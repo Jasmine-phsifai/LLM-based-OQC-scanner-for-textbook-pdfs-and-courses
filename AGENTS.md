@@ -27,6 +27,22 @@ against code and tests before relying on them.
 - Do not reactivate the Rust/PyO3 rewrite without updating
   `MIGRATION_STATUS.md` and proving the Python API boundary is stable.
 
+## Temporary Git Fork Workflow
+
+- The active GitHub CLI account is `Jasmine-phsifai`.
+- `origin` is the personal fork:
+  `git@github.com:Jasmine-phsifai/LLM-based-OQC-scanner-for-textbook-pdfs-and-courses.git`.
+- `upstream` is the original repository:
+  `https://github.com/honggoldgoldgold/LLM-based-OQC-scanner-for-textbook-pdfs-and-courses.git`.
+- Push work to `origin`; fetch or compare the original repository through
+  `upstream`. Do not push to `upstream` unless its write permission is restored.
+- This workspace uses the repository-local SSH key
+  `C:/Users/OMG/.ssh/supervised_win11_ed25519` through `core.sshCommand`; do not
+  print or upload the private key.
+- This is a temporary handoff because the active account can read the original
+  repository but cannot write to it. Do not replace these remotes merely to
+  work around a transient network or credential failure.
+
 ## Working Diary Rule (repo-wide, always on)
 
 This repo is mid-migration: `legacy_app/` is a finished-but-messy UI app,
