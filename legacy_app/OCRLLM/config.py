@@ -7,6 +7,7 @@ OCRLLM 全局配置。
 from __future__ import annotations
 
 import os
+import tempfile
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,18 @@ def normalize_google_ocr_vision_model(model: str | None) -> str:
     if "image" in lowered or "imagen" in lowered or "nano-banana" in lowered:
         return DEFAULT_GOOGLE_OCR_VISION_MODEL
     return value
+
+
+def _default_home_dir() -> Path:
+    """默认的 OCRLLM 主目录。
+
+    ``Path.home()`` 在没有 HOME/USERPROFILE 的环境（服务账号、被清空的子进程环境）
+    里直接抛 RuntimeError，不能让它拖垮整个配置构造。
+    """
+    try:
+        return Path.home() / "OCRLLM"
+    except RuntimeError:
+        return Path(tempfile.gettempdir()) / "OCRLLM"
 
 
 @dataclass
@@ -264,7 +277,7 @@ class AppConfig:
         # 默认输出/临时目录不能放在安装包目录里面：安装目录在其他机器上
         # 可能不可写（系统目录/共享安装），且跨机器不可预测。
         # 可通过 OCRLLM_HOME 环境变量或 PathConfig 显式覆盖。
-        default_home = Path(os.environ.get("OCRLLM_HOME", Path.home() / "OCRLLM"))
+        default_home = Path(os.environ.get("OCRLLM_HOME") or _default_home_dir())
         if not self.paths.output_dir:
             self.paths.output_dir = str(default_home / "output")
         if not self.paths.temp_dir:

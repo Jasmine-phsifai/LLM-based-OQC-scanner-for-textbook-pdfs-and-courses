@@ -93,14 +93,22 @@ def resolve_workers(configured: int, task_count: int, hard_cap: int = 8) -> int:
     return max(1, min(cpu, task_count, hard_cap))
 
 
+def atomic_temp_path(dest: str) -> str:
+    """同目录下的临时写入路径，扩展名保持在最后。
+
+    PIL 和 PyMuPDF 都靠扩展名推断输出格式，把 ``.tmp1234`` 放在末尾会让写入直接报错。
+    """
+    stem, ext = os.path.splitext(dest)
+    return f"{stem}.tmp{os.getpid()}{ext}"
+
+
 def atomic_save_image(img: "Image.Image", dest: str, **save_kwargs) -> None:
     """写入图片并在提交前验证可解码，避免中断/崩溃留下截断文件。
 
-    下游识图提供方（Codex CLI 、Google/DashScope 适配器）对损坏/截断图片不报错，
-    而是返回“无法识别该图片”的文本，被上层误当成正常识别结果。写入时中断
-    （取消/进程被杀）是此类损坏文件的真实来源之一。
+    下游识图提供方（Codex CLI、Google/DashScope 适配器）对损坏/截断图片不报错，
+    而是返回“无法识别该图片”的文本，被上层误当成正常识别结果。
     """
-    tmp_path = f"{dest}.tmp{os.getpid()}"
+    tmp_path = atomic_temp_path(dest)
     try:
         img.save(tmp_path, **save_kwargs)
         with Image.open(tmp_path) as check:

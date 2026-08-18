@@ -14,7 +14,7 @@ from threading import Event
 import fitz
 from PIL import Image
 
-from OCRLLM.core.utils import ensure_dir, resolve_workers, sanitize_path_component
+from OCRLLM.core.utils import atomic_temp_path, ensure_dir, resolve_workers, sanitize_path_component
 from OCRLLM.core.task_runner import CancelledError
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ def _render_one_page(
         mat = fitz.Matrix(effective_zoom, effective_zoom)
         pix = page.get_pixmap(matrix=mat)
         # 中断/进程被杀不能留下截断图片（会被识图提供方静默当成"无法识别"）
-        tmp_path = f"{img_path}.tmp{os.getpid()}"
+        tmp_path = atomic_temp_path(img_path)
         try:
             pix.save(tmp_path)
             with Image.open(tmp_path) as check:

@@ -18,6 +18,7 @@ from OCRLLM.processors.audio import (
 )
 from OCRLLM.processors.video import VideoProcessor
 from OCRLLM.processors.video_pipeline import AudioRecognizePhase, VideoProcessContext
+from OCRLLM.processors.video_pipeline_selection import VideoPipelineSelection
 
 
 class GoogleAudioRoutingTests(unittest.TestCase):
@@ -826,8 +827,7 @@ class GoogleAudioRoutingTests(unittest.TestCase):
                 debug_dir=tmp,
                 info_path=os.path.join(tmp, "frame_info.json"),
                 stem=stem,
-                selected_phases=[5],
-                skip_audio=False,
+                selection=VideoPipelineSelection(frames=False, audio=True),
                 hotwords=[
                     "transaction",
                     "isolation level",

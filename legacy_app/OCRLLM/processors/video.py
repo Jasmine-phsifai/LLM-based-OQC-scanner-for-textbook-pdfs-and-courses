@@ -53,6 +53,7 @@ from OCRLLM.core.output_quality import failed_placeholder_quality_reason, looks_
 from OCRLLM.processors.base import BaseProcessor
 from OCRLLM.core.document_model import SourceType
 from OCRLLM.processors.video_pipeline import VideoProcessContext, build_video_phase_chain
+from OCRLLM.processors.video_pipeline_selection import VideoPipelineSelection
 from OCRLLM.imaging.audio_extractor import extract_audio
 from OCRLLM.imaging.preprocess import imwrite_unicode
 from OCRLLM import prompts
@@ -116,6 +117,7 @@ class VideoProcessor(BaseProcessor):
         audio_prompt_template: str | None = None,
         output_stem: str | None = None,
         source_stem: str | None = None,
+        cleanup_intermediates: bool = True,
     ) -> dict:
         extra = {
             "stem": stem,
@@ -124,14 +126,30 @@ class VideoProcessor(BaseProcessor):
             "prompt_template": prompt_template,
             "audio_prompt_template": audio_prompt_template,
         }
+        if not cleanup_intermediates:
+            extra["cleanup_intermediates"] = False
         if output_stem is not None:
             extra["output_stem"] = output_stem
         if source_stem is not None and source_stem != stem:
             extra["source_stem"] = source_stem
         return extra
 
+    @staticmethod
+    def _checkpoint_compat_extra(extra: dict) -> dict:
+        """只比较真正影响产物含义的字段。
+
+        管线选择（``phases``/``skip_audio``）故意排除在外：两条管线已经互不干扰，
+        改勾选后仍应能复用磁盘上已有的产物，而不是从头重跑。
+        """
+        return {
+            key: extra[key]
+            for key in ("stem", "prompt_template", "audio_prompt_template", "output_stem", "source_stem")
+            if key in extra
+        }
+
     @classmethod
     def resume_options_from_checkpoint(cls, checkpoint: Checkpoint) -> dict:
+
         extra = checkpoint.extra or {}
         phases = extra.get("phases")
         normalized_phases = [int(phase) for phase in phases] if isinstance(phases, list) else None
@@ -145,9 +163,30 @@ class VideoProcessor(BaseProcessor):
             "audio_prompt_template": extra.get("audio_prompt_template") or None,
             "resume": True,
         }
+        if extra.get("cleanup_intermediates") is False:
+            options["cleanup_intermediates"] = False
         if extra.get("output_stem"):
             options["output_stem"] = extra["output_stem"]
         return options
+
+    @classmethod
+    def default_output_dir(cls, cfg: AppConfig, video_path: str, output_stem: str = None) -> str:
+        """返回该视频默认的输出目录（GUI 需要在启动前判断已有产物）。"""
+        stem = cls._safe_output_stem(output_stem or Path(video_path).stem)
+        return os.path.join(cfg.paths.output_dir, stem)
+
+    @classmethod
+    def existing_products(cls, cfg: AppConfig, video_path: str, output_dir: str = None) -> dict[str, bool]:
+        """检查两条管线的识别结果是否已经在磁盘上。
+
+        产物文件名的约定只在这里定义一次，GUI 不再自己拼路径。
+        """
+        stem = cls._safe_output_stem(Path(video_path).stem)
+        directory = output_dir or cls.default_output_dir(cfg, video_path)
+        return {
+            "frames": cls._file_has_content(cls._phase4_board_path(directory, stem)),
+            "audio": cls._file_has_content(cls._phase5_output_path(directory, stem)),
+        }
 
     def process(
         self,
@@ -159,16 +198,25 @@ class VideoProcessor(BaseProcessor):
         audio_prompt_template: str = None,
         output_stem: str = None,
         resume: bool = False,
+        selection: VideoPipelineSelection = None,
+        cleanup_intermediates: bool = True,
     ) -> dict:
-        """执行录课视频处理管线（最多 5 阶段）。
+        """执行录课视频处理。
+
+        视频含两条互不依赖的管线：frames（抽帧 → 预处理 → 板书识别）和
+        audio（提取音频 → 语音识别）。两者可以单独重跑，重跑一条永远不会删掉
+        另一条的产物。
 
         Args:
             video_path: 视频文件路径。
             output_dir: 输出目录。
-            phases: 执行的阶段列表（1~5）。
-            skip_audio: 是否跳过语音识别阶段。
+            phases: 旧接口的 1~5 阶段编号；传了 ``selection`` 时忽略。
+            skip_audio: 旧接口的跳过语音识别开关。
             prompt_template: 自定义板书识别提示词。
-            resume: 是否尝试断点续传。
+            audio_prompt_template: 自定义语音识别提示词。
+            resume: 是否复用磁盘上已有的产物（断点续传 / 手动部分重跑）。
+            selection: 两条管线的选择，优先于 ``phases``。
+            cleanup_intermediates: 成功后是否删除可免费重建的中间文件。
 
         Returns:
             包含 board_md、hotwords、audio_path、frames 等的结果字典。
@@ -188,7 +236,10 @@ class VideoProcessor(BaseProcessor):
         debug_dir = os.path.join(ensure_dir(self.cfg.paths.temp_dir), self._debug_dir_name(stem))
         ensure_dir(debug_dir)
 
-        phases = self._normalize_phases(phases, skip_audio)
+        if selection is None:
+            selection = VideoPipelineSelection.from_legacy_steps(phases, skip_audio)
+        phases = selection.steps()
+        skip_audio = not selection.runs_audio_recognize
 
         context = VideoProcessContext(
             video_path=video_path,
@@ -197,12 +248,16 @@ class VideoProcessor(BaseProcessor):
             debug_dir=debug_dir,
             info_path=os.path.join(output_dir, "frame_info.json"),
             stem=stem,
-            selected_phases=phases,
-            skip_audio=skip_audio,
+            selection=selection,
             prompt_template=prompt_template,
             audio_prompt_template=audio_prompt_template,
             resume=resume,
+            cleanup_intermediates=cleanup_intermediates,
         )
+        # 热词是跨管线的可选输入：只跑 audio 管线时从磁盘上上一次板书识别的产物里读。
+        if selection.runs_audio_recognize and not selection.frames:
+            context.hotwords = self._load_existing_hotwords(output_dir, stem)
+
         phase_chain = build_video_phase_chain(context)
 
         self.tracker.start_task(
@@ -222,13 +277,14 @@ class VideoProcessor(BaseProcessor):
             audio_prompt_template,
             output_stem=output_stem,
             source_stem=source_stem,
+            cleanup_intermediates=cleanup_intermediates,
         )
         if resume:
             checkpoint = self.checkpoint_mgr.load("video", video_path)
             if checkpoint and checkpoint.is_compatible(
                 total_items=5,
                 output_path=output_dir,
-                expected_extra=checkpoint_extra,
+                expected_extra=self._checkpoint_compat_extra(checkpoint_extra),
             ):
                 completed_phases = set(checkpoint.completed_indices)
                 logger.info("[VIDEO] 断点续传: 已完成阶段 %s", sorted(completed_phases))
@@ -286,6 +342,29 @@ class VideoProcessor(BaseProcessor):
         if 5 in phases:
             weights["phase5"] = 2.0
         return weights
+
+    def _load_existing_hotwords(self, output_dir: str, stem: str) -> list[str]:
+        """从上一次 frames 管线的产物里读热词；读不到就算了。"""
+        hotword_path = self._phase4_hotword_path(output_dir, stem)
+        try:
+            if os.path.isfile(hotword_path):
+                with open(hotword_path, "r", encoding="utf-8") as f:
+                    words = [line.strip() for line in f if line.strip()]
+                if words:
+                    logger.info("[VIDEO] 复用已有热词表 %d 个词: %s", len(words), hotword_path)
+                    return words
+        except OSError as e:
+            logger.warning("[VIDEO] 读取热词表失败，按无热词处理: %s", e)
+
+        board_md = self._phase4_board_path(output_dir, stem)
+        try:
+            words = _extract_hotwords_from_md(board_md)
+        except OSError as e:
+            logger.warning("[VIDEO] 读取板书 MD 失败，按无热词处理: %s", e)
+            return []
+        if words:
+            logger.info("[VIDEO] 从已有板书 MD 提取热词 %d 个", len(words))
+        return words
 
     def _phase4_batch_size(self) -> int:
         return visual_video_frame_batch_size(self.cfg)
@@ -913,6 +992,7 @@ class VideoProcessor(BaseProcessor):
         output_dir: str,
         stem: str,
         prompt_template: str = None,
+        restored_slots: dict[int, str] = None,
     ) -> tuple[str, list[str], str]:
         self._report(4, 5, "大模型识别板书...")
         prompt_template = prompt_template or prompts.BOARD_WITH_HOTWORDS
@@ -921,45 +1001,63 @@ class VideoProcessor(BaseProcessor):
         batch_size = self._phase4_batch_size()
         batches = batch_list(data, batch_size)
         total_batches = len(batches)
+        restored_slots = {
+            index: text for index, text in (restored_slots or {}).items() if 0 <= index < total_batches
+        }
 
         # 增量写入器
         md_path = self._phase4_board_path(output_dir, stem)
-        writer = IncrementalMDWriter(md_path, total_slots=total_batches)
+        writer = IncrementalMDWriter(
+            md_path, total_slots=total_batches, truncate=not bool(restored_slots),
+        )
+        if restored_slots:
+            writer.seed_slots(restored_slots)
 
         md_parts = [""] * total_batches
-        hotwords = []
-        last_batch_idx = total_batches - 1
+        hotwords: list[str] = []
+        pending_indices = [index for index in range(total_batches) if index not in restored_slots]
+        for index, text in restored_slots.items():
+            md_parts[index] = text
+
+        if restored_slots:
+            self.tracker.update_phase("phase4", len(restored_slots), "已恢复断点内容")
+        if not pending_indices:
+            writer.finalize()
+            logger.info("[VIDEO] Phase 4 全部批次均已存在，直接复用 -> %s", md_path)
+            return self._phase4_finalize(md_path, md_parts, hotwords, output_dir, stem)
+
+        pending_count = len(pending_indices)
 
         # 计算并行度（与 PDF 统一策略）
         high_parallel_provider = visual_allows_high_parallel(self.cfg)
-        base_workers = resolve_workers(self._llm_parallel_requests(), total_batches, hard_cap=64 if high_parallel_provider else 8)
-        if self._use_api_pool_for_llm() and total_batches > base_workers:
-            workers = min(self.api_pool.max_parallel, total_batches, base_workers * self.api_pool.pool_size)
+        base_workers = resolve_workers(self._llm_parallel_requests(), pending_count, hard_cap=64 if high_parallel_provider else 8)
+        if self._use_api_pool_for_llm() and pending_count > base_workers:
+            workers = min(self.api_pool.max_parallel, pending_count, base_workers * self.api_pool.pool_size)
             logger.info("[VIDEO] 付费模式: 并行度提升 %d → %d (API 池 %d 个 key)",
                         base_workers, workers, self.api_pool.pool_size)
         else:
             workers = base_workers
 
-        logger.info("[VIDEO] Phase 4: %d 张帧, %d 个批次 (每批 %d 张), workers=%d",
-                    len(frame_results), total_batches, batch_size, workers)
+        logger.info("[VIDEO] Phase 4: %d 张帧, %d 个批次 (每批 %d 张), 待处理 %d, workers=%d",
+                    len(frame_results), total_batches, batch_size, pending_count, workers)
 
-        stagger = self._llm_request_stagger_seconds() if total_batches > 4 else 0
-        self.tracker.update_queue(max(0, total_batches - workers), min(workers, total_batches))
+        stagger = self._llm_request_stagger_seconds() if pending_count > 4 else 0
+        self.tracker.update_queue(max(0, pending_count - workers), min(workers, pending_count))
 
         executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="video-llm")
         future_map = {}
+        successful_batches = 0
         try:
-            for bi, batch in enumerate(batches):
+            for order, bi in enumerate(pending_indices):
                 self._check_cancelled()
                 future = executor.submit(
-                    self._phase4_batch_one, bi, batch, total_batches, prompt_template, writer,
+                    self._phase4_batch_one, bi, batches[bi], total_batches, prompt_template, writer,
                 )
                 future_map[future] = bi
-                if stagger and bi < total_batches - 1:
+                if stagger and order < pending_count - 1:
                     self._sleep(stagger)
 
             done = 0
-            successful_batches = 0
             for future in self._iter_completed_futures(set(future_map)):
                 bi = future_map.pop(future, None)
                 if bi is None:
@@ -970,13 +1068,14 @@ class VideoProcessor(BaseProcessor):
                     md_parts[idx] = result_text
                     if success:
                         successful_batches += 1
-                    if hw:
-                        hotwords = hw
-                    self.tracker.update_phase("phase4", done, f"完成第 {idx+1}/{total_batches} 批")
-                    self._report(4, 5, f"识别板书: 完成 {done}/{total_batches}")
+                    for word in hw or []:
+                        if word not in hotwords:
+                            hotwords.append(word)
+                    self.tracker.update_phase("phase4", len(restored_slots) + done, f"完成第 {idx+1}/{total_batches} 批")
+                    self._report(4, 5, f"识别板书: 完成 {done}/{pending_count}")
                     self._report_content(result_text, f"板书识别 — 批次 {idx + 1}/{total_batches}")
 
-                    remaining = total_batches - done
+                    remaining = pending_count - done
                     running = min(workers, remaining)
                     self.tracker.update_queue(max(0, remaining - running), running)
                 except CancelledError:
@@ -994,8 +1093,8 @@ class VideoProcessor(BaseProcessor):
         # 最终写入
         writer.finalize()
         self.tracker.update_phase("phase4", total_batches, "识别完成")
-        if total_batches and successful_batches == 0:
-            raise RuntimeError(f"视频板书识别全部 {total_batches} 个批次失败，输出文件只包含错误信息: {md_path}")
+        if pending_count and successful_batches == 0 and not restored_slots:
+            raise RuntimeError(f"视频板书识别全部 {pending_count} 个批次失败，输出文件只包含错误信息: {md_path}")
         if total_batches:
             reason = failed_placeholder_quality_reason(
                 "\n\n".join(part for part in md_parts if part),
@@ -1004,6 +1103,17 @@ class VideoProcessor(BaseProcessor):
             if reason:
                 raise RuntimeError(f"视频板书识别输出包含识别失败且有效正文过少: {reason}: {md_path}")
 
+        return self._phase4_finalize(md_path, md_parts, hotwords, output_dir, stem)
+
+    def _phase4_finalize(
+        self,
+        md_path: str,
+        md_parts: list[str],
+        hotwords: list[str],
+        output_dir: str,
+        stem: str,
+    ) -> tuple[str, list[str], str]:
+        """写出热词表并返回板书识别产物。"""
         # ---- 热词: 若没拿到，从文本中回退提取 ----
         if not hotwords and self.cfg.codex_vision.enabled:
             logger.info("[VIDEO] Codex 模式跳过 Qwen 文本热词提取")
@@ -1290,6 +1400,47 @@ class VideoProcessor(BaseProcessor):
             "hotwords": hotwords,
         }
 
+    def _load_phase4_partial_slots(
+        self,
+        output_dir: str,
+        stem: str,
+        frame_results: list[dict],
+        batch_size: int,
+    ) -> dict[int, str]:
+        """从上一次写了一半的板书 MD 里恢复已完成的批次，避免重复付费识别。
+
+        以 markdown 自身为状态：一个批次的所有帧标记都在、顺序一致、内容既不是失败
+        占位也不是模型拒识，才算这一批已完成。
+        """
+        board_md = self._phase4_board_path(output_dir, stem)
+        if not self._file_has_content(board_md):
+            return {}
+        try:
+            board_text, _ = _split_hotwords(Path(board_md).read_text(encoding="utf-8"))
+        except OSError as e:
+            logger.warning("[VIDEO] 读取板书 MD 失败，放弃批次级恢复: %s", e)
+            return {}
+
+        blocks = {
+            frame["frame_id"]: "\n".join([frame["header"], *frame["lines"]]).strip()
+            for frame in _parse_frames(board_text)
+        }
+        if not blocks:
+            return {}
+
+        restored: dict[int, str] = {}
+        for batch_index, batch in enumerate(batch_list(list(frame_results), batch_size)):
+            frame_ids = [Path(frame.get("path", "")).stem for frame in batch]
+            if any(frame_id not in blocks for frame_id in frame_ids):
+                continue
+            text = "\n\n".join(blocks[frame_id] for frame_id in frame_ids)
+            if "识别失败" in text or looks_like_refusal(text):
+                continue
+            restored[batch_index] = text
+        if restored:
+            logger.info("[VIDEO] 批次级恢复: 复用已完成的 %d 个批次", len(restored))
+        return restored
+
     def _clear_phase3_artifacts(self, output_dir: str):
         manifest_path = self._phase3_manifest_path(output_dir)
         processed_dir = self._phase3_dir(output_dir)
@@ -1335,42 +1486,37 @@ class VideoProcessor(BaseProcessor):
             self._clear_phase5_artifacts(output_dir, stem)
 
     def _prune_completed_outputs(self, context: VideoProcessContext):
-        """成功完成后清理中间产物，仅保留用户真正需要的结果。"""
-        selected = set(context.selected_phases)
-        if 4 not in selected:
+        """成功完成后清理中间产物。
+
+        只删除「不花钱就能重建」的东西：mp3 可以再从视频里抽，帧和预处理图可以再抽一次。
+        识别结果（板书 MD、录音 MD、热词表）一律保留 —— 它们是花过钱的产物，而且是
+        另一条管线以后单独重跑时的输入。
+        """
+        if not context.cleanup_intermediates:
+            logger.info("[VIDEO] 已关闭中间文件清理，保留全部产物")
             return
 
         output_dir = context.output_dir
         stem = context.stem
-        raw_board_path = self._phase4_board_path(output_dir, stem)
-        hotword_path = self._phase4_hotword_path(output_dir, stem)
-        transcript_path = self._phase5_output_path(output_dir, stem)
-        audio_path = self._phase1_audio_path(output_dir, stem)
+        board_path = self._phase4_board_path(output_dir, stem)
 
-        keep_paths: set[str] = set()
-        if os.path.exists(raw_board_path) and os.path.getsize(raw_board_path) > 0:
-            keep_paths.add(raw_board_path)
-            context.board_md = raw_board_path
-        else:
-            logger.warning("[VIDEO] 原始板书 MD 不存在或为空，跳过最终清理")
+        if context.selection.frames and not self._file_has_content(board_path):
+            logger.warning("[VIDEO] 板书 MD 不存在或为空，跳过清理以便排查")
+            return
+        if context.selection.runs_audio_recognize and not self._file_has_content(
+            self._phase5_output_path(output_dir, stem)
+        ):
+            logger.warning("[VIDEO] 录音识别结果不存在或为空，跳过清理以便排查")
             return
 
-        if 5 in selected and not context.skip_audio:
-            if os.path.exists(transcript_path) and os.path.getsize(transcript_path) > 0:
-                keep_paths.add(transcript_path)
-            else:
-                logger.warning("[VIDEO] 语音识别结果不存在或为空，跳过最终清理")
-                return
+        if self._file_has_content(board_path):
+            context.board_md = board_path
 
         for path, label in [
-            (context.info_path, "Phase 2 帧信息"),
-            (self._phase4_merged_board_path(output_dir, stem), "Phase 4 合并板书 MD"),
-            (raw_board_path, "Phase 4 原始板书 MD"),
-            (hotword_path, "Phase 4 热词表"),
-            (audio_path, "Phase 1 提取音频"),
+            (context.info_path, "帧信息"),
+            (self._phase4_merged_board_path(output_dir, stem), "合并板书 MD"),
+            (self._phase1_audio_path(output_dir, stem), "提取的音频"),
         ]:
-            if path in keep_paths:
-                continue
             try:
                 if os.path.isfile(path):
                     os.remove(path)
@@ -1386,6 +1532,13 @@ class VideoProcessor(BaseProcessor):
             logger.warning("[VIDEO] 清理提取帧目录失败: %s", e)
 
         self._clear_phase3_artifacts(output_dir)
+
+    @staticmethod
+    def _file_has_content(path: str) -> bool:
+        try:
+            return os.path.isfile(path) and os.path.getsize(path) > 0
+        except OSError:
+            return False
 
     def _save_phase3_manifest(
         self,

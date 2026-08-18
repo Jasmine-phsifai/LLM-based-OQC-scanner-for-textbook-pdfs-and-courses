@@ -115,8 +115,8 @@ class GuiAppCloseTests(unittest.TestCase):
             tab._video_path.setText(video_path)
             tab._board_prompt._current_text = "board prompt {image_names} {extra_instruction}"
             tab._audio_prompt._current_text = "audio prompt {hotwords_instruction}"
-            for phase, checkbox in tab._phases.items():
-                checkbox.setChecked(phase in {1, 5})
+            tab._frames_pipeline.setChecked(False)
+            tab._audio_pipeline.setChecked(True)
 
             def fake_process(self, **kwargs):
                 captured.update(kwargs)
@@ -127,6 +127,8 @@ class GuiAppCloseTests(unittest.TestCase):
 
             self.assertEqual(captured["prompt_template"], "board prompt {image_names} {extra_instruction}")
             self.assertEqual(captured["audio_prompt_template"], "audio prompt {hotwords_instruction}")
+            self.assertTrue(captured["selection"].audio)
+            self.assertFalse(captured["selection"].frames)
             tab.deleteLater()
             self._app.processEvents()
 

@@ -13,6 +13,7 @@ from OCRLLM.processors.video_pipeline import (
     VideoPhase,
     VideoProcessContext,
 )
+from OCRLLM.processors.video_pipeline_selection import VideoPipelineSelection
 
 
 class ResumeContractTests(unittest.TestCase):
@@ -146,8 +147,7 @@ class VideoPhase4ResumeTests(unittest.TestCase):
             debug_dir=tmp,
             info_path=os.path.join(tmp, "frame_info.json"),
             stem="lecture",
-            selected_phases=[4],
-            skip_audio=False,
+            selection=VideoPipelineSelection(frames=True, audio=True),
         )
 
     def _write_frame_info(self, tmp: str, frame_ids: list[str]) -> list[dict]:
@@ -227,8 +227,7 @@ class VideoPhase5ResumeTests(unittest.TestCase):
                 debug_dir=tmp,
                 info_path=os.path.join(tmp, "frame_info.json"),
                 stem="lecture",
-                selected_phases=[5],
-                skip_audio=False,
+                selection=VideoPipelineSelection(frames=False, audio=True),
                 audio_prompt_template="audio prompt",
                 resume=True,
                 audio_path=audio_path,
@@ -309,7 +308,7 @@ class VideoInvalidationTests(unittest.TestCase):
             self.executed = True
             return True
 
-    def test_invalidated_video_phases_are_persisted_before_rerun(self):
+    def test_frame_phase_invalidation_is_persisted_and_never_touches_audio(self):
         processor = self._DummyProcessor()
         checkpoint = Checkpoint("video", "src.mp4", "out_dir", 5, completed_indices={1, 2, 3, 4, 5})
         context = VideoProcessContext(
@@ -319,18 +318,17 @@ class VideoInvalidationTests(unittest.TestCase):
             debug_dir="debug",
             info_path="info.json",
             stem="demo",
-            selected_phases=[3, 4, 5],
-            skip_audio=False,
+            selection=VideoPipelineSelection(frames=True, audio=True),
         )
         completed = set(checkpoint.completed_indices)
 
         self._DummyPhase().run(processor, context, checkpoint, completed)
 
-        self.assertEqual(completed, {1, 2})
-        self.assertEqual(checkpoint.completed_indices, {1, 2, 3})
-        self.assertEqual(processor.checkpoint_mgr.saved[0], [1, 2])
-        self.assertEqual(processor.checkpoint_mgr.saved[1], [1, 2, 3])
-        self.assertEqual(processor.cleared, [("out_dir", "demo", (3, 4, 5))])
+        self.assertEqual(completed, {1, 2, 5})
+        self.assertEqual(checkpoint.completed_indices, {1, 2, 3, 5})
+        self.assertEqual(processor.checkpoint_mgr.saved[0], [1, 2, 5])
+        self.assertEqual(processor.checkpoint_mgr.saved[1], [1, 2, 3, 5])
+        self.assertEqual(processor.cleared, [("out_dir", "demo", (3, 4))])
 
     def test_resume_reuses_valid_artifact_even_when_checkpoint_was_not_marked(self):
         processor = self._DummyProcessor()
@@ -342,8 +340,7 @@ class VideoInvalidationTests(unittest.TestCase):
             debug_dir="debug",
             info_path="info.json",
             stem="demo",
-            selected_phases=[4, 5],
-            skip_audio=False,
+            selection=VideoPipelineSelection(frames=True, audio=True),
             resume=True,
         )
         phase = self._ReusablePhase()
@@ -367,13 +364,104 @@ class VideoInvalidationTests(unittest.TestCase):
                 debug_dir=os.path.join(tmp, "debug"),
                 info_path=os.path.join(tmp, "frame_info.json"),
                 stem="demo",
-                selected_phases=[2, 3, 4],
-                skip_audio=True,
+                selection=VideoPipelineSelection(frames=True, audio=False),
             )
 
             self.assertTrue(FrameExtractPhase().execute(processor, context))
 
             self.assertEqual(processor.cleared, [(tmp, "demo", (3, 4))])
+
+
+class VideoPipelineSelectionTests(unittest.TestCase):
+    def test_legacy_steps_map_to_pipelines(self):
+        self.assertEqual(
+            VideoPipelineSelection.from_legacy_steps([1, 2, 3, 4, 5]),
+            VideoPipelineSelection(frames=True, audio=True),
+        )
+        self.assertEqual(
+            VideoPipelineSelection.from_legacy_steps([1, 2, 3, 4]),
+            VideoPipelineSelection(frames=True, audio=False, audio_extract_only=True),
+        )
+        self.assertEqual(
+            VideoPipelineSelection.from_legacy_steps([1, 5]),
+            VideoPipelineSelection(frames=False, audio=True),
+        )
+        self.assertEqual(
+            VideoPipelineSelection.from_legacy_steps(None, skip_audio=True),
+            VideoPipelineSelection(frames=True, audio=False, audio_extract_only=True),
+        )
+
+    def test_steps_round_trip_to_stable_ids(self):
+        self.assertEqual(VideoPipelineSelection(frames=True, audio=True).steps(), [1, 2, 3, 4, 5])
+        self.assertEqual(VideoPipelineSelection(frames=True, audio=False).steps(), [2, 3, 4])
+        self.assertEqual(VideoPipelineSelection(frames=False, audio=True).steps(), [1, 5])
+
+
+class VideoCleanupTests(unittest.TestCase):
+    def _context(self, tmp: str, selection: VideoPipelineSelection) -> VideoProcessContext:
+        return VideoProcessContext(
+            video_path="lecture.mp4",
+            output_dir=tmp,
+            frames_dir=os.path.join(tmp, "提取帧"),
+            debug_dir=tmp,
+            info_path=os.path.join(tmp, "frame_info.json"),
+            stem="lecture",
+            selection=selection,
+        )
+
+    def _write_all_artifacts(self, tmp: str):
+        os.makedirs(os.path.join(tmp, "提取帧"), exist_ok=True)
+        paths = {
+            "board": os.path.join(tmp, "lecture_板书识别.md"),
+            "transcript": os.path.join(tmp, "lecture_录音识别.md"),
+            "hotwords": os.path.join(tmp, "lecture_热词表.txt"),
+            "audio": os.path.join(tmp, "lecture.mp3"),
+            "info": os.path.join(tmp, "frame_info.json"),
+            "frame": os.path.join(tmp, "提取帧", "board_001_010s.jpg"),
+        }
+        for path in paths.values():
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("x")
+        return paths
+
+    def test_cleanup_keeps_paid_output_and_drops_rebuildable_intermediates(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = self._write_all_artifacts(tmp)
+            processor = VideoProcessor.__new__(VideoProcessor)
+
+            processor._prune_completed_outputs(
+                self._context(tmp, VideoPipelineSelection(frames=True, audio=True))
+            )
+
+            self.assertTrue(os.path.exists(paths["board"]))
+            self.assertTrue(os.path.exists(paths["transcript"]))
+            self.assertTrue(os.path.exists(paths["hotwords"]))
+            self.assertFalse(os.path.exists(paths["audio"]))
+            self.assertFalse(os.path.exists(paths["info"]))
+            self.assertFalse(os.path.isdir(os.path.join(tmp, "提取帧")))
+
+    def test_frames_only_run_never_deletes_the_transcript(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = self._write_all_artifacts(tmp)
+            processor = VideoProcessor.__new__(VideoProcessor)
+
+            processor._prune_completed_outputs(
+                self._context(tmp, VideoPipelineSelection(frames=True, audio=False))
+            )
+
+            self.assertTrue(os.path.exists(paths["transcript"]))
+
+    def test_keep_intermediates_disables_cleanup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = self._write_all_artifacts(tmp)
+            processor = VideoProcessor.__new__(VideoProcessor)
+            context = self._context(tmp, VideoPipelineSelection(frames=True, audio=True))
+            context.cleanup_intermediates = False
+
+            processor._prune_completed_outputs(context)
+
+            self.assertTrue(os.path.exists(paths["audio"]))
+            self.assertTrue(os.path.exists(paths["info"]))
 
 
 if __name__ == "__main__":

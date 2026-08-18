@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
 from OCRLLM import prompts
 from OCRLLM.gui.batch_tasks import BatchFileTask, run_batch_tasks
 from OCRLLM.gui.widgets import FileInput, PromptButton, browse_files, join_paths_text, split_paths_text
+from OCRLLM.processors.video_pipeline_selection import VideoPipelineSelection
 
 
 class VideoTab(QWidget):
@@ -40,18 +41,26 @@ class VideoTab(QWidget):
                                 "视频文件 (*.mp4 *.avi *.mkv *.mov *.flv *.wmv);;所有文件 (*)",
                                 self._video_path)))
 
-        # 阶段选择
-        phase_row = QHBoxLayout()
-        phase_row.addWidget(QLabel("执行阶段:"))
-        self._phases: dict[int, QCheckBox] = {}
-        for p, name in [(1, "音频提取"), (2, "智能抽帧"), (3, "裁剪缩放"),
-                        (4, "大模型识别"), (5, "语音识别")]:
-            cb = QCheckBox(f"{p}.{name}")
-            cb.setChecked(True)
-            self._phases[p] = cb
-            phase_row.addWidget(cb)
-        phase_row.addStretch()
-        vbox.addLayout(phase_row)
+        # 管线选择：视频里的两个产物互不依赖，可以单独跑、单独重跑。
+        pipeline_row = QHBoxLayout()
+        pipeline_row.addWidget(QLabel("识别内容:"))
+        self._frames_pipeline = QCheckBox("板书/课件（抽帧 → 大模型识别）")
+        self._frames_pipeline.setChecked(True)
+        self._audio_pipeline = QCheckBox("录音（提取音频 → 语音识别）")
+        self._audio_pipeline.setChecked(True)
+        pipeline_row.addWidget(self._frames_pipeline)
+        pipeline_row.addWidget(self._audio_pipeline)
+        pipeline_row.addStretch()
+        vbox.addLayout(pipeline_row)
+
+        option_row = QHBoxLayout()
+        self._keep_intermediates = QCheckBox("保留中间文件（音频、提取帧）")
+        self._keep_intermediates.setToolTip(
+            "默认完成后删除可重建的中间文件；识别结果和热词表任何情况下都不会被删。"
+        )
+        option_row.addWidget(self._keep_intermediates)
+        option_row.addStretch()
+        vbox.addLayout(option_row)
 
         from OCRLLM.gui.app import make_action_buttons
         self._board_prompt = PromptButton("录课板书/课件识别", "video_board", prompts.BOARD_WITH_HOTWORDS, self)
@@ -76,6 +85,53 @@ class VideoTab(QWidget):
             return
         self._video_path.setText(join_paths_text(list(paths)))
 
+    def _selection(self) -> VideoPipelineSelection:
+        return VideoPipelineSelection(
+            frames=self._frames_pipeline.isChecked(),
+            audio=self._audio_pipeline.isChecked(),
+        )
+
+    def _ask_reuse_or_rerun(self, cfg, video_paths, selection, output_dir_for) -> bool | None:
+        """已有产物时询问复用还是重跑。
+
+        Returns:
+            True 复用已有产物，False 重跑，None 用户取消。
+        """
+        from OCRLLM.processors.video import VideoProcessor
+
+        conflicts = []
+        for video_path in video_paths:
+            products = VideoProcessor.existing_products(cfg, video_path, output_dir_for(video_path))
+            done = [
+                label
+                for label, key in (("板书识别", "frames"), ("录音识别", "audio"))
+                if products.get(key) and getattr(selection, key)
+            ]
+            if done:
+                conflicts.append(f"{os.path.basename(video_path)}: 已有 {'、'.join(done)}")
+        if not conflicts:
+            return False
+
+        box = QMessageBox(self)
+        box.setWindowTitle("已有识别结果")
+        box.setText("以下视频这次要跑的管线已经有结果了：\n\n" + "\n".join(conflicts[:10]))
+        box.setInformativeText(
+            "复用：保留已完成的部分，只补缺失的内容。\n"
+            "重跑：重新识别所选管线，未勾选的管线结果不受影响。"
+        )
+        reuse_btn = box.addButton("复用已有结果", QMessageBox.AcceptRole)
+        rerun_btn = box.addButton("重跑所选管线", QMessageBox.DestructiveRole)
+        box.addButton("取消", QMessageBox.RejectRole)
+        box.setDefaultButton(reuse_btn)
+        box.exec_()
+
+        clicked = box.clickedButton()
+        if clicked is reuse_btn:
+            return True
+        if clicked is rerun_btn:
+            return False
+        return None
+
     def _run(self):
         video_paths = split_paths_text(self._video_path.text())
         if not video_paths:
@@ -84,8 +140,11 @@ class VideoTab(QWidget):
         if missing:
             QMessageBox.warning(self, "提示", "文件不存在:\n" + "\n".join(missing[:10])); return
 
-        phases = [p for p, cb in self._phases.items() if cb.isChecked()]
-        skip_audio = 5 not in phases
+        selection = self._selection()
+        if not selection.frames and not selection.audio:
+            QMessageBox.warning(self, "提示", "请至少勾选一项识别内容"); return
+
+        cleanup_intermediates = not self._keep_intermediates.isChecked()
         prompt_text = self._board_prompt.prompt_text()
         audio_prompt_text = self._audio_prompt.prompt_text()
 
@@ -97,18 +156,25 @@ class VideoTab(QWidget):
             src_dir = os.path.dirname(os.path.abspath(video_path))
             return os.path.join(src_dir, Path(video_path).stem)
 
+        cfg = self._get_cfg()
+        resume = self._ask_reuse_or_rerun(cfg, video_paths, selection, _output_dir_for)
+        if resume is None:
+            return
+
         if len(video_paths) == 1:
             video_path = video_paths[0]
             output_dir = _output_dir_for(video_path)
 
             def task(reporter):
                 from OCRLLM.processors.video import VideoProcessor
-                cfg = self._get_cfg()
+                task_cfg = self._get_cfg()
                 tracker = self._get_tracker() if self._get_tracker else None
-                proc = VideoProcessor(cfg=cfg, reporter=reporter, tracker=tracker)
+                proc = VideoProcessor(cfg=task_cfg, reporter=reporter, tracker=tracker)
                 result = proc.process(
                     video_path=video_path, output_dir=output_dir,
-                    phases=phases, skip_audio=skip_audio,
+                    selection=selection,
+                    resume=resume,
+                    cleanup_intermediates=cleanup_intermediates,
                     prompt_template=prompt_text or None,
                     audio_prompt_template=audio_prompt_text or None,
                 )
@@ -126,7 +192,7 @@ class VideoTab(QWidget):
 
         def task(reporter):
             from OCRLLM.processors.video import VideoProcessor
-            cfg = self._get_cfg()
+            batch_cfg = self._get_cfg()
             tasks = []
             for video_path in video_paths:
                 output_dir = _output_dir_for(video_path)
@@ -136,8 +202,9 @@ class VideoTab(QWidget):
                     result = proc.process(
                         video_path=path,
                         output_dir=out,
-                        phases=phases,
-                        skip_audio=skip_audio,
+                        selection=selection,
+                        resume=resume,
+                        cleanup_intermediates=cleanup_intermediates,
                         prompt_template=prompt_text or None,
                         audio_prompt_template=audio_prompt_text or None,
                     )
@@ -148,7 +215,7 @@ class VideoTab(QWidget):
                     display_name=os.path.basename(video_path),
                     run=_run_one,
                 ))
-            return run_batch_tasks(task_kind="video", task_label="视频", cfg=cfg, reporter=reporter, tasks=tasks)
+            return run_batch_tasks(task_kind="video", task_label="视频", cfg=batch_cfg, reporter=reporter, tasks=tasks)
 
         if self._start_worker(task):
             self._board_prompt.consume_temporary()

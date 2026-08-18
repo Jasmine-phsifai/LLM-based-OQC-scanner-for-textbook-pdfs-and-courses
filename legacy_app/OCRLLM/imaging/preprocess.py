@@ -13,7 +13,7 @@ import cv2
 import numpy as np
 
 from OCRLLM.config import AppConfig
-from OCRLLM.core.utils import ensure_dir
+from OCRLLM.core.utils import atomic_temp_path, ensure_dir
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ def imwrite_unicode(path: str, img: np.ndarray, params=None) -> bool:
     result, encoded = cv2.imencode(ext, img, params) if params else cv2.imencode(ext, img)
     if not result:
         return False
-    tmp_path = f"{path}.tmp{os.getpid()}"
+    tmp_path = atomic_temp_path(path)
     encoded.tofile(tmp_path)
     os.replace(tmp_path, path)
     return True
