@@ -155,224 +155,30 @@ Codex CLI (`codex-cli 0.144.5`, model `gpt-5.5`) through the actual
   at its final path — do not port `pix.save(path)` / `img.save(path)` /
   `arr.tofile(path)` call sites verbatim.
 
-### 2026-08-18 (session 3): video "five phase" model is the wrong abstraction
 
-Status: **diagnosed and fixed in the same session.** The diagnosis below was
-written before any code change; the "What changed" section at the end records
-the fix.
+### 2026-08-18 (session 5): isolated QSettings tests leaked registry keys (D6)
 
-**Where the design lives.** `processors/video.py::VideoProcessor.process`
-(phase list `[1..5]`), `processors/video_pipeline.py` (the five
-`VideoPhase` subclasses + `build_video_phase_chain`), and
-`gui/tabs/video_tab.py::_build_ui` (five always-checked `QCheckBox`,
-`self._phases[1..5]`). Checkpointing is
-`core/checkpoint.py` with `total_items=5` and `completed_indices` holding
-phase numbers.
+**What broke.** `legacy_app/tests/qsettings_test_isolation.py` created a unique
+organization `OCRLLMTests-<uuid>` per test and cleaned it up with
+`QSettings.clear()` + `sync()`. 60 orphaned `HKCU\Software\OCRLLMTests-<uuid>`
+keys had accumulated on the development machine.
 
-**The structural error.** Video actually contains two independent products:
-an *audio* pipeline (extract → transcribe) and a *frame* pipeline
-(extract frames → preprocess → recognize). The code models them as one
-linear chain of five ordinal steps. Ordinal numbering forces a total order
-on two things that have no order between them, and it makes "phase 5" mean
-both "the last step" and "the audio product", which is where every reported
-inconsistency comes from. The only genuine cross-link is *hotwords*: phase 4
-extracts hotwords from the board markdown and phase 5 feeds them to ASR
-(`video.py::_phase5_asr`, `_extract_hotwords_from_md`). That is an optional
-quality boost, not a structural dependency, but the linear chain encodes it
-as one.
+**True root cause.** `QSettings.clear()` removes values, not the key itself. On
+Windows the organization key survives with zero values, so every run leaves one
+empty tree behind. The teardown was not "never executed" as previously recorded
+in the defect register; it executed and simply did not do what it claimed.
 
-**Concrete failures traced to it:**
+**Fix.** New `legacy_app/tests/delete_test_qsettings_tree.py`:
+- `delete_test_qsettings_tree(org)` recursively deletes the tree with `winreg`
+  and refuses any organization name outside the `OCRLLMTests-` prefix, so it
+  cannot be pointed at the real `HKCU\Software\OCRLLM` settings.
+- `delete_orphaned_test_qsettings_trees()` purges leftovers; running the module
+  directly deleted all 60 orphans (each verified to hold zero values first).
+`qsettings_test_isolation.restore()` now calls the per-org deletion.
 
-1. *Audio-only follow-up run is impossible.* Reported case A (ticking only
-   box 5 after a 1–4 run) fails, and the reason is not the checkbox — it is
-   `video.py::_prune_completed_outputs`, which runs on every successful
-   completion where phase 4 was selected and **deletes** the extracted
-   `{stem}.mp3`, `frame_info.json`, the `提取帧/` directory, the phase-3
-   processed-frame directory and manifest, and the hotword table. After a
-   1–4 run the audio file the user would need is already gone, so phase 5
-   alone has nothing to transcribe (`AudioRecognizePhase.execute` hits the
-   `音频文件不存在，跳过语音识别` branch and *returns True*, i.e. reports
-   success while doing nothing — a second bug: a no-op is indistinguishable
-   from a completed transcription in the result dict).
-
-2. *Frame-only re-run silently destroys the transcript.* Reported case B.
-   `FrameExtractPhase.execute` calls `_clear_invalidated_phase_artifacts`
-   with `{3,4,5}`; `_artifact_invalidations_for_context` only spares
-   phase 5 when 5 is *not* selected. So re-running the full tick set to
-   redo bad board recognition deletes `{stem}_录音识别.md` and re-pays for
-   ASR. Conversely, re-running to redo bad ASR requires phase 1 (audio
-   extract), which requires nothing be pruned — but the pruning already
-   happened. Whether the re-run overwrites or preserves the other product
-   depends on which boxes are ticked, in a way no user can predict from the
-   UI. The UI offers no "re-recognize frames, keep transcript" and no
-   "re-transcribe, keep board" operation at all.
-
-3. *Resume is phase-granular, so it is nearly worthless for the expensive
-   phase.* `IncrementalMDWriter(md_path, total_slots=total_batches)` in
-   `_phase4_llm` is constructed with the default `truncate=True` and no
-   `seed_slots(...)` call, unlike the PDF path which does seed. A crash at
-   batch 79/80 therefore discards all 79 paid recognitions and re-runs the
-   whole phase. `BoardRecognizePhase.can_resume` only answers
-   "does a complete-looking board markdown already exist", never "which
-   batches are done".
-
-4. *Resume is discarded on any parameter edit.* `Checkpoint.is_compatible`
-   compares `expected_extra` exactly, and that dict includes `phases` and
-   `prompt_template`. Changing the tick set or touching the prompt after a
-   crash silently invalidates the checkpoint and restarts from zero. The
-   GUI never passes `resume=True` on a normal run either — resume is
-   reachable only through the startup "⏩ 继续任务" banner
-   (`gui/app.py::_run_resume_checkpoint` →
-   `VideoProcessor.resume_options_from_checkpoint`), and the checkpoint is
-   deleted on success, so "resume" exists only for crashed runs and cannot
-   express "reuse what's on disk for a deliberate partial re-run".
-
-5. *Progress bar can never reach 100% on a partial tick set.* Not true —
-   `_build_phase_weights` only adds weights for selected phases and
-   `ProgressTracker` normalizes them — but the weights are static constants
-   (`1/3/2/4/2`) unrelated to actual frame count, video length, or provider
-   speed, so the bar's rate is meaningless. It also reports phases 1, 2 and
-   5 as `phase_total=1`, i.e. a single 0%→100% jump for the two slowest
-   real-time operations (ffmpeg extraction and ASR).
-
-6. *Hotword collection is order-dependent and mostly random.* In
-   `_phase4_llm` the completion loop does `hotwords = hw` (assignment, not
-   accumulation) over out-of-order `as_completed` results, so the final
-   hotword list is whichever batch happened to finish last and returned a
-   non-empty list. Hotwords then flow into ASR quality.
-
-7. *`skip_audio` duplicates the tick state.* `video_tab._run` computes
-   `skip_audio = 5 not in phases` and passes both, then
-   `_normalize_phases` and `AudioRecognizePhase.should_run` each re-derive
-   the same condition. Two sources of truth for one user intent, and
-   `_artifact_invalidations_for_context` keys off both.
-
-**Intended direction (agreed shape, implementation pending):** replace the
-five ordinal phases with two named pipelines that share the model list,
-fallback logic, and resume machinery but own their own artifacts and their
-own re-run switch — `audio` (extract → transcribe) and `frames`
-(extract → preprocess → recognize) — with hotwords demoted to an optional
-input that is read from disk if present and skipped if absent, never a
-scheduling constraint. Stop pruning inputs that a later partial re-run
-needs, or make pruning an explicit user choice. Make resume batch-granular
-for the recognition step and independent per pipeline.
-
-- **WARNING FOR src/ocrllm**: video support is not started in the new
-  library. Do **not** port the five-ordinal-phase model. Model video as two
-  independently runnable, independently resumable pipelines from the start;
-  make the recognition step's resume unit the batch, not the phase; keep
-  the hotword link a soft optional input; and never let a successful run
-  delete an artifact that a partial re-run of the *other* pipeline would
-  need. The same trap exists for any future multi-product source type
-  (e.g. PDF text layer + page images).
-- **WARNING FOR src/ocrllm**: a step that finds its input missing must not
-  `return True`/report success (the `音频文件不存在，跳过语音识别` branch).
-  Missing input is either a typed error or an explicit "skipped" state in
-  the result object — never silent success.
-
-**What changed.** New `processors/video_pipeline_selection.py` holds
-`VideoPipelineSelection` (three booleans: `frames`, `audio`,
-`audio_extract_only`) and the `AUDIO_STEPS = (1, 5)` /
-`FRAME_STEPS = (2, 3, 4)` grouping. Step numbers 1–5 were deliberately kept as
-stable identifiers so checkpoint files, CLI `--phases`, `registry.py`,
-`SocialLongVideoProcessor`, `api/server.py` and the resume banner
-(`checkpoint.py::_looks_actually_done` reads `extra["phases"]`) keep working
-unchanged; `from_legacy_steps()` translates the old tick set. Concretely:
-
-- `video_pipeline.py`: `_artifact_invalidations_for_context` replaced by
-  `_downstream_steps_in_same_pipeline(context, step, inclusive)`. Invalidation
-  can no longer cross the pipeline boundary in either direction. `inclusive`
-  distinguishes "recovery failed, redo this step too" from "this step just
-  recomputed, drop what follows it".
-- `video.py::_prune_completed_outputs`: now deletes only free-to-regenerate
-  intermediates (mp3, `frame_info.json`, `提取帧/`, phase-3 dir + manifest,
-  merged board MD). Board MD, transcript MD and the hotword table are never
-  deleted. Gated by a new `cleanup_intermediates` argument.
-- `AudioRecognizePhase.execute`: re-extracts the mp3 from the video when it is
-  missing (a free operation) and raises if that fails, instead of returning
-  success without transcribing.
-- `video.py::_load_phase4_partial_slots` + `_phase4_llm(restored_slots=...)`:
-  batch-granular resume driven by the board markdown itself rather than a
-  second checkpoint schema. A crash at batch 79/80 now re-runs one batch.
-- `_phase4_llm` accumulates hotwords across batches instead of `hotwords = hw`.
-- `_checkpoint_compat_extra`: pipeline selection no longer participates in
-  checkpoint compatibility, so changing the tick set reuses on-disk artifacts
-  instead of restarting from zero.
-- `video_tab.py`: five ordinal checkboxes replaced by two pipeline checkboxes
-  plus a 保留中间文件 opt-out; when the selected pipelines already have output,
-  a 复用 / 重跑 / 取消 dialog runs before the worker starts. Path conventions
-  stay in `VideoProcessor.existing_products`/`default_output_dir` so the GUI
-  never re-derives artifact filenames.
-- Progress phase names are prefixed by pipeline (`板书·智能抽帧`,
-  `录音·语音识别`).
-
-Legacy suite: 198 passed, 1 skipped (excluding `test_social_e2e.py`, which
-needs ffmpeg on PATH, and the pre-existing `test_gui_app.py` settings-UI
-failures below).
-
-### 2026-08-18 (session 3, second finding): the previous session's atomic-write fix was itself broken
-
-Found while running the suite for the refactor above. The 2026-08-18 follow-up
-entry's atomic-write fix built its temp path as `f"{dest}.tmp{os.getpid()}"` —
-i.e. the real extension stopped being the last suffix. Both PyMuPDF
-(`pix.save`) and PIL (`img.save`) infer the output format from the extension,
-so:
-
-- `imaging/pdf_renderer.py` raised
-  `ValueError: Image format tmp11788 not in ('png', ..., 'jpg', ...)` on every
-  page render.
-- `core/utils.py::atomic_save_image` (used by `resize_image_if_needed`, which
-  the PDF, board and video paths all call) would fail the same way for every
-  image large enough to need resizing.
-
-`imaging/preprocess.py::imwrite_unicode` was unaffected only by luck — it
-writes raw encoded bytes with `tofile`, so the extension is irrelevant there.
-Fixed by adding `core/utils.py::atomic_temp_path()` (`{stem}.tmp{pid}{ext}`)
-and routing all three call sites through it.
-
-Also fixed in the same pass: `config.py::__post_init__` called `Path.home()`
-unguarded, and `Path.home()` raises `RuntimeError("Could not determine home
-directory.")` whenever HOME/USERPROFILE is absent — a cleared subprocess
-environment, a service account, some CI shells. That made `AppConfig()`
-unconstructible, i.e. the whole app dead, not just the default path wrong.
-Now falls back to `tempfile.gettempdir()/OCRLLM`.
-
-- **WARNING FOR src/ocrllm**: this is a fix that shipped without ever being
-  executed. A "safety" change to a write path is still a change to the write
-  path. When the atomic-image-write rule is carried into the new library, the
-  temp name must keep the real extension last, and there must be a test that
-  actually writes and re-reads a JPEG/PNG through the helper.
-- **WARNING FOR src/ocrllm**: never let a process-wide config constructor call
-  something that can raise on a hostile-but-legal environment (`Path.home()`,
-  `os.getlogin()`, `socket.gethostname()`). Config construction must not be a
-  failure point.
-
-### 2026-08-18 (session 3): observed but NOT fixed
-
-Recorded per the diary rule; no work done on these.
-
-- `tests/test_gui_app.py` has four failures unrelated to video, all
-  `AttributeError: 'QCRMainWindow' object has no attribute '_api_key_input'`
-  (`test_api_settings_body_is_scrollable`,
-  `test_external_vision_provider_changes_do_not_overwrite_model_input`,
-  `test_external_vision_provider_keeps_explicit_model_when_provider_alias_changes`,
-  `test_external_vision_provider_model_input_is_separate_from_provider`). The
-  API-settings widget was renamed and the tests were not updated, so the
-  external-vision-provider settings UI currently has **no** working test
-  coverage.
-- `tests/test_gui_app.py::test_run_resume_checkpoint_supports_audio_tasks`
-  intermittently kills the interpreter with a Windows access violation
-  (`0xC0000005`) when the file runs inside a larger pytest session. It passes
-  when the file is run alone. Suspected Qt object lifetime / `deleteLater`
-  ordering across tests, not a product bug — but it silently truncates suite
-  results, which is how the two regressions above went unnoticed.
-- `tests/test_social_e2e.py` fails at collection without ffmpeg on PATH, so a
-  default `pytest tests` run reports zero tests. Collection should be skipped,
-  not errored, when ffmpeg is absent.
-- Progress weights for video are static constants (`1/3/2/4/2`) unrelated to
-  frame count or video length, and steps 1, 2 and 5 report `phase_total=1`, so
-  ffmpeg extraction and ASR are single 0%→100% jumps. Left as-is.
-- `processors/social/short_video.py` has its own separate "6 phases" ordinal
-  model. Not touched. It likely has the same abstraction problem and should be
-  reviewed before anything is ported from it.
-
+**WARNING FOR src/ocrllm.** Same class, different resource: a cleanup call that
+looks like it releases a resource but only empties it. `src/ocrllm` has the
+equivalent shape in `output/delete_image_resume_state.py` and in the temp/
+snapshot directories created by `imaging/snapshot_image_group.py`. When porting
+or extending those, assert the resource is *gone*, not merely empty, and make
+the teardown assertion part of the test rather than trusting the API name.

@@ -131,7 +131,7 @@ cfg = Config(
 ```python
 result.markdown      # str      — 主体 Markdown 文本
 result.output_path   # Path     — 输出文件路径
-result.source_type   # str      — "board" | "pdf" | "video" | "audio" | "office"
+result.source_type   # str      — "image" | "pdf" | "video" | "audio"（板书识别用 profile="board" 表示）
 result.hotwords      # list[str] — 提取的专业术语热词（仅视频/音频非空）
 ```
 
@@ -358,7 +358,7 @@ Phase 0 目标：证明 API 设计可行，端到端链路打通。
 - [ ] `pip install -e .` 在当前环境成功（`pyproject.toml` + 包结构就位）
 - [ ] `import ocrllm` 从任意 cwd 可用
 - [ ] API 全部可 import: `Config`, `RecognitionResult`, `recognize`, `recognize_batch`, 4 个异常类
-- [ ] `recognize("board.jpg")` 端到端跑通：输入图片 → 调 DashScope VLM → 返回 `RecognitionResult`（markdown 非空、source_type="board"、output_path 指向实际文件）
+- [ ] `recognize("board.jpg")` 端到端跑通：输入图片 → 调 DashScope VLM → 返回 `RecognitionResult`（markdown 非空、source_type="image"、profile="board"、output_path 指向实际文件）
 - [ ] golden test: ≥3 张代表性板书图片（手写/投影/混合），新旧输出 diff 可接受
 - [ ] PyO3 spike（独立分支）: Windows wheel 可构建，`_core.pyd` < 30MB，进度回调可被 Python 侧轮询，取消信号可用
 

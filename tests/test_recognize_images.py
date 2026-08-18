@@ -254,10 +254,10 @@ def test_recognize_batch_preserves_request_call_and_result_order(tmp_path):
     ]
     provider = RecordingProvider(lambda paths: f"# {paths[0].name}\n")
 
-    results = recognize_batch(sources, config=Config(provider=provider))
+    outcomes = recognize_batch(sources, config=Config(provider=provider))
 
     assert [call[0][0].name for call in provider.calls] == [path.name for path in sources]
-    assert [result.markdown.strip() for result in results] == [
+    assert [outcome.result.markdown.strip() for outcome in outcomes] == [
         "# z.png",
         "# a.jpg",
         "# m.jpeg",

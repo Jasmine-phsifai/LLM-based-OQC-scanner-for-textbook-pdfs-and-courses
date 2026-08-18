@@ -5,6 +5,7 @@ from __future__ import annotations
 import unicodedata
 
 from ..errors import ProviderError
+from .looks_like_refusal import looks_like_refusal
 
 
 def validate_provider_markdown(value: object) -> str:
@@ -13,6 +14,13 @@ def validate_provider_markdown(value: object) -> str:
         raise ProviderError(
             "The configured provider returned no recognition Markdown.",
             code="PROVIDER_RESPONSE_INVALID",
+            details={"reason": "empty"},
+        )
+    if looks_like_refusal(value):
+        raise ProviderError(
+            "The configured provider declined the request instead of recognizing it.",
+            code="PROVIDER_REFUSED_RECOGNITION",
+            details={"reason": "refusal"},
         )
     return value
 

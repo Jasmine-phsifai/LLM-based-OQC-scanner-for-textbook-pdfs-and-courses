@@ -7,6 +7,8 @@ import uuid
 
 from PyQt5.QtCore import QSettings
 
+from delete_test_qsettings_tree import delete_test_qsettings_tree
+
 
 def use_isolated_qsettings(test_case: unittest.TestCase) -> None:
     import OCRLLM.gui.app as app_module
@@ -36,6 +38,7 @@ def use_isolated_qsettings(test_case: unittest.TestCase) -> None:
         settings = QSettings(org, app)
         settings.clear()
         settings.sync()
+        delete_test_qsettings_tree(org)
         settings_dialog_module.SETTINGS_ORG = old_dialog_org
         settings_dialog_module.SETTINGS_APP = old_dialog_app
         app_module.QCRMainWindow._SETTINGS_ORG = old_main_org

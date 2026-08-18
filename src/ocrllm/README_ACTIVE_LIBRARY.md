@@ -67,7 +67,8 @@ The current image facade:
   caller's config identity, while the built-in adapter uses an isolated,
   revalidated copy.
 - rejects groups above `Config.execution.maximum_images_per_request` before
-  source/provider work and bounds ordered, fail-fast `recognize_batch()` jobs;
+  source/provider work and bounds ordered, fail-fast `recognize_batch()` jobs
+  that report one `BatchItemOutcome` per source;
 - applies one monotonic provider-start interval to every draft/review/scout
   call in a direct operation or across one concurrent batch.
 - distinguishes provider permission, suspension, concurrency, quota,
@@ -120,10 +121,10 @@ evidence.
 ## Known Defects In This Package
 
 Do not treat the capability description above as defect-free. Open items are
-registered in `../../docs/ACTIVE_STATE_AND_RULES.md`; the high-severity ones are
-provider refusal text passing as success, `Config.timeout_seconds` not being
-enforced for injected providers, and `recognize_batch` discarding completed paid
-work on failure.
+registered in `../../docs/ACTIVE_STATE_AND_RULES.md`. Defects D1-D7 were closed
+on 2026-08-18; the one item left open there is intra-request checkpointing, so a
+crash inside a single `recognize()` call still discards that call's provider
+work.
 
 Read `../../docs/ACTIVE_STATE_AND_RULES.md` first: it carries current state, the
 defect register, and the coding rules. Then read

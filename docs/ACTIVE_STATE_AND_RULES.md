@@ -73,8 +73,8 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 987 passed, 1 skipped, 0 failed (87 s) | `python -m pytest -q` |
-| Import weight | 78 ms, 114 modules | timed `import ocrllm` |
+| Test suite | 1006 passed, 0 skipped, 0 failed (102 s) | `python -m pytest -q` |
+| Import weight | 92 ms, 115 modules | timed `import ocrllm` |
 | Heavy-module isolation | `PIL`, `openai`, `httpx`, `onnxruntime` all absent after plain import | `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
@@ -91,12 +91,18 @@ snapshot isolation are the two strongest parts of this codebase; build on them.
 Open defects in shipped surface. Severity is impact on a real user, not effort.
 Do not close an entry without a test that fails before the fix.
 
-All seven entries were addressed on 2026-08-18. Regression coverage for D1-D4
+All seven entries were addressed on 2026-08-18, following Stage 1 of
+`docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
 lives in `tests/test_defect_register_regressions.py`; verify with:
 
 ```powershell
 & 'D:\Anaconda\envs\OCRLLM\python.exe' -m pytest -q -p no:cacheprovider
 ```
+
+Stage 1 exit gate, measured 2026-08-18: 1006 passed, 0 failed, 0 skipped;
+`import ocrllm` 92 ms / 115 modules with `PIL`, `openai`, `httpx`, `onnxruntime`
+and `rapidocr` all absent; offline quality scorer re-run with no corpus change.
+No paid live call was made.
 
 ### D1 — Provider refusal text is accepted as success. **High. Fixed 2026-08-18.**
 
@@ -105,13 +111,21 @@ contained a visible character. A model that replied `无法识别图片内容，
 or `I'm sorry, I can't help with identifying content in this image` was returned
 to the caller as a successful recognition.
 
-Fix: `providers/looks_like_refusal.py` ports the legacy
-`core/output_quality.py::looks_like_refusal` remedy and is applied inside
-`validate_provider_markdown`. A refusal now raises `ProviderError` with code
-`PROVIDER_RESPONSE_INVALID` and `details["reason"] == "refusal"`; empty output
-carries `details["reason"] == "empty"`. Detection is capped at 300 visible
-characters so a long transcription that merely contains a refusal phrase is
-still accepted.
+Fix: `providers/looks_like_refusal.py` ports the behaviour statement of the
+legacy `core/output_quality.py::looks_like_refusal` remedy and is applied inside
+`validate_provider_markdown`, so both the injected and built-in paths are
+covered. A refusal raises `ProviderError` with the new stable code
+`PROVIDER_REFUSED_RECOGNITION` and `details["reason"] == "refusal"`; empty or
+control-only output keeps `PROVIDER_RESPONSE_INVALID` with
+`details["reason"] == "empty"`. The new code's disposition is registered as
+`("change_source", "request")`: the model declined a well-formed request, so the
+source is what must change. Detection is capped at 300 visible characters, so a
+long transcription containing a refusal phrase is still accepted.
+
+Offline Phase 1 quality scorer re-run after the change: 70 passed
+(`pytest tests/test_run_phase1_quality.py tests/test_quality_gate_application.py
+tests/test_score_recognition_result.py tests/test_verify_fixture_artifacts.py`).
+No committed corpus expectation changed.
 
 Not addressed by this fix: the Phase 1 v17 GO ran through the old validator, so
 that gate could not distinguish a refusal from a transcription. The GO is not
@@ -122,39 +136,58 @@ re-established by this change.
 `timeout_seconds` was only threaded into the DashScope OpenAI client, so an
 injected provider that blocked hung the caller permanently.
 
-Fix: `providers/bounded_provider_call.py` runs each injected-provider call on a
+Fix: the worker-thread design from S1.2 was chosen over renaming the field,
+because `timeout_seconds` is a public field and a caller expects it to bind.
+`providers/bounded_provider_call.py` runs each injected-provider call on a
 pre-warmed daemon worker thread and joins it with `Config.timeout_seconds`,
 raising `ProviderError(code="PROVIDER_TIMEOUT", retryable=True)` when the bound
-elapses. The worker is started and parked *before* the request-start gate is
-awaited, so thread startup does not disturb the measured provider cadence, and
-it never dispatches when the gate raises instead of releasing. Built-in
-DashScope calls keep their transport timeout and are not wrapped.
+elapses. The abandoned thread is disclosed in the error as
+`details["abandoned_provider_thread"] = True`. The worker is started and parked
+*before* the request-start gate is awaited, so thread startup does not disturb
+the measured provider cadence, and it never dispatches when the gate raises
+instead of releasing. Built-in DashScope calls keep their transport timeout and
+are not wrapped.
 
 Known limit: a wedged provider thread cannot be killed. It is abandoned as a
 daemon thread rather than allowed to block interpreter shutdown.
 
 ### D3 — `recognize_batch` discards completed paid work on any failure. **High. Fixed 2026-08-18.**
 
-Fix: execution stays fail-fast, but the raised `OCRLLMError` now carries
-`partial_results`, an ordered tuple with every completed `RecognitionResult` and
-`None` for items that did not finish, plus `details["batch_completed_count"]`
-and `details["batch_dispatched_count"]`. The parallel path drains futures that
-were already dispatched — and therefore already paid for — before re-raising.
-`OCRLLMError.partial_results` defaults to `()` for every other error.
+**Signature change, taken deliberately.** `recognize_batch` now returns
+`list[BatchItemOutcome]` instead of `list[RecognitionResult]`.
+`BatchItemOutcome` carries `index` and exactly one of `result` or `error`, so a
+caller reads successes and failures from the same ordered list.
 
-### D4 — Image resume does not cover the case that loses money. **Medium. Partly fixed 2026-08-18.**
+Execution semantics are unchanged: bounded worker pool, caller order, fail-fast.
+The first failure aborts the start gate and cancels pending futures; calls that
+were already dispatched — and therefore already paid for — are drained and
+settled, and every source that was never attempted gets a `Cancelled` outcome so
+the returned list always matches the caller's source order.
 
-Fixed: `resume=True` is no longer rejected outright for injected providers.
-Reuse is opt-in and caller-declared — the provider must expose a nonempty
-`resume_identity` string that changes whenever its recognition behaviour
-changes. Without it the previous `ConfigError` still fires, now naming the
-attribute. The library cannot infer behavioural equivalence of two injected
-objects, so silent reuse is never inferred.
+### D4 — Image resume does not cover the case that loses money. **Medium. Fixed 2026-08-18.**
 
-Still open: checkpointing is per whole request. One `recognize()` call can spend
-up to six provider calls (drafts, review, three sign scouts) and a crash inside
-that call still discards all of them. The batch-level money loss is covered by
-D3; the intra-request loss is not.
+Two changes, both using the existing versioned job-state format. No second
+checkpoint format was introduced.
+
+1. `resume=True` is no longer rejected outright for injected providers. Reuse is
+   opt-in and caller-declared: the provider must expose a nonempty
+   `resume_identity` string that changes whenever its recognition behaviour
+   changes. Without it the previous `ConfigError` still fires, now naming the
+   attribute. The library cannot infer behavioural equivalence of two injected
+   objects, so equivalence is never inferred silently.
+2. The job-state file is **retained** after successful publication instead of
+   being deleted. That single change is what makes a batch resume at item
+   granularity: re-running the same batch reuses each completed item's state,
+   spends nothing on it, and re-pays only for the items that failed. The
+   now-unreachable `output/delete_image_resume_state.py` was removed.
+
+Consequence to know: `output_dir` accumulates one `<stem>.ocrllm-state.json`
+beside each published Markdown file. That file is the proof of paid work; do not
+prune it as clutter.
+
+Still open: checkpointing inside one request. A single `recognize()` call can
+spend up to six provider calls (drafts, review, three sign scouts) and a crash
+inside that call still discards all of them.
 
 ### D5 — Local OCR is not runnable in the maintained development environment. **Medium. Fixed 2026-08-18.**
 

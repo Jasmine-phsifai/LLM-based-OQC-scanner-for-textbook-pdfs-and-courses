@@ -33,12 +33,15 @@ def test_import_contract_writes_when_output_dir_is_set(tmp_path):
     assert result.output_path.read_text(encoding="utf-8") == result.markdown
 
 
-def test_batch_returns_one_result_per_source(tmp_path):
+def test_batch_returns_one_outcome_per_source(tmp_path):
     first = write_test_image(tmp_path / "a.png", color=(255, 0, 0))
     second = write_test_image(tmp_path / "b.jpeg", color=(0, 255, 0))
 
-    results = recognize_batch([first, second], config=Config(provider=FakeProvider()))
+    outcomes = recognize_batch([first, second], config=Config(provider=FakeProvider()))
+    results = [outcome.result for outcome in outcomes]
 
+    assert [outcome.index for outcome in outcomes] == [0, 1]
+    assert all(outcome.succeeded for outcome in outcomes)
     assert [result.source_type for result in results] == ["image", "image"]
     assert [result.profile for result in results] == ["board", "board"]
     assert [result.markdown.split("Images: ", 1)[1].strip() for result in results] == [

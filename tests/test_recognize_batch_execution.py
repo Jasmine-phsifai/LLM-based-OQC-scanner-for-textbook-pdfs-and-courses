@@ -79,11 +79,11 @@ def test_parallel_batch_is_bounded_and_returns_caller_order(tmp_path):
         execution=RecognitionExecutionPolicy(max_parallel_requests=2),
     )
 
-    results = recognize_batch(sources, config=config)
+    outcomes = recognize_batch(sources, config=config)
 
     assert provider.maximum_active == 2
     assert sorted(provider.names) == sorted(path.name for path in sources)
-    assert [result.markdown.strip() for result in results] == [
+    assert [outcome.result.markdown.strip() for outcome in outcomes] == [
         f"# {path.name}" for path in sources
     ]
 
@@ -104,9 +104,9 @@ def test_provider_start_interval_covers_every_parallel_workflow_call(tmp_path):
         preferences=RecognitionPreferences(review_passes=1),
     )
 
-    results = recognize_batch(sources, config=config)
+    outcomes = recognize_batch(sources, config=config)
 
-    assert len(results) == 2
+    assert len(outcomes) == 2
     assert len(provider.started_at) == 4
     observed_intervals = [
         later - earlier
@@ -158,8 +158,10 @@ def test_parallel_failure_aborts_provider_calls_still_waiting_for_the_gate(tmp_p
         ),
     )
 
-    with pytest.raises(ProviderError) as captured:
-        recognize_batch(sources, config=config)
+    outcomes = recognize_batch(sources, config=config)
 
-    assert captured.value.code == "PROVIDER_UNAVAILABLE"
+    codes = [outcome.error.code for outcome in outcomes]
+    assert len(outcomes) == 4
+    assert codes.count("PROVIDER_UNAVAILABLE") == 1
+    assert codes.count("CANCELLED") == 3
     assert provider.call_count == 1

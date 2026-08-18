@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ..config import Config
 from ..errors import ConfigError, OCRLLMError, ProviderError
+from .bounded_provider_call import BoundedProviderCall, ProviderDeadlineExceeded
 from .map_injected_provider_error import map_injected_provider_error
 from .provider_request_start_gate import wait_for_provider_request_start
 from .resolved_vision_provider import ResolvedVisionProvider
@@ -41,10 +42,30 @@ def call_vision_provider(
             code="CONFIG_INVALID",
         )
 
-    wait_for_provider_request_start(config.cancellation)
     dispatch_error: OCRLLMError | None = None
     try:
-        provider_value = recognize_method(tuple(image_paths), prompt=prompt, config=config)
+        provider_value = _dispatch_provider_call(
+            recognize_method,
+            image_paths,
+            prompt=prompt,
+            config=config,
+            resolved_provider=resolved_provider,
+        )
+    except ProviderDeadlineExceeded:
+        del provider, recognize_method
+        raise ProviderError(
+            "The configured provider did not respond within Config.timeout_seconds.",
+            code="PROVIDER_TIMEOUT",
+            retryable=True,
+            details={
+                "model": resolved_provider.model,
+                "provider": resolved_provider.name,
+                "timeout_seconds": config.timeout_seconds,
+                # The blocked call cannot be interrupted; its worker thread is
+                # abandoned as a daemon rather than joined.
+                "abandoned_provider_thread": True,
+            },
+        ) from None
     except Exception as error:
         if resolved_provider.built_in and isinstance(error, OCRLLMError):
             dispatch_error = error
@@ -65,6 +86,7 @@ def call_vision_provider(
             str(error),
             code=error.code,
             details={
+                **dict(error.details),
                 "model": resolved_provider.model,
                 "provider": resolved_provider.name,
             },
@@ -73,3 +95,23 @@ def call_vision_provider(
         del provider, recognize_method, provider_value
         raise validation_error
     return markdown
+
+
+def _dispatch_provider_call(
+    recognize_method: object,
+    image_paths: Sequence[Path],
+    *,
+    prompt: str,
+    config: Config,
+    resolved_provider: ResolvedVisionProvider,
+) -> object:
+    """Pace the request, then bound injected providers that have no transport timeout."""
+    assert callable(recognize_method)
+    if resolved_provider.built_in:
+        wait_for_provider_request_start(config.cancellation)
+        return recognize_method(tuple(image_paths), prompt=prompt, config=config)
+    with BoundedProviderCall(
+        lambda: recognize_method(tuple(image_paths), prompt=prompt, config=config)
+    ) as bounded_call:
+        wait_for_provider_request_start(config.cancellation)
+        return bounded_call.run_within(config.timeout_seconds)

@@ -1,6 +1,7 @@
 """Public OCRLLM library facade."""
 
 from .config import Config
+from .batch_item_outcome import BatchItemOutcome
 from .credential_pool_policy import CredentialPoolPolicy
 from .capability_report import CapabilityReport
 from .providers.dashscope.provider_settings import DashScopeSettings
@@ -47,6 +48,7 @@ from .provider_error_disposition import (
 from .result import RecognitionResult
 
 __all__ = [
+    "BatchItemOutcome",
     "Cancelled",
     "ConcurrencyLimited",
     "Config",

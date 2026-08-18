@@ -31,6 +31,7 @@ STABLE_ERROR_CODES = frozenset(
         "PROVIDER_REQUEST_INVALID",
         "PROVIDER_CONTENT_BLOCKED",
         "PROVIDER_RESPONSE_INVALID",
+        "PROVIDER_REFUSED_RECOGNITION",
         "OCR_BACKEND_FAILED",
         "OCR_RESULT_INVALID",
         "OCR_NO_TEXT",
@@ -199,6 +200,7 @@ class ProviderError(OCRLLMError):
             "PROVIDER_REQUEST_INVALID",
             "PROVIDER_CONTENT_BLOCKED",
             "PROVIDER_RESPONSE_INVALID",
+            "PROVIDER_REFUSED_RECOGNITION",
         }
     )
 

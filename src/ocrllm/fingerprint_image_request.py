@@ -38,29 +38,36 @@ def fingerprint_image_request(
         }
         model_document = None
     else:
-        if type(config.provider) is not DashScopeSettings:
-            raise ConfigError(
-                "Image resume requires exact DashScopeSettings or local OCR mode.",
-                code="CONFIG_INVALID",
-            ) from None
-        settings = config.provider
         processor_name = _VISION_PROCESSOR_NAME
         processor_version = _VISION_PROCESSOR_VERSION
-        provider_document = {
-            "name": "dashscope",
-            "region": settings.region,
-            "base_url": settings.base_url,
-            "enable_thinking": settings.enable_thinking,
-            "vl_high_resolution_images": settings.vl_high_resolution_images,
-            "standalone_sign_scout_model": settings.standalone_sign_scout_model,
-        }
         local_ocr_document = None
-        model_document = {
-            "name": resolve_dashscope_model(config.vision_model.name),
-            "maximum_images_per_request": (
-                config.vision_model.maximum_images_per_request
-            ),
-        }
+        if type(config.provider) is DashScopeSettings:
+            settings = config.provider
+            provider_document = {
+                "name": "dashscope",
+                "region": settings.region,
+                "base_url": settings.base_url,
+                "enable_thinking": settings.enable_thinking,
+                "vl_high_resolution_images": settings.vl_high_resolution_images,
+                "standalone_sign_scout_model": settings.standalone_sign_scout_model,
+            }
+            model_document = {
+                "name": resolve_dashscope_model(config.vision_model.name),
+                "maximum_images_per_request": (
+                    config.vision_model.maximum_images_per_request
+                ),
+            }
+        else:
+            provider_document = {
+                "name": "injected",
+                "resume_identity": _injected_provider_resume_identity(config.provider),
+            }
+            model_document = {
+                "name": config.vision_model.name,
+                "maximum_images_per_request": (
+                    config.vision_model.maximum_images_per_request
+                ),
+            }
 
     document = {
         "identity_version": "ocrllm.image-request.v1",
@@ -110,3 +117,29 @@ def fingerprint_image_request(
         processor_version=processor_version,
         sources=tuple(sources),
     )
+
+
+def _injected_provider_resume_identity(provider: object) -> str:
+    """Return the caller-declared identity that makes an injected provider resumable.
+
+    The library cannot infer whether two injected provider objects would produce
+    the same recognition, so reuse is opt-in: the provider declares a
+    ``resume_identity`` string that changes whenever its behaviour changes.
+    """
+    if provider is None:
+        raise ConfigError(
+            "Image resume requires a configured provider or local OCR mode.",
+            code="CONFIG_INVALID",
+        ) from None
+    try:
+        identity = getattr(provider, "resume_identity", None)
+    except Exception:
+        identity = None
+    if type(identity) is not str or not identity.strip():
+        raise ConfigError(
+            "Image resume with an injected provider requires a nonempty "
+            "'resume_identity' string attribute on the provider that changes "
+            "whenever its recognition behaviour changes.",
+            code="CONFIG_INVALID",
+        ) from None
+    return identity

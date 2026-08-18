@@ -15,7 +15,14 @@ def load_rapidocr() -> Callable[..., object]:
     except ImportError:
         raise DependencyMissing(
             "Local OCR requires the optional 'ocr' dependencies.",
-            details={"extra": "ocr", "engine": "rapidocr"},
+            details={
+                "extra": "ocr",
+                "engine": "rapidocr",
+                "required_distribution": "rapidocr>=3.9,<4",
+                # The legacy 'rapidocr-onnxruntime' distribution exposes a different
+                # module and a different result API; installing it is not enough.
+                "incompatible_distribution": "rapidocr-onnxruntime",
+            },
         ) from None
     except Exception:
         raise OCRBackendError(

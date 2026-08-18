@@ -22,7 +22,12 @@ def test_load_rapidocr_maps_missing_optional_dependency(monkeypatch) -> None:
         load_rapidocr()
 
     assert caught.value.code == "DEPENDENCY_MISSING"
-    assert caught.value.details == {"extra": "ocr", "engine": "rapidocr"}
+    assert caught.value.details == {
+        "extra": "ocr",
+        "engine": "rapidocr",
+        "required_distribution": "rapidocr>=3.9,<4",
+        "incompatible_distribution": "rapidocr-onnxruntime",
+    }
     assert "secret-missing-dependency-sentinel" not in repr(caught.value)
 
 

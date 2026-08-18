@@ -50,6 +50,9 @@ _DEFAULT_BY_CODE: dict[str, tuple[ProviderFailureAction, ProviderFailureScope]] 
     "PROVIDER_REQUEST_INVALID": ("fix_request", "request"),
     "PROVIDER_CONTENT_BLOCKED": ("change_source", "request"),
     "PROVIDER_RESPONSE_INVALID": ("inspect_response", "request"),
+    # A refusal is the model declining a well-formed request: the source is what
+    # must change, not the request shape or the credential.
+    "PROVIDER_REFUSED_RECOGNITION": ("change_source", "request"),
 }
 
 

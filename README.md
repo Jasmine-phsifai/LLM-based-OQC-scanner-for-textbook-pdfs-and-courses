@@ -41,7 +41,9 @@ The current verified contract:
   transitive `httpx`.
 - `Config.execution` bounds per-request image count, independent batch
   concurrency, and monotonic provider-call starts. `recognize_batch()` remains
-  fail-fast and returns results in caller order.
+  fail-fast and returns one `BatchItemOutcome` per source in caller order, each
+  carrying either a result or a typed error, so completed paid work is never
+  discarded.
 
 Phase 1 now contains one lazy DashScope vision adapter with offline boundary
 tests. It requires immutable `DashScopeSettings` with an explicit region and

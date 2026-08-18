@@ -120,6 +120,8 @@ def _recognize(
             raise AssertionError(f"unhandled validated media type: {media_type}")
 
     if cfg.resume:
+        # The state file is kept after publication: it is what lets a repeated
+        # call, and therefore a repeated batch, skip work that was already paid for.
         assert output_path is not None
         assert resume_identity is not None
         assert resume_state_path is not None
@@ -143,9 +145,6 @@ def _recognize(
                 processor_output.markdown,
                 overwrite=False,
             )
-        from .output.delete_image_resume_state import delete_image_resume_state
-
-        delete_image_resume_state(resume_state_path)
     elif output_path is not None:
         write_markdown_atomically(
             output_path,

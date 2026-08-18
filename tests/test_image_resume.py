@@ -95,7 +95,7 @@ def test_vision_resume_reuses_completed_result_without_provider_calls_or_secrets
     assert len(calls) == 1
     assert result.markdown == "# Resumable board\n"
     assert result.output_path == output_dir / "board_board.md"
-    assert not state_path.exists()
+    assert state_path.exists()
 
 
 def test_local_ocr_resume_reuses_completed_result_without_backend_call(
@@ -131,7 +131,7 @@ def test_local_ocr_resume_reuses_completed_result_without_backend_call(
     assert len(calls) == 1
     assert result.markdown == "Offline resumed OCR"
     assert result.metadata["engine"] == "test-rapidocr"
-    assert not _state_path(output_dir).exists()
+    assert _state_path(output_dir).exists()
 
 
 def test_matching_state_and_output_complete_post_publish_crash_window(
@@ -142,20 +142,16 @@ def test_matching_state_and_output_complete_post_publish_crash_window(
     output_dir = tmp_path / "output"
     calls: list[tuple[Path, ...]] = []
     _install_fake_dashscope(monkeypatch, calls)
-    deleter = importlib.import_module("ocrllm.output.delete_image_resume_state")
-    original_delete = deleter.delete_image_resume_state
-    monkeypatch.setattr(deleter, "delete_image_resume_state", lambda _path: None)
 
     first = recognize(source, config=_vision_config(output_dir))
 
     assert first.output_path is not None
     assert _state_path(output_dir).exists()
-    monkeypatch.setattr(deleter, "delete_image_resume_state", original_delete)
     second = recognize(source, config=_vision_config(output_dir))
 
     assert len(calls) == 1
     assert second.markdown == first.markdown
-    assert not _state_path(output_dir).exists()
+    assert _state_path(output_dir).exists()
 
 
 def test_resume_rejects_existing_output_without_state_before_provider_call(
@@ -255,8 +251,6 @@ def test_resume_rejects_edited_final_output(tmp_path, monkeypatch) -> None:
     output_dir = tmp_path / "output"
     calls: list[tuple[Path, ...]] = []
     _install_fake_dashscope(monkeypatch, calls)
-    deleter = importlib.import_module("ocrllm.output.delete_image_resume_state")
-    monkeypatch.setattr(deleter, "delete_image_resume_state", lambda _path: None)
     result = recognize(source, config=_vision_config(output_dir))
     assert result.output_path is not None
     result.output_path.write_text("edited", encoding="utf-8")
