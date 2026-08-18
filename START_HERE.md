@@ -3,6 +3,14 @@
 This repo currently contains two codebases. Treat the directory boundary as a
 hard signal before editing or importing anything.
 
+**Read `docs/ACTIVE_STATE_AND_RULES.md` first.** It outranks every other file,
+including this one, and it carries current state, the open defect register, and
+the coding and documentation rules.
+
+**Documentation in this repo lags the code.** Historical `docs/phase*` files
+record conclusions that were true only on their own date. Verify capability
+claims against code and tests before relying on them.
+
 ## Active New Library
 
 Path: `src/ocrllm/`
@@ -14,36 +22,24 @@ Use for:
 - New downstream project dependencies
 - Root test suite under `tests/`
 
-Read next:
+Read in this order:
 
-- `MIGRATION_STATUS.md`
-- `docs/ocrllm_library_go_no_go.md`
-- `src/ocrllm/README_ACTIVE_LIBRARY.md`
-- `src/ocrllm/AGENTS.md`
-- `docs/ocrllm_module_target_design.md`
-- `docs/provider_cost_and_reliability_policy.md`
-- `docs/phase1_implementation_record.md`
-- `docs/phase1_live_quality_result_v17_2026-07-11.md`
-- `docs/phase2_worker_command_contract_2026-07-11.md`
-- `docs/phase2_worker_event_contract_2026-07-11.md`
-- `docs/phase2_worker_jsonl_io_2026-07-11.md`
-- `docs/phase2_capability_control_loop_2026-07-12.md`
-- `docs/phase2_isolated_job_manager_2026-07-12.md`
-- `docs/phase2_production_image_job_2026-07-12.md`
-- `docs/phase2_production_worker_entrypoint_2026-07-12.md`
-- `docs/phase2_node_worker_harness_2026-07-12.md`
-- `docs/phase2_live_worker_result_2026-07-12.md`
-- `docs/image_library_completion_decision_2026-07-12.md`
-- `docs/local_ocr_implementation_checkpoint_2026-07-12.md`
-- `docs/phase2a_recognition_execution_policy_2026-07-12.md`
-- `docs/provider_workflow_configuration_decision_2026-07-12.md`
-- `docs/provider_workflow_configuration_checkpoint_2026-07-12.md`
-- `docs/provider_error_disposition_decision_2026-07-12.md`
-- `docs/provider_error_disposition_checkpoint_2026-07-12.md`
-- `docs/dashscope_credential_pool_decision_2026-07-12.md`
-- `docs/dashscope_credential_pool_checkpoint_2026-07-12.md`
-- `docs/image_resume_decision_2026-07-12.md`
-- `docs/image_resume_checkpoint_2026-07-12.md`
+```text
+docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
+docs/plan_phase1_defects_and_provider_split.md
+                                      The approved next slice.
+docs/ocrllm_library_go_no_go.md       Phase gates, file responsibilities,
+                                      migrate/rewrite/reject boundary.
+src/ocrllm/README_ACTIVE_LIBRARY.md   Package boundary and capability surface.
+src/ocrllm/AGENTS.md                  Package editing rules.
+MIGRATION_STATUS.md                   Navigation aid.
+docs/ocrllm_module_target_design.md   Target-state module map.
+docs/provider_cost_and_reliability_policy.md
+                                      Account-specific provider policy.
+```
+
+Everything else under `docs/` is a dated historical record. Consult one only to
+understand how a past decision was reached, never to learn current state.
 
 Public import shape:
 
@@ -84,14 +80,16 @@ image recognition, and fresh `image` plus Beijing `image,dashscope` profiles.
 The image/provider and v1alpha1 worker capabilities are available. The active
 post-Phase-2 decision now authorizes only the Phase 2A provider-workflow slice.
 
-The active library has a DashScope in-memory credential scheduler, but still
-has no automatic retry/model fallback or persistent/cross-process pool state.
-Image resume is available; PDF, audio, and video support remain absent. Local
-user PDFs/screenshots under `docs/` remain untracked supplemental test material,
-not redistributable gate evidence. Read
-`MIGRATION_STATUS.md` for current evidence and next steps, and
-`docs/ocrllm_library_go_no_go.md` for exact gates, commands, target
-responsibilities, and the migrate/rewrite/reject matrix.
+The active library has a DashScope in-memory credential scheduler and image
+resume, but no automatic retry, model fallback, or persistent/cross-process pool
+state. That absence is deliberate: adapters must not create undisclosed paid
+calls. PDF, audio, and video support remain absent. Local user PDFs/screenshots
+under `docs/` remain untracked supplemental test material, not redistributable
+gate evidence.
+
+Phase 1 GO carries one open qualification: the quality gate's false-success
+guard cannot detect provider refusal text. See defect D1 in
+`docs/ACTIVE_STATE_AND_RULES.md`.
 
 ## Legacy Application
 
@@ -144,6 +142,8 @@ Do not infer architecture from generated output or temporary files.
 ## Choose The Edit Location
 
 ```text
+Need current state or open defects   -> docs/ACTIVE_STATE_AND_RULES.md
+Need to know what to build next      -> docs/plan_phase1_defects_and_provider_split.md
 Need to change the public library API      -> src/ocrllm/ and tests/
 Need to add a downstream import feature    -> src/ocrllm/ and tests/
 Need to compare old product behavior       -> legacy_app/

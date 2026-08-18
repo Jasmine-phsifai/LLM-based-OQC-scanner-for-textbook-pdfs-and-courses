@@ -109,15 +109,26 @@ cannot enter the result. Directional-arrow insertion is forbidden while
 complete primary transcription remains unchanged. Exact dynamic scout-prompt
 hashes and byte counts are returned in metadata.
 Qwen-VL Max remains an explicit supported scout option but is not the Phase 1
-evidence baseline. There is still no key pool, automatic retry/model fallback,
-or image resume; PDF, audio, and video remain unavailable.
+evidence baseline. A DashScope in-memory credential scheduler and image resume
+are available; there is still no automatic retry, model fallback, or
+cross-process pool state, and that absence is deliberate. PDF, audio, and video
+remain unavailable.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.
 
-Read `../../docs/ocrllm_library_go_no_go.md` before active-library work. It is
-the authoritative source for file responsibilities, GO gates, and the
-migrate/rewrite/reject boundary.
+## Known Defects In This Package
+
+Do not treat the capability description above as defect-free. Open items are
+registered in `../../docs/ACTIVE_STATE_AND_RULES.md`; the high-severity ones are
+provider refusal text passing as success, `Config.timeout_seconds` not being
+enforced for injected providers, and `recognize_batch` discarding completed paid
+work on failure.
+
+Read `../../docs/ACTIVE_STATE_AND_RULES.md` first: it carries current state, the
+defect register, and the coding rules. Then read
+`../../docs/ocrllm_library_go_no_go.md` for file responsibilities, GO gates, and
+the migrate/rewrite/reject boundary.
 
 ## Belongs Here
 

@@ -1,6 +1,12 @@
 # OCRLLM Repo Boundary Instructions
 
-Read `START_HERE.md` before changing this repo.
+Read `docs/ACTIVE_STATE_AND_RULES.md` first, then `START_HERE.md`, before
+changing this repo. `docs/ACTIVE_STATE_AND_RULES.md` outranks every other
+document and carries current state, the open defect register, and the coding and
+documentation rules.
+
+Documentation in this repo is known to lag the code. Verify capability claims
+against code and tests before relying on them.
 
 ## Active Boundary
 

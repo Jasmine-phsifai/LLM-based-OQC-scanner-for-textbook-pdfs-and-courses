@@ -2,8 +2,14 @@
 
 This directory is the active `ocrllm` package for downstream imports.
 
-Read `../../docs/ocrllm_library_go_no_go.md` before feature work. Its phase
-gates and file responsibilities are authoritative.
+Read `../../docs/ACTIVE_STATE_AND_RULES.md` first. It outranks every other
+document and carries current state, the open defect register, and the coding and
+documentation rules. Then read `../../docs/ocrllm_library_go_no_go.md` for phase
+gates and file responsibilities.
+
+The approved next slice is
+`../../docs/plan_phase1_defects_and_provider_split.md`. Do not start unrelated
+feature work ahead of it.
 
 ## Keep
 
@@ -23,6 +29,15 @@ gates and file responsibilities are authoritative.
 - Adding PyMuPDF or `fitz`; the gated PDF slice uses PDFium through
   `pypdfium2`.
 - Adding HarmonyOS/ArkTS work or claims; that integration is deferred.
+- Extending `contracts/` or `worker/`. Both are frozen until a consumer exists.
+- Returning success for provider output that is empty, control-only, or
+  refusal-shaped.
+- Adding a code path that can block on an external party without a
+  caller-visible bound.
+- Adding automatic retry, model switch, key rotation, or provider fallback
+  inside an adapter. Expose disposition; let the caller act.
+- Trusting a capability claim in prose. Verify against code and tests;
+  documentation in this repo is known to lag.
 
 ## When Porting Legacy Behavior
 

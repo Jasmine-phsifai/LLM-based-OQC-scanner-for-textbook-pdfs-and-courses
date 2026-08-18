@@ -1,14 +1,23 @@
 # OCRLLM Library Go/No-Go Execution Decision
 
-Status: active and authoritative.
+Status: active execution contract, **outranked by
+`docs/ACTIVE_STATE_AND_RULES.md`**.
 
-Decision date: 2026-07-12.
+Decision date: 2026-07-12. Precedence and current state revised 2026-08-18.
 
-This file is the execution contract for new work in `src/ocrllm/`. If another
-planning document conflicts with this file, this file wins. Tests and runtime
-trials establish evidence and gate status; they do not override a NO-GO or
-deferred boundary. Only an explicit update to this decision can change a
-boundary.
+Read `docs/ACTIVE_STATE_AND_RULES.md` before this file. It carries current
+state, the open defect register, and the coding and documentation rules. Where
+this file and that file disagree, that file wins.
+
+The dated narrative entries appended under "Verification Commands" are an
+immutable record of past attempts. Each states a conclusion that was true only
+on its own date, and many read "Phase 1 remains NO-GO" because that was true
+when written. Do not cite any of them as current state.
+
+This file remains authoritative for phase gates, file responsibilities, and the
+migrate/rewrite/reject boundary. Tests and runtime trials establish evidence and
+gate status; they do not override a NO-GO or deferred boundary. Only an explicit
+update to this decision can change a boundary.
 
 ## Implementation Directive
 
@@ -1344,10 +1353,17 @@ fake/evidence tests pass without a provider/API call.
 
 That offline evidence does not make image recognition `available`. The first
 live gate completed on 2026-07-11, but the smoke and both independently
-dispatched full-corpus runs failed. Preserve the frozen v1 evidence and do not
-lower or reinterpret its thresholds. Phase 1 remains NO-GO. PDFium remains only
-a backend feasibility spike; PDF, audio, and video recognition remain
-unavailable under their later gates.
+dispatched full-corpus runs failed.
+
+> **Superseded 2026-08-18.** The NO-GO statement that stood here described the
+> first live gate only. Phase 1 reached GO on the v17 gate; see the top of this
+> file and `docs/ACTIVE_STATE_AND_RULES.md`. That GO carries one qualification:
+> the gate's false-success guard cannot detect provider refusal text (defect
+> D1), so Phase 1 quality conclusions must be re-confirmed after D1 is repaired.
+
+Preserve the frozen v1 evidence and do not lower or reinterpret its thresholds.
+PDFium remains only a backend feasibility spike; PDF, audio, and video
+recognition remain unavailable under their later gates.
 
 The user-supplied screenshots currently present under `docs/` are local,
 supplemental, non-redistributable, and remain untracked. Keep them uncommitted.

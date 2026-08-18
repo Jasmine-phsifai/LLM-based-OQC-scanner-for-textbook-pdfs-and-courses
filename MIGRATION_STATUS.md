@@ -1,6 +1,25 @@
 # OCRLLM Migration Status
 
-This file is the project memory aid. Read it before changing the repo.
+This file is a navigation aid. **`docs/ACTIVE_STATE_AND_RULES.md` outranks it**
+and carries current state, the open defect register, and the coding and
+documentation rules. Read that file first.
+
+## Posture Change, 2026-08-18
+
+The library was built as a feasibility spike on one narrow slice (DashScope +
+image). That question is answered: the contract, quality-gate, and error layers
+work. The project is now maintained as a product.
+
+Consequences, stated in full in `docs/ACTIVE_STATE_AND_RULES.md`:
+
+- Defects in shipped surface outrank new capability.
+- `contracts/` and `worker/` are frozen until a consumer exists.
+- `docs/` has one current-state file; the rest are dated historical records.
+
+The approved next slice is
+`docs/plan_phase1_defects_and_provider_split.md`: repair defects D1-D4, then
+split provider configuration by modality so vision and audio can use different
+providers, as the legacy application already does in production.
 
 ## Legacy Maintenance Diary
 
@@ -27,36 +46,27 @@ Use these files to avoid confusing new work, old app code, and suspended future
 planning:
 
 ```text
+docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
+docs/plan_phase1_defects_and_provider_split.md
+                                      The approved next slice.
 START_HERE.md                         One-screen repo map.
 README.md                             Short public overview.
 src/ocrllm/README_ACTIVE_LIBRARY.md   Active package boundary.
 src/ocrllm/AGENTS.md                  Active package editing rules.
-docs/ocrllm_library_go_no_go.md       Authoritative execution decision, file
-                                      responsibilities, and phase GO gates.
+docs/ocrllm_library_go_no_go.md       Phase gates, file responsibilities, and
+                                      the migrate/rewrite/reject boundary.
 docs/library_migration_decision.md    Foundational library-making rationale.
 legacy_app/README_LEGACY.md           Legacy app boundary.
-legacy_app/AGENTS.md                  Legacy app editing rules.
+legacy_app/AGENTS.md                  Legacy app editing rules and diary.
 docs/ocrllm_module_target_design.md   Target-state module design map.
 docs/provider_cost_and_reliability_policy.md
                                       Account-specific provider policy.
-docs/provider_workflow_configuration_checkpoint_2026-07-12.md
-                                      Current provider/model API and proof.
-docs/provider_error_disposition_checkpoint_2026-07-12.md
-                                      Current provider error policy and proof.
-docs/dashscope_credential_pool_checkpoint_2026-07-12.md
-                                      Credential scheduler API and proof.
-docs/image_resume_checkpoint_2026-07-12.md
-                                      Image resume and Phase 2A GO proof.
-docs/phase1_implementation_record.md  Phase 1 commits, agent work, atomic writer,
-                                      verification, and resume point.
-docs/legacy_bilibili_social_long_debug_record.md
-                                      Legacy Bilibili course robustness record.
-docs/legacy_youtube_playlist_social_long_workflow.md
-                                      Legacy YouTube playlist course workflow.
-docs/legacy_filetrans_codex_debug_record.md
-                                      Legacy Filetrans/Codex runtime record.
 Architecture.md                       Suspended future architecture reference.
 ```
+
+The remaining `docs/phase*`, `*_decision_*`, and `*_checkpoint_*` files are
+dated historical records of how past decisions were reached. Do not read them to
+learn current state.
 
 ## Why This Happened
 
