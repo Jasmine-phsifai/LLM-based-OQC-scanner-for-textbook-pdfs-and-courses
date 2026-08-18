@@ -2,6 +2,16 @@
 
 This file is the project memory aid. Read it before changing the repo.
 
+## Legacy Maintenance Diary
+
+`legacy_app/AGENTS.md` now has a "Working Diary Rule" section. Read its
+2026-08-18 entry before touching PDF/video/board path handling or provider
+response validation in either `legacy_app/` or `src/ocrllm/` — it records real
+root causes (not surface symptoms) for a Windows path-creation failure and a
+silent-refusal "fake success" class of bug, plus explicit `WARNING FOR
+src/ocrllm` notes so the same defects are not re-introduced when those
+vertical slices are ported.
+
 ## One-Sentence Summary
 
 The old OCRLLM app has been moved to `legacy_app/`; the active project is an

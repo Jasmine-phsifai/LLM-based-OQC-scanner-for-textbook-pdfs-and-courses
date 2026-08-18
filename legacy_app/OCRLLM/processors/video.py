@@ -49,6 +49,7 @@ from OCRLLM.core.progress_tracker import ProgressTracker
 from OCRLLM.core.incremental_writer import IncrementalMDWriter
 from OCRLLM.core.checkpoint import Checkpoint
 from OCRLLM.core.board_merge import _parse_frames
+from OCRLLM.core.output_quality import failed_placeholder_quality_reason, looks_like_refusal
 from OCRLLM.processors.base import BaseProcessor
 from OCRLLM.core.document_model import SourceType
 from OCRLLM.processors.video_pipeline import VideoProcessContext, build_video_phase_chain
@@ -177,7 +178,7 @@ class VideoProcessor(BaseProcessor):
             raise FileNotFoundError(f"视频文件不存在: {video_path}")
 
         source_stem = Path(video_path).stem
-        stem = self._safe_output_stem(output_stem) if output_stem else source_stem
+        stem = self._safe_output_stem(output_stem) if output_stem else self._safe_output_stem(source_stem)
         if output_dir is None:
             output_dir = os.path.join(ensure_dir(self.cfg.paths.output_dir), stem)
         ensure_dir(output_dir)
@@ -995,6 +996,13 @@ class VideoProcessor(BaseProcessor):
         self.tracker.update_phase("phase4", total_batches, "识别完成")
         if total_batches and successful_batches == 0:
             raise RuntimeError(f"视频板书识别全部 {total_batches} 个批次失败，输出文件只包含错误信息: {md_path}")
+        if total_batches:
+            reason = failed_placeholder_quality_reason(
+                "\n\n".join(part for part in md_parts if part),
+                expected_units=total_batches, unit_name="批",
+            )
+            if reason:
+                raise RuntimeError(f"视频板书识别输出包含识别失败且有效正文过少: {reason}: {md_path}")
 
         # ---- 热词: 若没拿到，从文本中回退提取 ----
         if not hotwords and self.cfg.codex_vision.enabled:
@@ -1068,6 +1076,8 @@ class VideoProcessor(BaseProcessor):
                 else:
                     result = self.llm.chat_with_images(prompt=prompt, image_paths=[path])
                 normalized = self._ensure_batch_frame_markers(strip_md_fence(result), (frame,))
+                if looks_like_refusal(normalized):
+                    raise RuntimeError("模型拒识：" + normalized.strip().splitlines()[-1][:80])
                 success = True
             except CancelledError:
                 raise
@@ -1114,14 +1124,19 @@ class VideoProcessor(BaseProcessor):
 
             result_text = strip_md_fence(result)
 
-            if not self._has_expected_batch_frame_markers(result_text, frames):
+            if not self._has_expected_batch_frame_markers(result_text, frames) or looks_like_refusal(result_text):
                 if len(frames) > 1:
                     logger.warning(
-                        "[VIDEO] 批次 %d 帧标记不完整，回退逐帧识别 (%d 帧)",
+                        "[VIDEO] 批次 %d 帧标记不完整或疑似模型拒识，回退逐帧识别 (%d 帧)",
                         bi + 1,
                         len(frames),
                     )
                     result_text, hotwords, success = self._phase4_rerun_per_frame(frames, paths, prompt_template)
+                elif looks_like_refusal(result_text):
+                    logger.error("[VIDEO] 批次 %d 模型拒识（非空但非识别内容）", bi + 1)
+                    safe_err = "模型拒识：" + result_text.strip().splitlines()[0][:80]
+                    result_text = f"{self._build_frame_marker(frames[0])}\n\n<!-- 帧 {Path(frames[0]['path']).stem} 识别失败: {safe_err} -->"
+                    success = False
                 else:
                     result_text = self._ensure_batch_frame_markers(result_text, frames)
                     success = True

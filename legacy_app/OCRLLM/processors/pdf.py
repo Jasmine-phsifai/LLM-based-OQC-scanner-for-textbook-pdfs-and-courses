@@ -17,7 +17,7 @@ from OCRLLM.config import AppConfig
 from OCRLLM.core.checkpoint import Checkpoint
 from OCRLLM.core.incremental_writer import IncrementalMDWriter
 from OCRLLM.core.llm_client import LLMClient
-from OCRLLM.core.output_quality import failed_placeholder_quality_reason
+from OCRLLM.core.output_quality import failed_placeholder_quality_reason, looks_like_refusal
 from OCRLLM.core.provider_selection import (
     uses_google_for_vision,
     visual_allows_high_parallel,
@@ -449,6 +449,10 @@ class PDFProcessor(BaseProcessor):
                 logger.warning("[PDF] 批次 %s 页标题异常，回退逐页识别", page_str)
                 return self._rerun_per_page(batch, start_page, prompt_template)
 
+            if looks_like_refusal(result):
+                logger.warning("[PDF] 批次 %s 疑似模型拒识（响应非空但为拒绝文本），回退逐页识别", page_str)
+                return self._rerun_per_page(batch, start_page, prompt_template)
+
             return result, True
         except CancelledError:
             raise
@@ -519,6 +523,10 @@ class PDFProcessor(BaseProcessor):
                 result = strip_md_fence(result)
                 result = sanitize_llm_markdown(result)
                 result = normalize_single_page_markdown(result, page_num)
+                if looks_like_refusal(result):
+                    logger.error("[PDF] 第 %d 页模型拒识（非空但非识别内容）", page_num)
+                    safe_err = "模型拒识：" + result.strip().splitlines()[0][:80]
+                    return idx, f"\n\n<!-- 第 {page_num} 页识别失败: {safe_err} -->\n\n", False
                 return idx, result, True
             except CancelledError:
                 raise

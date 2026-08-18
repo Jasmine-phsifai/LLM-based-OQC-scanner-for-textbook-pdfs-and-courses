@@ -20,6 +20,43 @@ logger = logging.getLogger(__name__)
 _PERSISTENT_LOG_MARKER = "_ocrllm_persistent_log"
 
 
+_WINDOWS_RESERVED_TRAILING = re.compile(r"[ .]+$")
+
+
+def sanitize_path_component(name: str, fallback: str = "_") -> str:
+    """清理单个路径分量，避免 Windows 静默拒绝目录创建。
+
+    Windows 会在解析路径时丢弃分量末尾的空格/句点（但 ``CreateDirectory``
+    等 API 并不总是接受同样丢弃后的名字），导致 ``os.makedirs`` 抛出
+    ``The system cannot find the path specified``。真正来源往往是原始
+    文件名本身带有尾随空格（例如 "数理统计 .pdf"），而不是路径过长。
+
+    Args:
+        name: 原始目录/文件名分量（不含路径分隔符）。
+        fallback: 清理后为空字符串时使用的占位名。
+
+    Returns:
+        去除首尾空格/句点后可安全用作 Windows 路径分量的名字。
+    """
+    cleaned = _WINDOWS_RESERVED_TRAILING.sub("", name.strip())
+    return cleaned or fallback
+
+
+def long_path(path: str) -> str:
+    """在 Windows 上为超长绝对路径加上 ``\\\\?\\`` 前缀以绕过 260 字符限制。
+
+    不做任何其他平台或相对路径的转换；调用方需自行保证传入的是绝对路径。
+    """
+    if sys.platform != "win32":
+        return path
+    normalized = os.path.abspath(path)
+    if normalized.startswith("\\\\?\\") or len(normalized) < 240:
+        return normalized
+    if normalized.startswith("\\\\"):
+        return "\\\\?\\UNC\\" + normalized.lstrip("\\")
+    return "\\\\?\\" + normalized
+
+
 def ensure_dir(path: str) -> str:
     """确保目录存在，不存在则创建。
 
@@ -30,7 +67,10 @@ def ensure_dir(path: str) -> str:
         规范化后的目录路径。
     """
     normalized = path or "."
-    os.makedirs(normalized, exist_ok=True)
+    try:
+        os.makedirs(normalized, exist_ok=True)
+    except OSError:
+        os.makedirs(long_path(normalized), exist_ok=True)
     return normalized
 
 
@@ -51,6 +91,27 @@ def resolve_workers(configured: int, task_count: int, hard_cap: int = 8) -> int:
         return max(1, min(configured, task_count))
     cpu = os.cpu_count() or 4
     return max(1, min(cpu, task_count, hard_cap))
+
+
+def atomic_save_image(img: "Image.Image", dest: str, **save_kwargs) -> None:
+    """写入图片并在提交前验证可解码，避免中断/崩溃留下截断文件。
+
+    下游识图提供方（Codex CLI 、Google/DashScope 适配器）对损坏/截断图片不报错，
+    而是返回“无法识别该图片”的文本，被上层误当成正常识别结果。写入时中断
+    （取消/进程被杀）是此类损坏文件的真实来源之一。
+    """
+    tmp_path = f"{dest}.tmp{os.getpid()}"
+    try:
+        img.save(tmp_path, **save_kwargs)
+        with Image.open(tmp_path) as check:
+            check.load()
+        os.replace(tmp_path, dest)
+    except Exception:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def resize_image_if_needed(
@@ -75,7 +136,7 @@ def resize_image_if_needed(
     scale = max_side / max(w, h)
     new_w, new_h = int(w * scale), int(h * scale)
     img = img.resize((new_w, new_h), Image.LANCZOS)
-    img.save(dest, quality=quality)
+    atomic_save_image(img, dest, quality=quality)
     logger.info("[RESIZE] %s: %dx%d -> %dx%d -> %s", image_path, w, h, new_w, new_h, dest)
     return dest
 

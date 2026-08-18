@@ -15,6 +15,7 @@ from OCRLLM.core.utils import (
     batch_list, concat_md_files, ensure_dir,
     sort_files_by_time, resize_image_if_needed, strip_md_fence,
 )
+from OCRLLM.core.output_quality import failed_placeholder_quality_reason, looks_like_refusal
 from OCRLLM.imaging.preprocess import ImagePreprocessor
 from OCRLLM import prompts
 
@@ -132,6 +133,8 @@ class BoardProcessor(BaseProcessor):
                     prompt=prompt, image_paths=list(proc_paths), history=trimmed_history,
                 )
                 result = strip_md_fence(result)
+                if looks_like_refusal(result):
+                    raise RuntimeError("模型拒识：" + result.strip().splitlines()[0][:80])
                 md_parts.append(result)
                 successful_batches += 1
                 self._report_content(result, f"板书识别 — 第 {batch_idx + 1} 批")
@@ -151,5 +154,10 @@ class BoardProcessor(BaseProcessor):
         concat_md_files(md_parts, output_path)
         if batches and successful_batches == 0:
             raise RuntimeError(f"板书识别全部 {len(batches)} 个批次失败，输出文件只包含错误信息: {output_path}")
+        reason = failed_placeholder_quality_reason(
+            "\n\n".join(md_parts), expected_units=len(batches), unit_name="批",
+        )
+        if reason:
+            raise RuntimeError(f"板书识别输出包含识别失败且有效正文过少: {reason}: {output_path}")
         logger.info("[BOARD] 板书识别完成 -> %s", output_path)
         return output_path

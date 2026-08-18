@@ -19,12 +19,15 @@ logger = logging.getLogger(__name__)
 
 
 def imwrite_unicode(path: str, img: np.ndarray, params=None) -> bool:
-    """cv2.imwrite 的替代，支持中文/Unicode 文件路径。"""
+    """cv2.imwrite 的替代，支持中文/Unicode 文件路径，原子写入避免中断留下截断文件。"""
     ext = os.path.splitext(path)[1]
     result, encoded = cv2.imencode(ext, img, params) if params else cv2.imencode(ext, img)
-    if result:
-        encoded.tofile(path)
-    return result
+    if not result:
+        return False
+    tmp_path = f"{path}.tmp{os.getpid()}"
+    encoded.tofile(tmp_path)
+    os.replace(tmp_path, path)
+    return True
 
 
 def convert_heic_to_jpg(image_path: str, temp_dir: str = "temp", quality: int = 85) -> str:

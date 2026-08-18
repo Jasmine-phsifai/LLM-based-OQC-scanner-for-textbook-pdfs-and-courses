@@ -12,8 +12,9 @@ from pathlib import Path
 from threading import Event
 
 import fitz
+from PIL import Image
 
-from OCRLLM.core.utils import ensure_dir, resolve_workers
+from OCRLLM.core.utils import ensure_dir, resolve_workers, sanitize_path_component
 from OCRLLM.core.task_runner import CancelledError
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,19 @@ def _render_one_page(
             effective_zoom = zoom
         mat = fitz.Matrix(effective_zoom, effective_zoom)
         pix = page.get_pixmap(matrix=mat)
-        pix.save(img_path)
+        # 中断/进程被杀不能留下截断图片（会被识图提供方静默当成"无法识别"）
+        tmp_path = f"{img_path}.tmp{os.getpid()}"
+        try:
+            pix.save(tmp_path)
+            with Image.open(tmp_path) as check:
+                check.load()
+            os.replace(tmp_path, img_path)
+        except Exception:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            raise
         return page_index, img_path
     finally:
         doc.close()
@@ -64,7 +77,7 @@ def pdf_to_images(
     Returns:
         生成的图片路径列表（按页码排序）。
     """
-    pdf_name = Path(pdf_path).stem
+    pdf_name = sanitize_path_component(Path(pdf_path).stem)
     run_id = uuid.uuid4().hex[:8]
     output_dir = os.path.join(temp_dir or "temp", "pdf_images", pdf_name, run_id)
     ensure_dir(output_dir)

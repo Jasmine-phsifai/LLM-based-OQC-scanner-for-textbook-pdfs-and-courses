@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import Any
 
 from OCRLLM.core.codex_model_catalog import (
@@ -260,11 +261,14 @@ class AppConfig:
     shot_detection: ShotDetectionConfig = field(default_factory=ShotDetectionConfig)
 
     def __post_init__(self):
-        base_dir = os.path.dirname(__file__)
+        # 默认输出/临时目录不能放在安装包目录里面：安装目录在其他机器上
+        # 可能不可写（系统目录/共享安装），且跨机器不可预测。
+        # 可通过 OCRLLM_HOME 环境变量或 PathConfig 显式覆盖。
+        default_home = Path(os.environ.get("OCRLLM_HOME", Path.home() / "OCRLLM"))
         if not self.paths.output_dir:
-            self.paths.output_dir = os.path.join(base_dir, "output")
+            self.paths.output_dir = str(default_home / "output")
         if not self.paths.temp_dir:
-            self.paths.temp_dir = os.path.join(base_dir, "temp")
+            self.paths.temp_dir = str(default_home / "temp")
 
     @classmethod
     def from_env(cls) -> AppConfig:
