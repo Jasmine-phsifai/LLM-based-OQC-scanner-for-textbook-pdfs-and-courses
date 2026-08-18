@@ -7,9 +7,11 @@ document and carries current state, the open defect register, and the coding and
 documentation rules. Then read `../../docs/ocrllm_library_go_no_go.md` for phase
 gates and file responsibilities.
 
-The approved next slice is
-`../../docs/plan_phase1_defects_and_provider_split.md`. Do not start unrelated
+The approved current work is
+`../../docs/plan_phase1_maturation_and_phase2_audio.md`. Do not start unrelated
 feature work ahead of it.
+
+`contracts/` and `worker/` are frozen. Do not change them.
 
 ## Keep
 

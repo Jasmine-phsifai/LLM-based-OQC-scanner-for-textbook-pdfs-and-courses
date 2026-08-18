@@ -13,12 +13,16 @@ file never overrides a higher-ranked one.
 
 ```text
 1. docs/ACTIVE_STATE_AND_RULES.md     This file. Current truth and rules.
-2. docs/plan_phase1_defects_and_provider_split.md
-                                      The approved next slice.
-3. docs/ocrllm_library_go_no_go.md    Execution contract, gates, boundaries.
+2. docs/plan_phase1_maturation_and_phase2_audio.md
+                                      Current work: Phase 1 maturation, then
+                                      Phase 2 mp3-only audio.
+3. docs/plan_phase1_defects_and_provider_split.md
+                                      Defect repair D1-D7. In progress under a
+                                      separate agent.
+4. docs/ocrllm_library_go_no_go.md    Execution contract, gates, boundaries.
                                       Its dated log sections are history.
-4. MIGRATION_STATUS.md / START_HERE.md  Navigation aids.
-5. docs/phase*                        Immutable historical records.
+5. MIGRATION_STATUS.md / START_HERE.md  Navigation aids.
+6. docs/phase*                        Immutable historical records.
                                       Never cite as current state.
 ```
 
@@ -41,6 +45,12 @@ things:
   Anything already built that lacks a consumer is frozen, not extended.
 - Documentation is a maintained artifact with a single current-state file, not
   an append-only research log.
+
+Phase 1 is consequently reopened for maturation. "Phase 1 is GO" means the image
+path was proven once under trial constraints; it does not mean the image path is
+finished. Trial-shaped constraints — a hardcoded model list, all-or-nothing
+resume, one attempt per request — are now defects of maturity and are being
+removed. See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
 
@@ -81,69 +91,107 @@ snapshot isolation are the two strongest parts of this codebase; build on them.
 Open defects in shipped surface. Severity is impact on a real user, not effort.
 Do not close an entry without a test that fails before the fix.
 
-### D1 — Provider refusal text is accepted as success. **High.**
+All seven entries were addressed on 2026-08-18. Regression coverage for D1-D4
+lives in `tests/test_defect_register_regressions.py`; verify with:
 
-`providers/validate_provider_markdown.py` only asks whether the response
-contains a visible character. A model that replies `无法识别图片内容，请重新上传`
-or `I'm sorry, I can't help with identifying content in this image` is returned
+```powershell
+& 'D:\Anaconda\envs\OCRLLM\python.exe' -m pytest -q -p no:cacheprovider
+```
+
+### D1 — Provider refusal text is accepted as success. **High. Fixed 2026-08-18.**
+
+`providers/validate_provider_markdown.py` only asked whether the response
+contained a visible character. A model that replied `无法识别图片内容，请重新上传`
+or `I'm sorry, I can't help with identifying content in this image` was returned
 to the caller as a successful recognition.
 
-This is the exact defect class already diagnosed in production and recorded in
-`legacy_app/AGENTS.md` with a `WARNING FOR src/ocrllm` carry-forward note. The
-legacy remedy (`core/output_quality.py::looks_like_refusal`) was never ported.
+Fix: `providers/looks_like_refusal.py` ports the legacy
+`core/output_quality.py::looks_like_refusal` remedy and is applied inside
+`validate_provider_markdown`. A refusal now raises `ProviderError` with code
+`PROVIDER_RESPONSE_INVALID` and `details["reason"] == "refusal"`; empty output
+carries `details["reason"] == "empty"`. Detection is capped at 300 visible
+characters so a long transcription that merely contains a refusal phrase is
+still accepted.
 
-The DashScope adapter does check the OpenAI `message.refusal` **field**. That is
-a different thing: production refusals arrive as ordinary `message.content` and
-pass every existing check.
+Not addressed by this fix: the Phase 1 v17 GO ran through the old validator, so
+that gate could not distinguish a refusal from a transcription. The GO is not
+re-established by this change.
 
-Consequence beyond the caller: the Phase 1 quality gate ran through this same
-validator, so v17 GO rests on a gate that cannot distinguish a refusal from a
-transcription.
+### D2 — `Config.timeout_seconds` is not enforced for injected providers. **High. Fixed 2026-08-18.**
 
-### D2 — `Config.timeout_seconds` is not enforced for injected providers. **High.**
+`timeout_seconds` was only threaded into the DashScope OpenAI client, so an
+injected provider that blocked hung the caller permanently.
 
-`timeout_seconds` is a public field, but it is only threaded into the DashScope
-OpenAI client. `recognize()` applies no wall clock. An injected provider that
-blocks hangs the caller permanently. Injected providers are the library's only
-documented extension point, so this is an unbounded hang on the primary
-integration path.
+Fix: `providers/bounded_provider_call.py` runs each injected-provider call on a
+pre-warmed daemon worker thread and joins it with `Config.timeout_seconds`,
+raising `ProviderError(code="PROVIDER_TIMEOUT", retryable=True)` when the bound
+elapses. The worker is started and parked *before* the request-start gate is
+awaited, so thread startup does not disturb the measured provider cadence, and
+it never dispatches when the gate raises instead of releasing. Built-in
+DashScope calls keep their transport timeout and are not wrapped.
 
-Measured: `timeout_seconds=0.5` against a provider sleeping 3 s returned after
-3.05 s.
+Known limit: a wedged provider thread cannot be killed. It is abandoned as a
+daemon thread rather than allowed to block interpreter shutdown.
 
-### D3 — `recognize_batch` discards completed paid work on any failure. **High.**
+### D3 — `recognize_batch` discards completed paid work on any failure. **High. Fixed 2026-08-18.**
 
-The current contract is fail-fast: one failure raises and the caller receives no
-results for the items that already succeeded and were already paid for.
+Fix: execution stays fail-fast, but the raised `OCRLLMError` now carries
+`partial_results`, an ordered tuple with every completed `RecognitionResult` and
+`None` for items that did not finish, plus `details["batch_completed_count"]`
+and `details["batch_dispatched_count"]`. The parallel path drains futures that
+were already dispatched — and therefore already paid for — before re-raising.
+`OCRLLMError.partial_results` defaults to `()` for every other error.
 
-This is the same defect class already fixed once in `legacy_app`
-(phase-granular resume discarding batch work on a late crash), re-emerged one
-layer up. Fail-fast is a reasonable default; silently destroying paid results is
-not.
+### D4 — Image resume does not cover the case that loses money. **Medium. Partly fixed 2026-08-18.**
 
-### D4 — Image resume does not cover the case that loses money. **Medium.**
+Fixed: `resume=True` is no longer rejected outright for injected providers.
+Reuse is opt-in and caller-declared — the provider must expose a nonempty
+`resume_identity` string that changes whenever its recognition behaviour
+changes. Without it the previous `ConfigError` still fires, now naming the
+attribute. The library cannot infer behavioural equivalence of two injected
+objects, so silent reuse is never inferred.
 
-`resume=True` is rejected for injected providers (`ConfigError: Image resume
-requires exact DashScopeSettings or local OCR mode`), and it checkpoints per
-whole request rather than within a batch. It does not address D3.
+Still open: checkpointing is per whole request. One `recognize()` call can spend
+up to six provider calls (drafts, review, three sign scouts) and a crash inside
+that call still discards all of them. The batch-level money loss is covered by
+D3; the intra-request loss is not.
 
-### D5 — Local OCR is not runnable in the maintained development environment. **Medium.**
+### D5 — Local OCR is not runnable in the maintained development environment. **Medium. Fixed 2026-08-18.**
 
-`local_ocr/load_rapidocr.py` imports `rapidocr` (the 3.x API).
-`D:\Anaconda\envs\OCRLLM` provides `rapidocr-onnxruntime 1.4.4`, which exposes
-`rapidocr_onnxruntime`. The capability's GO evidence came from a throwaway
-isolated environment with `rapidocr 3.9.1` and exactly one real-engine test.
-The feature is green in evidence and non-functional on the development machine.
+`local_ocr/load_rapidocr.py` imports `rapidocr` (the 3.x API), while
+`D:\Anaconda\envs\OCRLLM` only provided `rapidocr-onnxruntime 1.4.4`, which
+exposes a different module and a different result API.
 
-### D6 — The legacy test suite leaks registry keys. **Low.**
+Fix: `rapidocr` 3.9.2 is installed in `D:\Anaconda\envs\OCRLLM`, matching the
+`ocr` extra pin `rapidocr>=3.9,<4` in `pyproject.toml`. The `DependencyMissing`
+details now name the required distribution and call out
+`rapidocr-onnxruntime` as an incompatible substitute. The code was not taught a
+second backend API: one supported engine, matched by the environment.
 
-`legacy_app/tests/qsettings_test_isolation.py` has left roughly 58 orphaned
-`HKCU\Software\OCRLLMTests-<uuid>` keys. Its teardown path has never executed
-successfully, which also means that path is untested.
+Verify:
 
-### D7 — `RecognitionResult` prose drift. **Low.**
+```powershell
+& 'D:\Anaconda\envs\OCRLLM\python.exe' -c "from rapidocr import RapidOCR; import importlib.metadata as m; print(m.version('rapidocr'))"
+```
 
-Some documents describe a `media_type` attribute. The field is `source_type`.
+### D6 — The legacy test suite leaks registry keys. **Low. Fixed 2026-08-18.**
+
+`QSettings.clear()` removes values but leaves the organization key, so each run
+left an empty `HKCU\Software\OCRLLMTests-<uuid>` tree behind.
+
+Fix: `legacy_app/tests/delete_test_qsettings_tree.py` deletes the tree in
+teardown and refuses any organization name outside the `OCRLLMTests-` prefix.
+The 60 orphaned keys present on the development machine were deleted by running
+that module directly; all 60 held zero values.
+
+### D7 — `RecognitionResult` prose drift. **Low. Fixed 2026-08-18.**
+
+The field is `source_type`. `Architecture.md` described its values as
+`"board" | "pdf" | "video" | "audio" | "office"`; board is a `profile`, not a
+source type. Corrected there. `docs/ocrllm_module_target_design.md` was already
+correct: `SourceDescriptor.media_type`, `Artifact.media_type`, and
+`ProcessorOutput.media_type` are real, distinct fields and are not drift.
+
 
 ## Structure Decisions
 
@@ -160,11 +208,19 @@ Some documents describe a `media_type` attribute. The field is `source_type`.
 `contracts/` and `worker/` stay in the tree. They are tested and they encode a
 real decision about process isolation. Do not delete them.
 
-Do not extend them either, until a consumer exists. Note that
-`contracts/image_recognition_request.py` hardcodes `provider: Literal["dashscope"]`
-and `profile: Literal["board"]`, so the protocol cannot represent the provider
-split described in the next-slice plan. When a consumer appears, that contract
-is revised as part of the same slice that produces the consumer — not before.
+**Freeze confirmed 2026-08-18. They are closed to change.** No new fields, no
+new commands or events, no protocol version bump, and no new tests. They have no
+consumer, and 1,817 lines is already 23% of the library.
+
+A future slice that needs to change them must first produce the consumer that
+justifies the change, in the same slice. Note that
+`contracts/image_recognition_request.py` hardcodes
+`provider: Literal["dashscope"]` and `profile: Literal["board"]`, so the protocol
+cannot represent modality splitting or audio. That revision belongs to whichever
+slice delivers a real consumer, and to no slice before it.
+
+When a Phase 1 change makes a frozen contract inaccurate, record the divergence
+in this file and move on. Do not chase the contract into sync.
 
 ### Reconsider before reuse
 
@@ -190,11 +246,71 @@ These are additive to the implementation directive in
    have a caller-visible bound. See D2.
 5. **Never destroy paid work.** Any operation that has already spent money must
    surface what succeeded, even when a later item fails. See D3.
-6. **No hidden cost.** No automatic retry, model switch, key rotation, or
-   provider fallback inside an adapter. This rule is deliberate and stays.
-   Compute and expose disposition; let the caller act.
+6. **No hidden cost.** Revised 2026-08-18; see "Policy Change: Disclosed
+   Automatic Recovery" below. Automatic retry and model switching are now
+   permitted, but only when the caller opted in and every attempt is disclosed.
+   Silent extra paid calls remain forbidden.
 7. **New structure requires a failing case.** Add an abstraction when a real
    failure demands it, not when one is imagined.
+
+## Policy Change: Disclosed Automatic Recovery
+
+Decided 2026-08-18. This **reverses** part of the earlier rule in
+`docs/ocrllm_library_go_no_go.md` that reads:
+
+> Perform no automatic model switch, key rotation, paid-provider fallback, or
+> hidden retry in the first adapter.
+
+That rule existed to prevent *undisclosed* paid calls. It was correct about the
+harm and too broad about the mechanism. A provider on a free tier returns
+`QuotaExhausted` on a per-model basis, and a library that cannot move to the
+next free model forces every caller to reimplement the same loop.
+
+The rule is replaced by four conditions. All four must hold.
+
+1. **Opt-in.** Automatic recovery happens only when the caller supplies an
+   explicit candidate list. No default candidate chain. An unconfigured call
+   behaves exactly as it does today: one attempt, then a typed error.
+2. **Disclosed.** Every attempt appears in an ordered attempt ledger in the
+   result metadata and in the error details: model tried, disposition, and
+   outcome. A caller must be able to reconstruct exactly what was spent.
+3. **Disposition-gated.** Switching triggers only on dispositions that mean
+   "this model or credential cannot serve the request" — quota exhausted,
+   unavailable, permission denied. Never on a generic failure, never on
+   `PROVIDER_RESPONSE_INVALID`, and never on a refusal.
+4. **Bounded.** A maximum attempt count and a terminating error when the whole
+   chain is exhausted. No unbounded loop, no silent give-up.
+
+The behavior oracle is `legacy_app/OCRLLM/core/llm_client.py`, functions
+`_vision_fallback_chain`, `_call_with_free_tier_fallback`, and
+`_notify_free_tier_switch`. Legacy already orders the caller's primary model
+first, slides down the chain on free-tier exhaustion only, notifies the user on
+every switch, and raises a distinct "all exhausted" error at the end. Port that
+behavior statement, not the file.
+
+## Policy Change: Model Discovery Replaces The Fixed Allowlist
+
+Decided 2026-08-18. The three-model DashScope allowlist in
+`resolve_dashscope_model.py` is retired as a gate on caller choice.
+
+The allowlist was protecting a real thing: live quality evidence is measured
+against one pinned model snapshot, and silently changing models invalidates it.
+That protection is preserved by separating two concepts that were conflated:
+
+- **The evidence baseline** stays pinned and named in result metadata. A quality
+  claim always states which model produced it.
+- **Caller model choice** is validated against the provider's live catalog, not
+  against a hardcoded set. An unknown model fails because the provider does not
+  serve it, not because a constant in this repository is out of date.
+
+A model outside the evidence baseline is usable and must be reported as
+unproven, not blocked. Do not silently imply baseline quality for a model that
+was never gated.
+
+Relevant measurement: the `board.v17` prompt against `qwen3.5-ocr` produced 16
+completion tokens and no usable output, while the pinned model produced a full
+transcription from the same prompt and image. Prompt and model class are
+coupled. Discovery makes a model *selectable*; it does not make it *proven*.
 
 ## Documentation Rules
 

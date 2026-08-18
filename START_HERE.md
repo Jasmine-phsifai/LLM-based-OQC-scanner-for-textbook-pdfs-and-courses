@@ -26,8 +26,11 @@ Read in this order:
 
 ```text
 docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
+docs/plan_phase1_maturation_and_phase2_audio.md
+                                      Current work: Phase 1 maturation, then
+                                      Phase 2 mp3-only audio.
 docs/plan_phase1_defects_and_provider_split.md
-                                      The approved next slice.
+                                      Defect repair, in progress separately.
 docs/ocrllm_library_go_no_go.md       Phase gates, file responsibilities,
                                       migrate/rewrite/reject boundary.
 src/ocrllm/README_ACTIVE_LIBRARY.md   Package boundary and capability surface.
@@ -143,7 +146,7 @@ Do not infer architecture from generated output or temporary files.
 
 ```text
 Need current state or open defects   -> docs/ACTIVE_STATE_AND_RULES.md
-Need to know what to build next      -> docs/plan_phase1_defects_and_provider_split.md
+Need to know what to build next      -> docs/plan_phase1_maturation_and_phase2_audio.md
 Need to change the public library API      -> src/ocrllm/ and tests/
 Need to add a downstream import feature    -> src/ocrllm/ and tests/
 Need to compare old product behavior       -> legacy_app/

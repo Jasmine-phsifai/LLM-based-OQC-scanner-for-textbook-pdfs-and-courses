@@ -16,10 +16,17 @@ Consequences, stated in full in `docs/ACTIVE_STATE_AND_RULES.md`:
 - `contracts/` and `worker/` are frozen until a consumer exists.
 - `docs/` has one current-state file; the rest are dated historical records.
 
-The approved next slice is
-`docs/plan_phase1_defects_and_provider_split.md`: repair defects D1-D4, then
-split provider configuration by modality so vision and audio can use different
-providers, as the legacy application already does in production.
+The approved current work is
+`docs/plan_phase1_maturation_and_phase2_audio.md`: mature Phase 1 out of its
+trial constraints (live model discovery, flowed output with real resume,
+disclosed automatic model-switching recovery), then deliver Phase 2 as an
+mp3-only audio recognizer.
+
+Defect repair D1-D7 and the vision/audio provider split are tracked separately
+in `docs/plan_phase1_defects_and_provider_split.md`.
+
+Phase 2's original Electron JSONL worker framing is superseded. `worker/` and
+`contracts/` are frozen; Phase 2 now means audio.
 
 ## Legacy Maintenance Diary
 
@@ -47,8 +54,10 @@ planning:
 
 ```text
 docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
+docs/plan_phase1_maturation_and_phase2_audio.md
+                                      Current work.
 docs/plan_phase1_defects_and_provider_split.md
-                                      The approved next slice.
+                                      Defect repair, in progress separately.
 START_HERE.md                         One-screen repo map.
 README.md                             Short public overview.
 src/ocrllm/README_ACTIVE_LIBRARY.md   Active package boundary.

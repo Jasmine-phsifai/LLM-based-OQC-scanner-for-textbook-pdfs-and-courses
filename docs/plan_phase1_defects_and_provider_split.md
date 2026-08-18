@@ -1,7 +1,11 @@
 # Plan: Phase 1 Defect Repair And Vision/Audio Provider Split
 
-Status: **approved next slice.** Written 2026-08-18. Supersedes any earlier
-"what is next" statement in `docs/phase*`.
+Status: **Stage 1 in progress under a separate agent.** Written 2026-08-18.
+
+> Current work for everyone else is
+> `docs/plan_phase1_maturation_and_phase2_audio.md`. Do not duplicate Stage 1
+> here; rebase onto it. Stage 2 of this document remains the prerequisite for
+> the Phase 2 audio work described in that plan.
 
 Read `docs/ACTIVE_STATE_AND_RULES.md` first. It defines document precedence, the
 defect register referenced here, and the coding rules this plan must follow.
@@ -64,17 +68,16 @@ not encode these preferences — it must simply make them expressible.
 
 ### What is deliberate and must not be "fixed"
 
-A previous review misread these as defects. They are documented decisions and
-they stay:
+A previous review misread these as defects. They are documented decisions:
 
 - **One provider adapter in Phase 1.** Google and Codex are recorded in the
   migration matrix as `Future optional adapters after a real gate is approved`.
-- **The three-model DashScope allowlist.** Live quality evidence is bound to a
-  pinned model snapshot; widening the allowlist invalidates the evidence. Any
-  new model enters through a gate, not through a config flag.
-- **No automatic retry, model switch, key rotation, or provider fallback inside
-  an adapter,** and `max_retries=0` on the SDK client. This prevents undisclosed
-  paid calls. Disposition is computed and exposed; the caller acts.
+
+Two items formerly listed here were **reversed on 2026-08-18**. The fixed model
+allowlist is retired in favour of live catalog discovery, and automatic
+model-switching recovery is permitted under four binding conditions. See the two
+"Policy Change" sections in `docs/ACTIVE_STATE_AND_RULES.md` before acting on
+any older statement about either.
 
 A relevant measurement: running the `board.v17` prompt against `qwen3.5-ocr`
 produced 16 completion tokens and no usable output, while the pinned model
