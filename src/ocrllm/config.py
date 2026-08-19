@@ -156,6 +156,7 @@ def _normalize_vision_model(value: object) -> VisionModelSettings:
         ) from None
     return VisionModelSettings(
         name=value.name,
+        candidate_models=value.candidate_models,
         maximum_images_per_request=value.maximum_images_per_request,
     )
 

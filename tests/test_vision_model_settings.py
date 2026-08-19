@@ -18,6 +18,7 @@ from ocrllm.providers.dashscope.resolve_dashscope_maximum_images import (
 from ocrllm.providers.dashscope.resolve_dashscope_model import (
     DEFAULT_DASHSCOPE_MODEL,
 )
+from write_test_image import write_test_image
 
 
 class CountingProvider:
@@ -136,7 +137,13 @@ def test_execution_limit_wins_when_stricter_than_model_limit(tmp_path) -> None:
     assert provider.calls == 0
 
 
-def test_unsupported_builtin_model_fails_before_source_or_dependency_work(tmp_path) -> None:
+def test_unavailable_builtin_model_is_reported_by_provider_catalog(tmp_path, monkeypatch) -> None:
+    resolver = __import__(
+        "ocrllm.providers.dashscope.resolve_dashscope_model",
+        fromlist=["fetch_dashscope_model_catalog"],
+    )
+    monkeypatch.setattr(resolver, "fetch_dashscope_model_catalog", lambda settings: frozenset())
+    source = write_test_image(tmp_path / "board.png")
     config = Config(
         provider=DashScopeSettings(
             region="cn-beijing",
@@ -146,8 +153,8 @@ def test_unsupported_builtin_model_fails_before_source_or_dependency_work(tmp_pa
         vision_model=VisionModelSettings(name="unsupported-model"),
     )
 
-    with pytest.raises(ConfigError, match="supports") as captured:
-        recognize(tmp_path / "missing.png", config=config)
+    with pytest.raises(ConfigError, match="DashScope does not serve") as captured:
+        recognize(source, config=config)
 
     assert captured.value.code == "CONFIG_INVALID"
 
@@ -157,5 +164,4 @@ def test_dashscope_model_capability_is_explicit_for_every_supported_model() -> N
     assert resolve_dashscope_maximum_images("qwen3.7-plus") == 10
     assert resolve_dashscope_maximum_images("qwen-vl-max") == 10
 
-    with pytest.raises(ConfigError, match="no approved image-count"):
-        resolve_dashscope_maximum_images("unknown")
+    assert resolve_dashscope_maximum_images("unknown") == 10

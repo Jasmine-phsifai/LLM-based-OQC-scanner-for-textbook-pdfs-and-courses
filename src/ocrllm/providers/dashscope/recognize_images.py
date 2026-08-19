@@ -40,7 +40,7 @@ def recognize_images(
             code="CONFIG_INVALID",
         ) from None
 
-    model = resolve_dashscope_model(config.vision_model.name)
+    model = resolve_dashscope_model(config.vision_model.name, settings=settings)
     request = build_dashscope_image_request(
         image_paths,
         prompt=prompt,

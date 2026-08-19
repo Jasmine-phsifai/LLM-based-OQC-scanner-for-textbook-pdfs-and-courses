@@ -544,16 +544,15 @@ def test_cancellation_callback_cannot_diverge_builtin_request_metadata(
     assert result.metadata["model"] == "qwen3.7-plus-2026-05-26"
 
 
-def test_unapproved_dashscope_model_fails_before_sdk_load(tmp_path, monkeypatch):
+def test_unavailable_dashscope_model_fails_from_provider_catalog(tmp_path, monkeypatch):
     source = write_test_image(tmp_path / "board.png", size=(11, 11))
     sentinel = "sk-model-secret-must-not-escape-519c"
+    resolver = importlib.import_module(
+        "ocrllm.providers.dashscope.resolve_dashscope_model"
+    )
+    monkeypatch.setattr(resolver, "fetch_dashscope_model_catalog", lambda settings: frozenset())
 
-    def unexpected_sdk_load():
-        raise AssertionError("SDK must not load for an unsupported model")
-
-    monkeypatch.setattr(adapter_module, "load_openai", unexpected_sdk_load)
-
-    with pytest.raises(ConfigError) as captured:
+    with pytest.raises(ConfigError, match="DashScope does not serve") as captured:
         recognize(
             source,
             config=Config(

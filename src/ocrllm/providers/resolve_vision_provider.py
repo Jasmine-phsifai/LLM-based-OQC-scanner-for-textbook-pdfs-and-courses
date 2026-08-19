@@ -28,7 +28,10 @@ def resolve_vision_provider(config: Config) -> ResolvedVisionProvider:
         return ResolvedVisionProvider(
             value=provider_module,
             name="dashscope",
-            model=resolve_dashscope_model(config.vision_model.name),
+            model=resolve_dashscope_model(
+                config.vision_model.name,
+                settings=provider,
+            ),
             built_in=True,
         )
 

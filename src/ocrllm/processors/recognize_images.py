@@ -8,6 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from ..config import Config
+from ..all_candidates_exhausted import AllCandidatesExhausted
 from ..errors import OCRLLMError, ProviderError
 from ..processor_output import ProcessorOutput
 from ..profiles.build_board_consensus_prompt import build_board_consensus_prompt
@@ -19,8 +20,13 @@ from ..profiles.build_board_sign_scout_prompt import (
 )
 from ..profiles.build_board_symbol_audit_prompt import build_board_symbol_audit_prompt
 from ..providers.call_vision_provider import call_vision_provider
+from ..provider_error_disposition import get_provider_error_disposition
 from ..providers.dashscope.resolve_sign_scout_enable_thinking import (
     resolve_sign_scout_enable_thinking,
+)
+from ..providers.dashscope.resolve_dashscope_model import (
+    DEFAULT_DASHSCOPE_MODEL,
+    SUPPORTED_DASHSCOPE_MODELS,
 )
 from ..providers.dashscope.provider_settings import DashScopeSettings
 from ..providers.resolve_vision_provider import resolve_vision_provider
@@ -30,6 +36,69 @@ from .restore_quorum_standalone_signs import restore_quorum_standalone_signs
 
 
 def recognize_images(
+    image_paths: Sequence[Path],
+    *,
+    profile: str,
+    config: Config,
+) -> ProcessorOutput:
+    """Recognize with the configured model queue and disclose every attempt."""
+    candidates = config.vision_model.candidate_models
+    if candidates:
+        ordered_models = list(candidates)
+        if config.vision_model.name is not None:
+            ordered_models.insert(0, config.vision_model.name)
+        ordered_models = list(dict.fromkeys(ordered_models))
+    else:
+        ordered_models = [config.vision_model.name]
+
+    attempts: list[dict[str, str]] = []
+    for candidate_index, model in enumerate(ordered_models):
+        candidate_config = config
+        if model is not None:
+            candidate_config = replace(
+                config,
+                vision_model=replace(
+                    config.vision_model,
+                    name=model,
+                    candidate_models=(),
+                ),
+            )
+        try:
+            output = _recognize_images_once(
+                image_paths,
+                profile=profile,
+                config=candidate_config,
+            )
+        except ProviderError as error:
+            disposition = get_provider_error_disposition(error)
+            attempts.append(
+                {
+                    "model": model or "",
+                    "outcome": error.code,
+                    "disposition": disposition.action,
+                }
+            )
+            if error.code != "PROVIDER_QUOTA_EXHAUSTED" or candidate_index == len(ordered_models) - 1:
+                error._add_safe_detail("model_attempts", attempts)
+                if error.code == "PROVIDER_QUOTA_EXHAUSTED" and candidate_index == len(ordered_models) - 1:
+                    error = AllCandidatesExhausted(
+                        "All configured model candidates were exhausted.",
+                        details=dict(error.details),
+                    )
+                    error._add_safe_detail("all_candidates_exhausted", True)
+                    error._add_safe_detail("last_model", model)
+                raise error from None
+            continue
+
+        attempts.append({"model": model or "", "outcome": "success"})
+        metadata = dict(output.metadata)
+        metadata["model_attempts"] = attempts
+        return replace(output, metadata=metadata)
+
+    raise AssertionError("the model candidate loop must return or raise")
+
+
+def _recognize_images_once(
     image_paths: Sequence[Path],
     *,
     profile: str,
@@ -162,6 +231,12 @@ def recognize_images(
     metadata: dict[str, str | int | bool | None] = {
         "image_count": len(image_paths),
         "model": resolved_provider.model,
+        "model_evidence": (
+            "proven"
+            if resolved_provider.model in SUPPORTED_DASHSCOPE_MODELS
+            else "unproven"
+        ),
+        "model_proven": resolved_provider.model == DEFAULT_DASHSCOPE_MODEL,
         "prompt_version": BOARD_PROMPT_VERSION,
         "provider": resolved_provider.name,
         "profile": profile,

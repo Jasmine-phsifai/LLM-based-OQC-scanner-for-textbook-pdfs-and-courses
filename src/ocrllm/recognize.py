@@ -71,7 +71,11 @@ def _recognize(
                     profile=profile,
                     config=cfg,
                 )
-                if cfg.resume:
+                checkpoint_enabled = (
+                    output_path is not None
+                    and (cfg.resume or _can_checkpoint_image(cfg))
+                )
+                if checkpoint_enabled:
                     assert output_path is not None
                     from .fingerprint_image_request import fingerprint_image_request
                     from .fingerprint_image_sources import fingerprint_image_sources
@@ -85,15 +89,19 @@ def _recognize(
                         config=cfg,
                     )
                     resume_state_path = build_job_state_path(output_path)
-                    resume_state = load_image_resume_state(resume_state_path)
-                    if resume_state is None and output_path.exists():
+                    resume_state = (
+                        load_image_resume_state(resume_state_path)
+                        if cfg.resume
+                        else None
+                    )
+                    if cfg.resume and resume_state is None and output_path.exists():
                         from .errors import ResumeStateError
 
                         raise ResumeStateError(
                             "Existing image output has no matching resume state.",
                             code="RESUME_STATE_INVALID",
                         ) from None
-                    if resume_state is not None:
+                    if cfg.resume and resume_state is not None:
                         processor_output = reuse_image_resume_state(
                             resume_state,
                             resume_identity,
@@ -119,7 +127,7 @@ def _recognize(
         else:  # pragma: no cover - routing is closed until another phase is authorized.
             raise AssertionError(f"unhandled validated media type: {media_type}")
 
-    if cfg.resume:
+    if output_path is not None and resume_identity is not None:
         # The state file is kept after publication: it is what lets a repeated
         # call, and therefore a repeated batch, skip work that was already paid for.
         assert output_path is not None
@@ -133,7 +141,7 @@ def _recognize(
 
             resume_state = build_image_resume_state(resume_identity, processor_output)
             save_image_resume_state_atomically(resume_state_path, resume_state)
-        if output_path.exists():
+        if cfg.resume and output_path.exists():
             from .output.validate_image_resume_output import (
                 validate_image_resume_output,
             )
@@ -143,7 +151,7 @@ def _recognize(
             write_markdown_atomically(
                 output_path,
                 processor_output.markdown,
-                overwrite=False,
+                overwrite=cfg.overwrite,
             )
     elif output_path is not None:
         write_markdown_atomically(
@@ -152,3 +160,16 @@ def _recognize(
             overwrite=cfg.overwrite,
         )
     return build_recognition_result(processor_output, output_path=output_path)
+
+
+def _can_checkpoint_image(config: Config) -> bool:
+    """Return whether this provider has a stable identity for automatic reuse."""
+    if config.image_mode == "ocr":
+        return True
+    if type(config.provider).__name__ == "DashScopeSettings":
+        return True
+    try:
+        identity = getattr(config.provider, "resume_identity", None)
+    except Exception:
+        return False
+    return type(identity) is str and bool(identity.strip())

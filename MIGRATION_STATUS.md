@@ -28,6 +28,34 @@ in `docs/plan_phase1_defects_and_provider_split.md`.
 Phase 2's original Electron JSONL worker framing is superseded. `worker/` and
 `contracts/` are frozen; Phase 2 now means audio.
 
+## Stage M Model Discovery Commit, 2026-08-19
+
+Stage M model discovery and its adjacent product-maturity image-path work are
+recorded here before commit so the work survives process or machine loss:
+
+- DashScope accepts explicit non-baseline models through a lazy, process-cached
+  provider catalog and reports whether the selected model is proven by the
+  pinned quality evidence.
+- File-backed image recognition preserves completed work with atomic state
+  sidecars, and explicit candidate model queues perform disclosed,
+  quota-gated recovery with an ordered attempt ledger.
+- Added offline regression coverage for model discovery, durable resume, and
+  candidate recovery in `tests/test_stage_maturation.py`.
+
+Verification before commit:
+
+```text
+python -m pytest -q -p no:cacheprovider   -> 1018 passed
+python -m compileall -q src tests          -> passed
+plain import probe                          -> 61 ms / 122 modules; no heavy modules
+git diff --check                            -> passed
+```
+
+No paid live catalog or DashScope smoke call was made. Those gates remain
+blocked pending explicit maintainer budget. `src/ocrllm/worker/` and
+`src/ocrllm/contracts/` are unchanged. The unrelated untracked files already
+present under `docs/` are intentionally excluded from this commit.
+
 ## Legacy Maintenance Diary
 
 `legacy_app/AGENTS.md` now has a "Working Diary Rule" section. Read its

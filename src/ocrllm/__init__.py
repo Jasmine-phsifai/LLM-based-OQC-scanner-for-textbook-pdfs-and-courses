@@ -1,6 +1,7 @@
 """Public OCRLLM library facade."""
 
 from .config import Config
+from .all_candidates_exhausted import AllCandidatesExhausted
 from .batch_item_outcome import BatchItemOutcome
 from .credential_pool_policy import CredentialPoolPolicy
 from .capability_report import CapabilityReport
@@ -52,6 +53,7 @@ __all__ = [
     "Cancelled",
     "ConcurrencyLimited",
     "Config",
+    "AllCandidatesExhausted",
     "CredentialPoolPolicy",
     "CapabilityReport",
     "ConfigError",

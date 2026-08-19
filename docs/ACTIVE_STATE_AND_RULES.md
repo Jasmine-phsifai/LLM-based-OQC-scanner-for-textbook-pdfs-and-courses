@@ -347,6 +347,31 @@ completion tokens and no usable output, while the pinned model produced a full
 transcription from the same prompt and image. Prompt and model class are
 coupled. Discovery makes a model *selectable*; it does not make it *proven*.
 
+## Stage M Implementation Status, 2026-08-19
+
+The Phase 1 image path now has the first product-maturity implementation:
+
+- DashScope model selection keeps the pinned evidence baseline as metadata,
+  checks non-baseline explicit names against a lazily fetched, process-cached
+  provider catalog, and fails open to the provider request when catalog access
+  is unavailable. Catalog/network imports remain lazy.
+- Completed file-backed image recognitions write their state sidecar atomically
+  before publication, so a batch failure preserves completed units. Explicit
+  resume still requires the D4 provider identity declaration for injected
+  providers; output-only injected providers without that declaration retain
+  their prior non-resumable behavior.
+- An explicit `VisionModelSettings.candidate_models` queue advances only on
+  `PROVIDER_QUOTA_EXHAUSTED`, records model, disposition, and outcome in the
+  result/error ledger, and raises `AllCandidatesExhausted` naming the final
+  model when the queue is spent. Generic failures and refusals do not switch.
+
+Offline regression coverage is in `tests/test_stage_maturation.py`. No paid
+live call was made for this implementation; the required live catalog and
+end-to-end smoke gates remain unexecuted until an explicit maintainer budget
+is supplied. Final offline gate: 1,018 passed, `compileall` clean, and plain
+import 61 ms / 122 modules with `PIL`, `openai`, `httpx`, and `onnxruntime`
+absent. `worker/` and `contracts/` remain unchanged.
+
 ## Documentation Rules
 
 The `docs/` directory holds 54 files and 8,699 lines for a 7,824-line library.

@@ -151,7 +151,10 @@ def test_local_ocr_writes_only_final_markdown_atomically(tmp_path, monkeypatch) 
 
     assert result.output_path == tmp_path / "output" / "board_board.md"
     assert result.output_path.read_text(encoding="utf-8") == "Offline OCR"
-    assert tuple(result.output_path.parent.iterdir()) == (result.output_path,)
+    assert {path.name for path in result.output_path.parent.iterdir()} == {
+        result.output_path.name,
+        "board_board.ocrllm-state.json",
+    }
 
 
 def test_missing_local_ocr_dependency_is_typed_and_writes_nothing(

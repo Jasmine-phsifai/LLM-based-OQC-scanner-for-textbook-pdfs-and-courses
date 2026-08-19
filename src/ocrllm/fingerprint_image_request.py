@@ -53,6 +53,7 @@ def fingerprint_image_request(
             }
             model_document = {
                 "name": resolve_dashscope_model(config.vision_model.name),
+                "candidate_models": list(config.vision_model.candidate_models),
                 "maximum_images_per_request": (
                     config.vision_model.maximum_images_per_request
                 ),
@@ -64,6 +65,7 @@ def fingerprint_image_request(
             }
             model_document = {
                 "name": config.vision_model.name,
+                "candidate_models": list(config.vision_model.candidate_models),
                 "maximum_images_per_request": (
                     config.vision_model.maximum_images_per_request
                 ),

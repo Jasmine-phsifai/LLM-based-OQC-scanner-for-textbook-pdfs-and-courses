@@ -10,9 +10,10 @@ from .image_group_limits import MAX_IMAGE_GROUP_COUNT
 
 @dataclass(frozen=True, slots=True)
 class VisionModelSettings:
-    """Select one vision model and optionally lower its known image limit."""
+    """Select one vision model and an optional ordered recovery chain."""
 
     name: str | None = None
+    candidate_models: tuple[str, ...] = ()
     maximum_images_per_request: int | None = None
 
     def __post_init__(self) -> None:
@@ -24,6 +25,19 @@ class VisionModelSettings:
         ):
             raise ConfigError(
                 "VisionModelSettings.name must be nonempty exact text when set.",
+                code="CONFIG_INVALID",
+            ) from None
+        if type(self.candidate_models) is not tuple or any(
+            type(model) is not str or not model.strip()
+            for model in self.candidate_models
+        ):
+            raise ConfigError(
+                "VisionModelSettings.candidate_models must be a tuple of nonempty text.",
+                code="CONFIG_INVALID",
+            ) from None
+        if len(set(self.candidate_models)) != len(self.candidate_models):
+            raise ConfigError(
+                "VisionModelSettings.candidate_models must not contain duplicates.",
                 code="CONFIG_INVALID",
             ) from None
         maximum = self.maximum_images_per_request
