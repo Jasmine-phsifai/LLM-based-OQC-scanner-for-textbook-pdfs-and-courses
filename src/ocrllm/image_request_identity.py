@@ -12,6 +12,7 @@ class ImageRequestIdentity:
     """Bind ordered sources to one processor and canonical request digest."""
 
     request_fingerprint: str
+    identity_version: str
     processor_name: str
     processor_version: str
     sources: tuple[SourceFingerprint, ...]

@@ -6,10 +6,12 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from ..config import Config
 from ..all_candidates_exhausted import AllCandidatesExhausted
 from ..errors import OCRLLMError, ProviderError
+from ..image_slot_state import ImageSlotState
 from ..processor_output import ProcessorOutput
 from ..profiles.build_board_consensus_prompt import build_board_consensus_prompt
 from ..profiles.build_board_prompt import BOARD_PROMPT_VERSION, build_board_prompt
@@ -29,10 +31,14 @@ from ..providers.dashscope.resolve_dashscope_model import (
     SUPPORTED_DASHSCOPE_MODELS,
 )
 from ..providers.dashscope.provider_settings import DashScopeSettings
+from ..providers.resolved_vision_provider import ResolvedVisionProvider
 from ..providers.resolve_vision_provider import resolve_vision_provider
 from ..snapshot_config import snapshot_config
 from ..vision_model_settings import VisionModelSettings
 from .restore_quorum_standalone_signs import restore_quorum_standalone_signs
+
+if TYPE_CHECKING:
+    from ..image_slot_checkpoint import ImageSlotCheckpoint
 
 
 def recognize_images(
@@ -40,6 +46,7 @@ def recognize_images(
     *,
     profile: str,
     config: Config,
+    slot_checkpoint: ImageSlotCheckpoint | None = None,
 ) -> ProcessorOutput:
     """Recognize with the configured model queue and disclose every attempt."""
     candidates = config.vision_model.candidate_models
@@ -51,7 +58,7 @@ def recognize_images(
     else:
         ordered_models = [config.vision_model.name]
 
-    attempts: list[dict[str, str]] = []
+    attempts: list[dict[str, str | int]] = []
     for candidate_index, model in enumerate(ordered_models):
         candidate_config = config
         if model is not None:
@@ -68,6 +75,7 @@ def recognize_images(
                 image_paths,
                 profile=profile,
                 config=candidate_config,
+                slot_checkpoint=slot_checkpoint,
             )
         except ProviderError as error:
             disposition = get_provider_error_disposition(error)
@@ -76,6 +84,9 @@ def recognize_images(
                     "model": model or "",
                     "outcome": error.code,
                     "disposition": disposition.action,
+                    "provider_calls_attempted": error.details.get(
+                        "provider_calls_attempted", 1
+                    ),
                 }
             )
             if error.code != "PROVIDER_QUOTA_EXHAUSTED" or candidate_index == len(ordered_models) - 1:
@@ -90,7 +101,13 @@ def recognize_images(
                 raise error from None
             continue
 
-        attempts.append({"model": model or "", "outcome": "success"})
+        attempts.append(
+            {
+                "model": model or "",
+                "outcome": "success",
+                "provider_calls_attempted": output.metadata["provider_call_count"],
+            }
+        )
         metadata = dict(output.metadata)
         metadata["model_attempts"] = attempts
         return replace(output, metadata=metadata)
@@ -103,6 +120,7 @@ def _recognize_images_once(
     *,
     profile: str,
     config: Config,
+    slot_checkpoint: ImageSlotCheckpoint | None = None,
 ) -> ProcessorOutput:
     """Call one injected vision provider and reject false-success output."""
     if type(config.provider) is DashScopeSettings:
@@ -122,22 +140,84 @@ def _recognize_images_once(
         if scout_model is not None
         else base_prompt
     )
+
+    calls_dispatched = 0
+    slot_ledger: list[dict[str, str | int | bool | None]] = []
+
+    def run_pass(
+        slot_id: str,
+        resolved: ResolvedVisionProvider,
+        pass_config: Config,
+        prompt: str,
+    ) -> str:
+        """Reuse, or pay for and persist, one workflow pass."""
+        nonlocal calls_dispatched
+        if slot_checkpoint is not None:
+            persisted = slot_checkpoint.reusable_slot(
+                slot_id,
+                provider=resolved.name,
+                model=resolved.model,
+            )
+            if persisted is not None:
+                slot_ledger.append(
+                    {
+                        "slot_id": persisted.slot_id,
+                        "workflow_pass": persisted.workflow_pass,
+                        "provider": persisted.provider,
+                        "model": persisted.model,
+                        "reused": True,
+                        "provider_calls_attempted": 0,
+                    }
+                )
+                return persisted.markdown
+        try:
+            markdown = call_vision_provider(
+                resolved,
+                image_paths,
+                prompt=prompt,
+                config=pass_config,
+            )
+        except OCRLLMError as error:
+            error._add_safe_detail("workflow_pass", slot_id)
+            error._add_safe_detail("provider_calls_attempted", calls_dispatched + 1)
+            raise
+        calls_dispatched += 1
+        if slot_checkpoint is not None:
+            slot_checkpoint.persist_slot(
+                ImageSlotState(
+                    slot_id=slot_id,
+                    workflow_pass=slot_id,
+                    provider=resolved.name,
+                    model=resolved.model,
+                    markdown=markdown,
+                    markdown_sha256=hashlib.sha256(
+                        markdown.encode("utf-8")
+                    ).hexdigest(),
+                    provider_calls_attempted=calls_dispatched,
+                )
+            )
+        slot_ledger.append(
+            {
+                "slot_id": slot_id,
+                "workflow_pass": slot_id,
+                "provider": resolved.name,
+                "model": resolved.model,
+                "reused": False,
+                "provider_calls_attempted": calls_dispatched,
+            }
+        )
+        return markdown
+
     drafts: list[str] = []
     for candidate_index in range(config.preferences.draft_candidates):
-        try:
-            drafts.append(call_vision_provider(
-                resolved_provider,
-                image_paths,
-                prompt=primary_prompt,
-                config=config,
-            ))
-        except OCRLLMError as error:
-            error._add_safe_detail(
-                "workflow_pass",
+        drafts.append(
+            run_pass(
                 "draft" if candidate_index == 0 else "draft_2",
+                resolved_provider,
+                config,
+                primary_prompt,
             )
-            error._add_safe_detail("provider_calls_attempted", candidate_index + 1)
-            raise
+        )
 
     markdown = drafts[0]
     if config.preferences.review_passes:
@@ -147,27 +227,13 @@ def _recognize_images_once(
             if consensus
             else build_board_review_prompt(base_prompt, drafts[0])
         )
-        try:
-            markdown = call_vision_provider(
-                resolved_provider,
-                image_paths,
-                prompt=review_prompt,
-                config=config,
-            )
-        except OCRLLMError as error:
-            error._add_safe_detail(
-                "workflow_pass",
-                "consensus_review" if consensus else "review",
-            )
-            error._add_safe_detail(
-                "provider_calls_attempted",
-                config.preferences.draft_candidates + 1,
-            )
-            raise
+        markdown = run_pass(
+            "consensus_review" if consensus else "review",
+            resolved_provider,
+            config,
+            review_prompt,
+        )
 
-    provider_call_count = (
-        config.preferences.draft_candidates + config.preferences.review_passes
-    )
     restored_sign_count = 0
     abstained_scout_count = 0
     scout_prompt: str | None = None
@@ -187,25 +253,14 @@ def _recognize_images_once(
         scout_prompt = build_board_sign_scout_prompt(markdown)
         scouts: list[str] = []
         for scout_index in range(3):
-            try:
-                scouts.append(
-                    call_vision_provider(
-                        resolved_scout,
-                        image_paths,
-                        prompt=scout_prompt,
-                        config=scout_config,
-                    )
-                )
-            except OCRLLMError as error:
-                error._add_safe_detail(
-                    "workflow_pass",
+            scouts.append(
+                run_pass(
                     f"standalone_sign_scout_{scout_index + 1}",
+                    resolved_scout,
+                    scout_config,
+                    scout_prompt,
                 )
-                error._add_safe_detail(
-                    "provider_calls_attempted",
-                    provider_call_count + scout_index + 1,
-                )
-                raise
+            )
         try:
             restored = restore_quorum_standalone_signs(
                 markdown,
@@ -219,16 +274,15 @@ def _recognize_images_once(
                 details={
                     "model": scout_model,
                     "provider": resolved_scout.name,
-                    "provider_calls_attempted": provider_call_count + 3,
+                    "provider_calls_attempted": calls_dispatched,
                     "workflow_pass": "standalone_sign_merge",
                 },
             ) from None
         markdown = restored.markdown
         restored_sign_count = restored.restored_count
         abstained_scout_count = restored.abstained_scout_count
-        provider_call_count += 3
 
-    metadata: dict[str, str | int | bool | None] = {
+    metadata: dict[str, object] = {
         "image_count": len(image_paths),
         "model": resolved_provider.model,
         "model_evidence": (
@@ -240,7 +294,8 @@ def _recognize_images_once(
         "prompt_version": BOARD_PROMPT_VERSION,
         "provider": resolved_provider.name,
         "profile": profile,
-        "provider_call_count": provider_call_count,
+        "provider_call_count": calls_dispatched,
+        "workflow_slots": slot_ledger,
         "draft_candidates": config.preferences.draft_candidates,
         "review_passes": config.preferences.review_passes,
         "standalone_sign_scout_model": scout_model,

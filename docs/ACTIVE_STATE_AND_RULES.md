@@ -196,9 +196,9 @@ Consequence to know: `output_dir` accumulates one `<stem>.ocrllm-state.json`
 beside each published Markdown file. That file is the proof of paid work; do not
 prune it as clutter.
 
-Still open: checkpointing inside one request. A single `recognize()` call can
-spend up to six provider calls (drafts, review, three sign scouts) and a crash
-inside that call still discards all of them.
+Checkpointing inside one request is closed by Stage M2 (see "Stage M
+Implementation Status"): each workflow pass now persists as it completes and
+`resume=True` reuses persisted passes at slot granularity.
 
 ### D5 — Local OCR is not runnable in the maintained development environment. **Medium. Fixed 2026-08-18.**
 
@@ -480,6 +480,54 @@ defects:
    legacy checkpoint/GUI suite passed 29 tests and the settings/model suite
    passed 12 tests with 1 environment skip. These counts are verification
    snapshots, not permanent gates for future changes.
+
+### M2. Flowed output and true resume, 2026-08-19
+
+A single `recognize()` call spends up to six provider calls (drafts, review,
+three sign scouts). Each completed pass now persists immediately as a
+slot-indexed record in the existing `<stem>.ocrllm-state.json` sidecar, and a
+crash mid-request discards nothing that was already paid for.
+
+- `image_slot_checkpoint.py` persists one `ImageSlotState` per workflow pass
+  (slot id, workflow pass, provider, actual model, validated Markdown with its
+  SHA-256, calls attempted) through the existing atomic state writer. No new
+  storage backend: the state document gained a `slots` array and is otherwise
+  the same versioned sidecar. Slot writes are atomic replaces, so the file is
+  valid after every paid call.
+- Resume is slot-granular. `resume=True` with a matching fingerprint seeds the
+  checkpoint from the persisted slots and pays only for the missing passes; a
+  slot is reused only by the same provider **and** model that produced it, so
+  a quota fallback to another model never inherits the failed model's passes.
+  Preservation is not opt-in: injected providers keep the D4 `resume_identity`
+  declaration, and any checkpoint-eligible run persists slots even without
+  `resume=True`.
+- **Fingerprint identity break, v1 to v2 (audit finding G6).** Commit
+  `a19776d` silently changed the v1 fingerprint by adding `candidate_models`
+  to the hashed document. The identity version is now explicit:
+  `ocrllm.image-request.v2`, stored in every new state file. A state written
+  under v1 is rejected with `RESUME_STATE_MISMATCH` whose details name both
+  versions (`state_identity_version` / `request_identity_version`). Upgrade
+  behavior: nothing migrates; a v1 state is treated as foreign work and the
+  request re-runs only after the caller removes it or runs without
+  `resume=True`. The v2 document also hashes the board and sign-scout prompt
+  versions, closing a silent-stale-resume hole that v1 left open.
+- **Paid-call disclosure (audit finding G1).** `RecognitionResult.metadata`
+  now carries `workflow_slots`: per slot the workflow pass, provider, actual
+  model, whether the slot was reused from disk, and calls attempted. Every
+  `model_attempts` ledger entry — success or typed failure — carries
+  `provider_calls_attempted`, so a successful fallback no longer discards what
+  the failed candidates spent. Typed failures keep their `workflow_pass` and
+  `provider_calls_attempted` details.
+
+Regression coverage is `tests/test_m2_slot_resume.py`: a kill-mid-request
+fake provider proves persisted slots survive a crash and that a resumed run
+pays only for missing slots (including the sign-scout passes), a hand-written
+v1 state proves the version-named rejection, a candidate-fallback run proves
+failed-model slots are neither reused nor lost, and a prompt-version bump
+proves resume identity invalidates. Offline gate: full suite, `compileall`
+clean, plain import 117 ms / 122 modules with `PIL`, `openai`, `httpx`, and
+`onnxruntime` absent. No paid live call was made. `worker/` and `contracts/`
+are unchanged.
 
 ## Documentation Rules
 

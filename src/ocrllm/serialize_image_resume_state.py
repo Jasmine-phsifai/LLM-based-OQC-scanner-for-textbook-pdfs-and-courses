@@ -12,6 +12,7 @@ def serialize_image_resume_state(state: ImageResumeState) -> bytes:
     """Return deterministic state bytes without runtime or secret fields."""
     document = {
         "state_version": state.state_version,
+        "identity_version": state.identity_version,
         "request_fingerprint": state.request_fingerprint,
         "processor_name": state.processor_name,
         "processor_version": state.processor_version,
@@ -22,6 +23,18 @@ def serialize_image_resume_state(state: ImageResumeState) -> bytes:
                 "sha256": source.sha256,
             }
             for source in state.sources
+        ],
+        "slots": [
+            {
+                "slot_id": slot.slot_id,
+                "workflow_pass": slot.workflow_pass,
+                "provider": slot.provider,
+                "model": slot.model,
+                "markdown": slot.markdown,
+                "markdown_sha256": slot.markdown_sha256,
+                "provider_calls_attempted": slot.provider_calls_attempted,
+            }
+            for slot in state.slots
         ],
         "result": {
             "markdown": state.markdown,

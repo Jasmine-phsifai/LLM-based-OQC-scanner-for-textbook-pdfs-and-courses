@@ -10,6 +10,8 @@ from .config import Config
 from .contracts.source_fingerprint import SourceFingerprint
 from .errors import ConfigError
 from .image_request_identity import ImageRequestIdentity
+from .profiles.build_board_prompt import BOARD_PROMPT_VERSION
+from .profiles.build_board_sign_scout_prompt import SIGN_SCOUT_PROMPT_VERSION
 from .providers.dashscope.provider_settings import DashScopeSettings
 from .providers.dashscope.resolve_dashscope_model import resolve_dashscope_model
 from .thaw_json_value import thaw_json_value
@@ -19,6 +21,10 @@ _VISION_PROCESSOR_NAME = "image.vision.board"
 _VISION_PROCESSOR_VERSION = "image.vision.board.v1"
 _OCR_PROCESSOR_NAME = "image.ocr.rapidocr"
 _OCR_PROCESSOR_VERSION = "image.ocr.rapidocr.v1"
+
+# v1 silently changed meaning when candidate_models joined the hashed document.
+# v2 makes the break explicit: states written under v1 are rejected by version.
+IMAGE_REQUEST_IDENTITY_VERSION = "ocrllm.image-request.v2"
 
 
 def fingerprint_image_request(
@@ -37,10 +43,15 @@ def fingerprint_image_request(
             "minimum_confidence": config.local_ocr.minimum_confidence,
         }
         model_document = None
+        prompt_versions_document = None
     else:
         processor_name = _VISION_PROCESSOR_NAME
         processor_version = _VISION_PROCESSOR_VERSION
         local_ocr_document = None
+        prompt_versions_document = {
+            "board": BOARD_PROMPT_VERSION,
+            "sign_scout": SIGN_SCOUT_PROMPT_VERSION,
+        }
         if type(config.provider) is DashScopeSettings:
             settings = config.provider
             provider_document = {
@@ -72,7 +83,7 @@ def fingerprint_image_request(
             }
 
     document = {
-        "identity_version": "ocrllm.image-request.v1",
+        "identity_version": IMAGE_REQUEST_IDENTITY_VERSION,
         "sources": [
             {
                 "uri": source.uri,
@@ -83,6 +94,7 @@ def fingerprint_image_request(
         ],
         "processor_name": processor_name,
         "processor_version": processor_version,
+        "prompt_versions": prompt_versions_document,
         "image_mode": config.image_mode,
         "profile": profile,
         "input_languages": list(config.input_languages),
@@ -115,6 +127,7 @@ def fingerprint_image_request(
     ).encode("utf-8")
     return ImageRequestIdentity(
         request_fingerprint=hashlib.sha256(encoded).hexdigest(),
+        identity_version=IMAGE_REQUEST_IDENTITY_VERSION,
         processor_name=processor_name,
         processor_version=processor_version,
         sources=tuple(sources),

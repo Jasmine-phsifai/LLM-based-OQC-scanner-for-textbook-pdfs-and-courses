@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .config import Config
 from .processor_output import ProcessorOutput
+
+if TYPE_CHECKING:
+    from .image_slot_checkpoint import ImageSlotCheckpoint
 
 
 def recognize_validated_images(
@@ -14,6 +18,7 @@ def recognize_validated_images(
     *,
     profile: str,
     config: Config,
+    slot_checkpoint: ImageSlotCheckpoint | None = None,
 ) -> ProcessorOutput:
     """Run local OCR or the unified provider-backed board processor."""
     if config.image_mode == "ocr":
@@ -32,4 +37,5 @@ def recognize_validated_images(
         validated_paths,
         profile=profile,
         config=config,
+        slot_checkpoint=slot_checkpoint,
     )

@@ -140,8 +140,9 @@ def test_candidate_chain_switches_only_on_model_quota_and_reports_ledger(tmp_pat
             "model": "quota-model",
             "outcome": "PROVIDER_QUOTA_EXHAUSTED",
             "disposition": "stop",
+            "provider_calls_attempted": 1,
         },
-        {"model": "recovery-model", "outcome": "success"},
+        {"model": "recovery-model", "outcome": "success", "provider_calls_attempted": 1},
     ]
 
 

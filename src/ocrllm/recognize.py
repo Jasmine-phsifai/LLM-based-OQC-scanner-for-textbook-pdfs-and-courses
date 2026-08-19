@@ -60,6 +60,7 @@ def _recognize(
     resume_identity = None
     resume_state = None
     resume_state_path = None
+    slot_checkpoint = None
 
     with reuse_or_create_provider_request_start_gate(
         cfg.execution.provider_request_start_interval_seconds
@@ -101,20 +102,43 @@ def _recognize(
                             "Existing image output has no matching resume state.",
                             code="RESUME_STATE_INVALID",
                         ) from None
-                    if cfg.resume and resume_state is not None:
+                    if (
+                        cfg.resume
+                        and resume_state is not None
+                        and resume_state.markdown
+                    ):
                         processor_output = reuse_image_resume_state(
                             resume_state,
                             resume_identity,
                         )
                     else:
+                        from .image_slot_checkpoint import ImageSlotCheckpoint
                         from .recognize_validated_images import (
                             recognize_validated_images,
                         )
 
+                        seeded_slots = ()
+                        if cfg.resume and resume_state is not None:
+                            from .validate_image_resume_identity import (
+                                validate_image_resume_identity,
+                            )
+
+                            validate_image_resume_identity(
+                                resume_state,
+                                resume_identity,
+                            )
+                            seeded_slots = resume_state.slots
+                        slot_checkpoint = ImageSlotCheckpoint(
+                            resume_identity,
+                            resume_state_path,
+                            profile=profile,
+                            seeded_slots=seeded_slots,
+                        )
                         processor_output = recognize_validated_images(
                             validated_paths,
                             profile=profile,
                             config=cfg,
+                            slot_checkpoint=slot_checkpoint,
                         )
                 else:
                     from .recognize_validated_images import recognize_validated_images
@@ -133,13 +157,17 @@ def _recognize(
         assert output_path is not None
         assert resume_identity is not None
         assert resume_state_path is not None
-        if resume_state is None:
+        if slot_checkpoint is not None:
             from .build_image_resume_state import build_image_resume_state
             from .output.save_image_resume_state_atomically import (
                 save_image_resume_state_atomically,
             )
 
-            resume_state = build_image_resume_state(resume_identity, processor_output)
+            resume_state = build_image_resume_state(
+                resume_identity,
+                processor_output,
+                slots=slot_checkpoint.slots,
+            )
             save_image_resume_state_atomically(resume_state_path, resume_state)
         if cfg.resume and output_path.exists():
             from .output.validate_image_resume_output import (
