@@ -33,7 +33,7 @@ def test_codex_refusal_retries_then_raises_with_reason():
     with pytest.raises(CodexCLIUnavailableError, match="图片模糊") as exc_info:
         _run_codex_with_output("SORRY4OCRLLM, because 图片模糊")
 
-    assert exc_info.value.run_call_count == 2
+    assert exc_info.value.run_call_count == 3
 
 
 def test_codex_sentinel_mid_document_is_returned_as_content():

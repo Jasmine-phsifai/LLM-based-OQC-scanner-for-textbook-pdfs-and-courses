@@ -287,6 +287,8 @@ class PDFProcessor(BaseProcessor):
                     total_items=len(batches),
                     extra=checkpoint_extra,
                 )
+            # 立即落盘：即使全部批次失败或进程中断，也要留下可续传入口
+            self.checkpoint_mgr.save(checkpoint)
 
             self.tracker.set_total(total_pages)
             self.tracker.start_phase("llm", "大模型识别", len(batches))
@@ -381,9 +383,71 @@ class PDFProcessor(BaseProcessor):
                             raise
                         logger.error("[PDF] 批次 %d 异常: %s", batch_idx, e)
                         self.tracker.increment_error()
+                        b_start = page_offset + batch_idx * batch_size + 1
+                        b_end = b_start + len(batches[batch_idx]) - 1
+                        failed_page_ranges.append(f"{b_start}-{b_end}" if b_end > b_start else str(b_start))
             finally:
                 self._cancel_futures(future_map)
                 executor.shutdown(wait=True, cancel_futures=True)
+
+            # --- Retry pass for failed batches ---
+            failed_batch_indices = self._collect_failed_batch_indices(
+                failed_page_ranges, batches, page_offset, batch_size
+            )
+            if failed_batch_indices and successful_batches > 0:
+                logger.info("[PDF] 开始重试 %d 个失败批次 (等待 10s 后重试)", len(failed_batch_indices))
+                self._report(0, 1, f"⏳ 等待后重试 {len(failed_batch_indices)} 个失败批次...")
+                self._sleep(10)
+                retry_failed_ranges: list[str] = []
+                retry_executor = ThreadPoolExecutor(
+                    max_workers=max(1, workers // 2), thread_name_prefix="pdf-retry"
+                )
+                retry_future_map = {}
+                try:
+                    for batch_idx in failed_batch_indices:
+                        self._check_cancelled()
+                        future = retry_executor.submit(
+                            self._process_llm_batch_tracked,
+                            batch_idx,
+                            batches[batch_idx],
+                            page_offset,
+                            prompt_template,
+                            writer,
+                            checkpoint,
+                        )
+                        retry_future_map[future] = batch_idx
+                        if stagger:
+                            self._sleep(stagger * 2)
+
+                    for future in self._iter_completed_futures(set(retry_future_map)):
+                        batch_idx = retry_future_map.pop(future, None)
+                        if batch_idx is None:
+                            continue
+                        try:
+                            idx, page_str, result, success = future.result()
+                            if success:
+                                successful_batches += 1
+                                # Remove from failed ranges on success
+                                failed_page_ranges = [
+                                    r for r in failed_page_ranges if r != page_str
+                                ]
+                            else:
+                                retry_failed_ranges.append(page_str)
+                            self._report(0, 1, f"重试完成第 {page_str} 页 ({'✓' if success else '✗'})")
+                        except CancelledError:
+                            raise
+                        except Exception as e:
+                            if is_provider_setup_error(e):
+                                raise
+                            logger.error("[PDF] 重试批次 %d 异常: %s", batch_idx, e)
+                finally:
+                    self._cancel_futures(retry_future_map)
+                    retry_executor.shutdown(wait=True, cancel_futures=True)
+                # Update failed_page_ranges to only contain still-failing pages
+                if retry_failed_ranges:
+                    failed_page_ranges = retry_failed_ranges
+                else:
+                    failed_page_ranges = []
 
             self.tracker.finish_phase("llm")
             writer.finalize()
@@ -563,6 +627,25 @@ class PDFProcessor(BaseProcessor):
             executor.shutdown(wait=True, cancel_futures=True)
 
         return "\n\n".join(parts), success
+
+    @staticmethod
+    def _collect_failed_batch_indices(
+        failed_page_ranges: list[str],
+        batches: list,
+        page_offset: int,
+        batch_size: int,
+    ) -> list[int]:
+        """Map failed page-range strings back to batch indices for retry."""
+        indices = set()
+        for r in failed_page_ranges:
+            m = re.match(r"(\d+)(?:-(\d+))?", r)
+            if not m:
+                continue
+            start = int(m.group(1))
+            idx = max(0, (start - 1 - page_offset) // batch_size)
+            if idx < len(batches):
+                indices.add(idx)
+        return sorted(indices)
 
     @staticmethod
     def _raise_if_failed_output_too_short(output_path: str, expected_pages: int) -> None:

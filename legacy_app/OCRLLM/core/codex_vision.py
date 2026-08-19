@@ -71,8 +71,8 @@ _REQUIRED_EXEC_FLAGS = (
     "--output-last-message",
 )
 
-_CODEX_VISION_MAX_ATTEMPTS = 2
-_CODEX_VISION_RETRY_DELAY_SECONDS = 3.0
+_CODEX_VISION_MAX_ATTEMPTS = 3
+_CODEX_VISION_RETRY_DELAY_SECONDS = 4.0
 
 
 class CodexCLIUnavailableError(RuntimeError):
@@ -336,6 +336,16 @@ class CodexVisionRunner:
                 except subprocess.TimeoutExpired as exc:
                     raise CodexCLIUnavailableError(f"Codex 识图超时: {exc}") from exc
                 except OSError as exc:
+                    # WinError 1455 (页面文件太小) 等属于瞬时资源压力，等待后重试
+                    if attempt < _CODEX_VISION_MAX_ATTEMPTS:
+                        logger.warning(
+                            "[CODEX] 识图启动失败（资源压力，将重试 %d/%d）: %s",
+                            attempt + 1,
+                            _CODEX_VISION_MAX_ATTEMPTS,
+                            exc,
+                        )
+                        time.sleep(max(10.0, _CODEX_VISION_RETRY_DELAY_SECONDS * attempt * 3))
+                        continue
                     raise CodexCLIUnavailableError(_codex_launch_failure_message("Codex 识图启动失败", command, exc)) from exc
 
                 if result.returncode != 0:

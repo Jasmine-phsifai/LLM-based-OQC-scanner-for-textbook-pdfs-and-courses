@@ -206,6 +206,18 @@ def classify_google_error(exc: Exception) -> ClassifiedGoogleError:
         return ClassifiedGoogleError(GoogleErrorKind.SAFETY, False, False, message)
     if "empty response" in lowered or "响应为空" in lowered:
         return ClassifiedGoogleError(GoogleErrorKind.EMPTY_RESPONSE, False, True, message)
+    if "invalid_argument" in lowered or "400" in lowered:
+        capability_markers = (
+            "modality is not enabled",
+            "input modality",
+            "only supports",
+            "is not supported",
+            "does not support",
+            "interactions api",
+        )
+        if any(marker in lowered for marker in capability_markers):
+            return ClassifiedGoogleError(GoogleErrorKind.INVALID_MODEL, True, False, message)
+        return ClassifiedGoogleError(GoogleErrorKind.BAD_RESPONSE, True, False, message)
     return ClassifiedGoogleError(GoogleErrorKind.UNKNOWN, False, False, message)
 
 
@@ -293,11 +305,22 @@ def _coerce_error_code(value) -> int | None:
 def _google_json_error_payload(text: str) -> dict | None:
     stripped = text.strip()
     if not stripped.startswith("{"):
-        return None
+        # SDK 异常常形如 "400 INVALID_ARGUMENT. {'error': {...}}"：截取首个大括号后的部分。
+        # 仅当前缀很短时才尝试，避免把含 JSON 片段的正常长响应误判为错误。
+        brace = stripped.find("{")
+        if brace == -1 or brace > 80:
+            return None
+        stripped = stripped[brace:]
+    payload = None
     try:
         payload = json.loads(stripped)
     except json.JSONDecodeError:
-        return None
+        try:
+            import ast
+
+            payload = ast.literal_eval(stripped)
+        except (ValueError, SyntaxError, MemoryError, RecursionError):
+            return None
     if not isinstance(payload, dict):
         return None
 
@@ -352,11 +375,27 @@ def _classify_google_json_error(payload: dict, original_message: str) -> Classif
     if "safety" in lowered or "blocked" in lowered:
         return ClassifiedGoogleError(GoogleErrorKind.SAFETY, False, False, original_message)
     if code and code >= 500:
+        if "high demand" in lowered or "try again later" in lowered:
+            return ClassifiedGoogleError(GoogleErrorKind.RATE_LIMIT, False, True, original_message)
         return ClassifiedGoogleError(GoogleErrorKind.BAD_RESPONSE, False, True, original_message)
     if status in {"internal", "unavailable", "deadline_exceeded"}:
+        if "high demand" in lowered or "try again later" in lowered:
+            return ClassifiedGoogleError(GoogleErrorKind.RATE_LIMIT, False, True, original_message)
         return ClassifiedGoogleError(GoogleErrorKind.BAD_RESPONSE, False, True, original_message)
     if code == 400 or status in {"invalid_argument", "bad_request", "failed_precondition", "aborted"}:
-        return ClassifiedGoogleError(GoogleErrorKind.BAD_RESPONSE, False, True, original_message)
+        # 模型能力不匹配（不支持图片输入 / 仅支持其他 API）：该模型永远失败，必须换模型
+        capability_markers = (
+            "modality is not enabled",
+            "input modality",
+            "only supports",
+            "is not supported",
+            "does not support",
+            "interactions api",
+        )
+        if any(marker in lowered for marker in capability_markers):
+            return ClassifiedGoogleError(GoogleErrorKind.INVALID_MODEL, True, False, original_message)
+        # 其余 400 属于对该模型的永久性请求错误：先重试同模型（可能是瞬时），失败后换模型
+        return ClassifiedGoogleError(GoogleErrorKind.BAD_RESPONSE, True, True, original_message)
     return ClassifiedGoogleError(GoogleErrorKind.BAD_RESPONSE, False, True, original_message)
 
 
