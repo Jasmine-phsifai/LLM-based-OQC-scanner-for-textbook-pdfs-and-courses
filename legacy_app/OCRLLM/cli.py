@@ -418,6 +418,30 @@ def _cmd_explicit(args, cfg: AppConfig):
     _run_routed_command(args, cfg, routed)
 
 
+def _build_repair_subcommand(subparsers):
+    parser = subparsers.add_parser(
+        "repair",
+        help="修复已完成 PDF 中的识别失败页（仅重新识别失败页）",
+        description="扫描已有 Markdown 输出中的 '识别失败' 占位符，仅重渲染并重新识别那些页。",
+    )
+    parser.add_argument("pdf", help="原始 PDF 文件路径")
+    parser.add_argument("md", help="已生成的识别结果 Markdown 路径")
+
+
+def _cmd_repair(args, cfg: AppConfig):
+    from OCRLLM.processors.pdf import PDFProcessor
+
+    reporter = _make_reporter()
+    proc = PDFProcessor(cfg=cfg, reporter=reporter)
+    failed_pages = proc.find_failed_pages(args.md)
+    if not failed_pages:
+        print("没有找到识别失败的页，无需修复。")
+        return
+    print(f"发现 {len(failed_pages)} 个失败页: {failed_pages}")
+    result = proc.repair(args.pdf, args.md)
+    print(f"\n修复完成: {result}")
+
+
 def main():
     """CLI 主入口 — 解析命令行参数并分发到对应子命令。
 
@@ -431,6 +455,7 @@ def main():
 
     _build_explicit_subcommands(sub)
     _build_auto_subcommand(sub)
+    _build_repair_subcommand(sub)
 
     args = parser.parse_args()
     setup_logging(logging.DEBUG if args.verbose else logging.INFO)
@@ -438,6 +463,7 @@ def main():
 
     dispatch = {spec.key: _cmd_explicit for spec in _iter_cli_specs()}
     dispatch["auto"] = cmd_auto
+    dispatch["repair"] = _cmd_repair
     dispatch[args.command](args, cfg)
 
 

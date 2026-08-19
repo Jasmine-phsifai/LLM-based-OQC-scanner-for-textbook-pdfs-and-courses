@@ -49,10 +49,16 @@ class PDFTab(QWidget):
 
         from OCRLLM.gui.app import make_action_buttons
         self._prompt = PromptButton("PDF公式识别", "pdf_formula", prompts.PDF_FORMULA, self)
+
+        from PyQt5.QtWidgets import QPushButton
+        self._repair_btn = QPushButton("🔧 修复失败页")
+        self._repair_btn.setToolTip("扫描已有识别结果中的失败页，仅重新识别那些页")
+        self._repair_btn.clicked.connect(self._run_repair)
+
         vbox.addLayout(make_action_buttons(
             "▶ 开始处理 PDF", self._run,
             self._prompt.reset_to_default,
-            extra_widgets=[self._prompt]))
+            extra_widgets=[self._prompt, self._repair_btn]))
 
     def set_input_paths(self, paths: list[str] | tuple[str, ...]):
         """从外部设置 PDF 文件路径。
@@ -136,7 +142,53 @@ class PDFTab(QWidget):
         if self._start_worker(task):
             self._prompt.consume_temporary()
 
+    def _run_repair(self):
+        pdf_paths = split_paths_text(self._pdf_path.text())
+        if not pdf_paths:
+            QMessageBox.warning(self, "提示", "请先选择需要修复的 PDF 文件")
+            return
 
+        def _output_path_for(pdf_path: str) -> str:
+            if self._get_output_in_place():
+                src_dir = os.path.dirname(os.path.abspath(pdf_path))
+                stem = os.path.splitext(os.path.basename(pdf_path))[0]
+                return os.path.join(src_dir, f"{stem}_识别.md")
+            cfg = self._get_cfg()
+            stem = os.path.splitext(os.path.basename(pdf_path))[0]
+            return os.path.join(cfg.paths.output_dir, f"{stem}_识别.md")
+
+        # Pre-check: do any output files have failed pages?
+        from OCRLLM.processors.pdf import PDFProcessor
+        repair_targets = []
+        for pdf_path in pdf_paths:
+            md_path = _output_path_for(pdf_path)
+            if not os.path.isfile(md_path):
+                continue
+            failed = PDFProcessor.find_failed_pages(md_path)
+            if failed:
+                repair_targets.append((pdf_path, md_path, failed))
+
+        if not repair_targets:
+            QMessageBox.information(self, "修复", "所选 PDF 的识别结果中没有发现失败页。")
+            return
+
+        total_pages = sum(len(f) for _, _, f in repair_targets)
+        names = ", ".join(os.path.basename(p) for p, _, _ in repair_targets)
+        prompt_text = self._prompt.prompt_text()
+
+        def task(reporter):
+            cfg = self._get_cfg()
+            results = []
+            for pdf_path, md_path, failed in repair_targets:
+                proc = PDFProcessor(cfg=cfg, reporter=reporter)
+                try:
+                    proc.repair(pdf_path, md_path, prompt_template=prompt_text or None)
+                    results.append(f"✓ {os.path.basename(pdf_path)}: {len(failed)} 页已修复")
+                except Exception as e:
+                    results.append(f"✗ {os.path.basename(pdf_path)}: {e}")
+            return f"修复完成:\n" + "\n".join(results)
+
+        self._start_worker(task)
 def _file_row(label_text, file_input, btn_text, btn_callback):
     from PyQt5.QtWidgets import QPushButton
     row = QHBoxLayout()

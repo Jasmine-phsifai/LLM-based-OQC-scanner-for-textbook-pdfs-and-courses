@@ -49,6 +49,11 @@ from OCRLLM import prompts
 
 logger = logging.getLogger(__name__)
 
+# Pattern for failed-page placeholders embedded in output markdown
+_FAILED_PAGE_RE = re.compile(
+    r"<!--\s*第\s+(\d+)(?:-\d+)?\s*(?:页识别失败|页逐页识别失败).*?-->",
+)
+
 
 class PDFProcessor(BaseProcessor):
     """PDF → Markdown 处理器。"""
@@ -675,3 +680,113 @@ class PDFProcessor(BaseProcessor):
                 Path(directory).rmdir()
             except Exception:
                 pass
+
+    # ---- Repair mode: re-recognize only failed pages in existing output ----
+
+    @staticmethod
+    def find_failed_pages(md_path: str) -> list[int]:
+        """Return 1-based page numbers that have failure placeholders."""
+        try:
+            text = Path(md_path).read_text(encoding="utf-8")
+        except OSError:
+            return []
+        return sorted(set(int(m.group(1)) for m in _FAILED_PAGE_RE.finditer(text)))
+
+    def repair(
+        self,
+        pdf_path: str,
+        md_path: str,
+        prompt_template: str = None,
+    ) -> str:
+        """Re-recognize only the failed pages in an existing output markdown.
+
+        Renders only the needed pages from the PDF, recognizes them, and
+        replaces the failure placeholders in-place.  Already-recognized pages
+        are untouched.
+
+        Returns:
+            The md_path, or raises if any pages still fail after repair.
+        """
+        failed_pages = self.find_failed_pages(md_path)
+        if not failed_pages:
+            logger.info("[PDF-REPAIR] 没有找到识别失败的页: %s", md_path)
+            return md_path
+
+        prompt_template = prompt_template or prompts.PDF_FORMULA
+        logger.info("[PDF-REPAIR] 需要修复 %d 页: %s", len(failed_pages), failed_pages)
+        self._report(0, len(failed_pages), f"修复 {len(failed_pages)} 个失败页...")
+
+        # Render only the pages we need
+        image_map: dict[int, str] = {}
+        try:
+            for idx, page_num in enumerate(failed_pages):
+                self._check_cancelled()
+                self._report(idx, len(failed_pages), f"渲染第 {page_num} 页...")
+                paths = pdf_to_images(
+                    pdf_path,
+                    dpi=self.cfg.processing.pdf_dpi,
+                    page_range=(page_num, page_num),
+                    max_side=self.cfg.processing.image_max_side,
+                    quality=self.cfg.processing.image_quality,
+                    temp_dir=self.cfg.paths.temp_dir,
+                    render_workers=1,
+                    cancel_event=self.reporter.cancel_event,
+                )
+                if paths:
+                    image_map[page_num] = paths[0]
+
+            # Recognize each failed page individually
+            results: dict[int, str] = {}
+            still_failed: list[int] = []
+            for idx, page_num in enumerate(failed_pages):
+                self._check_cancelled()
+                img = image_map.get(page_num)
+                if not img:
+                    still_failed.append(page_num)
+                    continue
+                self._report(idx + 1, len(failed_pages), f"识别第 {page_num} 页 ({idx + 1}/{len(failed_pages)})")
+                prompt = prompt_template.format(page_range=f"{page_num}-{page_num}")
+                try:
+                    if self._use_api_pool_for_llm():
+                        with self.api_pool.get_client() as client:
+                            text = client.chat_with_images(prompt=prompt, image_paths=[img])
+                    else:
+                        text = self.llm.chat_with_images(prompt=prompt, image_paths=[img])
+                    text = strip_md_fence(text)
+                    text = sanitize_llm_markdown(text)
+                    text = normalize_single_page_markdown(text, page_num)
+                    if looks_like_refusal(text):
+                        logger.warning("[PDF-REPAIR] 第 %d 页模型拒识", page_num)
+                        still_failed.append(page_num)
+                        continue
+                    results[page_num] = text
+                    self._report_content(text, f"修复识别 — 第 {page_num} 页")
+                except CancelledError:
+                    raise
+                except Exception as e:
+                    if is_provider_setup_error(e):
+                        raise
+                    logger.error("[PDF-REPAIR] 第 %d 页识别失败: %s", page_num, e)
+                    still_failed.append(page_num)
+        finally:
+            self._cleanup_images(list(image_map.values()))
+
+        if not results:
+            raise RuntimeError(f"PDF 修复识别全部 {len(failed_pages)} 页失败")
+
+        # Replace failure placeholders in the markdown
+        content = Path(md_path).read_text(encoding="utf-8")
+        for page_num, new_text in results.items():
+            pattern = re.compile(
+                r"\n*<!--\s*第\s+" + str(page_num) + r"(?:-\d+)?\s*(?:页识别失败|页逐页识别失败).*?-->\n*",
+            )
+            content = pattern.sub("\n\n" + new_text + "\n\n", content)
+
+        Path(md_path).write_text(content, encoding="utf-8")
+        logger.info(
+            "[PDF-REPAIR] 修复完成: %d/%d 页成功, %d 页仍失败 -> %s",
+            len(results), len(failed_pages), len(still_failed), md_path,
+        )
+        if still_failed:
+            raise RuntimeError(f"PDF 修复后仍有 {len(still_failed)} 页失败: {still_failed}: {md_path}")
+        return md_path
