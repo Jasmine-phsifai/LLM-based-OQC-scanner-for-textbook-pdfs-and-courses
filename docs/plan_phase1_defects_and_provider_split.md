@@ -1,6 +1,6 @@
 # Plan: Phase 1 Defect Repair And Vision/Audio Provider Split
 
-Status: **Stage 1 in progress under a separate agent.** Written 2026-08-18.
+Status: **Stage 1 closed; Stage 2 not started.** Updated 2026-08-19.
 
 > Current work for everyone else is
 > `docs/plan_phase1_maturation_and_phase2_audio.md`. Do not duplicate Stage 1
@@ -16,7 +16,7 @@ Two stages, in order. Stage 1 is not optional and does not run in parallel with
 Stage 2.
 
 ```text
-Stage 1   Repair D1-D4 in shipped surface.        Blocks everything else.
+Stage 1   Repair D1-D4 in shipped surface.        CLOSED 2026-08-18.
 Stage 2   Split provider configuration by modality (vision / audio).
 Stage 3   Phase 2 continuation.                   Not in this plan.
 ```
@@ -85,7 +85,7 @@ produced a full transcription from the same prompt and image. Prompts are
 coupled to model class. Adding a model is a prompt-contract change, not a list
 edit.
 
-## Stage 1 — Defect Repair
+## Stage 1 — Defect Repair (historical execution record; closed)
 
 ### S1.1 Refusal detection (D1)
 
@@ -163,7 +163,7 @@ verification that successes retain their `output_path` when `output_dir` is set.
   remove the orphaned `HKCU\Software\OCRLLMTests-*` keys.
 - D7: correct `source_type` / `media_type` drift in prose.
 
-### Stage 1 exit gate
+### Stage 1 exit gate (passed)
 
 - Full suite green, with new failing-first tests for D1-D4.
 - Import weight unchanged: under 150 ms, no heavy module in `sys.modules`.

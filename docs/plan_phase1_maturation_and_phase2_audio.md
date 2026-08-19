@@ -1,6 +1,7 @@
 # Plan: Phase 1 Maturation, Then Phase 2 MP3 Audio
 
-Status: **approved current work.** Written 2026-08-18.
+Status: **approved current work; Stage M partially implemented.** Updated
+2026-08-19.
 
 Read `docs/ACTIVE_STATE_AND_RULES.md` first. It defines document precedence, the
 two policy changes this plan depends on, and the coding rules.
@@ -9,8 +10,9 @@ two policy changes this plan depends on, and the coding rules.
 
 ```text
 Defect repair D1-D7    docs/plan_phase1_defects_and_provider_split.md, Stage 1.
-                       IN PROGRESS under a separate agent. Do not duplicate.
-Phase 1 maturation     This document, Stage M. Current work.
+                       CLOSED 2026-08-18. Do not duplicate.
+Phase 1 maturation     This document, Stage M. Partially implemented; current
+                       findings are in docs/ACTIVE_STATE_AND_RULES.md.
 Phase 2 mp3 audio      This document, Stage A. Not started. Plan only.
 Provider modality split  docs/plan_phase1_defects_and_provider_split.md, Stage 2.
                        Prerequisite for Stage A.
@@ -29,8 +31,9 @@ Stage M and the defect repair touch adjacent code. The boundary is:
 | Automatic disclosed model-switching recovery | Stage M |
 | Freezing `worker/` and `contracts/` | Stage M |
 
-Stage M assumes D1-D4 have landed. If they have not, rebase onto them rather
-than reimplementing them.
+Stage M assumes D1-D4 have landed. They have landed; the residual D4
+intra-request checkpoint limitation remains open and is not silently treated as
+closed.
 
 ## Why Phase 1 Is Reopened
 
@@ -65,12 +68,13 @@ Required behavior:
   returning 239 entries.
 - Validate a caller's model against the live catalog. Unknown means "the
   provider does not serve this", not "this repository has not heard of it".
-- Cache the catalog for the process lifetime. Discovery must not add a network
-  round trip to every recognition.
+- Cache successful catalogs for 600 seconds. Discovery must not add a network
+  round trip to every recognition; an expired successful catalog remains usable
+  during a refresh outage.
 - Discovery must be lazy and must never run during plain `import ocrllm`.
-- Never make the catalog fetch a hard dependency of recognition. If discovery
-  fails, fall back to attempting the caller's explicit model and let the
-  provider reject it. A catalog outage must not block a valid request.
+- A first catalog failure must fail closed with retryable
+  `PROVIDER_CATALOG_UNAVAILABLE`; do not send an unverified model to a paid
+  provider call when the catalog is unavailable.
 - Keep the evidence baseline pinned and named in result metadata. A model
   outside the baseline is usable and must be reported as unproven.
 
@@ -188,7 +192,7 @@ The documentation rules in `docs/ACTIVE_STATE_AND_RULES.md` apply. Concretely:
 
 ## Stage A — Phase 2: MP3-Only Audio Recognizer
 
-**Not started. Plan only. Do not begin until Stage M exits.**
+**Not started. Plan only. Do not begin until Stage M exits and Stage 2 lands.**
 
 Phase 2's original framing was an Electron JSONL worker. That is superseded:
 the worker is frozen and Phase 2 is redefined as the first audio capability.

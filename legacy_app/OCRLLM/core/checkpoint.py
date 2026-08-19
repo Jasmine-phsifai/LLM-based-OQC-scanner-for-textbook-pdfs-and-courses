@@ -306,8 +306,21 @@ class CheckpointManager:
                     return checkpoint
         return incomplete[0]
 
-    def remove_with_artifacts(self, checkpoint: Checkpoint):
-        """删除检查点及其产生的临时文件/输出。"""
+    def cancel(self, checkpoint: Checkpoint):
+        """取消检查点，但保留所有已经生成的输出。"""
+        logger.info(
+            "[CP] 取消任务，保留已生成输出: %s -> %s",
+            checkpoint.source_path,
+            checkpoint.output_path,
+        )
+        self.remove(checkpoint.task_type, checkpoint.source_path)
+
+    def remove_with_artifacts(self, checkpoint: Checkpoint, *, delete_outputs: bool = False):
+        """删除检查点；仅显式要求时才删除输出。"""
+        if not delete_outputs:
+            self.cancel(checkpoint)
+            return
+
         import shutil
 
         output_path = checkpoint.output_path

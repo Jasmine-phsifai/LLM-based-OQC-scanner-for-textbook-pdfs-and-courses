@@ -7,9 +7,9 @@ hard signal before editing or importing anything.
 including this one, and it carries current state, the open defect register, and
 the coding and documentation rules.
 
-**Documentation in this repo lags the code.** Historical `docs/phase*` files
-record conclusions that were true only on their own date. Verify capability
-claims against code and tests before relying on them.
+Current state lives in `docs/ACTIVE_STATE_AND_RULES.md`. Dated phase, decision,
+checkpoint, review, and incident files keep history only; they never override
+that file. Verify capability claims against the named code and tests.
 
 ## Active New Library
 
@@ -27,10 +27,11 @@ Read in this order:
 ```text
 docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
 docs/plan_phase1_maturation_and_phase2_audio.md
-                                      Current work: Phase 1 maturation, then
-                                      Phase 2 mp3-only audio.
+                                      Current work plan; Stage M is partially
+                                      implemented and still open.
 docs/plan_phase1_defects_and_provider_split.md
-                                      Defect repair, in progress separately.
+                                      Stage 1 closed; Stage 2 provider split
+                                      is not started.
 docs/ocrllm_library_go_no_go.md       Phase gates, file responsibilities,
                                       migrate/rewrite/reject boundary.
 src/ocrllm/README_ACTIVE_LIBRARY.md   Package boundary and capability surface.
@@ -41,8 +42,10 @@ docs/provider_cost_and_reliability_policy.md
                                       Account-specific provider policy.
 ```
 
-Everything else under `docs/` is a dated historical record. Consult one only to
-understand how a past decision was reached, never to learn current state.
+Other documents named in this read order remain current for their bounded
+purpose. Files with `phase*`, `*_decision_*`, `*_checkpoint_*`, `*_review_*`,
+or `*_incident_*` names are dated history; consult them only to understand how
+a past decision was reached, never to learn current state.
 
 Public import shape:
 
@@ -50,21 +53,20 @@ Public import shape:
 from ocrllm import Config, DashScopeSettings, VisionModelSettings, recognize
 ```
 
-Completed phase: **Phase 2A -- image library completion**. Phase 0 contract
-honesty, Phase 1 real board/image, Phase 2 JSONL worker, and Phase 2A are GO.
-Local OCR, shared execution policy, adapter-owned DashScope/model configuration,
-provider error disposition, region-bound credential scheduling, and image
-resume are verified. No later phase is active; Phase 3 PDFium remains not
-started. The Phase 2
-formal GO commit is `2db456a` and its clean Git-archive proof passes.
-The active facade now decodes valid PNG/JPEG inputs before provider dispatch,
-passes request-scoped validated snapshots isolated from later caller-path
-changes to one synchronous injected provider,
-rejects empty or control-only provider output, returns typed/redacted public
-errors, and reports
-canonical `source_type="image"` with `profile="board"`. File output remains
-optional and atomic; `output_dir=None` stays memory-only. Pillow is installed by
-the `image` extra and remains lazy during plain `import ocrllm`.
+Current phase: **Phase 1 maturation, Stage M partially implemented**. Phase 0
+contract honesty, the Phase 1 image gate, the Phase 2 development worker, and
+Phase 2A image-library completion are GO. Stage M has shipped lazy DashScope
+catalog checks, atomic file-backed image state, and an opt-in candidate queue.
+Its attempt ledger, complete disposition-gated recovery, model-aware pool
+behavior, flowed output, and resume identity migration remain open. Stage 2
+vision/audio provider splitting and Stage A mp3 recognition are not started.
+
+The public image facade decodes PNG/JPEG inputs before provider dispatch,
+passes request-scoped validated snapshots to an injected provider, rejects
+empty/control-only/refusal-shaped output, returns typed redacted errors, and
+reports canonical `source_type="image"` with `profile="board"`. File output
+is optional and atomic; `output_dir=None` stays memory-only. Pillow remains
+lazy during plain `import ocrllm`.
 
 Phase 1 uses one unified `board.v17` workflow for printed, projected,
 handwritten, formula, table, and ordered-image inputs. The Beijing live gate
@@ -77,22 +79,19 @@ Preserve
 `evidence/phase1/phase1-quality-v17-2026-07-11-cn-beijing.json`: 107,246
 bytes, SHA-256
 `6f0454d634dbe76f68f29c07a4c0ced4a047c080e46bb75dda2cb84ffca3a96b`.
-The clean Git-archive gate at `0278b66` passed 712 tests, fixture-byte identity,
-compilation, a 67,266-byte wheel, base import and timing budgets, a generated
-image recognition, and fresh `image` plus Beijing `image,dashscope` profiles.
-The image/provider and v1alpha1 worker capabilities are available. The active
-post-Phase-2 decision now authorizes only the Phase 2A provider-workflow slice.
+The clean Git-archive gate at `0278b66` is historical evidence for the image and
+worker boundaries. The current allowed work is Stage M maturation under
+`docs/plan_phase1_maturation_and_phase2_audio.md`; its exit gate has not passed.
 
-The active library has a DashScope in-memory credential scheduler and image
-resume, but no automatic retry, model fallback, or persistent/cross-process pool
-state. That absence is deliberate: adapters must not create undisclosed paid
-calls. PDF, audio, and video support remain absent. Local user PDFs/screenshots
-under `docs/` remain untracked supplemental test material, not redistributable
-gate evidence.
+The active library has a region-bound in-memory credential scheduler and
+request/batch image resume. Candidate switching is opt-in and currently
+quota-gated; it is not yet complete recovery. PDF, audio, and video support
+remain unavailable. Local user PDFs/screenshots under `docs/` are untracked
+supplemental material, not redistributable gate evidence.
 
-Phase 1 GO carries one open qualification: the quality gate's false-success
-guard cannot detect provider refusal text. See defect D1 in
-`docs/ACTIVE_STATE_AND_RULES.md`.
+The current open defect list is only in
+`docs/ACTIVE_STATE_AND_RULES.md`: residual D4 plus G1, G2, G3, G4, G5, G6, G7,
+G8, and G10. D1-D7 and F1-F4 are closed; G9 is closed.
 
 ## Legacy Application
 
@@ -100,8 +99,8 @@ Path: `legacy_app/`
 
 Use for:
 
-- Read-only behavior reference for old GUI, CLI, FastAPI, processors, and
-  launchers
+- Behavior reference and explicitly scoped maintenance for the old GUI, CLI,
+  FastAPI, processors, and launchers
 - Historical outputs and incident records used to define active-library
   fixtures
 
@@ -150,8 +149,7 @@ Need to know what to build next      -> docs/plan_phase1_maturation_and_phase2_a
 Need to change the public library API      -> src/ocrllm/ and tests/
 Need to add a downstream import feature    -> src/ocrllm/ and tests/
 Need to compare old product behavior       -> legacy_app/
-Need to fix or maintain the old app        -> stop; require a separately scoped
-                                               legacy-maintenance request
+Need to fix or maintain the old app        -> legacy_app/ plus its diary
 Need to record migration state             -> MIGRATION_STATUS.md
 Need to decide GO/NO-GO or port behavior   -> docs/ocrllm_library_go_no_go.md
 Need to debug Bilibili social-long courses -> docs/legacy_bilibili_social_long_debug_record.md

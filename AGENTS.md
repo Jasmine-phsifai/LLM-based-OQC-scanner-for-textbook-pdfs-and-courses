@@ -45,9 +45,9 @@ against code and tests before relying on them.
 
 ## Working Diary Rule (repo-wide, always on)
 
-This repo is mid-migration: `legacy_app/` is a finished-but-messy UI app,
-`src/ocrllm/` is an unfinished library with unproven behavior. Every session
-must keep a working diary.
+This repo is mid-migration: `legacy_app/` is the maintained compatibility app,
+and `src/ocrllm/` is the active library with a proven image slice and partially
+implemented Stage M maturation work. Every session must keep a working diary.
 
 - Every problem **fixed** in `legacy_app/` gets a diary entry in
   `legacy_app/AGENTS.md`.

@@ -41,11 +41,13 @@ from ocrllm import (
 )
 ```
 
-Phase 0 contract honesty, Phase 1 real board/image, and Phase 2 versioned JSONL
-worker are GO. Phase 2A image-library completion is active; local OCR, shared
-execution policy, adapter-owned DashScope/model configuration, and provider
-error disposition are GO, credential scheduling is current, and Phase 3 PDFium
-remains not started.
+Phase 0 contract honesty, Phase 1 real board/image, the Phase 2 development
+worker, and Phase 2A image-library completion are GO. Stage M is partially
+implemented: lazy DashScope catalog validation, atomic file-backed image state,
+and an opt-in candidate queue are shipped. Complete attempt disclosure,
+disposition-gated recovery, model-aware credential scheduling, flowed output,
+and resume identity migration remain open. Stage 2 provider splitting, Phase 2
+audio, and Phase 3 PDFium are not started.
 
 The current image facade:
 
@@ -73,7 +75,9 @@ The current image facade:
   call in a direct operation or across one concurrent batch.
 - distinguishes provider permission, suspension, concurrency, quota,
   invalid-request, content-block, and transient failures and exposes immutable
-  disposition evidence without performing retries.
+  disposition evidence without performing retries. Automatic candidate
+  switching is opt-in and currently quota-gated; it is not a complete recovery
+  policy yet.
 
 The built-in DashScope board/image capability is available under the bounded
 Phase 1 contract. The v17 Beijing gate completed exactly 52 provider calls with
@@ -98,10 +102,9 @@ lazy maintained RapidOCR/ONNX Runtime dependencies in the `ocr` extra. It makes
 zero provider/network calls and warns that OCR text extraction is not equivalent
 to formula/table/layout-aware vision. Its clean committed and fresh-extra gates
 pass.
-The adapter requires an explicit matching region and endpoint, accepts
-`qwen3.7-plus`, the default pinned `qwen3.7-plus-2026-05-26`, and explicit
-configured scout work, disables OpenAI SDK retries, and builds Base64 data
-URLs rather than sending local paths. The v17 evidence candidate uses one
+The adapter requires an explicit matching region and endpoint, disables OpenAI
+SDK retries, and builds Base64 data URLs rather than sending local paths. The
+v17 evidence candidate uses one
 thinking-enabled pinned Qwen3.7 transcript plus three independent
 thinking-enabled omission ledgers from the same pinned model, each conditioned
 on the quoted inert primary. Only exact allowlisted records can reach
@@ -111,20 +114,19 @@ complete primary transcription remains unchanged. Exact dynamic scout-prompt
 hashes and byte counts are returned in metadata.
 Qwen-VL Max remains an explicit supported scout option but is not the Phase 1
 evidence baseline. A DashScope in-memory credential scheduler and image resume
-are available; there is still no automatic retry, model fallback, or
-cross-process pool state, and that absence is deliberate. PDF, audio, and video
-remain unavailable.
+are available; candidate switching is incomplete and there is no cross-process
+pool state. PDF, audio, and video remain unavailable.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.
 
 ## Known Defects In This Package
 
-Do not treat the capability description above as defect-free. Open items are
-registered in `../../docs/ACTIVE_STATE_AND_RULES.md`. Defects D1-D7 were closed
-on 2026-08-18; the one item left open there is intra-request checkpointing, so a
-crash inside a single `recognize()` call still discards that call's provider
-work.
+The current open items are registered in
+`../../docs/ACTIVE_STATE_AND_RULES.md`: residual D4 plus G1, G2, G3, G4, G5,
+G6, G7, G8, and G10. D1-D7 and F1-F4 are closed; G9 is closed. A crash inside
+a single `recognize()` call can still discard that call's completed provider
+work because flowed output is not implemented.
 
 Read `../../docs/ACTIVE_STATE_AND_RULES.md` first: it carries current state, the
 defect register, and the coding rules. Then read

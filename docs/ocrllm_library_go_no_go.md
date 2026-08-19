@@ -1,7 +1,7 @@
 # OCRLLM Library Go/No-Go Execution Decision
 
-Status: active execution contract, **outranked by
-`docs/ACTIVE_STATE_AND_RULES.md`**.
+Status: active execution contract for gates and boundaries, **outranked by
+`docs/ACTIVE_STATE_AND_RULES.md` for all current status**.
 
 Decision date: 2026-07-12. Precedence and current state revised 2026-08-18.
 
@@ -12,7 +12,9 @@ this file and that file disagree, that file wins.
 The dated narrative entries appended under "Verification Commands" are an
 immutable record of past attempts. Each states a conclusion that was true only
 on its own date, and many read "Phase 1 remains NO-GO" because that was true
-when written. Do not cite any of them as current state.
+when written. Do not cite any of them as current state. Current shipped status,
+open defects, and next work are only in
+`docs/ACTIVE_STATE_AND_RULES.md`.
 
 This file remains authoritative for phase gates, file responsibilities, and the
 migrate/rewrite/reject boundary. Tests and runtime trials establish evidence and
@@ -95,10 +97,10 @@ DEFERRED:
 - Offline VLM/ASR models, GPU packages, Office documents, social downloads, and
   native/WASM engines.
 
-## Current Truth
+## Historical Gate Baseline
 
-Phase 0/1/2 transition evidence and current implementation truth, as of
-2026-07-12:
+The following records the Phase 0/1/2 transition baseline as of 2026-07-12. It
+is retained for gate provenance, not as a current implementation inventory.
 
 - Phase 0 is GO at commit `5018ad0`. Phase 1 is GO after the passing v17 live
   gate and the clean committed-wheel proof at `0278b66`. Phase 2 is GO after

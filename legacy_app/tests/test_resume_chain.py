@@ -138,6 +138,62 @@ class ResumeContractTests(unittest.TestCase):
             self.assertEqual(selected.resume_key, video_cp.resume_key)
 
 
+class CheckpointCleanupTests(unittest.TestCase):
+    def test_cancelling_incomplete_tasks_preserves_generated_outputs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pdf_source = os.path.join(tmp, "book.pdf")
+            pdf_output = os.path.join(tmp, "book_识别.md")
+            audio_source = os.path.join(tmp, "lecture.mp3")
+            audio_output = os.path.join(tmp, "lecture_录音识别.md")
+            video_source = os.path.join(tmp, "lecture.mp4")
+            video_output = os.path.join(tmp, "lecture")
+            for source_path in (pdf_source, audio_source, video_source):
+                with open(source_path, "wb") as source_file:
+                    source_file.write(b"source")
+            with open(pdf_output, "w", encoding="utf-8") as output_file:
+                output_file.write("recognized PDF")
+            with open(audio_output, "w", encoding="utf-8") as output_file:
+                output_file.write("recognized transcript")
+            os.makedirs(video_output)
+            video_board = os.path.join(video_output, "lecture_板书识别.md")
+            video_transcript = os.path.join(video_output, "lecture_录音识别.md")
+            for output_path in (video_board, video_transcript):
+                with open(output_path, "w", encoding="utf-8") as output_file:
+                    output_file.write("recognized video result")
+
+            manager = CheckpointManager(tmp)
+            cases = [
+                ("pdf", pdf_source, pdf_output, [pdf_output]),
+                ("audio", audio_source, audio_output, [audio_output]),
+                ("video", video_source, video_output, [video_board, video_transcript]),
+            ]
+
+            for task_type, source_path, output_path, preserved_paths in cases:
+                checkpoint = Checkpoint(task_type, source_path, output_path, 3)
+                manager.save(checkpoint)
+                manager.remove_with_artifacts(checkpoint)
+
+                self.assertIsNone(manager.load(task_type, source_path))
+                for preserved_path in preserved_paths:
+                    self.assertTrue(os.path.exists(preserved_path), preserved_path)
+
+    def test_output_deletion_requires_explicit_opt_in(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source_path = os.path.join(tmp, "book.pdf")
+            output_path = os.path.join(tmp, "book_识别.md")
+            with open(source_path, "wb") as source_file:
+                source_file.write(b"source")
+            with open(output_path, "w", encoding="utf-8") as output_file:
+                output_file.write("recognized PDF")
+
+            manager = CheckpointManager(tmp)
+            checkpoint = Checkpoint("pdf", source_path, output_path, 3)
+            manager.save(checkpoint)
+            manager.remove_with_artifacts(checkpoint, delete_outputs=True)
+
+            self.assertFalse(os.path.exists(output_path))
+
+
 class VideoPhase4ResumeTests(unittest.TestCase):
     def _make_context(self, tmp: str) -> VideoProcessContext:
         return VideoProcessContext(

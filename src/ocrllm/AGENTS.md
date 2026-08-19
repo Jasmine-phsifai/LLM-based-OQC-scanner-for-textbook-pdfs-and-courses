@@ -8,8 +8,10 @@ documentation rules. Then read `../../docs/ocrllm_library_go_no_go.md` for phase
 gates and file responsibilities.
 
 The approved current work is
-`../../docs/plan_phase1_maturation_and_phase2_audio.md`. Do not start unrelated
-feature work ahead of it.
+`../../docs/plan_phase1_maturation_and_phase2_audio.md`. Stage M is partially
+implemented; its open G findings and the residual D4 limitation are recorded
+in `../../docs/ACTIVE_STATE_AND_RULES.md`. Do not start unrelated feature work
+ahead of the current plan.
 
 `contracts/` and `worker/` are frozen. Do not change them.
 
