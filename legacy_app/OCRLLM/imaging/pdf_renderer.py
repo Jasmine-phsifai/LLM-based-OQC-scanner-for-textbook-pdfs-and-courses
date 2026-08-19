@@ -20,6 +20,13 @@ from OCRLLM.core.task_runner import CancelledError
 logger = logging.getLogger(__name__)
 
 
+def _pixmap_to_pil(pix: "fitz.Pixmap") -> Image.Image:
+    if pix.alpha or pix.colorspace is None or pix.colorspace.n > 3:
+        pix = fitz.Pixmap(fitz.csRGB, pix)
+    mode = "RGB" if pix.n >= 3 else "L"
+    return Image.frombytes(mode, (pix.width, pix.height), pix.samples)
+
+
 def _render_one_page(
     pdf_path: str,
     page_index: int,
@@ -45,16 +52,27 @@ def _render_one_page(
         # 中断/进程被杀不能留下截断图片（会被识图提供方静默当成"无法识别"）
         tmp_path = atomic_temp_path(img_path)
         try:
-            pix.save(tmp_path)
-            with Image.open(tmp_path) as check:
-                check.load()
+            try:
+                pix.save(tmp_path, jpg_quality=quality)
+                with Image.open(tmp_path) as check:
+                    check.load()
+            except Exception as first_err:
+                # MuPDF 的 JPEG 流偶发无法被 PIL 解码；改用 PIL 从像素重编码兜底。
+                logger.warning(
+                    "[PDF2IMG] 第 %d 页 MuPDF 编码校验失败(%s)，改用 PIL 重编码",
+                    page_index + 1, first_err,
+                )
+                img = _pixmap_to_pil(pix)
+                img.save(tmp_path, format="JPEG", quality=quality)
+                with Image.open(tmp_path) as check:
+                    check.load()
             os.replace(tmp_path, img_path)
-        except Exception:
+        except Exception as err:
             try:
                 os.remove(tmp_path)
             except OSError:
                 pass
-            raise
+            raise RuntimeError(f"第 {page_index + 1} 页渲染失败: {err}") from err
         return page_index, img_path
     finally:
         doc.close()
@@ -101,6 +119,10 @@ def pdf_to_images(
 
     workers = resolve_workers(configured=render_workers, task_count=len(indices), hard_cap=8)
     logger.info("[PDF2IMG] 并行渲染: 页数=%d, workers=%d", len(indices), workers)
+
+    # PIL 的解码器注册是惰性且非线程安全的；多线程首次 Image.open 竞态会报
+    # "broken data stream"。先在主线程完成注册。
+    Image.init()
 
     if progress_callback:
         progress_callback(0, len(indices))

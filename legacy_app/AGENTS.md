@@ -205,6 +205,32 @@ raised both defaults to 1800 seconds and the GUI maximum to 7200 seconds;
 judgement: yes, a future Codex adapter should have one authoritative timeout
 default and a UI/config range capable of representing it.
 
+## 2026-08-19 — PDF parallel render dies with "broken data stream" (fixed)
+
+What broke: Codex mode on a 581-page PDF aborted at page-render time with
+`OSError: broken data stream when reading image file`, raised from the
+decode-verify inside `imaging/pdf_renderer.py::_render_one_page`. The log
+showed `Importing JpegImagePlugin` once per worker thread — all 8 threads hit
+`Image.open()` while PIL's lazy, non-thread-safe codec registry was still
+initializing, a known source of transient decode failures. The verify step
+(added 2026-08-18 to catch truncated files) treated one transient failure as
+fatal for the whole task, and `quality` was silently ignored (`pix.save` was
+called without `jpg_quality`).
+
+Fix: (1) `Image.init()` in the main thread before spawning render workers;
+(2) on verify failure, re-encode that page via PIL from the pixmap samples
+(`_pixmap_to_pil`, handles alpha/CMYK) instead of failing the task; (3) pass
+`jpg_quality=quality` to `pix.save`; (4) render errors now carry the 1-based
+page number. Verified: 8 renderer/atomic tests pass plus a live 6-page
+parallel-render smoke.
+
+Carry-forward judgement: yes. WARNING FOR src/ocrllm: when the PDF slice is
+ported, (a) never let worker threads perform PIL's first `Image.open` —
+initialize the registry up front; (b) a decode-verify guard must have a
+fallback encoder or per-page retry, or it converts a transient glitch into a
+whole-task failure on large documents; (c) don't accept a `quality` parameter
+that the MuPDF save path ignores.
+
 **Task C — Codex had no machine-readable refusal contract.** What broke: a
 successful CLI exit containing refusal prose was indistinguishable from OCR
 content, while phrase guessing is incomplete and language-dependent. Root
