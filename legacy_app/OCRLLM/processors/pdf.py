@@ -276,6 +276,7 @@ class PDFProcessor(BaseProcessor):
                 else:
                     if checkpoint is not None:
                         logger.warning("[PDF] 检查点与当前任务参数不兼容，忽略旧检查点")
+                        self._report(0, 1, "⚠ 检查点与当前参数（提示词/批次/页码）不兼容，将重新识别")
                     checkpoint = None
 
             if checkpoint is None:

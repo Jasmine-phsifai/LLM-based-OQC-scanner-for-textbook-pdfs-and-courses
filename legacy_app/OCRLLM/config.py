@@ -60,6 +60,26 @@ def _default_home_dir() -> Path:
         return Path(tempfile.gettempdir()) / "OCRLLM"
 
 
+def _existing_legacy_data_root() -> Path | None:
+    """已有历史数据（检查点/输出）的老数据根目录。
+
+    默认目录曾从安装目录迁到 ~/OCRLLM，导致老安装的检查点对应用不可见、
+    断点续传横幅消失。若旧数据根仍持有检查点，就继续沿用它。
+    """
+    here = Path(__file__).resolve()
+    candidates = []
+    if len(here.parents) >= 3:
+        candidates.append(here.parents[2])  # 仓库根（历史真实数据位置）
+    candidates.append(here.parent)  # 旧默认 <package>/output
+    for root in candidates:
+        try:
+            if (root / "output" / ".checkpoints").is_dir():
+                return root
+        except OSError:
+            continue
+    return None
+
+
 @dataclass
 class APIConfig:
     """API 连接配置（密钥、地址、付费模式）。"""
@@ -275,9 +295,14 @@ class AppConfig:
 
     def __post_init__(self):
         # 默认输出/临时目录不能放在安装包目录里面：安装目录在其他机器上
-        # 可能不可写（系统目录/共享安装），且跨机器不可预测。
-        # 可通过 OCRLLM_HOME 环境变量或 PathConfig 显式覆盖。
-        default_home = Path(os.environ.get("OCRLLM_HOME") or _default_home_dir())
+        # 可能不可写（系统目录/共享安装），但已有历史检查点的老安装必须
+        # 继续沿用旧目录，否则断点续传会“消失”。
+        # 优先级：显式 PathConfig > OCRLLM_HOME > 已有数据的旧根 > ~/OCRLLM。
+        env_home = os.environ.get("OCRLLM_HOME")
+        if env_home:
+            default_home = Path(env_home)
+        else:
+            default_home = _existing_legacy_data_root() or _default_home_dir()
         if not self.paths.output_dir:
             self.paths.output_dir = str(default_home / "output")
         if not self.paths.temp_dir:

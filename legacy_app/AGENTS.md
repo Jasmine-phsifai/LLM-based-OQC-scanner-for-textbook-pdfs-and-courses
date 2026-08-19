@@ -231,6 +231,35 @@ fallback encoder or per-page retry, or it converts a transient glitch into a
 whole-task failure on large documents; (c) don't accept a `quality` parameter
 that the MuPDF save path ignores.
 
+## 2026-08-19 — resume "vanished": data-root relocation orphaned all checkpoints (fixed)
+
+What broke: after commit f1c9c11 moved the default output dir from the app
+root to `~/OCRLLM/output`, `CheckpointManager` (rooted at
+`output_dir/.checkpoints`) started looking in a brand-new empty directory.
+The 40+ real checkpoints under `<repo>/output/.checkpoints` became invisible,
+so the startup 继续任务 banner showed nothing — the user experienced this as
+"resume features disappeared". No checkpoint was ever deleted; the app was
+looking in the wrong place. Secondary issue: when a checkpoint is found but
+rejected by `is_compatible` (prompt/batch/page-range mismatch), only a log
+line was written — the GUI stayed silent.
+
+Fix: `config.py::_existing_legacy_data_root()` — when OCRLLM_HOME is unset
+and a legacy root still holds `output/.checkpoints`, keep using it; only
+fresh installs fall through to `~/OCRLLM`. Priority: explicit PathConfig >
+OCRLLM_HOME > existing legacy data root > `~/OCRLLM`. `pdf.py` now also
+surfaces checkpoint-incompatibility to the progress reporter.
+
+Also added `tests/test_pdf_render_fresh_process.py`: the PIL codec-registry
+race (previous entry) is only reproducible in a fresh interpreter with cold
+multi-threaded first decode; every in-process test was structurally unable to
+hit it. The new test renders a 40-page PDF with 8 workers in a subprocess.
+
+Carry-forward judgement: yes, twice over. WARNING FOR src/ocrllm:
+(1) never change a default data directory without a migration/continuity
+path — silent relocation orphans user state (checkpoints, outputs, resume);
+(2) concurrency/init-order bugs need at least one fresh-subprocess
+integration test; a warm pytest process masks lazy-init races permanently.
+
 **Task C — Codex had no machine-readable refusal contract.** What broke: a
 successful CLI exit containing refusal prose was indistinguishable from OCR
 content, while phrase guessing is incomplete and language-dependent. Root
