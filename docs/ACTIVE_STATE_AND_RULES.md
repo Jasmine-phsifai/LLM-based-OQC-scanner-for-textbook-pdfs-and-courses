@@ -352,9 +352,11 @@ coupled. Discovery makes a model *selectable*; it does not make it *proven*.
 The Phase 1 image path now has the first product-maturity implementation:
 
 - DashScope model selection keeps the pinned evidence baseline as metadata,
-  checks non-baseline explicit names against a lazily fetched, process-cached
-  provider catalog, and fails open to the provider request when catalog access
-  is unavailable. Catalog/network imports remain lazy.
+  checks non-baseline explicit names against a lazily fetched provider catalog,
+  and fails closed with a retryable typed error when no catalog is available.
+  Nonempty successes are cached for 600 seconds; an expired success remains
+  usable during refresh outages while later calls keep retrying the refresh.
+  Catalog/network imports remain lazy.
 - Completed file-backed image recognitions write their state sidecar atomically
   before publication, so a batch failure preserves completed units. Explicit
   resume still requires the D4 provider identity declaration for injected

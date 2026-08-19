@@ -4,15 +4,17 @@ from __future__ import annotations
 
 import json
 from threading import Lock
+from time import monotonic
 
-from ...errors import ConfigError
+from ...errors import ConfigError, ProviderError
 
 
 DEFAULT_DASHSCOPE_MODEL = "qwen3.7-plus-2026-05-26"
 SUPPORTED_DASHSCOPE_MODELS = frozenset(
     {"qwen3.7-plus", DEFAULT_DASHSCOPE_MODEL, "qwen-vl-max"}
 )
-_CATALOG_CACHE: dict[str, frozenset[str] | None] = {}
+DASHSCOPE_MODEL_CATALOG_CACHE_TTL_SECONDS = 600
+_CATALOG_CACHE: dict[str, tuple[frozenset[str], float]] = {}
 _CATALOG_LOCK = Lock()
 
 
@@ -26,7 +28,14 @@ def resolve_dashscope_model(configured_model: str | None, *, settings=None) -> s
     model = DEFAULT_DASHSCOPE_MODEL if configured_model is None else configured_model
     if settings is not None and model not in SUPPORTED_DASHSCOPE_MODELS:
         catalog = fetch_dashscope_model_catalog(settings)
-        if catalog is not None and model not in catalog:
+        if catalog is None:
+            raise ProviderError(
+                "The DashScope model catalog is temporarily unavailable.",
+                code="PROVIDER_CATALOG_UNAVAILABLE",
+                retryable=True,
+                details={"provider": "dashscope", "model": model},
+            ) from None
+        if model not in catalog:
             raise ConfigError(
                 "DashScope does not serve the requested model according to its "
                 "provider model catalog.",
@@ -36,16 +45,22 @@ def resolve_dashscope_model(configured_model: str | None, *, settings=None) -> s
 
 
 def fetch_dashscope_model_catalog(settings) -> frozenset[str] | None:
-    """Fetch and process-cache the provider catalog; outages fail open."""
+    """Return a fresh catalog, or the last success during a refresh outage."""
     cache_key = settings.base_url
+    now = monotonic()
     with _CATALOG_LOCK:
-        if cache_key in _CATALOG_CACHE:
-            return _CATALOG_CACHE[cache_key]
-    try:
-        from urllib.request import Request, urlopen
-        from .resolve_dashscope_credential import resolve_dashscope_credential
+        cached = _CATALOG_CACHE.get(cache_key)
+        if (
+            cached is not None
+            and now - cached[1] < DASHSCOPE_MODEL_CATALOG_CACHE_TTL_SECONDS
+        ):
+            return cached[0]
 
-        api_key = settings.api_key or resolve_dashscope_credential(settings)
+    from urllib.request import Request, urlopen
+    from .resolve_dashscope_credential import resolve_dashscope_credential
+
+    api_key = settings.api_key or resolve_dashscope_credential(settings)
+    try:
         request = Request(
             f"{settings.base_url.rstrip('/')}/models",
             headers={"Authorization": f"Bearer {api_key}"},
@@ -59,9 +74,15 @@ def fetch_dashscope_model_catalog(settings) -> frozenset[str] | None:
             for row in rows
             if isinstance(row, dict) and isinstance(row.get("id"), str)
         )
-        catalog = names or None
     except Exception:
-        catalog = None
+        with _CATALOG_LOCK:
+            latest_cached = _CATALOG_CACHE.get(cache_key)
+        return latest_cached[0] if latest_cached is not None else None
+
+    if not names:
+        with _CATALOG_LOCK:
+            latest_cached = _CATALOG_CACHE.get(cache_key)
+        return latest_cached[0] if latest_cached is not None else None
     with _CATALOG_LOCK:
-        _CATALOG_CACHE[cache_key] = catalog
-    return catalog
+        _CATALOG_CACHE[cache_key] = (names, monotonic())
+    return names

@@ -47,6 +47,7 @@ _DEFAULT_BY_CODE: dict[str, tuple[ProviderFailureAction, ProviderFailureScope]] 
     "PROVIDER_TIMEOUT": ("retry", "provider"),
     "PROVIDER_NETWORK": ("retry", "provider"),
     "PROVIDER_UNAVAILABLE": ("retry", "provider"),
+    "PROVIDER_CATALOG_UNAVAILABLE": ("retry", "provider"),
     "PROVIDER_REQUEST_INVALID": ("fix_request", "request"),
     "PROVIDER_CONTENT_BLOCKED": ("change_source", "request"),
     "PROVIDER_RESPONSE_INVALID": ("inspect_response", "request"),
