@@ -101,3 +101,119 @@ The complete legacy incident trace, including carry-forward warnings for future
 library ports, is in [`legacy_app/AGENTS.md`](legacy_app/AGENTS.md). Historical
 `docs/phase*`, decision, checkpoint, and review files are immutable records;
 read them only to understand why a past decision was made.
+
+## Historical Record Index
+
+This appendix restores the important material that used to be embedded in this
+navigation file. It is history, not a second current-state document. The
+linked records are the detailed source; the summaries here are deliberately
+short.
+
+### Why The Migration Happened (historical rationale)
+
+The old application imported as uppercase `OCRLLM` and combined GUI, CLI,
+FastAPI, social downloading, providers, prompts, and recognition processors in
+one surface. It also had no root package metadata, used package-relative
+runtime paths, and exposed implementation classes before a stable facade
+existed. The migration therefore moved the application to `legacy_app/` and
+rewrote proven behavior behind the small `src/ocrllm/` contract. This rationale
+remains valid; the old architecture is not a pending implementation plan.
+See [`docs/library_migration_decision.md`](docs/library_migration_decision.md)
+and [`docs/ocrllm_module_target_design.md`](docs/ocrllm_module_target_design.md).
+
+### Historical Gate Decisions
+
+- Phase 0 established the importable package and boundary contract. Its exact
+  measurements are historical and remain in
+  [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md).
+- Phase 1 progressed from exploratory `board.v*` workflows to the pinned
+  `board.v17` Beijing evidence and clean package gate at `0278b66`. The evidence
+  and every intermediate failure remain in the `phase1_*` records.
+- Phase 2 froze the development JSONL worker and process-isolation contract;
+  its live result is preserved in
+  [`docs/phase2_live_worker_result_2026-07-12.md`](docs/phase2_live_worker_result_2026-07-12.md).
+- Phase 2A added local OCR, execution policy, provider error disposition,
+  credential scheduling, and image resume. The dated checkpoint records remain
+  under `docs/`; current implementation status is in the active-state file.
+- PDF feasibility was conditionally accepted for future work using PDFium
+  through `pypdfium2`, with no `PyMuPDF`/`fitz` in the active package. The
+  feasibility result did not authorize Phase 3 support; the current go/no-go
+  gate remains the authority.
+
+### Historical Gate Criteria
+
+The migration's historical definition of “done” required more than source code:
+offline tests, compilation, a clean Git-archive wheel, an isolated install,
+plain-import dependency isolation, fixture-byte/provenance checks, and a real
+provider gate where the phase required one. A failing or unverified gate was to
+remain recorded rather than be converted into a pass. The exact commands and
+older measurements remain in
+[`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md) and the
+dated phase records.
+
+### Historical Provider And Resume Decisions
+
+The following decisions are preserved as dated records rather than copied into
+the current status prose:
+
+- provider/model configuration:
+  [`docs/provider_workflow_configuration_decision_2026-07-12.md`](docs/provider_workflow_configuration_decision_2026-07-12.md)
+- error taxonomy and dispositions:
+  [`docs/provider_error_disposition_decision_2026-07-12.md`](docs/provider_error_disposition_decision_2026-07-12.md)
+- credential-pool fairness and region binding:
+  [`docs/dashscope_credential_pool_decision_2026-07-12.md`](docs/dashscope_credential_pool_decision_2026-07-12.md)
+- image resume and versioned state:
+  [`docs/image_resume_decision_2026-07-12.md`](docs/image_resume_decision_2026-07-12.md)
+- local OCR boundary and optional dependency:
+  [`docs/local_ocr_implementation_checkpoint_2026-07-12.md`](docs/local_ocr_implementation_checkpoint_2026-07-12.md)
+- implementation and review chronology:
+  [`docs/phase1_implementation_record.md`](docs/phase1_implementation_record.md)
+
+These records explain why the current package is lightweight, lazy-importing,
+typed at public boundaries, secret-redacting, and cautious about paid recovery.
+They do not override the current Stage M findings.
+
+### Historical Legacy Workflows
+
+The old application workflows were not deleted during the migration. Their
+current boundary and incident history remain in:
+
+- [`docs/legacy_bilibili_social_long_debug_record.md`](docs/legacy_bilibili_social_long_debug_record.md)
+- [`docs/legacy_youtube_playlist_social_long_workflow.md`](docs/legacy_youtube_playlist_social_long_workflow.md)
+- [`docs/legacy_filetrans_codex_debug_record.md`](docs/legacy_filetrans_codex_debug_record.md)
+- [`legacy_app/AGENTS.md`](legacy_app/AGENTS.md)
+
+These records retain the two-Markdown social-long contract, resume/download
+sidecars, Codex and FileTrans failure handling, Windows path lessons, and the
+carry-forward warnings required when a vertical slice is ported. They are
+legacy compatibility history, not active-library capability claims.
+
+### Suspended Or Deferred Directions
+
+The following directions remain traceable but are not current work:
+
+- Rust/PyO3 rewrite: suspended in [`Architecture.md`](Architecture.md).
+- HarmonyOS/ArkTS: deferred by the active go/no-go decision.
+- Browser/React service: deferred until the core modality contracts are useful.
+- Social downloading in `src/ocrllm`: rejected as a new-library boundary;
+  retained only in `legacy_app/`.
+- PDF, audio, and video in the active package: phase-gated and not started as
+  stated in the current active-state document.
+
+## Obsolete Prose Kept For Trace
+
+Some old statements were removed from the navigation surface because they were
+contradictory, not because their history was unimportant. Treat these as
+**obsolete**, not current guidance:
+
+- the old Phase 0/Phase 1 test counts and timing numbers;
+- the pre-2026-08-18 claim that Stage M was not started;
+- the earlier “no retry, model fallback, or provider switching” policy, which
+  was replaced by disclosed opt-in recovery;
+- the three-model DashScope allowlist as a caller-choice gate;
+- the original Electron-worker-as-Phase-2 framing;
+- any historical `Phase 1 remains NO-GO` sentence from a dated attempt before
+  the pinned v17 gate.
+
+The original wording remains recoverable in Git history and in the dated
+records. It is not silently presented as current behavior.

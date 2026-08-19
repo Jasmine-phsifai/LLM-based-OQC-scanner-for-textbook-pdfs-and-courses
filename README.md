@@ -150,6 +150,26 @@ The full incident trace and carry-forward warnings are in
 [`legacy_app/AGENTS.md`](legacy_app/AGENTS.md). Historical phase conclusions
 are immutable; current status is never inferred from them.
 
+## Historical References
+
+Important decisions and incident histories remain available without being
+mistaken for current status:
+
+- migration rationale and target architecture:
+  [`docs/library_migration_decision.md`](docs/library_migration_decision.md) and
+  [`docs/ocrllm_module_target_design.md`](docs/ocrllm_module_target_design.md)
+- provider, error, credential-pool, local-OCR, and resume decisions:
+  [`MIGRATION_STATUS.md`](MIGRATION_STATUS.md#historical-provider-and-resume-decisions)
+- Phase 1 and Phase 2 evidence chronology:
+  [`docs/phase1_implementation_record.md`](docs/phase1_implementation_record.md)
+  and [`docs/phase2_live_worker_result_2026-07-12.md`](docs/phase2_live_worker_result_2026-07-12.md)
+- legacy social-long and FileTrans/Codex workflows:
+  [`MIGRATION_STATUS.md`](MIGRATION_STATUS.md#historical-legacy-workflows)
+
+Superseded counts, NO-GO conclusions from earlier attempts, the old fixed model
+allowlist, and the original Electron Phase 2 framing are retained as obsolete
+history in the dated records and Git history. They are not current claims.
+
 ## Verification
 
 Offline active-library checks:
