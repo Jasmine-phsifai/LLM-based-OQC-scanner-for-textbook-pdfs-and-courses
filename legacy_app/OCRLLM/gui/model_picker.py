@@ -13,10 +13,11 @@ UI 元素：
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QAbstractItemView, QButtonGroup, QCheckBox, QDialog,
@@ -27,6 +28,10 @@ from PyQt5.QtWidgets import (
 
 from OCRLLM.core import model_catalog
 from OCRLLM.core.model_catalog import AudioModel, VisionModel
+
+# Shared with the picker's own "fetch now" button; kept separate from
+# settings_dialog's executor since this module must not import that one.
+_PICKER_FETCH_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ocrllm-picker-fetch")
 
 
 _VISION_KIND_FILTERS = [
@@ -55,10 +60,12 @@ class ModelPickerDialog(QDialog):
         kind: str,        # "vision" 或 "audio"
         current_name: str = "",
         on_validate_custom=None,    # callable(name) -> bool, 用于测试自定义模型
+        on_fetch_live: Optional[Callable[[], None]] = None,  # 无参真实拉取，失败时 raise
     ):
         super().__init__(parent)
         self._kind = kind
         self._on_validate_custom = on_validate_custom
+        self._on_fetch_live = on_fetch_live
         self._selected_name: str = current_name
         self._init_ui()
         self._reload_table()
@@ -92,6 +99,11 @@ class ModelPickerDialog(QDialog):
         self._only_free.setChecked(True)
         self._only_free.toggled.connect(self._reload_table)
         search_row.addWidget(self._only_free)
+        self._fetch_live_btn = QPushButton("🔄 拉取最新模型")
+        self._fetch_live_btn.setToolTip("实时调用 /models 获取当前账号真实模型列表，不是静态清单")
+        self._fetch_live_btn.clicked.connect(self._on_fetch_live_clicked)
+        self._fetch_live_btn.setVisible(self._on_fetch_live is not None)
+        search_row.addWidget(self._fetch_live_btn)
         layout.addLayout(search_row)
 
         # 分类 radio (横向 chip)
@@ -142,7 +154,7 @@ class ModelPickerDialog(QDialog):
         # 底部：当前选中 + OK / Cancel
         bottom_row = QHBoxLayout()
         self._selected_label = QLabel("未选中任何模型")
-        self._selected_label.setFont(QFont("Microsoft YaHei", 9, QFont.Bold))
+        self._selected_label.setFont(QFont("", 9, QFont.Bold))
         bottom_row.addWidget(self._selected_label, stretch=1)
         ok_btn = QPushButton("✅ 选中此模型")
         ok_btn.clicked.connect(self._on_ok)
@@ -153,6 +165,32 @@ class ModelPickerDialog(QDialog):
         layout.addLayout(bottom_row)
 
     # ---- 行为 ----
+
+    def _on_fetch_live_clicked(self):
+        if self._on_fetch_live is None:
+            return
+        self._fetch_live_btn.setEnabled(False)
+        self._fetch_live_btn.setText("拉取中...")
+        future = _PICKER_FETCH_EXECUTOR.submit(self._on_fetch_live)
+        timer = QTimer(self)
+
+        def _poll():
+            if not future.done():
+                return
+            timer.stop()
+            timer.deleteLater()
+            self._fetch_live_btn.setEnabled(True)
+            self._fetch_live_btn.setText("🔄 拉取最新模型")
+            try:
+                future.result()
+            except Exception as exc:  # noqa: BLE001 - surfaced to the user
+                QMessageBox.warning(self, "拉取失败", str(exc))
+                return
+            self._reload_table()
+            QMessageBox.information(self, "拉取完成", "模型列表已根据当前账号实时更新。")
+
+        timer.timeout.connect(_poll)
+        timer.start(80)
 
     def _current_kind_filter(self) -> Optional[str]:
         idx = self._kind_group.checkedId()

@@ -13,16 +13,22 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from PyQt5.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QGroupBox,
+    QApplication, QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QGroupBox,
     QHBoxLayout, QLabel, QLineEdit, QListWidget, QMessageBox,
     QPushButton, QScrollArea, QSpinBox, QVBoxLayout,
     QWidget, QFrame, QAbstractItemView,
 )
-from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtCore import QSettings, Qt, QTimer
+
+# Shared pool for background model-list fetches so a slow /models call or a
+# stalled google.com probe never blocks the settings window's event loop.
+_FETCH_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="ocrllm-model-fetch")
 
 from OCRLLM.config import AppConfig, normalize_google_ocr_vision_model
 from OCRLLM.core import model_catalog
@@ -104,6 +110,7 @@ class SettingsDialog(QDialog):
         self._cfg = cfg
         self._settings = QSettings(SETTINGS_ORG, SETTINGS_APP)
         self._restoring_settings = False
+        self._active_fetch_timers: list[QTimer] = []
 
         self._pending_vision_model: str = cfg.models.vision_model
         self._pending_audio_model: str = cfg.models.asr_model
@@ -169,6 +176,73 @@ class SettingsDialog(QDialog):
         self._refresh_dashscope_models_btn.clicked.connect(lambda: self._refresh_bailian_models(force=True, notify=True))
         row2.addWidget(self._refresh_dashscope_models_btn)
         dash_layout.addLayout(row2)
+
+        # 视觉/音频模型选择（生效模型；被 Codex 或独立视觉 Provider 接管时改由那边写回同一字段）
+        vis_model_row = QHBoxLayout()
+        vis_model_row.addWidget(QLabel("主视觉模型:"))
+        self._vision_model_combo = QComboBox()
+        self._vision_model_combo.setEditable(True)
+        self._vision_model_combo.setMinimumWidth(280)
+        self._vision_model_combo.setToolTip("主模型 ID；可直接输入或从扫描列表/内置清单选择")
+        self._vision_model_combo.currentTextChanged.connect(self._on_vision_model_text_changed)
+        vis_model_row.addWidget(self._vision_model_combo, stretch=1)
+        self._btn_pick_vision = QPushButton("选择模型...")
+        self._btn_pick_vision.clicked.connect(self._open_vision_picker)
+        vis_model_row.addWidget(self._btn_pick_vision)
+        dash_layout.addLayout(vis_model_row)
+
+        vision_shared_hint = QLabel(
+            "此字段是最终生效的视觉模型；启用「本机 Codex 识图」或「独立视觉 Provider」时，"
+            "会由那边的模型选择改写这里，而不是各自维护一份。"
+        )
+        vision_shared_hint.setWordWrap(True)
+        dash_layout.addWidget(vision_shared_hint)
+
+        # 模型降级队列
+        queue_group = QGroupBox("模型降级队列（主模型额度耗尽时自动按顺序切换）")
+        queue_outer = QVBoxLayout(queue_group)
+
+        self._model_queue_list = QListWidget()
+        self._model_queue_list.setAlternatingRowColors(True)
+        self._model_queue_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self._model_queue_list.setToolTip("优先级从上到下递减；主模型耗尽后依次尝试队列中的模型。\n留空则不启用降级切换。")
+        self._model_queue_list.setMaximumHeight(140)
+        queue_outer.addWidget(self._model_queue_list)
+
+        queue_btn_row = QHBoxLayout()
+        btn_add_scanned = QPushButton("添加扫描模型")
+        btn_add_scanned.setToolTip("从扫描结果下拉框中选择模型添加到队列")
+        btn_add_scanned.clicked.connect(self._on_queue_add_scanned)
+        queue_btn_row.addWidget(btn_add_scanned)
+        btn_add_all = QPushButton("全选扫描模型")
+        btn_add_all.setToolTip("将所有扫描到的模型全部加入降级队列（免费 API 适用）")
+        btn_add_all.clicked.connect(self._on_queue_select_all)
+        queue_btn_row.addWidget(btn_add_all)
+        btn_remove = QPushButton("移除选中")
+        btn_remove.clicked.connect(self._on_queue_remove)
+        queue_btn_row.addWidget(btn_remove)
+        btn_up = QPushButton("↑ 上移")
+        btn_up.clicked.connect(self._on_queue_move_up)
+        queue_btn_row.addWidget(btn_up)
+        btn_down = QPushButton("↓ 下移")
+        btn_down.clicked.connect(self._on_queue_move_down)
+        queue_btn_row.addWidget(btn_down)
+        queue_btn_row.addStretch()
+        queue_outer.addLayout(queue_btn_row)
+        dash_layout.addWidget(queue_group)
+
+        # 音频模型（仅 DashScope 长录音识别使用）
+        audio_model_row = QHBoxLayout()
+        audio_model_row.addWidget(QLabel("音频模型:"))
+        self._audio_model_label = QLabel()
+        self._audio_model_label.setStyleSheet("font-weight: bold; padding: 2px 8px;")
+        audio_model_row.addWidget(self._audio_model_label, stretch=1)
+        btn_pick_audio = QPushButton("选择模型...")
+        btn_pick_audio.clicked.connect(self._open_audio_picker)
+        audio_model_row.addWidget(btn_pick_audio)
+        dash_layout.addLayout(audio_model_row)
+
+        self._refresh_model_labels()
 
         body_layout.addWidget(dash_group)
 
@@ -372,72 +446,6 @@ class SettingsDialog(QDialog):
 
         body_layout.addWidget(vis_group)
 
-        # ---- 模型选择 ----
-        model_group = QGroupBox("模型选择")
-        model_layout = QVBoxLayout(model_group)
-
-        # 主模型行
-        vis_model_row = QHBoxLayout()
-        vis_model_row.addWidget(QLabel("主视觉模型:"))
-        self._vision_model_combo = QComboBox()
-        self._vision_model_combo.setEditable(True)
-        self._vision_model_combo.setMinimumWidth(280)
-        self._vision_model_combo.setToolTip("主模型 ID；可直接输入或从扫描列表/内置清单选择")
-        self._vision_model_combo.currentTextChanged.connect(self._on_vision_model_text_changed)
-        vis_model_row.addWidget(self._vision_model_combo, stretch=1)
-        self._btn_pick_vision = QPushButton("选择模型...")
-        self._btn_pick_vision.clicked.connect(self._open_vision_picker)
-        vis_model_row.addWidget(self._btn_pick_vision)
-        model_layout.addLayout(vis_model_row)
-
-        # 模型降级队列
-        queue_group = QGroupBox("模型降级队列（主模型额度耗尽时自动按顺序切换）")
-        queue_outer = QVBoxLayout(queue_group)
-
-        self._model_queue_list = QListWidget()
-        self._model_queue_list.setAlternatingRowColors(True)
-        self._model_queue_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self._model_queue_list.setToolTip("优先级从上到下递减；主模型耗尽后依次尝试队列中的模型。\n留空则不启用降级切换。")
-        self._model_queue_list.setMaximumHeight(140)
-        queue_outer.addWidget(self._model_queue_list)
-
-        queue_btn_row = QHBoxLayout()
-        btn_add_scanned = QPushButton("添加扫描模型")
-        btn_add_scanned.setToolTip("从扫描结果下拉框中选择模型添加到队列")
-        btn_add_scanned.clicked.connect(self._on_queue_add_scanned)
-        queue_btn_row.addWidget(btn_add_scanned)
-        btn_add_all = QPushButton("全选扫描模型")
-        btn_add_all.setToolTip("将所有扫描到的模型全部加入降级队列（免费 API 适用）")
-        btn_add_all.clicked.connect(self._on_queue_select_all)
-        queue_btn_row.addWidget(btn_add_all)
-        btn_remove = QPushButton("移除选中")
-        btn_remove.clicked.connect(self._on_queue_remove)
-        queue_btn_row.addWidget(btn_remove)
-        btn_up = QPushButton("↑ 上移")
-        btn_up.clicked.connect(self._on_queue_move_up)
-        queue_btn_row.addWidget(btn_up)
-        btn_down = QPushButton("↓ 下移")
-        btn_down.clicked.connect(self._on_queue_move_down)
-        queue_btn_row.addWidget(btn_down)
-        queue_btn_row.addStretch()
-        queue_outer.addLayout(queue_btn_row)
-
-        model_layout.addWidget(queue_group)
-
-        # 音频模型
-        audio_model_row = QHBoxLayout()
-        audio_model_row.addWidget(QLabel("音频模型:"))
-        self._audio_model_label = QLabel()
-        self._audio_model_label.setStyleSheet("font-weight: bold; padding: 2px 8px;")
-        audio_model_row.addWidget(self._audio_model_label, stretch=1)
-        btn_pick_audio = QPushButton("选择模型...")
-        btn_pick_audio.clicked.connect(self._open_audio_picker)
-        audio_model_row.addWidget(btn_pick_audio)
-        model_layout.addLayout(audio_model_row)
-
-        self._refresh_model_labels()
-        body_layout.addWidget(model_group)
-
         # ---- 并发 ----
         conc_group = QGroupBox("并发 & 性能")
         conc_layout = QVBoxLayout(conc_group)
@@ -508,6 +516,50 @@ class SettingsDialog(QDialog):
         bottom_row.addWidget(cancel_btn)
         layout.addLayout(bottom_row)
 
+    # ---- 后台拉取 ----
+
+    def _wait_for_future(self, future):
+        """Block the caller's return value but keep the Qt event loop pumping.
+
+        Used by call sites that need a synchronous bool result (Apply-time
+        validation gates) while still not freezing window repaints/clicks for
+        the duration of the network call.
+        """
+        while not future.done():
+            QApplication.processEvents()
+            time.sleep(0.01)
+        return future.result()
+
+    def _run_fetch_async(self, fn, on_done):
+        """Run a blocking network/subprocess call off the GUI thread.
+
+        `fn` takes no arguments and returns a result or raises. `on_done(result,
+        error)` is invoked on the GUI thread once `fn` finishes, so it is safe
+        to touch widgets there. The rest of the window (and this dialog) stays
+        responsive while `fn` runs; only the triggering control is disabled by
+        the caller.
+        """
+        future = _FETCH_EXECUTOR.submit(fn)
+        timer = QTimer(self)
+        self._active_fetch_timers.append(timer)
+
+        def _poll():
+            if not future.done():
+                return
+            timer.stop()
+            timer.deleteLater()
+            if timer in self._active_fetch_timers:
+                self._active_fetch_timers.remove(timer)
+            try:
+                result = future.result()
+            except Exception as exc:  # noqa: BLE001 - surfaced to on_done
+                on_done(None, exc)
+            else:
+                on_done(result, None)
+
+        timer.timeout.connect(_poll)
+        timer.start(80)
+
     # ---- 扫描模型 ----
 
     def _on_scan_models(self):
@@ -522,31 +574,35 @@ class SettingsDialog(QDialog):
 
         self._scan_models_btn.setEnabled(False)
         self._scan_models_btn.setText("扫描中...")
-        self.repaint()
 
-        try:
-            models = _scan_models_from_api(base_url, api_key)
-        finally:
+        def _fetch():
+            return _scan_models_from_api(base_url, api_key)
+
+        def _on_done(models, error):
             self._scan_models_btn.setEnabled(True)
             self._scan_models_btn.setText("扫描模型")
+            if error is not None:
+                logger.warning("扫描模型失败: %s", error)
+                models = []
+            if not models:
+                QMessageBox.warning(self, "扫描失败",
+                                    f"未能从 {base_url}/models 获取模型列表。\n"
+                                    "请检查 Base URL 和 API Key 是否正确，或手动输入模型 ID。")
+                return
 
-        if not models:
-            QMessageBox.warning(self, "扫描失败",
-                                f"未能从 {base_url}/models 获取模型列表。\n"
-                                "请检查 Base URL 和 API Key 是否正确，或手动输入模型 ID。")
-            return
+            self._scanned_models = models
+            current = self._vision_model_combo.currentText().strip()
+            self._vision_model_combo.clear()
+            self._vision_model_combo.addItems(models)
+            if current and current in models:
+                self._vision_model_combo.setCurrentText(current)
+            elif models:
+                self._vision_model_combo.setCurrentIndex(0)
+            QMessageBox.information(self, "扫描完成",
+                                    f"从视觉 Provider 获取到 {len(models)} 个模型。\n"
+                                    "请从下拉菜单中选择模型。")
 
-        self._scanned_models = models
-        current = self._vision_model_combo.currentText().strip()
-        self._vision_model_combo.clear()
-        self._vision_model_combo.addItems(models)
-        if current and current in models:
-            self._vision_model_combo.setCurrentText(current)
-        elif models:
-            self._vision_model_combo.setCurrentIndex(0)
-        QMessageBox.information(self, "扫描完成",
-                                f"从视觉 Provider 获取到 {len(models)} 个模型。\n"
-                                "请从下拉菜单中选择模型。")
+        self._run_fetch_async(_fetch, _on_done)
 
     def _populate_google_model_combos(self):
         vision_models = [m.name for m in model_catalog.load_google_vision_models()]
@@ -595,14 +651,17 @@ class SettingsDialog(QDialog):
 
         self._refresh_google_models_btn.setEnabled(False)
         self._refresh_google_models_btn.setText("测试中...")
-        self.repaint()
-        try:
+
+        def _fetch():
             timeout = float(self._cfg.google_api.network_check_timeout_seconds)
             self._test_google_reachable(timeout)
-            summary = model_catalog.refresh_google_models(
+            return model_catalog.refresh_google_models(
                 api_key,
                 timeout=float(self._cfg.google_api.model_fetch_timeout_seconds),
             )
+
+        try:
+            summary = self._wait_for_future(_FETCH_EXECUTOR.submit(_fetch))
             self._populate_google_model_combos()
         except Exception as exc:
             logger.warning("Google 模型刷新失败: %s", exc)
@@ -656,9 +715,10 @@ class SettingsDialog(QDialog):
 
         self._refresh_dashscope_models_btn.setEnabled(False)
         self._refresh_dashscope_models_btn.setText("刷新中...")
-        self.repaint()
         try:
-            summary = model_catalog.refresh_bailian_models(base_url, api_key, timeout=15.0)
+            summary = self._wait_for_future(
+                _FETCH_EXECUTOR.submit(model_catalog.refresh_bailian_models, base_url, api_key, timeout=15.0)
+            )
         except Exception as exc:
             logger.warning("百炼模型刷新失败: %s", exc)
             if notify:
@@ -668,11 +728,25 @@ class SettingsDialog(QDialog):
             self._refresh_dashscope_models_btn.setEnabled(True)
             self._refresh_dashscope_models_btn.setText("刷新百炼模型")
 
+        # Actually load the fetched models into the picker, not just a count.
+        current = self._vision_model_combo.currentText().strip()
+        merged_names = [m.name for m in model_catalog.list_vision_models()]
+        self._vision_model_combo.blockSignals(True)
+        self._vision_model_combo.clear()
+        self._vision_model_combo.addItems(merged_names)
+        self._vision_model_combo.blockSignals(False)
+        if current and current in merged_names:
+            self._vision_model_combo.setCurrentText(current)
+        elif current:
+            self._vision_model_combo.setCurrentText(current)
+        self._refresh_model_labels()
+
         if notify:
             QMessageBox.information(
                 self,
                 "刷新完成",
-                f"获取到 {summary.raw_count} 个模型；已识别视觉 {len(summary.vision)} 个、音频 {len(summary.audio)} 个。",
+                f"获取到 {summary.raw_count} 个模型；已识别视觉 {len(summary.vision)} 个、音频 {len(summary.audio)} 个。\n"
+                "视觉模型下拉框已更新为真实列表。",
             )
         return True
 
@@ -770,7 +844,7 @@ class SettingsDialog(QDialog):
         signature = self._codex_check_signature()
         if not force and self._settings.value("ui/codex_checked_signature", type=str) == signature:
             return True
-        report = inspect_codex_cli(self._codex_config_from_ui())
+        report = self._wait_for_future(_FETCH_EXECUTOR.submit(inspect_codex_cli, self._codex_config_from_ui()))
         if not report.ok:
             QMessageBox.warning(self, "Codex 不可用", report.message)
             return False
@@ -779,13 +853,24 @@ class SettingsDialog(QDialog):
         return True
 
     def _on_codex_check_clicked(self):
-        report = inspect_codex_cli(self._codex_config_from_ui())
-        if report.ok:
-            self._settings.setValue("ui/codex_checked_signature", self._codex_check_signature())
-            self._settings.sync()
-            QMessageBox.information(self, "Codex 检测通过", report.message)
-        else:
-            QMessageBox.warning(self, "Codex 不可用", report.message)
+        self._codex_check_btn.setEnabled(False)
+        self._codex_check_btn.setText("检测中...")
+        cfg = self._codex_config_from_ui()
+
+        def _on_done(report, error):
+            self._codex_check_btn.setEnabled(True)
+            self._codex_check_btn.setText("检测 Codex")
+            if error is not None:
+                QMessageBox.warning(self, "Codex 不可用", str(error))
+                return
+            if report.ok:
+                self._settings.setValue("ui/codex_checked_signature", self._codex_check_signature())
+                self._settings.sync()
+                QMessageBox.information(self, "Codex 检测通过", report.message)
+            else:
+                QMessageBox.warning(self, "Codex 不可用", report.message)
+
+        self._run_fetch_async(lambda: inspect_codex_cli(cfg), _on_done)
 
     # ---- 模型降级队列操作 ----
 
@@ -1064,6 +1149,16 @@ class SettingsDialog(QDialog):
 
     # ---- 模型选择 ----
 
+    def _live_dashscope_fetch(self):
+        """Real /models fetch used by the picker's own "拉取最新模型" button."""
+        api_key = self._api_key_input.text().strip()
+        base_url = self._base_url_input.text().strip() or self._cfg.api.base_url
+        if not api_key:
+            raise RuntimeError("请先在上方填入 DashScope API Key")
+        if not model_catalog.is_dashscope_base_url(base_url):
+            raise RuntimeError("主 API Base URL 不是百炼/DashScope 地址，无法用此端点拉取")
+        model_catalog.refresh_bailian_models(base_url, api_key, timeout=15.0)
+
     def _open_vision_picker(self):
         from OCRLLM.gui.model_picker import ModelPickerDialog
 
@@ -1080,7 +1175,8 @@ class SettingsDialog(QDialog):
 
         dlg = ModelPickerDialog(self, kind="vision",
                                 current_name=self._pending_vision_model,
-                                on_validate_custom=_validate_custom)
+                                on_validate_custom=_validate_custom,
+                                on_fetch_live=self._live_dashscope_fetch)
         if dlg.exec_() == ModelPickerDialog.Accepted:
             self._pending_vision_model = dlg.selected_model_name
             self._vision_model_combo.setCurrentText(dlg.selected_model_name)
@@ -1104,7 +1200,8 @@ class SettingsDialog(QDialog):
 
         dlg = ModelPickerDialog(self, kind="audio",
                                 current_name=self._pending_audio_model,
-                                on_validate_custom=_validate_custom)
+                                on_validate_custom=_validate_custom,
+                                on_fetch_live=self._live_dashscope_fetch)
         if dlg.exec_() == ModelPickerDialog.Accepted:
             self._pending_audio_model = dlg.selected_model_name
             self._refresh_model_labels()

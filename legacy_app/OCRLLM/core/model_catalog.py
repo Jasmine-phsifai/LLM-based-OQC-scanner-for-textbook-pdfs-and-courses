@@ -264,6 +264,15 @@ def _fetch_openai_compatible_model_ids(base_url: str, api_key: str, timeout: flo
 
 
 def _classify_bailian_vision_model(model_id: str) -> VisionModel | None:
+    """Turn one live /models entry into a VisionModel.
+
+    Only excludes names that are unambiguously audio-only (a different API
+    mechanism, filetrans/paraformer/etc). Anything else fetched from the
+    account is shown — the previous name-pattern allowlist (vl/ocr/omni/
+    qwen3.5/qwen3.6) silently hid every model the account actually served
+    that wasn't already known months ago. Sub-labeling below is cosmetic
+    only and never gates visibility.
+    """
     name = model_id.strip()
     lowered = name.lower()
     if not name:
@@ -279,11 +288,9 @@ def _classify_bailian_vision_model(model_id: str) -> VisionModel | None:
     elif "vl" in lowered:
         kind = "vlm"
         label = f"{name} — 百炼实时获取视觉"
-    elif lowered.startswith(("qwen3.5", "qwen3.6")):
-        kind = "general"
-        label = f"{name} — 百炼实时获取通用模型"
     else:
-        return None
+        kind = "general"
+        label = f"{name} — 百炼实时获取"
     return VisionModel(name=name, label=label, kind=kind, free_quota=False, max_images=None, note="百炼 /models 实时获取")
 
 

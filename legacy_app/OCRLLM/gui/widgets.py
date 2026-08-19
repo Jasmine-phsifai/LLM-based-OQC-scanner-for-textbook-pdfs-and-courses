@@ -230,7 +230,7 @@ def browse_files(parent, caption: str, filter_str: str, line_edit: QLineEdit):
 class IncompleteTasksDialog(QDialog):
     """管理所有未完成任务的对话框。
 
-    用户可以浏览、继续、或删除（含临时文件清理）任意未完成任务。
+    用户可以浏览、继续、或取消任意未完成任务；取消不会删除已生成的结果。
     """
 
     def __init__(self, checkpoint_mgr: CheckpointManager, parent: Optional[QWidget] = None):
@@ -238,7 +238,7 @@ class IncompleteTasksDialog(QDialog):
         self._mgr = checkpoint_mgr
         self._selected_checkpoint: Optional[Checkpoint] = None
         self._selected_checkpoints: list[Checkpoint] = []
-        self._action: Optional[str] = None  # "resume" or "delete"
+        self._action: Optional[str] = None  # "resume" or "cancel"
         self._init_ui()
         self._refresh()
 
@@ -261,9 +261,9 @@ class IncompleteTasksDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        hint = QLabel("以下是所有未完成的识别任务。可以多选后批量继续，或删除不需要的任务（同时清理临时文件）。")
+        hint = QLabel("以下是所有未完成的识别任务。可以多选后批量继续，或取消不需要继续的任务（保留已生成的识别结果）。")
         hint.setWordWrap(True)
-        hint.setFont(QFont("Microsoft YaHei", 9))
+        hint.setFont(QFont("", 9))
         layout.addWidget(hint)
 
         self._table = QTableWidget()
@@ -286,13 +286,13 @@ class IncompleteTasksDialog(QDialog):
         self._resume_btn.clicked.connect(self._on_resume)
         btn_row.addWidget(self._resume_btn)
 
-        self._delete_btn = QPushButton("🗑 删除选中任务 (清理文件)")
-        self._delete_btn.clicked.connect(self._on_delete)
-        btn_row.addWidget(self._delete_btn)
+        self._cancel_btn = QPushButton("⏹ 取消选中任务（保留结果）")
+        self._cancel_btn.clicked.connect(self._on_cancel)
+        btn_row.addWidget(self._cancel_btn)
 
-        self._delete_all_btn = QPushButton("🗑 删除全部")
-        self._delete_all_btn.clicked.connect(self._on_delete_all)
-        btn_row.addWidget(self._delete_all_btn)
+        self._cancel_all_btn = QPushButton("⏹ 取消全部（保留结果）")
+        self._cancel_all_btn.clicked.connect(self._on_cancel_all)
+        btn_row.addWidget(self._cancel_all_btn)
 
         btn_row.addStretch()
         self._close_btn = QPushButton("关闭")
@@ -323,8 +323,8 @@ class IncompleteTasksDialog(QDialog):
         has_items = len(self._checkpoints) > 0
         self._select_all_btn.setEnabled(has_items)
         self._resume_btn.setEnabled(has_items)
-        self._delete_btn.setEnabled(has_items)
-        self._delete_all_btn.setEnabled(has_items)
+        self._cancel_btn.setEnabled(has_items)
+        self._cancel_all_btn.setEnabled(has_items)
 
         if has_items:
             self._table.selectRow(0)
@@ -356,36 +356,36 @@ class IncompleteTasksDialog(QDialog):
         self._action = "resume"
         self.accept()
 
-    def _on_delete(self):
+    def _on_cancel(self):
         checkpoints = self._get_selected_cps()
         if not checkpoints:
             QMessageBox.information(self, "提示", "请先选择任务")
             return
         if len(checkpoints) == 1:
-            msg = f"确定删除任务 \"{Path(checkpoints[0].source_path).name}\" 吗？\n\n将同时删除该任务产生的临时文件和输出文件。"
+            msg = f"确定取消任务 \"{Path(checkpoints[0].source_path).name}\" 吗？\n\n已生成的识别结果会保留。"
         else:
-            msg = f"确定删除选中的 {len(checkpoints)} 个未完成任务吗？\n\n将同时删除这些任务产生的临时文件和输出文件。"
+            msg = f"确定取消选中的 {len(checkpoints)} 个未完成任务吗？\n\n已生成的识别结果会保留。"
         reply = QMessageBox.question(
-            self, "确认删除",
+            self, "确认取消",
             msg,
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
         )
         if reply != QMessageBox.Yes:
             return
         for cp in checkpoints:
-            self._mgr.remove_with_artifacts(cp)
+            self._mgr.cancel(cp)
         self._refresh()
 
-    def _on_delete_all(self):
+    def _on_cancel_all(self):
         if not self._checkpoints:
             return
         reply = QMessageBox.question(
-            self, "确认删除全部",
-            f"确定删除全部 {len(self._checkpoints)} 个未完成任务吗？\n\n将同时清理所有临时文件。",
+            self, "确认取消全部",
+            f"确定取消全部 {len(self._checkpoints)} 个未完成任务吗？\n\n已生成的识别结果会保留。",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
         )
         if reply != QMessageBox.Yes:
             return
         for cp in list(self._checkpoints):
-            self._mgr.remove_with_artifacts(cp)
+            self._mgr.cancel(cp)
         self._refresh()

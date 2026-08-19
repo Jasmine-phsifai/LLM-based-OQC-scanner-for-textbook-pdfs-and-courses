@@ -68,6 +68,30 @@ class GuiAppCloseTests(unittest.TestCase):
         dlg.deleteLater()
         self._app.processEvents()
 
+    def test_incomplete_tasks_dialog_cancels_without_deleting_outputs(self):
+        checkpoint = Checkpoint("pdf", "/tmp/a.pdf", "/tmp/a.md", 3)
+
+        class _FakeManager:
+            def __init__(self):
+                self.cancelled = []
+
+            def list_incomplete(self):
+                return [] if self.cancelled else [checkpoint]
+
+            def cancel(self, selected_checkpoint):
+                self.cancelled.append(selected_checkpoint)
+
+        manager = _FakeManager()
+        dlg = IncompleteTasksDialog(manager)
+
+        with patch.object(QMessageBox, "question", return_value=QMessageBox.Yes):
+            dlg._on_cancel()
+
+        self.assertEqual(manager.cancelled, [checkpoint])
+        self.assertEqual(dlg.action, None)
+        dlg.deleteLater()
+        self._app.processEvents()
+
     def test_manage_tasks_resumes_multiple_selected_tasks_in_one_batch(self):
         checkpoints = [
             Checkpoint("pdf", "/tmp/a.pdf", "/tmp/a.md", 3),
@@ -111,7 +135,13 @@ class GuiAppCloseTests(unittest.TestCase):
                 task(ProgressReporter())
                 return True
 
-            tab = VideoTab(lambda: AppConfig().with_updates(paths={"output_dir": tmp, "temp_dir": tmp}), start_worker)
+            tab = VideoTab(
+                lambda: AppConfig().with_updates(
+                    paths={"output_dir": tmp, "temp_dir": tmp},
+                    api={"api_key": "test-key"},
+                ),
+                start_worker,
+            )
             tab._video_path.setText(video_path)
             tab._board_prompt._current_text = "board prompt {image_names} {extra_instruction}"
             tab._audio_prompt._current_text = "audio prompt {hotwords_instruction}"
@@ -167,84 +197,87 @@ class GuiAppCloseTests(unittest.TestCase):
             self._app.processEvents()
 
     def test_external_vision_provider_model_input_is_separate_from_provider(self):
+        from OCRLLM.gui.settings_dialog import SettingsDialog
+
         with tempfile.TemporaryDirectory() as tmp:
             cfg = AppConfig().with_updates(paths={"output_dir": tmp, "temp_dir": tmp})
-            window = QCRMainWindow(cfg=cfg)
-            window._api_key_input.setText("dash-key")
-            window._vision_api_enabled_cb.setChecked(True)
-            window._vision_provider_input.setText("ioasis")
-            window._vision_model_input.setText("gpt-5.5")
-            window._vision_api_key_input.setText("oasis-key")
-            window._vision_base_url_input.setText("https://oasis.example/v1")
+            dialog = SettingsDialog(None, cfg)
+            dialog._api_key_input.setText("dash-key")
+            dialog._vision_enabled_cb.setChecked(True)
+            dialog._vision_provider_input.setText("ioasis")
+            dialog._vision_model_combo.setCurrentText("gpt-5.5")
+            dialog._vision_key_input.setText("oasis-key")
+            dialog._vision_url_input.setText("https://oasis.example/v1")
 
-            window._sync_api_from_ui()
+            applied = dialog.apply_config()
 
-            self.assertEqual(window._cfg.vision_api.provider, "ioasis")
-            self.assertEqual(window._cfg.models.vision_model, "gpt-5.5")
-            window.deleteLater()
+            self.assertEqual(applied.vision_api.provider, "ioasis")
+            self.assertEqual(applied.models.vision_model, "gpt-5.5")
+            dialog.deleteLater()
             self._app.processEvents()
 
     def test_external_vision_provider_changes_do_not_overwrite_model_input(self):
+        from OCRLLM.gui.settings_dialog import SettingsDialog
+
         with tempfile.TemporaryDirectory() as tmp:
             cfg = AppConfig().with_updates(paths={"output_dir": tmp, "temp_dir": tmp})
-            window = QCRMainWindow(cfg=cfg)
-            window._api_key_input.setText("dash-key")
-            window._vision_api_enabled_cb.setChecked(True)
-            window._vision_api_key_input.setText("provider-key")
-            window._vision_base_url_input.setText("https://vision.example/v1")
-            window._vision_provider_input.setText("ioasis")
-            window._vision_model_input.setText("gpt-5.5")
-            window._pending_audio_model = "qwen3-asr-flash-filetrans"
+            dialog = SettingsDialog(None, cfg)
+            dialog._api_key_input.setText("dash-key")
+            dialog._vision_enabled_cb.setChecked(True)
+            dialog._vision_key_input.setText("provider-key")
+            dialog._vision_url_input.setText("https://vision.example/v1")
+            dialog._vision_provider_input.setText("ioasis")
+            dialog._vision_model_combo.setCurrentText("gpt-5.5")
+            dialog._pending_audio_model = "qwen3-asr-flash-filetrans"
 
-            window._vision_provider_input.setText("fuckme")
-            self.assertEqual(window._vision_model_input.text(), "gpt-5.5")
-            self.assertIn("视觉: gpt-5.5", window._api_summary.text())
-            self.assertIn("视觉Provider: fuckme", window._api_summary.text())
-            self.assertIn("音频: qwen3-asr-flash-filetrans", window._api_summary.text())
+            dialog._vision_provider_input.setText("fuckme")
+            self.assertEqual(dialog._vision_model_combo.currentText(), "gpt-5.5")
 
-            window._sync_api_from_ui()
+            applied = dialog.apply_config()
 
-            self.assertEqual(window._cfg.models.vision_model, "gpt-5.5")
-            self.assertEqual(window._cfg.vision_api.provider, "fuckme")
-            self.assertEqual(window._cfg.models.asr_model, "qwen3-asr-flash-filetrans")
-            window.deleteLater()
+            self.assertEqual(applied.models.vision_model, "gpt-5.5")
+            self.assertEqual(applied.vision_api.provider, "fuckme")
+            self.assertEqual(applied.models.asr_model, "qwen3-asr-flash-filetrans")
+            dialog.deleteLater()
             self._app.processEvents()
 
     def test_external_vision_provider_keeps_explicit_model_when_provider_alias_changes(self):
+        from OCRLLM.gui.settings_dialog import SettingsDialog
+
         with tempfile.TemporaryDirectory() as tmp:
             cfg = AppConfig().with_updates(paths={"output_dir": tmp, "temp_dir": tmp})
-            window = QCRMainWindow(cfg=cfg)
-            window._api_key_input.setText("dash-key")
-            window._vision_api_enabled_cb.setChecked(True)
-            window._vision_provider_input.setText("ioasis")
-            window._vision_api_key_input.setText("provider-key")
-            window._vision_base_url_input.setText("https://vision.example")
-            window._vision_model_input.setText("gpt-5.5")
-            window._pending_audio_model = "qwen3-asr-flash-filetrans"
-            window._refresh_model_labels()
+            dialog = SettingsDialog(None, cfg)
+            dialog._api_key_input.setText("dash-key")
+            dialog._vision_enabled_cb.setChecked(True)
+            dialog._vision_provider_input.setText("ioasis")
+            dialog._vision_key_input.setText("provider-key")
+            dialog._vision_url_input.setText("https://vision.example")
+            dialog._vision_model_combo.setCurrentText("gpt-5.5")
+            dialog._pending_audio_model = "qwen3-asr-flash-filetrans"
 
-            window._vision_provider_input.setText("fuckme")
-            window._sync_api_from_ui()
+            dialog._vision_provider_input.setText("fuckme")
+            applied = dialog.apply_config()
 
-            self.assertEqual(window._cfg.models.vision_model, "gpt-5.5")
-            self.assertEqual(window._cfg.vision_api.provider, "fuckme")
-            self.assertEqual(window._cfg.models.asr_model, "qwen3-asr-flash-filetrans")
-            self.assertEqual(window._vision_model_input.text(), "gpt-5.5")
-            self.assertIn("视觉: gpt-5.5", window._api_summary.text())
-            self.assertIn("视觉Provider: fuckme", window._api_summary.text())
-            window.deleteLater()
+            self.assertEqual(applied.models.vision_model, "gpt-5.5")
+            self.assertEqual(applied.vision_api.provider, "fuckme")
+            self.assertEqual(applied.models.asr_model, "qwen3-asr-flash-filetrans")
+            self.assertEqual(dialog._vision_model_combo.currentText(), "gpt-5.5")
+            dialog.deleteLater()
             self._app.processEvents()
 
-    def test_api_settings_body_is_scrollable(self):
+    def test_api_settings_dialog_body_is_scrollable(self):
+        # API/model settings moved out of the main window into SettingsDialog;
+        # this dialog owns the scrollable body now.
+        from OCRLLM.gui.settings_dialog import SettingsDialog
+
         with tempfile.TemporaryDirectory() as tmp:
             cfg = AppConfig().with_updates(paths={"output_dir": tmp, "temp_dir": tmp})
-            window = QCRMainWindow(cfg=cfg)
+            dlg = SettingsDialog(None, cfg)
 
-            self.assertIsInstance(window._api_scroll, QScrollArea)
-            self.assertIs(window._api_scroll.widget(), window._api_body)
-            self.assertTrue(window._api_scroll.widgetResizable())
-            self.assertEqual(window._api_scroll.verticalScrollBarPolicy(), Qt.ScrollBarAsNeeded)
-            window.deleteLater()
+            scroll_areas = dlg.findChildren(QScrollArea)
+            self.assertTrue(scroll_areas, "SettingsDialog should contain a QScrollArea")
+            self.assertTrue(scroll_areas[0].widgetResizable())
+            dlg.deleteLater()
             self._app.processEvents()
 
 

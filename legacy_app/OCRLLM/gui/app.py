@@ -225,7 +225,7 @@ class QCRMainWindow(QMainWindow):
 
         self._progress_label = QLabel("就绪")
         self._progress_label.setWordWrap(True)
-        self._progress_label.setFont(QFont("Microsoft YaHei", 9))
+        self._progress_label.setFont(QFont("", 9))
         progress_layout.addWidget(self._progress_label)
 
         # 断点续传提示区

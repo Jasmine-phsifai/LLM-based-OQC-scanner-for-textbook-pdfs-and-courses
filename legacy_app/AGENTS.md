@@ -284,3 +284,118 @@ gate diagnostic when it applies, and otherwise raises with the failed units
 and output path. Carry-forward judgement: this is a direct risk for every
 future batch-orchestration port. **WARNING FOR src/ocrllm**: batch
 orchestration ports must never turn a timeout into a placeholder-as-success.
+
+## 2026-08-19 — cancelling a false-failed task deleted paid output (fixed)
+
+What broke: a task could finish writing a useful transcript or recognition
+markdown and still be reported as failed because one batch, page, or provider
+cleanup step raised afterward. The task then appeared in the resume list. Using
+the list's delete/cancel action called `CheckpointManager.remove_with_artifacts`
+and deleted the checkpoint's recorded output with `os.remove` or `shutil.rmtree`.
+That deletion bypassed the Windows Recycle Bin, so the successful result was
+not recoverable through normal desktop recovery.
+
+True root cause: the cleanup method treated an incomplete checkpoint as proof
+that its output was disposable. Checkpoint state and output validity are
+different facts; a checkpoint can be incomplete while its output contains
+valuable paid work or a complete result with a false terminal error.
+
+Fix: `CheckpointManager.cancel()` now removes only the checkpoint and preserves
+all generated output. `remove_with_artifacts()` is non-destructive by default;
+output deletion requires the explicit `delete_outputs=True` keyword. The resume
+dialog now labels the action as cancellation, explains that results are kept,
+and calls `cancel()` directly. Regression tests cover PDF, audio, and video
+outputs plus the dialog action.
+
+Carry-forward judgement: yes. **WARNING FOR src/ocrllm**: checkpoint dismissal,
+retry, and terminal error handling must never delete published recognition
+artifacts implicitly. Any destructive cleanup must be a separate explicit
+operation, and a partial/falsely failed result must remain durable and
+inspectable.
+
+## 2026-08-19 — 模型配置页面 (settings_dialog / model_picker) UI defect pass (fixed 1-5, 7; verified-not-fixed 6)
+
+Seven user-reported UI problems in the model configuration page, fixed except
+item 6 which was explicitly deferred by the user to a verify-and-document-only
+scope this session.
+
+1/2. Fetching models froze the whole dialog and, for DashScope, never actually
+loaded fetched names into the combo (only a count popup). Root cause: `_refresh_bailian_models`,
+`_refresh_google_models`, and `_on_codex_check_clicked` ran their network/subprocess
+call directly on the GUI thread with only a `self.repaint()` before it — no event
+pumping happened until the call returned. Fix: added `SettingsDialog._run_fetch_async`
+(fire-and-forget, `ThreadPoolExecutor` + `QTimer` poll, callback runs on the GUI
+thread) for scan/Codex-check, and `SettingsDialog._wait_for_future` (submits to
+the same executor, then pumps `QApplication.processEvents()` while waiting) for
+the two call sites that need a synchronous bool return (Apply-time validation
+gates: `_validate_google_environment_if_needed`, `_refresh_bailian_models` return
+value used at dialog-init). `_refresh_bailian_models` now also repopulates
+`_vision_model_combo` from `model_catalog.list_vision_models()` after a
+successful fetch instead of only showing a message box.
+
+3. `QFont("Microsoft YaHei", ...)` was hardcoded in `gui/app.py`, `gui/model_picker.py`,
+`gui/widgets.py`. Not bundled, not guaranteed present outside Windows. Replaced
+family with `""` (unset) so Qt/the OS supplies whatever CJK-capable font is
+already the app default, keeping only point size/weight.
+
+4. `test_gui_app.py::test_api_settings_body_is_scrollable` asserted
+`QCRMainWindow._api_scroll`, a main-window attribute that no longer exists
+because API/model settings moved into `SettingsDialog` long ago. Replaced with
+`test_api_settings_dialog_body_is_scrollable`, which opens `SettingsDialog`
+directly and asserts it contains a resizable `QScrollArea`. Full legacy suite
+(excluding the ffmpeg-only `test_social_e2e.py`): 220 passed, 1 skipped.
+
+5. DashScope's own model selection (`主视觉模型` combo + picker button + 降级队列
++ `音频模型` row) lived in a separate "模型选择" group box far below the DashScope
+API-key group, with Google/Codex/独立 Provider groups physically in between —
+the "split into two parts" the user reported. Per user decision, generalized
+the pattern used by Google/Codex (credentials + model selection inside one
+group box): moved that whole block into `dash_group`, added a one-line label
+noting the field is shared and gets overwritten when Codex or the independent
+Provider is enabled (it always was one shared `_pending_vision_model`/combo;
+this only fixes the visual placement, not the underlying sharing — that is
+item 6).
+
+6. **Verified true, NOT fixed (delayed by explicit user decision).** Image
+(3 providers: DashScope/Codex/independent OpenAI-compatible) and audio (2:
+DashScope/Google) recognition are each a single active-provider priority chain,
+not independently selectable parallel providers. Confirmed in code:
+`core/provider_selection.py` (`uses_codex_for_vision` > `uses_independent_vision_provider`
+> `uses_google_for_vision`, mutually exclusive by construction) and
+`config.models.vision_model` / `asr_model` are single fields — `settings_dialog.py`
+literally overwrites `_pending_vision_model` with the Codex model string when
+Codex is toggled on (`_on_codex_enabled_changed`), and the independent Provider's
+"扫描模型" button also writes into that same combo. Real per-modality parallel
+provider selection needs: (a) `AppConfig` schema change to per-provider model
+fields instead of one shared field per modality, (b) `provider_selection.py`
+redesigned from a priority chain to an explicit selector, (c) dispatch changes
+in `llm_client.py`, `processors/video.py`, `processors/social/long_video.py`
+wherever `cfg.codex_vision.enabled` / `cfg.vision_api.enabled` gate behavior.
+This is a real backend redesign, not a UI fix — prior subagents' warning was
+correct.
+
+7. `ModelPickerDialog` ("选择模型..." next to DashScope's model row) already
+read a merged builtin+cached-catalog list, but `_classify_bailian_vision_model`
+silently returned `None` (dropped the model entirely) for any live-fetched
+name that didn't match a hardcoded `vl`/`ocr`/`omni`/`qwen3.5`/`qwen3.6` pattern
+written against a months-old account snapshot — so new real models never
+appeared regardless of the "类型过滤" radio choice, which looked like a broken
+filter but was actually models missing from the list. Fixed in
+`core/model_catalog.py`: unmatched non-audio names now get a `general` fallback
+kind instead of being dropped; audio/vision ASR exclusion (a real mechanism
+difference, not a stale label) is unchanged. Also added a real "🔄 拉取最新模型"
+button inside `ModelPickerDialog` itself (`on_fetch_live` callback, backed by
+`model_catalog.refresh_bailian_models`, run off the GUI thread via its own
+small `ThreadPoolExecutor` + `QTimer` poll) — previously the picker had no
+fetch action of its own and only showed whatever was last cached by the
+outer dialog's separate refresh button.
+
+No stored QSettings/API-key state was touched by any of the above; no
+in-flight OCR/recognition task code paths were changed.
+
+**WARNING FOR src/ocrllm**: none of `src/ocrllm`'s provider/model-catalog
+design has this per-modality single-active-provider coupling yet (it doesn't
+have a settings GUI), but if one is ever added, design the model field as
+per-provider from the start — retrofitting a shared field later (as legacy
+did) is what created item 6's blocker.
+
