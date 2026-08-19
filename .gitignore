@@ -83,6 +83,28 @@ temp/
 *.pkl
 *.joblib
 
+# Multimedia inputs and evidence files
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tif
+*.tiff
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.mp3
+*.wav
+*.m4a
+*.flac
+*.aac
+*.ogg
+
 # Large model files
 *.bin
 *.pth
