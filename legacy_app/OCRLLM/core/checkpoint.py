@@ -269,8 +269,10 @@ class CheckpointManager:
         """启发式：output 文件已经齐全 → 这个 checkpoint 是脏数据，应丢弃。"""
         try:
             if cp.task_type == "pdf":
-                # PDF 输出是单个 .md 文件
-                return self._file_nonempty(cp.output_path)
+                # PDF 输出是单个 .md 文件。但部分失败的任务也会写出非空 md
+                # （失败槽位含占位注释），所以必须同时要求 checkpoint 自身记录完整，
+                # 否则失败任务的 checkpoint 会在这里被误删，断点续传入口消失。
+                return cp.is_complete and self._file_nonempty(cp.output_path)
             if cp.task_type == "video":
                 stem = (cp.extra or {}).get("stem")
                 if not stem:
@@ -288,7 +290,7 @@ class CheckpointManager:
                         return False
                 return True
             if cp.task_type == "audio":
-                return self._file_nonempty(cp.output_path)
+                return cp.is_complete and self._file_nonempty(cp.output_path)
         except Exception as e:
             logger.debug("[CP] _looks_actually_done 检查失败 (%s)，按未完成处理: %s", cp.source_path, e)
         return False
