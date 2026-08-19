@@ -179,14 +179,30 @@ class PDFTab(QWidget):
         def task(reporter):
             cfg = self._get_cfg()
             results = []
+            any_success = False
             for pdf_path, md_path, failed in repair_targets:
                 proc = PDFProcessor(cfg=cfg, reporter=reporter)
                 try:
                     proc.repair(pdf_path, md_path, prompt_template=prompt_text or None)
-                    results.append(f"✓ {os.path.basename(pdf_path)}: {len(failed)} 页已修复")
+                    results.append(f"✓ {os.path.basename(pdf_path)}: 全部 {len(failed)} 页修复成功")
+                    any_success = True
+                except RuntimeError as e:
+                    msg = str(e)
+                    # Extract still-failed count from the error message
+                    remaining = PDFProcessor.find_failed_pages(md_path)
+                    fixed = len(failed) - len(remaining)
+                    if fixed > 0:
+                        results.append(
+                            f"⚠ {os.path.basename(pdf_path)}: {fixed}/{len(failed)} 页已修复，"
+                            f"仍有 {len(remaining)} 页失败"
+                        )
+                        any_success = True
+                    else:
+                        results.append(f"✗ {os.path.basename(pdf_path)}: 全部 {len(failed)} 页修复失败")
                 except Exception as e:
                     results.append(f"✗ {os.path.basename(pdf_path)}: {e}")
-            return f"修复完成:\n" + "\n".join(results)
+            header = "修复完成" if any_success else "修复失败 — 所有页仍无法识别"
+            return f"{header}:\n" + "\n".join(results)
 
         self._start_worker(task)
 def _file_row(label_text, file_input, btn_text, btn_callback):

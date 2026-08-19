@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 # Pattern for failed-page placeholders embedded in output markdown
 _FAILED_PAGE_RE = re.compile(
-    r"<!--\s*第\s+(\d+)(?:-\d+)?\s*(?:页识别失败|页逐页识别失败).*?-->",
+    r"<!--\s*第\s+(\d+)(?:-(\d+))?\s*(?:页识别失败|页逐页识别失败).*?-->",
 )
 
 
@@ -690,7 +690,12 @@ class PDFProcessor(BaseProcessor):
             text = Path(md_path).read_text(encoding="utf-8")
         except OSError:
             return []
-        return sorted(set(int(m.group(1)) for m in _FAILED_PAGE_RE.finditer(text)))
+        pages: set[int] = set()
+        for m in _FAILED_PAGE_RE.finditer(text):
+            start = int(m.group(1))
+            end = int(m.group(2)) if m.group(2) else start
+            pages.update(range(start, end + 1))
+        return sorted(pages)
 
     def repair(
         self,
@@ -774,13 +779,24 @@ class PDFProcessor(BaseProcessor):
         if not results:
             raise RuntimeError(f"PDF 修复识别全部 {len(failed_pages)} 页失败")
 
-        # Replace failure placeholders in the markdown
+        # Replace failure placeholders in the markdown.
+        # Placeholders can be single-page (第 5 页) or range (第 9-16 页).
+        # For ranges, assemble all successfully-repaired pages into one block.
         content = Path(md_path).read_text(encoding="utf-8")
-        for page_num, new_text in results.items():
-            pattern = re.compile(
-                r"\n*<!--\s*第\s+" + str(page_num) + r"(?:-\d+)?\s*(?:页识别失败|页逐页识别失败).*?-->\n*",
-            )
-            content = pattern.sub("\n\n" + new_text + "\n\n", content)
+        for m in _FAILED_PAGE_RE.finditer(content):
+            start = int(m.group(1))
+            end = int(m.group(2)) if m.group(2) else start
+            range_pages = list(range(start, end + 1))
+            repaired_parts = [results[p] for p in range_pages if p in results]
+            if not repaired_parts:
+                continue
+            replacement = "\n\n".join(repaired_parts)
+            # If some pages in the range still failed, keep a trimmed placeholder
+            still_missing = [p for p in range_pages if p not in results]
+            if still_missing:
+                missing_str = ", ".join(str(p) for p in still_missing)
+                replacement += f"\n\n<!-- 第 {missing_str} 页识别失败: 修复重试后仍失败 -->\n\n"
+            content = content.replace(m.group(0), "\n\n" + replacement + "\n\n", 1)
 
         Path(md_path).write_text(content, encoding="utf-8")
         logger.info(
