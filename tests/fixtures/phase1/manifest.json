@@ -193,8 +193,8 @@
     {
       "id": "generate-phase1-fixtures-source",
       "path": "tests/quality/generators/generate_phase1_fixtures.py",
-      "sha256": "6a1b441463ab99bdf4886e4a1c114965a4c52622b94a43d5d8c7e0350f51bacc",
-      "bytes": 2930,
+      "sha256": "6470fc03576a2f334c8e50e2382f0fd1cc259abfa590ebb154faf8018f2fe834",
+      "bytes": 10914,
       "role": "generator-source",
       "redistribution": "allowed",
       "license_id": "repo-owned-test-data",
@@ -217,7 +217,7 @@
     {
       "id": "load-quality-font-source",
       "path": "tests/quality/generators/load_quality_font.py",
-      "sha256": "d0f9266e9ec00d0752a9e79a74eeab34b659870ad7a14080ea322e3e76b64295",
+      "sha256": "6a4cdacd0f08207ea83bd9fc051641e16da1c58957c9e9f184bc99ee420276b4",
       "bytes": 1430,
       "role": "generator-source",
       "redistribution": "allowed",

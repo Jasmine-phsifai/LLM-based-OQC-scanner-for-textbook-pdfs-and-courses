@@ -74,7 +74,7 @@ DEFAULT_PHASE1_MANIFEST_PATH = (
     Path(__file__).parents[1] / "fixtures" / "phase1" / "manifest.json"
 )
 FROZEN_PHASE1_MANIFEST_SHA256 = (
-    "4ec1440f531e88492eb06795a29308256a5718c2748625ce2ad9b1230807e393"
+    "78df07bb720ab9a68b828c445ba5072ab1a0597e704a0ca48514bec8c26325f6"
 )
 
 _SCHEMA_VERSION = "ocrllm.phase1-fixture-manifest.v1"

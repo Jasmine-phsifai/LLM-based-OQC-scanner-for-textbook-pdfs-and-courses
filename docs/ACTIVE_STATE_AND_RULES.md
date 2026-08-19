@@ -1,6 +1,7 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified by live audit 2026-08-18.
+Status: **authoritative and current.** Last verified 2026-08-19 against the
+working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
 `docs/ocrllm_library_go_no_go.md`, before `START_HERE.md`, and before any
@@ -14,21 +15,24 @@ file never overrides a higher-ranked one.
 ```text
 1. docs/ACTIVE_STATE_AND_RULES.md     This file. Current truth and rules.
 2. docs/plan_phase1_maturation_and_phase2_audio.md
-                                      Current work: Phase 1 maturation, then
-                                      Phase 2 mp3-only audio.
+                                      Current work plan; implementation status
+                                      is recorded here, not inferred from the
+                                      plan text.
 3. docs/plan_phase1_defects_and_provider_split.md
-                                      Defect repair D1-D7. In progress under a
-                                      separate agent.
+                                      Stage 1 history and the not-started
+                                      vision/audio split plan.
 4. docs/ocrllm_library_go_no_go.md    Execution contract, gates, boundaries.
-                                      Its dated log sections are history.
-5. MIGRATION_STATUS.md / START_HERE.md  Navigation aids.
-6. docs/phase*                        Immutable historical records.
-                                      Never cite as current state.
+                                      Its dated verification log is history.
+5. MIGRATION_STATUS.md / START_HERE.md  Navigation copies of this state.
+6. docs/phase*, *_decision_*, *_checkpoint_*
+                                      Immutable historical records. Never cite
+                                      them as current state.
 ```
 
-Every `docs/phase*` file is a frozen record of one past attempt. Several of them
-state conclusions that were true only on their own date. Do not read a `phase*`
-file to learn what is true now.
+Every dated phase, decision, checkpoint, and incident file is a frozen record
+of one past attempt. It keeps the trace but does not define the present. Read
+this file first, then verify the named code and tests before trusting any
+historical claim.
 
 ## Project Posture Changed
 
@@ -48,17 +52,22 @@ things:
 
 Phase 1 is consequently reopened for maturation. "Phase 1 is GO" means the image
 path was proven once under trial constraints; it does not mean the image path is
-finished. Trial-shaped constraints — a hardcoded model list, all-or-nothing
-resume, one attempt per request — are now defects of maturity and are being
-removed. See `docs/plan_phase1_maturation_and_phase2_audio.md`.
+finished. Stage M is **partially implemented**: model catalog discovery,
+file-backed state sidecars, and opt-in candidate queues shipped, but the
+attempt-ledger, flowed-output, recovery-policy, credential-pool, evidence-label,
+resume-version, and candidate-validation gaps remain open below. Stage 2
+vision/audio provider splitting and Stage A mp3 recognition have not started.
+See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
 
 Future agents must assume the following and verify before trusting any claim:
 
-- **Documentation lags code.** Several files still describe capabilities as
-  absent that shipped, and one normative section still reports a superseded
-  NO-GO. Prefer reading code and tests over prose.
+- **Fixture byte-reproduction is environment-bound (redesigned 2026-08-19).** The Phase 1 generated-image corpus can only be byte-reproduced in the exact Pillow wheel build that created it; that environment is lost and no installable 12.x build reproduces the pinned pixels. `tests/quality/generators/generate_phase1_fixtures.py` now checks three layers instead: manifest-hash integrity (every environment), same-environment determinism, and reproduction that is byte-strict only under the recorded `GENERATOR_ENVIRONMENT` and pixel-tolerant otherwise. Do not re-baseline the committed images without a maintainer decision: they are the pixels the v17 live evidence was scored against.
+
+- **Dated documentation is history.** Old phase and review files deliberately
+   retain their original conclusions. Current navigation documents must point
+   here and must not repeat those conclusions as present status.
 - **Structure runs ahead of demand.** `contracts/` and `worker/` are 1,817
   lines (23% of the library) serving a subprocess protocol with no consumer.
   They are correct and tested; they are also not yet load-bearing.
@@ -67,14 +76,14 @@ Future agents must assume the following and verify before trusting any claim:
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
 
-## Verified State, 2026-08-18
+## Verified State, 2026-08-19
 
 Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1014 passed, 0 skipped, 0 failed (105 s) | `python -m pytest -q` |
-| Import weight | 92 ms, 115 modules | timed `import ocrllm` |
+| Test suite | 1025 passed, 0 skipped, 0 failed (133 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` with empty `PYTHONPATH` |
+| Import weight | 131 ms median / 222 ms max, 122 modules (5 clean processes) | timed plain import with `src` on `sys.path`; one Windows scheduling outlier |
 | Heavy-module isolation | `PIL`, `openai`, `httpx`, `onnxruntime` all absent after plain import | `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
@@ -88,21 +97,21 @@ snapshot isolation are the two strongest parts of this codebase; build on them.
 
 ## Defect Register
 
-Open defects in shipped surface. Severity is impact on a real user, not effort.
-Do not close an entry without a test that fails before the fix.
+Severity is impact on a real user, not implementation effort. D1-D7 are closed.
+The residual D4 limitation and the current Stage M findings are open. Do not
+close an entry without a test that fails before the fix.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
-lives in `tests/test_defect_register_regressions.py`; verify with:
+lives in `tests/test_defect_register_regressions.py`. The current full-suite
+command is:
 
 ```powershell
 & 'D:\Anaconda\envs\OCRLLM\python.exe' -m pytest -q -p no:cacheprovider
 ```
 
-Stage 1 exit gate, measured 2026-08-18: 1014 passed, 0 failed, 0 skipped;
-`import ocrllm` 92 ms / 115 modules with `PIL`, `openai`, `httpx`, `onnxruntime`
-and `rapidocr` all absent; offline quality scorer re-run with no corpus change.
-No paid live call was made.
+The exact result is refreshed by the verification command before each status
+update. No paid live call is implied by an offline pass.
 
 ### D1 — Provider refusal text is accepted as success. **High. Fixed 2026-08-18.**
 
@@ -342,6 +351,11 @@ A model outside the evidence baseline is usable and must be reported as
 unproven, not blocked. Do not silently imply baseline quality for a model that
 was never gated.
 
+Implementation status: the catalog path is shipped for names outside the
+static set, but the static set still bypasses catalog validation. That is the
+remaining discovery/evidence mismatch tracked by G5; the policy above is the
+target behavior, not a claim that M1 has passed.
+
 Relevant measurement: the `board.v17` prompt against `qwen3.5-ocr` produced 16
 completion tokens and no usable output, while the pinned model produced a full
 transcription from the same prompt and image. Prompt and model class are
@@ -349,35 +363,129 @@ coupled. Discovery makes a model *selectable*; it does not make it *proven*.
 
 ## Stage M Implementation Status, 2026-08-19
 
-The Phase 1 image path now has the first product-maturity implementation:
+Stage M is **partially implemented**. The following behavior is shipped and
+tested offline:
 
-- DashScope model selection keeps the pinned evidence baseline as metadata,
-  checks non-baseline explicit names against a lazily fetched provider catalog,
-  and fails closed with a retryable typed error when no catalog is available.
-  Nonempty successes are cached for 600 seconds; an expired success remains
-  usable during refresh outages while later calls keep retrying the refresh.
-  Catalog/network imports remain lazy.
-- Completed file-backed image recognitions write their state sidecar atomically
-  before publication, so a batch failure preserves completed units. Explicit
-  resume still requires the D4 provider identity declaration for injected
-  providers; output-only injected providers without that declaration retain
-  their prior non-resumable behavior.
-- An explicit `VisionModelSettings.candidate_models` queue advances only on
-  `PROVIDER_QUOTA_EXHAUSTED`, records model, disposition, and outcome in the
-  result/error ledger, and raises `AllCandidatesExhausted` naming the final
-  model when the queue is spent. Generic failures and refusals do not switch.
+- Non-baseline DashScope model names can be checked against a lazy provider
+   catalog. Successful catalogs have a 600-second TTL; expired catalogs remain
+   usable during refresh failure; a first catalog failure is surfaced as the
+   retryable `PROVIDER_CATALOG_UNAVAILABLE` error. The catalog path is lazy.
+- File-backed image recognition writes versioned state atomically before
+   publishing Markdown. Re-running a compatible batch can reuse completed
+   request outputs. Injected-provider resume still requires a caller-declared
+   nonempty `resume_identity`.
+- An explicit `VisionModelSettings.candidate_models` queue is attempted in
+   caller order and currently advances on `PROVIDER_QUOTA_EXHAUSTED` only. The
+   queue is bounded and its attempts are visible, but the ledger and terminal
+   error contract are not complete; see G1, G2, and G4 below.
 
-Offline regression coverage is in `tests/test_stage_maturation.py`. No paid
-live call was made for this implementation; the required live catalog and
-end-to-end smoke gates remain unexecuted until an explicit maintainer budget
-is supplied. Final offline gate: 1,018 passed, `compileall` clean, and plain
-import 61 ms / 122 modules with `PIL`, `openai`, `httpx`, and `onnxruntime`
-absent. `worker/` and `contracts/` remain unchanged.
+The Stage M exit gate has **not** passed. Flowed output within one request,
+full disposition-gated recovery, model-aware credential scheduling, complete
+spend disclosure, and the live catalog/end-to-end smoke remain open. The
+offline suite and import probe must be refreshed by command output before this
+section's measured counts are changed. `worker/` and `contracts/` remain
+unchanged and frozen.
+
+### Current Open Stage M Findings
+
+These are current implementation findings, not historical phase failures.
+Their identifiers are stable so plans, tests, and future diary entries can
+refer to the same issue.
+
+#### G1 — Attempt ledger cannot reconstruct spend. **High. Open.**
+
+`recognize_images.py` does not carry provider-call counts through a successful
+candidate switch, and configuration failures are not entered in the attempt
+ledger. A caller cannot reconstruct all paid work from result metadata or error
+details.
+
+#### G2 — Recovery is quota-only. **Medium. Open.**
+
+The candidate loop switches only for `PROVIDER_QUOTA_EXHAUSTED`, although the
+approved recovery policy also permits model switching for the configured
+unavailable and permission-denied dispositions.
+
+#### G3 — Account blocks prevent eligible model candidates. **Medium. Open.**
+
+The credential pool can record a quota or permission block at account scope.
+That account-wide state prevents acquisition for the next candidate even when
+the candidate-specific model may still be usable.
+
+#### G4 — Chain exhaustion has the wrong public identity. **Medium. Open.**
+
+`AllCandidatesExhausted` subclasses `QuotaExhausted` and therefore does not yet
+give callers a distinct code/disposition for “the entire configured chain
+ended” versus “one model exhausted.”
+
+#### G5 — Proven-model metadata is too broad. **Medium. Open.**
+
+The static supported-model set is still treated as evidence-backed metadata,
+although the live quality evidence proves only the pinned model with the exact
+v17 workflow. Selection and proof status must remain separate.
+
+#### G6 — Resume identity version is stale for candidate queues. **Medium. Open.**
+
+`fingerprint_image_request.py` includes `candidate_models` in the fingerprint
+while retaining `ocrllm.image-request.v1`. Existing checkpoints can therefore
+fail with a state mismatch without an explicit identity-version migration.
+
+#### G7 — Flowed output is not implemented. **Medium. Open.**
+
+`recognize()` publishes only after the complete multi-pass request returns. A
+crash after earlier paid drafts, review, or scout calls still loses that
+request's completed work.
+
+#### G8 — Scout failures are attributed to the primary model. **Medium. Open.**
+
+The omission-scout workflow uses a separate fixed scout model, but a scout
+failure is raised through the primary candidate loop. Recovery can therefore
+switch or retry the wrong model.
+
+#### G10 — Candidate validation is weaker than primary validation. **Low. Open.**
+
+Candidate names reject empty text but do not enforce the primary model field's
+exact trimming and control-character rules.
+
+#### G9 — Catalog outage fail-open. **Closed 2026-08-19.**
+
+Commit `4c5293d` made first-fetch catalog failure retryable and fail closed,
+while retaining the last successful catalog during refresh outages.
+
+## Legacy Status, 2026-08-19
+
+The legacy diary contains no currently open product bug. The recorded path,
+refusal, atomic-write, partial-failure, PDF-render, resume-root, and checkpoint
+cancellation defects are fixed and retained as trace in `legacy_app/AGENTS.md`.
+The latest checkpoint-cancellation fix preserves generated outputs when a task
+is dismissed; it does not delete paid Markdown implicitly. Any legacy issue
+found or fixed in a later session still belongs in that diary before the
+session closes.
+
+## New And Fixed In This Working Update
+
+These changes are current, verified, and should not be mistaken for open
+defects:
+
+- Legacy checkpoint cancellation is now non-destructive by default. Explicit
+   output deletion remains available only through `delete_outputs=True`; the
+   resume dialog calls the cancellation path and its PDF/audio/video regression
+   tests pass.
+- Legacy API/model settings are owned by `SettingsDialog`; model discovery and
+   picker refresh work is kept off the GUI event loop where the path is
+   asynchronous, and the stale main-window test assumptions were updated.
+- The Phase 1 fixture checker now verifies manifest integrity, deterministic
+   regeneration, and decoded-pixel equivalence when the rendering environment
+   is not fully pinned. Its manifest/source pins and tests are synchronized.
+- The active suite passed 1,025 tests with an empty `PYTHONPATH`; the focused
+   legacy checkpoint/GUI suite passed 29 tests and the settings/model suite
+   passed 12 tests with 1 environment skip. These counts are verification
+   snapshots, not permanent gates for future changes.
 
 ## Documentation Rules
 
-The `docs/` directory holds 54 files and 8,699 lines for a 7,824-line library.
-That ratio is the problem this section fixes.
+The `docs/` directory contains both current policy and immutable historical
+records. This section prevents the historical volume from becoming a second
+source of current truth.
 
 1. **One current-state file.** This file. Update it in place; do not add a
    parallel status document.

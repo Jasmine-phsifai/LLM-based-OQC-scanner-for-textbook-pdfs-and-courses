@@ -6,23 +6,22 @@ import hashlib
 from functools import lru_cache
 from pathlib import Path
 
-import PIL
 from PIL import ImageFont
 
 
-PINNED_PILLOW_VERSION = "12.3.0"
 FONT_BYTES = 16_437_364
 FONT_SHA256 = "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b"
 
 
 @lru_cache(maxsize=1)
 def quality_font_path() -> Path:
-    """Return the exact pinned font path after byte-level verification."""
-    if PIL.__version__ != PINNED_PILLOW_VERSION:
-        raise RuntimeError(
-            f"fixture generation requires Pillow {PINNED_PILLOW_VERSION}; "
-            f"found {PIL.__version__}"
-        )
+    """Return the exact pinned font path after byte-level verification.
+
+    The Pillow version is deliberately not gated here: rendered output is
+    compared against the committed corpus by
+    generate_phase1_fixtures.check_phase1_fixtures, which owns the
+    environment match and the reproduction tolerance.
+    """
     path = (
         Path(__file__).resolve().parents[1]
         / "assets"

@@ -22,7 +22,7 @@ def test_verifies_every_hash_image_license_and_provenance_offline() -> None:
 
     assert report.artifact_count == 20
     assert report.fixture_image_count == 5
-    assert report.total_bytes == 17_879_115 + manifest.raw_bytes
+    assert report.total_bytes == 17_887_099 + manifest.raw_bytes
     assert report.total_bytes <= 25 * 1024 * 1024
 
 
