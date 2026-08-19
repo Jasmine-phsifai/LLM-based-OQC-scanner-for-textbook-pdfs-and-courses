@@ -19,7 +19,7 @@ from ..errors import (
 
 def map_injected_provider_error(error: Exception, *, model: str | None) -> OCRLLMError:
     """Return a redacted public error for one injected-provider failure."""
-    details = {"model": model}
+    details = {} if model is None else {"model": model}
     try:
         raw_code = getattr(error, "code", None)
     except Exception:

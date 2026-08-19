@@ -26,6 +26,14 @@ _REFUSAL_MARKERS = (
     "请重新上传",
     "当前对话中没有",
     "当前对话里没有",
+    "抱歉",
+    "对不起",
+    "帮不了",
+    "请提供更清晰",
+    "sorry",
+    "cannot be completed",
+    "can't be completed",
+    "can not be completed",
 )
 
 
@@ -38,9 +46,11 @@ def looks_like_refusal(text: str) -> bool:
     stripped = (text or "").strip()
     if not stripped:
         return False
+    # The short-response cap makes bare apology markers safe for real transcriptions.
     if visible_text_char_count(stripped) > 200:
         return False
-    return any(marker in stripped for marker in _REFUSAL_MARKERS)
+    folded = stripped.casefold()
+    return any(marker.casefold() in folded for marker in _REFUSAL_MARKERS)
 
 
 

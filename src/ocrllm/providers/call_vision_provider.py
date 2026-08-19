@@ -58,8 +58,7 @@ def call_vision_provider(
             code="PROVIDER_TIMEOUT",
             retryable=True,
             details={
-                "model": resolved_provider.model,
-                "provider": resolved_provider.name,
+                **_known_provider_details(resolved_provider),
                 "timeout_seconds": config.timeout_seconds,
                 # The blocked call cannot be interrupted; its worker thread is
                 # abandoned as a daemon rather than joined.
@@ -87,14 +86,26 @@ def call_vision_provider(
             code=error.code,
             details={
                 **dict(error.details),
-                "model": resolved_provider.model,
-                "provider": resolved_provider.name,
+                **_known_provider_details(resolved_provider),
             },
         )
     if validation_error is not None:
         del provider, recognize_method, provider_value
         raise validation_error
     return markdown
+
+
+def _known_provider_details(
+    resolved_provider: ResolvedVisionProvider,
+) -> dict[str, str]:
+    return {
+        key: value
+        for key, value in (
+            ("model", resolved_provider.model),
+            ("provider", resolved_provider.name),
+        )
+        if value is not None
+    }
 
 
 def _dispatch_provider_call(

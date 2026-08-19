@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -322,7 +323,7 @@ class CodexVisionRunner:
                 normalize_codex_vision_model(self.cfg.model),
                 len(image_paths),
             )
-            timeout_seconds = max(30, int(self.cfg.timeout_seconds or 600))
+            timeout_seconds = max(30, int(self.cfg.timeout_seconds or 1800))
             for attempt in range(1, _CODEX_VISION_MAX_ATTEMPTS + 1):
                 if output_path.exists():
                     output_path.unlink()
@@ -357,6 +358,24 @@ class CodexVisionRunner:
                 if not text:
                     text = (result.stdout or "").strip()
                 if text:
+                    stripped_text = text.strip()
+                    if stripped_text.casefold().startswith("sorry4ocrllm"):
+                        because_match = re.search(r"\bbecause\b", stripped_text, flags=re.IGNORECASE)
+                        if because_match:
+                            reason = stripped_text[because_match.end():]
+                        else:
+                            reason = stripped_text[len("SORRY4OCRLLM"):]
+                        reason = reason.strip(" \t\r\n,，.:：;；!?！？-—") or "未提供原因"
+                        if attempt < _CODEX_VISION_MAX_ATTEMPTS:
+                            logger.warning(
+                                "[CODEX] 识图被拒绝，将重试 %d/%d: %s",
+                                attempt + 1,
+                                _CODEX_VISION_MAX_ATTEMPTS,
+                                reason,
+                            )
+                            time.sleep(_CODEX_VISION_RETRY_DELAY_SECONDS * attempt)
+                            continue
+                        raise CodexCLIUnavailableError(f"Codex 拒绝识别: {reason}")
                     return text
 
                 if attempt < _CODEX_VISION_MAX_ATTEMPTS:
@@ -416,7 +435,8 @@ class CodexVisionRunner:
             "你是 OCRLLM 的本机 Codex 只读识图子进程。"
             "只根据附加图片完成识别，不调用工具，不读取项目文件，不编辑文件，不联网，不解释过程。"
             f"本次共有 {image_count} 张图片。"
-            "按用户原始提示要求输出最终识别内容；如果原始提示要求 Markdown，就只输出 Markdown 正文。\n\n"
+            "按用户原始提示要求输出最终识别内容；如果原始提示要求 Markdown，就只输出 Markdown 正文。"
+            "如果识别任务令人困惑或无法根据附加图片完成，请只回复 `SORRY4OCRLLM, because {原因}`，除此之外不要输出任何内容。\n\n"
             "用户原始提示:\n"
             f"{user_prompt}"
         )

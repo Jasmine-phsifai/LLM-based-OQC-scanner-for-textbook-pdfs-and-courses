@@ -12,6 +12,19 @@ from ocrllm import (
 from ocrllm.errors import ConfigError
 
 
+def test_dashscope_settings_for_region_derives_shared_endpoint():
+    settings = DashScopeSettings.for_region("cn-beijing")
+
+    assert settings.base_url == (
+        "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    )
+
+
+def test_dashscope_settings_for_region_rejects_region_without_shared_endpoint():
+    with pytest.raises(ConfigError):
+        DashScopeSettings.for_region("ap-northeast-1")
+
+
 @pytest.mark.parametrize(
     ("region", "base_url"),
     [

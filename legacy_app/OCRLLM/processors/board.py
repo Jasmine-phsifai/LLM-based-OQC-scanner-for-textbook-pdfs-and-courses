@@ -114,6 +114,7 @@ class BoardProcessor(BaseProcessor):
         md_parts = []
         history = []
         successful_batches = 0
+        failed_batches: list[int] = []
 
         for batch_idx, batch in enumerate(batches):
             self._check_cancelled()
@@ -150,6 +151,7 @@ class BoardProcessor(BaseProcessor):
                 logger.error("[BOARD] 批次 %d 失败: %s", batch_idx + 1, e)
                 safe_err = str(e).replace("--", "\u2014")
                 md_parts.append(f"\n\n<!-- 批次 {batch_idx + 1} ({names_str}) 识别失败: {safe_err} -->\n\n")
+                failed_batches.append(batch_idx + 1)
 
         concat_md_files(md_parts, output_path)
         if batches and successful_batches == 0:
@@ -159,5 +161,8 @@ class BoardProcessor(BaseProcessor):
         )
         if reason:
             raise RuntimeError(f"板书识别输出包含识别失败且有效正文过少: {reason}: {output_path}")
+        if failed_batches:
+            failed = ", ".join(str(batch) for batch in failed_batches)
+            raise RuntimeError(f"板书识别输出包含识别失败，失败批次: {failed}: {output_path}")
         logger.info("[BOARD] 板书识别完成 -> %s", output_path)
         return output_path

@@ -49,6 +49,34 @@ class DashScopeSettings:
     vl_high_resolution_images: bool = True
     standalone_sign_scout_model: str | None = None
 
+    @classmethod
+    def for_region(
+        cls,
+        region: str,
+        *,
+        api_key: str | None = None,
+        credential_pool: DashScopeCredentialPool | None = None,
+        enable_thinking: bool = False,
+        vl_high_resolution_images: bool = True,
+        standalone_sign_scout_model: str | None = None,
+    ) -> DashScopeSettings:
+        """Create settings for a region that has a shared DashScope endpoint."""
+        _validate_region(region)
+        host = _SHARED_HOST_BY_REGION.get(region)
+        if host is None:
+            raise ConfigError(
+                "DashScopeSettings.for_region requires a region with a shared endpoint."
+            ) from None
+        return cls(
+            region=region,
+            base_url=f"https://{host}{_OPENAI_COMPATIBLE_PATH}",
+            api_key=api_key,
+            credential_pool=credential_pool,
+            enable_thinking=enable_thinking,
+            vl_high_resolution_images=vl_high_resolution_images,
+            standalone_sign_scout_model=standalone_sign_scout_model,
+        )
+
     def __post_init__(self) -> None:
         _validate_region(self.region)
         _validate_base_url(self.base_url, region=self.region)

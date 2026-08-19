@@ -331,6 +331,7 @@ class PDFProcessor(BaseProcessor):
 
             executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="pdf-llm")
             future_map = {}
+            failed_page_ranges: list[str] = []
             try:
                 for batch_idx, batch in enumerate(batches):
                     self._check_cancelled()
@@ -360,6 +361,9 @@ class PDFProcessor(BaseProcessor):
                         idx, page_str, result, success = future.result()
                         if success:
                             successful_batches += 1
+                        else:
+                            failed_pages = re.findall(r"第\s+(\d+(?:-\d+)?)\s+页识别失败", result)
+                            failed_page_ranges.extend(failed_pages or [page_str])
                         self.tracker.update_phase("llm", done, f"完成第 {page_str} 页")
                         self.tracker.increment_completed(len(batches[idx]))
                         self._report(done, len(batches), f"完成第 {page_str} 页批次 ({done}/{len(batches)})")
@@ -385,6 +389,9 @@ class PDFProcessor(BaseProcessor):
             if successful_batches == 0:
                 raise RuntimeError(f"PDF 大模型识别全部 {len(batches)} 个批次失败，输出文件只包含错误信息: {output_path}")
             self._raise_if_failed_output_too_short(output_path, total_pages)
+            if failed_page_ranges:
+                failed_ranges = ", ".join(dict.fromkeys(failed_page_ranges))
+                raise RuntimeError(f"PDF 输出包含识别失败，失败页范围: {failed_ranges}: {output_path}")
             self.checkpoint_mgr.remove("pdf", pdf_path)
 
             bottleneck = self.tracker.get_bottleneck_report()

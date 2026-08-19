@@ -1047,6 +1047,7 @@ class VideoProcessor(BaseProcessor):
         executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="video-llm")
         future_map = {}
         successful_batches = 0
+        failed_batches: list[int] = []
         try:
             for order, bi in enumerate(pending_indices):
                 self._check_cancelled()
@@ -1068,6 +1069,8 @@ class VideoProcessor(BaseProcessor):
                     md_parts[idx] = result_text
                     if success:
                         successful_batches += 1
+                    else:
+                        failed_batches.append(idx + 1)
                     for word in hw or []:
                         if word not in hotwords:
                             hotwords.append(word)
@@ -1102,6 +1105,9 @@ class VideoProcessor(BaseProcessor):
             )
             if reason:
                 raise RuntimeError(f"视频板书识别输出包含识别失败且有效正文过少: {reason}: {md_path}")
+        if failed_batches:
+            failed = ", ".join(str(batch) for batch in failed_batches)
+            raise RuntimeError(f"视频板书识别输出包含识别失败，失败批次: {failed}: {md_path}")
 
         return self._phase4_finalize(md_path, md_parts, hotwords, output_dir, stem)
 

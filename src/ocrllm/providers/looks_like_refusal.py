@@ -13,6 +13,11 @@ import unicodedata
 _MAXIMUM_REFUSAL_VISIBLE_CHARACTERS = 300
 
 _REFUSAL_MARKERS = (
+    # Bare apology markers are safe only under the short-output visible-character cap.
+    "抱歉",
+    "对不起",
+    "帮不了",
+    "请提供更清晰",
     "无法识别",
     "无法读取",
     "无法访问",
@@ -29,11 +34,15 @@ _REFUSAL_MARKERS = (
     "当前对话里没有",
     "i'm sorry",
     "i am sorry",
+    "sorry",
     "i'm unable",
     "i am unable",
     "i cannot",
     "i can't",
     "i can not",
+    "cannot be completed",
+    "can't be completed",
+    "can not be completed",
     "unable to identify",
     "unable to read",
     "unable to process",

@@ -182,3 +182,50 @@ equivalent shape in `output/delete_image_resume_state.py` and in the temp/
 snapshot directories created by `imaging/snapshot_image_group.py`. When porting
 or extending those, assert the resource is *gone*, not merely empty, and make
 the teardown assertion part of the test rather than trusting the API name.
+
+### 2026-08-18: refusal contracts, Codex timeout, and partial-batch failure truth
+
+**Task A — short apology refusals escaped the legacy oracle.** What broke:
+`looks_like_refusal()` recognized only the original 11 Chinese phrases, so
+short refusals beginning with an apology, including English `Sorry`, could be
+reported as OCR content. Root cause: the marker set lagged observed provider
+wording and matching was case-sensitive. Fix: added the requested Chinese and
+English markers, case-folded matching, and retained the 200-visible-character
+cap so an apology quoted inside a long transcription remains valid content.
+Carry-forward judgement: yes, every provider validator in `src/ocrllm` needs
+the same short-refusal coverage and long-transcription exemption when this
+oracle is mirrored.
+
+**Task B — the Codex vision timeout was too short for real OCR batches.** What
+broke: the config default, runner fallback, and GUI control all selected 600
+seconds, while the GUI could not represent values above 3600 seconds. Root
+cause: three duplicated defaults drifted from the operating requirement. Fix:
+raised both defaults to 1800 seconds and the GUI maximum to 7200 seconds;
+`TimeoutExpired` still fails immediately and is not retried. Carry-forward
+judgement: yes, a future Codex adapter should have one authoritative timeout
+default and a UI/config range capable of representing it.
+
+**Task C — Codex had no machine-readable refusal contract.** What broke: a
+successful CLI exit containing refusal prose was indistinguishable from OCR
+content, while phrase guessing is incomplete and language-dependent. Root
+cause: the prompt did not tell Codex how to signal an impossible image task and
+the runner did not parse such a signal. Fix: the prompt now requires the exact
+`SORRY4OCRLLM, because {原因}` response, and the runner recognizes it only at
+the start, retries within the existing bounded attempt loop, then raises with
+the extracted reason; a sentinel appearing mid-transcription remains content.
+Carry-forward judgement: this can re-emerge in any Codex-style provider port.
+**WARNING FOR src/ocrllm**: a codex-style provider port needs the sentinel
+contract, not phrase guessing.
+
+**Task D — partial batch failures were still reported as success.** What
+broke: PDF, board, and video workers returned or tracked `success=False` and
+wrote failure placeholders, but their orchestrators only rejected all-failed
+or low-content output. A mostly successful job therefore passed the ratio gate
+despite a timeout. Root cause: the per-batch flags were counted and discarded
+instead of becoming a terminal job outcome. Fix: each orchestrator now records
+failed page ranges or batch numbers, finalizes the output first so paid partial
+work and placeholders remain resumable, preserves the more-specific quality
+gate diagnostic when it applies, and otherwise raises with the failed units
+and output path. Carry-forward judgement: this is a direct risk for every
+future batch-orchestration port. **WARNING FOR src/ocrllm**: batch
+orchestration ports must never turn a timeout into a placeholder-as-success.

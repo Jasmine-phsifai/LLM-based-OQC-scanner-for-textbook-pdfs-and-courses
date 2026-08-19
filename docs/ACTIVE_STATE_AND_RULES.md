@@ -73,7 +73,7 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1006 passed, 0 skipped, 0 failed (102 s) | `python -m pytest -q` |
+| Test suite | 1014 passed, 0 skipped, 0 failed (105 s) | `python -m pytest -q` |
 | Import weight | 92 ms, 115 modules | timed `import ocrllm` |
 | Heavy-module isolation | `PIL`, `openai`, `httpx`, `onnxruntime` all absent after plain import | `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
@@ -99,12 +99,14 @@ lives in `tests/test_defect_register_regressions.py`; verify with:
 & 'D:\Anaconda\envs\OCRLLM\python.exe' -m pytest -q -p no:cacheprovider
 ```
 
-Stage 1 exit gate, measured 2026-08-18: 1006 passed, 0 failed, 0 skipped;
+Stage 1 exit gate, measured 2026-08-18: 1014 passed, 0 failed, 0 skipped;
 `import ocrllm` 92 ms / 115 modules with `PIL`, `openai`, `httpx`, `onnxruntime`
 and `rapidocr` all absent; offline quality scorer re-run with no corpus change.
 No paid live call was made.
 
 ### D1 — Provider refusal text is accepted as success. **High. Fixed 2026-08-18.**
+
+Marker coverage was extended on 2026-08-18 for apology-prefixed refusals.
 
 `providers/validate_provider_markdown.py` only asked whether the response
 contained a visible character. A model that replied `无法识别图片内容，请重新上传`

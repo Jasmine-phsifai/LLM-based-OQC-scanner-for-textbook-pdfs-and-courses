@@ -102,7 +102,7 @@ class CodexVisionConfig:
     command: str = "codex"
     model: str = DEFAULT_CODEX_VISION_MODEL
     reasoning_effort: str = DEFAULT_CODEX_VISION_REASONING_EFFORT
-    timeout_seconds: int = 600
+    timeout_seconds: int = 1800
     parallel_requests: int = CODEX_VISION_RUNTIME_PARALLEL
     request_stagger_seconds: float = CODEX_VISION_RUNTIME_STAGGER_SECONDS
     vision_batch_size: int = CODEX_VISION_RUNTIME_BATCH_SIZE

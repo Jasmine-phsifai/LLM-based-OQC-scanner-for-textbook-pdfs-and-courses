@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tempfile
 import unittest
 
@@ -74,6 +75,49 @@ class _SparseThenClosedPDFLLM:
         raise RuntimeError("Cannot send a request, as the client has been closed.")
 
 
+class _OneTimedOutPDFBatchLLM:
+    def set_cancel_event(self, *_args):
+        pass
+
+    def chat_with_images(self, *_args, image_paths, **_kwargs):
+        page_number = int(os.path.basename(image_paths[0]).removeprefix("page").removesuffix(".png"))
+        if page_number == 2:
+            raise subprocess.TimeoutExpired("codex", 1800)
+        return (
+            f"<!-- meta:page number={page_number} -->\n\n"
+            f"第 {page_number} 页成功正文。" + "有效识别内容" * 80
+        )
+
+
+class _SecondBoardBatchTimesOutLLM:
+    def __init__(self):
+        self.calls = 0
+
+    def set_cancel_event(self, *_args):
+        pass
+
+    def chat_with_images_contextual(self, *_args, **_kwargs):
+        self.calls += 1
+        if self.calls == 2:
+            raise subprocess.TimeoutExpired("codex", 1800)
+        return "第一批成功正文。" + "有效识别内容" * 80
+
+
+class _SecondVideoBatchTimesOutLLM:
+    def __init__(self):
+        self.calls = 0
+
+    def set_cancel_event(self, *_args):
+        pass
+
+    def chat_with_images(self, *_args, image_paths, **_kwargs):
+        self.calls += 1
+        if self.calls == 2:
+            raise subprocess.TimeoutExpired("codex", 1800)
+        stem = os.path.splitext(os.path.basename(image_paths[0]))[0]
+        return f"<!-- meta:frame id={stem} time=00:10 -->\n\n第一批成功正文。" + "有效识别内容" * 80
+
+
 def _cfg(tmp: str) -> AppConfig:
     return AppConfig(
         api=APIConfig(api_key="dummy-key"),
@@ -98,6 +142,25 @@ class VisionFailurePropagationTests(unittest.TestCase):
 
             with open(output_path, encoding="utf-8") as f:
                 self.assertIn("识别失败", f.read())
+
+    def test_board_partial_timeout_raises_after_writing_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            image_paths = [os.path.join(tmp, f"board{index}.png") for index in range(1, 3)]
+            output_path = os.path.join(tmp, "board.md")
+            for path in image_paths:
+                Image.new("RGB", (8, 8), "white").save(path)
+            proc = BoardProcessor(
+                cfg=_cfg(tmp), llm=_SecondBoardBatchTimesOutLLM(), api_pool=_SingleClientPool()
+            )
+
+            with self.assertRaisesRegex(RuntimeError, r"输出包含识别失败.*2.*board\.md"):
+                proc.process(image_paths, output_path=output_path, skip_preprocess=True)
+
+            with open(output_path, encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("第一批成功正文", content)
+            self.assertIn("批次 2", content)
+            self.assertIn("timed out", content)
 
     def test_pdf_raises_when_every_llm_batch_only_writes_error_placeholders(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -145,6 +208,36 @@ class VisionFailurePropagationTests(unittest.TestCase):
                 content = f.read()
             self.assertIn("client has been closed", content)
 
+    def test_pdf_partial_timeout_raises_after_preserving_all_batch_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pdf_path = os.path.join(tmp, "book.pdf")
+            output_path = os.path.join(tmp, "book.md")
+            image_paths = [os.path.join(tmp, f"page{page}.png") for page in range(1, 4)]
+            for path in image_paths:
+                Image.new("RGB", (8, 8), "white").save(path)
+
+            import fitz
+
+            doc = fitz.open()
+            for _ in image_paths:
+                doc.new_page(width=64, height=64)
+            doc.save(pdf_path)
+            doc.close()
+
+            proc = PDFProcessor(cfg=_cfg(tmp), llm=_OneTimedOutPDFBatchLLM(), api_pool=_SingleClientPool())
+
+            from unittest.mock import patch
+            with patch("OCRLLM.processors.pdf.pdf_to_images", return_value=image_paths):
+                with self.assertRaisesRegex(RuntimeError, r"PDF 输出包含识别失败.*2.*book\.md"):
+                    proc.process(pdf_path, need_formula=True, output_path=output_path)
+
+            with open(output_path, encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("第 1 页成功正文", content)
+            self.assertIn("第 3 页成功正文", content)
+            self.assertIn("第 2-2 页识别失败", content)
+            self.assertIn("timed out", content)
+
     def test_video_phase4_raises_when_every_batch_only_writes_error_placeholders(self):
         with tempfile.TemporaryDirectory() as tmp:
             frame_path = os.path.join(tmp, "board_001_010s.jpg")
@@ -168,6 +261,33 @@ class VisionFailurePropagationTests(unittest.TestCase):
             board_md = os.path.join(tmp, "lecture_板书识别.md")
             with open(board_md, encoding="utf-8") as f:
                 self.assertIn("批次 1 失败", f.read())
+
+    def test_video_partial_timeout_raises_after_writing_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            frame_paths = [os.path.join(tmp, f"board_00{index}_010s.jpg") for index in range(1, 3)]
+            for path in frame_paths:
+                Image.new("RGB", (8, 8), "white").save(path)
+            frames = [
+                {"path": path, "timestamp": 10.0, "frame_idx": index}
+                for index, path in enumerate(frame_paths, start=1)
+            ]
+            proc = VideoProcessor(
+                cfg=_cfg(tmp),
+                llm=_SecondVideoBatchTimesOutLLM(),
+                reporter=ProgressReporter(),
+                tracker=ProgressTracker(),
+                api_pool=_SingleClientPool(),
+            )
+
+            with self.assertRaisesRegex(RuntimeError, r"输出包含识别失败.*2"):
+                proc._phase4_llm(frames, frame_paths, tmp, "lecture")
+
+            board_md = os.path.join(tmp, "lecture_板书识别.md")
+            with open(board_md, encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("第一批成功正文", content)
+            self.assertIn("批次 2 失败", content)
+            self.assertIn("timed out", content)
 
     def test_video_phase4_propagates_provider_setup_errors_without_placeholders(self):
         from OCRLLM.core.provider_errors import ProviderSetupError

@@ -89,6 +89,28 @@ def test_refusal_text_is_not_a_successful_recognition(tmp_path, response) -> Non
     assert disposition.retryable is False
 
 
+@pytest.mark.parametrize(
+    "response",
+    [
+        "抱歉，我帮不了你识别这张图。",
+        "对不起，图片太模糊，请提供更清晰的版本。",
+        "Sorry, this request cannot be completed.",
+    ],
+)
+def test_apology_prefixed_refusal_is_not_a_successful_recognition(
+    tmp_path,
+    response,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    provider = _FixedResponseProvider(response)
+
+    with pytest.raises(ProviderError) as failure:
+        recognize(source, config=Config(provider=provider))
+
+    assert failure.value.code == "PROVIDER_REFUSED_RECOGNITION"
+    assert failure.value.details["reason"] == "refusal"
+
+
 def test_long_transcription_mentioning_a_refusal_phrase_is_accepted(tmp_path) -> None:
     source = write_test_image(tmp_path / "board.png")
     transcription = "# Board\n\n" + ("讲义提到无法识别的字符时应当标注。" * 40)

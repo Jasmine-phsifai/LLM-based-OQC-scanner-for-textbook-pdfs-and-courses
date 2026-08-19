@@ -285,8 +285,8 @@ class SettingsDialog(QDialog):
         codex_row2.addWidget(self._codex_command_input, stretch=1)
         codex_row2.addWidget(QLabel("超时(秒):"))
         self._codex_timeout_input = QSpinBox()
-        self._codex_timeout_input.setRange(30, 3600)
-        self._codex_timeout_input.setValue(600)
+        self._codex_timeout_input.setRange(30, 7200)
+        self._codex_timeout_input.setValue(1800)
         codex_row2.addWidget(self._codex_timeout_input)
         codex_layout.addLayout(codex_row2)
 
