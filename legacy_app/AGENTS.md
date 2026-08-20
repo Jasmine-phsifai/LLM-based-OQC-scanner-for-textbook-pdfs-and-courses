@@ -399,3 +399,92 @@ have a settings GUI), but if one is ever added, design the model field as
 per-provider from the start — retrofitting a shared field later (as legacy
 did) is what created item 6's blocker.
 
+### 2026-08-20: Codex model discovery and Fast mode were missing from settings
+
+**What broke.** The Codex section exposed only a small static model list and
+had no way to discover the models available to the installed Codex CLI. It
+also had no Fast mode control, so every OCRLLM `codex exec` call ignored the
+user's desired priority service tier because the runner deliberately ignores
+the user's global Codex configuration.
+
+**True root cause.** The GUI, `CodexVisionConfig`, and
+`CodexVisionRunner._build_command` had no shared field for the service tier;
+the existing inspection path already called `codex debug models` but kept its
+parsed list private and never exposed it to the model combo.
+
+**Fix.** Added persisted `fast_mode` state and an environment override,
+passed `-c service_tier="priority"` only when enabled, rejected Fast mode for
+models whose directory metadata lacks the priority tier, and added an async
+Codex model fetch button that loads image-capable model slugs from
+`codex debug models`.
+
+**Carry-forward judgement.** Yes, the same configuration/UI drift can
+re-emerge when a Codex-style provider is ported to `src/ocrllm`.
+
+**WARNING FOR src/ocrllm**: provider capability discovery and request options
+must share one typed configuration contract; a UI-only speed switch is not a
+feature unless the provider command or request payload receives it and the
+selected model is checked for support.
+
+### 2026-08-20: Codex CLI could not read Unicode Windows image paths
+
+**What broke.** A 68-video Codex run completed extraction and preprocessing,
+then every Phase 4 batch was rejected as unable to read its attached images.
+The runner retried each batch three times, so the batch spent minutes per
+video without a chance of producing recognition output.
+
+**True root cause.** The selected and processed JPEGs were present, non-empty,
+and decoded successfully with Pillow. The exact same JPEG failed through
+`codex exec -i` when its original path contained Chinese directory/file names,
+but succeeded after copying the bytes to an ASCII-only temporary filename.
+The Codex CLI returned exit code 0 with the refusal sentinel, so subprocess
+success and model metadata both incorrectly looked healthy.
+
+**Fix.** `CodexVisionRunner` now copies every request's image attachments into
+its per-request temporary directory using ASCII filenames before building the
+Codex command. It also rejects directories and empty staged files before
+launching the subprocess. The original images remain untouched.
+
+**Verification.** A live ASCII-path smoke returned `IMAGE_OK`; the focused
+regression test proves a Unicode source path is not passed to Codex and that
+the staged bytes are identical. The active video process was stopped after
+video 037 Phase 4 so it would not continue spending retries on the known
+failure.
+
+**Carry-forward judgement.** Yes, this can re-emerge when a media provider is
+ported into `src/ocrllm` if it receives user filesystem paths directly.
+
+**WARNING FOR src/ocrllm**: provider adapters must normalize or snapshot
+filesystem inputs into a provider-safe path/byte contract before dispatch;
+existence checks alone do not prove that a subprocess can consume a Windows
+Unicode path.
+
+
+## 2026-08-20 — Codex "无法访问附加图片" mass refusals: service-side attachment loss (mitigated)
+
+Symptom: 2026-08-20 12:21–12:37, every Codex vision call (1–8 images) was
+refused via the SORRY4OCRLLM path with "无法访问/无法读取附加图片"; 10 calls at
+11:59–12:03 had succeeded. All Modern Robotics batch videos failed.
+
+Diagnosis (live, same day): reproduced the EXACT production path —
+CodexVisionRunner.recognize with the same failing frames
+(D:\univ\...\034_*\processed_frames\*.jpg), same registry config
+(gpt-5.6-luna, effort=low, fast_mode/priority, batch 8), and 5 parallel
+calls × 8 frames — everything succeeded. Staging, -i attachment, sandbox,
+cwd, PATH (base vs OCRLLM env), env vars all ruled out. Conclusion: the
+2026-08-18 attachment repair IS valid; the remaining failure is a transient
+OpenAI service-side window where codex exec exits 0 but the model never
+receives the -i attachments. The old retry (3 tries, 4–8 s apart) cannot
+outlive a 16+ minute window, so whole batches aborted.
+
+Fix in core/codex_vision.py: classify image-access refusals
+(_is_image_access_refusal, CN+EN markers) and retry them on a dedicated long
+schedule (15/45/90/180/300 s) that does NOT consume the 3 regular attempts;
+exhaustion raises a message stating the loss is service-side and the task is
+resumable. Non-access refusals keep the old short path. 3 new tests in
+tests/test_codex_vision.py; suite 232 passed / 1 skipped.
+
+WARNING FOR src/ocrllm: any future Codex-CLI provider must treat "model says
+it cannot see the attachment" as transient infrastructure failure with long
+backoff — not as a content refusal and not as caller error. CLI exit code 0
+does not mean the attachments were delivered.

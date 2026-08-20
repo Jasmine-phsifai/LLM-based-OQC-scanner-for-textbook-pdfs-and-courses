@@ -34,6 +34,7 @@ from OCRLLM.core.utils import windows_no_window_kwargs
 logger = logging.getLogger(__name__)
 
 CODEX_VISION_DEFAULT_REASONING = DEFAULT_CODEX_VISION_REASONING_EFFORT
+CODEX_VISION_FAST_SERVICE_TIER = "priority"
 CODEX_VISION_BATCH_SIZE = CODEX_VISION_RUNTIME_BATCH_SIZE
 CODEX_VISION_MAX_PARALLEL = CODEX_VISION_RUNTIME_PARALLEL
 CODEX_VISION_STAGGER_SECONDS = CODEX_VISION_RUNTIME_STAGGER_SECONDS
@@ -74,6 +75,31 @@ _REQUIRED_EXEC_FLAGS = (
 _CODEX_VISION_MAX_ATTEMPTS = 3
 _CODEX_VISION_RETRY_DELAY_SECONDS = 4.0
 
+# Codex 服务端偶发丢失 -i 附件（CLI 仍返回 0，模型称“无法访问附加图片”）。
+# 这类窗口可持续十几分钟，需要独立的长退避重试计划（秒）。
+_IMAGE_ACCESS_RETRY_DELAYS_SECONDS = (15.0, 45.0, 90.0, 180.0, 300.0)
+
+_IMAGE_ACCESS_REFUSAL_MARKERS = (
+    "无法访问",
+    "无法读取",
+    "无法打开",
+    "路径不存在",
+    "cannot access",
+    "cannot read",
+    "cannot open",
+    "unable to access",
+    "unable to read",
+    "not able to access",
+    "no attached image",
+    "not attached",
+)
+
+
+def _is_image_access_refusal(reason: str) -> bool:
+    """判断 SORRY4OCRLLM 拒绝原因是否为“看不到附件”类服务端瞬时故障。"""
+    lowered = (reason or "").casefold()
+    return any(marker in lowered for marker in _IMAGE_ACCESS_REFUSAL_MARKERS)
+
 
 class CodexCLIUnavailableError(RuntimeError):
     """Codex CLI 不可用或不满足本机识图要求。"""
@@ -108,6 +134,58 @@ def _run_codex_process(
 
 def _run_probe(cmd: list[str], timeout: float = 20.0):
     return _run_codex_process(cmd, timeout=timeout)
+
+
+def _fetch_codex_model_records(command: str, *, timeout: float = 30.0) -> list[dict]:
+    if not shutil.which(command):
+        raise CodexCLIUnavailableError(f"未找到 Codex 命令: {command}")
+    try:
+        result = _run_probe([command, "debug", "models"], timeout=timeout)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise CodexCLIUnavailableError(
+            _codex_launch_failure_message("Codex 模型目录检测失败", command, exc)
+        ) from exc
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()
+        raise CodexCLIUnavailableError(f"Codex 模型目录检测失败: {detail}")
+    try:
+        raw = json.loads(result.stdout or "{}")
+    except json.JSONDecodeError as exc:
+        raise CodexCLIUnavailableError(f"Codex 模型目录不是有效 JSON: {exc}") from exc
+    records = raw.get("models") if isinstance(raw, dict) else None
+    if not isinstance(records, list):
+        raise CodexCLIUnavailableError("Codex 模型目录缺少 models 列表")
+    return [record for record in records if isinstance(record, dict)]
+
+
+def fetch_codex_vision_models(cfg: CodexVisionConfig) -> list[str]:
+    """从 Codex CLI 模型目录返回支持图片输入的模型 slug。"""
+    records = _fetch_codex_model_records((cfg.command or "codex").strip())
+    names = []
+    for record in records:
+        slug = str(record.get("slug") or "").strip()
+        modalities = {str(value).strip().lower() for value in (record.get("input_modalities") or [])}
+        if slug and "image" in modalities:
+            names.append(slug)
+    return list(dict.fromkeys(names))
+
+
+def _supports_fast_mode(model: dict) -> bool | None:
+    service_tiers = model.get("service_tiers")
+    if service_tiers is not None:
+        if isinstance(service_tiers, dict):
+            service_tiers = [service_tiers]
+        return any(
+            isinstance(item, dict)
+            and str(item.get("id") or "").strip().lower() == CODEX_VISION_FAST_SERVICE_TIER
+            for item in service_tiers
+        )
+    additional_speed_tiers = model.get("additional_speed_tiers")
+    if additional_speed_tiers is None:
+        return None
+    if isinstance(additional_speed_tiers, str):
+        additional_speed_tiers = [additional_speed_tiers]
+    return any(str(item).strip().lower() == "fast" for item in additional_speed_tiers)
 
 
 def _codex_launch_failure_message(prefix: str, command: str, exc: BaseException) -> str:
@@ -230,21 +308,13 @@ def inspect_codex_cli(cfg: CodexVisionConfig) -> CodexInspectionReport:
         )
 
     try:
-        models_result = _run_probe([command, "debug", "models"], timeout=30.0)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return CodexInspectionReport(False, _codex_launch_failure_message("Codex 模型目录检测失败", command, exc), version)
-    if models_result.returncode != 0:
-        detail = (models_result.stderr or models_result.stdout or "").strip()
-        return CodexInspectionReport(False, f"Codex 模型目录检测失败: {detail}", version)
+        models = _fetch_codex_model_records(command)
+    except CodexCLIUnavailableError as exc:
+        return CodexInspectionReport(False, str(exc), version)
 
     model_name = normalize_codex_vision_model(cfg.model)
-    try:
-        raw = json.loads(models_result.stdout or "{}")
-    except json.JSONDecodeError as exc:
-        return CodexInspectionReport(False, f"Codex 模型目录不是有效 JSON: {exc}", version)
-    models = raw.get("models") or []
     image_model_slugs = [
-        item.get("slug")
+        str(item.get("slug") or "").strip()
         for item in models
         if "image" in set(item.get("input_modalities") or []) and item.get("slug")
     ]
@@ -255,6 +325,8 @@ def inspect_codex_cli(cfg: CodexVisionConfig) -> CodexInspectionReport:
     modalities = set(model.get("input_modalities") or [])
     if "image" not in modalities:
         return CodexInspectionReport(False, f"Codex 模型不支持图片输入: {model_name}{suggestion}", version)
+    if cfg.fast_mode and _supports_fast_mode(model) is False:
+        return CodexInspectionReport(False, f"模型 {model_name} 不支持 Fast mode", version)
     supported_efforts = {
         item.get("effort")
         for item in (model.get("supported_reasoning_levels") or [])
@@ -264,7 +336,12 @@ def inspect_codex_cli(cfg: CodexVisionConfig) -> CodexInspectionReport:
     if supported_efforts and effort not in supported_efforts:
         return CodexInspectionReport(False, f"模型 {model_name} 不支持思考强度: {effort}", version)
 
-    return CodexInspectionReport(True, f"Codex 可用: {version or command}, model={model_name}, reasoning={effort}", version)
+    fast_detail = f", fast={CODEX_VISION_FAST_SERVICE_TIER}" if cfg.fast_mode else ""
+    return CodexInspectionReport(
+        True,
+        f"Codex 可用: {version or command}, model={model_name}, reasoning={effort}{fast_detail}",
+        version,
+    )
 
 
 def apply_codex_vision_runtime_limits(cfg: AppConfig) -> AppConfig:
@@ -290,6 +367,24 @@ class CodexVisionRunner:
     def __init__(self, cfg: CodexVisionConfig):
         self.cfg = cfg
 
+    @staticmethod
+    def _stage_image_paths(image_paths: Iterable[str], staging_dir: str) -> list[str]:
+        staged_paths = []
+        for index, path in enumerate(image_paths, start=1):
+            source = Path(path)
+            suffix = source.suffix.lower() if source.suffix.isascii() else ""
+            destination = Path(staging_dir) / f"image_{index:03d}{suffix}"
+            try:
+                shutil.copyfile(source, destination)
+                if destination.stat().st_size <= 0:
+                    raise OSError("staged image is empty")
+            except OSError as exc:
+                raise CodexCLIUnavailableError(
+                    f"无法准备 Codex 图片附件: {path}: {exc}"
+                ) from exc
+            staged_paths.append(str(destination))
+        return staged_paths
+
     def recognize(self, prompt: str, image_paths: list[str]) -> str:
         batch_limit = max(
             1,
@@ -305,16 +400,17 @@ class CodexVisionRunner:
         command = (self.cfg.command or "codex").strip()
         if not shutil.which(command):
             raise CodexCLIUnavailableError(f"未找到 Codex 命令: {command}")
-        missing = [path for path in image_paths if not Path(path).exists()]
+        missing = [path for path in image_paths if not Path(path).is_file()]
         if missing:
             raise CodexCLIUnavailableError(f"图片不存在: {missing[0]}")
 
         with tempfile.TemporaryDirectory(prefix="ocrllm_codex_") as tmp:
+            staged_image_paths = self._stage_image_paths(image_paths, tmp)
             output_path = Path(tmp) / "last_message.txt"
             cmd = self._build_command(
                 command=command,
                 prompt=self._build_prompt(prompt, len(image_paths)),
-                image_paths=image_paths,
+                image_paths=staged_image_paths,
                 cwd=tmp,
                 output_path=str(output_path),
             )
@@ -324,7 +420,10 @@ class CodexVisionRunner:
                 len(image_paths),
             )
             timeout_seconds = max(30, int(self.cfg.timeout_seconds or 1800))
-            for attempt in range(1, _CODEX_VISION_MAX_ATTEMPTS + 1):
+            image_access_retries = 0
+            attempt = 0
+            while attempt < _CODEX_VISION_MAX_ATTEMPTS:
+                attempt += 1
                 if output_path.exists():
                     output_path.unlink()
                 try:
@@ -376,6 +475,26 @@ class CodexVisionRunner:
                         else:
                             reason = stripped_text[len("SORRY4OCRLLM"):]
                         reason = reason.strip(" \t\r\n,，.:：;；!?！？-—") or "未提供原因"
+                        if _is_image_access_refusal(reason):
+                            if image_access_retries < len(_IMAGE_ACCESS_RETRY_DELAYS_SECONDS):
+                                delay = _IMAGE_ACCESS_RETRY_DELAYS_SECONDS[image_access_retries]
+                                image_access_retries += 1
+                                logger.warning(
+                                    "[CODEX] Codex 服务端未收到图片附件（瞬时故障），"
+                                    "%.0f 秒后重试 %d/%d: %s",
+                                    delay,
+                                    image_access_retries,
+                                    len(_IMAGE_ACCESS_RETRY_DELAYS_SECONDS),
+                                    reason,
+                                )
+                                time.sleep(delay)
+                                attempt -= 1  # 长退避重试不占用常规重试次数
+                                continue
+                            raise CodexCLIUnavailableError(
+                                "Codex 服务端持续丢失图片附件（本地图片已校验完好，"
+                                f"多次长退避重试仍失败）: {reason}；"
+                                "任务保留占位符，可稍后恢复重跑"
+                            )
                         if attempt < _CODEX_VISION_MAX_ATTEMPTS:
                             logger.warning(
                                 "[CODEX] 识图被拒绝，将重试 %d/%d: %s",
@@ -431,6 +550,8 @@ class CodexVisionRunner:
             "--output-last-message",
             output_path,
         ]
+        if self.cfg.fast_mode:
+            cmd.extend(["-c", f'service_tier="{CODEX_VISION_FAST_SERVICE_TIER}"'])
         for feature in _DISABLED_CODEX_FEATURES:
             cmd.extend(["--disable", feature])
         for path in image_paths:
