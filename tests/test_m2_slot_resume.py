@@ -50,12 +50,14 @@ def _slot_config(
     output_dir: Path,
     *,
     resume: bool = False,
+    overwrite: bool = False,
 ) -> Config:
     return Config(
         provider=provider,
         output_dir=output_dir,
         preferences=RecognitionPreferences(draft_candidates=2, review_passes=1),
         resume=resume,
+        overwrite=overwrite,
     )
 
 
@@ -124,6 +126,39 @@ def test_interrupted_request_keeps_paid_slots_and_resume_pays_only_missing(
 
     recognize(source, config=_slot_config(provider, output_dir, resume=True))
     assert len(provider.calls) == 4
+
+
+def test_interrupted_overwrite_resume_rejects_old_output_before_provider_call(
+    tmp_path: Path,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    output_path = output_dir / "board_board.md"
+    output_path.write_text("previous published output", encoding="utf-8")
+    provider = InterruptibleSlotProvider(fail_after=2)
+
+    with pytest.raises(ProviderError):
+        recognize(
+            source,
+            config=_slot_config(provider, output_dir, overwrite=True),
+        )
+
+    state_path = output_dir / "board_board.ocrllm-state.json"
+    partial_state = state_path.read_bytes()
+    calls_before_resume = len(provider.calls)
+    provider.fail_after = None
+
+    with pytest.raises(ResumeStateError) as captured:
+        recognize(
+            source,
+            config=_slot_config(provider, output_dir, resume=True),
+        )
+
+    assert captured.value.code == "RESUME_STATE_MISMATCH"
+    assert len(provider.calls) == calls_before_resume
+    assert output_path.read_text(encoding="utf-8") == "previous published output"
+    assert state_path.read_bytes() == partial_state
 
 
 def test_resume_rejects_legacy_v1_state_naming_the_version_difference(

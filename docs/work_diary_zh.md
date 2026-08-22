@@ -1171,3 +1171,34 @@ legacy、social media 或用户临时交接文件。
 **遗留/下一步。** 这次只统一已经存在的 built-in 身份规则，不建立未来 adapter registry。Stage 2 真正加入
 第二个内置 provider 时，再把 stable identity 设计为 provider-neutral seam；现在提前抽象没有消费者。下一轮
 继续查找已建 active 功能的可证明缺陷；若没有更高价值证据，则转入队列 #6 的 Stage A 只读调研。
+
+## #026 — 2026-08-23：部分恢复遇到旧输出时不再先花模型调用
+
+**任务。** 检查 `resume=True` 是否会在发现已有 Markdown 与部分 checkpoint 无法同时验证之前，先补跑缺失的
+provider 工作。成功标准是：真实可达场景先有失败回归；修复后在任何新增 provider 调用前报 typed mismatch，
+原 Markdown 与已保存 slots 都不改变；正常部分恢复和完整状态复用继续通过。
+
+**假设修正与方案。** 初始假设是“部分状态旁不应存在 Markdown”。两名只读 scout 和主代理逐行复核后找到
+反例：已有 Markdown 的任务以 `overwrite=True` 开始，slot 已写入 sidecar 后中断，会自然留下旧 Markdown 与
+合法 v2 partial state。当前状态没有保存 overwrite 授权或旧文件摘要，而 `resume=True` 又不能与
+`overwrite=True` 同时设置，所以库不能判断该文件仍是原来的旧产物，还是中途被替换。比较两条路：①扩展状态
+版本，记录覆盖前文件身份并设计自动替换语义；②保持现有状态契约，在身份验证后、补跑 provider 前保守拒绝。
+选择②。它不猜测覆盖权限、不增加状态字段，并且用户移走旧 Markdown 后仍可从未变的 slots 继续恢复；自动
+穿过旧文件的恢复留给未来有真实优先级时再设计，不能在本轮偷偷放宽覆盖语义。
+
+**失败优先证据与修复。** 回归先写入 `previous published output`，用 `overwrite=True` 运行三次 provider
+尝试并在第三次失败，确认库生成 partial sidecar 且保留旧文件；随后用同一稳定身份 `resume=True`。修前
+**1 failed / 0.45s**：恢复又执行一次 provider，完成并替换 sidecar 后才得到
+`RESUME_STATE_MISMATCH`。修复只在 `recognize.py` 的 partial-state 分支增加一个前置条件：先完成 request
+identity 校验，若 output 已存在则立即抛 `RESUME_STATE_MISMATCH`。回归约束调用数不增加、旧 Markdown 文本
+不变、sidecar 原始 bytes 不变。没有调用只适用于 completed state 的 digest validator，也没有静默覆盖。
+
+**审查与验证。** 主代理复核 config 的 resume/overwrite 互斥、output preflight、slot 原子保存、partial
+state invariant 和最终 output validator。image-resume/M2/defect focused 集 **44 passed / 2.73s**；root
+全量 **1068 passed / 90.09s**。本轮无网络/provider/付费调用，没有修改 frozen `contracts/`、`worker/`、
+legacy、social media 或用户临时交接文件。当前文档已明确人工处理方式：移动或删除旧 Markdown 后再恢复，
+已保存的付费 slots 仍可复用。
+
+**遗留/下一步。** v2 状态无法自动证明 interrupted-overwrite 留下的旧产物；这是明确限制，不是本轮声称关闭
+的能力。只有当自动恢复覆盖任务成为实际产品优先级时，才考虑把 prior-output provenance 纳入新状态版本。
+下一轮继续优先审计已建 active 功能；无更高价值缺陷时再进入 Stage A 音频只读调研。

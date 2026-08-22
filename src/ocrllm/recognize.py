@@ -156,6 +156,14 @@ def _recognize(
                                 resume_state,
                                 resume_identity,
                             )
+                            if output_path.exists():
+                                from .errors import ResumeStateError
+
+                                raise ResumeStateError(
+                                    "Existing image output conflicts with a partial "
+                                    "resume state.",
+                                    code="RESUME_STATE_MISMATCH",
+                                ) from None
                             seeded_slots = resume_state.slots
                         slot_checkpoint = ImageSlotCheckpoint(
                             resume_identity,

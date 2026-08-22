@@ -833,6 +833,14 @@ crash mid-request discards nothing that was already paid for.
   Preservation is not opt-in: injected providers keep the D4 `resume_identity`
   declaration, and any checkpoint-eligible run persists slots even without
   `resume=True`.
+- A partial checkpoint can coexist with an older Markdown after an
+  `overwrite=True` run is interrupted. Because state v2 does not persist the
+  overwrite authorization or identify that older artifact, `resume=True` now
+  rejects this ambiguous pair with `RESUME_STATE_MISMATCH` before dispatching
+  another provider call. The caller can move or remove the old Markdown and
+  resume from the retained slots. Automatic continuation through that case
+  would require explicit prior-output provenance in a future state version;
+  the library does not silently infer permission to overwrite.
 - **Fingerprint identity break, v1 to v2 (audit finding G6).** Commit
   `a19776d` silently changed the v1 fingerprint by adding `candidate_models`
   to the hashed document. The identity version is now explicit:
