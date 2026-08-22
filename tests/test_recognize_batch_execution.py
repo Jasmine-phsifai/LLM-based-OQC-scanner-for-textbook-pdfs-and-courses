@@ -51,7 +51,7 @@ class TimedProvider:
 
     def recognize_images(self, image_paths, *, prompt, config):
         with self._lock:
-            self.started_at.append(time.monotonic())
+            self.started_at.append(time.perf_counter())
         return f"# {image_paths[0].name}\n"
 
 

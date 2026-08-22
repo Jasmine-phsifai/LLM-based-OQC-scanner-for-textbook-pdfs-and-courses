@@ -1,4 +1,4 @@
-"""Coordinate monotonic provider request starts within one public operation."""
+"""Coordinate high-resolution monotonic starts within one public operation."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ class ProviderRequestStartGate:
             while True:
                 self._raise_if_aborted()
                 raise_if_cancelled(cancellation)
-                now = time.monotonic()
+                now = time.perf_counter()
                 remaining = self._next_start_at - now
                 if remaining <= 0.0:
                     self._next_start_at = now + self._interval_seconds

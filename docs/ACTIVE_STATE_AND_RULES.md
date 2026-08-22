@@ -268,6 +268,16 @@ are not wrapped.
 Known limit: a wedged provider thread cannot be killed. It is abandoned as a
 daemon thread rather than allowed to block interpreter shutdown.
 
+Cadence timing uses `time.perf_counter()` as of 2026-08-23. The repository's
+Windows Python 3.10 runtime implements `time.monotonic()` with 15.625 ms
+`GetTickCount64()` resolution, which could lose most of a short configured
+interval at a tick boundary. `perf_counter()` is the high-resolution monotonic
+QPC clock in that runtime. A deterministic quantized-clock regression proves a
+30 ms permit cannot collapse to one 15.625 ms tick, and integration tests
+measure provider entry with the same high-resolution clock. This guarantees
+gate authorization spacing; arbitrary thread scheduling and remote network
+send time remain outside an exact wall-clock guarantee.
+
 ### D3 — `recognize_batch` discards completed paid work on any failure. **High. Fixed 2026-08-18.**
 
 **Signature change, taken deliberately.** `recognize_batch` now returns

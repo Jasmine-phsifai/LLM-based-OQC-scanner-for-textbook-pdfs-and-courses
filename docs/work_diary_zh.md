@@ -1348,3 +1348,38 @@ frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文
 **下一步。** 下一轮先对上述 cadence 测试做只读、可重复的 Windows 计时审计：区分产品 start-gate 语义与低分辨率观测误差；只有稳定证明
 产品会过早 dispatch 才改实现，否则只修测试测量 seam。若该证据不能复现，再继续优先审计 active provider/output surface，而不是扩大
 HTML/Markdown 解析范围。
+
+## #031 — 2026-08-23：provider start gate 改用高分辨率单调时钟
+
+**任务与证据转向。** 本轮接续 #030 唯一一次 30 ms cadence 测试记录到约 15 ms 的现象，先判断是产品过早放行还是测试观测误差。
+主代理重新读取权威文档、日记与 package 规则并同步 origin；两名只读 scout 分别审计 clock/call topology 与测试设计。初始有两条路径：
+①保留 production `time.monotonic()`，只把 `TimedProvider` 换成更精细的测量；②若 coarse clock 可使 permit 本身损失间隔，则 production 与
+测试一起改用 `time.perf_counter()`。仓库实际环境 `D:\Anaconda\envs\OCRLLM\python.exe` 是 Python 3.10.20，实时
+`get_clock_info()` 证明 `monotonic=GetTickCount64(), resolution=0.015625`，而
+`perf_counter=QueryPerformanceCounter(), resolution=1e-7`。一名 scout 最初在系统 Python 3.13 上看到两者同为 QPC，主代理要求切回项目
+解释器复核后结论一致修正；没有把错误环境的结果当成仓库事实。
+
+**失败优先的确定性证明。** 新建单一职责 `tests/test_provider_request_start_gate.py`，用无真实 sleep 的
+`QuantizedWindowsClock` 模拟 15.625 ms GetTickCount64 tick 与 timer-quantized sleep：第一次 gate permit 恰在 coarse tick 前，provider entry
+跨过 tick 后记录；第二次等待若仍以 stale coarse value 建 deadline，就可在下一 tick 放行。旧代码稳定 **1 failed / 0.15s**，两次仿真 actual time
+只差约 `0.031251 - 0.015624 = 0.015627`，小于配置 0.03；这不是靠偶发调度重现。把 gate 的唯一时间读取改成
+`time.perf_counter()` 后，同一模型必须跨满高分辨率 30 ms 才能放行。测试同时 monkeypatch coarse `monotonic` 与高分辨率 `perf_counter`，
+未来若退回旧时钟会重新失败。
+
+**最小实现与边界。** production 只有一行行为改动：`ProviderRequestStartGate.wait()` 从 `time.monotonic()` 换到同样单调、但在项目 Windows
+运行时由 QPC 提供的 `time.perf_counter()`。integration `TimedProvider` 也用 QPC 观测，避免端点量化把真实约 30 ms 错报成一个 15.625 ms
+tick。没有改 interval 配置、sleep/poll、lock、abort/cancellation、timeout、线程数或 provider API。两个 scout 与主代理都指出另一条不同边界：
+injected provider 在 caller gate 后通过 Event 唤醒已 parked worker，极端 worker 调度仍可能压缩“method entry”观测；remote network send 更不
+可能由库精确承诺。此次失败只证明 coarse clock 问题，没有证明需要把 gate 搬进 worker。为该理论窗口增加 handshake 会连带改变 timeout 与
+cancellation 语义，因此本轮明确不做。权威文档现在承诺 operation-local gate authorization spacing，并把 provider entry 作为接近的 integration
+证据，而非任意线程/网络的绝对时钟保证。
+
+**复核与验证。** 修后 deterministic gate 回归通过；direct 与 parallel integration cadence 两项连续运行 **20 轮、40 tests 全通过**。
+一名 clock scout 另跑 100 次 post-fix probe，最小 provider-entry gap 为 **0.0302167 s**，无一次低于 0.03。batch/gate/policy/image/D1/
+provider-error/Stage M focused 集 **114 passed / 3.48s**；root 全量 **1080 passed / 91.26s**。`src/ocrllm/README_ACTIVE_LIBRARY.md`
+与权威状态已把 cadence 写成 high-resolution monotonic；module docstring 同步。提交前继续执行 `compileall`、plain import、diff/EOL 与 staged
+review。本轮无网络/provider/付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** 回到 active 已建功能审计。优先检查 provider response/output 边界是否还有可公开复现的 false success、错误分类或付费后丢结果；
+若没有更高价值缺陷，再按既有队列进入 Stage A 音频只读迁移调研。worker wake-up 理论窗口保留为明确边界，除非后续出现真实可重复证据，
+不升级成线程协议重构。
