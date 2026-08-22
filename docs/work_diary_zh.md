@@ -878,6 +878,9 @@ provider unavailable，因此未把 legacy 修复复制过去。无网络、prov
 排除真实 ffmpeg e2e 与延期的 import-time Bilibili diagnostic 后，legacy 离线广集为
 **275 passed, 1 skipped / 43.57s**，唯一 skip 是显式 live Google discovery；`py_compile` 与
 `git diff --check` 通过。
+首次从 repo 根运行 legacy focused 测试时因该套件依赖 `legacy_app` 工作目录而出现
+`ModuleNotFoundError: OCRLLM`，当时零测试执行；切到正确目录后得到上述失败优先与最终结果，
+该命令错误不计入产品测试结论。
 
 **新发现与下一步。** Google 独立实现的 JSON 分类先判断 `code == 429`，会让同时含明确
 `FreeTierOnly` / `FreeAllocationQuotaExceeded` 的 payload 走普通限流重试；已进入任务 13，下一轮
