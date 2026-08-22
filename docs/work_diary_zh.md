@@ -69,9 +69,9 @@
     sidecar/checkpoint 扩展。
 11. ~~独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
     “免费额度耗尽”提示~~ → 已保留显式 opt-in 切候选，但改用中性内部信号并保留原异常，见 #018。
-12. legacy offline suite 边界:`tests/test_bilibili_api.py` 在 collection 顶层执行真实 Bilibili
-    API 与 `curl b23.tv`；#014 广集因该公开网络超时中断。该项随 social media 一并延后，不再作为
-    当前 heartbeat 下一项；未来恢复时应移为显式 opt-in/script，默认 pytest collection 零网络。
+12. ~~legacy offline suite 边界:`tests/test_bilibili_api.py` 在 collection 顶层执行真实 Bilibili
+    API 与 `curl b23.tv`~~ → 已改为 guarded manual diagnostic，并用 import-safety regression 保证
+    默认 collection 零网络/零 subprocess，见 #043；没有恢复 social product 开发。
 13. ~~Google JSON 错误分类顺序~~ → 已完成并纠正原假设，见 #019。Google 已有证据是
     `You exceeded your current quota ... check your plan and billing details`；此前 JSON 路径实际误判为
     `BILLING`，不是 `RATE_LIMIT`。`FreeTierOnly` / `FreeAllocationQuotaExceeded` 属于 DashScope，
@@ -1606,3 +1606,19 @@ RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 
 **最后一次非产品命令错误。** 为寻找下一项明确 open debt，第一次 PowerShell `rg` pattern 混入未配对的双引号，shell 在执行搜索前报 terminator error，没有读写仓库。改用单引号和更简单的两个独立 pattern 后成功。该扫描确认 active 已登记的主要外部门禁仍是付费 Stage M smoke，另有 legacy Bilibili diagnostic 在 pytest collection 期间做 public HTTP 的已知 test debt。
 
 **本轮边界与下一轮。** 本轮没有网络/provider/付费调用，除 Git 同步和最终 push；没有修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。#043 优先审计并修复已建 legacy 测试基础设施：定位为何 Bilibili live diagnostic 在 collection/import 时联网，比较显式 opt-in integration test 与离线 collection seam，先证明 broad suite 会被 import-time HTTP 拖死，再做最小修正。它是测试隔离修复，不是恢复 social media feature 开发。
+
+## #043 — 2026-08-23：Bilibili diagnostic 不再在 pytest collection 联网
+
+**本轮英文自我任务。** Atomic task: remove public-network activity from pytest collection for the legacy Bilibili diagnostic without weakening the explicitly runnable diagnostic or resuming social-media feature work. Success means import/collection 零网络和零 subprocess，explicit manual diagnostic 仍可运行，失败优先证据、legacy carry-forward、离线广集、中文日记、提交和 push 全部完成。
+
+**复核后的精确范围。** 同步 origin、重读 active/entry/legacy 规则和 #042 后，确认 `legacy_app/tests/test_bilibili_api.py` 没有任何 test function。模块 import 立即创建 `curl_cffi.Session`，无条件产生 3 处 GET 和 2 个 curl short-link subprocess，short-link 命中 BV 后还可能产生 2 处 GET。root pytest 的 `testpaths=["tests"]` 不会收集它，但显式 legacy suite 或 `pytest .` 会在 `--collect-only` 阶段联网；旧记录的 20.94 秒 timeout 因而是真实 test-infrastructure defect。
+
+**两条路径与选择。** 两名只读 scout 分别建议：①改成 `OCRLLM_RUN_LIVE_BILIBILI_TESTS` 控制的 skipped live test；②改成 guarded manual diagnostic。选择②，因为旧文件只有打印，没有 assertion、marker 或 pass/fail contract，social feature 已延期；把它正式化成 live CI test 会扩展产品语义。改名为 `diagnose_bilibili_api.py`，函数也叫 `diagnose_bilibili_api()`，只有 `__main__` 执行。全部显式 GET 与 curl 都限制 15 秒；未修改 production Bilibili/downloader 代码。
+
+**失败优先和最小回归。** 新 test 注入会在 Session 构造或 subprocess 启动时立即失败的 fake，再用 `runpy.run_path()` 导入 diagnostic。旧模块稳定 **1 failed / 0.14s**，失败点是 import 构造 Session；没有真实网络。修后 **1 passed / 0.04s**；对 regression + diagnostic 的 collect-only 只收集 1 个 offline test，diagnostic 不执行。主代理没有运行 explicit live diagnostic。
+
+**下一步。** 运行排除真实 ffmpeg e2e、但不再排除 Bilibili 文件的完整 legacy offline suite；再跑 root suite、compile/import/diff。结果和边界在提交前补入本条。用户临时交接文件、active Python、frozen contracts/worker 和 social production code 保持不动。
+
+**完整验证与边界。** legacy offline suite 现在只排除真实 ffmpeg `test_social_e2e.py`，不再排除 Bilibili 文件，结果 **279 passed, 1 skipped / 51.94s**；唯一 skip 是显式 live Google discovery。active root suite **1090 passed / 88.95s**。`compileall -q src tests legacy_app`、isolated lightweight import、diff/EOL whitespace 全部通过。没有运行 Bilibili/Google/provider/付费 live 调用，网络仅用于 Git 同步和最终 push；用户临时交接文件、active Python、frozen contracts/worker 和 social production code 保持不动。
+
+**下一轮。** #044 审计 packaging-facing `README.md` 与 `src/ocrllm/README_ACTIVE_LIBRARY.md` 是否仍把 Stage M 写成 partial、把已关闭 defect 写成 open。只对照当前 authority、代码和最新验证修正文档事实；不借文档更新启动 Stage A、Google adapter、PDF 或付费 smoke。

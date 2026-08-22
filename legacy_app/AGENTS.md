@@ -850,3 +850,28 @@ billing 和 429 分支前。普通 429 继续同模型重试，503 high demand �
 **Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：新增 Google provider 时必须把普通
 429 窗口限流、明确 quota exhaustion 与真实 billing failure 分开建模；不能因它们可能都切候选就
 只测调用顺序，也不得复用 DashScope marker。
+
+## 2026-08-23 — pytest collection 隐式访问 Bilibili 网络（已修复）
+
+**现象与范围复核。** 早先“仅观察”条目记录了 `tests/test_bilibili_api.py` 在 import 时直接创建
+`curl_cffi.Session`、访问 Bilibili 首页/finger/view API，并启动两个 `curl -sIL b23.tv` 子进程。
+它没有 test function 或 assertion，实际是临时 live diagnostic 误用 `test_*.py` 名称。root pytest
+因 `testpaths=["tests"]` 不收集 legacy，但显式 `pytest legacy_app/tests` 或 `pytest .` 会在 collection
+联网。修复只处理测试隔离，不修改 downloader、Bilibili API production code 或 social product behavior。
+
+**两条路径与选择。** 路径一把脚本改成环境变量控制的 live pytest test；路径二保留 manual
+diagnostic，改为非 test 文件并用函数/main guard 显式执行。选择二：原文件没有可验证的 pass/fail
+contract，social media 又已延期，把它升级成 formal live CI test 会发明新语义。文件改名为
+`diagnose_bilibili_api.py`，唯一入口 `diagnose_bilibili_api()` 与文件名一致，只有直接运行脚本才调用；
+所有 session GET 和 curl subprocess 都有 15 秒 timeout。
+
+**失败优先证据与修复。** 新 import-safety regression 用 fake `curl_cffi.requests.Session` 和 patched
+`subprocess.run` 禁止任何外部工作，再用 `runpy.run_path()` 导入 diagnostic。旧文件在 Session 构造处
+稳定 **1 failed / 0.14s**，没有真实网络。修后 focused 为 **1 passed / 0.04s**；collect-only 只发现
+这个 offline regression，diagnostic 本身不被收集或执行。explicit live 入口仍是
+`python legacy_app/tests/diagnose_bilibili_api.py`，本轮没有运行它。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：所有默认 import、collection 和 capability
+检查必须零网络、零凭据、零外部进程副作用。需要 live 验证时，使用明确的 opt-in test 或 guarded
+diagnostic，并把 optional dependency import 和 bounded external calls 放在执行入口内；不要只靠文件名
+排除，因为 broad repository collection 仍可能导入它。

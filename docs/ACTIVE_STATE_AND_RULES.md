@@ -826,7 +826,10 @@ Standalone board repair now has stable source and batch identity:
   import-time live-Bilibili diagnostic passed 266 tests with one explicit live-Google
   skip. Compilation and diff checks passed. No provider, paid, active-library, or
   frozen-boundary behavior changed. A broad run exposed that the Bilibili diagnostic
-  performs public HTTP during collection; it timed out and remains open test debt.
+  performed public HTTP during collection and timed out. That test-infrastructure
+  debt is now closed: the diagnostic has a non-test filename, one explicitly called
+  function, a `__main__` guard, and bounded live calls; an offline regression forbids
+  HTTP-session construction or subprocess launch during import.
 
 Video failed-batch identity was still open at that checkpoint and is closed by the current
 update above.
