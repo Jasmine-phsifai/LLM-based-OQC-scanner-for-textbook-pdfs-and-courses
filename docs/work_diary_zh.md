@@ -1312,3 +1312,39 @@ not-attempted drain 三个既有入口统一到同一个小 outcome constructor�
 **下一步。** 只读 scout 另发现 active provider Markdown validator 对 HTML comment 的相反误判：comment-only 文本会被当作可见成功，
 而 comment 内的 apology 又会把外部真实 Markdown 误判为 refusal。下一轮应先做两个 public failing-first 回归，再只在可见性/拒绝检查前
 忽略闭合 `<!-- ... -->`，返回值仍保留原 Markdown；不要引入完整 Markdown renderer。
+
+## #030 — 2026-08-23：provider 的闭合 HTML comment 不再制造相反误判
+
+**任务与已确认假设。** 本轮处理 #029 留下的 active provider-output 缺陷：仅含闭合 `<!-- ... -->` 的响应实际不渲染识别内容，不能成功；
+但 comment 内部的 “I'm sorry / cannot read” 也不可让外部真实 `# Board` 被判为 refusal。主代理重新读取权威状态、入口文档、工作日记和
+package 规则并同步 origin；两名只读 scout 分别复核 production topology 与测试 seam。调用链确认所有 injected 与 built-in vision 响应都经
+`call_vision_provider()` 进入 `validate_provider_markdown()`；成功值在此后原样返回。因此本轮假设明确为：闭合 comment 只从语义检查视图中
+移除，不重写成功结果。
+
+**两条路径与选择。** 方案一是在 visibility 和 refusal 两处各写一个相同 regex，文件少但会保留两套可能再次漂移的 comment 定义；
+方案二是增加单一职责 `providers/remove_closed_html_comments.py::remove_closed_html_comments()`，两项检查共用它。选择方案二，文件名即职责，
+实现只是已有 DOTALL/non-greedy `<!--.*?-->` 规则的唯一归属，不引入 renderer、tokenizer 或 HTML parser。`validate_provider_markdown()` 对
+comment-free view 做 L/N/S 可见性检查；`looks_like_refusal()` 在同一 view 上做 trim、300 字符上限和 marker 搜索；两者通过后仍返回原始
+Markdown 字符串。非字符串仍按原契约归一到同一 `PROVIDER_RESPONSE_INVALID`/`empty` 分支，没有重复 error construction。
+
+**失败优先证据与回归。** public `recognize()` 回归首先加入两例。多行 comment-only 在修前未抛错，独立运行是 **1 failed, 7 passed**；
+含隐藏 apology/refusal 与外部可见公式的 Markdown 在修前错误抛 `PROVIDER_REFUSED_RECOGNITION`，独立运行是 **1 failed**。修后前者稳定得到
+`PROVIDER_RESPONSE_INVALID` 且 `details["reason"] == "empty"`，后者 success 并逐字等于原 provider 字符串，证明 comment 没有从输出中
+删除。现有 direct `looks_like_refusal()` 回归也加入 hidden refusal assertion，防止未来只在 validator 外围绕过而让底层函数重新说谎。
+
+**边界与个人复核。** 主代理逐行复核 exact-str hostile subclass、空值分类、marker 大小写、多个/跨行闭合 comment、原值返回、built-in
+error-detail 合并、candidate/retry 与 checkpoint 调用顺序。helper 只识别闭合 comment；未闭合或畸形 comment 保持旧行为。comment 语法若
+出现在 inline/fenced code 中，完整 Markdown renderer 可能把它当作可见字面量；正确区分需要 parser/state machine，当前真实缺陷与 legacy
+行为没有提出该需求，本轮不扩张。也没有把其他 HTML tag/entity 一并定义为“不可见”。两份历史 CRLF 文件在 patch 后曾出现 mixed EOL，
+已只对这两份文件恢复原 CRLF；仓库的 `* -text` 策略不变。
+
+**验证与异常记录。** provider/image/D1/error-detail/DashScope/M2/Stage M focused 集 **169 passed / 5.91s**。首次 root 全量出现一个与本轮
+无关的短间隔 timing failure：`test_direct_recognition_applies_interval_between_draft_and_review` 在 30 ms 配置下记录到约 15 ms，结果为
+**1 failed, 1078 passed / 91.26s**；该 cadence 代码未修改，随后 exact test 连续 **10/10 passed**，再次 root 全量为
+**1079 passed / 90.66s**。Windows monotonic 采样粒度使这个单次证据更像测试边界抖动，但不能当作未发生；已保留供后续独立 cadence audit，
+本轮不夹带 sleep/tolerance 改动。`compileall`、plain import 和最终 diff/EOL 检查在提交前另行执行。本轮无网络/provider/付费调用，未修改
+frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** 下一轮先对上述 cadence 测试做只读、可重复的 Windows 计时审计：区分产品 start-gate 语义与低分辨率观测误差；只有稳定证明
+产品会过早 dispatch 才改实现，否则只修测试测量 seam。若该证据不能复现，再继续优先审计 active provider/output surface，而不是扩大
+HTML/Markdown 解析范围。

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import re
 import unicodedata
+
+from .remove_closed_html_comments import remove_closed_html_comments
 
 
 # A refusal arrives as ordinary assistant content with HTTP 200 and passes every
@@ -53,12 +54,10 @@ _REFUSAL_MARKERS = (
     "as an ai",
 )
 
-_MARKDOWN_NOISE = re.compile(r"<!--.*?-->", flags=re.DOTALL)
-
 
 def looks_like_refusal(markdown: str) -> bool:
     """Return True when a short response is the model declining, not content."""
-    stripped = markdown.strip()
+    stripped = remove_closed_html_comments(markdown).strip()
     if not stripped:
         return False
     if _visible_character_count(stripped) > _MAXIMUM_REFUSAL_VISIBLE_CHARACTERS:
@@ -68,9 +67,8 @@ def looks_like_refusal(markdown: str) -> bool:
 
 
 def _visible_character_count(markdown: str) -> int:
-    without_comments = _MARKDOWN_NOISE.sub("", markdown)
     return sum(
         1
-        for character in without_comments
+        for character in markdown
         if unicodedata.category(character)[0] in {"L", "N"}
     )

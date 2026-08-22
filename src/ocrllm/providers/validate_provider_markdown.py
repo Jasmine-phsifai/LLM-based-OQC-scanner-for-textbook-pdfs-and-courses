@@ -6,23 +6,26 @@ import unicodedata
 
 from ..errors import ProviderError
 from .looks_like_refusal import looks_like_refusal
+from .remove_closed_html_comments import remove_closed_html_comments
 
 
 def validate_provider_markdown(value: object) -> str:
     """Return visible Markdown or raise a redacted false-success error."""
-    if type(value) is not str or not _contains_visible_content(value):
+    markdown: str = value if type(value) is str else ""
+    inspected_markdown = remove_closed_html_comments(markdown)
+    if not _contains_visible_content(inspected_markdown):
         raise ProviderError(
             "The configured provider returned no recognition Markdown.",
             code="PROVIDER_RESPONSE_INVALID",
             details={"reason": "empty"},
         )
-    if looks_like_refusal(value):
+    if looks_like_refusal(markdown):
         raise ProviderError(
             "The configured provider declined the request instead of recognizing it.",
             code="PROVIDER_REFUSED_RECOGNITION",
             details={"reason": "refusal"},
         )
-    return value
+    return markdown
 
 
 def _contains_visible_content(value: str) -> bool:

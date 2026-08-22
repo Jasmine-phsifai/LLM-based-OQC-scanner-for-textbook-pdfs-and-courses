@@ -123,6 +123,7 @@ def test_long_transcription_mentioning_a_refusal_phrase_is_accepted(tmp_path) ->
 
 def test_looks_like_refusal_ignores_ordinary_content() -> None:
     assert not looks_like_refusal("# Board\n\n$x = 1$\n")
+    assert not looks_like_refusal("<!-- I'm sorry, I cannot read it. -->\n# Board\n")
     assert not looks_like_refusal("")
     assert looks_like_refusal("无法识别")
 

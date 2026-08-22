@@ -319,6 +319,7 @@ def test_config_subclasses_are_rejected_before_source_or_provider_work(tmp_path)
         " \t\r\n",
         "\x00\u200b",
         "# ---",
+        "<!-- internal note:\nno recognized content -->",
     ],
     ids=[
         "none",
@@ -328,6 +329,7 @@ def test_config_subclasses_are_rejected_before_source_or_provider_work(tmp_path)
         "whitespace",
         "control-only",
         "markdown-scaffolding-only",
+        "closed-html-comment-only",
     ],
 )
 def test_invalid_provider_output_never_becomes_success(tmp_path, provider_output):
@@ -338,6 +340,7 @@ def test_invalid_provider_output_never_becomes_success(tmp_path, provider_output
         recognize(source, config=Config(provider=provider))
 
     assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.details["reason"] == "empty"
     assert len(provider.calls) == 1
 
 
@@ -360,6 +363,18 @@ def test_visible_json_literal_is_valid_recognized_board_content(tmp_path):
     result = recognize(source, config=Config(provider=RecordingProvider(literal)))
 
     assert result.markdown == literal
+
+
+def test_hidden_refusal_phrase_does_not_reject_visible_markdown(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    markdown = "<!-- I'm sorry, I cannot read the image. -->\n# Board\n\n$x = 1$\n"
+
+    result = recognize(
+        source,
+        config=Config(provider=RecordingProvider(markdown)),
+    )
+
+    assert result.markdown == markdown
 
 
 @pytest.mark.parametrize(

@@ -230,6 +230,15 @@ control-only output keeps `PROVIDER_RESPONSE_INVALID` with
 source is what must change. Detection is capped at 300 visible characters, so a
 long transcription containing a refusal phrase is still accepted.
 
+Closed HTML comments are ignored by both visibility and refusal inspection as
+of 2026-08-23. A comment-only response is therefore
+`PROVIDER_RESPONSE_INVALID`/`empty`, while a refusal phrase hidden in a comment
+cannot reject real visible Markdown. Accepted output is still returned exactly
+as supplied; comments are removed only from the validation view. The bounded
+helper handles closed `<!-- ... -->` blocks across lines. It deliberately does
+not claim full Markdown parsing, code-fence awareness, or malformed/unclosed
+comment handling.
+
 Offline Phase 1 quality scorer re-run after the change: 70 passed
 (`pytest tests/test_run_phase1_quality.py tests/test_quality_gate_application.py
 tests/test_score_recognition_result.py tests/test_verify_fixture_artifacts.py`).
