@@ -1564,3 +1564,23 @@ partial state 低于 16 MiB，却让 completed state 因最终 Markdown 的额�
 **完整验证与边界。** 项目环境 root 全量 **1091 passed / 91.99s**（使用 `-p no:cacheprovider`，没有此前 cache 权限警告）；`compileall -q src tests` 通过；isolated plain import 仍为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮网络只用于 Git 同步与只读检查 fork/upstream 的 GitHub release 列表（两者均为空）；没有真实 provider 或付费调用。未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
 
 **下一步。** #041 只审计 `Config.cache_dir`：确认原始意图、package/docs 承诺、local OCR/provider cache 是否已有外部约定，并比较立即删除与在真实 consumer 到来前明确拒绝。不要扩大成一次清空所有未来 PDF/audio 字段的重构。
+
+## #041 — 2026-08-23：删除没有消费者的 `Config.cache_dir`
+
+**本轮英文自我任务。** Atomic task: decide and correct the unused public `Config.cache_dir` field without disturbing the working `temp_dir` snapshot path or inventing cache behavior. Success means history、依赖行为、legacy 价值和调用者都已核实；旧行为先被公开回归证明错误；最小修改、文档、完整验证、提交与 origin 推送全部完成。这样做的原因是：成熟的配置项必须影响真实行为，但不能为了保留字段而创造比 legacy 更宽的缓存功能。
+
+**开工假设、两条路径与选择。** 同步并重读权威状态、入口、package 规则和 #040 日记后，先把 `cache_dir` 当作可疑的 pre-release placeholder，而不是直接认定无用。路径一是把它接到某个真实 backend；路径二是删除字段和虚假的平台缓存承诺。只有找到一个已经安装、已经由 active slice 使用、并且无需发明下载与并发政策的 consumer，才应选择路径一。三项独立只读审计和主代理复核都选择路径二。
+
+**证据与没有扩建的原因。** 全树只有 `config.py` 的字段声明和 path validation 读取它；snapshot 只是 dataclass copy。没有 tracked keyword caller、positional `Config(...)` caller、example、release tag、worker DTO、sidecar、fingerprint、adapter 或 local OCR consumer。legacy 也没有通用 cache 配置：PDF/media 中间物使用 temp，模型目录记录使用固定位置，其他 cache 是进程内数据。active DashScope catalog 已经用按 base URL 隔离的 600 秒内存 TTL，改成磁盘持久化会额外要求锁、过期、权限和跨进程规则。
+
+RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 ONNX 模型；把一个空的通用目录传给它会在 engine 初始化时尝试下载模型，还会产生并发下载完整性问题，违反 active local OCR 的 `network_call_count=0` 边界。ONNX Runtime 的 optimized-model path 没有由 RapidOCR 暴露给本库；OpenAI client 和 Pillow 也没有对应的请求级磁盘 cache。修改全局环境变量还会让并行调用互相影响。因此本轮不把一个无效字段改造成隐式联网功能；未来若真要控制模型位置，应由可执行 adapter 提供明确的、预置模型且禁止隐式下载的专用设置。
+
+**失败优先与最小实现。** 新回归 `test_config_does_not_expose_unimplemented_cache_directory` 先断言默认实例没有该属性，并断言传 `cache_dir=` 得到 Python `TypeError`。旧实现按预期 **1 failed / 0.21s**，失败点是 `hasattr(Config(), "cache_dir")` 仍为真。随后只删除 dataclass 字段和对应 path validation；同一回归变成 **1 passed / 0.09s**。没有修改有效的 `temp_dir`、catalog TTL、RapidOCR 初始化、frozen contracts/worker、legacy 或 social media。
+
+**文档边界。** 权威状态和迁移状态把此次 constructor 变化记录为 pre-release reduction；target design 删除了不存在的平台 cache 承诺。仓库在 #015 已用英文记录用户对 Google image/audio robustness 测试的直接授权、实时 model catalog、常见错误源，以及 legacy Windows 超约 260 字符路径的真实失败，因此本轮无需重复或另造一份 repo memory。下一步先完整验证；结果与提交信息在本轮结束前补入这里。
+
+**验证中的命令错误。** 第一次扩大定向集时写了不存在的 `tests/test_local_ocr.py`，pytest 因找不到文件而没有收集测试。这不是实现失败；先用 `rg --files tests` 找到真实文件名，再运行 config、import、local OCR、real RapidOCR、validation 和 image recognition 集，结果是 **132 passed / 10.29s**。没有为了让命令看起来成功而隐去这次错误。
+
+**完整验证与边界。** 项目环境 root 全量 **1092 passed / 92.03s**；`compileall -q src tests` 通过；isolated `import ocrllm` 本次只加载 root package module，且没有加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮网络只用于 Git 同步和最终 push，没有真实 provider 或付费调用。修改范围是 `Config` 两行删除、一条公开回归以及三份 current/design/migration 文档和本日记；用户未跟踪的临时交接文件保持不动。
+
+**下一步。** 不把这次删除机械复制到 `pdf_mode`、`pdf_pages`、`pdf_password`、`pdf_allow_partial`。它们共同表达尚未启动的 PDF slice，去留必须作为一个整体核对 target API、现有 constructor 测试和 Stage A/PDF gate；若下一轮没有更高优先级的已建功能缺陷，只做这组字段的只读产品审计，不顺手实现 PDF 或一次删四个字段。

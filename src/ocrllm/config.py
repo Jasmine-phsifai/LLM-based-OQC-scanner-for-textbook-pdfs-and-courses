@@ -49,7 +49,6 @@ class Config:
     pdf_allow_partial: bool = False
     output_dir: str | Path | None = None
     temp_dir: str | Path | None = None
-    cache_dir: str | Path | None = None
     timeout_seconds: float = 120.0
     resume: bool = False
     overwrite: bool = False
@@ -83,7 +82,6 @@ class Config:
 
         _validate_optional_path(self.output_dir, field_name="output_dir")
         _validate_optional_path(self.temp_dir, field_name="temp_dir")
-        _validate_optional_path(self.cache_dir, field_name="cache_dir")
 
         if self.resume and self.output_dir is None:
             raise ConfigError("Config.resume requires Config.output_dir") from None

@@ -404,7 +404,6 @@ class Config:
     pdf_allow_partial: bool = False
     output_dir: str | Path | None = None
     temp_dir: str | Path | None = None
-    cache_dir: str | Path | None = None
     timeout_seconds: float = 120.0
     resume: bool = False
     overwrite: bool = False
@@ -416,7 +415,6 @@ Design rules:
 
 - `output_dir=None` means memory-only result.
 - `temp_dir=None` means a safe OS temp location, not a package directory.
-- `cache_dir=None` means a platform cache location, not a package directory.
 - API keys belong to adapter settings or their documented environment variable.
 - `provider=None` is valid only for local PDF `text` mode. Image, PDF `vision`,
   audio, and video requests raise `ConfigError` without a required provider;

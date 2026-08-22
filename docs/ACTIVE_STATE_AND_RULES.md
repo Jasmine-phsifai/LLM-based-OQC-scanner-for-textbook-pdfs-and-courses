@@ -162,11 +162,16 @@ Future agents must assume the following and verify before trusting any claim:
   remain a separate wire boundary; a future direct callback must arrive with a
   real consumer and typed modality units rather than reusing the deleted name.
 
-- **Open: `Config.cache_dir` has no active consumer.** Unlike `temp_dir`, which
-  owns image snapshot placement, `cache_dir` is only validated and copied. No
-  active adapter, local OCR path, worker, or repository caller reads it. Audit
-  its history and packaging promises as a separate pre-release simplification;
-  do not keep a generic cache knob solely for hypothetical future modalities.
+- **The direct library no longer advertises a generic cache directory.** The
+  validated-but-never-consumed `Config.cache_dir` placeholder was removed from
+  the pre-release `0.1.0` constructor. `temp_dir` remains because image
+  snapshots actively use it; DashScope catalog discovery deliberately uses a
+  process-memory TTL cache. RapidOCR's model-root setting is not an equivalent
+  consumer: redirecting it to an empty directory can trigger implicit network
+  downloads and concurrent-download policy that the offline local-OCR slice
+  does not own. A future persistent-store or model-directory setting must land
+  with a specifically named executable consumer and explicit lifetime,
+  provisioning, offline, and concurrency semantics.
 
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an

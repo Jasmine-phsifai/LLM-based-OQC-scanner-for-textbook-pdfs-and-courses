@@ -68,6 +68,12 @@ def test_config_does_not_expose_unimplemented_progress_hook():
         Config(progress=object())  # type: ignore[call-arg]
 
 
+def test_config_does_not_expose_unimplemented_cache_directory():
+    assert not hasattr(Config(), "cache_dir")
+    with pytest.raises(TypeError):
+        Config(cache_dir="cache")  # type: ignore[call-arg]
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [
