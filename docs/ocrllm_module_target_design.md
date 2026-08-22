@@ -408,7 +408,6 @@ class Config:
     timeout_seconds: float = 120.0
     resume: bool = False
     overwrite: bool = False
-    progress: object | None = field(default=None, repr=False)
     cancellation: object | None = field(default=None, repr=False)
     extra: Mapping[str, JSONValue] = field(default_factory=dict, repr=False)
 ```
@@ -454,15 +453,16 @@ Design rules:
 - `pdf_password` is secret data: never log, serialize into results, or echo it
   in errors. `pdf_allow_partial=False` is the default.
 - Generated/custom repr omits provider objects, `api_key`, `dashscope`,
-  `pdf_password`, `progress`, `cancellation`, and `extra`. Tests place unique
+  `pdf_password`, `cancellation`, and `extra`. Tests place unique
   sentinels in each and assert none appears in repr, errors, events, logs, or
   serialized results.
 - Routing and evidence-affecting provider options belong in an approved immutable
   provider-settings value such as `DashScopeSettings`, not an exploding list of
   top-level fields. `extra` remains an extension surface for injected providers;
   the built-in adapter does not hide required routing decisions there.
-- Provider objects, progress callbacks, and cancellation objects are
-  direct-Python conveniences. They are never serialized into worker requests.
+- Provider objects and cancellation objects are direct-Python conveniences.
+  They are never serialized into worker requests. Direct-Python progress has
+  no public contract until a real consumer proves its units and lifecycle.
 - Model queues and key pools are deferred until one-provider failure handling
   is complete and measured need exists.
 
@@ -1114,8 +1114,8 @@ class JobState:
 
 The request fingerprint includes source fingerprints, processor/version,
 provider/model, languages, profile/mode, page selection, and safety settings.
-It excludes API keys, PDF passwords, output location, progress, and cancellation
-objects. Save after each completed unit and immediately after a remote task ID;
+It excludes API keys, PDF passwords, output location, and cancellation objects.
+Save after each completed unit and immediately after a remote task ID;
 reject corrupt or mismatched state instead of silently starting over. Before
 completion, persist the final Markdown hash, atomically replace the output, then
 delete state. If a crash leaves state plus output, matching hashes finish without

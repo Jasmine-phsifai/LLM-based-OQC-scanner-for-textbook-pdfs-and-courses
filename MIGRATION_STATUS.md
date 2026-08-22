@@ -28,7 +28,9 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   destination basenames near the traditional Windows path boundary; a process-local
   output claim keeps concurrent batch/direct-thread Markdown and state ownership
   consistent; finite batch-iterable failures become redacted terminal outcomes
-  without discarding earlier paid work; all no-cost exit criteria pass through
+  without discarding earlier paid work; the never-consumed `Config.progress`
+  placeholder is removed rather than promoted into an unproven callback API;
+  frozen worker progress remains separate; all no-cost exit criteria pass through
   the clean-archive runner at `2e9c770`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;

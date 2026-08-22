@@ -138,7 +138,7 @@ is retained for gate provenance, not as a current implementation inventory.
   measurements below predate the `dashscope` extra and remain historical
   Phase 0 evidence.
 - `Config` repr omits provider objects, `api_key`, `dashscope`, `pdf_password`,
-  `progress`, `cancellation`, and `extra`. Boundary tests use unique sentinels so
+  `cancellation`, and `extra`. Boundary tests use unique sentinels so
   these values cannot leak through repr, public errors, or results.
 - Every public `recognize()` call rejects `Config` subclasses and freshly
   revalidates the exact caller `Config` before source/provider work. Injected
@@ -1179,7 +1179,7 @@ src/ocrllm/output/delete_job_state.py
 src/ocrllm/fingerprint_recognition_request.py
     SHA-256 canonical JSON for sources, processor/version, provider/model,
     languages, profile/mode, selection, and safety settings, excluding secrets,
-    output location, progress, and cancellation objects.
+    output location and cancellation objects.
 
 src/ocrllm/freeze_json_value.py
     Deep-copy JSON mappings to MappingProxyType and arrays to tuples; reject

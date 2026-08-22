@@ -1546,3 +1546,21 @@ partial state 低于 16 MiB，却让 completed state 因最终 Markdown 的额�
 **完整验证与边界。** 项目环境 root 全量 **1090 passed / 90.81s**；`compileall -q src tests` 通过；isolated plain import 为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查在提交前执行。本轮无网络、provider 真实调用或付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
 
 **下一步。** #040 审计公共 `Config.progress`：先查实际调用者、文档承诺和 direct-Python 使用价值，再在“删除无消费者字段”与“实现一个明确、很小的 callback”之间做产品决定。worker progress events 属于已经冻结的独立边界，不得为了保留一个未使用字段而扩建通用 progress 框架。
+
+## #040 — 2026-08-23：删除从未生效的 `Config.progress`
+
+**原子任务与假设。** 本轮只决定 direct-Python `Config.progress` 的去留，不顺手设计 progress event 系统。同步 origin、重读权威状态、入口、package 规则与 #039 日记后，先假设删除会形成真实的构造器兼容性变化，因此必须证明调用者、文档承诺和 legacy 价值；同时不能因为 worker 已经有 progress wire event，就把两个边界混在一起。
+
+**三名只读 scout 与仓库证据。** active-surface audit 确认字段在早期 `0.1.0` image contract commit 中以 `object | None` 占位加入，之后只被 `dataclasses.replace()` 原样携带；active non-worker 没有一次读取，仓库唯一传值是 repr 保密测试，也没有 positional `Config(...)` 调用、示例、tag 或 GitHub release。compatibility audit 确认删除会让未知 private source-install caller 的 `progress=` 立即报 `TypeError`，也理论上会移动后续 positional slot；这项未知风险无法完全排除，但保留 accept-and-ignore 会继续制造假能力。legacy audit 发现老 board 的进度确实对 GUI 有用，但它在预处理前只报一次、每批 provider dispatch 前就增加计数，最后一批刚开始时就可能显示 100%；content streaming 又是另一条 callback。active workflow 还包含 draft/review/scout/candidate/resume 与并行 batch，没有可直接复用的真实单位。
+
+**两条路径与选择。** 路径一删除字段，让显式使用者立即知道当前没有 direct progress；路径二实现“小 callback”，但即使只报开始/结束，也必须决定 callable 类型、线程、callback 异常、paid work 后失败、resume reuse、candidate fallback 和 batch item identity。选择路径一：当前没有消费者，package 仍是无 release tag 的 `0.1.0`；为了保留占位而发明这些政策正是过度设计。`Config.cancellation` 有真实调用和测试，继续保留。未来 A1/A2 audio 出现可测量 chunk/stage 后，可以用明确的新名字和 typed contract 再引入，不继承这个空字段。
+
+**失败优先与最小实现。** 回归先把原先混合的 repr 测试拆成 cancellation-only secrecy，并新增公共 surface 断言：`Config()` 不得有 `progress` 属性，`Config(progress=object())` 必须拒绝。旧实现稳定 **1 failed, 1 passed / 0.22s**，失败点正是属性仍存在。实现只从 `config.py` 删除一行 dataclass field；没有新增 helper、event、Protocol、callback 调用点或兼容 shim。修后 config 文件 **36 passed / 0.15s**。
+
+**文档与个人复核。** 权威状态把 open debt 改成已删除决定；`MIGRATION_STATUS.md` 记录 pre-release public boundary 变化；target design 删除字段、repr 承诺和“progress callback 是 convenience”的假声明；go/no-go 删除 Config repr 与 fingerprint 中的 progress。worker `ProgressEvent`、worker tests 和 frozen `contracts/`/`worker/` 均未修改。主代理逐行复核后又找到 target design 较后位置的第二条 fingerprint 旧句并同步修正。direct/batch recognition、capability、DashScope、local OCR、config 与 worker adapter 定向集 **197 passed / 2.39s**。
+
+**新发现（未夹带修复）。** `Config.cache_dir` 与 progress 类似，目前只有字段、path validation 和 snapshot copy，没有 active adapter、local OCR、worker 或 caller 读取；相反 `temp_dir` 确实由 image snapshot 使用。权威状态已把 `cache_dir` 记为下一项独立审计，不能因为本轮已经做一次构造器删除就未经 history/packaging 检查一起移除。PDF 字段有明确的未来 PDF slice 语义，也不在本轮混入。
+
+**完整验证与边界。** 项目环境 root 全量 **1091 passed / 91.99s**（使用 `-p no:cacheprovider`，没有此前 cache 权限警告）；`compileall -q src tests` 通过；isolated plain import 仍为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮网络只用于 Git 同步与只读检查 fork/upstream 的 GitHub release 列表（两者均为空）；没有真实 provider 或付费调用。未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** #041 只审计 `Config.cache_dir`：确认原始意图、package/docs 承诺、local OCR/provider cache 是否已有外部约定，并比较立即删除与在真实 consumer 到来前明确拒绝。不要扩大成一次清空所有未来 PDF/audio 字段的重构。

@@ -53,7 +53,6 @@ class Config:
     timeout_seconds: float = 120.0
     resume: bool = False
     overwrite: bool = False
-    progress: object | None = field(default=None, repr=False)
     cancellation: object | None = field(default=None, repr=False)
     extra: Mapping[str, JSONValue] = field(default_factory=dict, repr=False)
 

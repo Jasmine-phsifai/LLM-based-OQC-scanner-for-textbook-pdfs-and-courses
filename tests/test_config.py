@@ -54,20 +54,18 @@ def test_config_is_frozen_slotted_and_omits_secrets_from_repr(tmp_path):
         )
 
 
-def test_config_omits_progress_and_cancellation_objects_from_repr():
-    sentinels = (
-        "PROGRESS_OBJECT_SECRET_f9c2",
-        "CANCELLATION_OBJECT_SECRET_a461",
-    )
+def test_config_omits_cancellation_object_from_repr():
+    sentinel = "CANCELLATION_OBJECT_SECRET_a461"
 
-    rendered = repr(
-        Config(
-            progress=SecretObject(sentinels[0]),
-            cancellation=SecretObject(sentinels[1]),
-        )
-    )
+    rendered = repr(Config(cancellation=SecretObject(sentinel)))
 
-    assert all(sentinel not in rendered for sentinel in sentinels)
+    assert sentinel not in rendered
+
+
+def test_config_does_not_expose_unimplemented_progress_hook():
+    assert not hasattr(Config(), "progress")
+    with pytest.raises(TypeError):
+        Config(progress=object())  # type: ignore[call-arg]
 
 
 @pytest.mark.parametrize(

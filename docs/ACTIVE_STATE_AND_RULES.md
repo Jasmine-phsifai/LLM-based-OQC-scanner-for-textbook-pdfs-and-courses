@@ -154,12 +154,19 @@ Future agents must assume the following and verify before trusting any claim:
   Coordinated public regressions cover both process-control exception types,
   and a cancelled-Future regression protects the narrower mapping.
 
-- **Open: `Config.progress` is accepted but unused by the direct library
-  facade.** The active non-worker code does not read this public field. The
-  frozen worker protocol has its own progress events and is a separate
-  boundary. Audit actual callers and documentation before deciding whether to
-  remove the field or implement a deliberately small direct-Python callback;
-  do not invent a wider progress framework to justify the existing field.
+- **The direct library no longer advertises an unimplemented progress hook.**
+  The untyped, never-consumed `Config.progress` placeholder was removed from
+  the pre-release `0.1.0` constructor. There was no repository caller, example,
+  release tag, or defined timing/thread/failure contract. `Config.cancellation`
+  remains because it has executable semantics. Frozen worker progress events
+  remain a separate wire boundary; a future direct callback must arrive with a
+  real consumer and typed modality units rather than reusing the deleted name.
+
+- **Open: `Config.cache_dir` has no active consumer.** Unlike `temp_dir`, which
+  owns image snapshot placement, `cache_dir` is only validated and copied. No
+  active adapter, local OCR path, worker, or repository caller reads it. Audit
+  its history and packaging promises as a separate pre-release simplification;
+  do not keep a generic cache knob solely for hypothetical future modalities.
 
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an
