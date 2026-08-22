@@ -33,7 +33,7 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   removed rather than promoted into unproven callback, persistence, or PDF
   APIs; frozen worker progress remains separate, while local OCR retains its
   zero-network model-loading contract;
-  all no-cost exit criteria pass through the clean-archive runner at `2e9c770`;
+  all no-cost exit criteria pass through the clean-archive runner at `271d96d`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
 - replanned, not started: the standalone Stage 2 vision/audio scaffold was

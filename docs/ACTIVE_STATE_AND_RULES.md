@@ -83,6 +83,13 @@ Future agents must assume the following and verify before trusting any claim:
 - **Dated documentation is history.** Old phase and review files deliberately
    retain their original conclusions. Current navigation documents must point
    here and must not repeat those conclusions as present status.
+- **The public repository still opens on a stale branch.** On 2026-08-23 the
+  fork's GitHub default was `main` at `017de01`, a strict ancestor 161 commits
+  behind maintained `master` at `271d96d`. The current clean-archive gate passes
+  on `master`; a visitor following the default branch does not see that product.
+  Before any tag or public release, the maintainer must explicitly choose to
+  make `master` the default or reconcile the branches. Do not publish from the
+  stale default, and do not change this external repository setting implicitly.
 - **Structure runs ahead of demand.** `contracts/` and `worker/` are 1,817
   lines (23% of the library) serving a subprocess protocol with no consumer.
   They are correct and tested; they are also not yet load-bearing.
@@ -616,12 +623,12 @@ shipped and tested offline:
    queue. Injected typed errors retain only an allowlisted canonical
    `failure_scope`; arbitrary provider details remain discarded.
 
-Every non-paid Stage M exit criterion now passes. Commit `2e9c770` passed the
+Every non-paid Stage M exit criterion now passes. Commit `271d96d` passed the
 reusable clean-archive runner in `tools/run_stage_m_offline_gate.ps1`: its
-archived suite reported 1059 passed and one expected optional-RapidOCR skip,
-fixture verification and compilation passed, the wheel was 150,795 bytes, and
-the no-deps target was 736,133 bytes. Fresh `image` and `image,dashscope`
-profiles added 16,424,795 and 40,997,504 bytes respectively and passed their
+archived suite reported 1089 passed and one expected optional-RapidOCR skip,
+fixture verification and compilation passed, the wheel was 153,382 bytes, and
+the no-deps target was 747,967 bytes. Fresh `image` and `image,dashscope`
+profiles added 16,436,747 and 41,009,476 bytes respectively and passed their
 offline smokes. Plain import stayed below every documented wall and process-CPU
 budget in both Python environments. The built-in adapter now proves dispatch of
 a catalog-served model unknown to this repository, and an operating-system

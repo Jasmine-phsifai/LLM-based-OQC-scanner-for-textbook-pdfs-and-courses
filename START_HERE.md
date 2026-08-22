@@ -65,7 +65,7 @@ was removed from the queue: its audio-specific configuration boundary will be
 implemented with executable Stage A1 short-MP3 recognition. Stage A1/A2 are not
 started.
 
-All no-cost Stage M exit criteria pass at committed checkpoint `2e9c770`.
+All no-cost Stage M exit criteria pass at committed checkpoint `271d96d`.
 `tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,
 fixture/compile checks, clean wheel and outside-repository import guards,
 dependency profiles, generated-image smoke, and offline DashScope construction.

@@ -2548,7 +2548,7 @@ fresh `image,dashscope` profile installed 40,901,589 bytes against a 64 MiB
 ceiling. No provider call occurred. Phase 1 is **GO** and Phase 2 is now the
 only active implementation phase.
 
-## Current Stage M Offline Exit Runner, 2026-08-22
+## Current Stage M Offline Exit Runner, 2026-08-23
 
 Use the maintained runner instead of copying the older manual checkpoint blocks
 above:
@@ -2566,13 +2566,14 @@ smoke, and an offline DashScope client-construction smoke. It verifies import
 origin and forbids `PIL`, `pypdfium2`, `openai`, `httpx`, `onnxruntime`, and
 `legacy_app` after plain base import. Temporary files are removed in `finally`.
 
-Checkpoint `2e9c7706d1fdeb21bc88976a1d49126ec5ab85db` passed: archived tests
-reported 1059 passed and one expected optional-RapidOCR skip; the wheel was
-150,795 bytes and the base target 736,133 bytes; import wall median/p95 was
-1.12/1.70 ms in the OCRLLM environment and 0.54/1.14 ms in base Python;
-process-CPU median/p95 was 0/15.63 ms in both. The fresh profile deltas were
-16,424,795 bytes (`image`) and 40,997,504 bytes (`image,dashscope`). No provider
-request occurred. This closes only the offline part of the Stage M exit gate;
+Checkpoint `271d96df837a8bbe3caf271afd966cb0539371d6` passed: archived tests
+reported 1089 passed and one expected optional-RapidOCR skip; the wheel was
+153,382 bytes and the base target 747,967 bytes; import wall median/p95 was
+0.88/2.40 ms in the OCRLLM environment and 0.49/1.21 ms in base Python;
+process-CPU median/p95 was 0/15.63 ms and 0/0 ms respectively. The fresh
+profile deltas were 16,436,747 bytes (`image`) and 41,009,476 bytes
+(`image,dashscope`). No provider request occurred. This closes only the offline
+part of the Stage M exit gate;
 the paid live smoke still needs an explicit maintainer budget.
 
 ## Change Rejection Checklist
