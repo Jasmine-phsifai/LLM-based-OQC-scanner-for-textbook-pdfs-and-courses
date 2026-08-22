@@ -60,7 +60,10 @@ the authorized paid live smoke verifies current provider behavior. The former
 standalone Stage 2 vision/audio scaffold was replanned on 2026-08-23: the
 working image configuration stays unchanged and the audio-specific
 configuration boundary will land with the first executable Stage A1 short-MP3
-slice. Stage A1 and A2 have not started.
+slice. Stage A1 and A2 have not started. Stage A1 offline implementation may
+begin after its 2026-08-23 boundary audit; it does not wait on the independent
+Stage M paid image smoke. Each audio live gate remains separately budgeted and
+must not run without explicit maintainer authorization.
 The built-in Google image adapter is now scoped as a later optional
 vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
 does not copy legacy retry, audio, GUI, or social architecture. It is planned,

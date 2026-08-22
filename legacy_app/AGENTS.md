@@ -875,3 +875,18 @@ contract，social media 又已延期，把它升级成 formal live CI test 会�
 检查必须零网络、零凭据、零外部进程副作用。需要 live 验证时，使用明确的 opt-in test 或 guarded
 diagnostic，并把 optional dependency import 和 bounded external calls 放在执行入口内；不要只靠文件名
 排除，因为 broad repository collection 仍可能导入它。
+
+## 2026-08-23 — 短音频普通失败可被包装成成功结果（仅观察）
+
+**现象。** Stage A1 边界审计重新检查 legacy short-ASR 路径时确认：普通 provider 异常可以被转换成
+失败说明文字，随后仍作为 segment 内容汇总并返回输出路径。单 segment 请求因此可能生成看似正常的
+Markdown；非空的拒答或“没有语音”文字也缺少可靠的 typed failure 边界。本轮只记录真实旧行为，没有
+修改 legacy production code，也没有运行 provider。
+
+**暂不修复原因。** social 已延期，而本轮目标是收窄新库 A1；直接重写旧音频调用会同时触及旧 GUI、
+模型路由和恢复格式，不能作为小修混入。后续若维护 legacy 音频，必须先写失败优先回归，证明 provider
+error、refusal、empty 和 no-speech 都不会发布成功 transcript。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：A1 必须把 provider error、empty、refusal
+和 no-speech 映射成明确异常，失败时不发布 Markdown、不返回成功路径；不得复制 legacy 的失败文本回填、
+隐藏协议 fallback 或依模型名猜协议。

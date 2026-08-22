@@ -31,22 +31,30 @@ _CAPABILITY_NAMES = (
     "video.mp4-h264",
     "video.mp4-h264-aac",
 )
-_PHASE_BY_DEFERRED_CAPABILITY = {
-    "provider.dashscope.audio-short": "Phase 4",
-    "provider.dashscope.filetrans": "Phase 4",
-    "worker.jsonl.v1alpha2": "Phase 3",
-    "pdf.text": "Phase 3",
-    "pdf.vision": "Phase 3",
-    "pdf.text.resume": "Phase 3",
-    "pdf.vision.resume": "Phase 3",
-    "audio.short.wav-pcm-s16": "Phase 4",
-    "audio.short.mp3-mpeg-layer3": "Phase 4",
-    "audio.short.m4a-aac-lc": "Phase 4",
-    "audio.long.wav-pcm-s16": "Phase 4",
-    "audio.long.mp3-mpeg-layer3": "Phase 4",
-    "audio.long.m4a-aac-lc": "Phase 4",
-    "video.mp4-h264": "Phase 5",
-    "video.mp4-h264-aac": "Phase 5",
+_DEFERRED_REASON_BY_CAPABILITY = {
+    "provider.dashscope.audio-short": "Intentionally deferred to Stage A1.",
+    "provider.dashscope.filetrans": "Intentionally deferred to Stage A2.",
+    "worker.jsonl.v1alpha2": "Intentionally deferred to Phase 3.",
+    "pdf.text": "Intentionally deferred to Phase 3.",
+    "pdf.vision": "Intentionally deferred to Phase 3.",
+    "pdf.text.resume": "Intentionally deferred to Phase 3.",
+    "pdf.vision.resume": "Intentionally deferred to Phase 3.",
+    "audio.short.wav-pcm-s16": (
+        "Intentionally deferred to a later audio-format gate."
+    ),
+    "audio.short.mp3-mpeg-layer3": "Intentionally deferred to Stage A1.",
+    "audio.short.m4a-aac-lc": (
+        "Intentionally deferred to a later audio-format gate."
+    ),
+    "audio.long.wav-pcm-s16": (
+        "Intentionally deferred to a later audio-format gate."
+    ),
+    "audio.long.mp3-mpeg-layer3": "Intentionally deferred to Stage A2.",
+    "audio.long.m4a-aac-lc": (
+        "Intentionally deferred to a later audio-format gate."
+    ),
+    "video.mp4-h264": "Intentionally deferred to Phase 5.",
+    "video.mp4-h264-aac": "Intentionally deferred to Phase 5.",
 }
 
 
@@ -117,12 +125,11 @@ def get_capabilities(config: Config | None = None) -> tuple[CapabilityReport, ..
                 )
             )
         else:
-            phase = _PHASE_BY_DEFERRED_CAPABILITY[name]
             reports.append(
                 CapabilityReport(
                     name=name,
                     status="deferred",
-                    reason=f"Intentionally deferred to {phase}.",
+                    reason=_DEFERRED_REASON_BY_CAPABILITY[name],
                 )
             )
     return tuple(reports)

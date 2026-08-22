@@ -285,8 +285,10 @@ Those are live-test targets, not reasons to invent provider limits in advance.
 
 ## Stage A — Phase 2: MP3-Only Audio Recognizer
 
-**Not started. Plan only. Do not begin until Stage M exits. The Stage 2 audio
-configuration boundary lands with A1, not as unused scaffolding.**
+**Not started. Boundary-audited for offline implementation. The Stage 2 audio
+configuration boundary lands with A1, not as unused scaffolding. A1 does not
+wait on Stage M's independent paid image smoke; its own live gate remains
+separately budgeted.**
 
 Phase 2's original framing was an Electron JSONL worker. That is superseded:
 the worker is frozen and Phase 2 is redefined as the first audio capability.
@@ -303,8 +305,9 @@ the narrowest possible surface, exactly as Phase 1 proved the image contract.
 
 ### Prerequisites
 
-- Stage M complete. Audio runs are long; flowed output and resume are not
-  optional for them.
+- Reuse Stage M's proven source snapshot, redaction, atomic output, cancellation,
+  and typed completed-result state patterns. A1 has one synchronous result, so
+  it does not need chunk/segment flow or provider-task state. A2 does.
 - The audio configuration boundary from
   `docs/plan_phase1_defects_and_provider_split.md` Stage 2 lands in A1. Audio
   must use a provider, credential, and model independently of vision. The
@@ -314,10 +317,17 @@ the narrowest possible surface, exactly as Phase 1 proved the image contract.
 
 ### Provider note
 
-DashScope is the right provider for audio. The maintainer considers it expensive
-for per-frame image work and appropriate for audio. The account serves
-`qwen3-asr-flash-*` and `fun-asr-flash-*` families; verify against the live
-catalog at implementation time rather than trusting this list.
+The provisional first built-in adapter is DashScope short ASR because it is the
+current migration boundary and its documented Qwen3 short path uses the already
+required OpenAI-compatible client. Current official documentation says that
+path accepts one MP3 as Base64 input, up to five minutes, with a final encoded
+request limit of 10 MB (see the official
+[speech-model guide](https://help.aliyun.com/en/model-studio/asr-model/) and
+[Qwen ASR API reference](https://help.aliyun.com/en/model-studio/qwen-asr-api-reference)).
+Treat those as live-gate facts to reverify, not permanent library constants. Do
+not add the native DashScope SDK or a second protocol to A1. Google audio remains
+a separately selected provider slice and an authorized robustness source; it is
+not an implicit fallback.
 
 Long audio uses a submit/poll/download task flow rather than a single synchronous
 call. `docs/ocrllm_library_go_no_go.md` already reserves
@@ -328,19 +338,38 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 ### Stage A1 — Short MP3, First Executable Audio Slice
 
 - Add and immediately consume one exact immutable audio binding containing the
-  audio provider and short-ASR model identity. Do not rewrite the image fields.
-- Validate MP3 structure before any provider call. A zero-byte or truncated
-  file fails before money is spent.
+  audio provider and short-ASR model identity. Prefer
+  `Config.short_audio: ShortAudioSettings | None`, where the settings hold the
+  provider and explicit model. Do not rewrite the image fields or let an
+  injected provider hide the model identity.
+- Accept exactly one local MP3 path. Reject sequences and URLs. Snapshot its
+  bytes before validation or dispatch and use compact internal temporary names
+  so a long Windows destination path is not repeated at every atomic-write step.
+- Validate MP3 structure before any provider call. A zero-byte, malformed, or
+  truncated file fails before money is spent.
 - Probe duration with an explicit dependency error when the probe tool is
   absent. Never guess duration; reject files outside the documented short-path
-  boundary rather than silently switching protocols.
+  boundary rather than silently switching protocols. Select the probe dependency
+  only after a bounded fixture spike proves complete decode, VBR, ID3, truncation,
+  duration, package size, and license behavior; ambient FFmpeg is not a declared
+  product dependency.
 - Make one synchronous short-ASR protocol explicit in the adapter. Do not copy
   legacy's hidden SDK-to-OpenAI-compatible fallback or derive models from name
-  substrings.
+  substrings. Preflight the final Base64 request envelope rather than copying
+  legacy's raw-byte threshold.
 - Empty, refused, or no-speech responses are typed failures;
-  `NoSpeechDetected` already exists for the last case.
+  `NoSpeechDetected` already exists for the last case. A provider failure must
+  not be written as transcript prose or returned as a successful output path.
+- When `output_dir` is present, atomically persist one typed completed-result
+  record, bound to exact source bytes and request/protocol/provider/model
+  identity, before publishing Markdown. `resume=True` may reuse that exact
+  result with zero provider calls. A1 has no chunks, segments, task IDs, or
+  partial-transcript recovery.
 - Add exact lazy `[audio]` dependencies only when A1 tests prove they are
   needed. Plain `import ocrllm` remains lightweight.
+- Do not add hotwords in A1: the selected short protocol has not proven that
+  legacy behavior. Do not add automatic retries, candidate models, or provider
+  fallback.
 - Change only `provider.dashscope.audio-short` and
   `audio.short.mp3-mpeg-layer3` capability statuses when their executable and
   live gates pass. All long-audio, FileTrans, WAV, M4A, and video entries remain
@@ -365,8 +394,10 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 
 - A1 and A2 each have their own full-suite, import, capability, and live gates;
   A1 does not claim FileTrans or long-audio maturity.
-- Offline fake-provider tests cover validation, explicit protocol routing,
-  segment ordering, resume, and every error path in the slice being closed.
+- A1 offline fake-provider tests cover exact one-call routing, source snapshot
+  and validation, typed response failures, cancellation, completed-result
+  recovery, and output failure. A2 tests cover provider-task resume, segment
+  ordering, and incremental publication.
 - `import ocrllm` weight unchanged; audio dependencies lazy behind an extra.
 - A1: one bounded real short MP3 transcribed end to end.
 - A2: one bounded real long MP3 plus interrupted polling/resume without

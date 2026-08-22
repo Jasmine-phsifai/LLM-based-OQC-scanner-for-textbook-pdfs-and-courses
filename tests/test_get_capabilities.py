@@ -148,6 +148,32 @@ def test_v1alpha1_worker_is_available_and_later_phases_are_deferred() -> None:
         assert reports[name].status == "deferred"
 
 
+def test_deferred_audio_capabilities_name_the_current_migration_gate() -> None:
+    reports = _by_name()
+
+    assert reports["provider.dashscope.audio-short"].reason == (
+        "Intentionally deferred to Stage A1."
+    )
+    assert reports["audio.short.mp3-mpeg-layer3"].reason == (
+        "Intentionally deferred to Stage A1."
+    )
+    assert reports["provider.dashscope.filetrans"].reason == (
+        "Intentionally deferred to Stage A2."
+    )
+    assert reports["audio.long.mp3-mpeg-layer3"].reason == (
+        "Intentionally deferred to Stage A2."
+    )
+    for name in (
+        "audio.short.wav-pcm-s16",
+        "audio.short.m4a-aac-lc",
+        "audio.long.wav-pcm-s16",
+        "audio.long.m4a-aac-lc",
+    ):
+        assert reports[name].reason == (
+            "Intentionally deferred to a later audio-format gate."
+        )
+
+
 def test_get_capabilities_freshly_revalidates_exact_config() -> None:
     config = _proven_config()
     assert type(config.provider) is DashScopeSettings
