@@ -892,7 +892,10 @@ crash mid-request discards nothing that was already paid for.
   `model_attempts` ledger entry — success or typed failure — carries
   `provider_calls_attempted`, so a successful fallback no longer discards what
   the failed candidates spent. Typed failures keep their `workflow_pass` and
-  `provider_calls_attempted` details.
+  `provider_calls_attempted` details. If a validated paid pass then fails while
+  atomically persisting its slot, the `OUTPUT_WRITE_FAILED` error also names
+  that workflow pass and the current invocation's attempted-call count. Earlier
+  slots remain intact, and no final Markdown is published.
 
 Regression coverage is `tests/test_m2_slot_resume.py`: an injected mid-request
 failure proves slot reuse including sign-scout passes, a hand-written v1 state

@@ -1383,3 +1383,31 @@ review。本轮无网络/provider/付费调用，未修改 frozen `contracts/`�
 **下一步。** 回到 active 已建功能审计。优先检查 provider response/output 边界是否还有可公开复现的 false success、错误分类或付费后丢结果；
 若没有更高价值缺陷，再按既有队列进入 Stage A 音频只读迁移调研。worker wake-up 理论窗口保留为明确边界，除非后续出现真实可重复证据，
 不升级成线程协议重构。
+
+## #032 — 2026-08-23：付费 pass 的 checkpoint 写入失败不再丢失调用证据
+
+**原任务与假设修正。** 本轮先审计“draft 成功后，review 返回无效内容或拒绝识别时，是否会丢掉已付费 draft”。
+两名只读 scout、主代理代码复核与公开 API 离线探针一致否定了这个假设：稳定 injected provider 与可离线 mock 的 exact DashScope 路径都会在 review
+调用前原子保存已验证 draft。review 的 comment-only 无效回复或 refusal 会正确返回 typed error，带
+`workflow_pass=review` 和 `provider_calls_attempted=2`，sidecar 只含 draft，不发布最终 Markdown；修复 provider 后 `resume=True` 只新调用
+一次 review。因此没有增加 fallback success、重复 checkpoint 或 candidate 政策。refusal 后是否应该保留跨 source/request 的 draft 属于产品策略变更，
+不在没有明确授权时假定。
+
+**实际缺陷与两条路径。** 相邻的付费工作保全边界存在一个可确定复现的问题：provider 已返回有效内容、`calls_dispatched` 已增加，但
+`persist_slot()` 的原子 replace 失败时，公开 `OUTPUT_WRITE_FAILED` 没有当前 pass 和已尝试调用数。路径一是在更外层统一改写所有
+`OutputError`，但会把 preflight、最终发布和 slot checkpoint 三种不同时机混在一起；路径二只捕获 `persist_slot()` 抛出的 `OutputError`，
+增加已有的安全字段后原样重抛。选择路径二：它不把写入失败伪装成识别成功，不改 error code/message，也不影响 provider 验证、
+candidate 恢复或最终 publication。没有添加 `failed_model`，因为模型本身已成功，失败点是本地 checkpoint。
+
+**失败优先证据与保全语义。** 已有首个 draft 状态写入失败回归先增加两个断言；修复前为 **1 failed / 0.46s**，
+`details["workflow_pass"]` 直接缺失。修复后得到 `workflow_pass=draft` 和 `provider_calls_attempted=1`。新的 late-review 回归让两个 draft checkpoint
+先成功，第三个 `consensus_review` 的 replace 失败；错误如实报告 pass 和三次调用，sidecar 仍精确保留 `draft`/`draft_2`，没有最终
+Markdown 或遗留临时文件。这个回归不依赖网络、sleep 或付费 provider。三项定向回归 **3 passed / 0.41s**；image resume/M2/
+recognize/Stage M/defect focused 集 **96 passed / 3.55s**。
+
+**个人复核、验证与边界。** 主代理复核了 catch 的精确位置、原错误身份与安全 details 合并，并确认早期 slots 由原子 writer 保持完整。
+项目环境 root 全量 **1081 passed / 90.18s**；`compileall`、plain import 与 diff/EOL 检查也通过，轻量 import 为 37 modules 且未加载 PIL/OpenAI/httpx/onnxruntime。本轮无网络/provider/
+付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** 继续优先审计 active 已建功能中的 false success、付费工作丢失与恢复语义；若没有可公开稳定复现的缺陷，转入 Stage A
+音频只读迁移调研。不把已否定的 review 失败假设重复建模，也不在没有产品决策时扩大 refusal 后的跨请求复用范围。

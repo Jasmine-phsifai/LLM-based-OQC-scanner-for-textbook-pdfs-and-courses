@@ -13,6 +13,7 @@ from ..errors import (
     AllCandidatesExhausted,
     ConfigError,
     OCRLLMError,
+    OutputError,
     ProviderError,
 )
 from ..image_slot_state import ImageSlotState
@@ -267,19 +268,27 @@ def _recognize_images_once(
             raise
         calls_dispatched += 1
         if slot_checkpoint is not None:
-            slot_checkpoint.persist_slot(
-                ImageSlotState(
-                    slot_id=slot_id,
-                    workflow_pass=slot_id,
-                    provider=resolved.name,
-                    model=resolved.model,
-                    markdown=markdown,
-                    markdown_sha256=hashlib.sha256(
-                        markdown.encode("utf-8")
-                    ).hexdigest(),
-                    provider_calls_attempted=calls_dispatched,
+            try:
+                slot_checkpoint.persist_slot(
+                    ImageSlotState(
+                        slot_id=slot_id,
+                        workflow_pass=slot_id,
+                        provider=resolved.name,
+                        model=resolved.model,
+                        markdown=markdown,
+                        markdown_sha256=hashlib.sha256(
+                            markdown.encode("utf-8")
+                        ).hexdigest(),
+                        provider_calls_attempted=calls_dispatched,
+                    )
                 )
-            )
+            except OutputError as error:
+                error._add_safe_detail("workflow_pass", slot_id)
+                error._add_safe_detail(
+                    "provider_calls_attempted",
+                    calls_dispatched,
+                )
+                raise
         slot_ledger.append(
             {
                 "slot_id": slot_id,

@@ -13,6 +13,7 @@ import pytest
 from ocrllm import (
     Config,
     DashScopeSettings,
+    OutputError,
     ProviderError,
     QuotaExhausted,
     RecognitionPreferences,
@@ -126,6 +127,42 @@ def test_interrupted_request_keeps_paid_slots_and_resume_pays_only_missing(
 
     recognize(source, config=_slot_config(provider, output_dir, resume=True))
     assert len(provider.calls) == 4
+
+
+def test_review_checkpoint_failure_reports_spend_and_keeps_prior_slots(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    provider = InterruptibleSlotProvider()
+    saver = importlib.import_module("ocrllm.output.save_image_resume_state_atomically")
+    real_replace = saver.os.replace
+    replace_count = 0
+
+    def fail_review_checkpoint_replace(source_path, destination_path):
+        nonlocal replace_count
+        replace_count += 1
+        if replace_count == 3:
+            raise OSError("test-only review checkpoint replace failure")
+        return real_replace(source_path, destination_path)
+
+    monkeypatch.setattr(saver.os, "replace", fail_review_checkpoint_replace)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(source, config=_slot_config(provider, output_dir))
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["workflow_pass"] == "consensus_review"
+    assert captured.value.details["provider_calls_attempted"] == 3
+    assert len(provider.calls) == 3
+    assert not (output_dir / "board_board.md").exists()
+    partial_state = _state_document(output_dir)
+    assert [slot["slot_id"] for slot in partial_state["slots"]] == [
+        "draft",
+        "draft_2",
+    ]
+    assert list(output_dir.glob(".*.tmp")) == []
 
 
 def test_interrupted_overwrite_resume_rejects_old_output_before_provider_call(

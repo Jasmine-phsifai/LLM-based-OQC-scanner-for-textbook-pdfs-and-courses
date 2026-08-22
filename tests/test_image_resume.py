@@ -534,6 +534,8 @@ def test_atomic_state_save_failure_publishes_no_output_or_temporary_state(
         recognize(source, config=_vision_config(output_dir))
 
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["workflow_pass"] == "draft"
+    assert captured.value.details["provider_calls_attempted"] == 1
     assert len(calls) == 1
     assert not (output_dir / "board_board.md").exists()
     assert not _state_path(output_dir).exists()
