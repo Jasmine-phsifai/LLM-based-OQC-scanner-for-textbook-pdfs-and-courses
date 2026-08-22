@@ -623,6 +623,62 @@ def test_completed_state_size_failure_reports_paid_call_and_keeps_partial_state(
     assert len(calls) == 1
 
 
+def test_all_slots_partial_resume_honors_cancellation_before_final_publication(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_path = output_dir / "board_board.md"
+    state_path = _state_path(output_dir)
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    saver = importlib.import_module("ocrllm.output.save_image_resume_state_atomically")
+    real_save = saver.save_image_resume_state_atomically
+
+    def fail_completed_state(path, state):
+        if state.markdown:
+            raise OutputError("test-only completed state failure")
+        return real_save(path, state)
+
+    monkeypatch.setattr(saver, "save_image_resume_state_atomically", fail_completed_state)
+
+    with pytest.raises(OutputError):
+        recognize(source, config=_vision_config(output_dir))
+
+    assert len(calls) == 1
+    assert not output_path.exists()
+    partial_before = state_path.read_bytes()
+    partial_document = json.loads(partial_before)
+    assert partial_document["result"]["status"] == "partial"
+    assert partial_document["result"]["markdown"] == ""
+    assert [slot["slot_id"] for slot in partial_document["slots"]] == ["draft"]
+    monkeypatch.setattr(saver, "save_image_resume_state_atomically", real_save)
+
+    cancellation = threading.Event()
+    cancellation.set()
+    with pytest.raises(Cancelled) as captured:
+        recognize(
+            source,
+            config=_vision_config(output_dir, cancellation=cancellation),
+        )
+
+    assert captured.value.code == "CANCELLED"
+    assert len(calls) == 1
+    assert not output_path.exists()
+    assert state_path.read_bytes() == partial_before
+
+    resumed = recognize(source, config=_vision_config(output_dir))
+
+    assert resumed.markdown == "# Resumable board\n"
+    assert resumed.output_path == output_path
+    assert len(calls) == 1
+    assert output_path.read_text(encoding="utf-8") == resumed.markdown
+    assert json.loads(state_path.read_text(encoding="utf-8"))["result"][
+        "status"
+    ] == "complete"
+
+
 def test_resume_rejects_identity_less_injected_provider_without_invocation(
     tmp_path,
 ) -> None:

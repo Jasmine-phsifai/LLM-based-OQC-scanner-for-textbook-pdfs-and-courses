@@ -138,12 +138,20 @@ Future agents must assume the following and verify before trusting any claim:
   `CANCELLED`, makes no provider call, and leaves both state and Markdown bytes
   unchanged; a later uncancelled resume still reuses them with zero calls.
 
-- **Open: an all-slots-reusable partial checkpoint may still bypass
-  cancellation.** A partial v2 state whose saved slots already satisfy every
-  workflow pass can assemble and publish without reaching a provider start
-  check. Audit this path with a direct failing regression before changing
-  checkpoint or cancellation ordering; do not assume the completed-state fix
-  covers partial replay.
+- **All-slots partial image resume honors pre-set cancellation without losing
+  paid slots.** A valid partial state is identity-checked and rejected if a
+  final output already conflicts; the operation then checks cancellation before
+  constructing the slot checkpoint or entering candidate processing. A
+  cancelled replay makes no provider call, publishes no final Markdown, and
+  leaves the partial sidecar byte-identical. A later uncancelled resume reuses
+  the slots and completes with zero new calls.
+
+- **Open: batch settlement can mislabel a process-control exception from an
+  already-dispatched sibling.** After another item fails, the settlement path
+  currently catches `BaseException` from each remaining future and replaces it
+  with `CANCELLED` saying the item was not attempted. Audit coordinated
+  `KeyboardInterrupt` / `SystemExit` propagation separately; do not solve it by
+  swallowing process-control exceptions or discarding other settled outcomes.
 
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an

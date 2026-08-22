@@ -1514,3 +1514,19 @@ partial state 低于 16 MiB，却让 completed state 因最终 Markdown 的额�
 **完整验证与边界。** 项目环境 root 全量 **1086 passed / 89.59s**；`compileall -q src tests` 通过；isolated plain import 为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮无网络、provider 真实调用或付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
 
 **下一步。** #038 审计 all-slots-reusable partial checkpoint：先证明预设取消是否会组装并发布 final output，再决定在 partial identity/conflict validation 后统一检查一次，还是在 slot replay 边界逐次检查。不得重新支付已保存 slots，也不得因取消破坏 partial state。
+
+## #038 — 2026-08-23：all-slots partial resume 取消时不再发布伪成功
+
+**原子任务与假设。** 本轮只审计 partial v2 checkpoint 已经包含当前 workflow 所有必需 slots、但还没有 final result 时，预设取消能否阻止零调用 assemble/publish。同步 origin、重读权威状态、入口、package 规则与近期日记后，比较两条路径：一，在每个 `run_pass()` 命中 reusable slot 时检查取消；二，在 `_recognize()` 完成 partial identity 与 output-conflict validation 后、创建 `ImageSlotCheckpoint` 和进入 candidate processing 前检查一次。选择路径二，因为 cancellation 是 operation policy，不应重复塞进每个 slot；而且它能在候选 model 不匹配、可能重新 dispatch 前统一停止。
+
+**真实 partial 构造与失败证据。** 回归没有手写 JSON。默认一-pass DashScope workflow 首次 provider 返回有效 draft 后，真实 `ImageSlotCheckpoint.persist_slot()` 先原子写入 `status=partial`、空 final Markdown、唯一 `draft` slot；测试只让随后的 completed-state save 抛 `OutputError`。由此得到“全部所需付费 slots 已存在、final result 尚未写入”的真实 v2 sidecar。恢复正常 saver 后，用已经 set 的 Event 做 `resume=True`。旧实现稳定 **1 failed / 0.45s**：没有抛 `Cancelled`，而是复用 draft、写 completed state、发布 Markdown 并返回 success，整个过程 provider 调用数仍是 1。
+
+**两名只读 scout 与个人复核。** topology 审计确认 partial state 可以合法保存任意已完成 slots；reusable slot 必须 provider/model 精确匹配，命中时 ledger 记零调用并在 `call_vision_provider()` 前返回。若把 check 放到 `run_pass()`，会重复检查，并且 provider/model resolution 已经开始；一次 orchestration check 更早、更清楚。test 审计建议用第二次 state replace 失败造 partial；主代理选择现有 saver 函数 seam，同样保留第一次真实 partial 原子写，只让 completed state 失败，减少对 writer 内部 replace 次数的耦合。local OCR production 不会创建 slot partial，且本身已有 backend 前 cancellation；统一 orchestration check 对结构有效的 partial OCR state 仍安全。
+
+**最小实现与回归保证。** `recognize.py` 把现有 `raise_if_cancelled` lazy import 提到 `_recognize()` 的局部 import 区，completed 分支继续在 state identity/digest validation 后检查；partial 分支新增一处调用，位置在 identity validation 与 existing-output conflict error 之后、`seeded_slots`/checkpoint/processor 之前。回归证明取消时：code 为 `CANCELLED`；provider 总调用保持首次的 1；final Markdown 不存在；partial sidecar bytes 完全不变。随后未取消 resume 复用同一 draft，零新增调用并发布相同 Markdown 与 completed state。completed + partial 两条取消回归 **2 passed / 0.34s**；image resume/M2/Stage M/defect focused 集 **66 passed / 3.30s**。
+
+**新边界与下一优先级。** candidate ledger 无需在取消错误中伪造：取消发生在 candidate loop 前，真实新调用数就是 0，已付费 slot 仍留在 sidecar。并行审计遗留的下一个明确问题是 `recognize_batch()` 在 sibling 已失败后 settle 其他已 dispatch futures 时捕获 `BaseException`，可能把 `KeyboardInterrupt` / `SystemExit` 改写成“未尝试”的 `CANCELLED`。这会同时影响 process-control 传播与事实描述，已记入权威 open debt；`Config.progress` 的公共字段去留仍是另一项需要产品决定的简化任务。
+
+**完整验证与边界。** 项目环境 root 全量 **1087 passed / 90.59s**；`compileall -q src tests` 通过；isolated plain import 为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮无网络、provider 真实调用或付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** #039 用 Event 协调一个 batch item 先产生普通 typed failure、另一个已 dispatch item 再抛 process-control exception，先确认当前 settlement 是否吞掉它以及如何保留其他已完成 outcomes。不要把普通 cancelled Future、caller cancellation 和 `BaseException` 混成一种状态。

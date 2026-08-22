@@ -55,6 +55,7 @@ def _recognize(
     from .providers.provider_request_start_gate import (
         reuse_or_create_provider_request_start_gate,
     )
+    from .raise_if_cancelled import raise_if_cancelled
     from .validate_execution_image_count import validate_execution_image_count
     from .validate_same_type_group import validate_same_type_group
 
@@ -139,8 +140,6 @@ def _recognize(
                             resume_state,
                             resume_identity,
                         )
-                        from .raise_if_cancelled import raise_if_cancelled
-
                         raise_if_cancelled(cfg.cancellation)
                     else:
                         from .image_slot_checkpoint import ImageSlotCheckpoint
@@ -166,6 +165,7 @@ def _recognize(
                                     "resume state.",
                                     code="RESUME_STATE_MISMATCH",
                                 ) from None
+                            raise_if_cancelled(cfg.cancellation)
                             seeded_slots = resume_state.slots
                         slot_checkpoint = ImageSlotCheckpoint(
                             resume_identity,
