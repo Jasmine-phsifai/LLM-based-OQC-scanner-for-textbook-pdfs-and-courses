@@ -6,6 +6,11 @@ from OCRLLM.config import AppConfig
 from OCRLLM.core.provider_errors import ProviderSetupError
 from OCRLLM.core.task_runner import CancelledError
 from OCRLLM.processors.board import BoardProcessor
+from OCRLLM.processors.board_repair_manifest import (
+    create_board_repair_manifest,
+    render_board_batch_failure,
+    save_board_repair_manifest,
+)
 
 
 class _ScriptedBoardLLM:
@@ -31,16 +36,29 @@ def _board_processor(tmp_path: Path, responses):
     return processor
 
 
+def _write_repairable_failures(md_path: Path, image_paths: list[Path]) -> None:
+    manifest = create_board_repair_manifest(
+        batches=([str(path)] for path in image_paths),
+        batch_size=1,
+        prompt="test prompt",
+        skip_preprocess=True,
+    )
+    save_board_repair_manifest(md_path, manifest)
+    md_path.write_text(
+        "\n\n".join(
+            render_board_batch_failure(batch, "timeout")
+            for batch in manifest.batches
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_board_repair_publishes_success_and_propagates_cancellation(tmp_path):
     image_paths = [tmp_path / "board-1.png", tmp_path / "board-2.png"]
     for path in image_paths:
         path.write_bytes(b"image")
     md_path = tmp_path / "board.md"
-    md_path.write_text(
-        "<!-- 批次 1 (board-1.png) 识别失败: timeout -->\n\n"
-        "<!-- 批次 2 (board-2.png) 识别失败: timeout -->",
-        encoding="utf-8",
-    )
+    _write_repairable_failures(md_path, image_paths)
     processor = _board_processor(
         tmp_path,
         ["第一批已修复", CancelledError("任务已取消")],
@@ -63,10 +81,7 @@ def test_board_repair_propagates_provider_setup_errors(tmp_path):
     image_path = tmp_path / "board.png"
     image_path.write_bytes(b"image")
     md_path = tmp_path / "board.md"
-    md_path.write_text(
-        "<!-- 批次 1 (board.png) 识别失败: timeout -->",
-        encoding="utf-8",
-    )
+    _write_repairable_failures(md_path, [image_path])
     processor = _board_processor(
         tmp_path,
         [ProviderSetupError("provider SDK missing")],

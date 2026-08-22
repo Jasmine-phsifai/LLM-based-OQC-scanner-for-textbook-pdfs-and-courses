@@ -706,3 +706,52 @@ GUI 单任务只缩小发生面，不构成库级保证。
 **Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 音频批处理必须在首次 dispatch 前
 建立 typed/versioned slots；提交采用有界 rolling window；取消停止新工作但排空已运行调用，并在
 传播前原子提交每个已付费成功。不要使用“全量 submit 后等待”或只在整批结束时保存的实现。
+
+## 2026-08-23 — standalone board repair 按文件名误选图片（已修复）
+
+**现象与根因。** `find_failed_batches()` 把本地化注释括号内文本按逗号切分，合法文件名
+`chapter, part.png` 会变成两个不存在的名字；`repair()` 再用 `{basename: path}` 建表，不同目录
+同 basename 时后者静默覆盖前者。同路径图片换字节也没有校验。结果可能是明确失败，也可能把
+另一张图片付费识别后写进原批次，属于静默数据污染。
+
+**修复与兼容政策。** 新增 `processors/board_repair_manifest.py`。生产首次 provider dispatch 前
+原子写 v1 sidecar，保存每张有序原图 size/SHA-256、stable item ID、精确 batch membership/unit
+ID，以及 batch size、prompt hash、skip-preprocess 审计值。Markdown 每批写机器可读
+`meta:board-batch index/unit/status`；repair 严格验证 schema/version、哈希、完整 batch 覆盖、unit
+重算、Markdown 映射和 supplied source 多重集，再按 exact-byte bucket 解析当前路径。rename 可用，
+逗号/括号/重复 basename 不参与身份；旧输出无 sidecar、损坏/未知版本、图片或 Markdown 漂移都在
+零 provider 调用时拒绝，不提供 unsafe fallback。每个成功 retry 仍通过 atomic writer 发布。
+
+不可变边界是原始 source bytes + batch membership。repair 允许改变 prompt/model/preprocessing，
+因此没有把某次 crop/resize provider input 冻结进 unit；这些值属于新 attempt，不是源身份。
+
+**失败优先证据与验证。** 修前六条 identity 回归为 **6 failed / 12.34s**。最终
+identity/repair/failure focused 集 **22 passed / 27.71s**；排除真实 ffmpeg e2e 与 import-time live
+Bilibili diagnostic 的 offline legacy 广集 **266 passed, 1 skipped / 50.74s**，唯一 skip 是显式
+live Google discovery；相关模块 `py_compile` 与 `git diff --check` 通过。没有 provider 或付费调用。
+
+**已观察、尚未修复。** production `BoardProcessor.process()` 仍将所有结果保留到循环末尾，且
+`except Exception` 会吞 provider 抛出的 `CancelledError` 和 setup failure。下一次取消检查可越过
+最终 Markdown 发布，丢掉前面已付费成功；setup 缺失也会被降格为普通批次失败。video repair 的
+failed-batch 仍按 current batch size 解释历史 index。并发同一输出仍无 revision/CAS。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 图像批处理恢复必须持久化强 source
+fingerprint、原始有序 unit membership 与机器可读 slot 状态；不要按 basename、逗号分隔展示文本或
+current batch size 重建。repair attempt 可改变 prompt/model/preprocessing，但不得改变 source unit；
+生产取消必须先原子保存已付费成功再传播。
+
+## 2026-08-23 — pytest collection 隐式访问 Bilibili 网络（仅观察，未修复）
+
+**现象与根因。** #014 广集只排除真实 ffmpeg `test_social_e2e.py` 后，pytest 收集
+`tests/test_bilibili_api.py` 即在模块顶层运行真实 Bilibili API 查询和 `curl -sIL b23.tv`。短链接
+请求 15 秒超时，整套测试以 collection error 中断；导入测试模块本身就有外部副作用，所谓 offline
+广集并不诚实。此前网络可用时该文件没有产生 test case 计数，因此绿灯掩盖了隐式联网。
+
+**当前证据与临时边界。** 失败结果为 **1 collection error / 20.94s**，异常是
+`subprocess.TimeoutExpired`。排除该 diagnostic 与 social e2e 后为
+**266 passed, 1 skipped / 50.74s**。本轮没有重试网络，也没有修改该文件，以免混入 board identity
+原子任务；已进入下一循环队列。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 默认单元/回归测试的 collection 与
+import 必须零网络、零凭据、零外部进程副作用；live diagnostics 必须放到显式 opt-in marker 或独立
+script，并以清晰 preflight/timeout 报告，不能靠网络恰好可用来维持“全量绿”。

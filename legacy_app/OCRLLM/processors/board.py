@@ -11,9 +11,19 @@ from pathlib import Path
 from typing import Optional
 
 from OCRLLM.processors.base import BaseProcessor
+from OCRLLM.processors.board_repair_manifest import (
+    BoardRepairIdentityError,
+    create_board_repair_manifest,
+    find_failed_board_batch_indices,
+    load_board_repair_manifest,
+    render_board_batch_failure,
+    render_board_batch_marker,
+    replace_failed_board_batch,
+    save_board_repair_manifest,
+)
 from OCRLLM.core.document_model import SourceType
 from OCRLLM.core.utils import (
-    batch_list, concat_md_files, ensure_dir,
+    batch_list, ensure_dir,
     sort_files_by_time, resize_image_if_needed, strip_md_fence,
 )
 from OCRLLM.core.output_quality import failed_placeholder_quality_reason, looks_like_refusal
@@ -119,6 +129,14 @@ class BoardProcessor(BaseProcessor):
         batches = batch_list(
             list(zip(sorted_paths, processed_paths)), self.cfg.processing.batch_size
         )
+        manifest = create_board_repair_manifest(
+            batches=([original for original, _processed in batch] for batch in batches),
+            batch_size=self.cfg.processing.batch_size,
+            prompt=prompt_template,
+            skip_preprocess=skip_preprocess,
+        )
+        ensure_dir(os.path.dirname(output_path))
+        save_board_repair_manifest(output_path, manifest)
         md_parts = []
         history = []
         successful_batches = 0
@@ -129,6 +147,7 @@ class BoardProcessor(BaseProcessor):
             orig_paths, proc_paths = zip(*batch)
             names = [Path(p).name for p in orig_paths]
             names_str = ", ".join(names)
+            saved_batch = manifest.batches[batch_idx]
 
             self._report(
                 batch_idx + 1, len(batches),
@@ -144,7 +163,9 @@ class BoardProcessor(BaseProcessor):
                 result = strip_md_fence(result)
                 if looks_like_refusal(result):
                     raise RuntimeError("模型拒识：" + result.strip().splitlines()[0][:80])
-                md_parts.append(result)
+                md_parts.append(
+                    f"{render_board_batch_marker(saved_batch, 'complete')}\n\n{result}"
+                )
                 successful_batches += 1
                 self._report_content(result, f"板书识别 — 第 {batch_idx + 1} 批")
 
@@ -157,11 +178,13 @@ class BoardProcessor(BaseProcessor):
                 ])
             except Exception as e:
                 logger.error("[BOARD] 批次 %d 失败: %s", batch_idx + 1, e)
-                safe_err = str(e).replace("--", "\u2014")
-                md_parts.append(f"\n\n<!-- 批次 {batch_idx + 1} ({names_str}) 识别失败: {safe_err} -->\n\n")
+                md_parts.append(render_board_batch_failure(saved_batch, e))
                 failed_batches.append(batch_idx + 1)
 
-        concat_md_files(md_parts, output_path)
+        write_text_atomically(
+            output_path,
+            "\n\n".join(part.strip() for part in md_parts) + "\n",
+        )
         if batches and successful_batches == 0:
             raise RuntimeError(f"板书识别全部 {len(batches)} 个批次失败，输出文件只包含错误信息: {output_path}")
         reason = failed_placeholder_quality_reason(
@@ -182,6 +205,9 @@ class BoardProcessor(BaseProcessor):
             text = Path(md_path).read_text(encoding="utf-8")
         except OSError:
             return []
+        stable_indices = find_failed_board_batch_indices(text)
+        if stable_indices:
+            return [(index, []) for index in stable_indices]
         results: list[tuple[int, list[str]]] = []
         for m in _FAILED_BATCH_RE.finditer(text):
             idx = int(m.group(1))
@@ -201,14 +227,24 @@ class BoardProcessor(BaseProcessor):
         Uses the original image files to re-process only the failed batches.
         Returns md_path, or raises on total/partial failure.
         """
+        content = Path(md_path).read_text(encoding="utf-8")
         failed = self.find_failed_batches(md_path)
-        if not failed:
+        has_stable_metadata = "meta:board-batch" in content
+        if not failed and not has_stable_metadata:
             logger.info("[BOARD-REPAIR] 没有发现识别失败的批次: %s", md_path)
             return md_path
 
         prompt_template = prompt_template or prompts.BOARD
-        # Build name → path map from the original images
-        name_to_path = {Path(p).name: p for p in image_paths}
+        manifest, paths_by_item_id = load_board_repair_manifest(
+            output_path=md_path,
+            markdown=content,
+            supplied_paths=image_paths,
+        )
+        if not failed:
+            logger.info("[BOARD-REPAIR] 没有发现识别失败的批次: %s", md_path)
+            return md_path
+        batches_by_index = {batch.index: batch for batch in manifest.batches}
+        items_by_id = {item.item_id: item for item in manifest.items}
 
         total = len(failed)
         logger.info("[BOARD-REPAIR] 需要修复 %d 个批次", total)
@@ -216,16 +252,18 @@ class BoardProcessor(BaseProcessor):
 
         results: dict[int, str] = {}  # batch index → recognized text
         still_failed: list[int] = []
-        content = Path(md_path).read_text(encoding="utf-8")
-
         preprocessor = ImagePreprocessor(self.cfg)
 
-        for order, (batch_idx, names) in enumerate(failed):
+        for order, (batch_idx, _legacy_names) in enumerate(failed):
             self._check_cancelled()
-            batch_paths = [name_to_path[n] for n in names if n in name_to_path]
-            if not batch_paths:
-                still_failed.append(batch_idx)
-                continue
+            try:
+                saved_batch = batches_by_index[batch_idx]
+            except KeyError as exc:
+                raise BoardRepairIdentityError(
+                    f"板书失败批次 {batch_idx} 不在修复 manifest 中"
+                ) from exc
+            batch_paths = [paths_by_item_id[item_id] for item_id in saved_batch.item_ids]
+            names = [items_by_id[item_id].display_name for item_id in saved_batch.item_ids]
 
             self._report(order + 1, total, f"识别批次 {batch_idx} ({order + 1}/{total})")
             names_str = ", ".join(names)
@@ -255,18 +293,7 @@ class BoardProcessor(BaseProcessor):
                 still_failed.append(batch_idx)
                 continue
 
-            pattern = re.compile(
-                r"\s*<!--\s*批次\s+" + str(batch_idx) + r"\s+\([^)]*\)\s+识别失败:.*?-->\s*",
-            )
-            updated_content, replacement_count = pattern.subn(
-                "\n\n" + text + "\n\n",
-                content,
-                count=1,
-            )
-            if replacement_count != 1:
-                raise RuntimeError(
-                    f"板书修复标记已变化，无法安全发布批次 {batch_idx}: {md_path}"
-                )
+            updated_content = replace_failed_board_batch(content, saved_batch, text)
             write_text_atomically(md_path, updated_content)
             content = updated_content
             results[batch_idx] = text

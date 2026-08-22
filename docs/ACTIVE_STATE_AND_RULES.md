@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-22 against the
+Status: **authoritative and current.** Last verified 2026-08-23 against the
 working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
@@ -91,9 +91,11 @@ Future agents must assume the following and verify before trusting any claim:
   the next cancellable operation, and cancellation/provider setup errors remain
   visible. Short-audio repair now requires a versioned sidecar containing exact
   source hashes and millisecond unit windows, so current chunk settings cannot
-  reinterpret an old failed segment. Board identity still depends on current
-  batch/basename reconstruction, and video failed batches still depend on the
-  current batch size. The exact open findings are recorded in
+  reinterpret an old failed segment. Standalone board repair now binds exact
+  ordered source bytes and saved batch membership through its own versioned
+  sidecar instead of parsing filenames. Video failed batches still depend on the
+  current batch size, and production board recognition still lacks incremental
+  cancellation-safe publication. The exact open findings are recorded in
   `legacy_app/AGENTS.md`. New library modalities must extend typed, versioned
   checkpoint state and atomic publication rather than copy localized
   Markdown-regex repair.
@@ -527,9 +529,9 @@ field would reject.
 Commit `4c5293d` made first-fetch catalog failure retryable and fail closed,
 while retaining the last successful catalog during refresh outages.
 
-## Legacy Status, 2026-08-22
+## Legacy Status, 2026-08-23
 
-Four legacy durability/repair-hardening slices are complete. `repair_board()` reads the
+Five legacy durability/repair-hardening slices are complete. `repair_board()` reads the
 normal `{"items": [...]}` manifest, accounts for unavailable processed frames
 as explicit partial failures, and video cleanup retains extracted audio while
 failed transcript segments remain. Audio, board, and video repair now publish
@@ -542,13 +544,43 @@ when that identity is missing or inconsistent. Production short-ASR now publishe
 that manifest plus an all-unfinished Markdown checkpoint before dispatch, uses a
 bounded rolling request window, and atomically republishes every settled segment.
 Cancellation or provider setup failure stops new submissions, drains already-running
-calls, preserves their successes, and then propagates. Stable board/video repair
-identity remains open and continues to outrank Stage A feature research. Earlier legacy
-fixes remain recorded history, not proof that all compatibility paths are
-defect-free.
+calls, preserves their successes, and then propagates. Standalone board outputs now
+persist exact ordered source fingerprints, saved batch membership, stable unit IDs, and
+machine-readable batch status. Repair resolves renamed sources by bytes, rejects
+missing/corrupt/drifted identity before dispatch, and no longer relies on comma-split or
+duplicate basenames. Production board checkpoint/cancellation semantics and stable video
+failed-batch identity remain open and continue to outrank Stage A feature research.
+Earlier legacy fixes remain recorded history, not proof that all compatibility paths
+are defect-free.
 ## New And Fixed In This Working Update
 
-Production short-ASR now durably checkpoints paid parallel work:
+Standalone board repair now has stable source and batch identity:
+
+- Before its first provider request, `BoardProcessor.process()` atomically publishes a
+  versioned `.board-repair.json` sidecar. It records exact ordered source size/SHA-256,
+  stable item and batch IDs, exact batch membership, and prompt/preprocessing audit
+  metadata. Markdown carries one machine-readable index/unit/status marker per batch.
+- Repair validates schema/version, source collection, item and unit IDs, complete batch
+  coverage, and Markdown mapping before dispatch. Missing/corrupt/unsupported state,
+  source-byte drift, extra/missing inputs, or presentation-unit drift fails closed.
+- Sources are resolved by exact bytes rather than basename. Rename therefore remains
+  safe, while comma-containing names and duplicate basenames cannot redirect a paid
+  retry. Prompt, model, and preprocessing remain mutable repair-attempt choices; the
+  immutable unit is the original source-byte membership, not one past transformation.
+- Six regressions failed before implementation. The final identity/repair/failure set
+  passed 22 tests; the offline legacy suite excluding the real ffmpeg e2e and the
+  import-time live-Bilibili diagnostic passed 266 tests with one explicit live-Google
+  skip. Compilation and diff checks passed. No provider, paid, active-library, or
+  frozen-boundary behavior changed. A broad run exposed that the Bilibili diagnostic
+  performs public HTTP during collection; it timed out and remains open test debt.
+
+Production board recognition still catches cancellation/setup failure inside its batch
+loop and publishes Markdown only after the loop; video repair still expands historical
+failed batches using the current batch size. Both are explicitly open.
+
+### Previous working update: production short-ASR checkpoints
+
+Production short-ASR durably checkpoints paid parallel work:
 
 - Before the first provider request, `_short_asr()` publishes the versioned repair
   manifest and a complete Markdown skeleton whose slots are explicitly unfinished.
@@ -564,7 +596,8 @@ Production short-ASR now durably checkpoints paid parallel work:
   with one explicit live-Google skip. `py_compile` and diff checks passed. No provider,
   network, active-library, or frozen-boundary behavior changed.
 
-Board batch/basename identity and video failed-batch identity remain open.
+Production board checkpoint/cancellation behavior and video failed-batch identity remain
+open.
 
 ### Previous working update: stable audio repair identity
 
@@ -589,7 +622,8 @@ Short-audio repair has a stable unit-identity contract:
   Compilation and diff checks passed. No provider, network, active-library, or
   frozen-boundary behavior changed.
 
-Board batch/basename identity and video failed-batch identity remain open.
+Board batch/basename identity was still open at that checkpoint and is closed by
+the current update above. Video failed-batch identity remains open.
 
 ### Previous working update: atomic repair publication
 
@@ -611,7 +645,8 @@ Legacy repair publication now has one explicit durability contract:
   explicit live-Google skip. Compilation passed. No active-library,
   frozen-boundary, network, or provider behavior changed.
 
-Stable board batch/basename and video failed-batch identity remains open.
+Stable board batch/basename identity was still open at that checkpoint and is
+closed by the current update above. Video failed-batch identity remains open.
 The shared writer is intentionally only a file-publication primitive; localized
 marker transformations were not centralized or promoted into a library API.
 

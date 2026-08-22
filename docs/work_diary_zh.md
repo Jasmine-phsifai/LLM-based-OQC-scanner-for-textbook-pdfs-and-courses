@@ -55,11 +55,17 @@
     ~~audio 以持久化 source/input SHA-256 + 原始毫秒边界替代 current split 重建~~ →
     已完成,见 #012。
     ~~production short-ASR 在取消/setup failure 前逐段保存，且停止扩大付费请求~~ →
-    已完成,见 #013。仍开放:board batch/basename 与 video failed-batch/current batch size
+    已完成,见 #013。
+    ~~standalone board 以 source SHA-256 + saved batch unit 替代逗号/basename 恢复~~ →
+    已完成,见 #014。仍开放:production board 取消/setup 的增量发布，以及 video
+    failed-batch/current batch size
     的稳定身份。不要把 Markdown regex repair 移植到 `src/ocrllm`;新库按现有 typed
     sidecar/checkpoint 扩展。
 11. 独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
     “免费额度耗尽”提示；应建立中性 failover disposition 后再修。
+12. legacy offline suite 边界:`tests/test_bilibili_api.py` 在 collection 顶层执行真实 Bilibili
+    API 与 `curl b23.tv`；#014 广集因该公开网络超时中断。应移为显式 opt-in/script，默认 pytest
+    collection 必须零网络。修复后再回到 production board checkpoint。
 
 ## 条目格式
 
@@ -664,3 +670,57 @@ future iterator；②在 short-ASR 内实现有界 rolling drain。选择②，�
 failed-batch 按 current batch size 重建。下一轮优先为 board 建立稳定身份失败测试；若调查证明
 两种 modality 需要不同 schema，则分别做小型 sidecar，不抽象出未经证明的通用媒体恢复框架。
 Stage A 调研继续后移。
+
+## #014 — 2026-08-23:用源字节与稳定 batch unit 阻止 board repair 修错图片
+
+**任务**:让 standalone `BoardProcessor` 在 provider 前保存版本化 source/batch identity；repair
+不再从本地化 marker 按逗号拆文件名或用 basename 字典猜图片，缺失/损坏/漂移时零调用失败。
+
+**上下文**:#013 后任务队列写着“board current batch reconstruction”，但主审代码后修正前提：
+standalone board repair 实际从 marker 取名字，不读取当前 batch size；current batch drift 属于 video。
+已证明的 board 缺陷是含逗号文件名被拆开、不同目录同 basename 后者覆盖前者、同路径换字节仍
+付费重试。两名 Luna scout 分别审查 schema 和测试 seam；比较过把身份塞入 Markdown 与邻接
+sidecar，选择后者，避免继续把本地化展示文本当恢复数据库，也不抽象未经证明的通用 media schema。
+
+**成功标准**:生产首次 dispatch 前已有可解析 sidecar；重命名但字节相同可按身份解析；逗号和
+重复 basename 不会误选；source drift、missing/corrupt manifest、Markdown unit drift 都在零
+provider 调用时失败；旧本地化输出不做 unsafe fallback；focused、legacy 广集、编译与 diff 全绿。
+
+**为什么重要**:repair 会再次消费 provider 请求。按名字猜错图片会产生语法完全有效但内容属于
+另一张图的 Markdown，是比显式失败更危险的静默污染；稳定 batch identity 也是未来新库图像批次
+恢复不可缺少的边界。
+
+**结果**:
+
+- 六条回归先以 **6 failed / 12.34s** 精确复现：provider 前无身份、逗号+rename 无法恢复、
+  duplicate basename 选择最后一项、source drift 仍调用、missing/corrupt sidecar 仍调用。
+  后续补充 Markdown unit 漂移测试，第一次运行又发现 malformed marker 会被“没有失败”提前返回，
+  现已要求存在 stable metadata 时先完整验证 manifest/Markdown 再下结论。
+- 新增单一职责 `processors/board_repair_manifest.py`。v1 sidecar 保存按生产 mtime 顺序确定后的
+  每张原图 size/SHA-256、稳定 item ID、精确 batch membership/unit ID、原 batch size、prompt hash
+  与 skip-preprocess 审计值；长输出路径沿用短名 + path digest 策略，写入复用 atomic writer。
+- Markdown 每批都有 `meta:board-batch index/unit/status`；人类可读失败注释继续保留“批次 N
+  识别失败”，但 repair 只按 manifest unit 精确替换。loader 严格验证 schema/version、连续索引、
+  哈希、完整有序 batch 覆盖、unit 重算、Markdown 映射和 supplied source 多重集。
+- repair 用 `(size, SHA-256)` bucket 消费 supplied paths：同字节 rename 安全，重复 basename 不再
+  冲突，额外/缺失/漂移输入全部拒绝。source bytes + batch membership 是不可变 unit；prompt/model/
+  preprocessing 是允许改进的 repair attempt，不把某次 crop/resize 输出错误冻结成永久身份。
+- 首轮 focused 暴露两个旧测试仍手写无 sidecar marker，以及人类可读错误断言需要兼容；测试改为
+  使用生产 manifest renderer，显示文字保留。最终 identity/repair/failure set
+  **22 passed / 27.71s**；真正 offline 的 legacy 广集（排除真实 ffmpeg `test_social_e2e.py` 与
+  import-time live `test_bilibili_api.py`）为 **266 passed, 1 skipped / 50.74s**，唯一 skip 是显式
+  live Google discovery。四个 Python 文件 `py_compile` 与 `git diff --check` 通过；无 provider/
+  付费调用。
+- 不隐藏一次验证失败：只排除 social e2e 的广集在 collection `test_bilibili_api.py` 时真实请求
+  `b23.tv`，15 秒后抛 `subprocess.TimeoutExpired`，结果为 **1 collection error / 20.94s**。这是测试
+  文件顶层执行网络诊断的既有缺陷，不是 board 回归；本轮没有继续联网重试，已加入队列 #12。
+- 主审没有采纳“缺少旧 sidecar 时按 basename best effort”或把 audio/board 合并为通用 manifest；
+  前者继续静默误修，后者会把时间窗口与图片集合两种不同 unit 强塞进过早抽象。`contracts/`、
+  `worker/` 与用户未跟踪交接文件未动。
+
+**遗留/下一步**:下一轮先关闭队列 #12，使默认 offline pytest collection 不再隐式联网。随后处理
+production `BoardProcessor.process()`：它仍把所有 `md_parts` 留到循环结束，
+且 broad `except Exception` 会吞 provider 内的 `CancelledError`/setup failure；下一次 `_check_cancelled`
+可越过最终写入，丢掉前面已付费成功。这比 video identity 更直接影响生产成果，应随后用失败测试
+定义“initial skeleton + 每批原子发布 + terminal error 传播”；随后再修 video historical batch size。
+并发同一输出仍是 last-writer-wins，另立 revision/CAS 证据前不加锁。
