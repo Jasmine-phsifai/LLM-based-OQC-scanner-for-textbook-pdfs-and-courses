@@ -60,7 +60,7 @@ def fetch_dashscope_model_catalog(settings) -> frozenset[str] | None:
     from urllib.request import Request, urlopen
     from .resolve_dashscope_credential import resolve_dashscope_credential
 
-    api_key = settings.api_key or resolve_dashscope_credential(settings)
+    api_key = resolve_dashscope_credential(settings)
     try:
         request = Request(
             f"{settings.base_url.rstrip('/')}/models",

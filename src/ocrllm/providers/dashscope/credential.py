@@ -28,4 +28,7 @@ class DashScopeCredential:
                 "DashScopeCredential.credential_id must be 1-64 safe ID characters.",
                 code="CONFIG_INVALID",
             ) from None
-        validate_dashscope_api_key(self.api_key, owner="DashScopeCredential")
+        validate_dashscope_api_key(
+            self.api_key,
+            field_name="DashScopeCredential.api_key",
+        )

@@ -6,6 +6,7 @@ import os
 
 from ...errors import ConfigError
 from .provider_settings import DashScopeSettings
+from .validate_dashscope_api_key import validate_dashscope_api_key
 
 
 def resolve_dashscope_credential(settings: DashScopeSettings) -> str:
@@ -23,14 +24,16 @@ def resolve_dashscope_credential(settings: DashScopeSettings) -> str:
     api_key = settings.api_key
     if api_key is None:
         api_key = os.environ.get("DASHSCOPE_API_KEY")
-    if type(api_key) is not str or not api_key or api_key != api_key.strip():
+    if api_key is None or api_key == "":
         raise ConfigError(
             "DashScope requires DashScopeSettings.api_key or DASHSCOPE_API_KEY.",
             code="CONFIG_MISSING",
         ) from None
-    if api_key.startswith("sk-sp-"):
-        raise ConfigError(
-            "DashScope Coding Plan credentials cannot authorize this library adapter.",
-            code="CONFIG_INVALID",
-        ) from None
-    return api_key
+    return validate_dashscope_api_key(
+        api_key,
+        field_name=(
+            "DashScopeSettings.api_key"
+            if settings.api_key is not None
+            else "DASHSCOPE_API_KEY"
+        ),
+    )

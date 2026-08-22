@@ -81,7 +81,10 @@ class DashScopeSettings:
         _validate_region(self.region)
         _validate_base_url(self.base_url, region=self.region)
         if self.api_key is not None:
-            validate_dashscope_api_key(self.api_key, owner="DashScopeSettings")
+            validate_dashscope_api_key(
+                self.api_key,
+                field_name="DashScopeSettings.api_key",
+            )
         _validate_credential_pool(
             self.credential_pool,
             api_key=self.api_key,

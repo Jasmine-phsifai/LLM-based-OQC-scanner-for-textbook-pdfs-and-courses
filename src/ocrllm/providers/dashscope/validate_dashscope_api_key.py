@@ -5,7 +5,7 @@ from __future__ import annotations
 from ...errors import ConfigError
 
 
-def validate_dashscope_api_key(api_key: object, *, owner: str) -> str:
+def validate_dashscope_api_key(api_key: object, *, field_name: str) -> str:
     """Return one exact safe-to-use key without ever echoing its value."""
     if (
         type(api_key) is not str
@@ -14,7 +14,7 @@ def validate_dashscope_api_key(api_key: object, *, owner: str) -> str:
         or any(ord(character) < 32 or ord(character) == 127 for character in api_key)
     ):
         raise ConfigError(
-            f"{owner}.api_key must be nonempty exact text.",
+            f"{field_name} must be nonempty exact text.",
             code="CONFIG_INVALID",
         ) from None
     if api_key.startswith("sk-sp-"):

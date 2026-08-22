@@ -102,8 +102,8 @@ def test_dashscope_key_falls_back_to_environment(monkeypatch):
     )
 
 
-@pytest.mark.parametrize("value", [None, "", " padded "])
-def test_missing_or_malformed_dashscope_key_is_typed(monkeypatch, value):
+@pytest.mark.parametrize("value", [None, ""])
+def test_missing_dashscope_key_is_typed(monkeypatch, value):
     monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
     if value is not None:
         monkeypatch.setenv("DASHSCOPE_API_KEY", value)
@@ -112,6 +112,21 @@ def test_missing_or_malformed_dashscope_key_is_typed(monkeypatch, value):
         resolve_dashscope_credential(_settings())
 
     assert captured.value.code == "CONFIG_MISSING"
+
+
+@pytest.mark.parametrize(
+    "value",
+    [" padded-secret ", "line1\nline2-secret", "secret\x7fvalue"],
+)
+def test_malformed_environment_key_is_invalid_without_echo(monkeypatch, value):
+    monkeypatch.setenv("DASHSCOPE_API_KEY", value)
+
+    with pytest.raises(ConfigError) as captured:
+        resolve_dashscope_credential(_settings())
+
+    assert captured.value.code == "CONFIG_INVALID"
+    assert value not in str(captured.value)
+    assert value not in repr(captured.value.details)
 
 
 def test_coding_plan_key_is_rejected_without_echo(monkeypatch):
