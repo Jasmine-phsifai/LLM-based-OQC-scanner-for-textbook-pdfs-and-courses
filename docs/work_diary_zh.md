@@ -1439,3 +1439,32 @@ provider 真实调用或付费调用，未修改 frozen `contracts/`、`worker/`
 
 **下一步。** 继续检查已建 active provider/output 边界，尤其是大回复、多 pass 组合和 typed error 细节是否还能出现 false success 或付费证据丢失；
 若没有稳定可公开复现的缺陷，按既有优先级转入 Stage A 音频只读迁移调研，不继续为已否定的两文件事务假设扩展架构。
+
+## #034 — 2026-08-23：completed state 超限时保留全部付费调用证据
+
+**原任务与限额结论。** 本轮审计大型 provider Markdown 在 memory-only、checkpoint 和多 pass 图像识别中是否会无界放大。代码、测试、现行计划与两名只读
+scout 确认：公开契约没有 provider 回复的 byte/character cap；DashScope 请求只有 `max_completion_tokens=16_384`，并拒绝
+`finish_reason=length`；16 MiB 是 resume-state 文件限额，不是 Markdown 限额。memory-only 结果和最终 `.md` 并没有同样上限。用16 MiB 除以最多七份文本或根据 token
+猜一个新 cap，都无法正确处理 JSON escape、metadata 与合法大型 OCR 结果。因此没有从实现限额反推新公开政策，也没有截断或静默缩短回复。
+
+**可确定复现的实际缺陷。** 每个成功 pass 先把完整 Markdown 存入 partial slot；completed state 又同时带全部 slots 和最终 assembled result。因此某个回复可以让
+partial state 低于 16 MiB，却让 completed state 因最终 Markdown 的额外副本超限。原有路径会正确抛 `OUTPUT_WRITE_FAILED`、保留 partial sidecar 且不发布 Markdown，
+但 error details 是空的，已付费调用数在最终 state materialization 边界丢失。用真实 serializer 动态把限额设为刚保存的 partial bytes + 1，可在不分配巨大字符串、
+不硬编码 JSON overhead 的情况下稳定触发。失败优先单例为 **1 failed / 0.49s**：`provider_calls_attempted` 缺失。
+
+**两条路径与选择。** 方案一是在 shared validator 增加 Markdown size cap，提前拒绝；它没有可辩护的数值，会改变 memory-only 与 injected-provider 契约。方案二保持已有
+16 MiB state 保护和 fail-closed 语义，只在 completed-state save 抛出 `OutputError` 时补充当前 invocation 的总 provider calls。选择方案二。没有补 `workflow_pass`，因为 provider passes
+全部成功，失败点是本地 final-state 组装；造一个假 pass 名会让调用者误以为某次模型调用失败。也没有从 completed state 删除 slot bodies：那会改变已付费中间证据且无法
+解决多 pass partial state 本身超限。
+
+**调用计数修正与个人复核。** 初版直接取 `metadata["provider_call_count"]`，主代理与 scout 复核后在扩大验证前撤回：该字段只统计最后成功的 candidate，会丢失先前失败模型的
+调用。最终实现优先严格求和已有 `model_attempts[*].provider_calls_attempted`，只在没有完整 ledger 时使用已验证的非负 `provider_call_count`。回归同时覆盖：初次一次调用失败报 1；
+复用 partial draft 后再次超限报当次 0 且不重新调 provider；quota model 两次后切换 recovery model 两次的 completed-state 失败报总数 4，partial state 仍保留 recovery 的 draft/review slots。
+测试编写期间首先直接改了 module limit，紧随的定向集因限额泄漏出现 **3 failed, 2 passed**；改为 `monkeypatch.setattr()` 后 fixture 会恢复全局值，没有把这个测试隔离问题隐藏成产品失败。
+
+**验证与边界。** 最终六项定向回归 **6 passed / 0.56s**；image resume/M2/Stage M/output/provider focused 集 **120 passed / 4.37s**；项目环境 root 全量
+**1085 passed / 89.34s**。`compileall`、plain import 与 diff/EOL 检查也通过，轻量 import 为 37 modules 且未加载 PIL/OpenAI/httpx/onnxruntime。本轮无网络/provider 真实调用或付费调用，未修改 frozen
+`contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** 继续优先审计 active 已建功能；若没有新的稳定缺陷，不直接跳过当前前置实现 Stage A，而是先审计其明确前置 Stage 2 vision/audio provider split。Stage M 的付费 live exit smoke 仍未授权，
+不用 offline 结果假装它已完成。

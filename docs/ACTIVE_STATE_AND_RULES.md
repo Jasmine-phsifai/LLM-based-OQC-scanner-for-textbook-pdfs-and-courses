@@ -903,7 +903,13 @@ crash mid-request discards nothing that was already paid for.
   `provider_calls_attempted` details. If a validated paid pass then fails while
   atomically persisting its slot, the `OUTPUT_WRITE_FAILED` error also names
   that workflow pass and the current invocation's attempted-call count. Earlier
-  slots remain intact, and no final Markdown is published.
+  slots remain intact, and no final Markdown is published. A completed-state
+  write can separately exceed the 16 MiB sidecar limit after all slots fit,
+  because completed state also carries the assembled result. That failure now
+  reports the current invocation's total calls across every model attempt while
+  deliberately omitting `workflow_pass`: all provider passes succeeded and the
+  failure is local final-state materialization. The partial sidecar remains
+  resumable; a zero-call resume that reaches the same limit reports zero.
 
 Regression coverage is `tests/test_m2_slot_resume.py`: an injected mid-request
 failure proves slot reuse including sign-scout passes, a hand-written v1 state

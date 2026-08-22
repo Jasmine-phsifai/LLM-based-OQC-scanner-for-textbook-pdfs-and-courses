@@ -340,6 +340,66 @@ def test_fallback_does_not_reuse_or_discard_other_models_paid_slots(
     assert {slot["model"] for slot in persisted["slots"]} == {"recovery-model"}
 
 
+def test_completed_state_failure_counts_calls_across_model_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    provider = _ModelAwareProvider(quota_model="quota-model")
+    saver = importlib.import_module("ocrllm.output.save_image_resume_state_atomically")
+    real_serialize = saver.serialize_image_resume_state
+
+    def limit_after_each_partial_state(state):
+        raw = real_serialize(state)
+        if not state.markdown:
+            monkeypatch.setattr(saver, "_MAX_STATE_BYTES", len(raw) + 1)
+        return raw
+
+    monkeypatch.setattr(
+        saver,
+        "serialize_image_resume_state",
+        limit_after_each_partial_state,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                vision_model=VisionModelSettings(
+                    name="quota-model",
+                    candidate_models=("recovery-model",),
+                ),
+                preferences=RecognitionPreferences(
+                    draft_candidates=1,
+                    review_passes=1,
+                ),
+            ),
+        )
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 4
+    assert "workflow_pass" not in captured.value.details
+    assert provider.calls == [
+        "quota-model",
+        "quota-model",
+        "recovery-model",
+        "recovery-model",
+    ]
+    assert not (output_dir / "board_board.md").exists()
+    partial_state = _state_document(output_dir)
+    assert [slot["slot_id"] for slot in partial_state["slots"]] == [
+        "draft",
+        "review",
+    ]
+    assert {slot["model"] for slot in partial_state["slots"]} == {
+        "recovery-model"
+    }
+    assert list(output_dir.glob(".*.tmp")) == []
+
+
 adapter_module = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
 
 

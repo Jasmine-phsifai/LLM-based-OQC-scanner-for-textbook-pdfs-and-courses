@@ -542,6 +542,47 @@ def test_atomic_state_save_failure_publishes_no_output_or_temporary_state(
     assert list(output_dir.glob(".*.tmp")) == []
 
 
+def test_completed_state_size_failure_reports_paid_call_and_keeps_partial_state(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    saver = importlib.import_module("ocrllm.output.save_image_resume_state_atomically")
+    real_serialize = saver.serialize_image_resume_state
+
+    def limit_after_partial_state(state):
+        raw = real_serialize(state)
+        if not state.markdown:
+            monkeypatch.setattr(saver, "_MAX_STATE_BYTES", len(raw) + 1)
+        return raw
+
+    monkeypatch.setattr(saver, "serialize_image_resume_state", limit_after_partial_state)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(source, config=_vision_config(output_dir))
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert "workflow_pass" not in captured.value.details
+    assert len(calls) == 1
+    assert not (output_dir / "board_board.md").exists()
+    partial_state = json.loads(_state_path(output_dir).read_text(encoding="utf-8"))
+    assert partial_state["result"]["status"] == "partial"
+    assert partial_state["result"]["markdown"] == ""
+    assert [slot["slot_id"] for slot in partial_state["slots"]] == ["draft"]
+    assert list(output_dir.glob(".*.tmp")) == []
+
+    with pytest.raises(OutputError) as resumed:
+        recognize(source, config=_vision_config(output_dir))
+
+    assert resumed.value.details["provider_calls_attempted"] == 0
+    assert "workflow_pass" not in resumed.value.details
+    assert len(calls) == 1
+
+
 def test_resume_rejects_identity_less_injected_provider_without_invocation(
     tmp_path,
 ) -> None:

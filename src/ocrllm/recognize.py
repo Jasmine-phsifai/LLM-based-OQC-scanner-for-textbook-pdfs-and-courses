@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -204,7 +204,34 @@ def _recognize(
                 processor_output,
                 slots=slot_checkpoint.slots,
             )
-            save_image_resume_state_atomically(resume_state_path, resume_state)
+            try:
+                save_image_resume_state_atomically(resume_state_path, resume_state)
+            except OutputError as error:
+                provider_calls_attempted = None
+                model_attempts = processor_output.metadata.get("model_attempts")
+                if type(model_attempts) is tuple:
+                    attempt_counts: list[int] = []
+                    for attempt in model_attempts:
+                        if not isinstance(attempt, Mapping):
+                            break
+                        count = attempt.get("provider_calls_attempted")
+                        if type(count) is not int or count < 0:
+                            break
+                        attempt_counts.append(count)
+                    else:
+                        provider_calls_attempted = sum(attempt_counts)
+                if provider_calls_attempted is None:
+                    fallback_count = processor_output.metadata.get(
+                        "provider_call_count"
+                    )
+                    if type(fallback_count) is int and fallback_count >= 0:
+                        provider_calls_attempted = fallback_count
+                if provider_calls_attempted is not None:
+                    error._add_safe_detail(
+                        "provider_calls_attempted",
+                        provider_calls_attempted,
+                    )
+                raise
         if cfg.resume and output_path.exists():
             from .output.validate_image_resume_output import (
                 validate_image_resume_output,
