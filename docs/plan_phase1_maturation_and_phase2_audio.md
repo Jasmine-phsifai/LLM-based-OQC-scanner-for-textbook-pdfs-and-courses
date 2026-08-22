@@ -133,8 +133,9 @@ Required behavior:
 
 - The caller supplies an ordered candidate model list. Their primary model is
   tried first and is never tried twice.
-- On a disposition meaning "this model cannot serve the request", advance to the
-  next candidate. On any other failure, stop and raise.
+- On an approved error whose disposition is explicitly model-scoped, advance to
+  the next candidate. Account-, credential-, provider-, and request-scoped
+  failures stop and raise even when their error code is otherwise recoverable.
 - DashScope codes `AllocationQuota.FreeTierOnly`, `CommodityNotPurchased`, and
   `FreeQuotaExceeded` are mapped to model scope, so sibling candidates remain
   eligible; account suspension remains account-scoped. This is proven offline

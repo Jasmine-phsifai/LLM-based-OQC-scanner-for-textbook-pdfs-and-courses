@@ -227,7 +227,10 @@ def test_candidate_chain_advances_on_permission_denied_and_unavailable(tmp_path)
                 "model lacks permission",
                 details={"failure_scope": "model"},
             ),
-            "down-model": ProviderUnavailable("service unavailable"),
+            "down-model": ProviderUnavailable(
+                "model unavailable",
+                details={"failure_scope": "model"},
+            ),
         }
     )
 
@@ -305,6 +308,66 @@ def test_candidate_chain_does_not_advance_on_credential_permission_denial(tmp_pa
     assert provider.models == ["denied-model"]
 
 
+@pytest.mark.parametrize(
+    ("failure", "expected_code", "expected_disposition"),
+    [
+        (
+            QuotaExhausted(
+                "account quota exhausted",
+                details={"failure_scope": "account"},
+            ),
+            "PROVIDER_QUOTA_EXHAUSTED",
+            "stop",
+        ),
+        (
+            ProviderUnavailable(
+                "provider service unavailable",
+                details={"failure_scope": "provider"},
+            ),
+            "PROVIDER_UNAVAILABLE",
+            "retry",
+        ),
+    ],
+)
+def test_candidate_chain_does_not_change_models_for_non_model_failure_scope(
+    tmp_path,
+    failure,
+    expected_code,
+    expected_disposition,
+):
+    source = write_test_image(tmp_path / "board.png")
+    provider = _DispositionProvider({"first-model": failure})
+
+    with pytest.raises(ProviderError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(
+                    name="first-model",
+                    candidate_models=("never-tried-model",),
+                ),
+            ),
+        )
+
+    assert type(captured.value) is type(failure)
+    assert captured.value.code == expected_code
+    assert (
+        captured.value.details["failure_scope"]
+        == failure.details["failure_scope"]
+    )
+    assert captured.value.details["failed_model"] == "first-model"
+    assert provider.models == ["first-model"]
+    assert [dict(attempt) for attempt in captured.value.details["model_attempts"]] == [
+        {
+            "model": "first-model",
+            "outcome": expected_code,
+            "disposition": expected_disposition,
+            "provider_calls_attempted": 1,
+        }
+    ]
+
+
 def test_single_model_failure_keeps_its_original_public_identity(tmp_path):
     source = write_test_image(tmp_path / "board.png")
     provider = _DispositionProvider(
@@ -325,10 +388,15 @@ def test_single_model_failure_keeps_its_original_public_identity(tmp_path):
 
 
 def test_chain_exhaustion_wraps_an_advance_eligible_last_failure(tmp_path):
+    from ocrllm import get_provider_error_disposition
+
     source = write_test_image(tmp_path / "board.png")
     provider = _DispositionProvider(
         {
-            "quota-model": QuotaExhausted("model quota exhausted"),
+            "quota-model": QuotaExhausted(
+                "model quota exhausted",
+                details={"failure_scope": "model"},
+            ),
             "denied-model": ProviderPermissionDenied(
                 "model lacks permission",
                 details={"failure_scope": "model"},
@@ -350,6 +418,8 @@ def test_chain_exhaustion_wraps_an_advance_eligible_last_failure(tmp_path):
 
     assert captured.value.code == "ALL_CANDIDATES_EXHAUSTED"
     assert captured.value.details["last_model"] == "denied-model"
+    assert "failure_scope" not in captured.value.details
+    assert get_provider_error_disposition(captured.value).scope == "account"
 
 
 def test_configuration_failure_is_recorded_in_the_attempt_ledger(tmp_path, monkeypatch):

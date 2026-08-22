@@ -65,13 +65,9 @@ def _may_advance_candidate(
     """Apply model-chain recovery only to an eligible serving failure."""
     if error.code not in _RECOVERY_ADVANCE_CODES:
         return False
-    if error.code == "PROVIDER_PERMISSION_DENIED":
-        # A denied model may be replaced; a denied credential must be
-        # quarantined/rotated, not hidden by changing the model.
-        return disposition.scope == "model"
-    # Quota defaults to account scope for injected legacy-compatible errors,
-    # while the DashScope adapter now reports the observed per-model scope.
-    return True
+    # Changing models cannot recover an account, credential, request, or
+    # provider-wide state, regardless of the public error code.
+    return disposition.scope == "model"
 
 
 def recognize_images(
@@ -162,9 +158,15 @@ def recognize_images(
                 and is_last
                 and _may_advance_candidate(error, disposition)
             ):
+                exhausted_details = dict(error.details)
+                # The last model's scope is not the scope of the exhausted
+                # caller-configured chain. Let the terminal error use its
+                # canonical account-wide disposition while the attempt ledger
+                # retains each model-specific outcome.
+                exhausted_details.pop("failure_scope", None)
                 error = AllCandidatesExhausted(
                     "All configured model candidates were exhausted.",
-                    details=dict(error.details),
+                    details=exhausted_details,
                 )
                 error._add_safe_detail("all_candidates_exhausted", True)
                 error._add_safe_detail("last_model", model)

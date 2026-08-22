@@ -216,7 +216,10 @@ class _ModelAwareProvider:
         model = config.vision_model.name
         self.calls.append(model)
         if model == self.quota_model and self.calls.count(model) == 2:
-            raise QuotaExhausted("per-model quota spent")
+            raise QuotaExhausted(
+                "per-model quota spent",
+                details={"failure_scope": "model"},
+            )
         return f"# {model} response {self.calls.count(model)}\n"
 
 

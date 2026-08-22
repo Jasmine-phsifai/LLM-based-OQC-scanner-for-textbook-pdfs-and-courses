@@ -429,10 +429,11 @@ The rule is replaced by four conditions. All four must hold.
 2. **Disclosed.** Every attempt appears in an ordered attempt ledger in the
    result metadata and in the error details: model tried, disposition, and
    outcome. A caller must be able to reconstruct exactly what was spent.
-3. **Disposition-gated.** Switching triggers only on dispositions that mean
-   "this model or credential cannot serve the request" — quota exhausted,
-   unavailable, permission denied. Never on a generic failure, never on
-   `PROVIDER_RESPONSE_INVALID`, and never on a refusal.
+3. **Disposition-gated.** Switching triggers only when an approved failure is
+   explicitly model-scoped: quota exhausted, unavailable, or permission denied
+   for that model. Account-, credential-, provider-, and request-scoped failures
+   stop. Never switch on a generic failure, `PROVIDER_RESPONSE_INVALID`, or a
+   refusal.
 4. **Bounded.** A maximum attempt count and a terminating error when the whole
    chain is exhausted. No unbounded loop, no silent give-up.
 
@@ -488,11 +489,13 @@ shipped and tested offline:
    `resume=True` pays only for missing passes. Injected-provider resume still
    requires a caller-declared nonempty `resume_identity`.
 - An explicit `VisionModelSettings.candidate_models` queue is attempted in
-   caller order and advances only for quota exhaustion, provider unavailability,
-   and model-scoped permission denial. Credential-scoped permission denial
-   stops. The queue is bounded and opt-in; a single-model call retains its
-   original typed failure. Every attempt discloses outcome and paid-call count,
-   and chain exhaustion raises the distinct `ALL_CANDIDATES_EXHAUSTED` code.
+   caller order and advances only when quota exhaustion, unavailability, or
+   permission denial is explicitly model-scoped. Account-, credential-, and
+   provider-scoped failures stop. The queue is bounded and opt-in; a single-model
+   call retains its original typed failure. Every attempt discloses outcome and
+   paid-call count, and chain exhaustion raises the distinct
+   `ALL_CANDIDATES_EXHAUSTED` code with its canonical account-wide disposition,
+   not the final candidate's model scope.
 - DashScope free-tier and unpurchased-commodity quota codes are mapped to model
    scope, so the credential pool blocks that model rather than the account;
    account suspension remains account-wide. This distinction is offline-tested
@@ -534,14 +537,18 @@ caller-controlled invalid text cannot leak through public error details. If a
 fixed scout model fails catalog resolution after a paid primary pass, the same
 entry retains that prior call count and names the setup workflow pass.
 
-#### G2 — Recovery is quota-only. **Medium. Closed 2026-08-22.**
+#### G2 — Recovery is quota-only. **Medium. Closed 2026-08-22; scope corrected 2026-08-23.**
 
-The opt-in candidate loop advances for quota exhaustion, provider
-unavailability, and model-scoped permission denial. It stops for authentication
-failure, credential-scoped permission denial, response-invalid, refusal, and
-all other unapproved failures. Exhaustion wrapping occurs only when the caller
-actually configured a candidate list; single-model failures retain their
-original public identity.
+The opt-in candidate loop advances for quota exhaustion, unavailability, and
+permission denial only when the disposition is model-scoped. It stops for
+account quota, provider outage, credential denial, authentication failure,
+response-invalid, refusal, and every other wider or unapproved failure. This
+scope rule was corrected after regressions proved that account quota and a
+provider-wide outage each spent an unnecessary sibling candidate. Exhaustion
+wrapping occurs only when the caller configured a candidate list; it removes the
+last candidate's model scope so `ALL_CANDIDATES_EXHAUSTED` keeps its canonical
+account-wide disposition. Single-model failures retain their original public
+identity.
 
 #### G3 — Account blocks prevent eligible model candidates. **Medium. Closed offline 2026-08-22; live semantics pending exit gate.**
 

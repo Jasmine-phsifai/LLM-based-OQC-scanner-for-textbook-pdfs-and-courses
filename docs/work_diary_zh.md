@@ -87,6 +87,9 @@
 17. ~~Google image provider 最小迁移边界~~ → 已完成只读代码/测试/依赖审计，见 #023。结论是先完成
     Stage 2 provider/modality split，再接入窄 Google image adapter；不得提前扩展旧的单 provider 配置，
     也不得复制 legacy 内部重试、模型切换、audio/Files API、GUI 或 social 结构。该计划不阻塞 Stage A。
+18. ~~active candidate recovery 忽略 failure scope~~ → 已要求 quota/unavailable/permission 三类错误都必须
+    明确为 model scope 才能切候选；account quota 与 provider outage 保留原错误并停止，链耗尽也不再继承
+    最后一个模型的 scope，见 #024。
 
 ## 条目格式
 
@@ -1098,3 +1101,39 @@ Stage 2 都完成后才可实现；它可与 Stage A 独立排序，不成为 au
 **遗留/下一步。** Stage 2 写代码前仍有计划中已登记的人类选择：旧 `Config.provider`/`vision_model` 保留一版
 兼容映射，还是在 0.2.0 明确破坏。Google 调研不替用户猜这个 public API 决定。当前 heartbeat 下一项仍应
 优先找已建功能的可证明缺陷；若无更高优先级缺陷，则可继续 Stage A 只读调研。Google adapter 实现保持门禁关闭。
+
+## #024 — 2026-08-23：候选模型只处理 model-scope 故障
+
+**任务。** 验证并修复 active candidate recovery 的 scope 漏洞：account-wide quota 或 provider-wide outage
+不能仅因错误 code 位于 allowlist 就继续调用下一个模型；同时保证真正的 model-scope quota/unavailable/
+permission 仍能恢复，attempt ledger 和最终错误身份不说谎。
+
+**上下文与方案变化。** 初查发现 `_may_advance_candidate()` 只检查 permission 的 scope，quota 与 unavailable
+无条件返回真；而公共 disposition 已明确把无 scope quota 默认为 account、unavailable 默认为 provider，
+DashScope 5xx 也实际映射为 provider scope。先比较两条路径：①三类允许错误一律要求 model scope；②保留共享
+漏洞，等 Google adapter 再加特判。选择①，因为换模型只能修复模型状态，不能修复 account/credential/provider。
+中途曾考虑为旧 injected provider 保留“无 scope 也切换”的兼容分支；两名只读 scout 与提交历史复核表明，
+现有两个无 scope 正向 fixture 的文字本身都声称 per-model，只是漏写证据，而且库仍为 0.1.0、没有外部消费方。
+因此撤回兼容分支，改成更小、更诚实的单一规则，并给正向 fixture 补上 `failure_scope="model"`。
+
+**失败优先证据。** 新增 public `recognize()` 参数化回归，以显式 account-scope `QuotaExhausted` 和
+provider-scope `ProviderUnavailable` 驱动真实候选循环。修前 **2 failed, 12 passed / 0.76s**：两种错误都没有
+抛出，因为代码额外调用 `never-tried-model` 并返回成功。回归同时约束只发生一次 provider 调用、原 typed code
+和 scope 保留、`failed_model` 正确、ledger 只有一项且付费调用数为 1。正向测试继续覆盖 model-scope quota、
+unavailable 和 permission 均能切换。
+
+**审查发现与实现。** 主代理逐行审查 mapper、disposition、candidate loop、M2 slot resume、Stage M policy 和
+引入提交 `25af57c9`。生产判断从“permission 看 scope、其余只看 code”缩减为：code 必须属于既有三项 allowlist，
+且 canonical disposition scope 必须等于 `model`。没有新类、配置、重试或 provider 特判。只读 policy scout 另
+发现终止包装会把最后一个候选的 `failure_scope="model"` 复制给 `ALL_CANDIDATES_EXHAUSTED`，覆盖该错误本应为
+account 的 disposition；新增断言修前 **1 failed / 0.40s**。修复只在包装前删除这个局部 scope，逐模型结果仍
+保留在 attempt ledger，终止错误恢复 canonical account scope。
+
+**验证与边界。** candidate/M2/disposition/DashScope mapper focused 最终集 **95 passed / 0.97s**；root 全量
+**1066 passed / 89.53s**。`compileall`、独立 plain-import probe 与 `git diff --check` 通过；probe 确认未加载
+Pillow、OpenAI、httpx、onnxruntime 或 google-genai。没有网络/provider/付费调用，没有修改 frozen
+`contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**遗留/下一步。** Stage M paid live exit 仍需用户单独批准 DashScope 预算；本轮离线结果不替代它。Google
+follow-on 现在可以直接依赖共享 scope 规则，503/provider outage 不需要 adapter 私有绕行。下一轮继续优先
+检查已建 active 功能的可证明缺陷；没有更高价值证据时再做 Stage A 只读调研。
