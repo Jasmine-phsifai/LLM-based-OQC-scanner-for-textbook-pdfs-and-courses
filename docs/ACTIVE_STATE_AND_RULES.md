@@ -90,8 +90,8 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1060 passed, 0 skipped, 0 failed (106.00 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
-| Import weight | 1.12 ms wall median, 1.70 ms p95; 0 ms CPU median, 15.63 ms p95 | clean-wheel gate, 30 measured fresh processes after two warm-ups |
+| Test suite | 1059 passed, 0 skipped, 0 failed (83.58 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
+| Import weight | 0.89 ms wall median, 1.98 ms p95; 0 ms CPU median, 15.63 ms p95 | clean-wheel gate, 30 measured fresh processes after two warm-ups |
 | Heavy-module isolation | `PIL`, `pypdfium2`, `openai`, `httpx`, `onnxruntime`, and `legacy_app` absent after plain import | outside-repository clean-wheel `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
@@ -468,8 +468,9 @@ every other model is selectable but `"unproven"`. Catalog validation in
 `resolve_dashscope_model` now applies to every non-pinned model (formerly the
 static set bypassed it); the pinned baseline keeps its bypass because its proof
 is the v17 live gate, not a catalog row. `SUPPORTED_DASHSCOPE_MODELS` is
-deleted, and `resolve_dashscope_maximum_images` collapsed to the uniform cap
-constant it always returned.
+deleted. The later `resolve_dashscope_maximum_images` shell was also deleted:
+its unused model argument always produced the same limit already imposed by
+the library, so its candidate could never affect the effective limit or source.
 
 #### G6 — Resume identity version is stale for candidate queues. **Medium. Closed 2026-08-22.**
 
@@ -527,19 +528,21 @@ session closes.
 These changes are current, verified, and should not be mistaken for open
 defects:
 
-- The Phase 1 v2-v7 recognized-Markdown normalizers were audited and retained.
-   They are cumulative protocol stages, not parallel copies; only two tiny
-   helper bodies repeat, and extracting them would add cross-version coupling
-   while historical evidence identifies every source file independently.
-- The scorer's explicit older-dialect branches were retained as historical
-   protocol routing. The canonical manifest currently selects v7, but deleting
-   those branches would remove no module or current execution: v7 transitively
-   needs every earlier stage, v6 serves a manifest probe, and each stage has
-   direct regression coverage. No historical evidence file was changed.
-- Focused normalizer, historical-diagnosis, manifest, and scorer coverage
-   passed 83 tests. The full local suite passed 1,060 tests; because no source
-   changed, the latest clean-wheel checkpoint remains `2e9c770`. These counts
-   are verification snapshots, not permanent gates for future changes.
+- The non-frozen tiny-module audit removed
+   `resolve_dashscope_maximum_images.py`. Its model parameter was unused, it
+   always returned 10, and `resolve_effective_image_limit` had already inserted
+   the same library limit first. The DashScope candidate therefore could never
+   win the `min()` tie or alter public limit metadata.
+- Model catalog validation remains in `resolve_vision_provider` and the
+   DashScope adapter, where provider settings are available. Shared constants,
+   value types, evidence-identified policies, platform-safe output naming, and
+   dependency seams were retained rather than merged by line count.
+- Focused limit/model/catalog coverage passed 63 tests; the full local suite
+   passed 1,059 tests. The archived source gate passed 1,058 tests with the
+   expected base-profile RapidOCR skip, fixture/compile/wheel/import/extras and
+   offline smoke gates. Its wheel was 150,217 bytes and base target 734,036
+   bytes. These counts are verification snapshots, not permanent gates for
+   future changes.
 
 ### M2. Flowed output and true resume, 2026-08-19
 

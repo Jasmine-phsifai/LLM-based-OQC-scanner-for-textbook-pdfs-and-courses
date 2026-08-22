@@ -31,6 +31,8 @@
    ~~两个 `recognize_images.py` 同名~~ → 审计后保留(职责/导入明确,不是冲突),见 #005;
    ~~DashScope key 校验重叠~~ → 已统一并修掉环境变量控制字符漏检,见 #005。
    ~~tests/quality 归一化器 v2..v7 重复~~ → 审计后保留(累积协议 + evidence identity),见 #006。
+   ~~无效的 DashScope 单模型图片上限 resolver~~ → 已删除(永远不可能影响结果),见 #007。
+   剩余明确候选仅 `output/build_job_state_path.py`;其余小文件已证明是共享/证据/策略边界。
    注意:contracts/ 与 worker/ 是冻结区,不动。
 5. Stage M 出口门收尾:~~全量绿 + import 重量 + 中断实测 + 未知模型可用 +
    候选链配额模拟~~ → 离线出口已完成,见 #004;仅剩一次付费 live smoke(需用户明确预算)。
@@ -325,3 +327,52 @@ normalizer 单测、历史 evidence 诊断、manifest/scorer 集成与全量套�
 Markdown 做逐版本 byte-for-byte 输出/异常/score differential,并保留旧模块 shim 或设计可验证
 的 archived identity,不能直接改历史 JSON。队列 #4 只剩「超小文件归并」,下一轮应先量化
 非冻结区小文件的调用密度与真实维护成本;无证据继续保留。
+
+---
+
+## #007 — 2026-08-22:删除永远不生效的 DashScope 图片上限层
+
+**任务**:盘点非冻结区超小生产模块,只在调用图、测试与证据身份都证明安全时删除一个真实的
+无效 seam,而不是按行数合并文件。
+
+**上下文**:当前精简队列只剩“小文件归并”。两条路径是把纯单调用 helper 并回调用者,或保留
+承担独立策略/证据责任的文件并只删不可观察的层。两名只读子代理分别审计调用拓扑与公共面/
+测试/evidence 风险;主代理复核全部 24 行以内候选、历史提交与当前限制选择算法。工作树仍只有
+用户未跟踪交接文件;`contracts/`、`worker/` 冻结;没有 live 预算。
+
+**成功标准**:候选必须没有公共 export、没有历史 evidence identity、没有独立行为,且删除后
+effective limit 数值、`limit_source`、catalog 校验与错误顺序不变;focused、全量、compile 与
+clean archive gate 全绿;其余小文件逐类给出保留理由。
+
+**为什么重要**:假装“按模型解析能力”但完全忽略模型的接口会误导下一位维护者,也会让未来
+真实差异被塞进错误层。反过来,只因为文件短就合并共享 DTO、平台安全策略或证据协议,会破坏
+冷读结构。成熟结构要删除假的扩展点,保留真的边界。
+
+**结果**:
+
+- 删除 `providers/dashscope/resolve_dashscope_maximum_images.py`。它的 `model` 参数从未使用,
+  永远返回 10;`resolve_effective_image_limit` 又先插入 `(10, "library_safety")`。Python `min`
+  对相同 key 保留首项,所以后插入的 `dashscope_model_capability` 在任何模型下都不可能改变
+  限制或对外 `limit_source`。这不是待扩展策略,而是不可观察的重复候选。
+- 同步删掉 effective-limit 中 3 个无用 import、DashScope 分支和只验证恒等式的直接单测,
+  共净删 32 行。真实 catalog policy 未动:`resolve_vision_provider` 与 DashScope adapter 仍在
+  带 settings 的边界调用 `resolve_dashscope_model`;现有 unavailable-model 集成测试继续通过。
+- 两个 scout 的首选不同:风险审计偏向内联 8 行 `build_job_state_path`,拓扑审计发现 provider
+  cap 是更强候选。主审以“行为是否可达”裁决后先删后者;sidecar 命名仍是持久化约定且当前
+  文档明确命名,留作队列中唯一需另行裁决的候选,不在本原子任务顺手扩大范围。
+- 其余短文件保留:共享 hard limits/regions、跨解析与渲染的 DTO、冻结 contract 使用的 JSON
+  thaw、resume identity、evidence-identified profile/scout/table/image policy、RapidOCR 元数据
+  seam 与跨平台 output stem 都有多个消费者、独立风险或历史身份,不能按行数归并。
+- 修改前 focused **64 passed / 0.78s**;修改后同范围 **63 passed / 0.77s**(少的一条正是已删除
+  resolver 的恒等式测试)。`compileall -q src tests` 干净;本地全量 **1059 passed / 83.58s**。
+- 文档合并前的精确源码树 clean archive gate:
+  **1058 passed,1 skipped / 82.26s**(base profile 预期 RapidOCR skip),fixture/compile/wheel/
+  outside-import/metadata/extras/两种 profile/offline smoke 全绿。wheel **150,217 bytes**,
+  base target **734,036 bytes**;`image` / `image,dashscope` 增量 **16,422,639 / 40,995,338
+  bytes**;OCRLLM import wall 中位/p95 **0.89/1.98ms**,base Python **0.45/0.86ms**。
+- `contracts/`、`worker/`、历史 evidence 与未跟踪交接文件均未动;无 provider 请求。
+
+**遗留/下一步**:队列 #4 只剩 `output/build_job_state_path.py` 是否应按 coding rule 1 内联。
+它确实是单调用纯 helper,但也命名稳定 sidecar 约定并被当前执行契约列出;下一轮应在“减少一次
+导航”与“保留持久化命名边界”之间单独裁决,不要顺带动其他已证明合理的小文件。若选择保留,
+精简队列即可关闭并转入 legacy 日记补录或 Stage A 调研;paid Stage M smoke 仍须明确预算。

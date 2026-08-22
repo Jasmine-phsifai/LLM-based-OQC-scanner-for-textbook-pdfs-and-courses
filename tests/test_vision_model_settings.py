@@ -12,12 +12,6 @@ from ocrllm import (
     recognize,
 )
 from ocrllm.errors import ConfigError, InvalidSource
-from ocrllm.providers.dashscope.resolve_dashscope_maximum_images import (
-    resolve_dashscope_maximum_images,
-)
-from ocrllm.providers.dashscope.resolve_dashscope_model import (
-    DEFAULT_DASHSCOPE_MODEL,
-)
 from write_test_image import write_test_image
 
 
@@ -168,9 +162,3 @@ def test_unavailable_builtin_model_is_reported_by_provider_catalog(tmp_path, mon
         recognize(source, config=config)
 
     assert captured.value.code == "CONFIG_INVALID"
-
-
-def test_dashscope_image_cap_is_uniform_regardless_of_model() -> None:
-    assert resolve_dashscope_maximum_images(DEFAULT_DASHSCOPE_MODEL) == 10
-    assert resolve_dashscope_maximum_images("qwen3.7-plus") == 10
-    assert resolve_dashscope_maximum_images("never-heard-of") == 10
