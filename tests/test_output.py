@@ -32,6 +32,42 @@ class CountingProvider:
         return self.markdown
 
 
+def _windows_path_units(path: Path) -> int:
+    return len(str(path).encode("utf-16-le")) // 2
+
+
+def _make_directory_with_windows_path_units(
+    base: Path,
+    target_units: int,
+) -> Path:
+    current = base
+    while _windows_path_units(current) < target_units:
+        remaining = target_units - _windows_path_units(current) - 1
+        if remaining < 1:
+            raise AssertionError(
+                "target path length cannot be reached by adding a directory"
+            )
+        current /= "d" * min(40, remaining)
+    assert _windows_path_units(current) == target_units
+    current.mkdir(parents=True)
+    return current
+
+
+def _enforce_legacy_windows_open_limit(monkeypatch) -> None:
+    original_open = Path.open
+
+    def open_with_legacy_limit(path, *args, **kwargs):
+        if _windows_path_units(path) > 259:
+            raise OSError(
+                206,
+                "test-only simulated legacy Windows path limit",
+                str(path),
+            )
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", open_with_legacy_limit)
+
+
 def test_output_dir_none_keeps_result_in_memory_and_writes_nothing(tmp_path):
     source = write_test_image(tmp_path / "board.png")
     files_before = set(tmp_path.iterdir())
@@ -63,6 +99,29 @@ def test_single_and_ordered_group_output_names_are_deterministic(tmp_path):
     assert group.output_path == group_dir / "lecture_plus_2_board.md"
     assert single.output_path.read_text(encoding="utf-8") == single.markdown
     assert group.output_path.read_text(encoding="utf-8") == group.markdown
+
+
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="Windows legacy path-limit regression",
+)
+def test_markdown_publish_does_not_amplify_near_limit_output_path(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    if _windows_path_units(tmp_path) >= 213:
+        pytest.skip("pytest temporary root is already beyond the controlled path range")
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = _make_directory_with_windows_path_units(tmp_path, 213)
+    provider = CountingProvider()
+    _enforce_legacy_windows_open_limit(monkeypatch)
+
+    result = recognize(source, config=Config(provider=provider, output_dir=output_dir))
+
+    assert result.output_path == output_dir / "board_board.md"
+    assert _windows_path_units(result.output_path) == 228
+    assert result.output_path.read_text(encoding="utf-8") == "# Fresh board\n"
+    assert provider.calls == 1
 
 
 def test_existing_output_fails_before_provider_invocation(tmp_path):
@@ -138,7 +197,7 @@ def test_post_publish_temp_cleanup_failure_does_not_report_final_output_failure(
     original_unlink = Path.unlink
 
     def deny_hidden_temp_unlink(path, *args, **kwargs):
-        if path.parent == output_dir and path.name.startswith(".board_board.md."):
+        if path.parent == output_dir and path.name.startswith(".ocrllm-"):
             raise PermissionError("test-only delayed cleanup")
         return original_unlink(path, *args, **kwargs)
 

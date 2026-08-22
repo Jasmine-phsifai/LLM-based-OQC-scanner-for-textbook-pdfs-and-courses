@@ -17,9 +17,7 @@ def write_markdown_atomically(
     overwrite: bool,
 ) -> None:
     """Durably publish Markdown without silently replacing an existing file."""
-    temporary_path = output_path.with_name(
-        f".{output_path.name}.{uuid4().hex}.tmp"
-    )
+    temporary_path = output_path.with_name(f".ocrllm-{uuid4().hex}.tmp")
     try:
         with temporary_path.open("x", encoding="utf-8", newline="\n") as stream:
             stream.write(markdown)

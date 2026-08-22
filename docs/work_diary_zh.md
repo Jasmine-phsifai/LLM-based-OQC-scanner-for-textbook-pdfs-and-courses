@@ -76,6 +76,9 @@
     `You exceeded your current quota ... check your plan and billing details`；此前 JSON 路径实际误判为
     `BILLING`，不是 `RATE_LIMIT`。`FreeTierOnly` / `FreeAllocationQuotaExceeded` 属于 DashScope，
     未加入 Google contract；普通 429 及带限流标记的 `RESOURCE_EXHAUSTED` 仍按限流重试。
+14. ~~active image 输出/恢复状态的 Windows 临时路径放大~~ → 已改为固定短名的同目录临时文件，
+    并用两条独立的 UTF-16 路径边界回归验证，见 #020。这里只消除库自己追加长后缀造成的失败，
+    不承诺任意深目录或通用 `\\?\` long-path 支持。
 
 ## 条目格式
 
@@ -922,3 +925,41 @@ legacy 离线广集 **278 passed, 1 skipped / 69.24s**，唯一 skip
 **Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：未来新增 Google adapter 时，429 与
 `RESOURCE_EXHAUSTED` 不能单独决定 disposition；同一恢复动作也不能代替准确分类测试。只迁移有
 真实 payload/官方语义证据的窄规则，不得把 DashScope marker 搬进 Google contract。
+
+## #020 — 2026-08-23：消除 active 原子写入的 Windows 临时路径放大
+
+**任务。** 证明并修正 active image 输出及恢复状态在传统 Windows 路径上限附近的行为。legacy 曾真实
+发生超过约 260 字符后多个环节失效；active 又会从用户输出路径派生 `.ocrllm-state.json` 和同目录临时
+文件，因此先验证 child 是否真的继承同类风险，而不是直接建立通用 long-path 框架。成功标准是：一个
+本身仍可用的 Markdown 与 sidecar 路径，不得仅因库内部临时名重复完整目标文件名而失败；公开输出名、
+sidecar 名、resume identity 和同目录原子替换保持不变。
+
+**假设复核与选择。** 代码路径证明 `normalize_output_stem()` 已限制公开 stem，但两个 atomic writer 原来
+分别生成 `.<完整 Markdown 名>.<UUID>.tmp` 和 `.<完整 sidecar 名>.<UUID>.tmp`。本机
+`LongPathsEnabled=0`；构造 213 UTF-16 units 的输出目录后，最终 Markdown 为 228、sidecar 为 243，
+二者仍在传统界限内，而旧临时名分别达到 266 和 281。两条可选路径是：①建立 `\\?\` 前缀、全路径预算
+和 fallback state 命名；②只把现有两个 writer 的内部临时 basename 改成固定
+`.ocrllm-<32 hex>.tmp`。选择②：原子替换只要求临时文件与目标同目录，UUID 已提供唯一性；路径①会扩散到
+existence/read/replace 等多条路径并改变持久 sidecar 契约，不适合这个已被精确定位的缺陷。没有为两行
+相同策略再增加 helper 文件；冷读时两个 writer 各自把命名规则写明更直接。
+
+**失败优先证据与修复。** 首条真实 Windows resume 回归修前为 **1 failed / 0.65s**，错误准确发生在
+`save_image_resume_state_atomically()`，包装为 `OUTPUT_WRITE_FAILED`；旧 state 临时路径达到 281 字符。
+随后只把两个 writer 的临时名缩短，不改变 durable 文件名、flush/fsync、同目录 replace、no-clobber 或
+清理语义。只靠这一条回归不能独立证明 Markdown writer，而且启用 long paths 的 CI 可能让旧实现假绿；
+只读测试审计指出后，拆成两条 Windows 回归，并用 test-only `Path.open` 在超过 259 UTF-16 units 时模拟
+传统限制：non-resume 流程单独覆盖 Markdown 临时名，resume 流程覆盖 sidecar 临时名及第二次零 provider
+复用。计数按 UTF-16 units 而非 Python 字符数，避免 supplementary characters 掩盖组件长度。
+
+**验证。** 两条最终路径边界回归 **2 passed / 0.42s**；output/image-resume/M2-slot/local-OCR focused 集
+在拆分前已为 **44 passed / 1.79s**。第一次 root 全量在新增第二条测试被 collection 之前启动，结果是
+**1060 passed / 272.90s**，因此不把它冒充最终新增测试覆盖；最终 root 全量重新 collection 后为
+**1061 passed / 208.82s**。四个修改 Python 文件 `py_compile` 与 `git diff --check` 通过。无网络、
+provider 或付费调用；未修改冻结的 `contracts/`、`worker/`，未触碰 social media，也未修改用户的
+临时交接文件。
+
+**边界与下一步。** compact temp 只消除了“目标名被再次复制进临时名”的库内放大，并不支持任意深的
+Windows 输出目录。输出目录达到约 215 units 时，44 字符临时名仍可能先碰传统总路径上限；canonical
+sidecar 也比 Markdown 长 15 字符。若未来真实案例要求更深目录，应另做 provider 调用前 preflight 或完整
+extended-path 方案，不能把本轮结果宣传为通用 long-path 支持。下一轮重新按成熟度队列选择已建功能缺陷；
+Stage A 仍受 Stage M live 出口与 Stage 2 门禁约束。

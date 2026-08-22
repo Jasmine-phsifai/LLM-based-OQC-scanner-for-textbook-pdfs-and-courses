@@ -84,6 +84,15 @@ Future agents must assume the following and verify before trusting any claim:
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
 
+- **Active atomic output no longer amplifies user filenames, but arbitrary deep
+  Windows paths remain unsupported.** Markdown and image-resume state writers use
+  a fixed `.ocrllm-<uuid>.tmp` sibling instead of repeating the full destination
+  basename. Deterministic Windows tests prove a 228-unit Markdown path and its
+  243-unit canonical sidecar can publish and resume under a simulated traditional
+  259-UTF-16-unit boundary. Public Markdown and `.ocrllm-state.json` names did not
+  change. This closes suffix-induced overflow only; it is not general `\\?\`
+  extended-path support, and a deeper directory can still exceed the OS limit.
+
 - **Legacy media repair is open debt, not a porting template.** The normal
   video manifest crash, missing-frame false success, and failed-audio cleanup
   deletion found in commit `6b2d9eb` are fixed with direct regressions. Audio,

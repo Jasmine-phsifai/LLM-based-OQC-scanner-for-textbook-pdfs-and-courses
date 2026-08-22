@@ -20,7 +20,7 @@ def save_image_resume_state_atomically(
     state: ImageResumeState,
 ) -> None:
     """Durably replace state through a unique sibling temporary file."""
-    temporary_path = state_path.with_name(f".{state_path.name}.{uuid4().hex}.tmp")
+    temporary_path = state_path.with_name(f".ocrllm-{uuid4().hex}.tmp")
     try:
         raw = serialize_image_resume_state(state)
         if len(raw) > _MAX_STATE_BYTES:

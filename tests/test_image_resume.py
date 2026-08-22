@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 from pathlib import Path
 
 import pytest
@@ -65,6 +66,42 @@ def _fail_markdown_publication(monkeypatch):
 
 def _state_path(output_dir: Path, stem: str = "board_board") -> Path:
     return output_dir / f"{stem}.ocrllm-state.json"
+
+
+def _windows_path_units(path: Path) -> int:
+    return len(str(path).encode("utf-16-le")) // 2
+
+
+def _make_directory_with_windows_path_units(
+    base: Path,
+    target_units: int,
+) -> Path:
+    current = base
+    while _windows_path_units(current) < target_units:
+        remaining = target_units - _windows_path_units(current) - 1
+        if remaining < 1:
+            raise AssertionError(
+                "target path length cannot be reached by adding a directory"
+            )
+        current /= "d" * min(40, remaining)
+    assert _windows_path_units(current) == target_units
+    current.mkdir(parents=True)
+    return current
+
+
+def _enforce_legacy_windows_open_limit(monkeypatch) -> None:
+    original_open = Path.open
+
+    def open_with_legacy_limit(path, *args, **kwargs):
+        if _windows_path_units(path) > 259:
+            raise OSError(
+                206,
+                "test-only simulated legacy Windows path limit",
+                str(path),
+            )
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", open_with_legacy_limit)
 
 
 def test_vision_resume_reuses_completed_result_without_provider_calls_or_secrets(
@@ -132,6 +169,33 @@ def test_local_ocr_resume_reuses_completed_result_without_backend_call(
     assert result.markdown == "Offline resumed OCR"
     assert result.metadata["engine"] == "test-rapidocr"
     assert _state_path(output_dir).exists()
+
+
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="Windows legacy path-limit regression",
+)
+def test_resume_state_temp_does_not_amplify_near_limit_sidecar_path(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    if _windows_path_units(tmp_path) >= 213:
+        pytest.skip("pytest temporary root is already beyond the controlled path range")
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = _make_directory_with_windows_path_units(tmp_path, 213)
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    _enforce_legacy_windows_open_limit(monkeypatch)
+
+    first = recognize(source, config=_vision_config(output_dir))
+    second = recognize(source, config=_vision_config(output_dir))
+
+    assert first.output_path == output_dir / "board_board.md"
+    assert first.output_path.read_text(encoding="utf-8") == "# Resumable board\n"
+    assert _state_path(output_dir).is_file()
+    assert _windows_path_units(_state_path(output_dir)) == 243
+    assert second.markdown == first.markdown
+    assert len(calls) == 1
 
 
 def test_matching_state_and_output_complete_post_publish_crash_window(
