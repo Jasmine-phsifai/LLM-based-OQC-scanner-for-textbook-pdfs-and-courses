@@ -56,9 +56,12 @@ finished. Stage M is **offline implementation-complete**: model catalog
 discovery, file-backed state sidecars, opt-in disposition-gated candidate
 queues, slot-indexed intra-request checkpoints, spend disclosure, and
 model-aware credential blocking have shipped. Its exit gate remains open until
-the authorized paid live smoke verifies current provider behavior. Stage 2
-vision/audio provider splitting and Stage A mp3 recognition have not started.
-The built-in Google image adapter is now scoped as a post-Stage-2 optional
+the authorized paid live smoke verifies current provider behavior. The former
+standalone Stage 2 vision/audio scaffold was replanned on 2026-08-23: the
+working image configuration stays unchanged and the audio-specific
+configuration boundary will land with the first executable Stage A1 short-MP3
+slice. Stage A1 and A2 have not started.
+The built-in Google image adapter is now scoped as a later optional
 vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
 does not copy legacy retry, audio, GUI, or social architecture. It is planned,
 not implemented, and does not block Stage A.

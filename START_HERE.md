@@ -30,7 +30,7 @@ docs/plan_phase1_maturation_and_phase2_audio.md
                                       Current work plan; Stage M is offline
                                       complete with its live exit gate open.
 docs/plan_phase1_defects_and_provider_split.md
-                                      Stage 1 closed; Stage 2 provider split
+                                      Stage 1 closed; Stage 2 folded into A1
                                       is not started.
 docs/ocrllm_library_go_no_go.md       Phase gates, file responsibilities,
                                       migrate/rewrite/reject boundary.
@@ -60,8 +60,10 @@ catalog checks, atomic file-backed image state, an opt-in candidate queue, and
 slot-indexed intra-request checkpoints with an explicit v1-to-v2 resume
 identity migration, complete attempt-spend disclosure, disposition-gated
 recovery, model-aware pool behavior, and correct scout-failure attribution.
-Its paid live exit smoke remains open. Stage 2 vision/audio provider splitting
-and Stage A mp3 recognition are not started.
+Its paid live exit smoke remains open. The former standalone Stage 2 scaffold
+was removed from the queue: its audio-specific configuration boundary will be
+implemented with executable Stage A1 short-MP3 recognition. Stage A1/A2 are not
+started.
 
 All no-cost Stage M exit criteria pass at committed checkpoint `2e9c770`.
 `tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,

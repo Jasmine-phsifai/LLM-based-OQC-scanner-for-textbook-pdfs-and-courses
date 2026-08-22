@@ -13,9 +13,9 @@ Defect repair D1-D7    docs/plan_phase1_defects_and_provider_split.md, Stage 1.
                        CLOSED 2026-08-18. Do not duplicate.
 Phase 1 maturation     This document, Stage M. Offline implementation complete;
                        paid live exit smoke remains open.
-Phase 2 mp3 audio      This document, Stage A. Not started. Plan only.
-Provider modality split  docs/plan_phase1_defects_and_provider_split.md, Stage 2.
-                       Prerequisite for Stage A.
+Phase 2 mp3 audio      This document, Stage A1/A2. Not started. Plan only.
+Audio config boundary docs/plan_phase1_defects_and_provider_split.md, Stage 2.
+                       Lands with the first executable Stage A1 slice.
 ```
 
 Stage M and the defect repair touch adjacent code. The boundary is:
@@ -193,8 +193,8 @@ The documentation rules in `docs/ACTIVE_STATE_AND_RULES.md` apply. Concretely:
 
 ## Google Image Follow-on — Built-in Adapter
 
-**Investigated 2026-08-23. Plan only. Do not implement before Stage M exits and
-the Stage 2 provider/modality split lands. This does not block Stage A.**
+**Investigated 2026-08-23. Plan only. Do not implement before Stage M exits.
+This does not block Stage A.**
 
 ### Decision and boundary
 
@@ -203,12 +203,12 @@ Two implementation paths were compared:
 1. Add `GoogleSettings` beside the current single `Config.provider` field now.
    This looks small but would also require special cases in configuration
    normalization, DashScope-only scout behavior and evidence metadata,
-   capability reporting, and image resume identity. Stage 2 would then replace
-   the same public configuration shape immediately afterward.
-2. Complete the provider-neutral Stage 2 split once, retain the shared vision
-   call seam, and then register one narrow Google image adapter.
+   capability reporting, and image resume identity.
+2. Add the Google image adapter through an explicit vision-provider resolver
+   without redesigning audio or replacing the proven image configuration.
 
-Choose path 2. It avoids an intermediate public API and keeps one owner for
+Choose path 2 after its exact resolver design is proven by failing tests. It
+avoids an unrelated audio abstraction and keeps one owner for
 candidate routing, request pacing, checkpointing, attempt disclosure, refusal
 detection, and Markdown validation. The Google adapter translates one SDK call
 and its failures; it must not copy legacy `GoogleProviderClient` or introduce a
@@ -273,7 +273,7 @@ history, GUI/QSettings, provider priority toggles, credential pools, persistent
    model/output-setting changes invalidate reuse. Run the full suite and import
    weight gate without loading Google, OpenAI, Pillow, or network clients during
    plain import.
-4. After Stage 2, use the maintainer's standing Google authorization for one
+4. Use the maintainer's standing Google authorization for one
    bounded live catalog fetch and one small authorized image request against a
    catalog-served image-capable model. Preserve real outcomes for window quota,
    overload, API error, empty reply, unsupported format, and excessive image
@@ -285,7 +285,8 @@ Those are live-test targets, not reasons to invent provider limits in advance.
 
 ## Stage A — Phase 2: MP3-Only Audio Recognizer
 
-**Not started. Plan only. Do not begin until Stage M exits and Stage 2 lands.**
+**Not started. Plan only. Do not begin until Stage M exits. The Stage 2 audio
+configuration boundary lands with A1, not as unused scaffolding.**
 
 Phase 2's original framing was an Electron JSONL worker. That is superseded:
 the worker is frozen and Phase 2 is redefined as the first audio capability.
@@ -304,11 +305,12 @@ the narrowest possible surface, exactly as Phase 1 proved the image contract.
 
 - Stage M complete. Audio runs are long; flowed output and resume are not
   optional for them.
-- The vision/audio provider split from
-  `docs/plan_phase1_defects_and_provider_split.md` Stage 2. Audio must be able
-  to use a different provider from vision. The maintainer already runs it this
-  way: `audio_model = qwen3-asr-flash-filetrans` on DashScope while
-  `vision_model = gpt-5.4-mini` elsewhere.
+- The audio configuration boundary from
+  `docs/plan_phase1_defects_and_provider_split.md` Stage 2 lands in A1. Audio
+  must use a provider, credential, and model independently of vision. The
+  maintainer already runs it this way: FileTrans uses
+  `qwen3-asr-flash-filetrans` on DashScope while vision may use another
+  provider.
 
 ### Provider note
 
@@ -323,30 +325,54 @@ call. `docs/ocrllm_library_go_no_go.md` already reserves
 `download_filetrans_result.py` for this. Legacy behavior and its failure history
 are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 
-### Behavior requirements
+### Stage A1 — Short MP3, First Executable Audio Slice
 
-- Validate the mp3 before any provider call, the way images are validated
-  today. A zero-byte or truncated file fails before money is spent.
-- Duration probe with an explicit dependency error when the probe tool is
-  absent. Never guess duration.
-- Short and long paths split on a documented duration threshold. The long path
-  is resumable by provider task ID; an interrupted poll must not resubmit and
-  re-pay.
+- Add and immediately consume one exact immutable audio binding containing the
+  audio provider and short-ASR model identity. Do not rewrite the image fields.
+- Validate MP3 structure before any provider call. A zero-byte or truncated
+  file fails before money is spent.
+- Probe duration with an explicit dependency error when the probe tool is
+  absent. Never guess duration; reject files outside the documented short-path
+  boundary rather than silently switching protocols.
+- Make one synchronous short-ASR protocol explicit in the adapter. Do not copy
+  legacy's hidden SDK-to-OpenAI-compatible fallback or derive models from name
+  substrings.
+- Empty, refused, or no-speech responses are typed failures;
+  `NoSpeechDetected` already exists for the last case.
+- Add exact lazy `[audio]` dependencies only when A1 tests prove they are
+  needed. Plain `import ocrllm` remains lightweight.
+- Change only `provider.dashscope.audio-short` and
+  `audio.short.mp3-mpeg-layer3` capability statuses when their executable and
+  live gates pass. All long-audio, FileTrans, WAV, M4A, and video entries remain
+  deferred.
+
+### Stage A2 — Resumable Long MP3 / FileTrans
+
+- Add the separate FileTrans model identity to the audio settings when this
+  path consumes it. Short and long protocols remain explicit rather than
+  inferred from model names.
+- Submit, then atomically persist the provider task ID and strong source/request
+  identity before polling. Resume must reuse a matching task without upload or
+  resubmission.
 - Transcript segments are written incrementally under M2. A long transcription
   that dies at 90% keeps 90%.
 - A failed or refused transcription is never presented as a transcript. This is
   D1's rule applied to audio, and legacy shipped exactly this bug.
-- `NoSpeechDetected` already exists in the public error set and must be used
-  rather than returning an empty success.
+- Do not copy the legacy stat-only task fingerprint, deterministic temporary
+  name, localized Markdown recovery regex, or automatic protocol fallback.
 
 ### Stage A exit gate
 
-- Full suite green with offline fake-provider tests covering validation,
-  routing, segment ordering, resume, and every error path.
+- A1 and A2 each have their own full-suite, import, capability, and live gates;
+  A1 does not claim FileTrans or long-audio maturity.
+- Offline fake-provider tests cover validation, explicit protocol routing,
+  segment ordering, resume, and every error path in the slice being closed.
 - `import ocrllm` weight unchanged; audio dependencies lazy behind an extra.
-- One real mp3 transcribed end to end, with resume proven by interrupting a
-  long run and continuing it without re-paying.
-- Capability reported per modality: audio available, video still unavailable.
+- A1: one bounded real short MP3 transcribed end to end.
+- A2: one bounded real long MP3 plus interrupted polling/resume without
+  resubmission or repayment.
+- Capability reporting changes atomically with the executable slice; video
+  remains unavailable.
 
 ## Rules For Whoever Executes This
 

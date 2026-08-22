@@ -1468,3 +1468,17 @@ partial state 低于 16 MiB，却让 completed state 因最终 Markdown 的额�
 
 **下一步。** 继续优先审计 active 已建功能；若没有新的稳定缺陷，不直接跳过当前前置实现 Stage A，而是先审计其明确前置 Stage 2 vision/audio provider split。Stage M 的付费 live exit smoke 仍未授权，
 不用 offline 结果假装它已完成。
+
+## #035 — 2026-08-23：取消无消费者的 provider split 脚手架，音频改为 A1/A2 两个可执行切片
+
+**原子任务与假设修正。** 本轮只读审计 Stage 2 配置拆分是否真是 MP3 识别的必要前置，不开始音频实现，不修改 frozen `contracts/` / `worker/`，也不把 Stage M 尚未授权的付费 live gate 写成已完成。开始时的两个候选是：一，按旧计划先增加通用 `ModalityBinding`、vision/audio 两套 binding 和“已配置但不可用”的 audio capability；二，保留已验证的 image 配置，在首个真正能识别短 MP3 的切片中再增加专用 audio binding。代码与 legacy 证据使原假设发生变化：独立音频配置确实必要，但 standalone provider split 不是必要产品能力。
+
+**代码证据。** 当前 `Config.provider`、`vision_model`、`image_mode`、`local_ocr` 是一组共同校验的 image 契约；local OCR 也不能自然塞进“provider + model”的通用二元组。`get_capabilities()`、resume identity、候选模型替换和多个 image consumer 都直接读取这组字段，frozen worker 仍按旧形状构造 `Config`。先增加新旧两套 vision 形状会引入 resolver、冲突判断、`dataclasses.replace()` 漂移和一轮公共迁移，却没有新增可执行能力。松散增加 `audio_provider` / `audio_model` 虽然改动少，但会把 `Config` 变成容易出现半配置的字段袋，也没有形成清楚责任边界。
+
+**legacy 音频证据。** 三名只读 scout 与主代理逐行复核一致确认：short ASR 是同步 multimodal 请求，FileTrans 是 upload + submit task + poll + download 的异步协议；默认 model ID 分别是 `qwen3-asr-flash` 和 `qwen3-asr-flash-filetrans`。两者可共用 DashScope 账户设置，但不能用一个 model 字段或名称 substring 推断协议。legacy 已出现过 task ID 未及时保存、弱 source identity、修复时按当前配置重新切片、已付费分段在取消时丢失、非原子发布和 Windows 长路径 sidecar 等真实问题；这些是 A2 的行为约束，不是现在提前复制 sidecar / retry framework 的理由。Google 音频又是另一条 chunked native-multimodal 路径，因此更不能用通用 binding 假装所有 provider 协议相同。
+
+**决策与文档改动。** 选择路径二。Stage 2 不再作为 standalone scaffolding release：保留 proven image 公共字段；Stage A1 在 short-MP3 consumer 同一提交中加入 exact、immutable、secret-redacted 的 audio-specific binding，只包含当时真正消费的 provider/credential/short-model 身份；Stage A2 实现 FileTrans 时再增加独立 long-model 身份和 task resume。A1 不允许静默切到长协议，A2 不允许从 model 名猜协议。capability 也随可执行切片逐项变化：A1 只可能关闭 DashScope short-audio 和 short-MP3 两项，其余 audio/video 继续 deferred。已同步更新两个 active plan、`ACTIVE_STATE_AND_RULES.md`、`MIGRATION_STATUS.md` 与 `START_HERE.md`；没有增加代码、dependency extra 或不可用 public type。
+
+**个人复核、验证与边界。** 主代理没有照抄 scout 对具体 class 名的建议，而是对照当前 `Config` consumer、207 处测试构造、capability registry、legacy short/FileTrans 调用和恢复历史后收敛决策。旧计划里“先让 caller 表达 unavailable audio”与“新结构必须有 consumer”直接冲突，现已消除。Google image 后续也不再依赖音频抽象；它必须由自己的 image consumer 证明 resolver 设计。config/capability/import 定向集 **51 passed / 0.53s**，项目环境 root 全量 **1085 passed / 88.64s**，diff/EOL whitespace 检查通过。pytest 仍报告既有 `.pytest_cache` 写入权限 warning，但不影响测试结果，也没有为消除 warning 修改目录权限。Stage M 付费 DashScope smoke 仍然开放，因此 A1 仍未获准开始。本轮无网络、provider 或付费调用，未修改 active Python、legacy、social media 或用户临时交接文件。
+
+**下一步。** 回到已建 active surface 的缺陷优先队列。若没有更高价值的稳定缺陷，先向 maintainer 请求 Stage M 付费 live smoke 的明确预算；只有 Stage M 真正退出后，才为 A1 写 failing-first tests，并让 audio binding 与首个 short-MP3 consumer 同时出现。A2 的 FileTrans、长音频断点续传和分段 checkpoint 必须等 A1 契约稳定后再做。

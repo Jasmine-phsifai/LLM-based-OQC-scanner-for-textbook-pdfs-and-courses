@@ -32,8 +32,10 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   the clean-archive runner at `2e9c770`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
-- not started: Stage 2 vision/audio provider splitting, Stage A mp3 recognition,
-  and the active PDFium phase.
+- replanned, not started: the standalone Stage 2 vision/audio scaffold was
+  removed; its audio-specific configuration boundary now lands with executable
+  Stage A1 short-MP3 recognition, followed by Stage A2 FileTrans;
+- not started: Stage A1/A2 audio recognition and the active PDFium phase.
 
 The defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,

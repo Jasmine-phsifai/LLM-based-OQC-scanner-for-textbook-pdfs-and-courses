@@ -1,28 +1,28 @@
 # Plan: Phase 1 Defect Repair And Vision/Audio Provider Split
 
-Status: **Stage 1 closed; Stage 2 not started.** Updated 2026-08-19.
+Status: **Stage 1 closed; Stage 2 replanned as part of Stage A.** Updated 2026-08-23.
 
 > Current work for everyone else is
 > `docs/plan_phase1_maturation_and_phase2_audio.md`. Do not duplicate Stage 1
-> here; rebase onto it. Stage 2 of this document remains the prerequisite for
-> the Phase 2 audio work described in that plan.
+> here; rebase onto it. Stage 2 now defines the configuration boundary that
+> lands inside the first executable audio slice in that plan.
 
 Read `docs/ACTIVE_STATE_AND_RULES.md` first. It defines document precedence, the
 defect register referenced here, and the coding rules this plan must follow.
 
 ## Scope
 
-Two stages, in order. Stage 1 is not optional and does not run in parallel with
-Stage 2.
+Stage 1 is closed. Stage 2 is retained as a design boundary but no longer runs
+as a standalone implementation stage.
 
 ```text
 Stage 1   Repair D1-D4 in shipped surface.        CLOSED 2026-08-18.
-Stage 2   Split provider configuration by modality (vision / audio).
+Stage 2   Add audio-specific config inside executable Stage A1. REPLANNED.
 Stage 3   Phase 2 continuation.                   Not in this plan.
 ```
 
-Phase 2 work resumes only after Stage 2 lands, because the Phase 2 wire contract
-must be revised by whichever slice introduces the modality split. See
+Stage A1 implements this boundary through the direct Python API. The Phase 2
+wire contract stays frozen until a real worker consumer requires audio. See
 "Contract impact" below.
 
 ## Background A Future Agent Needs
@@ -39,7 +39,7 @@ D2 and D3 are unbounded-hang and paid-work-loss defects on the primary
 integration path. Both have already occurred in `legacy_app` in a different
 form. `legacy_app/AGENTS.md` records the originals.
 
-### Why the provider split is the right next capability
+### Why audio still needs an independent configuration boundary
 
 This is **not** a new idea being introduced. The legacy application already
 binds modality to provider independently, and the maintainer runs it that way in
@@ -170,74 +170,56 @@ verification that successes retain their `output_path` when `output_dir` is set.
 - Offline Phase 1 quality scorer re-run and its result recorded.
 - No paid live call required for Stage 1. Do not spend budget here.
 
-## Stage 2 — Vision/Audio Provider Split
+## Stage 2 — Audio Configuration Boundary Inside Stage A
 
-### Target shape
+**Replanned 2026-08-23. Do not implement this as a standalone scaffolding
+release.** The former target introduced a generic `ModalityBinding`, rewrote
+the working vision configuration, and added an audio binding whose only
+consumer reported it unavailable. That contradicts the active rule that new
+structure needs an executable consumer.
 
-Replace the single provider slot with one explicit binding per modality. Audio
-is **declared but not implemented** in this stage; the slice delivers the shape
-and the validation, not audio recognition.
+Preserve the proven public image fields: `Config.provider`,
+`Config.vision_model`, `Config.image_mode`, and `Config.local_ocr`. When Stage
+A1 implements short-MP3 recognition, add one exact immutable audio-specific
+binding and consume it in that same slice. It must pair an audio provider with
+the short-ASR model identity, allow credentials and model choice independent of
+vision, apply the existing secret-redaction and exact-type rules, and fail
+before dispatch when incomplete. Do not add loose `audio_provider` /
+`audio_model` fields or a generic binding shared with vision.
 
-```python
-Config(
-    vision=ModalityBinding(provider=DashScopeSettings(...), model=VisionModelSettings(...)),
-    audio=ModalityBinding(provider=DashScopeSettings(...), model=AudioModelSettings(...)),
-)
-```
+Stage A2 adds the distinct FileTrans model identity only when the asynchronous
+submit/poll/download path consumes it. Do not derive one audio protocol or
+model from the other's name. Legacy proves that short ASR and FileTrans share a
+DashScope account but are different protocols with different model IDs.
 
-Design constraints:
-
-- Each binding pairs a provider with a model for that modality only. A vision
-  model name is never accepted in an audio binding.
-- Bindings are independent. Configuring vision must not require configuring
-  audio, and the two may use different providers and different credentials.
-- `image_mode="ocr"` (local OCR) remains a vision binding with no provider.
-- Immutability, exact-type validation, and secret redaction rules apply
-  unchanged to every new settings type.
-- `get_capabilities()` must report per-modality status so a caller can discover
-  that vision is available while audio is declared-but-unavailable.
-
-### Migration of the existing surface
-
-`Config.provider` and `Config.vision_model` are public. Two options:
-
-- **Preferred:** accept both shapes for one release. Old fields map onto the
-  vision binding; supplying both old and new raises `ConfigError`. Remove the
-  old fields in the following version.
-- **Acceptable:** break at 0.2.0 with a clear error message naming the
-  replacement, given there is no external consumer yet.
-
-Confirm with the maintainer which applies before writing code. Do not guess.
-
-### Attempting audio is out of scope
-
-Do not implement transcription, FileTrans submission, polling, or media probing
-in this stage. Those have their own gate. This stage ends when a caller can
-*express* an audio binding and receive a clear "declared, not available"
-capability report.
+This removes the premature public compatibility decision. A future vision API
+redesign must be justified by a vision consumer and versioned on its own; it is
+not an audio prerequisite.
 
 ### Contract impact — read before touching `worker/`
 
 `contracts/image_recognition_request.py` pins `provider: Literal["dashscope"]`
-and `profile: Literal["board"]`. The worker protocol therefore cannot carry the
-modality split.
+and `profile: Literal["board"]`. The worker protocol cannot carry audio.
 
 Do not pre-emptively rewrite the protocol. Per
 `docs/ACTIVE_STATE_AND_RULES.md`, `contracts/` and `worker/` are frozen until a
 consumer exists. When Phase 2 resumes with a real consumer, revising
-`ocrllm.v1alpha1` to `v1alpha2` is part of *that* slice, and this plan's Stage 2
-is the reason the revision is needed. Record the dependency; do not act on it
-early.
+`ocrllm.v1alpha1` to `v1alpha2` is part of a future executable worker consumer,
+not Stage A's direct Python API. Record the dependency; do not act on it early.
 
 ### Stage 2 exit gate
 
 - Full suite green.
 - Import weight unchanged.
-- A caller can construct independent vision and audio bindings with different
-  providers, matching the stored legacy configuration shown above.
-- `get_capabilities()` distinguishes available vision from declared audio.
-- One live vision smoke through the new shape, budget approved in advance,
-  proving the split did not disturb the working DashScope path.
+- Existing image configuration, behavior, and tests remain unchanged.
+- One audio-specific binding with an independent provider, credential, and
+  short-ASR model is consumed by a working short-MP3 path.
+- Missing or incomplete audio configuration fails before provider dispatch.
+- `get_capabilities()` changes only the capabilities proven by that executable
+  slice; it does not advertise placeholders as available.
+- `worker/` and `contracts/` remain unchanged.
+- Any live audio call follows the authorization and budget rules current at
+  execution time.
 
 ## Rules For Whoever Executes This
 
