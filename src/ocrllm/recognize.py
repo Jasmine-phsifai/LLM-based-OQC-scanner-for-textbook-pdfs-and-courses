@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 from contextlib import ExitStack
 from pathlib import Path
@@ -107,7 +108,7 @@ def _recognize(
                     )
                     if (
                         not cfg.resume
-                        and resume_state_path.exists()
+                        and os.path.lexists(resume_state_path)
                         and not resume_state_path.is_file()
                     ):
                         raise OutputError(

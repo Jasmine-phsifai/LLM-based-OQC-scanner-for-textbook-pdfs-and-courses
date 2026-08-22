@@ -109,12 +109,23 @@ Future agents must assume the following and verify before trusting any claim:
   one output directory are not coordinated, and no cross-process transaction is
   claimed.
 
+- **Batch overwrite can still silently collide across sequential items.** Two
+  distinct sources with the same normalized stem map to one deterministic
+  Markdown path. With `recognize_batch(..., overwrite=True)`, each item releases
+  its process-local claim before the next item starts, so both can report success
+  while the later item replaces the earlier paid result. Until a batch-lifetime
+  target reservation is implemented, callers must not combine batch overwrite
+  with colliding normalized source stems. This is the next high-priority active
+  defect; a per-call claim or another existence check cannot close it.
+
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an
-  existing non-file canonical sidecar target now raises `OUTPUT_PATH_INVALID`
-  before a provider call. Strict `resume=True` loading retains its existing
-  `RESUME_STATE_INVALID` classification. This is a no-write structural preflight,
-  not a promise that later permission or filesystem races can be predicted.
+  existing non-file canonical sidecar target, including a dangling symbolic link,
+  now raises `OUTPUT_PATH_INVALID` before a provider call. The preflight uses
+  lexical existence so it cannot erase a broken link by treating it as absent.
+  Strict `resume=True` loading retains its existing `RESUME_STATE_INVALID`
+  classification. This is a no-write structural preflight, not a promise that
+  later permission or filesystem races can be predicted.
   Checkpoint eligibility uses the exact built-in `DashScopeSettings` type or a
   caller-declared injected `resume_identity`; a user provider's class name has
   no effect. This keeps eligibility aligned with configuration, dispatch, and

@@ -276,6 +276,40 @@ def test_state_directory_is_rejected_before_provider_in_both_modes(
     assert provider.calls == 0
 
 
+def test_dangling_state_link_is_rejected_before_automatic_checkpoint(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    state_path = _state_path(output_dir)
+    real_lexists = os.path.lexists
+
+    def lexists_with_dangling_state(path) -> bool:
+        return Path(path) == state_path or real_lexists(path)
+
+    monkeypatch.setattr(os.path, "lexists", lexists_with_dangling_state)
+
+    class Provider:
+        resume_identity = "dangling-state-preflight-v1"
+        calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            return "must not run"
+
+    provider = Provider()
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(provider=provider, output_dir=output_dir),
+        )
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert provider.calls == 0
+
+
 @pytest.mark.parametrize("loser_identity", ["same-target-loser-v1", None])
 def test_concurrent_same_target_keeps_winner_markdown_and_state_together(
     tmp_path,

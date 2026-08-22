@@ -1202,3 +1202,37 @@ legacy、social media 或用户临时交接文件。当前文档已明确人工�
 **遗留/下一步。** v2 状态无法自动证明 interrupted-overwrite 留下的旧产物；这是明确限制，不是本轮声称关闭
 的能力。只有当自动恢复覆盖任务成为实际产品优先级时，才考虑把 prior-output provenance 纳入新状态版本。
 下一轮继续优先审计已建 active 功能；无更高价值缺陷时再进入 Stage A 音频只读调研。
+
+## #027 — 2026-08-23：dangling sidecar 在模型调用前拒绝
+
+**原任务与改向。** 本轮先检查“completed state 保存后 Markdown 发布失败，是否会毁掉已付费恢复证据”。
+代码顺序和已有测试否定了这个猜想：completed sidecar 先原子保存，Markdown 后发布；发布失败后，无 output 的
+`resume=True` 会零 provider 调用复用 state 并重新发布。vision、local OCR、post-publish crash window 和真实
+Markdown replace failure 四项 focused 证据均通过。若 `overwrite=True` 已有旧 output/state，新 slot 会替换
+旧 state；同时保存旧一代和新付费一代需要 pending generation 或事务指针，不能靠调换两个 writer 的顺序完成。
+本轮不为这个已正确的次序增加重复 helper，也不偷偷放开 #026 已决定保守处理的 overwrite 权限。
+
+**实际缺陷与方案。** 邻近审计发现 automatic checkpoint 对 canonical sidecar 使用 `Path.exists()`，而
+Markdown preflight 和 strict resume loader 都使用 lexical existence。dangling symlink 会被 `exists()` 当成
+不存在，provider 先执行，随后 state 的 `os.replace()` 会替换这个 symlink directory entry。比较两条路：
+①把 dangling link 当作可替换的空位；②把任何已存在的非 regular sidecar 当作调用前冲突。选择②，因为它符合
+当前 `OUTPUT_PATH_INVALID` 契约，也避免已知本地冲突之后才花 provider 调用。只把 predicate 改为
+`os.path.lexists(resume_state_path)`；没有抽取共享 validator，因为 automatic 与 strict resume 的 error code
+本来就不同，抽象不能减少规则。
+
+**失败优先证据。** Windows 当前账户不能创建文件 symlink（探针得到 WinError 1314），所以回归不依赖开发者
+权限：只对 canonical sidecar 模拟 `lexists=True`，真实 `Path.exists/is_file` 仍保持 dangling-link 语义。
+修前 **1 failed / 0.43s**：没有抛错，provider 已运行并完成。修后得到 `OUTPUT_PATH_INVALID` 且 provider
+调用数为零；原有目录 sidecar 测试继续证明 automatic 是 `OUTPUT_PATH_INVALID`、strict resume 是
+`RESUME_STATE_INVALID`。output/image-resume/M2/defect focused 集 **56 passed / 2.95s**。
+
+**新发现但不混入本轮。** 只读 batch scout 用公开 API 稳定证明一个更高优先级缺陷：两个不同目录下同名 source
+会得到同一个 normalized output path；`recognize_batch(..., overwrite=True)` 的每个 item 在返回后释放 claim，
+所以串行模式下两个 provider 都执行、两个 outcome 都报告 success，而第二个 Markdown 静默覆盖第一个已付费
+结果。单次调用的 active claim 或再做一次 existence check 都不能修复；需要 batch 生命周期内保留 target
+reservation。该缺陷已写入 authoritative Known Debt，下一轮优先做失败回归与最小 batch-scoped reservation，
+不在这次一行 sidecar 修复中扩张。
+
+**验证与边界。** root 全量 **1069 passed / 90.24s**。无网络/provider/付费调用；未修改 frozen
+`contracts/`、`worker/`、legacy、social media 或用户临时交接文件。下一步是上述 deterministic batch
+overwrite collision，不因它需要更宽的调用生命周期就降级为文档长期债务。
