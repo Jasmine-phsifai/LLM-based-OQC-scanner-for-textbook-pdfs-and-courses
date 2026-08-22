@@ -1411,3 +1411,31 @@ recognize/Stage M/defect focused 集 **96 passed / 3.55s**。
 
 **下一步。** 继续优先审计 active 已建功能中的 false success、付费工作丢失与恢复语义；若没有可公开稳定复现的缺陷，转入 Stage A
 音频只读迁移调研。不把已否定的 review 失败假设重复建模，也不在没有产品决策时扩大 refusal 后的跨请求复用范围。
+
+## #033 — 2026-08-23：拒绝不可 UTF-8 编码的 provider 伪成功
+
+**原任务、假设修正与转向。** 本轮先检查 completed sidecar 与最终 Markdown 是否可在公开 `recognize()` 返回成功时互相不匹配。
+主代理和两名只读 scout 从代码顺序与已有并发/恢复回归一致否定了这个假设：在已承诺的进程内边界，completed state 和 Markdown 都来自同一个不可变
+`ProcessorOutput`；state 先原子写入，Markdown 后原子发布，任一写入失败都在构造 `RecognitionResult` 前抛错。中断可留下“新 state + 缺失/旧 Markdown”，
+但不会返回伪成功，且 `resume=True` 会验证或重新发布。另一进程直接改文件属于已明确不承诺的跨进程事务；增加返回前的第二次 hash 也无法消除后续 race，
+所以没有引入假交易层。
+
+**可公开复现的相邻缺陷。** 离线 injected provider 返回 `"# Board\n\ud800\n"`时，孤立 surrogate 通过可见内容检查。memory-only 路径直接
+返回一个无法严格 UTF-8 编码的“成功”结果；带稳定 `resume_identity` 和 output 的路径在第一次已付费调用后，于 slot SHA-256 计算处泄漏原始
+`UnicodeEncodeError`，没有 typed error、workflow pass 或调用数。这种字符串可由 JSON 的 surrogate escape 产生，不需要假设文件系统故障。
+
+**两条方案与最小修正。** 方案一是分别在 checkpoint hash、state serializer 和 Markdown writer 捕获编码错误；这会重复规则，把 provider 数据错误误报为
+`OUTPUT_WRITE_FAILED`，并继续漏掉 memory-only 伪成功。方案二是在已有单一入口 `validate_provider_markdown()` 中对原始 exact string 做严格 UTF-8 可编码检查。
+选择方案二。不可编码响应现在返回非重试的 `PROVIDER_RESPONSE_INVALID`，`reason=invalid_encoding`；既有 `call_vision_provider()`/`run_pass()` 自动补充 provider/model、
+`workflow_pass=draft` 和 `provider_calls_attempted=1`。不使用 replacement character 修复内容，因为那会静默改写识别结果；也不增加 candidate advance 或 fallback success。
+
+**失败优先证据。** 一个参数化公开回归同时覆盖 memory-only 与稳定 checkpoint provider + output。修复前稳定为 **2 failed / 0.45s**：前者根本不抛错，
+后者泄漏 `UnicodeEncodeError`。修复后两者均只调用 provider 一次并返回上述 typed error；output 变体的目录中无 Markdown、sidecar 或 temp。provider/resume/M2/
+output/Stage M focused 集 **141 passed / 6.43s**；项目环境 root 全量 **1083 passed / 90.88s**。
+
+**个人复核与边界。** 主代理复核了校验顺序、error detail 合并、candidate 政策、memory/file 两条路径、原值不修复原则与两份 scout 结论。
+公开回归已覆盖 shared validator，不再增加只调私有 helper 的重复测试。历史 CRLF 测试文件在 patch 后恢复为纯 CRLF；不改仓库 `* -text` 策略。本轮无网络/
+provider 真实调用或付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** 继续检查已建 active provider/output 边界，尤其是大回复、多 pass 组合和 typed error 细节是否还能出现 false success 或付费证据丢失；
+若没有稳定可公开复现的缺陷，按既有优先级转入 Stage A 音频只读迁移调研，不继续为已否定的两文件事务假设扩展架构。

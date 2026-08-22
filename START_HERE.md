@@ -71,10 +71,10 @@ It makes no provider request.
 
 The public image facade decodes PNG/JPEG inputs before provider dispatch,
 passes request-scoped validated snapshots to an injected provider, rejects
-empty/control-only/refusal-shaped output, returns typed redacted errors, and
-reports canonical `source_type="image"` with `profile="board"`. File output
-is optional and atomic; `output_dir=None` stays memory-only. Pillow remains
-lazy during plain `import ocrllm`.
+empty/control-only/refusal-shaped or non-UTF-8 output, returns typed redacted
+errors, and reports canonical `source_type="image"` with `profile="board"`.
+File output is optional and atomic; `output_dir=None` stays memory-only. Pillow
+remains lazy during plain `import ocrllm`.
 
 Phase 1 uses one unified `board.v17` workflow for printed, projected,
 handwritten, formula, table, and ordered-image inputs. The Beijing live gate

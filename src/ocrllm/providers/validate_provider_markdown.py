@@ -12,6 +12,15 @@ from .remove_closed_html_comments import remove_closed_html_comments
 def validate_provider_markdown(value: object) -> str:
     """Return visible Markdown or raise a redacted false-success error."""
     markdown: str = value if type(value) is str else ""
+    try:
+        markdown.encode("utf-8")
+    except UnicodeEncodeError:
+        raise ProviderError(
+            "The configured provider returned recognition Markdown that is not "
+            "valid UTF-8 text.",
+            code="PROVIDER_RESPONSE_INVALID",
+            details={"reason": "invalid_encoding"},
+        ) from None
     inspected_markdown = remove_closed_html_comments(markdown)
     if not _contains_visible_content(inspected_markdown):
         raise ProviderError(

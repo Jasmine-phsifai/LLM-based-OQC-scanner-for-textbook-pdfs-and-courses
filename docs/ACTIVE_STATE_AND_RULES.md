@@ -239,6 +239,14 @@ helper handles closed `<!-- ... -->` blocks across lines. It deliberately does
 not claim full Markdown parsing, code-fence awareness, or malformed/unclosed
 comment handling.
 
+Provider Markdown must also be strictly UTF-8 encodable as of 2026-08-23. An
+exact Python string containing an unpaired surrogate is rejected centrally as
+`PROVIDER_RESPONSE_INVALID` with `details["reason"] == "invalid_encoding"`.
+This prevents both a memory-only false success and a raw `UnicodeEncodeError`
+while hashing a paid checkpoint. The value is rejected rather than repaired
+with replacement characters, so published recognition content is never
+silently changed.
+
 Offline Phase 1 quality scorer re-run after the change: 70 passed
 (`pytest tests/test_run_phase1_quality.py tests/test_quality_gate_application.py
 tests/test_score_recognition_result.py tests/test_verify_fixture_artifacts.py`).

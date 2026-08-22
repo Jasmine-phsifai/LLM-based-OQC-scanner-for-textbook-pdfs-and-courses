@@ -128,6 +128,33 @@ def test_looks_like_refusal_ignores_ordinary_content() -> None:
     assert looks_like_refusal("无法识别")
 
 
+@pytest.mark.parametrize("write_output", [False, True])
+def test_unpaired_surrogate_provider_markdown_is_a_typed_invalid_response(
+    tmp_path,
+    write_output,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    provider = _FixedResponseProvider(
+        "# Board\n\ud800\n",
+        resume_identity="invalid-unicode-provider-v1",
+    )
+    output_dir = tmp_path / "output" if write_output else None
+
+    with pytest.raises(ProviderError) as failure:
+        recognize(
+            source,
+            config=Config(provider=provider, output_dir=output_dir),
+        )
+
+    assert failure.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert failure.value.details["reason"] == "invalid_encoding"
+    assert failure.value.details["workflow_pass"] == "draft"
+    assert failure.value.details["provider_calls_attempted"] == 1
+    assert provider.calls == 1
+    if output_dir is not None:
+        assert list(output_dir.iterdir()) == []
+
+
 # D2 --------------------------------------------------------------------------
 
 
