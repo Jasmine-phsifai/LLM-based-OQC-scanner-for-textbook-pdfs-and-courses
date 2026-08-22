@@ -7,7 +7,7 @@ file and that file differ, that file wins.
 
 ## Current Status
 
-Last synchronized: 2026-08-19.
+Last synchronized: 2026-08-22.
 
 The repository has two boundaries:
 
@@ -20,18 +20,18 @@ The active library has GO coverage for the image contract, local OCR, the
 development JSONL worker, provider error disposition, credential scheduling,
 and image resume. Stage M Phase 1 maturation is partially implemented:
 
-- shipped: lazy DashScope catalog checks, atomic file-backed image state, and
-  an opt-in candidate model queue;
-- open: complete attempt-spend disclosure, all approved recovery dispositions,
-  model-aware credential scheduling, flowed output, and resume identity
-  migration;
+- shipped: lazy DashScope catalog checks, atomic file-backed image state, an
+  opt-in candidate model queue, and slot-indexed intra-request checkpoints
+  with an explicit v1-to-v2 resume identity migration;
+- open: complete attempt-spend disclosure (the G1 remainder), all approved
+  recovery dispositions, and model-aware credential scheduling;
 - not started: Stage 2 vision/audio provider splitting, Stage A mp3 recognition,
   and the active PDFium phase.
 
 The current open defect register is in
-[`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md): residual
-D4 plus G1, G2, G3, G4, G5, G6, G7, G8, and G10. D1-D7 and F1-F4 are closed;
-G9 is closed. Do not create a second defect list in this file.
+[`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md): G1
+(partial), G2, G3, G4, G5, G8, and G10. D1-D7 including residual D4, F1-F4,
+G6, G7, and G9 are closed. Do not create a second defect list in this file.
 
 ## Read Order
 
@@ -85,6 +85,7 @@ route without presenting old conclusions as current status.
 
 | Commit | Trace |
 |---|---|
+| `cd7429c` | Stage M2 slot-indexed intra-request checkpoints and resume identity v2. |
 | `0278b66` | Phase 1 v17 image evidence and clean package gate. |
 | `2db456a` | Phase 2 development worker gate. |
 | `8025406` | D1-D7 defect repair. |

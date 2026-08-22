@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-19 against the
+Status: **authoritative and current.** Last verified 2026-08-22 against the
 working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
@@ -53,11 +53,11 @@ things:
 Phase 1 is consequently reopened for maturation. "Phase 1 is GO" means the image
 path was proven once under trial constraints; it does not mean the image path is
 finished. Stage M is **partially implemented**: model catalog discovery,
-file-backed state sidecars, and opt-in candidate queues shipped, but the
-attempt-ledger, flowed-output, recovery-policy, credential-pool, evidence-label,
-resume-version, and candidate-validation gaps remain open below. Stage 2
-vision/audio provider splitting and Stage A mp3 recognition have not started.
-See `docs/plan_phase1_maturation_and_phase2_audio.md`.
+file-backed state sidecars, opt-in candidate queues, and slot-indexed
+intra-request checkpoints shipped, but the attempt-ledger, recovery-policy,
+credential-pool, evidence-label, and candidate-validation gaps remain open
+below. Stage 2 vision/audio provider splitting and Stage A mp3 recognition have
+not started. See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
 
@@ -82,8 +82,8 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1025 passed, 0 skipped, 0 failed (133 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` with empty `PYTHONPATH` |
-| Import weight | 131 ms median / 222 ms max, 122 modules (5 clean processes) | timed plain import with `src` on `sys.path`; one Windows scheduling outlier |
+| Test suite | 1030 passed, 0 skipped, 0 failed (114 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` with empty `PYTHONPATH` |
+| Import weight | 112 ms, 122 modules, no heavy module loaded (2026-08-22 single process; consistent with the 131 ms median / 222 ms max five-process probe of 2026-08-19) | timed plain import with `src` on `sys.path` |
 | Heavy-module isolation | `PIL`, `openai`, `httpx`, `onnxruntime` all absent after plain import | `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
@@ -97,9 +97,11 @@ snapshot isolation are the two strongest parts of this codebase; build on them.
 
 ## Defect Register
 
-Severity is impact on a real user, not implementation effort. D1-D7 are closed.
-The residual D4 limitation and the current Stage M findings are open. Do not
-close an entry without a test that fails before the fix.
+Severity is impact on a real user, not implementation effort. D1-D7 are closed,
+including the residual D4 limitation (closed 2026-08-22 by `cd7429c`). Of the
+Stage M findings, G6, G7, and G9 are closed; G1 is partially addressed; G2,
+G3, G4, G5, G8, and G10 remain open. Do not close an entry without a test that
+fails before the fix.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
@@ -361,7 +363,7 @@ completion tokens and no usable output, while the pinned model produced a full
 transcription from the same prompt and image. Prompt and model class are
 coupled. Discovery makes a model *selectable*; it does not make it *proven*.
 
-## Stage M Implementation Status, 2026-08-19
+## Stage M Implementation Status, refreshed 2026-08-22
 
 Stage M is **partially implemented**. The following behavior is shipped and
 tested offline:
@@ -372,16 +374,18 @@ tested offline:
    retryable `PROVIDER_CATALOG_UNAVAILABLE` error. The catalog path is lazy.
 - File-backed image recognition writes versioned state atomically before
    publishing Markdown. Re-running a compatible batch can reuse completed
-   request outputs. Injected-provider resume still requires a caller-declared
-   nonempty `resume_identity`.
+   request outputs. Within one request, each completed workflow pass persists
+   as a slot in the same sidecar before the next paid call starts, and
+   `resume=True` pays only for missing passes. Injected-provider resume still
+   requires a caller-declared nonempty `resume_identity`.
 - An explicit `VisionModelSettings.candidate_models` queue is attempted in
    caller order and currently advances on `PROVIDER_QUOTA_EXHAUSTED` only. The
    queue is bounded and its attempts are visible, but the ledger and terminal
    error contract are not complete; see G1, G2, and G4 below.
 
-The Stage M exit gate has **not** passed. Flowed output within one request,
-full disposition-gated recovery, model-aware credential scheduling, complete
-spend disclosure, and the live catalog/end-to-end smoke remain open. The
+The Stage M exit gate has **not** passed. Full disposition-gated recovery,
+model-aware credential scheduling, complete spend disclosure (the G1
+remainder), and the live catalog/end-to-end smoke remain open. The
 offline suite and import probe must be refreshed by command output before this
 section's measured counts are changed. `worker/` and `contracts/` remain
 unchanged and frozen.
@@ -392,12 +396,13 @@ These are current implementation findings, not historical phase failures.
 Their identifiers are stable so plans, tests, and future diary entries can
 refer to the same issue.
 
-#### G1 — Attempt ledger cannot reconstruct spend. **High. Open.**
+#### G1 — Attempt ledger cannot reconstruct spend. **High. Partially addressed 2026-08-22; narrowed remainder open.**
 
-`recognize_images.py` does not carry provider-call counts through a successful
-candidate switch, and configuration failures are not entered in the attempt
-ledger. A caller cannot reconstruct all paid work from result metadata or error
-details.
+`cd7429c` added `provider_calls_attempted` to every `model_attempts` ledger
+entry (success or typed failure) and a `workflow_slots` disclosure in result
+metadata. Still open: configuration failures (raised before any provider
+dispatch, e.g. an invalid candidate name) are not entered in the attempt
+ledger, so one failure class still leaves no spend record.
 
 #### G2 — Recovery is quota-only. **Medium. Open.**
 
@@ -423,17 +428,23 @@ The static supported-model set is still treated as evidence-backed metadata,
 although the live quality evidence proves only the pinned model with the exact
 v17 workflow. Selection and proof status must remain separate.
 
-#### G6 — Resume identity version is stale for candidate queues. **Medium. Open.**
+#### G6 — Resume identity version is stale for candidate queues. **Medium. Closed 2026-08-22.**
 
-`fingerprint_image_request.py` includes `candidate_models` in the fingerprint
-while retaining `ocrllm.image-request.v1`. Existing checkpoints can therefore
-fail with a state mismatch without an explicit identity-version migration.
+Closed by `cd7429c` (the Stage M2 slot-resume slice, reviewed and cherry-picked
+from the unmerged `stage-m2` branch). The identity version is now explicit:
+`ocrllm.image-request.v2`, stored in every new state file. A v1 state is
+rejected with `RESUME_STATE_MISMATCH` naming both versions; the v2 document
+also hashes the board and sign-scout prompt versions. Nothing migrates; a v1
+state is treated as foreign work. See the M2 section below.
 
-#### G7 — Flowed output is not implemented. **Medium. Open.**
+#### G7 — Flowed output is not implemented. **Medium. Closed 2026-08-22.**
 
-`recognize()` publishes only after the complete multi-pass request returns. A
-crash after earlier paid drafts, review, or scout calls still loses that
-request's completed work.
+Closed by `cd7429c` at request granularity: each completed workflow pass
+(draft, review, each sign scout) persists immediately as a slot in the
+versioned sidecar before the next paid call starts, and `resume=True` seeds
+from persisted slots and pays only for missing passes. Batch granularity was
+already covered by D3/D4 (one output file plus one retained state sidecar per
+item). Proven by kill-mid-request tests in `tests/test_m2_slot_resume.py`.
 
 #### G8 — Scout failures are attributed to the primary model. **Medium. Open.**
 
@@ -476,10 +487,10 @@ defects:
 - The Phase 1 fixture checker now verifies manifest integrity, deterministic
    regeneration, and decoded-pixel equivalence when the rendering environment
    is not fully pinned. Its manifest/source pins and tests are synchronized.
-- The active suite passed 1,025 tests with an empty `PYTHONPATH`; the focused
-   legacy checkpoint/GUI suite passed 29 tests and the settings/model suite
-   passed 12 tests with 1 environment skip. These counts are verification
-   snapshots, not permanent gates for future changes.
+- The active suite passed 1,030 tests with an empty `PYTHONPATH` on 2026-08-22;
+   the focused legacy checkpoint/GUI suite passed 29 tests and the
+   settings/model suite passed 12 tests with 1 environment skip. These counts
+   are verification snapshots, not permanent gates for future changes.
 
 ### M2. Flowed output and true resume, 2026-08-19
 

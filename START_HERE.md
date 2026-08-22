@@ -56,9 +56,10 @@ from ocrllm import Config, DashScopeSettings, VisionModelSettings, recognize
 Current phase: **Phase 1 maturation, Stage M partially implemented**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and
 Phase 2A image-library completion are GO. Stage M has shipped lazy DashScope
-catalog checks, atomic file-backed image state, and an opt-in candidate queue.
-Its attempt ledger, complete disposition-gated recovery, model-aware pool
-behavior, flowed output, and resume identity migration remain open. Stage 2
+catalog checks, atomic file-backed image state, an opt-in candidate queue, and
+slot-indexed intra-request checkpoints with an explicit v1-to-v2 resume
+identity migration. Its complete attempt-spend disclosure,
+disposition-gated recovery, and model-aware pool behavior remain open. Stage 2
 vision/audio provider splitting and Stage A mp3 recognition are not started.
 
 The public image facade decodes PNG/JPEG inputs before provider dispatch,
@@ -90,8 +91,8 @@ remain unavailable. Local user PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 
 The current open defect list is only in
-`docs/ACTIVE_STATE_AND_RULES.md`: residual D4 plus G1, G2, G3, G4, G5, G6, G7,
-G8, and G10. D1-D7 and F1-F4 are closed; G9 is closed.
+`docs/ACTIVE_STATE_AND_RULES.md`: G1 (partial), G2, G3, G4, G5, G8, and G10.
+D1-D7 including residual D4, F1-F4, G6, G7, and G9 are closed.
 
 ## Legacy Application
 
