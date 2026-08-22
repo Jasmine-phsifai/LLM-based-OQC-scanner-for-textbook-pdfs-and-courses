@@ -112,6 +112,15 @@ Future agents must assume the following and verify before trusting any claim:
   correction; the active library already has typed quota, throttle, and
   unavailable-provider dispositions.
 
+- **Legacy Google JSON quota wording is classified consistently.** The
+  established Google message "You exceeded your current quota ... check your
+  plan and billing details" now maps to `QUOTA_EXHAUSTED` whether it arrives
+  as plain SDK text or inside a 429 JSON error. The advisory word "billing"
+  no longer mislabels that payload as a payment failure. Generic 429 /
+  `RESOURCE_EXHAUSTED`, explicit rate-limit markers, genuine payment errors,
+  and 5xx retry behavior are unchanged. DashScope-specific `FreeTierOnly`
+  markers are not part of this Google contract.
+
 ## Verified State, 2026-08-22
 
 Confirmed by execution, not by reading prose. Method noted so it can be redone.

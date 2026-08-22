@@ -824,3 +824,29 @@ Google discovery。相关三个 Python 文件 `py_compile`、`git diff --check` 
 **Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：临时 provider failure 与 quota
 exhaustion 即使都能触发候选恢复，也必须是不同 disposition；不能让内部复用改变用户文案或最终
 异常。active library 已有对应 typed 边界，本次未修改。
+
+## 2026-08-23 — Google 明确 quota JSON 被 advisory billing 文案误分类（已修复）
+
+**现象与根因。** `classify_google_error()` 对非 JSON 的 `RESOURCE_EXHAUSTED: You exceeded your
+current quota, please check your plan and billing details.` 返回 `QUOTA_EXHAUSTED`。同一内容放进标准
+429 JSON 后，`_classify_google_json_error()` 却先匹配 `billing` 单词而返回 `BILLING`。两个类型都
+允许切候选，所以只断言模型调用顺序会假绿，错误类型和后续用户说明仍不诚实。
+
+**证据纠正。** 原观察把 `FreeTierOnly` / `FreeAllocationQuotaExceeded` 当成可能的 Google marker；
+仓库代码、历史和 Google 说明均不支持，两者属于 DashScope compatibility 路径。Google 429 /
+`RESOURCE_EXHAUSTED` 覆盖多种额度窗口，不能整体升级成 quota exhaustion。
+
+**修复。** 只识别已有回归证据的 Google 组合文案 `you exceeded your current quota` +
+`check your plan and billing details`，且已有 rate limit/RPM/TPM/RPD 标记仍优先。该窄判断放在 generic
+billing 和 429 分支前。普通 429 继续同模型重试，503 high demand 继续重试，真实 payment/billing
+仍是 `BILLING`；没有新增配置、调用或抽象。
+
+**证据。** 直接 classifier 断言修前为 **1 failed, 19 passed / 2.09s**。第一版修复后，加强后的
+“quota advisory + RPM marker”回归继续发现 billing 抢先：focused **1 failed, 20 passed / 1.38s**，
+离线广集 **1 failed, 277 passed, 1 skipped / 71.89s**。最终 Google error 集
+**21 passed / 0.99s**，Google 相关四文件 **61 passed / 14.38s**，legacy 离线广集
+**278 passed, 1 skipped / 69.24s**。唯一 skip 是显式 live Google discovery；无 provider 调用。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：新增 Google provider 时必须把普通
+429 窗口限流、明确 quota exhaustion 与真实 billing failure 分开建模；不能因它们可能都切候选就
+只测调用顺序，也不得复用 DashScope marker。

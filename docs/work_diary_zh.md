@@ -72,9 +72,10 @@
 12. legacy offline suite 边界:`tests/test_bilibili_api.py` 在 collection 顶层执行真实 Bilibili
     API 与 `curl b23.tv`；#014 广集因该公开网络超时中断。该项随 social media 一并延后，不再作为
     当前 heartbeat 下一项；未来恢复时应移为显式 opt-in/script，默认 pytest collection 零网络。
-13. Google JSON 错误分类顺序：`_classify_google_json_error()` 先以 `code == 429` 判普通限流，
-    因此同一 payload 即使明确含 `FreeTierOnly` / `FreeAllocationQuotaExceeded` 也不会走配额切模型。
-    下一轮先写失败测试，确认真实 payload 语义后做最小排序修复；不得把普通 429 扩大成配额。
+13. ~~Google JSON 错误分类顺序~~ → 已完成并纠正原假设，见 #019。Google 已有证据是
+    `You exceeded your current quota ... check your plan and billing details`；此前 JSON 路径实际误判为
+    `BILLING`，不是 `RATE_LIMIT`。`FreeTierOnly` / `FreeAllocationQuotaExceeded` 属于 DashScope，
+    未加入 Google contract；普通 429 及带限流标记的 `RESOURCE_EXHAUSTED` 仍按限流重试。
 
 ## 条目格式
 
@@ -889,3 +890,35 @@ provider unavailable，因此未把 legacy 修复复制过去。无网络、prov
 **Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：候选切换原因必须保留 typed
 disposition；临时限流、服务不可用和配额耗尽可以采取相似恢复动作，但不得共享会改变用户提示或
 最终异常语义的类型。active library 当前已满足，后续 provider adapter 必须继续按此边界扩展。
+
+## #019 — 2026-08-23：Google 429 JSON 的 quota / billing 语义校正
+
+**任务。** 调查并修正 Google 429 JSON 中明确额度耗尽与普通窗口限流的分类顺序，同时保证普通
+429、503、真实支付失败的原行为不变。成功标准是 classifier 与真实候选循环都证明：明确 quota
+不重试已耗尽模型而切候选；普通限流只重试同一模型；不引入 DashScope 术语或更宽错误策略。
+
+**证据推翻原判断。** 仓库历史和 Google provider 资料中没有 Google 返回 `FreeTierOnly` 或
+`FreeAllocationQuotaExceeded` 的证据；两者从最早提交起就是 DashScope/OpenAI-compatible 路径的
+标记。Google 的已有回归文案是 `You exceeded your current quota, please check your plan and
+billing details.`。失败优先测试又证明 JSON 路径并非像 #018 末尾猜测那样判成 `RATE_LIMIT`，而是
+先被建议文字中的 `billing` 截走，误判成 `BILLING`；候选虽碰巧同样切换，但错误类型不诚实。
+
+**选择与修复。** 官方当前资料确认 429/`RESOURCE_EXHAUSTED` 覆盖 RPM、TPM、RPD、spend 等不同
+窗口，不能仅凭状态码判永久耗尽。保留普通 429 默认限流，以及既有 rate limit/RPM/TPM/RPD 标记
+优先。只把仓库已有证据的完整 Google quota 文案在没有限流标记时提前判为 `QUOTA_EXHAUSTED`，位置
+在 generic billing 与 429 分支之前。真实 payment/billing/funds 仍为 `BILLING`。实现只在现有函数
+内计算两个布尔值，没有新增 error framework、配置、重试或模型策略。
+
+**失败优先证据与验证。** 新 classifier 断言修前为 **1 failed, 19 passed / 2.09s**，准确显示
+`BILLING != QUOTA_EXHAUSTED`；此前仅看候选 call sequence 会因两个类型都允许切换而假绿，这也是
+本轮新增直接类型断言的原因。第一次修复后又把普通限流测试加强为“quota advisory + RPM marker”，
+暴露 generic billing 仍抢在 rate marker 前：focused **1 failed, 20 passed / 1.38s**，离线广集同一
+原因 **1 failed, 277 passed, 1 skipped / 71.89s**。最终把 rate marker 提到该窄 quota/billing 决策前。
+最终 `test_google_provider_errors.py` **21 passed / 0.99s**；Google provider/routing/config/settings
+合集 **61 passed / 14.38s**；排除真实 ffmpeg e2e 与延期的 import-time Bilibili diagnostic 后，
+legacy 离线广集 **278 passed, 1 skipped / 69.24s**，唯一 skip
+是显式 live Google discovery。`py_compile` 与 `git diff --check` 通过；无 live/provider 调用。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：未来新增 Google adapter 时，429 与
+`RESOURCE_EXHAUSTED` 不能单独决定 disposition；同一恢复动作也不能代替准确分类测试。只迁移有
+真实 payload/官方语义证据的窄规则，不得把 DashScope marker 搬进 Google contract。

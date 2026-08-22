@@ -31,7 +31,11 @@
 - `google-genai` Files API 对非 ASCII 本地路径不稳定。OCRLLM 上传长音频前会为中文文件名复制一个 ASCII 临时文件，上传完成后清理，避免课程名中文导致 `ascii codec` 错误。
 - Google 速率限制按项目计算，不是按 API key 计算。后续做 Google API 池时，不能照搬 DashScope 多 key 提升并发的假设。
 - 实验、预览、快照模型通常更容易有严格限流。OCRLLM 将它们放在图片识别优先队列前段，是为了优先消耗免费/不稳定模型；但限流错误仍按同模型重试处理，不直接误判为额度耗尽。
-- `RESOURCE_EXHAUSTED` 既可能是 quota，也可能是 rate limit。OCRLLM 分类时先看是否包含 rate limit/RPM/TPM/RPD 等字样；否则才进入“切换下一个免费候选模型”。
+- `RESOURCE_EXHAUSTED` 既可能是 quota，也可能是 rate limit，不能单独决定分类。普通 HTTP 429
+  默认按限流重试；rate limit/RPM/TPM/RPD 等字样也优先保持限流语义。只有已有回归证据的 Google 标准文案
+  `You exceeded your current quota ... check your plan and billing details` 在没有限流标记时判为 quota，
+  直接切换下一个候选。文案里的 `billing details` 是排查建议，不等于支付失败；真实 payment/billing
+  错误仍单独分类。`FreeTierOnly` / `FreeAllocationQuotaExceeded` 是 DashScope 标记，不属于 Google contract。
 - 分钟级 `RATE_LIMIT` 不能按普通网络错误快速重试。OCRLLM 会优先读取 Google `RetryInfo.retryDelay`；没有服务端建议时，rate limit 第一次重试至少等待 65 秒，避免一分钟窗口未刷新就失败。
 - `503 UNAVAILABLE` 且提示 high demand / try again later 通常是临时服务负载，也按可重试限流处理，不能写入板书失败占位。
 - `httpx.RemoteProtocolError: Server disconnected without sending a response` 属于长音频/大文件请求常见网络断连，应按网络错误重试同一模型，而不是当作未知错误直接失败。

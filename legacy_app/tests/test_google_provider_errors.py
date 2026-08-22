@@ -114,6 +114,76 @@ class GoogleProviderErrorTests(unittest.TestCase):
         self.assertTrue(classified.should_switch_model)
         self.assertFalse(classified.should_retry_same_model)
 
+    def test_json_quota_exhaustion_switches_candidate_without_same_model_retry(self):
+        cfg = AppConfig().with_updates(google_api={"enabled": True, "api_key": "AIza-test"})
+        client = GoogleProviderClient(cfg=cfg)
+        client._sleep_with_cancel = lambda _seconds: None
+        calls: list[str] = []
+        quota_error = (
+            '{"error":{"code":429,"status":"RESOURCE_EXHAUSTED",'
+            '"message":"You exceeded your current quota, please check your plan and billing details."}}'
+        )
+        classified = classify_google_error(RuntimeError(quota_error))
+
+        self.assertEqual(classified.kind, GoogleErrorKind.QUOTA_EXHAUSTED)
+        self.assertTrue(classified.should_switch_model)
+        self.assertFalse(classified.should_retry_same_model)
+
+        def invoke(model: str) -> str:
+            calls.append(model)
+            if model == "gemini-quota-spent":
+                return quota_error
+            return "fallback result"
+
+        result = client._call_with_model_switch(
+            "gemini-quota-spent",
+            ["gemini-fallback"],
+            "vision",
+            invoke,
+            max_retries=3,
+        )
+
+        self.assertEqual(result, "fallback result")
+        self.assertEqual(calls, ["gemini-quota-spent", "gemini-fallback"])
+
+    def test_json_rate_limit_retries_same_candidate_without_switching(self):
+        cfg = AppConfig().with_updates(google_api={"enabled": True, "api_key": "AIza-test"})
+        client = GoogleProviderClient(cfg=cfg)
+        client._sleep_with_cancel = lambda _seconds: None
+        calls: list[str] = []
+        rate_limit_error = (
+            '{"error":{"code":429,"status":"RESOURCE_EXHAUSTED",'
+            '"message":"You exceeded your current quota; check your plan and billing details. '
+            'Rate limit exceeded: RPM window."}}'
+        )
+
+        def invoke(model: str) -> str:
+            calls.append(model)
+            if len(calls) == 1:
+                return rate_limit_error
+            return "retry result"
+
+        result = client._call_with_model_switch(
+            "gemini-rate-limited",
+            ["gemini-fallback"],
+            "vision",
+            invoke,
+            max_retries=3,
+        )
+
+        self.assertEqual(result, "retry result")
+        self.assertEqual(calls, ["gemini-rate-limited", "gemini-rate-limited"])
+
+    def test_json_payment_failure_remains_billing_error(self):
+        classified = classify_google_error(RuntimeError(
+            '{"error":{"code":400,"status":"FAILED_PRECONDITION",'
+            '"message":"Payment method declined; billing account requires attention."}}'
+        ))
+
+        self.assertEqual(classified.kind, GoogleErrorKind.BILLING)
+        self.assertTrue(classified.should_switch_model)
+        self.assertFalse(classified.should_retry_same_model)
+
     def test_rate_limit_retries_same_model_before_user_visible_failure(self):
         classified = classify_google_error(RuntimeError(
             "429 Too Many Requests: rate limit exceeded for current project"

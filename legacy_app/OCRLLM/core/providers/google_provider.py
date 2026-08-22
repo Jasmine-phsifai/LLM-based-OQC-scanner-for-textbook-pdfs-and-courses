@@ -350,6 +350,15 @@ def _classify_google_json_error(payload: dict, original_message: str) -> Classif
     status = str(payload.get("status") or "").strip().lower()
     message = str(payload.get("message") or original_message)
     lowered = " ".join([status, str(code or ""), message, original_message]).lower()
+    rate_limit_markers = ("rate limit", "too many requests", "rpm", "tpm", "rpd")
+    has_rate_limit_marker = any(marker in lowered for marker in rate_limit_markers)
+    is_explicit_quota_exhaustion = (
+        "you exceeded your current quota" in lowered
+        and "check your plan and billing details" in lowered
+    )
+    is_quota_or_rate_error = (
+        code == 429 or status == "resource_exhausted" or "quota" in lowered
+    )
 
     if code == 404 or status == "not_found" or ("not found" in lowered and "model" in lowered):
         return ClassifiedGoogleError(GoogleErrorKind.INVALID_MODEL, True, False, original_message)
@@ -359,17 +368,14 @@ def _classify_google_json_error(payload: dict, original_message: str) -> Classif
         or "api key not valid" in lowered
     ):
         return ClassifiedGoogleError(GoogleErrorKind.AUTH, False, False, original_message)
+    if is_quota_or_rate_error and has_rate_limit_marker:
+        return ClassifiedGoogleError(GoogleErrorKind.RATE_LIMIT, False, True, original_message)
+    if is_explicit_quota_exhaustion:
+        return ClassifiedGoogleError(GoogleErrorKind.QUOTA_EXHAUSTED, True, False, original_message)
     if "billing" in lowered or "payment" in lowered or ("insufficient" in lowered and "fund" in lowered):
         return ClassifiedGoogleError(GoogleErrorKind.BILLING, True, False, original_message)
-    if code == 429 or status == "resource_exhausted" or "quota" in lowered:
-        if (
-            code == 429
-            or "rate limit" in lowered
-            or "too many requests" in lowered
-            or "rpm" in lowered
-            or "tpm" in lowered
-            or "rpd" in lowered
-        ):
+    if is_quota_or_rate_error:
+        if code == 429:
             return ClassifiedGoogleError(GoogleErrorKind.RATE_LIMIT, False, True, original_message)
         return ClassifiedGoogleError(GoogleErrorKind.QUOTA_EXHAUSTED, True, False, original_message)
     if "safety" in lowered or "blocked" in lowered:
