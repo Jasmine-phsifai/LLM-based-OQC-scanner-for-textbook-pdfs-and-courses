@@ -115,6 +115,10 @@ Future agents must assume the following and verify before trusting any claim:
   before a provider call. Strict `resume=True` loading retains its existing
   `RESUME_STATE_INVALID` classification. This is a no-write structural preflight,
   not a promise that later permission or filesystem races can be predicted.
+  Checkpoint eligibility uses the exact built-in `DashScopeSettings` type or a
+  caller-declared injected `resume_identity`; a user provider's class name has
+  no effect. This keeps eligibility aligned with configuration, dispatch, and
+  resume fingerprinting.
 
 - **Legacy media repair is open debt, not a porting template.** The normal
   video manifest crash, missing-frame false success, and failed-audio cleanup

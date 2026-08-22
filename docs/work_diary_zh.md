@@ -90,6 +90,8 @@
 18. ~~active candidate recovery 忽略 failure scope~~ → 已要求 quota/unavailable/permission 三类错误都必须
     明确为 model scope 才能切候选；account quota 与 provider outage 保留原错误并停止，链耗尽也不再继承
     最后一个模型的 scope，见 #024。
+19. ~~automatic checkpoint 用类名冒充内置 provider 身份~~ → 已改为精确 `DashScopeSettings` 类型判断；
+    同名 injected provider 在普通文件输出模式正常执行且不生成 sidecar，见 #025。
 
 ## 条目格式
 
@@ -1137,3 +1139,35 @@ Pillow、OpenAI、httpx、onnxruntime 或 google-genai。没有网络/provider/�
 **遗留/下一步。** Stage M paid live exit 仍需用户单独批准 DashScope 预算；本轮离线结果不替代它。Google
 follow-on 现在可以直接依赖共享 scope 规则，503/provider outage 不需要 adapter 私有绕行。下一轮继续优先
 检查已建 active 功能的可证明缺陷；没有更高价值证据时再做 Stage A 只读调研。
+
+## #025 — 2026-08-23：automatic checkpoint 不再按 provider 类名猜身份
+
+**任务。** 证明并修复 `_can_checkpoint_image()` 的类型身份冲突：用户注入的 provider 即使碰巧命名为
+`DashScopeSettings`，也不能被当成内置 DashScope 而强制进入 automatic checkpoint；普通 `output_dir`
+写出必须照常工作，显式 `resume=True` 的稳定身份要求保持不变。
+
+**上下文与方案。** 当前 `Config` 只把精确内置 `DashScopeSettings` 归一化为 built-in，resolver 与 resume
+fingerprint 也都使用精确类型；只有 checkpoint eligibility 比较 `type(provider).__name__`。因此同名 injected
+对象先被错误判为“可 checkpoint”，随后 fingerprint 又正确识别为 injected，并在 provider 调用前因缺少
+`resume_identity` 抛错。比较两条路径：①导入现有轻量 settings 类型并使用 `type(...) is DashScopeSettings`；
+②增加通用 checkpoint capability marker/protocol。选择①。injected provider 已经用 `resume_identity` 表达
+稳定身份，新增第二个 marker 会重复权威，而且 Stage 2 尚未引入第二个内置 adapter。
+
+**失败优先证据与实现。** 新增 public `recognize()` 回归，在测试函数内定义一个普通、无
+`resume_identity`、但类名恰为 `DashScopeSettings` 的 injected provider，并设置 `output_dir`。修前
+**1 failed / 0.42s**：得到 `CONFIG_INVALID`，provider 调用数为 0。修复只有两行：`recognize.py` 直接导入
+既有 settings 类型，并把字符串类名比较改成精确类型比较。修后同一回归证明 provider 调用一次、返回与磁盘
+Markdown 一致、结果路径正确，且 canonical `.ocrllm-state.json` 不存在。原有 identity-less
+`resume=True` 回归继续证明显式恢复在零调用时拒绝。
+
+**审查与验证。** 两名只读 scout 分别复核运行拓扑和测试 seam，均确认配置、resolver、fingerprint 的精确
+类型规则一致，`provider_settings.py` 不反向导入 `recognize`，因此没有循环依赖；`Config` 在 recognition
+模块加载时本来就需要同一 settings 模块。image-resume/import-contract/settings focused 集
+**77 passed / 1.68s**；root 全量 **1067 passed / 94.41s**。`compileall`、plain-import probe 与
+`git diff --check` 通过；plain `import ocrllm` 未加载 provider settings，也未加载 Pillow、OpenAI、httpx、
+onnxruntime 或 google-genai。没有网络/provider/付费调用，没有修改 frozen `contracts/`、`worker/`、
+legacy、social media 或用户临时交接文件。
+
+**遗留/下一步。** 这次只统一已经存在的 built-in 身份规则，不建立未来 adapter registry。Stage 2 真正加入
+第二个内置 provider 时，再把 stable identity 设计为 provider-neutral seam；现在提前抽象没有消费者。下一轮
+继续查找已建 active 功能的可证明缺陷；若没有更高价值证据，则转入队列 #6 的 Stage A 只读调研。

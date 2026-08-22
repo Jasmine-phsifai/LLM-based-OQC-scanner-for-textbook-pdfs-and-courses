@@ -528,6 +528,32 @@ def test_resume_rejects_identity_less_injected_provider_without_invocation(
     assert provider.calls == 0
 
 
+def test_injected_provider_named_like_builtin_writes_without_checkpoint(
+    tmp_path,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+
+    class DashScopeSettings:
+        calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            return "# Injected provider\n"
+
+    provider = DashScopeSettings()
+    result = recognize(
+        source,
+        config=Config(provider=provider, output_dir=output_dir),
+    )
+
+    assert provider.calls == 1
+    assert result.markdown == "# Injected provider\n"
+    assert result.output_path == output_dir / "board_board.md"
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert not _state_path(output_dir).exists()
+
+
 def test_credential_pool_identity_and_secrets_are_excluded_from_state(
     tmp_path,
     monkeypatch,
