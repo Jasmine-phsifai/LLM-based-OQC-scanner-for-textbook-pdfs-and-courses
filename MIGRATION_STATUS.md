@@ -40,7 +40,9 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   removed; its audio-specific configuration boundary now lands with executable
   Stage A1 short-MP3 recognition, followed by Stage A2 FileTrans. The A1
   offline slice may proceed independently of the open Stage M paid image smoke;
-  its own live gate remains separately budgeted;
+  its own live gate remains separately budgeted. The probe dependency spike
+  selected lazy `miniaudio>=1.71,<2`; it lands with the executable MP3 probe,
+  while FFmpeg/PyAV/Mutagen remain outside the A1 runtime;
 - not started: Stage A1/A2 audio recognition and the active PDFium phase.
 
 The defect register is in

@@ -64,6 +64,13 @@ slice. Stage A1 and A2 have not started. Stage A1 offline implementation may
 begin after its 2026-08-23 boundary audit; it does not wait on the independent
 Stage M paid image smoke. Each audio live gate remains separately budgeted and
 must not run without explicit maintainer authorization.
+The A1 dependency spike selected lazy `miniaudio>=1.71,<2` for MP3-specific
+metadata plus bounded-memory full decode. It will land with the first executable
+probe, not as an unused extra. FFmpeg, PyAV, Mutagen, and external executable
+requirements are rejected for this slice. Validation will reject malformed or
+undecodable audio and detectable declared/decoded duration mismatch; it will not
+claim that every frame-aligned MP3 truncation can be distinguished from an
+intentionally shorter valid file.
 The built-in Google image adapter is now scoped as a later optional
 vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
 does not copy legacy retry, audio, GUI, or social architecture. It is planned,
@@ -257,7 +264,7 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
 | Snapshot isolation | Provider reads original bytes while a concurrent thread overwrites the source | threaded race probe |
-| Corrupt-input rejection | zero-byte, truncated, and extension/content mismatch all raise `InvalidSource` before dispatch | live probe |
+| Corrupt image-input rejection | zero-byte, truncated, and extension/content mismatch all raise `InvalidSource` before dispatch | live probe |
 | Secret redaction | `api_key` absent from `repr`, error message, and error details | live probe |
 | Live error mapping | 401, 403 `AllocationQuota.FreeTierOnly`, 404, timeout all mapped to correct type and disposition | live paid probe |
 

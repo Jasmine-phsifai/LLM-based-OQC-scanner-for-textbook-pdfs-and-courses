@@ -345,14 +345,23 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 - Accept exactly one local MP3 path. Reject sequences and URLs. Snapshot its
   bytes before validation or dispatch and use compact internal temporary names
   so a long Windows destination path is not repeated at every atomic-write step.
-- Validate MP3 structure before any provider call. A zero-byte, malformed, or
-  truncated file fails before money is spent.
-- Probe duration with an explicit dependency error when the probe tool is
-  absent. Never guess duration; reject files outside the documented short-path
-  boundary rather than silently switching protocols. Select the probe dependency
-  only after a bounded fixture spike proves complete decode, VBR, ID3, truncation,
-  duration, package size, and license behavior; ambient FFmpeg is not a declared
-  product dependency.
+- Validate MP3 structure before any provider call. A zero-byte, wrong-format,
+  malformed, zero-decoded-frame, or detectably incomplete file fails before
+  money is spent. Do not claim universal truncation detection: an MP3 cut on a
+  valid frame boundary without Xing/VBRI or an external expected length is also
+  a valid shorter MP3 and cannot be distinguished locally.
+- The first executable probe adds lazy `miniaudio>=1.71,<2` under `[audio]` and
+  consumes it immediately. Use MP3-specific metadata on the immutable snapshot,
+  then fully exhaust the MP3 stream while discarding PCM chunks and counting
+  decoded frames. Reject a material advertised/decoded duration mismatch outside
+  a fixture-proven MPEG-frame/encoder-padding tolerance. Enforce the provider
+  duration boundary on decoded duration and never silently switch protocols.
+- Do not require or bundle FFmpeg for A1. The tested `imageio-ffmpeg` Windows
+  binary is about 87.6 MB and GPLv3-configured, while no system FFmpeg exists on
+  the target machine; full FFmpeg decode also accepts clean EOF truncation. Keep
+  it only as explicit developer fixture-generation/reference tooling. Mutagen is
+  metadata-only and GPL-2.0-or-later; PyAV is a much broader FFmpeg distribution;
+  neither belongs in the A1 runtime.
 - Make one synchronous short-ASR protocol explicit in the adapter. Do not copy
   legacy's hidden SDK-to-OpenAI-compatible fallback or derive models from name
   substrings. Preflight the final Base64 request envelope rather than copying
@@ -365,8 +374,9 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   identity, before publishing Markdown. `resume=True` may reuse that exact
   result with zero provider calls. A1 has no chunks, segments, task IDs, or
   partial-transcript recovery.
-- Add exact lazy `[audio]` dependencies only when A1 tests prove they are
-  needed. Plain `import ocrllm` remains lightweight.
+- Keep miniaudio imported only inside the executable probe. `[audio]` contains
+  the MP3 probe dependency; provider clients remain in provider-specific extras.
+  Plain `import ocrllm` remains lightweight.
 - Do not add hotwords in A1: the selected short protocol has not proven that
   legacy behavior. Do not add automatic retries, candidate models, or provider
   fallback.
@@ -398,6 +408,13 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   and validation, typed response failures, cancellation, completed-result
   recovery, and output failure. A2 tests cover provider-task resume, segment
   ordering, and incremental publication.
+- A1 probe integration tests use committed synthetic CBR, VBR, and ID3-tagged
+  MP3 fixtures plus empty, deterministic random, one-frame, incomplete-tail, and
+  corrupted-middle cases. Their manifest pins hashes and expected decoded frame
+  counts. A developer-only generator accepts an explicit FFmpeg path; ordinary
+  tests and the installed package never invoke FFmpeg. Five-minute and request-
+  size boundaries are unit-tested from probe results rather than by committing
+  large media files.
 - `import ocrllm` weight unchanged; audio dependencies lazy behind an extra.
 - A1: one bounded real short MP3 transcribed end to end.
 - A2: one bounded real long MP3 plus interrupted polling/resume without

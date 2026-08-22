@@ -63,7 +63,8 @@ recovery, model-aware pool behavior, and correct scout-failure attribution.
 Its paid live exit smoke remains open. The former standalone Stage 2 scaffold
 was removed from the queue: its audio-specific configuration boundary will be
 implemented with executable Stage A1 short-MP3 recognition. Stage A1/A2 are not
-started.
+started. The A1 dependency spike selected lazy `miniaudio>=1.71,<2`; it lands
+with the first executable MP3 probe, not as unused packaging metadata.
 
 All no-cost Stage M exit criteria pass at committed checkpoint `271d96d`.
 `tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,
