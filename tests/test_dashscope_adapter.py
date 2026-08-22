@@ -202,6 +202,31 @@ def test_explicit_dashscope_model_reaches_request_and_result(tmp_path, monkeypat
     assert result.metadata["model"] == "qwen3.7-plus"
 
 
+def test_builtin_adapter_dispatches_repository_unknown_catalog_model(
+    tmp_path,
+    monkeypatch,
+):
+    source = write_test_image(tmp_path / "board.png", size=(12, 13))
+    model = "provider-new-model-2030"
+    client = FakeClient(response=_response(content="# New model\n", model=model))
+    _install_fake_openai(monkeypatch, client)
+    _serve_model_catalog(monkeypatch, model)
+
+    result = recognize(
+        source,
+        config=Config(
+            provider=_settings(),
+            vision_model=VisionModelSettings(name=model),
+        ),
+    )
+
+    assert [call["model"] for call in client.calls] == [model]
+    assert result.markdown == "# New model\n"
+    assert result.metadata["model"] == model
+    assert result.metadata["model_evidence"] == "unproven"
+    assert result.metadata["model_proven"] is False
+
+
 def test_builtin_review_pass_makes_two_no_retry_requests_and_returns_review(
     tmp_path,
     monkeypatch,
