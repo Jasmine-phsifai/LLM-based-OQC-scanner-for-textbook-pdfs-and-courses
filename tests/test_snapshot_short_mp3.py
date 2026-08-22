@@ -22,6 +22,68 @@ FIXTURE = (
 )
 
 
+class _CloseFailingStream:
+    def __init__(self, wrapped, *, close_error, write_error=None) -> None:
+        self.wrapped = wrapped
+        self.close_error = close_error
+        self.write_error = write_error
+
+    def __getattr__(self, name):
+        return getattr(self.wrapped, name)
+
+    def write(self, data):
+        if self.write_error is not None:
+            raise self.write_error
+        return self.wrapped.write(data)
+
+    def close(self) -> None:
+        self.wrapped.close()
+        raise self.close_error
+
+
+def _install_stream_close_failure(
+    monkeypatch,
+    *,
+    source: Path,
+    stream_kind: str,
+    close_error: BaseException,
+    write_error: BaseException | None = None,
+) -> None:
+    original_open = Path.open
+
+    def wrap_opened_stream(path, *args, **kwargs):
+        opened = original_open(path, *args, **kwargs)
+        mode = args[0] if args else kwargs.get("mode", "r")
+        is_target = (
+            stream_kind == "source" and path == source and mode == "rb"
+        ) or (
+            stream_kind == "destination"
+            and path.name == "source.mp3"
+            and mode == "xb"
+        )
+        if not is_target:
+            return opened
+        return _CloseFailingStream(
+            opened,
+            close_error=close_error,
+            write_error=write_error,
+        )
+
+    monkeypatch.setattr(Path, "open", wrap_opened_stream)
+
+
+def _primary_error(primary_kind: str) -> BaseException:
+    if primary_kind == "typed":
+        return OutputError("primary output failure", code="OUTPUT_WRITE_FAILED")
+    if primary_kind == "ordinary":
+        return RuntimeError("primary ordinary failure")
+    if primary_kind == "keyboard_interrupt":
+        return KeyboardInterrupt("primary keyboard interrupt")
+    if primary_kind == "system_exit":
+        return SystemExit("primary system exit")
+    raise AssertionError(f"unknown primary kind: {primary_kind}")
+
+
 def test_snapshot_short_mp3_owns_compact_validated_bytes_and_cleans_up(
     tmp_path,
     monkeypatch,
@@ -206,11 +268,8 @@ def test_snapshot_short_mp3_cleans_partial_copy_after_midstream_read_failure(
                 raise OSError(secret)
             return self.wrapped.read(size)
 
-        def __enter__(self):
-            return self
-
-        def __exit__(self, error_type, error, traceback):
-            return self.wrapped.__exit__(error_type, error, traceback)
+        def close(self) -> None:
+            self.wrapped.close()
 
     def wrap_source_open(path, *args, **kwargs):
         opened = original_open(path, *args, **kwargs)
@@ -247,13 +306,10 @@ def test_snapshot_short_mp3_closes_source_before_probe_and_yield(
         def read(self, size):
             return self.wrapped.read(size)
 
-        def __enter__(self):
-            return self
-
-        def __exit__(self, error_type, error, traceback):
+        def close(self) -> None:
             nonlocal source_closed
+            self.wrapped.close()
             source_closed = True
-            return self.wrapped.__exit__(error_type, error, traceback)
 
     def observe_source_open(path, *args, **kwargs):
         opened = original_open(path, *args, **kwargs)
@@ -292,11 +348,8 @@ def test_snapshot_short_mp3_rejects_short_snapshot_write(
         def write(self, data):
             return self.wrapped.write(data[:-1])
 
-        def __enter__(self):
-            return self
-
-        def __exit__(self, error_type, error, traceback):
-            return self.wrapped.__exit__(error_type, error, traceback)
+        def close(self) -> None:
+            self.wrapped.close()
 
     def short_write_snapshot(path, *args, **kwargs):
         opened = original_open(path, *args, **kwargs)
@@ -309,6 +362,135 @@ def test_snapshot_short_mp3_rejects_short_snapshot_write(
             raise AssertionError("unreachable")
 
     assert caught.value.code == "OUTPUT_WRITE_FAILED"
+    assert list((tmp_path / "temp").glob("ocrllm-audio-*")) == []
+
+
+@pytest.mark.parametrize(
+    ("stream_kind", "expected_error", "expected_code"),
+    [
+        ("source", InvalidSource, "SOURCE_UNREADABLE"),
+        ("destination", OutputError, "OUTPUT_WRITE_FAILED"),
+    ],
+)
+def test_snapshot_short_mp3_types_close_only_stream_failure(
+    tmp_path,
+    monkeypatch,
+    stream_kind,
+    expected_error,
+    expected_code,
+) -> None:
+    secret = f"{stream_kind}-close-secret-4328"
+    source = tmp_path / "valid.mp3"
+    source.write_bytes(b"bytes")
+    _install_stream_close_failure(
+        monkeypatch,
+        source=source,
+        stream_kind=stream_kind,
+        close_error=OSError(secret),
+    )
+    monkeypatch.setattr(
+        snapshot_module,
+        "probe_short_mp3",
+        lambda _path: (_ for _ in ()).throw(
+            AssertionError("probe must not run after a stream-close failure")
+        ),
+    )
+
+    with pytest.raises(expected_error) as caught:
+        with snapshot_module.snapshot_short_mp3(source, temp_dir=tmp_path / "temp"):
+            raise AssertionError("unreachable")
+
+    assert caught.value.code == expected_code
+    assert secret not in str(caught.value)
+    assert secret not in repr(caught.value)
+    assert secret not in repr(caught.value.details)
+    assert list((tmp_path / "temp").glob("ocrllm-audio-*")) == []
+
+
+@pytest.mark.parametrize("stream_kind", ["source", "destination"])
+@pytest.mark.parametrize(
+    "primary_kind",
+    ["typed", "ordinary", "keyboard_interrupt", "system_exit"],
+)
+def test_snapshot_short_mp3_preserves_primary_when_stream_close_fails(
+    tmp_path,
+    monkeypatch,
+    stream_kind,
+    primary_kind,
+) -> None:
+    secret = f"{stream_kind}-close-secret-8731"
+    source = tmp_path / "valid.mp3"
+    source.write_bytes(b"bytes")
+    primary = _primary_error(primary_kind)
+    write_error = primary if stream_kind == "destination" else None
+    _install_stream_close_failure(
+        monkeypatch,
+        source=source,
+        stream_kind=stream_kind,
+        close_error=OSError(secret),
+        write_error=write_error,
+    )
+    if stream_kind == "source":
+
+        def fail_copy(*_args, **_kwargs):
+            raise primary
+
+        monkeypatch.setattr(snapshot_module, "_copy_open_source", fail_copy)
+    monkeypatch.setattr(
+        snapshot_module,
+        "probe_short_mp3",
+        lambda _path: (_ for _ in ()).throw(
+            AssertionError("probe must not run after a copy failure")
+        ),
+    )
+
+    with pytest.raises(type(primary)) as caught:
+        with snapshot_module.snapshot_short_mp3(source, temp_dir=tmp_path / "temp"):
+            raise AssertionError("unreachable")
+
+    assert caught.value is primary
+    assert secret not in str(caught.value)
+    assert secret not in repr(caught.value)
+    if isinstance(primary, OutputError):
+        detail_name = (
+            "source_stream_cleanup_failed"
+            if stream_kind == "source"
+            else "snapshot_stream_cleanup_failed"
+        )
+        assert primary.details[detail_name] is True
+    assert list((tmp_path / "temp").glob("ocrllm-audio-*")) == []
+
+
+@pytest.mark.parametrize("stream_kind", ["source", "destination"])
+@pytest.mark.parametrize("control_type", [KeyboardInterrupt, SystemExit])
+def test_snapshot_short_mp3_propagates_process_control_from_stream_close(
+    tmp_path,
+    monkeypatch,
+    stream_kind,
+    control_type,
+) -> None:
+    source = tmp_path / "valid.mp3"
+    source.write_bytes(b"bytes")
+    control = control_type(f"{stream_kind} close process control")
+    _install_stream_close_failure(
+        monkeypatch,
+        source=source,
+        stream_kind=stream_kind,
+        close_error=control,
+    )
+    monkeypatch.setattr(
+        snapshot_module,
+        "probe_short_mp3",
+        lambda _path: (_ for _ in ()).throw(
+            AssertionError("probe must not run after process control")
+        ),
+    )
+
+    with pytest.raises(control_type) as caught:
+        with snapshot_module.snapshot_short_mp3(source, temp_dir=tmp_path / "temp"):
+            raise AssertionError("unreachable")
+
+    assert caught.value is control
     assert list((tmp_path / "temp").glob("ocrllm-audio-*")) == []
 
 
@@ -359,7 +541,7 @@ def test_snapshot_short_mp3_maps_owned_snapshot_write_failures(
     assert list((tmp_path / "temp").glob("ocrllm-audio-*")) == []
 
 
-def test_snapshot_cleanup_failure_is_typed_after_success(
+def test_snapshot_cleanup_failure_is_typed_despite_ambient_exception(
     tmp_path,
     monkeypatch,
 ) -> None:
@@ -375,9 +557,15 @@ def test_snapshot_cleanup_failure_is_typed_after_success(
 
     monkeypatch.setattr(snapshot_module.shutil, "rmtree", fail_normal_cleanup)
 
-    with pytest.raises(OutputError) as caught:
-        with snapshot_module.snapshot_short_mp3(source, temp_dir=tmp_path / "temp"):
-            pass
+    try:
+        raise RuntimeError("ambient caller exception")
+    except RuntimeError:
+        with pytest.raises(OutputError) as caught:
+            with snapshot_module.snapshot_short_mp3(
+                source,
+                temp_dir=tmp_path / "temp",
+            ):
+                pass
 
     assert caught.value.code == "OUTPUT_WRITE_FAILED"
     retained = list((tmp_path / "temp").glob("ocrllm-audio-*"))

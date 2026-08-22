@@ -76,8 +76,10 @@ The snapshot copies one regular local `.mp3` through an open file handle into a
 fixed `source.mp3` name, rejects growth/shrink and a 25 MiB local resource
 ceiling, closes the caller's handle, then probes those owned bytes before
 yielding. Short destination writes fail as output errors instead of being
-misreported by the decoder. This ceiling is not a provider request limit; the
-selected adapter must separately preflight its exact Base64/JSON envelope.
+misreported by the decoder. Source and destination close-only failures are
+typed and redacted; an earlier typed or process-control failure remains primary.
+This ceiling is not a provider request limit; the selected adapter must
+separately preflight its exact Base64/JSON envelope.
 The built-in Google image adapter is now scoped as a later optional
 vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
 does not copy legacy retry, audio, GUI, or social architecture. It is planned,
@@ -115,14 +117,13 @@ Future agents must assume the following and verify before trusting any claim:
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
 
-- **Snapshot stream-close failures still need typed precedence.** The image and
-  short-MP3 copy paths now reject short destination writes before decode or
-  provider dispatch. Their source and destination file context managers can
-  still let an `OSError` or `ValueError` from close escape raw and replace an
-  earlier typed copy failure. Repair each modality locally: a close-only failure
-  becomes the matching typed source/output error, while an existing primary is
-  preserved with one safe cleanup-failure detail. Do not create a generic media
-  stream framework merely to share this policy.
+- **Image snapshot stream-close failures still need typed precedence.** The
+  image and short-MP3 copy paths reject short destination writes before decode
+  or provider dispatch. Audio now explicitly closes both streams, types a
+  close-only failure, and preserves an earlier primary. Image source and
+  destination context managers can still let an `OSError` or `ValueError` from
+  close escape raw and replace an earlier typed copy failure. Repair image
+  locally with the same policy; do not create a generic media stream framework.
 
 - **Active atomic output no longer amplifies user filenames, but arbitrary deep
   Windows paths remain unsupported.** Markdown and image-resume state writers use

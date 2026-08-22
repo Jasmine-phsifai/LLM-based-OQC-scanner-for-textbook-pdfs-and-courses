@@ -6,7 +6,6 @@ import atexit
 import os
 import shutil
 import stat
-import sys
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -49,8 +48,10 @@ def snapshot_short_mp3(
     _validate_source_path(source)
     source_stream = _open_source(source)
     snapshot_root: Path | None = None
+    primary_error: BaseException | None = None
     try:
-        with source_stream:
+        source_error: BaseException | None = None
+        try:
             source_size = _opened_source_size(source_stream)
             temporary_parent = _prepare_temporary_parent(temp_dir)
             try:
@@ -69,22 +70,32 @@ def snapshot_short_mp3(
                 snapshot_path,
                 expected_size=source_size,
             )
+        except BaseException as error:
+            source_error = error
+            raise
+        finally:
+            _close_source_stream(
+                source_stream,
+                primary_error=source_error,
+            )
         duration_seconds = probe_short_mp3(snapshot_path)
         yield ShortMP3Snapshot(
             path=snapshot_path,
             byte_size=copied_size,
             duration_seconds=duration_seconds,
         )
+    except BaseException as error:
+        primary_error = error
+        raise
     finally:
         if snapshot_root is not None:
-            active_error = sys.exc_info()[1]
             try:
                 _delete_snapshot_directory(snapshot_root)
             except OutputError:
-                if active_error is None:
+                if primary_error is None:
                     raise
-                if isinstance(active_error, OCRLLMError):
-                    active_error._add_safe_detail("snapshot_cleanup_failed", True)
+                if isinstance(primary_error, OCRLLMError):
+                    primary_error._add_safe_detail("snapshot_cleanup_failed", True)
 
 
 def _validate_mp3_suffix(source_path: Path) -> None:
@@ -209,7 +220,8 @@ def _copy_open_source(
         ) from error
 
     copied_size = 0
-    with snapshot_stream:
+    primary_error: BaseException | None = None
+    try:
         while copied_size < expected_size:
             read_size = min(COPY_CHUNK_BYTES, expected_size - copied_size)
             try:
@@ -254,7 +266,59 @@ def _copy_open_source(
                 "A temporary audio snapshot could not be made durable.",
                 code="OUTPUT_WRITE_FAILED",
             ) from error
+    except BaseException as error:
+        primary_error = error
+        raise
+    finally:
+        _close_snapshot_stream(
+            snapshot_stream,
+            primary_error=primary_error,
+        )
     return copied_size
+
+
+def _close_source_stream(
+    source_stream,
+    *,
+    primary_error: BaseException | None,
+) -> None:
+    """Close the caller source without replacing an active failure."""
+
+    try:
+        source_stream.close()
+    except (OSError, ValueError):
+        if primary_error is None:
+            raise InvalidSource(
+                "The opened audio source could not be closed safely.",
+                code="SOURCE_UNREADABLE",
+            ) from None
+        if isinstance(primary_error, OCRLLMError):
+            primary_error._add_safe_detail(
+                "source_stream_cleanup_failed",
+                True,
+            )
+
+
+def _close_snapshot_stream(
+    snapshot_stream,
+    *,
+    primary_error: BaseException | None,
+) -> None:
+    """Close the owned snapshot without replacing an active failure."""
+
+    try:
+        snapshot_stream.close()
+    except (OSError, ValueError):
+        if primary_error is None:
+            raise OutputError(
+                "The temporary audio snapshot could not be closed safely.",
+                code="OUTPUT_WRITE_FAILED",
+            ) from None
+        if isinstance(primary_error, OCRLLMError):
+            primary_error._add_safe_detail(
+                "snapshot_stream_cleanup_failed",
+                True,
+            )
 
 
 def _raise_source_changed() -> None:
