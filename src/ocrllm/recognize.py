@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .config import Config
-from .errors import OCRLLMError
+from .errors import OCRLLMError, OutputError
 
 if TYPE_CHECKING:
     from .result import RecognitionResult
@@ -83,14 +83,23 @@ def _recognize(
                     from .output.load_image_resume_state import load_image_resume_state
                     from .reuse_image_resume_state import reuse_image_resume_state
 
+                    # The sibling suffix is a durable persistence convention.
+                    resume_state_path = output_path.with_name(
+                        f"{output_path.stem}.ocrllm-state.json"
+                    )
+                    if (
+                        not cfg.resume
+                        and resume_state_path.exists()
+                        and not resume_state_path.is_file()
+                    ):
+                        raise OutputError(
+                            "The image resume state path is not a regular file.",
+                            code="OUTPUT_PATH_INVALID",
+                        ) from None
                     resume_identity = fingerprint_image_request(
                         fingerprint_image_sources(source_paths, validated_paths),
                         profile=profile,
                         config=cfg,
-                    )
-                    # The sibling suffix is a durable persistence convention.
-                    resume_state_path = output_path.with_name(
-                        f"{output_path.stem}.ocrllm-state.json"
                     )
                     resume_state = (
                         load_image_resume_state(resume_state_path)

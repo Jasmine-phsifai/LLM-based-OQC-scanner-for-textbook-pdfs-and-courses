@@ -236,6 +236,42 @@ def test_resume_rejects_existing_output_without_state_before_provider_call(
     assert calls == []
 
 
+def test_state_directory_is_rejected_before_provider_in_both_modes(
+    tmp_path,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    _state_path(output_dir).mkdir()
+
+    class Provider:
+        resume_identity = "state-target-preflight-v1"
+        calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            return "must not run"
+
+    provider = Provider()
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(provider=provider, output_dir=output_dir),
+        )
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert provider.calls == 0
+
+    with pytest.raises(ResumeStateError) as resume_error:
+        recognize(
+            source,
+            config=Config(provider=provider, output_dir=output_dir, resume=True),
+        )
+
+    assert resume_error.value.code == "RESUME_STATE_INVALID"
+    assert provider.calls == 0
+
+
 def test_resume_rejects_changed_source_bytes_and_request_settings(
     tmp_path,
     monkeypatch,

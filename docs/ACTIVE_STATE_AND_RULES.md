@@ -93,6 +93,25 @@ Future agents must assume the following and verify before trusting any claim:
   change. This closes suffix-induced overflow only; it is not general `\\?\`
   extended-path support, and a deeper directory can still exceed the OS limit.
 
+- **Concurrent recognition of one output target can split Markdown and resume
+  ownership (open, high priority).** Two calls can both pass the absent-output
+  preflight. Slot/completed checkpoints replace the same canonical sidecar before
+  no-overwrite Markdown publication selects a winner, so the winner's Markdown can
+  remain beside the loser's state. An event-coordinated offline probe reproduced
+  this with one success, one `OUTPUT_EXISTS`, and mismatched durable artifacts.
+  Fixing only the final writer is insufficient because partial slot checkpoints
+  can arrive later. The next correction must coordinate one output from the first
+  checkpoint through publication and recheck state/output after ownership is
+  acquired; decide and document whether the supported boundary is process-local or
+  cross-process before choosing the lock mechanism.
+
+- **Automatic image checkpoint targets are preflighted before dispatch.** When
+  `resume=False` but stable provider identity enables paid-work checkpoints, an
+  existing non-file canonical sidecar target now raises `OUTPUT_PATH_INVALID`
+  before a provider call. Strict `resume=True` loading retains its existing
+  `RESUME_STATE_INVALID` classification. This is a no-write structural preflight,
+  not a promise that later permission or filesystem races can be predicted.
+
 - **Legacy media repair is open debt, not a porting template.** The normal
   video manifest crash, missing-frame false success, and failed-audio cleanup
   deletion found in commit `6b2d9eb` are fixed with direct regressions. Audio,

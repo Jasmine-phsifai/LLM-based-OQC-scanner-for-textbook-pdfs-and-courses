@@ -79,6 +79,11 @@
 14. ~~active image 输出/恢复状态的 Windows 临时路径放大~~ → 已改为固定短名的同目录临时文件，
     并用两条独立的 UTF-16 路径边界回归验证，见 #020。这里只消除库自己追加长后缀造成的失败，
     不承诺任意深目录或通用 `\\?\` long-path 支持。
+15. ~~automatic checkpoint 的非法 sidecar 目标延迟到 provider 之后才失败~~ → 已在非 resume 路径
+    增加零写入的 regular-file preflight，保留 resume 原有错误类型，见 #021。
+16. **active 同目标并发事务竞态（高优先级，下一轮）**：两个调用可同时通过 output 不存在检查，
+    winner Markdown 最终与 loser sidecar 配对。已用 Events + 真实 writer 稳定复现；先确定 active API
+    是否只承诺进程内并发，再选择覆盖 checkpoint 到 publication 的 per-output lock，不能只锁最终 writer。
 
 ## 条目格式
 
@@ -963,3 +968,44 @@ Windows 输出目录。输出目录达到约 215 units 时，44 字符临时名�
 sidecar 也比 Markdown 长 15 字符。若未来真实案例要求更深目录，应另做 provider 调用前 preflight 或完整
 extended-path 方案，不能把本轮结果宣传为通用 long-path 支持。下一轮重新按成熟度队列选择已建功能缺陷；
 Stage A 仍受 Stage M live 出口与 Stage 2 门禁约束。
+
+## #021 — 2026-08-23：automatic checkpoint 的非法 sidecar 目标提前失败
+
+**任务。** 审计 active image 输出/resume 的清理和覆盖边界，修复一个已经建立且可复现的正确性缺陷。
+最初重点是 #020 之后的临时文件清理；代码复核后把目标收窄为 automatic checkpoint 的派生 sidecar
+路径：`resume=False` 时，稳定 provider 仍会自动保存 paid-work checkpoint，但现有代码只在 provider
+返回之后才发现 `<output>.ocrllm-state.json` 已经是目录。成功标准是该无效目标在 provider 前以 typed
+path error 拒绝，provider 调用数为零，同时 `resume=True` 的既有 `RESUME_STATE_INVALID` 契约不变。
+
+**假设复核与选择。** 两条方案是：①在 sidecar writer 内继续依赖最终 `os.replace()`；②在
+`recognize.py` 已经派生 durable sidecar 名、但尚未 fingerprint/dispatch 的位置做无副作用检查。选择②。
+writer 仍负责真实写入错误和竞态；preflight 只拒绝此刻明确存在且不是 regular file 的目标，不尝试用
+探测文件预测权限或支持任意 long path。为一个局部三条件判断新建 validator 文件会增加冷读跳转，因而
+直接放在唯一的 checkpoint 建立位置。检查只用于 `resume=False`；resume 模式继续交给严格 loader，避免
+把既有 `ResumeStateError` 改成 `OutputError`。
+
+**失败优先证据与修复。** 新测试建立一个与 canonical sidecar 同名的目录，并使用带
+`resume_identity` 的 injected provider。修前为 **1 failed / 2.26s**：得到
+`OUTPUT_WRITE_FAILED` 而非 `OUTPUT_PATH_INVALID`，且执行已越过 provider。修复把 sidecar 名派生提前到
+fingerprint 之前，非 resume automatic-checkpoint 路径若目标存在且非 regular file，立即抛
+`OUTPUT_PATH_INVALID`。同一测试随后再以 `resume=True` 调用，确认仍得到 `RESUME_STATE_INVALID`；两种
+模式 provider 调用数均为零。单测最终 **1 passed / 0.28s**，image-resume/output/M2/process-kill/batch
+focused 集 **36 passed / 2.00s**。第一次 broader 命令误写不存在的
+`tests/test_batch_recovery.py`，在 collection 前停止、零测试执行；改用实际
+`tests/test_recognize_batch_execution.py` 后得到上述 36 项结果，不把命令错误计作产品失败。
+
+**并发审计的新发现。** 两名只读 scout 独立复核同目标并发。Events 控制的真实双线程调用稳定得到：
+caller A 成功、caller B 为 `OUTPUT_EXISTS`，最终 Markdown 是 A，但 canonical sidecar 的 Markdown 是 B。
+原因是 slot checkpoint 和 completed state 都在 no-overwrite Markdown 决胜前替换同一个 sidecar；单个
+atomic writer 正确不代表两个文件构成事务。只锁最终 writer、调换最终写入顺序、或只在
+`recognize_batch` 查重都不能关闭晚到的 partial checkpoint。进程内 per-output serialization 可以覆盖
+公开的线程/batch 并发；跨进程 lock 还需要稳定 inode、崩溃恢复和 stale-owner 语义。该缺陷比本轮小修
+更宽，不能在没有产品承诺审计和失败回归的情况下仓促加入锁，已登记为队列 #16 高优先级下一轮。
+
+**验证与边界。** 最终 root 全量 **1062 passed / 94.54s**；两个修改 Python 文件 `py_compile` 与
+`git diff --check` 通过。无网络/provider/付费调用；未修改 `contracts/`、`worker/`、legacy 或
+social media，也未触碰用户临时交接文件。race scout 在系统 temp 下留下一个已确认为空的 probe 目录；
+递归删除先被执行策略拒绝，随后非递归 PowerShell `Remove-Item` 又触发系统自身
+`NullReferenceException`，目录仍在。路径为
+`C:\Users\OMG\AppData\Local\Temp\ocrllm-race-audit-tujt3s9x`，不在仓库且不含文件；不使用跨 shell 或
+更危险删除手段绕过该环境问题。
