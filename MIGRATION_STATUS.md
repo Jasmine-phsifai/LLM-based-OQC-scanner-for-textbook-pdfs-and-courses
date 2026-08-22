@@ -42,7 +42,9 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   offline slice may proceed independently of the open Stage M paid image smoke;
   its own live gate remains separately budgeted. The provider-independent MP3
   probe now uses lazy `miniaudio>=1.71,<2`, fully decodes bounded five-minute
-  snapshots, and rejects the fixture-proven malformed cases before dispatch;
+  snapshots, and rejects the fixture-proven malformed cases before dispatch.
+  One local `.mp3` is copied through an open handle to fixed `source.mp3`, with
+  a separate 25 MiB local safety ceiling and cleanup ownership;
   FFmpeg/PyAV/Mutagen remain outside the A1 runtime. Audio configuration,
   provider dispatch, persistence, and the public facade are not implemented;
 - not started: Stage A2 audio recognition and the active PDFium phase.
@@ -219,7 +221,7 @@ The following directions remain traceable but are not current work:
   retained only in `legacy_app/`.
 - Public PDF, audio recognition, and video in the active package: phase-gated
   and unavailable as stated in the current active-state document. A1's internal
-  local MP3 probe is the only implemented audio component.
+  local MP3 snapshot/probe seam is the only implemented audio component.
 
 ## Obsolete Prose Kept For Trace
 

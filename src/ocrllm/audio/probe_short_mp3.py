@@ -16,9 +16,9 @@ _STREAM_FRAMES_PER_READ = 4096
 def probe_short_mp3(snapshot_path: Path) -> float:
     """Return decoded seconds for one immutable MP3 snapshot.
 
-    The caller owns source snapshotting and encoded-byte limits. This function
-    owns MP3-specific metadata validation, bounded-memory full decode, and the
-    Stage A1 five-minute decoded-duration limit.
+    The caller owns source snapshotting and provider-envelope limits. This
+    function owns MP3-specific metadata validation, bounded-memory full decode,
+    and the Stage A1 five-minute decoded-duration limit.
     """
 
     backend = load_miniaudio()

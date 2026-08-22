@@ -1,7 +1,8 @@
 # Plan: Phase 1 Maturation, Then Phase 2 MP3 Audio
 
 Status: **approved current work; Stage M offline implementation complete, live
-exit gate open; Stage A1 local MP3 probe implemented.** Updated 2026-08-23.
+exit gate open; Stage A1 local MP3 snapshot/probe implemented.** Updated
+2026-08-23.
 
 Read `docs/ACTIVE_STATE_AND_RULES.md` first. It defines document precedence, the
 two policy changes this plan depends on, and the coding rules.
@@ -13,8 +14,8 @@ Defect repair D1-D7    docs/plan_phase1_defects_and_provider_split.md, Stage 1.
                        CLOSED 2026-08-18. Do not duplicate.
 Phase 1 maturation     This document, Stage M. Offline implementation complete;
                        paid live exit smoke remains open.
-Phase 2 mp3 audio      This document, Stage A1/A2. A1 probe implemented; the
-                       recognition slice remains in progress. A2 not started.
+Phase 2 mp3 audio      This document, Stage A1/A2. A1 snapshot/probe implemented;
+                       recognition remains in progress. A2 not started.
 Audio config boundary docs/plan_phase1_defects_and_provider_split.md, Stage 2.
                        Lands with the first executable Stage A1 slice.
 ```
@@ -286,11 +287,11 @@ Those are live-test targets, not reasons to invent provider limits in advance.
 
 ## Stage A — Phase 2: MP3-Only Audio Recognizer
 
-**In progress. The provider-independent A1 local MP3 probe is implemented; the
-audio configuration, provider call, response mapping, persistence, and public
-facade are not. The Stage 2 audio configuration boundary lands with the rest of
-A1, not as unused scaffolding. A1 does not wait on Stage M's independent paid
-image smoke; its own live gate remains separately budgeted.**
+**In progress. The provider-independent A1 local MP3 snapshot/probe seam is
+implemented; audio configuration, provider call, response mapping, persistence,
+and the public facade are not. The Stage 2 audio configuration boundary lands
+with the rest of A1, not as unused scaffolding. A1 does not wait on Stage M's
+independent paid image smoke; its own live gate remains separately budgeted.**
 
 Phase 2's original framing was an Electron JSONL worker. That is superseded:
 the worker is frozen and Phase 2 is redefined as the first audio capability.
@@ -347,6 +348,11 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 - Accept exactly one local MP3 path. Reject sequences and URLs. Snapshot its
   bytes before validation or dispatch and use compact internal temporary names
   so a long Windows destination path is not repeated at every atomic-write step.
+- The local snapshot ceiling is 25 MiB as a resource bound, not a claim about
+  any provider. Copy from one opened regular-file handle to fixed `source.mp3`,
+  reject size change during the copy, flush and fsync before probing, and own
+  cleanup for the entire future provider call. The selected adapter separately
+  preflights its exact encoded request envelope.
 - Validate MP3 structure before any provider call. A zero-byte, wrong-format,
   malformed, zero-decoded-frame, or detectably incomplete file fails before
   money is spent. Do not claim universal truncation detection: an MP3 cut on a
@@ -374,9 +380,11 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   not be written as transcript prose or returned as a successful output path.
 - When `output_dir` is present, atomically persist one typed completed-result
   record, bound to exact source bytes and request/protocol/provider/model
-  identity, before publishing Markdown. `resume=True` may reuse that exact
-  result with zero provider calls. A1 has no chunks, segments, task IDs, or
-  partial-transcript recovery.
+  identity while the snapshot context is still open, then clean the snapshot
+  and publish Markdown. A cleanup failure must leave paid work recoverable from
+  that state rather than falsely report final success. `resume=True` may reuse
+  the exact result with zero provider calls. A1 has no chunks, segments, task
+  IDs, or partial-transcript recovery.
 - Keep miniaudio imported only inside the executable probe. `[audio]` contains
   the MP3 probe dependency; provider clients remain in provider-specific extras.
   Plain `import ocrllm` remains lightweight.

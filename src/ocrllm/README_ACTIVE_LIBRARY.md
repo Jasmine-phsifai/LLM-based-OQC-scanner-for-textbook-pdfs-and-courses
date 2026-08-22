@@ -60,10 +60,10 @@ intra-request checkpoints with explicit v1-to-v2 resume identity are shipped.
 Its paid live exit smoke remains open. The former standalone Stage 2
 provider-splitting scaffold was removed; audio-specific configuration will land
 with complete Stage A1 short-MP3 recognition. Stage A1 is in progress: an
-internal, provider-independent MP3 probe fully decodes five-minute-or-shorter
-snapshots through the lazy `ocrllm[audio]` extra. There is no public audio
-facade, provider dispatch, or transcript result yet. Stage A2 and the active
-PDFium phase have not started.
+internal, provider-independent seam copies one local MP3 to a compact owned
+snapshot and fully decodes it through the lazy `ocrllm[audio]` extra. There is
+no public audio facade, provider dispatch, or transcript result yet. Stage A2
+and the active PDFium phase have not started.
 
 The current image facade:
 

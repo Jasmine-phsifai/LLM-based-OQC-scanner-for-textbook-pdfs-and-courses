@@ -21,9 +21,9 @@ As of 2026-08-23:
   intra-request checkpoints are shipped. Its paid live exit smoke remains open.
 - The former standalone Stage 2 vision/audio scaffold was removed. Audio-specific
   configuration now lands with complete Stage A1 short-MP3 recognition. Stage
-  A1 is in progress: its internal local MP3 probe is implemented, but no public
-  audio recognition API exists. Stage A2 and the active PDFium phase have not
-  started. PDF, audio recognition, and video remain unavailable.
+  A1 is in progress: its internal local MP3 snapshot/probe seam is implemented,
+  but no public audio recognition API exists. Stage A2 and the active PDFium
+  phase have not started. PDF, audio recognition, and video remain unavailable.
 - The optional Google image adapter is planned, not implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.

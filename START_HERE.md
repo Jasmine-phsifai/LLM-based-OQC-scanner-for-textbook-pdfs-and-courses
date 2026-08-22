@@ -64,8 +64,9 @@ Its paid live exit smoke remains open. The former standalone Stage 2 scaffold
 was removed from the queue: its audio-specific configuration boundary will be
 implemented with complete Stage A1 short-MP3 recognition. Stage A1 is in
 progress: the lazy `miniaudio>=1.71,<2` local MP3 probe and deterministic
-validation corpus are implemented, but no audio provider, facade, persistence,
-or recognition result exists yet. Stage A2 has not started.
+validation corpus are implemented, and one bounded compact-name snapshot owns
+the bytes that the probe reads. No audio provider, facade, persistence, or
+recognition result exists yet. Stage A2 has not started.
 
 All no-cost Stage M exit criteria pass at committed checkpoint `271d96d`.
 `tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,

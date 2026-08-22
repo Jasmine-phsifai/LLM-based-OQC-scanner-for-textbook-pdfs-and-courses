@@ -290,13 +290,14 @@ print(result.status)
 from pathlib import Path
 import sys
 
-from ocrllm.audio.probe_short_mp3 import probe_short_mp3
+from ocrllm.audio.snapshot_short_mp3 import snapshot_short_mp3
 
-duration = probe_short_mp3(Path(sys.argv[1]))
-assert duration == 0.5, duration
-print(duration)
+with snapshot_short_mp3(Path(sys.argv[1]), temp_dir=Path(sys.argv[2])) as snapshot:
+    assert snapshot.path.name == 'source.mp3', snapshot.path
+    assert snapshot.duration_seconds == 0.5, snapshot.duration_seconds
+    print(snapshot.duration_seconds)
 '@
-                $audioSmoke | & $profilePython -I - $audioFixture
+                $audioSmoke | & $profilePython -I - $audioFixture $profileVenv
                 Assert-LastExitCode 'MP3 probe package smoke failed'
             }
 

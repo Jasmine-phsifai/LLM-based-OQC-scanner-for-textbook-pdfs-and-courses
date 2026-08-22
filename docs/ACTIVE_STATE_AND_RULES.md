@@ -60,18 +60,23 @@ the authorized paid live smoke verifies current provider behavior. The former
 standalone Stage 2 vision/audio scaffold was replanned on 2026-08-23: the
 working image configuration stays unchanged and the audio-specific
 configuration boundary will land with complete Stage A1 short-MP3 recognition.
-Stage A1 is in progress: its provider-independent local MP3 probe has landed,
-while source snapshotting, provider/model configuration, request construction,
-response handling, completed-result persistence, and the public facade remain
-absent. Stage A2 has not started. A1 does not wait on the independent Stage M
-paid image smoke. Each audio live gate remains separately budgeted and must not
-run without explicit maintainer authorization.
+Stage A1 is in progress: its provider-independent local MP3 snapshot and probe
+have landed, while provider/model configuration, request construction, response
+handling, completed-result persistence, and the public facade remain absent.
+Stage A2 has not started. A1 does not wait on the independent Stage M paid image
+smoke. Each audio live gate remains separately budgeted and must not run without
+explicit maintainer authorization.
 The A1 probe uses lazy `miniaudio>=1.71,<2` for MP3-specific metadata plus
 bounded-memory full decode. FFmpeg, PyAV, Mutagen, and external executable
 requirements remain outside the A1 runtime. The probe rejects malformed or
 undecodable audio, zero decoded frames, and declared/decoded frame mismatch; it
 does not claim that every frame-aligned MP3 truncation can be distinguished
 from an intentionally shorter valid file.
+The snapshot copies one regular local `.mp3` through an open file handle into a
+fixed `source.mp3` name, rejects growth/shrink and a 25 MiB local resource
+ceiling, then probes those owned bytes before yielding. This ceiling is not a
+provider request limit; the selected adapter must separately preflight its exact
+Base64/JSON envelope.
 The built-in Google image adapter is now scoped as a later optional
 vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
 does not copy legacy retry, audio, GUI, or social architecture. It is planned,
