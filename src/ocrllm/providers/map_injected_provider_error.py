@@ -17,9 +17,21 @@ from ..errors import (
 )
 
 
+_SAFE_FAILURE_SCOPES = frozenset(
+    {"request", "credential", "model", "account", "provider"}
+)
+
+
 def map_injected_provider_error(error: Exception, *, model: str | None) -> OCRLLMError:
     """Return a redacted public error for one injected-provider failure."""
     details = {} if model is None else {"model": model}
+    if isinstance(error, ProviderError):
+        try:
+            failure_scope = error.details.get("failure_scope")
+        except Exception:
+            failure_scope = None
+        if type(failure_scope) is str and failure_scope in _SAFE_FAILURE_SCOPES:
+            details["failure_scope"] = failure_scope
     try:
         raw_code = getattr(error, "code", None)
     except Exception:

@@ -2,8 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from ocrllm import Config, ProviderError, recognize
+from ocrllm import Config, ProviderError, ProviderPermissionDenied, recognize
 from ocrllm.providers.call_vision_provider import call_vision_provider
+from ocrllm.providers.map_injected_provider_error import map_injected_provider_error
 from ocrllm.providers.resolved_vision_provider import ResolvedVisionProvider
 
 from write_test_image import write_test_image
@@ -62,3 +63,31 @@ def test_provider_error_details_keep_known_model_and_provider():
 
     assert failure.value.details["model"] == "known-model"
     assert failure.value.details["provider"] == "known-provider"
+
+
+@pytest.mark.parametrize(
+    "failure_scope",
+    ["request", "credential", "model", "account", "provider"],
+)
+def test_injected_provider_error_preserves_only_canonical_failure_scope(
+    failure_scope,
+):
+    mapped = map_injected_provider_error(
+        ProviderPermissionDenied(details={"failure_scope": failure_scope}),
+        model="known-model",
+    )
+
+    assert mapped.details["failure_scope"] == failure_scope
+
+
+def test_injected_provider_error_discards_unknown_failure_scope() -> None:
+    secret = "UNTRUSTED-SCOPE-SECRET-772"
+
+    mapped = map_injected_provider_error(
+        ProviderPermissionDenied(details={"failure_scope": secret}),
+        model="known-model",
+    )
+
+    assert "failure_scope" not in mapped.details
+    assert secret not in str(mapped)
+    assert secret not in repr(mapped.details)

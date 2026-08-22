@@ -93,9 +93,13 @@ def map_dashscope_error(
             details=_scoped(details, "account"),
         )
     if _is_nonretryable_quota_code(normalized_code):
+        # Free-tier and unpurchased-commodity quota are granted per model, so
+        # one model's exhaustion must not block other candidate models on the
+        # same account (audit finding G3). Genuine account-wide states are the
+        # suspension codes above, which stay account-scoped.
         return QuotaExhausted(
-            "The DashScope account cannot spend the requested quota.",
-            details=_scoped(details, "account"),
+            "The requested DashScope model has no remaining free quota.",
+            details=_scoped(details, "model"),
         )
     if normalized_code == "datainspectionfailed":
         return ProviderContentBlocked(

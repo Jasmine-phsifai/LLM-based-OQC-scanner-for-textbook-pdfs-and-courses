@@ -6,7 +6,13 @@ from pathlib import Path
 import pytest
 
 from ocrllm import AllCandidatesExhausted, Config, RecognitionExecutionPolicy, VisionModelSettings, recognize, recognize_batch
-from ocrllm.errors import ProviderError, QuotaExhausted
+from ocrllm.errors import (
+    ConfigError,
+    ProviderError,
+    ProviderPermissionDenied,
+    ProviderUnavailable,
+    QuotaExhausted,
+)
 from ocrllm.providers.dashscope.provider_settings import DashScopeSettings
 from ocrllm.providers.dashscope.resolve_dashscope_model import resolve_dashscope_model
 
@@ -116,7 +122,7 @@ class _CandidateProvider:
         return "# Recovered\n"
 
 
-def test_candidate_chain_switches_only_on_model_quota_and_reports_ledger(tmp_path):
+def test_candidate_chain_advances_on_quota_and_reports_ledger(tmp_path):
     source = write_test_image(tmp_path / "board.png")
     provider = _CandidateProvider()
 
@@ -195,3 +201,186 @@ def test_unpinned_former_static_set_model_reports_unproven_evidence(tmp_path):
     assert result.metadata["model"] == "qwen3.7-plus"
     assert result.metadata["model_evidence"] == "unproven"
     assert result.metadata["model_proven"] is False
+
+
+class _DispositionProvider:
+    resume_identity = "disposition-provider-v1"
+
+    def __init__(self, failures: dict[str, object]) -> None:
+        self.models: list[str | None] = []
+        self._failures = failures
+
+    def recognize_images(self, image_paths, *, prompt, config):
+        model = config.vision_model.name
+        self.models.append(model)
+        failure = self._failures.get(model)
+        if failure is not None:
+            raise failure
+        return "# Served\n"
+
+
+def test_candidate_chain_advances_on_permission_denied_and_unavailable(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    provider = _DispositionProvider(
+        {
+            "denied-model": ProviderPermissionDenied(
+                "model lacks permission",
+                details={"failure_scope": "model"},
+            ),
+            "down-model": ProviderUnavailable("service unavailable"),
+        }
+    )
+
+    result = recognize(
+        source,
+        config=Config(
+            provider=provider,
+            vision_model=VisionModelSettings(
+                name="denied-model",
+                candidate_models=("denied-model", "down-model", "serving-model"),
+            ),
+        ),
+    )
+
+    assert provider.models == ["denied-model", "down-model", "serving-model"]
+    assert result.metadata["model"] == "serving-model"
+    attempts = [dict(attempt) for attempt in result.metadata["model_attempts"]]
+    assert [attempt["outcome"] for attempt in attempts] == [
+        "PROVIDER_PERMISSION_DENIED",
+        "PROVIDER_UNAVAILABLE",
+        "success",
+    ]
+    assert [attempt["disposition"] for attempt in attempts[:2]] == [
+        "quarantine_credential",
+        "retry",
+    ]
+
+
+def test_candidate_chain_does_not_advance_on_authentication_failure(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    provider = _DispositionProvider(
+        {"bad-key-model": ProviderError("bad key", code="PROVIDER_AUTHENTICATION")}
+    )
+
+    with pytest.raises(ProviderError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(
+                    name="bad-key-model",
+                    candidate_models=("bad-key-model", "never-tried-model"),
+                ),
+            ),
+        )
+
+    assert captured.value.code == "PROVIDER_AUTHENTICATION"
+    assert provider.models == ["bad-key-model"]
+
+
+def test_candidate_chain_does_not_advance_on_credential_permission_denial(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    provider = _DispositionProvider(
+        {
+            "denied-model": ProviderPermissionDenied(
+                "credential lacks permission",
+                details={"failure_scope": "credential"},
+            )
+        }
+    )
+
+    with pytest.raises(ProviderPermissionDenied) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(
+                    name="denied-model",
+                    candidate_models=("denied-model", "never-tried-model"),
+                ),
+            ),
+        )
+
+    assert captured.value.details["failure_scope"] == "credential"
+    assert provider.models == ["denied-model"]
+
+
+def test_single_model_failure_keeps_its_original_public_identity(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    provider = _DispositionProvider(
+        {"only-model": ProviderUnavailable("service unavailable")}
+    )
+
+    with pytest.raises(ProviderUnavailable) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(name="only-model"),
+            ),
+        )
+
+    assert captured.value.code == "PROVIDER_UNAVAILABLE"
+    assert provider.models == ["only-model"]
+
+
+def test_chain_exhaustion_wraps_an_advance_eligible_last_failure(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    provider = _DispositionProvider(
+        {
+            "quota-model": QuotaExhausted("model quota exhausted"),
+            "denied-model": ProviderPermissionDenied(
+                "model lacks permission",
+                details={"failure_scope": "model"},
+            ),
+        }
+    )
+
+    with pytest.raises(AllCandidatesExhausted) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(
+                    name="quota-model",
+                    candidate_models=("quota-model", "denied-model"),
+                ),
+            ),
+        )
+
+    assert captured.value.code == "ALL_CANDIDATES_EXHAUSTED"
+    assert captured.value.details["last_model"] == "denied-model"
+
+
+def test_configuration_failure_is_recorded_in_the_attempt_ledger(tmp_path, monkeypatch):
+    resolver = importlib.import_module(
+        "ocrllm.providers.dashscope.resolve_dashscope_model"
+    )
+    monkeypatch.setattr(
+        resolver,
+        "fetch_dashscope_model_catalog",
+        lambda settings: frozenset(),
+    )
+    source = write_test_image(tmp_path / "board.png")
+    config = Config(
+        provider=_settings(),
+        vision_model=VisionModelSettings(
+            name="typo-model",
+            candidate_models=("typo-model",),
+        ),
+    )
+
+    with pytest.raises(ConfigError, match="DashScope does not serve") as captured:
+        recognize(source, config=config)
+
+    attempts = [
+        dict(attempt) for attempt in captured.value.details["model_attempts"]
+    ]
+    assert attempts == [
+        {
+            "model": None,
+            "outcome": "CONFIG_INVALID",
+            "disposition": "fix_request",
+            "provider_calls_attempted": 0,
+        }
+    ]

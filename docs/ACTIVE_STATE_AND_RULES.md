@@ -52,12 +52,13 @@ things:
 
 Phase 1 is consequently reopened for maturation. "Phase 1 is GO" means the image
 path was proven once under trial constraints; it does not mean the image path is
-finished. Stage M is **partially implemented**: model catalog discovery,
-file-backed state sidecars, opt-in candidate queues, and slot-indexed
-intra-request checkpoints shipped, but the attempt-ledger, recovery-policy,
-credential-pool, evidence-label, and candidate-validation gaps remain open
-below. Stage 2 vision/audio provider splitting and Stage A mp3 recognition have
-not started. See `docs/plan_phase1_maturation_and_phase2_audio.md`.
+finished. Stage M is **offline implementation-complete**: model catalog
+discovery, file-backed state sidecars, opt-in disposition-gated candidate
+queues, slot-indexed intra-request checkpoints, spend disclosure, and
+model-aware credential blocking have shipped. Its exit gate remains open until
+the authorized paid live smoke verifies current provider behavior. Stage 2
+vision/audio provider splitting and Stage A mp3 recognition have not started.
+See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
 
@@ -76,14 +77,14 @@ Future agents must assume the following and verify before trusting any claim:
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
 
-## Verified State, 2026-08-19
+## Verified State, 2026-08-22
 
 Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1039 passed, 0 skipped, 0 failed (120 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` with empty `PYTHONPATH` |
-| Import weight | 93 ms, 121 modules, no heavy module loaded (2026-08-22) | timed plain import with `src` on `sys.path` |
+| Test suite | 1055 passed, 0 skipped, 0 failed (148.36 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
+| Import weight | 110 ms median (106-127 ms), 121 modules, no heavy module loaded | five fresh-process timed plain imports with empty `PYTHONPATH` |
 | Heavy-module isolation | `PIL`, `openai`, `httpx`, `onnxruntime` all absent after plain import | `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
@@ -99,9 +100,10 @@ snapshot isolation are the two strongest parts of this codebase; build on them.
 
 Severity is impact on a real user, not implementation effort. D1-D7 are closed,
 including the residual D4 limitation (closed 2026-08-22 by `cd7429c`). Of the
-Stage M findings, G4, G5, G6, G7, G9, and G10 are closed; G1 is partially
-addressed; G2, G3, and G8 remain open. Do not close an entry without a test
-that fails before the fix.
+Stage M findings G1-G10 are closed in offline code and tests. The Stage M exit
+gate is still open because its paid live smoke has not run; closing a code
+finding does not imply that current provider-account behavior was live-proven.
+Do not close an entry without a test that fails before the fix.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
@@ -365,8 +367,8 @@ coupled. Discovery makes a model *selectable*; it does not make it *proven*.
 
 ## Stage M Implementation Status, refreshed 2026-08-22
 
-Stage M is **partially implemented**. The following behavior is shipped and
-tested offline:
+Stage M is **offline implementation-complete**. The following behavior is
+shipped and tested offline:
 
 - Non-baseline DashScope model names can be checked against a lazy provider
    catalog. Successful catalogs have a 600-second TTL; expired catalogs remain
@@ -379,43 +381,58 @@ tested offline:
    `resume=True` pays only for missing passes. Injected-provider resume still
    requires a caller-declared nonempty `resume_identity`.
 - An explicit `VisionModelSettings.candidate_models` queue is attempted in
-   caller order and currently advances on `PROVIDER_QUOTA_EXHAUSTED` only. The
-   queue is bounded, its attempts are visible, and chain exhaustion raises the
-   distinct `ALL_CANDIDATES_EXHAUSTED` code; the spend ledger and the
-   approved recovery dispositions are not complete; see G1, G2, and G3 below.
+   caller order and advances only for quota exhaustion, provider unavailability,
+   and model-scoped permission denial. Credential-scoped permission denial
+   stops. The queue is bounded and opt-in; a single-model call retains its
+   original typed failure. Every attempt discloses outcome and paid-call count,
+   and chain exhaustion raises the distinct `ALL_CANDIDATES_EXHAUSTED` code.
+- DashScope free-tier and unpurchased-commodity quota codes are mapped to model
+   scope, so the credential pool blocks that model rather than the account;
+   account suspension remains account-wide. This distinction is offline-tested
+   but has not been re-proven against the live account in this update.
+- Scout failures name the scout model and never advance the primary candidate
+   queue. Injected typed errors retain only an allowlisted canonical
+   `failure_scope`; arbitrary provider details remain discarded.
 
-The Stage M exit gate has **not** passed. Full disposition-gated recovery,
-model-aware credential scheduling, complete spend disclosure (the G1
-remainder), and the live catalog/end-to-end smoke remain open. The
-offline suite and import probe must be refreshed by command output before this
-section's measured counts are changed. `worker/` and `contracts/` remain
-unchanged and frozen.
+The Stage M exit gate has **not** passed. The offline implementation and suite
+are complete, but the paid live catalog/end-to-end smoke still requires an
+explicit maintainer budget. The offline suite and import probe must be refreshed
+by command output before this section's measured counts are changed. `worker/`
+and `contracts/` remain unchanged and frozen.
 
-### Current Open Stage M Findings
+### Stage M Findings
 
 These are current implementation findings, not historical phase failures.
 Their identifiers are stable so plans, tests, and future diary entries can
 refer to the same issue.
 
-#### G1 — Attempt ledger cannot reconstruct spend. **High. Partially addressed 2026-08-22; narrowed remainder open.**
+#### G1 — Attempt ledger cannot reconstruct spend. **High. Closed 2026-08-22.**
 
-`cd7429c` added `provider_calls_attempted` to every `model_attempts` ledger
-entry (success or typed failure) and a `workflow_slots` disclosure in result
-metadata. Still open: configuration failures (raised before any provider
-dispatch, e.g. an invalid candidate name) are not entered in the attempt
-ledger, so one failure class still leaves no spend record.
+`cd7429c` added `provider_calls_attempted` to every successful or typed-failure
+`model_attempts` entry and a `workflow_slots` disclosure in result metadata.
+Pre-dispatch configuration failures now add a `fix_request` ledger entry with
+zero provider calls and `model: null`: no provider model was tried, and
+caller-controlled invalid text cannot leak through public error details. If a
+fixed scout model fails catalog resolution after a paid primary pass, the same
+entry retains that prior call count and names the setup workflow pass.
 
-#### G2 — Recovery is quota-only. **Medium. Open.**
+#### G2 — Recovery is quota-only. **Medium. Closed 2026-08-22.**
 
-The candidate loop switches only for `PROVIDER_QUOTA_EXHAUSTED`, although the
-approved recovery policy also permits model switching for the configured
-unavailable and permission-denied dispositions.
+The opt-in candidate loop advances for quota exhaustion, provider
+unavailability, and model-scoped permission denial. It stops for authentication
+failure, credential-scoped permission denial, response-invalid, refusal, and
+all other unapproved failures. Exhaustion wrapping occurs only when the caller
+actually configured a candidate list; single-model failures retain their
+original public identity.
 
-#### G3 — Account blocks prevent eligible model candidates. **Medium. Open.**
+#### G3 — Account blocks prevent eligible model candidates. **Medium. Closed offline 2026-08-22; live semantics pending exit gate.**
 
-The credential pool can record a quota or permission block at account scope.
-That account-wide state prevents acquisition for the next candidate even when
-the candidate-specific model may still be usable.
+Known DashScope free-tier and unpurchased-commodity quota codes now carry model
+scope and create only a model block in the credential pool; account suspension
+continues to block every model. Tests prove sibling-model acquisition remains
+available after model quota. No paid call ran in this update, so whether the
+provider still applies those product states per model must be rechecked by the
+Stage M live smoke rather than presented as live-proven fact.
 
 #### G4 — Chain exhaustion has the wrong public identity. **Medium. Closed 2026-08-22.**
 
@@ -454,11 +471,13 @@ from persisted slots and pays only for missing passes. Batch granularity was
 already covered by D3/D4 (one output file plus one retained state sidecar per
 item). Proven by kill-mid-request tests in `tests/test_m2_slot_resume.py`.
 
-#### G8 — Scout failures are attributed to the primary model. **Medium. Open.**
+#### G8 — Scout failures are attributed to the primary model. **Medium. Closed 2026-08-22.**
 
-The omission-scout workflow uses a separate fixed scout model, but a scout
-failure is raised through the primary candidate loop. Recovery can therefore
-switch or retry the wrong model.
+Every workflow-pass failure now carries its resolved `failed_model`. The outer
+candidate ledger distinguishes a scout failure from a primary-model failure,
+records the scout identity, and raises without advancing the primary candidate
+queue. A built-in DashScope regression proves one primary call plus one failed
+scout call and no candidate switch.
 
 #### G10 — Candidate validation is weaker than primary validation. **Low. Closed 2026-08-22.**
 

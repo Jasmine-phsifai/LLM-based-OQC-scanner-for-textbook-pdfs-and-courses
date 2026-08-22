@@ -25,9 +25,8 @@
 
 1. ~~集成 stage-m2(M2 槽位断点)~~ → 已完成,见 #001。
 2. ~~快修孤立小缺陷 G10/G4/G5~~ → 已完成,见 #002。
-3. 恢复簇:G1 余项(配置类失败也进 attempt 台账)+ G2(按处置门控推进,不止 quota)+
-   G3(凭据池账户级阻塞挡住合格候选)+ G8(scout 失败挂到了主模型)。四处同根,
-   都在 recognize_images.py 候选循环 + dashscope/credential_pool.py,一刀切。
+3. ~~恢复簇:G1 余项 + G2 + G3 + G8~~ → 已完成离线实现与验证,见 #003;
+   provider 账户/模型配额语义仍须任务 5 的付费 live smoke 复核。
 4. 精简轮:非冻结区的超小文件归并(coding rule 1 授权)、`processors/recognize_images.py`
    与 `providers/dashscope/recognize_images.py` 同名冲突、`validate_dashscope_api_key` 与
    `resolve_dashscope_credential` 重叠、tests/quality 归一化器 v2..v7 重复。
@@ -127,3 +126,59 @@ recognize_images.py 候选循环,下一次可以一刀切;G5 还顺带完成 M1 
   若再犯应加宽容差或改假时钟。
 
 **遗留**:无。任务 3(恢复簇)为下一刀:G1 余项 + G2 + G3 + G8。
+
+---
+
+## #003 — 2026-08-22:关闭恢复簇 G1 / G2 / G3 / G8
+
+**任务**:接手未完成的恢复簇工作树,修通配置失败零消费台账、按处置推进候选、
+model-aware 凭据池阻塞与 scout 失败归属,同时保持错误脱敏和单模型调用的公共错误身份。
+
+**上下文**:交接时有 6 个未提交文件、`4 failed / 107 passed`。已知失败是 injected
+provider 的 `failure_scope` 被重映射丢失、配置失败台账泄漏 secret-shaped model、
+scout 测试错误期待 pinned 模型。两名轻量只读子代理分别审计 scope 复制与台账脱敏;
+主代理逐行审查、实现和验证。
+
+**成功标准**:G1/G2/G3/G8 均有回归测试;只有显式 candidate queue 才自动恢复;
+credential 级 permission 不换模型;scout 失败不推进主候选;配置失败记录零调用且不泄密;
+全量套件、compileall、import 重量门均通过;权威/导航/计划文档同步。
+
+**为什么重要**:恢复策略直接决定额外付费、错误归属与坏凭据隔离。若候选循环把 scout
+或单模型故障误包装为整链耗尽,调用方会采取错误恢复动作;若台账回显未验证配置值,
+可观测性本身会成为泄密面。该簇是 Stage 2 provider 拆分前最后一组离线功能缺陷。
+
+**结果**:
+
+- G1:pre-dispatch `ConfigError` 进入 `model_attempts`,处置 `fix_request`,调用数 0;
+  `model: null` 表示没有 provider model 被实际尝试,避免回显任意 caller-controlled 文本。
+- G2:显式候选链现在仅对 quota、unavailable、model-scoped permission 推进;
+  authentication 与 credential-scoped permission 立即停止。新增负向测试证明坏凭据不会被
+  换模型掩盖。
+- 全量首跑发现 4 个 focused suite 未覆盖的真实回归:无 candidate queue 的
+  `PROVIDER_UNAVAILABLE` 被误包为 `ALL_CANDIDATES_EXHAUSTED`,破坏 serial/parallel batch
+  错误身份。修为只有 caller 明确提供候选列表才产生整链耗尽;新增单模型回归测试。
+- G3:DashScope `AllocationQuota.FreeTierOnly`、`CommodityNotPurchased`、
+  `FreeQuotaExceeded` 改为 model scope;pool 测试证明只阻塞当前模型,账户 suspension
+  仍阻塞全部模型。**限制**:本轮没有付费 live call;provider 当前是否仍按模型授予这些
+  状态只算离线实现假设,任务 5 必须复核,文档不得称 live-proven。
+- G8:每个失败 pass 写入实际 `failed_model`;scout 失败进入台账但不推进主候选。
+  injected typed error 仅复制 canonical `failure_scope`,其他 details 继续全部丢弃;
+  未知 scope 的 secret sentinel 不出现在 message/details/repr。
+- 修正 G8 测试自身错误:显式 `candidate_models=("qwen3.7-plus",)` 的首调就是该模型,
+  不是 pinned `qwen3.7-plus-2026-05-26`。
+- 主审查继续发现一个 G1 边界:固定 scout model 在 primary 已付费后才做目录解析;
+  若此时 `ConfigError`,外层原本会误报 0 调用。现于 scout setup 边界保留已付费调用数,
+  新测试证明未派发 scout 但台账准确记录 primary 的 1 次调用。
+- focused 验证:`132 passed`,修复全量暴露的单模型包装问题后相关集 `143 passed`,
+  post-primary scout 单测 `2 passed`。最终全量 `pytest -q -p no:cacheprovider` →
+  **1055 passed / 148.36s**;`compileall -q src tests` 干净;最终 5 个
+  fresh-process import 探针为 `110/112/107/106/127 ms`,中位数 **110ms**,
+  均 121 modules 且 `PIL/openai/httpx/onnxruntime` 不在 `sys.modules`。第一次 import
+  命令有 PowerShell 引号错误、第二次有 Python `NameError`,均是探针命令构造错误;
+  后续采样有效且重复执行最终门。
+- `contracts/`、`worker/` 未改;未运行付费调用。ACTIVE_STATE、START_HERE、
+  MIGRATION_STATUS 与当前 Stage M 计划同步为「离线实现完成、live exit gate 开放」。
+
+**遗留/下一步**:任务 5。先做无需付费的 Stage M 出口审计(中断、未知模型、候选链模拟
+证据是否足够且命令可复跑),然后向维护者申请明确预算再跑 live smoke。之后才能进入
+Stage 2 vision/audio provider split;任务 8 的 legacy 日记缺口仍需独立补录。

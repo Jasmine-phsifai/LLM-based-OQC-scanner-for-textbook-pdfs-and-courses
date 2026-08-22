@@ -16,6 +16,7 @@ from ocrllm import (
     DashScopeSettings,
     InvalidSource,
     ProviderError,
+    QuotaExhausted,
     RecognitionPreferences,
     VisionModelSettings,
     recognize,
@@ -394,6 +395,96 @@ def test_builtin_sign_scout_workflow_restores_only_two_scout_quorum_sign(
     assert result.metadata["provider_call_count"] == 4
     assert result.metadata["standalone_signs_restored"] == 1
     assert result.metadata["standalone_sign_scout_abstention_count"] == 0
+
+
+def test_scout_quota_failure_is_not_attributed_to_the_primary_candidate(
+    tmp_path,
+    monkeypatch,
+):
+    class ScoutQuotaClient(FakeClient):
+        def create(self, **kwargs):
+            self.calls.append(kwargs)
+            if kwargs["model"] == "qwen-vl-max":
+                error = FakeOpenAIModule.PermissionDeniedError("free tier spent")
+                error.status_code = 403
+                error.body = {"code": "AllocationQuota.FreeTierOnly"}
+                raise error
+            response = _response(content="# Exact board\n", model=kwargs["model"])
+            return SimpleNamespace(headers={}, parse=lambda: response)
+
+    source = write_test_image(tmp_path / "board.png", size=(12, 13))
+    client = ScoutQuotaClient()
+    _install_fake_openai(monkeypatch, client)
+    _serve_model_catalog(monkeypatch, "qwen-vl-max", "qwen3.7-plus")
+    ordinary = _settings()
+    settings = DashScopeSettings(
+        region=ordinary.region,
+        base_url=ordinary.base_url,
+        api_key="test-key",
+        standalone_sign_scout_model="qwen-vl-max",
+    )
+
+    with pytest.raises(QuotaExhausted) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=settings,
+                vision_model=VisionModelSettings(
+                    candidate_models=("qwen3.7-plus",),
+                ),
+            ),
+        )
+
+    assert captured.value.code == "PROVIDER_QUOTA_EXHAUSTED"
+    assert captured.value.details["failed_model"] == "qwen-vl-max"
+    assert captured.value.details["workflow_pass"] == "standalone_sign_scout_1"
+    # The scout's quota failure must not advance the primary candidate chain:
+    # exactly one paid primary pass and one failed scout call happened.
+    assert [call["model"] for call in client.calls] == [
+        "qwen3.7-plus",
+        "qwen-vl-max",
+    ]
+
+
+def test_unserved_scout_model_discloses_prior_primary_spend(
+    tmp_path,
+    monkeypatch,
+):
+    source = write_test_image(tmp_path / "board.png", size=(12, 13))
+    client = FakeClient(
+        response=_response(content="# Exact board\n", model="qwen3.7-plus")
+    )
+    _install_fake_openai(monkeypatch, client)
+    _serve_model_catalog(monkeypatch, "qwen3.7-plus")
+    ordinary = _settings()
+    settings = DashScopeSettings(
+        region=ordinary.region,
+        base_url=ordinary.base_url,
+        api_key="test-key",
+        standalone_sign_scout_model="qwen-vl-max",
+    )
+
+    with pytest.raises(ConfigError, match="DashScope does not serve") as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=settings,
+                vision_model=VisionModelSettings(name="qwen3.7-plus"),
+            ),
+        )
+
+    assert [call["model"] for call in client.calls] == ["qwen3.7-plus"]
+    assert captured.value.details["workflow_pass"] == "standalone_sign_scout_setup"
+    assert [
+        dict(attempt) for attempt in captured.value.details["model_attempts"]
+    ] == [
+        {
+            "model": None,
+            "outcome": "CONFIG_INVALID",
+            "disposition": "fix_request",
+            "provider_calls_attempted": 1,
+        }
+    ]
 
 
 def test_builtin_sign_scout_workflow_records_malformed_scout_abstentions(

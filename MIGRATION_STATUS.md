@@ -18,20 +18,21 @@ The repository has two boundaries:
 
 The active library has GO coverage for the image contract, local OCR, the
 development JSONL worker, provider error disposition, credential scheduling,
-and image resume. Stage M Phase 1 maturation is partially implemented:
+and image resume. Stage M Phase 1 maturation is offline implementation-complete:
 
 - shipped: lazy DashScope catalog checks, atomic file-backed image state, an
-  opt-in candidate model queue, and slot-indexed intra-request checkpoints
-  with an explicit v1-to-v2 resume identity migration;
-- open: complete attempt-spend disclosure (the G1 remainder), all approved
-  recovery dispositions, and model-aware credential scheduling;
+  opt-in disposition-gated candidate model queue, complete spend disclosure,
+  model-aware credential blocking, scout-failure attribution, and slot-indexed
+  intra-request checkpoints with an explicit v1-to-v2 identity migration;
+- open: the Stage M paid live exit smoke and live re-verification of provider
+  account/model quota semantics;
 - not started: Stage 2 vision/audio provider splitting, Stage A mp3 recognition,
   and the active PDFium phase.
 
-The current open defect register is in
-[`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md): G1
-(partial), G2, G3, and G8. D1-D7 including residual D4, F1-F4, G4, G5, G6,
-G7, G9, and G10 are closed. Do not create a second defect list in this file.
+The defect register is in
+[`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,
+F1-F4, and G1-G10 are closed in offline code and tests; the paid Stage M exit
+gate remains open. Do not create a second defect list in this file.
 
 ## Read Order
 

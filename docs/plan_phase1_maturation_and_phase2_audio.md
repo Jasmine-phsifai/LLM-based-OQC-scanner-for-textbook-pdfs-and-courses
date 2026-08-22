@@ -1,7 +1,7 @@
 # Plan: Phase 1 Maturation, Then Phase 2 MP3 Audio
 
-Status: **approved current work; Stage M partially implemented.** Updated
-2026-08-19.
+Status: **approved current work; Stage M offline implementation complete, live
+exit gate open.** Updated 2026-08-22.
 
 Read `docs/ACTIVE_STATE_AND_RULES.md` first. It defines document precedence, the
 two policy changes this plan depends on, and the coding rules.
@@ -11,8 +11,8 @@ two policy changes this plan depends on, and the coding rules.
 ```text
 Defect repair D1-D7    docs/plan_phase1_defects_and_provider_split.md, Stage 1.
                        CLOSED 2026-08-18. Do not duplicate.
-Phase 1 maturation     This document, Stage M. Partially implemented; current
-                       findings are in docs/ACTIVE_STATE_AND_RULES.md.
+Phase 1 maturation     This document, Stage M. Offline implementation complete;
+                       paid live exit smoke remains open.
 Phase 2 mp3 audio      This document, Stage A. Not started. Plan only.
 Provider modality split  docs/plan_phase1_defects_and_provider_split.md, Stage 2.
                        Prerequisite for Stage A.
@@ -31,9 +31,9 @@ Stage M and the defect repair touch adjacent code. The boundary is:
 | Automatic disclosed model-switching recovery | Stage M |
 | Freezing `worker/` and `contracts/` | Stage M |
 
-Stage M assumes D1-D4 have landed. They have landed; the residual D4
-intra-request checkpoint limitation remains open and is not silently treated as
-closed.
+Stage M assumes D1-D4 have landed. They have landed, and the residual D4
+intra-request checkpoint limitation closed with slot-indexed state persistence
+and resume identity v2.
 
 ## Why Phase 1 Is Reopened
 
@@ -122,6 +122,9 @@ phase-granular and discarded batch work on a late crash. Both are recorded in
 
 ### M3. Disclosed automatic recovery with model switching
 
+Implementation status: offline complete. The paid live exit smoke must still
+verify current provider-account behavior.
+
 See "Policy Change: Disclosed Automatic Recovery" in
 `docs/ACTIVE_STATE_AND_RULES.md`. All four conditions there are binding: opt-in,
 disclosed, disposition-gated, bounded.
@@ -132,14 +135,11 @@ Required behavior:
   tried first and is never tried twice.
 - On a disposition meaning "this model cannot serve the request", advance to the
   next candidate. On any other failure, stop and raise.
-- The account's live free-tier behavior to handle: DashScope returns HTTP 403
-  with provider code `AllocationQuota.FreeTierOnly` and message "Free quota
-  exhausted", already mapped correctly to `QuotaExhausted` with disposition
-  `stop` / scope `account`. Note the scope is `account`, not `model` — the
-  mapping is right for a single-model call but the recovery layer must decide
-  per candidate, because a different model on the same account may still have
-  free quota. Verify this against the live account before assuming either way,
-  and record the finding.
+- DashScope codes `AllocationQuota.FreeTierOnly`, `CommodityNotPurchased`, and
+  `FreeQuotaExceeded` are mapped to model scope, so sibling candidates remain
+  eligible; account suspension remains account-scoped. This is proven offline
+  against mapper and credential-pool tests, not re-proven against the live
+  account. The paid exit smoke must verify the provider still behaves this way.
 - When every candidate is exhausted, raise a distinct terminating error naming
   the last model tried.
 - Every attempt is recorded in an ordered ledger exposed in result metadata and

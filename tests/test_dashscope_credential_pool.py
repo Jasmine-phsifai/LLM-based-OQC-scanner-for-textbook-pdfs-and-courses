@@ -21,7 +21,8 @@ from ocrllm import (
     RateLimited,
     recognize,
 )
-from ocrllm.errors import ConfigError
+from ocrllm.errors import ConfigError, QuotaExhausted
+from ocrllm.providers.dashscope.map_dashscope_error import map_dashscope_error
 
 from write_test_image import write_test_image
 
@@ -325,6 +326,41 @@ def test_shared_cooldowns_wait_then_recover_without_switching_inside_call(
 
     assert elapsed >= 0.01
     assert pool.snapshot().account_state == "available"
+
+
+def test_free_tier_exhaustion_blocks_only_that_model() -> None:
+    pool = _pool(1)
+    raw = RuntimeError("raw provider body")
+    raw.status_code = 403
+    raw.body = {"code": "AllocationQuota.FreeTierOnly"}
+    mapped = map_dashscope_error(raw, openai_module=_FakeOpenAI, model="free-model")
+
+    lease = pool._acquire(model="free-model", cancellation=None)
+    lease._finish(mapped, succeeded=False)
+
+    report = pool.snapshot()
+    assert report.account_state == "available"
+    assert dict(report.model_blocks) == {"free-model": "PROVIDER_QUOTA_EXHAUSTED"}
+
+    other = pool._acquire(model="other-model", cancellation=None)
+    other._finish(None, succeeded=True)
+    with pytest.raises(QuotaExhausted):
+        pool._acquire(model="free-model", cancellation=None)
+
+
+def test_account_suspension_still_blocks_every_model() -> None:
+    pool = _pool(1)
+    raw = RuntimeError("raw provider body")
+    raw.status_code = 403
+    raw.body = {"code": "AccountSuspended"}
+    mapped = map_dashscope_error(raw, openai_module=_FakeOpenAI, model=MODEL)
+
+    lease = pool._acquire(model=MODEL, cancellation=None)
+    lease._finish(mapped, succeeded=False)
+
+    assert pool.snapshot().account_state == "blocked"
+    with pytest.raises(ProviderAccountSuspended):
+        pool._acquire(model="other-model", cancellation=None)
 
 
 def test_snapshot_is_immutable_ordered_and_contains_no_keys() -> None:

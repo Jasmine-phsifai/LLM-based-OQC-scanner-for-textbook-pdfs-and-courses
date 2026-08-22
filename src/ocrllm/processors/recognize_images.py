@@ -9,7 +9,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ..config import Config
-from ..errors import AllCandidatesExhausted, OCRLLMError, ProviderError
+from ..errors import (
+    AllCandidatesExhausted,
+    ConfigError,
+    OCRLLMError,
+    ProviderError,
+)
 from ..image_slot_state import ImageSlotState
 from ..processor_output import ProcessorOutput
 from ..profiles.build_board_consensus_prompt import build_board_consensus_prompt
@@ -21,7 +26,10 @@ from ..profiles.build_board_sign_scout_prompt import (
 )
 from ..profiles.build_board_symbol_audit_prompt import build_board_symbol_audit_prompt
 from ..providers.call_vision_provider import call_vision_provider
-from ..provider_error_disposition import get_provider_error_disposition
+from ..provider_error_disposition import (
+    ProviderErrorDisposition,
+    get_provider_error_disposition,
+)
 from ..providers.dashscope.resolve_sign_scout_enable_thinking import (
     resolve_sign_scout_enable_thinking,
 )
@@ -37,6 +45,35 @@ if TYPE_CHECKING:
     from ..image_slot_checkpoint import ImageSlotCheckpoint
 
 
+# Approved recovery dispositions (see "Policy Change: Disclosed Automatic
+# Recovery" in docs/ACTIVE_STATE_AND_RULES.md): advance only when the failure
+# means this model or credential cannot serve the request. Never on a generic
+# failure, never on PROVIDER_RESPONSE_INVALID, never on a refusal.
+_RECOVERY_ADVANCE_CODES = frozenset(
+    {
+        "PROVIDER_QUOTA_EXHAUSTED",
+        "PROVIDER_PERMISSION_DENIED",
+        "PROVIDER_UNAVAILABLE",
+    }
+)
+
+
+def _may_advance_candidate(
+    error: ProviderError,
+    disposition: ProviderErrorDisposition,
+) -> bool:
+    """Apply model-chain recovery only to an eligible serving failure."""
+    if error.code not in _RECOVERY_ADVANCE_CODES:
+        return False
+    if error.code == "PROVIDER_PERMISSION_DENIED":
+        # A denied model may be replaced; a denied credential must be
+        # quarantined/rotated, not hidden by changing the model.
+        return disposition.scope == "model"
+    # Quota defaults to account scope for injected legacy-compatible errors,
+    # while the DashScope adapter now reports the observed per-model scope.
+    return True
+
+
 def recognize_images(
     image_paths: Sequence[Path],
     *,
@@ -46,6 +83,7 @@ def recognize_images(
 ) -> ProcessorOutput:
     """Recognize with the configured model queue and disclose every attempt."""
     candidates = config.vision_model.candidate_models
+    candidate_recovery_enabled = bool(candidates)
     if candidates:
         ordered_models = list(candidates)
         if config.vision_model.name is not None:
@@ -54,7 +92,7 @@ def recognize_images(
     else:
         ordered_models = [config.vision_model.name]
 
-    attempts: list[dict[str, str | int]] = []
+    attempts: list[dict[str, str | int | None]] = []
     for candidate_index, model in enumerate(ordered_models):
         candidate_config = config
         if model is not None:
@@ -66,6 +104,7 @@ def recognize_images(
                     candidate_models=(),
                 ),
             )
+        is_last = candidate_index == len(ordered_models) - 1
         try:
             output = _recognize_images_once(
                 image_paths,
@@ -73,29 +112,63 @@ def recognize_images(
                 config=candidate_config,
                 slot_checkpoint=slot_checkpoint,
             )
-        except ProviderError as error:
-            disposition = get_provider_error_disposition(error)
+        except ConfigError as error:
+            # The failing configuration pass was not dispatched. Preserve any
+            # earlier paid calls reported by the workflow, then stop. Never
+            # advance: silently skipping a misserved model would hide the
+            # caller's mistake behind a different model they did not pin.
             attempts.append(
                 {
-                    "model": model or "",
+                    # Resolution rejected caller-controlled text before any
+                    # provider dispatch. Null is truthful and cannot leak a
+                    # secret accidentally supplied in the model field.
+                    "model": None,
                     "outcome": error.code,
-                    "disposition": disposition.action,
+                    "disposition": "fix_request",
                     "provider_calls_attempted": error.details.get(
-                        "provider_calls_attempted", 1
+                        "provider_calls_attempted", 0
                     ),
                 }
             )
-            if error.code != "PROVIDER_QUOTA_EXHAUSTED" or candidate_index == len(ordered_models) - 1:
-                error._add_safe_detail("model_attempts", attempts)
-                if error.code == "PROVIDER_QUOTA_EXHAUSTED" and candidate_index == len(ordered_models) - 1:
-                    error = AllCandidatesExhausted(
-                        "All configured model candidates were exhausted.",
-                        details=dict(error.details),
-                    )
-                    error._add_safe_detail("all_candidates_exhausted", True)
-                    error._add_safe_detail("last_model", model)
-                raise error from None
-            continue
+            error._add_safe_detail("model_attempts", attempts)
+            raise
+        except ProviderError as error:
+            disposition = get_provider_error_disposition(error)
+            entry: dict[str, str | int | None] = {
+                "model": model or "",
+                "outcome": error.code,
+                "disposition": disposition.action,
+                "provider_calls_attempted": error.details.get(
+                    "provider_calls_attempted", 1
+                ),
+            }
+            failed_model = error.details.get("failed_model")
+            own_failure = not (
+                type(failed_model) is str and failed_model != (model or "")
+            )
+            if not own_failure and type(failed_model) is str:
+                entry["failed_model"] = failed_model
+            attempts.append(entry)
+            if (
+                own_failure
+                and not is_last
+                and _may_advance_candidate(error, disposition)
+            ):
+                continue
+            error._add_safe_detail("model_attempts", attempts)
+            if (
+                candidate_recovery_enabled
+                and own_failure
+                and is_last
+                and _may_advance_candidate(error, disposition)
+            ):
+                error = AllCandidatesExhausted(
+                    "All configured model candidates were exhausted.",
+                    details=dict(error.details),
+                )
+                error._add_safe_detail("all_candidates_exhausted", True)
+                error._add_safe_detail("last_model", model)
+            raise error from None
 
         attempts.append(
             {
@@ -175,7 +248,20 @@ def _recognize_images_once(
             )
         except OCRLLMError as error:
             error._add_safe_detail("workflow_pass", slot_id)
-            error._add_safe_detail("provider_calls_attempted", calls_dispatched + 1)
+            error._add_safe_detail("failed_model", resolved.model)
+            # Config and catalog failures are raised before dispatch: no paid
+            # call happened for this pass, so only completed calls count.
+            dispatched_this_pass = not (
+                isinstance(error, ConfigError)
+                or (
+                    isinstance(error, ProviderError)
+                    and error.code == "PROVIDER_CATALOG_UNAVAILABLE"
+                )
+            )
+            error._add_safe_detail(
+                "provider_calls_attempted",
+                calls_dispatched + (1 if dispatched_this_pass else 0),
+            )
             raise
         calls_dispatched += 1
         if slot_checkpoint is not None:
@@ -245,7 +331,20 @@ def _recognize_images_once(
                 standalone_sign_scout_model=None,
             ),
         )
-        resolved_scout = resolve_vision_provider(scout_config)
+        try:
+            resolved_scout = resolve_vision_provider(scout_config)
+        except ConfigError as error:
+            # The primary pass has already been paid for. Preserve that spend
+            # without echoing the rejected caller-controlled scout model.
+            error._add_safe_detail(
+                "workflow_pass",
+                "standalone_sign_scout_setup",
+            )
+            error._add_safe_detail(
+                "provider_calls_attempted",
+                calls_dispatched,
+            )
+            raise
         scout_prompt = build_board_sign_scout_prompt(markdown)
         scouts: list[str] = []
         for scout_index in range(3):

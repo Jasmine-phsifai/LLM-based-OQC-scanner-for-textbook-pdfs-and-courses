@@ -308,6 +308,8 @@ def test_dashscope_billing_quota_failure_is_nonretryable():
     assert isinstance(mapped, QuotaExhausted)
     assert mapped.code == "PROVIDER_QUOTA_EXHAUSTED"
     assert mapped.retryable is False
+    # The commodity is activated per model: another candidate may be activated.
+    assert mapped.details["failure_scope"] == "model"
 
 
 @pytest.mark.parametrize("status", [400, 403, 429])
@@ -323,7 +325,9 @@ def test_dashscope_provider_code_precedes_generic_http_classification(
     assert isinstance(mapped, QuotaExhausted)
     assert mapped.code == "PROVIDER_QUOTA_EXHAUSTED"
     assert mapped.retryable is False
-    assert mapped.details["failure_scope"] == "account"
+    # Free-tier quota is granted per model: one model's exhaustion must not
+    # poison sibling candidates on the same account (audit finding G3).
+    assert mapped.details["failure_scope"] == "model"
 
 
 @pytest.mark.parametrize(

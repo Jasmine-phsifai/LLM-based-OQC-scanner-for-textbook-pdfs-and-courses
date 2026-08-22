@@ -27,8 +27,8 @@ Read in this order:
 ```text
 docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
 docs/plan_phase1_maturation_and_phase2_audio.md
-                                      Current work plan; Stage M is partially
-                                      implemented and still open.
+                                      Current work plan; Stage M is offline
+                                      complete with its live exit gate open.
 docs/plan_phase1_defects_and_provider_split.md
                                       Stage 1 closed; Stage 2 provider split
                                       is not started.
@@ -53,14 +53,15 @@ Public import shape:
 from ocrllm import Config, DashScopeSettings, VisionModelSettings, recognize
 ```
 
-Current phase: **Phase 1 maturation, Stage M partially implemented**. Phase 0
+Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and
 Phase 2A image-library completion are GO. Stage M has shipped lazy DashScope
 catalog checks, atomic file-backed image state, an opt-in candidate queue, and
 slot-indexed intra-request checkpoints with an explicit v1-to-v2 resume
-identity migration. Its complete attempt-spend disclosure,
-disposition-gated recovery, and model-aware pool behavior remain open. Stage 2
-vision/audio provider splitting and Stage A mp3 recognition are not started.
+identity migration, complete attempt-spend disclosure, disposition-gated
+recovery, model-aware pool behavior, and correct scout-failure attribution.
+Its paid live exit smoke remains open. Stage 2 vision/audio provider splitting
+and Stage A mp3 recognition are not started.
 
 The public image facade decodes PNG/JPEG inputs before provider dispatch,
 passes request-scoped validated snapshots to an injected provider, rejects
@@ -85,14 +86,15 @@ worker boundaries. The current allowed work is Stage M maturation under
 `docs/plan_phase1_maturation_and_phase2_audio.md`; its exit gate has not passed.
 
 The active library has a region-bound in-memory credential scheduler and
-request/batch image resume. Candidate switching is opt-in and currently
-quota-gated; it is not yet complete recovery. PDF, audio, and video support
+request/batch image resume. Candidate switching is opt-in, bounded,
+disposition-gated, and fully disclosed offline. PDF, audio, and video support
 remain unavailable. Local user PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 
-The current open defect list is only in
-`docs/ACTIVE_STATE_AND_RULES.md`: G1 (partial), G2, G3, and G8. D1-D7
-including residual D4, F1-F4, G4, G5, G6, G7, G9, and G10 are closed.
+The defect register is only in `docs/ACTIVE_STATE_AND_RULES.md`. D1-D7,
+F1-F4, and G1-G10 are closed in offline code and tests. Stage M itself remains
+open only at the paid live exit gate; provider-account semantics are not
+claimed live-proven by the offline closure.
 
 ## Legacy Application
 

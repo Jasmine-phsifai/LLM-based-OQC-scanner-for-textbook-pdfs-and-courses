@@ -75,9 +75,9 @@ The current image facade:
   call in a direct operation or across one concurrent batch.
 - distinguishes provider permission, suspension, concurrency, quota,
   invalid-request, content-block, and transient failures and exposes immutable
-  disposition evidence without performing retries. Automatic candidate
-  switching is opt-in and currently quota-gated; it is not a complete recovery
-  policy yet.
+  disposition evidence; adapters do not hide retries. The processor's explicit
+  candidate queue performs bounded, disclosed recovery for quota exhaustion,
+  provider unavailability, and model-scoped permission denial only.
 
 The built-in DashScope board/image capability is available under the bounded
 Phase 1 contract. The v17 Beijing gate completed exactly 52 provider calls with
@@ -113,20 +113,21 @@ cannot enter the result. Directional-arrow insertion is forbidden while
 complete primary transcription remains unchanged. Exact dynamic scout-prompt
 hashes and byte counts are returned in metadata.
 Qwen-VL Max remains an explicit supported scout option but is not the Phase 1
-evidence baseline. A DashScope in-memory credential scheduler and image resume
-are available; candidate switching is incomplete and there is no cross-process
-pool state. PDF, audio, and video remain unavailable.
+evidence baseline. A DashScope in-memory credential scheduler, model-aware
+blocking, candidate recovery, and request/batch image resume are available;
+there is no cross-process pool state. PDF, audio, and video remain unavailable.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.
 
-## Known Defects In This Package
+## Current Maturation Boundary
 
-The current open items are registered in
-`../../docs/ACTIVE_STATE_AND_RULES.md`: residual D4 plus G1, G2, G3, G4, G5,
-G6, G7, G8, and G10. D1-D7 and F1-F4 are closed; G9 is closed. A crash inside
-a single `recognize()` call can still discard that call's completed provider
-work because flowed output is not implemented.
+The authoritative defect register is in
+`../../docs/ACTIVE_STATE_AND_RULES.md`. D1-D7, F1-F4, and G1-G10 are closed in
+offline code and tests. Stage M remains open at its paid live exit smoke, and
+the offline model/account quota distinction is not claimed live-proven. A crash
+inside one `recognize()` call preserves completed workflow slots in the atomic
+state sidecar so resume pays only for missing work.
 
 Read `../../docs/ACTIVE_STATE_AND_RULES.md` first: it carries current state, the
 defect register, and the coding rules. Then read
