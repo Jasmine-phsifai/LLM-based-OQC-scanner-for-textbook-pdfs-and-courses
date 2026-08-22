@@ -164,12 +164,17 @@ def _copy_source_bounded(
                         code="SOURCE_TOO_LARGE",
                     )
                 try:
-                    snapshot_stream.write(chunk)
+                    written_size = snapshot_stream.write(chunk)
                 except (OSError, ValueError) as error:
                     raise OutputError(
                         "A temporary image snapshot could not be written.",
                         code="OUTPUT_WRITE_FAILED",
                     ) from error
+                if written_size != len(chunk):
+                    raise OutputError(
+                        "A temporary image snapshot could not be written completely.",
+                        code="OUTPUT_WRITE_FAILED",
+                    ) from None
 
             if copied_bytes == 0:
                 raise InvalidSource(

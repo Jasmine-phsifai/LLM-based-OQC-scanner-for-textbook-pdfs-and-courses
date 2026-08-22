@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from ocrllm import Config, InvalidSource, UnsupportedFormat, recognize
+from ocrllm import Config, InvalidSource, OutputError, UnsupportedFormat, recognize
 from ocrllm.imaging.decode_image_bytes import MAX_IMAGE_PIXELS
 from ocrllm.imaging.decoded_image_info import DecodedImageInfo
 from ocrllm.validate_image_group import (
@@ -95,6 +95,49 @@ def test_unreadable_source_fails_before_provider(tmp_path, monkeypatch):
 
     assert captured.value.code == "SOURCE_UNREADABLE"
     assert provider.calls == 0
+
+
+def test_short_snapshot_write_fails_before_provider(tmp_path, monkeypatch):
+    source = write_test_image(tmp_path / "short-write.png")
+    temp_dir = tmp_path / "snapshots"
+    provider = CountingProvider()
+    original_open = Path.open
+
+    class ShortWriter:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+        def write(self, data):
+            return self.wrapped.write(data[:-1])
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, error_type, error, traceback):
+            return self.wrapped.__exit__(error_type, error, traceback)
+
+    def short_write_snapshot(path, *args, **kwargs):
+        opened = original_open(path, *args, **kwargs)
+        if path.parent.name.isdigit() and path.parent.parent.name.startswith(
+            "ocrllm-images-"
+        ):
+            return ShortWriter(opened)
+        return opened
+
+    monkeypatch.setattr(Path, "open", short_write_snapshot)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(provider=provider, temp_dir=temp_dir),
+        )
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert provider.calls == 0
+    assert list(temp_dir.glob("ocrllm-images-*")) == []
 
 
 def test_oversized_source_fails_before_provider(tmp_path):

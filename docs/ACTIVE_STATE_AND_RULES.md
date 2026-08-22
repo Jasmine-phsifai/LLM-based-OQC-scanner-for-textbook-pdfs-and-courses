@@ -115,6 +115,15 @@ Future agents must assume the following and verify before trusting any claim:
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
 
+- **Snapshot stream-close failures still need typed precedence.** The image and
+  short-MP3 copy paths now reject short destination writes before decode or
+  provider dispatch. Their source and destination file context managers can
+  still let an `OSError` or `ValueError` from close escape raw and replace an
+  earlier typed copy failure. Repair each modality locally: a close-only failure
+  becomes the matching typed source/output error, while an existing primary is
+  preserved with one safe cleanup-failure detail. Do not create a generic media
+  stream framework merely to share this policy.
+
 - **Active atomic output no longer amplifies user filenames, but arbitrary deep
   Windows paths remain unsupported.** Markdown and image-resume state writers use
   a fixed `.ocrllm-<uuid>.tmp` sibling instead of repeating the full destination
