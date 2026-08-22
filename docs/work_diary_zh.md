@@ -63,7 +63,7 @@
     ~~production short-ASR 在取消/setup failure 前逐段保存，且停止扩大付费请求~~ →
     已完成,见 #013。
     ~~standalone board 以 source SHA-256 + saved batch unit 替代逗号/basename 恢复~~ →
-    已完成,见 #014。仍开放:production board 取消/setup 的增量发布，以及 video
+    已完成,见 #014。~~production board 取消/setup 的增量发布~~ → 已完成,见 #016。仍开放:video
     failed-batch/current batch size
     的稳定身份。不要把 Markdown regex repair 移植到 `src/ocrllm`;新库按现有 typed
     sidecar/checkpoint 扩展。
@@ -765,3 +765,46 @@ production `BoardProcessor.process()`：它仍把所有 `md_parts` 留到循环�
 **遗留/下一步**:恢复后的下一原子任务回到 production board 已证明的取消/setup 丢成果问题。
 实现前先检查 #014 新增的 manifest helper 是否能直接承担 initial skeleton/slot render；若需要新增
 抽象，必须先有重复失败证据，不能把 board 改造成比 legacy 产品更宽的通用任务系统。
+
+## #016 — 2026-08-23:production board 逐批原子保存并传播终止错误
+
+**任务**:让 `BoardProcessor.process()` 在首次 provider 调用前留下可修复 Markdown，并在每批完成后
+立即原子保存；后续取消或 provider setup failure 必须原样传播，不能吞掉前面已付费成功。
+
+**上下文**:#014 已建立稳定 source/batch sidecar，但生产循环仍把 `md_parts` 全留在内存，直到所有
+批次结束才首次写 Markdown；同一层 `except Exception` 还会把 `CancelledError` 和 setup failure
+降格成普通识别失败。比较两条路径：①给 marker schema 增加 `unfinished` 第三状态；②复用现有
+`failed` slot，以“任务未完成”说明尚未结算。选择②，因为现有 repair 已能安全重试 failed slot，新增
+状态只会扩大 parser/schema 与未来代理的理解成本。一个只读 Luna scout 独立复核测试 seam，结论一致；
+主代理逐行复核生产循环、manifest renderer、atomic writer 与既有普通 timeout 回归。
+
+**成功标准**:首次 provider dispatch 前同时存在 sidecar 与完整可修复 Markdown；每个成功/普通失败
+批次落入固定 slot 后立即原子发布；reporter cancellation、provider cancellation、setup failure 都
+传播并保留先前成功；普通 timeout 仍写部分结果后抛错；focused、legacy 离线广集、编译与 diff 全绿。
+
+**为什么重要**:board 请求可能已经产生费用或不可重复的结果。若只在循环末尾保存，用户取消一次就会
+丢掉所有先前成果；但为此引入通用任务框架或新 schema 会超出 legacy 行为边界。复用现有稳定身份和
+原子 writer，能直接关闭真实缺陷，同时保持代码可从文件和局部函数冷读理解。
+
+**结果**:
+
+- 四条直接回归先以 **4 failed / 6.49s** 复现：首次调用无 Markdown skeleton、reporter 取消后
+  首批输出文件不存在、provider cancellation/setup 被吞并改抛普通质量错误。第一次 focused 修后运行
+  暴露测试 observer 会在第二次调用把已见证的 `True` 覆盖为 `False`；修正为锁存证据后生产代码无需
+  调整。另一次从仓库根运行新 legacy 测试因缺少 legacy import path 在 collection 失败，改从
+  `legacy_app` 正确运行；这两项均如实保留，不算产品回归。
+- manifest 保存后立即建立与 batch 数相同的固定 `md_parts`，每项使用既有 stable failed marker 和
+  “任务未完成”；局部 `publish_current_batches()` 只复用同目录 atomic writer，没有新增文件、状态或
+  通用 executor。成功结果在 `_report_content` 前落槽并发布；普通异常落失败槽并发布。
+- `CancelledError` 直接传播；其他异常先用既有 `is_provider_setup_error()` 检查并传播 setup failure。
+  终止错误发生时当前及后续“任务未完成”slot 保持可由现有 repair 接手，先前成功不丢。普通 timeout
+  契约由既有 `test_failure_propagation.py` 继续覆盖，没有重复测试。
+- board checkpoint/identity/repair/failure focused 集 **26 passed / 25.46s**；排除真实 ffmpeg
+  `test_social_e2e.py` 与已延期的 import-time Bilibili diagnostic 后，legacy 离线广集
+  **270 passed, 1 skipped / 87.96s**，唯一 skip 仍是显式 live Google discovery。两个修改 Python
+  文件 `py_compile`、`git diff --check` 通过；无网络、provider、付费调用，未动 `src/ocrllm`、
+  `contracts/`、`worker/` 或 social media。
+
+**遗留/下一步**:media repair 耐久性队列只剩 video failed-batch 仍按当前 batch size 解释历史失败。
+下一轮先用失败测试证明具体误修路径，再决定是否做 video 专用 sidecar；不要把 audio/board schema
+强行抽成通用 media framework。Stage A 调研继续后移。

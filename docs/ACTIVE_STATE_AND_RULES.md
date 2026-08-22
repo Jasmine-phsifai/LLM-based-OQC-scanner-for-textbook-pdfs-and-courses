@@ -93,9 +93,10 @@ Future agents must assume the following and verify before trusting any claim:
   source hashes and millisecond unit windows, so current chunk settings cannot
   reinterpret an old failed segment. Standalone board repair now binds exact
   ordered source bytes and saved batch membership through its own versioned
-  sidecar instead of parsing filenames. Video failed batches still depend on the
-  current batch size, and production board recognition still lacks incremental
-  cancellation-safe publication. The exact open findings are recorded in
+  sidecar instead of parsing filenames. Production board recognition now publishes
+  a repairable skeleton before dispatch, atomically checkpoints every settled batch,
+  and propagates cancellation/provider setup failures. Video failed batches still
+  depend on the current batch size. The exact open findings are recorded in
   `legacy_app/AGENTS.md`. New library modalities must extend typed, versioned
   checkpoint state and atomic publication rather than copy localized
   Markdown-regex repair.
@@ -562,7 +563,7 @@ while retaining the last successful catalog during refresh outages.
 
 ## Legacy Status, 2026-08-23
 
-Five legacy durability/repair-hardening slices are complete. `repair_board()` reads the
+Six legacy durability/repair-hardening slices are complete. `repair_board()` reads the
 normal `{"items": [...]}` manifest, accounts for unavailable processed frames
 as explicit partial failures, and video cleanup retains extracted audio while
 failed transcript segments remain. Audio, board, and video repair now publish
@@ -579,11 +580,35 @@ calls, preserves their successes, and then propagates. Standalone board outputs 
 persist exact ordered source fingerprints, saved batch membership, stable unit IDs, and
 machine-readable batch status. Repair resolves renamed sources by bytes, rejects
 missing/corrupt/drifted identity before dispatch, and no longer relies on comma-split or
-duplicate basenames. Production board checkpoint/cancellation semantics and stable video
-failed-batch identity remain open and continue to outrank Stage A feature research.
+duplicate basenames. Production board recognition now publishes an all-repairable
+Markdown skeleton before dispatch, atomically republishes each success or ordinary
+failure, and propagates cancellation/provider setup errors without losing prior paid
+work. Stable video failed-batch identity remains open and continues to outrank Stage A
+feature research.
 Earlier legacy fixes remain recorded history, not proof that all compatibility paths
 are defect-free.
 ## New And Fixed In This Working Update
+
+Production board recognition now checkpoints every batch:
+
+- After saving its existing versioned identity sidecar and before the first provider
+  request, `BoardProcessor.process()` atomically publishes one repairable failed slot
+  per saved batch with the explicit reason `任务未完成`. This reuses the existing marker
+  and repair contract; no new status or checkpoint schema was added.
+- Each successful or ordinary failed batch replaces only its fixed slot and atomically
+  republishes the whole ordered Markdown before progress callbacks or later cancellation
+  checks. Cancellation and provider setup failures propagate unchanged, leaving the
+  current and later slots repairable while preserving prior paid successes.
+- Four direct regressions failed before implementation. The checkpoint/identity/repair/
+  failure set passed 26 tests; the offline legacy suite excluding the real ffmpeg e2e
+  and deferred import-time Bilibili diagnostic passed 270 tests with one explicit live-
+  Google skip. The final runs took 25.46 s and 87.96 s respectively. `py_compile` and
+  `git diff --check` passed. No provider, network,
+  active-library, frozen-boundary, or social-media behavior changed.
+
+Stable video failed-batch identity is the remaining media-repair durability item.
+
+### Previous working update: stable standalone board identity
 
 Standalone board repair now has stable source and batch identity:
 
@@ -605,9 +630,8 @@ Standalone board repair now has stable source and batch identity:
   frozen-boundary behavior changed. A broad run exposed that the Bilibili diagnostic
   performs public HTTP during collection; it timed out and remains open test debt.
 
-Production board recognition still catches cancellation/setup failure inside its batch
-loop and publishes Markdown only after the loop; video repair still expands historical
-failed batches using the current batch size. Both are explicitly open.
+Video repair still expands historical failed batches using the current batch size and
+remains explicitly open.
 
 ### Previous working update: production short-ASR checkpoints
 
@@ -627,8 +651,7 @@ Production short-ASR durably checkpoints paid parallel work:
   with one explicit live-Google skip. `py_compile` and diff checks passed. No provider,
   network, active-library, or frozen-boundary behavior changed.
 
-Production board checkpoint/cancellation behavior and video failed-batch identity remain
-open.
+Video failed-batch identity remains open.
 
 ### Previous working update: stable audio repair identity
 

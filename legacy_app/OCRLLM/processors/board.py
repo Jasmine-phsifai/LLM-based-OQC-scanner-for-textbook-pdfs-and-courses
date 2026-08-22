@@ -137,7 +137,18 @@ class BoardProcessor(BaseProcessor):
         )
         ensure_dir(os.path.dirname(output_path))
         save_board_repair_manifest(output_path, manifest)
-        md_parts = []
+        md_parts = [
+            render_board_batch_failure(batch, "任务未完成")
+            for batch in manifest.batches
+        ]
+
+        def publish_current_batches() -> None:
+            write_text_atomically(
+                output_path,
+                "\n\n".join(part.strip() for part in md_parts) + "\n",
+            )
+
+        publish_current_batches()
         history = []
         successful_batches = 0
         failed_batches: list[int] = []
@@ -163,28 +174,31 @@ class BoardProcessor(BaseProcessor):
                 result = strip_md_fence(result)
                 if looks_like_refusal(result):
                     raise RuntimeError("模型拒识：" + result.strip().splitlines()[0][:80])
-                md_parts.append(
-                    f"{render_board_batch_marker(saved_batch, 'complete')}\n\n{result}"
-                )
-                successful_batches += 1
-                self._report_content(result, f"板书识别 — 第 {batch_idx + 1} 批")
-
-                # 只保留 assistant 的文本输出作为上下文摘要，不伪造图片历史
-                if len(history) > _BOARD_HISTORY_MESSAGES - 2:
-                    history = history[-(_BOARD_HISTORY_MESSAGES - 2):]
-                history.extend([
-                    {"role": "user", "content": f"以上是第 {batch_idx + 1} 批（{names_str}）的板书图片，请继续识别下一批。"},
-                    {"role": "assistant", "content": result},
-                ])
+            except CancelledError:
+                raise
             except Exception as e:
+                if is_provider_setup_error(e):
+                    raise
                 logger.error("[BOARD] 批次 %d 失败: %s", batch_idx + 1, e)
-                md_parts.append(render_board_batch_failure(saved_batch, e))
+                md_parts[batch_idx] = render_board_batch_failure(saved_batch, e)
+                publish_current_batches()
                 failed_batches.append(batch_idx + 1)
+                continue
 
-        write_text_atomically(
-            output_path,
-            "\n\n".join(part.strip() for part in md_parts) + "\n",
-        )
+            md_parts[batch_idx] = (
+                f"{render_board_batch_marker(saved_batch, 'complete')}\n\n{result}"
+            )
+            publish_current_batches()
+            successful_batches += 1
+            self._report_content(result, f"板书识别 — 第 {batch_idx + 1} 批")
+
+            # 只保留 assistant 的文本输出作为上下文摘要，不伪造图片历史
+            if len(history) > _BOARD_HISTORY_MESSAGES - 2:
+                history = history[-(_BOARD_HISTORY_MESSAGES - 2):]
+            history.extend([
+                {"role": "user", "content": f"以上是第 {batch_idx + 1} 批（{names_str}）的板书图片，请继续识别下一批。"},
+                {"role": "assistant", "content": result},
+            ])
         if batches and successful_batches == 0:
             raise RuntimeError(f"板书识别全部 {len(batches)} 个批次失败，输出文件只包含错误信息: {output_path}")
         reason = failed_placeholder_quality_reason(

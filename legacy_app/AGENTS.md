@@ -755,3 +755,27 @@ current batch size 重建。repair attempt 可改变 prompt/model/preprocessing�
 **Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 默认单元/回归测试的 collection 与
 import 必须零网络、零凭据、零外部进程副作用；live diagnostics 必须放到显式 opt-in marker 或独立
 script，并以清晰 preflight/timeout 报告，不能靠网络恰好可用来维持“全量绿”。
+
+## 2026-08-23 — production board 取消丢失已付费批次（已修复）
+
+**现象与根因。** `BoardProcessor.process()` 虽然在 provider 前保存了稳定 repair sidecar，但 Markdown
+只在整个批次循环结束后写一次。首批成功后，若 reporter 在下一批检查时取消，最终写入会被越过，已付费
+正文全部丢失；provider 内抛出的 `CancelledError` 或 `ProviderSetupError` 又会被 broad
+`except Exception` 吞成普通失败，隐藏真实终止原因。
+
+**修复。** sidecar 保存后立即用既有 `render_board_batch_failure(..., "任务未完成")` 为所有批次建立
+固定 slot，并原子发布完整 Markdown。每个成功或普通失败只替换自己的 slot，随后立即通过既有 atomic
+writer 发布；成功在 content callback 前保存。取消直接传播，setup failure 经既有 chain predicate
+识别后传播，当前及后续未完成 slot 保持可修复。没有增加 `unfinished` schema、通用 executor 或跨
+modality 抽象。
+
+**失败优先证据与验证。** 修前四条回归为 **4 failed / 6.49s**，分别证明首次 dispatch 无 Markdown、
+reporter 取消丢首批、provider cancellation/setup 被吞。修后 board checkpoint/identity/repair/failure
+集 **26 passed / 25.46s**；排除真实 ffmpeg e2e 与延期的 import-time Bilibili diagnostic 后，legacy
+离线广集 **270 passed, 1 skipped / 87.96s**，唯一 skip 是显式 live Google discovery。相关文件
+`py_compile` 与 `git diff --check` 通过；无网络/provider/付费调用。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 图像批处理必须在首次 provider dispatch
+前持久化 typed/versioned slot，并在每个付费成功后、任何可取消 callback 前原子提交。取消/setup
+failure 必须传播且不能破坏已提交 slot。不要移植本次 localized failed-marker skeleton；新库应扩展现有
+typed checkpoint state。legacy video historical batch identity 仍需独立证据，不能据此预建通用媒体框架。
