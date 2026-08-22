@@ -27,9 +27,10 @@
 2. ~~快修孤立小缺陷 G10/G4/G5~~ → 已完成,见 #002。
 3. ~~恢复簇:G1 余项 + G2 + G3 + G8~~ → 已完成离线实现与验证,见 #003;
    provider 账户/模型配额语义仍须任务 5 的付费 live smoke 复核。
-4. 精简轮:非冻结区的超小文件归并(coding rule 1 授权)、tests/quality 归一化器 v2..v7 重复。
+4. 精简轮:非冻结区的超小文件归并(coding rule 1 授权)。
    ~~两个 `recognize_images.py` 同名~~ → 审计后保留(职责/导入明确,不是冲突),见 #005;
    ~~DashScope key 校验重叠~~ → 已统一并修掉环境变量控制字符漏检,见 #005。
+   ~~tests/quality 归一化器 v2..v7 重复~~ → 审计后保留(累积协议 + evidence identity),见 #006。
    注意:contracts/ 与 worker/ 是冻结区,不动。
 5. Stage M 出口门收尾:~~全量绿 + import 重量 + 中断实测 + 未知模型可用 +
    候选链配额模拟~~ → 离线出口已完成,见 #004;仅剩一次付费 live smoke(需用户明确预算)。
@@ -279,3 +280,48 @@ legacy 日记缺口;Stage 2 实现仍受 live 出口门约束。
 **遗留/下一步**:精简队列只剩超小文件是否值得归并与 tests/quality v2..v7 归一化器重复
 审计。下一轮应先量化重复和历史 gate 依赖;没有实际维护成本证据就不改。Stage M 仍仅剩
 需明确预算的 paid live smoke。
+
+---
+
+## #006 — 2026-08-22:否决合并 Phase 1 v2-v7 归一化协议
+
+**任务**:量化 `tests/quality/normalize_recognized_markdown_v2.py` 至 v7 的重复,判断能否在
+不改变 v17 与历史 evidence 解释的前提下精简。
+
+**上下文**:队列 #4 把六个版本文件列为疑似重复。两条路径是抽公共 helper/合并版本,或证明
+它们是不可随意折叠的版本协议并撤销该重构。两名轻量只读子代理分别做源码差分与 evidence
+可达性审计;主代理逐文件复核函数、scorer 调用图、manifest pin 与 v17 JSON code identity。
+
+**成功标准**:明确每版是否仍可达、重复的精确规模、提取 seam 的净收益与语义陷阱;所有
+normalizer 单测、历史 evidence 诊断、manifest/scorer 集成与全量套件通过;不改历史 JSON;
+没有充分收益则不碰代码并从活跃重构队列划掉。
+
+**为什么重要**:质量归一化器决定「live OCR 输出是否过门」,不是普通文本工具。错误合并会
+在测试仍绿时改变历史 evidence 的含义;但若它们真是复制粘贴,继续保留也会让 scorer 漂移。
+这里必须用可达性与身份哈希裁决,不能凭文件名数量判断。
+
+**结果**:
+
+- v2 是 **205 行/10 函数**的严格 base parser;v3 仅叠加关系符号排版与行首 Unicode 箭头;
+  v4 叠加 Unicode/LaTeX diagram connector;v5 叠加 ASCII `->`;v6 只解开 labeled formula
+  内单个 ASCII `\text{}`;v7 再解开单个 ASCII `\mathrm{}`。当前 v7 实际执行链是
+  **v7→v6→v5→v4→v3→v2**,六个文件均为运行依赖,不是六份独立实现。
+- 可文本提取的重复只有两对: v4/v5 各 5 行 match/prefix/slice helper;v6/v7 共用 5 行
+  formula-line regex 与约 8 行替换 helper。提取会新增跨版本 helper 模块,净减少不足以抵消
+  coupling;更危险的是 v4 必须在 v3 前处理 connector、v6 必须在 v7 前运行,顺序本身就是协议。
+- manifest 固定 `labeled-latex-restricted.v7`;`load_fixture_manifest.py` 还直接用 v6 probe。
+  六版各有独立回归测试。历史诊断虽按当前 canonical scorer 重算旧输出,但 v17 evidence 的
+  `code_identity.quality.files` 明确逐个记录 v2-v7 路径、字节数与 SHA-256;删文件/改 identity
+  不是普通 cleanup,必须另立 scorer-tooling migration 与 differential harness。
+- 也否决了「只删 scorer 旧 dialect branch」:canonical manifest 目前选择 v7,但分支是历史
+  protocol routing;删分支不会删掉任何模块或当前执行成本(v7 仍传递依赖全部前版),也没有
+  观察到的错误或维护负担,不值得为少量行制造半套迁移。
+- focused 命令覆盖六版 normalizer、v2/v3/v4/v10 evidence diagnosis、manifest 与 scorer:
+  **83 passed / 13.15s**。本地全量 **1060 passed / 106.00s**。没有源码变化,因此不重复
+  clean-wheel gate;最新代码 checkpoint 仍是已通过完整门的 `2e9c770`。
+- `contracts/`、`worker/` 与未跟踪交接文件均未动;无 provider 请求。
+
+**遗留/下一步**:normalizer 合并从精简队列移除。若未来必须迁移,前置条件是对所有 evidence
+Markdown 做逐版本 byte-for-byte 输出/异常/score differential,并保留旧模块 shim 或设计可验证
+的 archived identity,不能直接改历史 JSON。队列 #4 只剩「超小文件归并」,下一轮应先量化
+非冻结区小文件的调用密度与真实维护成本;无证据继续保留。

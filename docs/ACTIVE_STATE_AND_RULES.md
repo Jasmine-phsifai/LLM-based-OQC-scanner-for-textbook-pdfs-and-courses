@@ -66,6 +66,13 @@ Future agents must assume the following and verify before trusting any claim:
 
 - **Fixture byte-reproduction is environment-bound (redesigned 2026-08-19).** The Phase 1 generated-image corpus can only be byte-reproduced in the exact Pillow wheel build that created it; that environment is lost and no installable 12.x build reproduces the pinned pixels. `tests/quality/generators/generate_phase1_fixtures.py` now checks three layers instead: manifest-hash integrity (every environment), same-environment determinism, and reproduction that is byte-strict only under the recorded `GENERATOR_ENVIRONMENT` and pixel-tolerant otherwise. Do not re-baseline the committed images without a maintainer decision: they are the pixels the v17 live evidence was scored against.
 
+- **Quality normalizers v2-v7 are an evidence protocol, not duplicate utilities.**
+  The current v7 path executes the cumulative v7→v6→v5→v4→v3→v2 chain,
+  and the preserved v17 evidence records each file in its quality code identity.
+  Do not merge, delete, or rewrite these stages as routine cleanup. A future
+  migration requires byte-for-byte differential normalization and score proof
+  over preserved evidence plus an explicit archived-identity strategy.
+
 - **Dated documentation is history.** Old phase and review files deliberately
    retain their original conclusions. Current navigation documents must point
    here and must not repeat those conclusions as present status.
@@ -83,7 +90,7 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1060 passed, 0 skipped, 0 failed (163.42 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
+| Test suite | 1060 passed, 0 skipped, 0 failed (106.00 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
 | Import weight | 1.12 ms wall median, 1.70 ms p95; 0 ms CPU median, 15.63 ms p95 | clean-wheel gate, 30 measured fresh processes after two warm-ups |
 | Heavy-module isolation | `PIL`, `pypdfium2`, `openai`, `httpx`, `onnxruntime`, and `legacy_app` absent after plain import | outside-repository clean-wheel `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
@@ -520,22 +527,19 @@ session closes.
 These changes are current, verified, and should not be mistaken for open
 defects:
 
-- DashScope explicit settings, pooled credentials, environment credentials,
-   catalog authentication, and request dispatch now share one exact-text and
-   Coding-Plan rejection policy. Source precedence and pool leasing remain
-   separate responsibilities.
-- Environment credentials containing surrounding whitespace, embedded control
-   characters, or DEL now fail as redacted `CONFIG_INVALID`; only an absent or
-   empty credential is `CONFIG_MISSING`. Before this correction, newline and
-   DEL values reached the SDK path, while padded values were misclassified.
-- The duplicated `recognize_images.py` basename was audited and deliberately
-   retained: imports are fully qualified, one module owns board orchestration,
-   and the other implements the provider protocol. No collision or duplicated
-   behavior exists, so a rename would add churn without simplifying ownership.
-- The local active suite passed 1,060 tests. The clean base-profile archive at
-   `2e9c770` passed 1,059 with the optional real-RapidOCR test skipped because
-   the base profile intentionally has no OCR extra. These counts are
-   verification snapshots, not permanent gates for future changes.
+- The Phase 1 v2-v7 recognized-Markdown normalizers were audited and retained.
+   They are cumulative protocol stages, not parallel copies; only two tiny
+   helper bodies repeat, and extracting them would add cross-version coupling
+   while historical evidence identifies every source file independently.
+- The scorer's explicit older-dialect branches were retained as historical
+   protocol routing. The canonical manifest currently selects v7, but deleting
+   those branches would remove no module or current execution: v7 transitively
+   needs every earlier stage, v6 serves a manifest probe, and each stage has
+   direct regression coverage. No historical evidence file was changed.
+- Focused normalizer, historical-diagnosis, manifest, and scorer coverage
+   passed 83 tests. The full local suite passed 1,060 tests; because no source
+   changed, the latest clean-wheel checkpoint remains `2e9c770`. These counts
+   are verification snapshots, not permanent gates for future changes.
 
 ### M2. Flowed output and true resume, 2026-08-19
 
