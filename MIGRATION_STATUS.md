@@ -23,7 +23,8 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
 - shipped: lazy DashScope catalog checks, atomic file-backed image state, an
   opt-in disposition-gated candidate model queue, complete spend disclosure,
   model-aware credential blocking, scout-failure attribution, and slot-indexed
-  intra-request checkpoints with an explicit v1-to-v2 identity migration;
+  intra-request checkpoints with an explicit v1-to-v2 identity migration; all
+  no-cost exit criteria pass through the clean-archive runner at `17904ca`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
 - not started: Stage 2 vision/audio provider splitting, Stage A mp3 recognition,

@@ -2555,6 +2555,33 @@ fresh `image,dashscope` profile installed 40,901,589 bytes against a 64 MiB
 ceiling. No provider call occurred. Phase 1 is **GO** and Phase 2 is now the
 only active implementation phase.
 
+## Current Stage M Offline Exit Runner, 2026-08-22
+
+Use the maintained runner instead of copying the older manual checkpoint blocks
+above:
+
+```powershell
+& .\tools\run_stage_m_offline_gate.ps1
+```
+
+The runner refuses tracked working-tree changes, archives the exact current
+commit into a GUID-scoped temporary directory, and runs the full suite, fixture
+verification, compilation, clean wheel build, outside-repository base import,
+metadata and optional-extra checks, both import timing environments, fresh
+`image` and `image,dashscope` profiles, a generated-image injected-provider
+smoke, and an offline DashScope client-construction smoke. It verifies import
+origin and forbids `PIL`, `pypdfium2`, `openai`, `httpx`, `onnxruntime`, and
+`legacy_app` after plain base import. Temporary files are removed in `finally`.
+
+Checkpoint `17904ca555573ed92288cbeb910bdfbe6122ce14` passed: archived tests
+reported 1057 passed and one expected optional-RapidOCR skip; the wheel was
+150,801 bytes and the base target 736,004 bytes; import wall median/p95 was
+1.38/2.19 ms in the OCRLLM environment and 0.81/1.45 ms in base Python;
+process-CPU median/p95 was 0/15.63 ms in both. The fresh profile deltas were
+16,424,666 bytes (`image`) and 40,997,375 bytes (`image,dashscope`). No provider
+request occurred. This closes only the offline part of the Stage M exit gate;
+the paid live smoke still needs an explicit maintainer budget.
+
 ## Change Rejection Checklist
 
 Reject a proposed change when any answer is yes:

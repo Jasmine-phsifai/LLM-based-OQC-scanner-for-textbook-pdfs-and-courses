@@ -63,6 +63,12 @@ recovery, model-aware pool behavior, and correct scout-failure attribution.
 Its paid live exit smoke remains open. Stage 2 vision/audio provider splitting
 and Stage A mp3 recognition are not started.
 
+All no-cost Stage M exit criteria pass at committed checkpoint `17904ca`.
+`tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,
+fixture/compile checks, clean wheel and outside-repository import guards,
+dependency profiles, generated-image smoke, and offline DashScope construction.
+It makes no provider request.
+
 The public image facade decodes PNG/JPEG inputs before provider dispatch,
 passes request-scoped validated snapshots to an injected provider, rejects
 empty/control-only/refusal-shaped output, returns typed redacted errors, and
@@ -189,8 +195,13 @@ uv run --no-project --isolated --with 'Pillow==12.3.0' `
 & 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests
 ```
 
-Before reporting completion, run the clean Git-archive wheel build, isolated
-install, and outside-repo heavy-module guard in
+Before reporting completion, run the maintained clean-archive gate:
+
+```powershell
+& .\tools\run_stage_m_offline_gate.ps1
+```
+
+Its implementation and budgets are defined in
 `docs/ocrllm_library_go_no_go.md`. Do not run the paid live gate until the
 exact region/`base_url` is confirmed by the caller and the runner's Git/import,
 manifest, artifact, and credential preflight passes.

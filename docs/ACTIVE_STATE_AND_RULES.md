@@ -83,9 +83,9 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1055 passed, 0 skipped, 0 failed (148.36 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
-| Import weight | 110 ms median (106-127 ms), 121 modules, no heavy module loaded | five fresh-process timed plain imports with empty `PYTHONPATH` |
-| Heavy-module isolation | `PIL`, `openai`, `httpx`, `onnxruntime` all absent after plain import | `sys.modules` probe |
+| Test suite | 1058 passed, 0 skipped, 0 failed (182.12 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
+| Import weight | 1.38 ms wall median, 2.19 ms p95; 0 ms CPU median, 15.63 ms p95 | clean-wheel gate, 30 measured fresh processes after two warm-ups |
+| Heavy-module isolation | `PIL`, `pypdfium2`, `openai`, `httpx`, `onnxruntime`, and `legacy_app` absent after plain import | outside-repository clean-wheel `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
 | Snapshot isolation | Provider reads original bytes while a concurrent thread overwrites the source | threaded race probe |
@@ -394,11 +394,22 @@ shipped and tested offline:
    queue. Injected typed errors retain only an allowlisted canonical
    `failure_scope`; arbitrary provider details remain discarded.
 
-The Stage M exit gate has **not** passed. The offline implementation and suite
-are complete, but the paid live catalog/end-to-end smoke still requires an
-explicit maintainer budget. The offline suite and import probe must be refreshed
-by command output before this section's measured counts are changed. `worker/`
-and `contracts/` remain unchanged and frozen.
+Every non-paid Stage M exit criterion now passes. Commit `17904ca` passed the
+reusable clean-archive runner in `tools/run_stage_m_offline_gate.ps1`: its
+archived suite reported 1057 passed and one expected optional-RapidOCR skip,
+fixture verification and compilation passed, the wheel was 150,801 bytes, and
+the no-deps target was 736,004 bytes. Fresh `image` and `image,dashscope`
+profiles added 16,424,666 and 40,997,375 bytes respectively and passed their
+offline smokes. Plain import stayed below every documented wall and process-CPU
+budget in both Python environments. The built-in adapter now proves dispatch of
+a catalog-served model unknown to this repository, and an operating-system
+process-termination test proves a completed paid slot survives and resume pays
+only for the missing slots. `worker/` and `contracts/` are unchanged and frozen.
+
+The Stage M exit gate has **not** passed because its paid live catalog and
+end-to-end smoke still requires an explicit maintainer budget. No paid provider
+request occurred in the offline gate. Do not convert this no-cost proof into a
+claim about current provider-account or model-quota semantics.
 
 ### Stage M Findings
 
@@ -469,7 +480,10 @@ Closed by `cd7429c` at request granularity: each completed workflow pass
 versioned sidecar before the next paid call starts, and `resume=True` seeds
 from persisted slots and pays only for missing passes. Batch granularity was
 already covered by D3/D4 (one output file plus one retained state sidecar per
-item). Proven by kill-mid-request tests in `tests/test_m2_slot_resume.py`.
+item). Proven at the state-machine boundary by `tests/test_m2_slot_resume.py`
+and at the operating-system boundary by
+`tests/test_m2_process_kill_resume.py`, which terminates a child process after
+its second pass starts and then resumes from the first persisted slot.
 
 #### G8 — Scout failures are attributed to the primary model. **Medium. Closed 2026-08-22.**
 
@@ -506,20 +520,20 @@ session closes.
 These changes are current, verified, and should not be mistaken for open
 defects:
 
-- Legacy checkpoint cancellation is now non-destructive by default. Explicit
-   output deletion remains available only through `delete_outputs=True`; the
-   resume dialog calls the cancellation path and its PDF/audio/video regression
-   tests pass.
-- Legacy API/model settings are owned by `SettingsDialog`; model discovery and
-   picker refresh work is kept off the GUI event loop where the path is
-   asynchronous, and the stale main-window test assumptions were updated.
-- The Phase 1 fixture checker now verifies manifest integrity, deterministic
-   regeneration, and decoded-pixel equivalence when the rendering environment
-   is not fully pinned. Its manifest/source pins and tests are synchronized.
-- The active suite passed 1,030 tests with an empty `PYTHONPATH` on 2026-08-22;
-   the focused legacy checkpoint/GUI suite passed 29 tests and the
-   settings/model suite passed 12 tests with 1 environment skip. These counts
-   are verification snapshots, not permanent gates for future changes.
+- The Stage M no-cost exit criteria are executable through one clean-archive
+   runner instead of a copy-pasted manual command block. It verifies the exact
+   committed source and always removes its GUID-scoped temporary directory.
+- Process termination and repository-unknown built-in model dispatch now have
+   direct regression tests; earlier coverage stopped at simulated exceptions
+   and resolver-only catalog checks.
+- The public facade lazily resolves its existing 41 exports. This preserves the
+   import contract while reducing clean-wheel import from the failed
+   88.23/137.54 ms wall and 93.75/140.63 ms CPU median/p95 checkpoint to
+   1.38/2.19 ms wall and 0/15.63 ms CPU.
+- The local active suite passed 1,058 tests. The clean base-profile archive
+   passed 1,057 with the optional real-RapidOCR test skipped because the base
+   profile intentionally has no OCR extra. These counts are verification
+   snapshots, not permanent gates for future changes.
 
 ### M2. Flowed output and true resume, 2026-08-19
 
@@ -559,15 +573,14 @@ crash mid-request discards nothing that was already paid for.
   the failed candidates spent. Typed failures keep their `workflow_pass` and
   `provider_calls_attempted` details.
 
-Regression coverage is `tests/test_m2_slot_resume.py`: a kill-mid-request
-fake provider proves persisted slots survive a crash and that a resumed run
-pays only for missing slots (including the sign-scout passes), a hand-written
-v1 state proves the version-named rejection, a candidate-fallback run proves
+Regression coverage is `tests/test_m2_slot_resume.py`: an injected mid-request
+failure proves slot reuse including sign-scout passes, a hand-written v1 state
+proves the version-named rejection, a candidate-fallback run proves
 failed-model slots are neither reused nor lost, and a prompt-version bump
-proves resume identity invalidates. Offline gate: full suite, `compileall`
-clean, plain import 117 ms / 122 modules with `PIL`, `openai`, `httpx`, and
-`onnxruntime` absent. No paid live call was made. `worker/` and `contracts/`
-are unchanged.
+proves resume identity invalidates. `tests/test_m2_process_kill_resume.py`
+adds the stronger operating-system termination proof. The current offline gate
+results are recorded in the Stage M status above. No paid live call was made.
+`worker/` and `contracts/` are unchanged.
 
 ## Documentation Rules
 

@@ -31,8 +31,8 @@
    与 `providers/dashscope/recognize_images.py` 同名冲突、`validate_dashscope_api_key` 与
    `resolve_dashscope_credential` 重叠、tests/quality 归一化器 v2..v7 重复。
    注意:contracts/ 与 worker/ 是冻结区,不动。
-5. Stage M 出口门收尾:全量绿 + import 重量不变 + 中断实测 + 未知模型可用 +
-   候选链配额模拟 + 一次付费 live smoke(需用户预算)。
+5. Stage M 出口门收尾:~~全量绿 + import 重量 + 中断实测 + 未知模型可用 +
+   候选链配额模拟~~ → 离线出口已完成,见 #004;仅剩一次付费 live smoke(需用户明确预算)。
 6. 音频 Stage A 调研(用户已选定方向):legacy `processors/audio.py`(2133 行,
    ffmpeg+OSS+filetrans)、`docs/legacy_filetrans_codex_debug_record.md`、
    Stage 2 拆分范围、时长探针依赖可行性、热词。产出:调研结论 + 更新 Stage A 计划。
@@ -182,3 +182,51 @@ credential 级 permission 不换模型;scout 失败不推进主候选;配置失�
 **遗留/下一步**:任务 5。先做无需付费的 Stage M 出口审计(中断、未知模型、候选链模拟
 证据是否足够且命令可复跑),然后向维护者申请明确预算再跑 live smoke。之后才能进入
 Stage 2 vision/audio provider split;任务 8 的 legacy 日记缺口仍需独立补录。
+
+---
+
+## #004 — 2026-08-22:把 Stage M 离线出口门变成可复跑的产品门禁
+
+**任务**:审计并补齐 Stage M 所有无需付费的出口证据,把散落在测试和长文档中的手工
+命令收敛为一个针对精确 Git 提交的清洁归档门禁。
+
+**上下文**:G1-G10 已离线关闭,但出口声明仍有三处证据不足:未知 provider 模型只测到
+resolver、M2 所谓「kill」只是同进程 `ProviderError`、清洁包门是会混用工作树与归档
+提交的大段手工 PowerShell。两名轻量只读子代理分别审计行为覆盖与 clean-package
+流程;主代理逐项复核后确认缺口成立。`contracts/`、`worker/` 继续冻结。
+
+**成功标准**:操作系统终止进程后已付费槽位仍在且续跑只补缺口;仓库未知但 provider
+目录存在的模型走完内置 adapter;一个命令从精确提交重跑全量、fixture、compile、wheel、
+外部 import、extras、体积、延迟与离线 smoke;不得发 provider 请求;文档明确区分离线
+通过与仍需预算的 live 出口。
+
+**为什么重要**:没有可复跑门禁,「离线完成」会随工作树、已安装依赖和手工命令漂移;
+没有真实进程终止测试,最昂贵的断点续传承诺仍只是异常模拟。该门也是 Stage 2 拆 provider
+前最后一道防回归边界。
+
+**结果**:
+
+- 新增 `tests/test_m2_process_kill_resume.py`:子进程完成首 draft、进入第二次调用后由父进程
+  `terminate`;sidecar 只含首槽且没有最终 Markdown。随后同一 resume identity 续跑仅调用
+  provider 2 次,复用标志为 `[True, False, False]`,最终三个槽齐全。
+- 新增内置 DashScope 回归:目录返回仓库从未预置的 `provider-new-model-2030`,实际请求与
+  result metadata 都保留该模型,证据正确标为 `unproven`。这补的是 adapter 端到端,不是
+  重复 resolver 单测。
+- 新增 `tools/run_stage_m_offline_gate.ps1`:拒绝 tracked 脏树,归档精确 HEAD,在 GUID 临时目录
+  跑全量/fixture/compile/build/install/import-origin/metadata/extras/profile size/smoke,并在
+  `finally` 清理。base import 禁止 `PIL/pypdfium2/openai/httpx/onnxruntime/legacy_app`。
+- 门禁首跑在 `ded3fa3` 暴露真实性能债:wall 88.23/137.54ms 虽合格,process CPU
+  93.75/140.63ms 超过既定 60/100ms。两条路是放宽预算或修 import;选择后者。公共 facade
+  改为按首次属性访问懒加载,41 个现有 export、`from ocrllm import ...`、`dir()` 与缓存身份
+  均保持。clean-wheel plain import 降到 wall 1.38/2.19ms、CPU 0/15.63ms(中位/p95)。
+- 本地最终全量 **1058 passed / 182.12s**,`compileall -q src tests` 干净,fixture 校验像素等价。
+  精确提交 `17904ca555573ed92288cbeb910bdfbe6122ce14` 的归档门通过:**1057 passed,
+  1 skipped / 167.40s**;skip 是 base profile 未安装 OCR extra 时预期跳过真实 RapidOCR 集成。
+  wheel **150,801 bytes**,no-deps target **736,004 bytes**;`image` 增量
+  **16,424,666 bytes**,`image,dashscope` **40,997,375 bytes**。两个 Python 环境全部 import
+  预算通过,生成 PNG + injected provider 与 DashScope 离线 client 构造通过。
+- `git diff a19776d^..HEAD -- contracts worker` 为空;未发任何付费/免费 provider 请求。
+
+**遗留/下一步**:Stage M 只剩需用户明确预算的 live catalog/end-to-end smoke,用于复核当前
+账户/模型配额语义;没有预算不得运行。下一轮可先做任务 4 精简审计,也可调查任务 8 的
+legacy 日记缺口;Stage 2 实现仍受 live 出口门约束。
