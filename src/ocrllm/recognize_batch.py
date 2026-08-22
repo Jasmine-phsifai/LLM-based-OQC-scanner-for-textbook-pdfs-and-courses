@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from .batch_item_outcome import BatchItemOutcome
 from .clear_public_error import clear_public_error
 from .config import Config
-from .errors import Cancelled, OCRLLMError
+from .errors import Cancelled, InvalidSource, OCRLLMError
 from .output.output_target_claims import OutputTargetClaims
 from .recognize import _recognize
 from .validate_config import validate_config
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 
 _NOT_ATTEMPTED_MESSAGE = "Recognition batch stopped before this source was attempted."
+_SOURCE_ITERATION_FAILED_MESSAGE = "The batch source iterable could not be read."
 
 
 def recognize_batch(
@@ -35,7 +36,8 @@ def recognize_batch(
     further source is dispatched. It is no longer destructive. Every source gets
     a ``BatchItemOutcome`` carrying either its ``RecognitionResult`` or its typed
     error, so work that was already produced and already paid for still reaches
-    the caller alongside the failure.
+    the caller alongside the failure. If reading the iterable itself fails, one
+    final typed outcome reports that terminal input position.
     """
     from .providers.provider_request_start_gate import (
         ProviderRequestStartGate,
@@ -43,6 +45,10 @@ def recognize_batch(
     )
 
     cfg = validate_config(config)
+    try:
+        source_iterator = iter(sources)
+    except Exception:
+        return [_source_iteration_failure(0)]
     gate = ProviderRequestStartGate(
         cfg.execution.provider_request_start_interval_seconds
     )
@@ -50,13 +56,13 @@ def recognize_batch(
         if cfg.execution.max_parallel_requests == 1:
             with activate_provider_request_start_gate(gate):
                 return _recognize_batch_serially(
-                    sources,
+                    source_iterator,
                     config=cfg,
                     gate=gate,
                     output_claims=output_claims,
                 )
         return _recognize_batch_in_parallel(
-            sources,
+            source_iterator,
             config=cfg,
             gate=gate,
             output_claims=output_claims,
@@ -64,7 +70,7 @@ def recognize_batch(
 
 
 def _recognize_batch_serially(
-    sources: Iterable[str | Path | Sequence[str | Path]],
+    source_iterator: Iterator[str | Path | Sequence[str | Path]],
     *,
     config: Config,
     gate: ProviderRequestStartGate,
@@ -72,8 +78,15 @@ def _recognize_batch_serially(
 ) -> list[BatchItemOutcome]:
     """Recognize one source at a time, stopping after the first failure."""
     outcomes: list[BatchItemOutcome] = []
-    source_iterator = iter(sources)
-    for index, source in enumerate(source_iterator):
+    index = 0
+    while True:
+        try:
+            source = next(source_iterator)
+        except StopIteration:
+            break
+        except Exception:
+            outcomes.append(_source_iteration_failure(index))
+            break
         try:
             outcomes.append(
                 BatchItemOutcome(
@@ -91,11 +104,12 @@ def _recognize_batch_serially(
             outcomes.append(BatchItemOutcome(index=index, error=error))
             _append_not_attempted(outcomes, source_iterator, first_index=index + 1)
             break
+        index += 1
     return outcomes
 
 
 def _recognize_batch_in_parallel(
-    sources: Iterable[str | Path | Sequence[str | Path]],
+    source_iterator: Iterator[str | Path | Sequence[str | Path]],
     *,
     config: Config,
     gate: ProviderRequestStartGate,
@@ -104,9 +118,9 @@ def _recognize_batch_in_parallel(
     """Recognize with a bounded worker pool, settling every dispatched item."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    source_iterator = iter(sources)
     outcomes: list[BatchItemOutcome | None] = []
     failed = False
+    accepting_sources = True
     with ThreadPoolExecutor(
         max_workers=config.execution.max_parallel_requests,
         thread_name_prefix="ocrllm-recognition",
@@ -123,6 +137,7 @@ def _recognize_batch_in_parallel(
                     outcomes=outcomes,
                     future_indexes=future_indexes,
                 ):
+                    accepting_sources = False
                     break
 
             while future_indexes and not failed:
@@ -141,15 +156,16 @@ def _recognize_batch_in_parallel(
                     )
                     failed = True
                     continue
-                _submit_next_batch_item(
-                    source_iterator,
-                    executor=executor,
-                    config=config,
-                    gate=gate,
-                    output_claims=output_claims,
-                    outcomes=outcomes,
-                    future_indexes=future_indexes,
-                )
+                if accepting_sources:
+                    accepting_sources = _submit_next_batch_item(
+                        source_iterator,
+                        executor=executor,
+                        config=config,
+                        gate=gate,
+                        output_claims=output_claims,
+                        outcomes=outcomes,
+                        future_indexes=future_indexes,
+                    )
         except BaseException:
             gate.abort()
             for future in future_indexes:
@@ -165,7 +181,7 @@ def _recognize_batch_in_parallel(
     settled = [outcome for outcome in outcomes if outcome is not None]
     if len(settled) != len(outcomes):  # pragma: no cover - defensive.
         raise AssertionError("recognize_batch() left a dispatched item unsettled")
-    if failed:
+    if failed and accepting_sources:
         _append_not_attempted(settled, source_iterator, first_index=len(settled))
     return settled
 
@@ -184,6 +200,9 @@ def _submit_next_batch_item(
     try:
         source = next(source_iterator)
     except StopIteration:
+        return False
+    except Exception:
+        outcomes.append(_source_iteration_failure(len(outcomes)))
         return False
 
     result_index = len(outcomes)
@@ -247,10 +266,27 @@ def _append_not_attempted(
     first_index: int,
 ) -> None:
     """Give every undispatched source an outcome so the caller order stays whole."""
-    for offset, _source in enumerate(source_iterator):
+    next_index = first_index
+    while True:
+        try:
+            next(source_iterator)
+        except StopIteration:
+            return
+        except Exception:
+            outcomes.append(_source_iteration_failure(next_index))
+            return
         outcomes.append(
             BatchItemOutcome(
-                index=first_index + offset,
+                index=next_index,
                 error=Cancelled(_NOT_ATTEMPTED_MESSAGE),
             )
         )
+        next_index += 1
+
+
+def _source_iteration_failure(index: int) -> BatchItemOutcome:
+    """Return a secret-safe terminal outcome for a broken source iterable."""
+    return BatchItemOutcome(
+        index=index,
+        error=InvalidSource(_SOURCE_ITERATION_FAILED_MESSAGE),
+    )

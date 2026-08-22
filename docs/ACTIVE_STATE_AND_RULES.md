@@ -111,6 +111,15 @@ Future agents must assume the following and verify before trusting any claim:
   targeting one output directory are not coordinated, and no cross-process
   transaction is claimed.
 
+- **Batch input iteration cannot erase settled work.** `recognize_batch()`
+  accepts finite iterables and converts an ordinary failure while opening or
+  advancing the iterable into one final, redacted `SOURCE_INVALID` outcome at
+  that input position. Earlier successful or failed outcomes remain available,
+  including when iteration breaks while fail-fast handling is marking remaining
+  inputs `CANCELLED`. Process-control exceptions such as `KeyboardInterrupt`
+  and `SystemExit` still propagate. This is a finite-batch contract, not a
+  streaming or infinite-input API.
+
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an
   existing non-file canonical sidecar target, including a dangling symbolic link,
@@ -257,11 +266,14 @@ daemon thread rather than allowed to block interpreter shutdown.
 `BatchItemOutcome` carries `index` and exactly one of `result` or `error`, so a
 caller reads successes and failures from the same ordered list.
 
-Execution semantics are unchanged: bounded worker pool, caller order, fail-fast.
+Normal execution remains a bounded worker pool with caller order and fail-fast.
 The first failure aborts the start gate and cancels pending futures; calls that
 were already dispatched — and therefore already paid for — are drained and
 settled, and every source that was never attempted gets a `Cancelled` outcome so
-the returned list always matches the caller's source order.
+the returned list matches the caller's source order. If the finite source iterable
+itself raises an ordinary exception, a final redacted `SOURCE_INVALID` outcome
+represents the input position that could not be read instead of hiding all earlier
+outcomes behind that raw exception.
 
 ### D4 — Image resume does not cover the case that loses money. **Medium. Fixed 2026-08-18.**
 

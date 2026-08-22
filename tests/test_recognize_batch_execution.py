@@ -81,6 +81,16 @@ class NumberedProvider:
         return f"# Result {call_number}\n"
 
 
+class SignallingProvider(NumberedProvider):
+    def __init__(self) -> None:
+        super().__init__()
+        self.started = threading.Event()
+
+    def recognize_images(self, image_paths, *, prompt, config):
+        self.started.set()
+        return super().recognize_images(image_paths, prompt=prompt, config=config)
+
+
 def _colliding_sources(tmp_path):
     return [
         write_test_image(tmp_path / directory / "same.png", color=color)
@@ -160,6 +170,133 @@ def test_parallel_batch_reserves_target_after_first_item_finishes(
     assert (output_dir / "same_board.md").read_text(encoding="utf-8") == (
         outcomes[0].result.markdown
     )
+
+
+@pytest.mark.parametrize("max_parallel_requests", [1, 2])
+def test_batch_preserves_completed_result_when_source_iteration_fails(
+    tmp_path,
+    max_parallel_requests,
+):
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    provider = SignallingProvider()
+
+    def broken_sources():
+        yield source
+        assert provider.started.wait(timeout=5)
+        raise RuntimeError("source iterator exposed SECRET-ITERATION-TOKEN")
+
+    outcomes = recognize_batch(
+        broken_sources(),
+        config=Config(
+            provider=provider,
+            output_dir=output_dir,
+            overwrite=True,
+            execution=RecognitionExecutionPolicy(
+                max_parallel_requests=max_parallel_requests
+            ),
+        ),
+    )
+
+    assert provider.calls == 1
+    assert len(outcomes) == 2
+    assert outcomes[0].succeeded
+    assert outcomes[1].index == 1
+    assert outcomes[1].error.code == "SOURCE_INVALID"
+    assert "SECRET-ITERATION-TOKEN" not in str(outcomes[1].error)
+    assert (output_dir / "board_board.md").read_text(encoding="utf-8") == (
+        outcomes[0].result.markdown
+    )
+
+    standalone = recognize(
+        source,
+        config=Config(provider=provider, output_dir=output_dir, overwrite=True),
+    )
+    assert standalone.output_path == output_dir / "board_board.md"
+    assert provider.calls == 2
+
+
+@pytest.mark.parametrize("max_parallel_requests", [1, 2])
+def test_batch_preserves_item_failure_when_remaining_source_iteration_fails(
+    tmp_path,
+    max_parallel_requests,
+):
+    source = write_test_image(tmp_path / "board.png")
+    provider = ImmediateFailureProvider()
+
+    def broken_sources():
+        yield source
+        raise RuntimeError("remaining iterator exposed SECRET-ITERATION-TOKEN")
+
+    outcomes = recognize_batch(
+        broken_sources(),
+        config=Config(
+            provider=provider,
+            execution=RecognitionExecutionPolicy(
+                max_parallel_requests=max_parallel_requests
+            ),
+        ),
+    )
+
+    assert provider.call_count == 1
+    assert [outcome.index for outcome in outcomes] == [0, 1]
+    assert [outcome.error.code for outcome in outcomes] == [
+        "PROVIDER_UNAVAILABLE",
+        "SOURCE_INVALID",
+    ]
+    assert all(
+        "SECRET-ITERATION-TOKEN" not in str(outcome.error) for outcome in outcomes
+    )
+
+
+def test_batch_reports_source_iterable_that_cannot_be_opened():
+    class BrokenSources:
+        def __iter__(self):
+            raise RuntimeError("source iterable exposed SECRET-ITERATION-TOKEN")
+
+    outcomes = recognize_batch(BrokenSources(), config=Config(provider=TimedProvider()))
+
+    assert len(outcomes) == 1
+    assert outcomes[0].index == 0
+    assert outcomes[0].error.code == "SOURCE_INVALID"
+    assert "SECRET-ITERATION-TOKEN" not in str(outcomes[0].error)
+
+
+def test_parallel_batch_never_resumes_iterator_after_iteration_failure(tmp_path):
+    first = write_test_image(tmp_path / "first.png")
+    forbidden = write_test_image(tmp_path / "forbidden.png")
+    provider = SignallingProvider()
+
+    class RecoveringIterator:
+        def __init__(self):
+            self.position = 0
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            self.position += 1
+            if self.position == 1:
+                return first
+            if self.position == 2:
+                assert provider.started.wait(timeout=5)
+                raise RuntimeError("temporary iterator failure")
+            if self.position == 3:
+                return forbidden
+            raise StopIteration
+
+    outcomes = recognize_batch(
+        RecoveringIterator(),
+        config=Config(
+            provider=provider,
+            execution=RecognitionExecutionPolicy(max_parallel_requests=2),
+        ),
+    )
+
+    assert provider.calls == 1
+    assert [outcome.index for outcome in outcomes] == [0, 1]
+    assert outcomes[0].succeeded
+    assert outcomes[1].error.code == "SOURCE_INVALID"
 
 
 def test_parallel_batch_is_bounded_and_returns_caller_order(tmp_path):

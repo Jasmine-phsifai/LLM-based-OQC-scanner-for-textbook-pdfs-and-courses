@@ -1275,3 +1275,40 @@ media 或用户临时交接文件。仍不声称跨进程文件事务；不同�
 
 **下一步。** 继续优先审计已建 active surface，尤其新 shared owner 周边的 cancellation/iterable 异常释放；
 若没有可证明缺陷，再按队列进入 Stage A 音频只读迁移调研。
+
+## #029 — 2026-08-23：batch 输入迭代失败不再吞掉已完成结果
+
+**本轮任务与假设修正。** 原子任务先检查 #028 新增的 batch-lifetime output owner 在 source iterator、取消或异常控制流中
+是否泄漏 claim。主代理用“先产出一个已发布结果、再由 generator 抛 `RuntimeError`、随后立即 standalone overwrite”的离线探针覆盖
+串行和并行；只读审计又逐段检查外层 owner、内层 `ThreadPoolExecutor`、future settle 和 `ExitStack.close()`。两条路径都确认：executor
+先等待已运行任务收束，owner 再释放所有 claim；底层 claim 自身也在 `finally` 删除 key。因此原猜想被否定，没有增加重复 cleanup。
+探针却暴露了相邻真实缺陷：普通 iterator 异常直接逃出 `recognize_batch()`，调用者拿不到已经完成并付费的 outcome；如果异常发生在
+`_append_not_attempted()`，还会覆盖已经记录的 typed item failure。
+
+**方案比较与选择。** 方案一是把 `sources` 收紧为“调用者保证永不失败的 sequence”，保留 raw iterator exception；方案二是继续接受有限
+`Iterable`，把打开或推进 iterable 时的普通 `Exception` 表示为该位置的一个终止 `SOURCE_INVALID` outcome，同时保留此前结果。选择方案二：
+它延续 D3“不丢已完成工作”的公开目的，不需要预展开输入，也不改变 lazy dispatch。实现只捕获普通 `Exception`，所以
+`KeyboardInterrupt`、`SystemExit` 等进程控制异常仍然传播；错误文本固定为库拥有的脱敏消息，不复制 generator exception、secret 或
+traceback。该终止 outcome 表示“此输入位置无法读取”，不是虚构一个已成功枚举的 source。文档同时明确这是有限 batch API；无限 iterable
+在 fail-fast 后如何停止属于独立 streaming 设计，本轮不加猜测性 cap、后台消费或新配置。
+
+**失败优先证据与实现。** 参数化回归让 generator 先 yield 一张真实测试图，等待 provider 确实启动，再抛出含
+`SECRET-ITERATION-TOKEN` 的 `RuntimeError`。修复前串行和双 worker 均为 **2 failed / 0.71s**：raw exception 逃出，已发布 Markdown
+虽然留在磁盘，但调用者收不到 outcome。修复后返回两个有序结果：index 0 success、index 1 `SOURCE_INVALID`；provider 只调用一次，
+错误不含 secret，随后 standalone overwrite 成功，顺带证明 #028 owner 没有泄漏。第二组串行/并行回归让第一个 item 先得到
+`PROVIDER_UNAVAILABLE`，随后剩余 iterator 抛错；返回结果同时保留原 provider failure 和终止 `SOURCE_INVALID`，不再由后者覆盖前者。
+第三项回归覆盖 `iter(sources)` 本身抛错，得到 index 0 的脱敏 typed outcome。生产改动仅把 serial advance、parallel submit 和
+not-attempted drain 三个既有入口统一到同一个小 outcome constructor；没有新 public type、error code、线程、重试或预扫描。
+个人复核还发现可恢复的自定义 iterator 在第一次异常后可能继续 yield；并行 worker 完成时原本会再次推进它。增加一个局部
+`accepting_sources` 状态后，第一次耗尽或异常都永久停止本批次继续取源，同时避免正常耗尽后重复调用 `next()`；回归证明异常后的
+`forbidden.png` 不会进入 provider。
+
+**个人复核、验证与边界。** 主代理复核了 outcome 排序、并行列表中的未 settle 槽、gate/claim 生命周期、异常层级和 generator 关闭语义；
+新逻辑不会把 provider 内部的任意异常误判成 iterator 错误。batch/image/defect/Stage M focused 集 **82 passed / 3.30s**；正确项目环境
+`D:\Anaconda\envs\OCRLLM\python.exe` 下 root 全量 **1077 passed / 89.62s**。系统 base Python 因其 site-packages 中另有 regular
+`tests` package，曾在 collection 阶段产生 29 个 `tests.quality` import error；切回仓库既有 OCRLLM 环境即消失，没有为环境冲突修改产品代码。
+本轮无网络/provider/付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** 只读 scout 另发现 active provider Markdown validator 对 HTML comment 的相反误判：comment-only 文本会被当作可见成功，
+而 comment 内的 apology 又会把外部真实 Markdown 误判为 refusal。下一轮应先做两个 public failing-first 回归，再只在可见性/拒绝检查前
+忽略闭合 `<!-- ... -->`，返回值仍保留原 Markdown；不要引入完整 Markdown renderer。

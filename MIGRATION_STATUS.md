@@ -27,8 +27,9 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   atomic Markdown/state temporary names are compact and do not repeat public
   destination basenames near the traditional Windows path boundary; a process-local
   output claim keeps concurrent batch/direct-thread Markdown and state ownership
-  consistent; all no-cost exit criteria pass through the clean-archive runner at
-  `2e9c770`;
+  consistent; finite batch-iterable failures become redacted terminal outcomes
+  without discarding earlier paid work; all no-cost exit criteria pass through
+  the clean-archive runner at `2e9c770`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
 - not started: Stage 2 vision/audio provider splitting, Stage A mp3 recognition,
