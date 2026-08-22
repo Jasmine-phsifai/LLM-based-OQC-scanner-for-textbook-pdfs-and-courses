@@ -63,9 +63,9 @@
     ~~production short-ASR 在取消/setup failure 前逐段保存，且停止扩大付费请求~~ →
     已完成,见 #013。
     ~~standalone board 以 source SHA-256 + saved batch unit 替代逗号/basename 恢复~~ →
-    已完成,见 #014。~~production board 取消/setup 的增量发布~~ → 已完成,见 #016。仍开放:video
-    failed-batch/current batch size
-    的稳定身份。不要把 Markdown regex repair 移植到 `src/ocrllm`;新库按现有 typed
+    已完成,见 #014。~~production board 取消/setup 的增量发布~~ → 已完成,见 #016。
+    ~~video failed-batch/current batch size 的错误重建~~ → 已删除错误重建并改为生产阶段逐帧标记,见 #017。
+    不要把 Markdown regex repair 移植到 `src/ocrllm`;新库按现有 typed
     sidecar/checkpoint 扩展。
 11. 独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
     “免费额度耗尽”提示；应建立中性 failover disposition 后再修。
@@ -808,3 +808,49 @@ production `BoardProcessor.process()`：它仍把所有 `md_parts` 留到循环�
 **遗留/下一步**:media repair 耐久性队列只剩 video failed-batch 仍按当前 batch size 解释历史失败。
 下一轮先用失败测试证明具体误修路径，再决定是否做 video 专用 sidecar；不要把 audio/board schema
 强行抽成通用 media framework。Stage A 调研继续后移。
+
+## #017 — 2026-08-23:删除 video repair 的 current-batch 错误重建
+
+**任务**:证明并修复历史 `批次 N 失败` 被当前 video batch size 重新解释的问题；保证新失败输出直接
+携带精确帧身份，旧的含糊输出在零 provider 调用时失败，同时减少而不是扩展 repair 结构。
+
+**上下文**:#016 后 media repair 队列只剩 video。生产 `_phase4_batch_one()` 遇到普通异常时只有一个
+本地化 batch index；`repair_board()` 再用当前 `_phase4_batch_size()` 对 `frame_info.json` 重新分组。
+最初比较在 Phase 3 manifest 加字段、另建 video sidecar、扩展 Markdown 三条路径，两名只读 Luna scout
+分别复核 artifact topology 与测试 seam。主审随后发现第四条更小路径：生产失败当下已经持有精确
+`frames`，可直接展开为现有逐帧失败单元，因此不需要保存“batch identity”。拓扑 scout 接到反证后也确认
+此路径更安全、更小；sidecar 方案被推翻。
+
+**成功标准**:普通 multi-frame provider failure 为每帧写已有 meta/failure marker，不再写 batch-only
+marker；repair 只按显式 frame ID 定位；任何历史 batch-only marker 在加载帧/进度/provider 前明确失败；
+删除 current-batch expansion 与 batch replacement；既有逐帧部分成功、取消、质量门和 resume 回归不退化；
+focused、离线广集、编译与 diff 全绿。
+
+**为什么重要**:batch ordinal 不是稳定身份。设置从 2 改为 1 后，“历史 batch 2”会从原来的第 3、4 帧
+静默变成第 2 帧，provider 仍会返回语法有效正文，造成比显式失败更危险的内容污染。把已知 frame ID 在
+生产失败时写下，比为一个可以消失的 batch 概念建立新 schema 更容易冷读，也直接删除错误代码。
+
+**结果**:
+
+- 两条直接回归先以 **2 failed / 5.42s** 复现：生产 multi-frame failure 只写 `批次 1 失败`，旧 batch
+  marker 在 current batch size=1 时实际调用 provider 而没有拒绝。测试明确断言新生产输出包含两个精确
+  frame ID，旧输出的 provider 调用数为零。
+- `_phase4_batch_one()` 的普通异常分支现在为该请求中的每个 frame 调用既有 `_build_frame_marker()`，并写
+  `帧 <id> 识别失败`。`repair_board()` 在发现任何 batch-only marker 时立即说明历史成员不可证明并要求重跑
+  板书阶段；随后只保留显式 frame ID 路径。删除 current batch 分组、failed batch expansion、候选结果拼装
+  和 batch placeholder replacement，共减少 54 行错误/兼容逻辑；没有新模块、sidecar、schema 或抽象。
+- broader focused 首轮 **38 passed, 2 failed / 28.15s**；两项失败只是旧测试仍断言 `批次 N 失败` 文本。
+  改为断言精确 frame meta/failure 后，video repair/resume/failure/quality/writer 集
+  **40 passed / 26.31s**。一次更早的 broader 命令因猜错不存在的 `test_output_quality.py` 文件名而在
+  argument validation 停止、零测试执行；改用仓库实际 `test_output_quality_refusal.py` 后完成验证。最后一次
+  从 repo 根重跑 focused 时又因 legacy import path 缺失产生 **5 collection errors / 0 tests**，随即回到
+  `legacy_app` 正确运行；这些命令错误不计入产品结果。
+- 最终排除真实 ffmpeg `test_social_e2e.py` 与已延期 import-time Bilibili diagnostic 的 legacy 离线广集
+  **272 passed, 1 skipped / 90.30s**，唯一 skip 是显式 live Google discovery。三个修改 Python 文件
+  `py_compile` 与 `git diff --check` 通过；无网络/provider/付费调用，未动 `src/ocrllm`、`contracts/`、
+  `worker/` 或 social media。
+
+**遗留/下一步**:Phase 4 partial resume 仍按当前 batch size 组合已完成 frame block，可能导致重复付费但不会
+把失败身份重定向到另一帧；没有独立失败证据前不把它并入本轮。legacy media repair 身份/原子发布队列已
+关闭。下一轮回到队列 #11，调查普通 429/5xx 被误报成免费额度耗尽并错误触发 candidate switch 的 provider
+语义债；先做只读路径证明与失败测试，不扩大到新的 provider 框架。

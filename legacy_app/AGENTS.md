@@ -779,3 +779,24 @@ reporter 取消丢首批、provider cancellation/setup 被吞。修后 board che
 前持久化 typed/versioned slot，并在每个付费成功后、任何可取消 callback 前原子提交。取消/setup
 failure 必须传播且不能破坏已提交 slot。不要移植本次 localized failed-marker skeleton；新库应扩展现有
 typed checkpoint state。legacy video historical batch identity 仍需独立证据，不能据此预建通用媒体框架。
+
+## 2026-08-23 — video repair 用当前 batch size 误解历史失败（已修复）
+
+**现象与根因。** Phase 4 普通异常只写 `<!-- 批次 N 失败 -->`，没有保存该批实际包含哪些帧。
+`repair_board()` 按当前 `_phase4_batch_size()` 重新切分 `frame_info.json`；例如原 batch size=2 的历史
+batch 2 本应是第 3、4 帧，设置改为 1 后会静默重试第 2 帧并把正文写回旧失败位置。
+
+**修复与兼容边界。** 生产失败时已经持有精确 `frames`，所以不再保存含糊 batch marker，而是立即为
+每帧写已有 meta marker 与 `帧 <id> 识别失败`。repair 只消费显式 frame ID；发现任何旧 batch-only
+marker 时，在读取 frame artifact、报告进度或 provider 调用前明确拒绝并要求重新执行板书识别。删除按
+当前配置展开 batch、拼装候选结果和替换 batch placeholder 的全部分支。显式逐帧旧输出继续兼容；无法
+证明成员的旧 batch 输出不做猜测。没有新增 sidecar/schema 或通用媒体抽象。
+
+**失败优先证据与验证。** 两条回归修前为 **2 failed / 5.42s**，分别证明生产缺少精确 frame identity
+与旧 batch marker 会实际触发错误 provider 调用。最终 video repair/resume/failure/quality/writer 集
+**40 passed / 26.31s**；离线 legacy 广集 **272 passed, 1 skipped / 90.30s**，唯一 skip 是显式 live
+Google discovery。相关三个 Python 文件 `py_compile`、`git diff --check` 通过；无网络/provider/付费调用。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 新库遇到批请求失败时，应在 typed state
+中把失败落到请求时已知的精确 source/unit slot，不得只保存可被配置重新解释的 batch ordinal。这里使用
+逐帧 localized Markdown 是 legacy 现有 repair unit 的减法修复，不是新库应复制的持久化格式。

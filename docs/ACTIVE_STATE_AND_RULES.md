@@ -95,8 +95,10 @@ Future agents must assume the following and verify before trusting any claim:
   ordered source bytes and saved batch membership through its own versioned
   sidecar instead of parsing filenames. Production board recognition now publishes
   a repairable skeleton before dispatch, atomically checkpoints every settled batch,
-  and propagates cancellation/provider setup failures. Video failed batches still
-  depend on the current batch size. The exact open findings are recorded in
+  and propagates cancellation/provider setup failures. Video Phase 4 now expands an
+  ordinary failed request into exact per-frame failure markers while it still knows
+  membership; repair rejects ambiguous historical batch-only markers instead of using
+  today's batch size. The exact findings are recorded in
   `legacy_app/AGENTS.md`. New library modalities must extend typed, versioned
   checkpoint state and atomic publication rather than copy localized
   Markdown-regex repair.
@@ -563,7 +565,7 @@ while retaining the last successful catalog during refresh outages.
 
 ## Legacy Status, 2026-08-23
 
-Six legacy durability/repair-hardening slices are complete. `repair_board()` reads the
+Seven legacy durability/repair-hardening slices are complete. `repair_board()` reads the
 normal `{"items": [...]}` manifest, accounts for unavailable processed frames
 as explicit partial failures, and video cleanup retains extracted audio while
 failed transcript segments remain. Audio, board, and video repair now publish
@@ -583,11 +585,37 @@ missing/corrupt/drifted identity before dispatch, and no longer relies on comma-
 duplicate basenames. Production board recognition now publishes an all-repairable
 Markdown skeleton before dispatch, atomically republishes each success or ordinary
 failure, and propagates cancellation/provider setup errors without losing prior paid
-work. Stable video failed-batch identity remains open and continues to outrank Stage A
-feature research.
-Earlier legacy fixes remain recorded history, not proof that all compatibility paths
-are defect-free.
+work. Video batch failures now persist exact frame IDs, and ambiguous old batch-only
+outputs fail before provider dispatch instead of being reinterpreted with current
+configuration. The media-repair identity queue is closed; earlier fixes remain recorded
+history, not proof that all compatibility paths are defect-free.
 ## New And Fixed In This Working Update
+
+Video repair no longer reconstructs historical failures from today's batch size:
+
+- `_phase4_batch_one()` converts every ordinary failed multi-frame request into one
+  existing frame metadata marker and one failure marker per exact frame. Production
+  therefore persists repair identities while membership is known instead of saving an
+  ambiguous batch ordinal.
+- `repair_board()` repairs only explicit frame IDs. The current-batch expansion and
+  batch-placeholder replacement branches were deleted. Historical outputs containing
+  only `批次 N 失败` are rejected before frame loading, progress callbacks, or provider
+  dispatch because their original membership cannot be proved.
+- A proposed video sidecar was rejected after code review showed it would preserve an
+  avoidable batch abstraction. Per-frame markers already form the legacy repair unit;
+  this fix removes more production code than it adds and does not create a schema or
+  generic media framework.
+- Two direct regressions failed before implementation. The video/resume/failure/quality/
+  writer set passed 40 tests in 26.31 s; the offline legacy suite excluding the real
+  ffmpeg e2e and deferred import-time Bilibili diagnostic passed 272 tests with one
+  explicit live-Google skip in 90.30 s. `py_compile` and `git diff --check` passed. No
+  provider, network, active-library, frozen-boundary, or social-media behavior changed.
+
+The current-batch grouping in partial Phase 4 resume remains an efficiency characteristic,
+not a repair-identity path: it can cause re-payment but cannot redirect a historical failed
+batch. It is unchanged pending separate evidence.
+
+### Previous working update: production board checkpoints
 
 Production board recognition now checkpoints every batch:
 
@@ -606,7 +634,8 @@ Production board recognition now checkpoints every batch:
   `git diff --check` passed. No provider, network,
   active-library, frozen-boundary, or social-media behavior changed.
 
-Stable video failed-batch identity is the remaining media-repair durability item.
+Video failed-batch identity was still open at that checkpoint and is closed by the current
+update above.
 
 ### Previous working update: stable standalone board identity
 
@@ -630,8 +659,8 @@ Standalone board repair now has stable source and batch identity:
   frozen-boundary behavior changed. A broad run exposed that the Bilibili diagnostic
   performs public HTTP during collection; it timed out and remains open test debt.
 
-Video repair still expands historical failed batches using the current batch size and
-remains explicitly open.
+Video failed-batch identity was still open at that checkpoint and is closed by the current
+update above.
 
 ### Previous working update: production short-ASR checkpoints
 
@@ -651,7 +680,8 @@ Production short-ASR durably checkpoints paid parallel work:
   with one explicit live-Google skip. `py_compile` and diff checks passed. No provider,
   network, active-library, or frozen-boundary behavior changed.
 
-Video failed-batch identity remains open.
+Video failed-batch identity was still open at that checkpoint and is closed by the current
+update above.
 
 ### Previous working update: stable audio repair identity
 
@@ -676,8 +706,8 @@ Short-audio repair has a stable unit-identity contract:
   Compilation and diff checks passed. No provider, network, active-library, or
   frozen-boundary behavior changed.
 
-Board batch/basename identity was still open at that checkpoint and is closed by
-the current update above. Video failed-batch identity remains open.
+Board batch/basename and video failed-batch identity were still open at that checkpoint
+and are closed by later updates above.
 
 ### Previous working update: atomic repair publication
 
@@ -699,8 +729,8 @@ Legacy repair publication now has one explicit durability contract:
   explicit live-Google skip. Compilation passed. No active-library,
   frozen-boundary, network, or provider behavior changed.
 
-Stable board batch/basename identity was still open at that checkpoint and is
-closed by the current update above. Video failed-batch identity remains open.
+Stable board batch/basename and video failed-batch identity were still open at that
+checkpoint and are closed by later updates above.
 The shared writer is intentionally only a file-publication primitive; localized
 marker transformations were not centralized or promoted into a library API.
 
@@ -720,7 +750,7 @@ The current legacy video-repair artifact boundary is verified as follows:
   e2e file passed 235 tests with one explicit live-Google skip. Compilation also
   passed. No active-library, frozen-boundary, network, or provider behavior was
   changed. The later working update closed non-atomic/cancellation publication;
-  unstable repair identity remains open.
+  the current update closes the remaining batch-size-dependent repair identity.
 
 ### M2. Flowed output and true resume, 2026-08-19
 

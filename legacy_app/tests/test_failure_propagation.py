@@ -238,7 +238,7 @@ class VisionFailurePropagationTests(unittest.TestCase):
             self.assertIn("第 2-2 页识别失败", content)
             self.assertIn("timed out", content)
 
-    def test_video_phase4_raises_when_every_batch_only_writes_error_placeholders(self):
+    def test_video_phase4_raises_when_every_frame_only_writes_error_placeholders(self):
         with tempfile.TemporaryDirectory() as tmp:
             frame_path = os.path.join(tmp, "board_001_010s.jpg")
             Image.new("RGB", (8, 8), "white").save(frame_path)
@@ -260,7 +260,9 @@ class VisionFailurePropagationTests(unittest.TestCase):
 
             board_md = os.path.join(tmp, "lecture_板书识别.md")
             with open(board_md, encoding="utf-8") as f:
-                self.assertIn("批次 1 失败", f.read())
+                content = f.read()
+            self.assertIn("meta:frame id=board_001_010s", content)
+            self.assertIn("帧 board_001_010s 识别失败", content)
 
     def test_video_partial_timeout_raises_after_writing_output(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -286,7 +288,8 @@ class VisionFailurePropagationTests(unittest.TestCase):
             with open(board_md, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("第一批成功正文", content)
-            self.assertIn("批次 2 失败", content)
+            self.assertIn("meta:frame id=board_002_010s", content)
+            self.assertIn("帧 board_002_010s 识别失败", content)
             self.assertIn("timed out", content)
 
     def test_video_phase4_propagates_provider_setup_errors_without_placeholders(self):

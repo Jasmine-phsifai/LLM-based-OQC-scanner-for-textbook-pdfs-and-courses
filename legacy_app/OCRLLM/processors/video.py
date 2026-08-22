@@ -255,6 +255,12 @@ class VideoProcessor(BaseProcessor):
         if not failed_frame_ids and not failed_batch_indices:
             logger.info("[VIDEO-REPAIR] 没有发现识别失败的帧: %s", md_path)
             return md_path
+        if failed_batch_indices:
+            failed = ", ".join(str(index) for index in failed_batch_indices)
+            raise RuntimeError(
+                "旧版视频输出只记录失败批次索引，历史帧成员无法证明，无法安全修复。"
+                f"请重新执行视频板书识别以生成逐帧失败标记；失败批次: {failed}: {md_path}"
+            )
 
         # Load frame info to resolve frame images
         frame_results = self._load_frame_info_if_valid(info_path)
@@ -294,32 +300,11 @@ class VideoProcessor(BaseProcessor):
 
         # Resolve which frames to repair
         repair_targets: list[tuple[dict, str]] = []  # (frame_dict, image_path)
-        repair_target_ids: set[str] = set()
         unavailable_targets: list[str] = []
-        batch_size = self._phase4_batch_size()
-        all_batches = batch_list(list(frame_results), batch_size)
-
-        # From batch failures: expand to individual frames
-        for bi in failed_batch_indices:
-            if not 1 <= bi <= len(all_batches):
-                unavailable_targets.append(f"batch {bi}")
-                continue
-            for frame in all_batches[bi - 1]:
-                fid = Path(frame.get("path", "")).stem
-                if fid in repair_target_ids or fid in unavailable_targets:
-                    continue
-                img = processed_map.get(fid) or frame.get("path", "")
-                if os.path.isfile(img):
-                    repair_targets.append((frame, img))
-                    repair_target_ids.add(fid)
-                else:
-                    unavailable_targets.append(fid)
 
         # From per-frame failures
         frame_by_id = {Path(f.get("path", "")).stem: f for f in frame_results}
         for fid in failed_frame_ids:
-            if fid in repair_target_ids or fid in unavailable_targets:
-                continue
             frame = frame_by_id.get(fid)
             if frame is None:
                 unavailable_targets.append(fid)
@@ -327,7 +312,6 @@ class VideoProcessor(BaseProcessor):
             img = processed_map.get(fid) or frame.get("path", "")
             if os.path.isfile(img):
                 repair_targets.append((frame, img))
-                repair_target_ids.add(fid)
             else:
                 unavailable_targets.append(fid)
 
@@ -378,7 +362,6 @@ class VideoProcessor(BaseProcessor):
                 still_failed.append(fid)
                 continue
 
-            candidate_results = {**results, fid: text}
             updated_content = content
             replacement_count = 0
 
@@ -401,36 +384,6 @@ class VideoProcessor(BaseProcessor):
                     updated_content,
                     count=1,
                 )
-
-            if replacement_count == 0:
-                for batch_idx in failed_batch_indices:
-                    if not 1 <= batch_idx <= len(all_batches):
-                        continue
-                    batch_frames = all_batches[batch_idx - 1]
-                    batch_fids = [Path(item.get("path", "")).stem for item in batch_frames]
-                    if fid not in batch_fids:
-                        continue
-                    replacement_parts = []
-                    for batch_frame in batch_frames:
-                        batch_fid = Path(batch_frame.get("path", "")).stem
-                        if batch_fid in candidate_results:
-                            replacement_parts.append(candidate_results[batch_fid])
-                        else:
-                            safe_err = "修复重试后仍失败"
-                            replacement_parts.append(
-                                f"{self._build_frame_marker(batch_frame)}\n\n"
-                                f"<!-- 帧 {batch_fid} 识别失败: {safe_err} -->"
-                            )
-                    batch_pattern = re.compile(
-                        r"\s*<!--\s*批次\s+" + str(batch_idx) + r"\s+失败:.*?-->\s*",
-                    )
-                    replacement = "\n\n" + "\n\n".join(replacement_parts) + "\n\n"
-                    updated_content, replacement_count = batch_pattern.subn(
-                        replacement,
-                        updated_content,
-                        count=1,
-                    )
-                    break
 
             if replacement_count != 1:
                 raise RuntimeError(f"视频修复标记已变化，无法安全发布帧 {fid}: {md_path}")
@@ -1532,7 +1485,11 @@ class VideoProcessor(BaseProcessor):
                 raise
             logger.error("[VIDEO] 批次 %d 失败: %s", bi + 1, e)
             safe_err = str(e).replace("--", "\u2014")
-            placeholder = f"\n\n<!-- 批次 {bi + 1} 失败: {safe_err} -->\n\n"
+            placeholder = "\n\n".join(
+                f"{self._build_frame_marker(frame)}\n\n"
+                f"<!-- 帧 {Path(frame['path']).stem} 识别失败: {safe_err} -->"
+                for frame in frames
+            )
             writer.write_slot(bi, placeholder)
             return bi, placeholder, [], False
 

@@ -4,7 +4,9 @@ from pathlib import Path
 import pytest
 
 from OCRLLM.config import AppConfig
+from OCRLLM.core.incremental_writer import IncrementalMDWriter
 from OCRLLM.core.task_runner import CancelledError
+from OCRLLM import prompts
 from OCRLLM.processors.video import VideoProcessor
 from OCRLLM.processors.video_pipeline import VideoProcessContext
 from OCRLLM.processors.video_pipeline_selection import VideoPipelineSelection
@@ -38,6 +40,11 @@ class _CancelAfterOneVisionLLM:
         if self.calls == 1:
             return "第一帧已修复"
         raise CancelledError("任务已取消")
+
+
+class _FailingVisionLLM:
+    def chat_with_images(self, *_args, **_kwargs):
+        raise RuntimeError("provider timeout")
 
 
 def _video_processor(tmp_path: Path, batch_size: int = 1):
@@ -100,7 +107,10 @@ def test_repair_board_reports_missing_processed_frames_after_partial_success(tmp
     )
     board_path = tmp_path / "lecture_板书识别.md"
     board_path.write_text(
-        "<!-- 批次 1 失败: provider error -->",
+        "<!-- meta:frame id=frame_001 time=00:10 -->\n\n"
+        "<!-- 帧 frame_001 识别失败: provider error -->\n\n"
+        "<!-- meta:frame id=frame_002 time=00:20 -->\n\n"
+        "<!-- 帧 frame_002 识别失败: provider error -->",
         encoding="utf-8",
     )
 
@@ -111,6 +121,63 @@ def test_repair_board_reports_missing_processed_frames_after_partial_success(tmp
     repaired = board_path.read_text(encoding="utf-8")
     assert "修复后的板书内容" in repaired
     assert "帧 frame_002 识别失败" in repaired
+
+
+def test_video_phase4_batch_failure_records_each_exact_frame_id(tmp_path):
+    originals = [tmp_path / f"frame_00{index}.jpg" for index in (1, 2)]
+    processed = [tmp_path / f"processed_frame_00{index}.jpg" for index in (1, 2)]
+    for path in [*originals, *processed]:
+        path.write_bytes(b"image")
+    frames = [
+        {"path": str(path), "timestamp": float(index * 10), "frame_idx": index}
+        for index, path in enumerate(originals, start=1)
+    ]
+    processor, _ = _video_processor(tmp_path, batch_size=2)
+    processor.llm = _FailingVisionLLM()
+    output = tmp_path / "board.md"
+    writer = IncrementalMDWriter(str(output), total_slots=1)
+
+    _index, _text, _hotwords, success = processor._phase4_batch_one(
+        0,
+        list(zip(frames, [str(path) for path in processed])),
+        1,
+        prompts.BOARD_WITH_HOTWORDS,
+        writer,
+    )
+    writer.finalize()
+
+    content = output.read_text(encoding="utf-8")
+    assert not success
+    assert "批次 1 失败" not in content
+    assert "meta:frame id=frame_001" in content
+    assert "帧 frame_001 识别失败: provider timeout" in content
+    assert "meta:frame id=frame_002" in content
+    assert "帧 frame_002 识别失败: provider timeout" in content
+
+
+def test_video_repair_rejects_legacy_failed_batch_before_provider_call(tmp_path):
+    originals = [tmp_path / f"frame_00{index}.jpg" for index in (1, 2, 3)]
+    processed = [tmp_path / f"processed_frame_00{index}.jpg" for index in (1, 2, 3)]
+    for path in [*originals, *processed]:
+        path.write_bytes(b"image")
+    frames = [
+        {"path": str(path), "timestamp": float(index * 10), "frame_idx": index}
+        for index, path in enumerate(originals, start=1)
+    ]
+    _write_frame_info(tmp_path, frames)
+    processor, llm = _video_processor(tmp_path, batch_size=1)
+    processor._save_phase3_manifest(
+        str(tmp_path),
+        frames,
+        [str(path) for path in processed],
+    )
+    board_path = tmp_path / "lecture_板书识别.md"
+    board_path.write_text("<!-- 批次 1 失败: provider error -->", encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="旧版.*批次.*无法安全修复"):
+        processor.repair_board("lecture.mp4", str(tmp_path))
+
+    assert llm.image_calls == []
 
 
 def test_cleanup_keeps_extracted_audio_when_transcript_has_failed_segments(tmp_path):
