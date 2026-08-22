@@ -1530,3 +1530,19 @@ partial state 低于 16 MiB，却让 completed state 因最终 Markdown 的额�
 **完整验证与边界。** 项目环境 root 全量 **1087 passed / 90.59s**；`compileall -q src tests` 通过；isolated plain import 为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮无网络、provider 真实调用或付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
 
 **下一步。** #039 用 Event 协调一个 batch item 先产生普通 typed failure、另一个已 dispatch item 再抛 process-control exception，先确认当前 settlement 是否吞掉它以及如何保留其他已完成 outcomes。不要把普通 cancelled Future、caller cancellation 和 `BaseException` 混成一种状态。
+
+## #039 — 2026-08-23：batch settlement 不再吞掉进程控制异常
+
+**原子任务与假设。** 本轮只修 `recognize_batch()` 在一个 item 已经返回 typed failure 后，settle 其他已 dispatch future 时错误捕获所有 `BaseException` 的问题。同步 origin、重读权威状态、入口、package 规则与 #038 日记后，比较两条路径：一是为了始终返回 outcomes，给 process-control failure 发明额外元数据；二是只把 `concurrent.futures.CancelledError` 解释成“未尝试”，其余非 `OCRLLMError` 按正常并行循环的既有政策传播。选择路径二，因为它不扩大公共 API，也不会把已经运行的工作写成未尝试。
+
+**失败优先证据。** 新回归通过公开 `recognize_batch()` 和两个 Event 固定顺序：两个 provider call 必须都已进入；`failure.png` 等待另一项开始后先抛 `ProviderError(PROVIDER_UNAVAILABLE)`；测试只在 monkeypatch wrapper 确认 `_settle_dispatched_outcomes()` 已经开始后，才允许另一个运行中的 call 抛预先创建的 `KeyboardInterrupt` 或 `SystemExit`。因此结果不依赖线程快慢。旧实现两例都稳定 **DID NOT RAISE，2 failed / 0.38s**，证明异常被改写成了 `CANCELLED`。
+
+**两名只读 scout 与个人复核。** topology scout 确认正常 parallel loop 只捕获 `OCRLLMError`，其他 `BaseException` 会进入外层 abort/cancel/re-raise；worker future 会保存并由 `result()` 原样重抛异常；`ThreadPoolExecutor.__exit__()` 使用 `shutdown(wait=True)`，所以传播异常不会放弃仍在运行的线程。test scout 给出相同的 Event 协调方案，并指出现有 gate-abort 测试虽然返回 `CANCELLED`，却不能稳定证明 `Future.cancel()` 成功后的 `CancelledError` 分支。主代理逐行复核实现与测试，采用公开 process-control 回归，并补一个只针对 settlement helper 的 cancelled Future 小测试；没有替换 executor，也没有新增状态类型。
+
+**最小实现与行为边界。** `_settle_dispatched_outcomes()` 在函数内 lazy import `CancelledError`，保留先处理 typed `OCRLLMError` 的分支，只把原先的 `except BaseException` 收窄为 `except CancelledError`。真正取消、尚未开始的 future 仍得到原有 `CANCELLED` 和“未尝试”信息；已运行 future 的 `KeyboardInterrupt`、`SystemExit` 以及意外编程错误不再被伪装。两条参数化回归还断言传播的是 provider 抛出的同一个异常对象；cancelled Future 回归证明窄分支仍有效。batch 单文件 **16 passed / 0.92s**，batch + defect register 定向集 **39 passed / 2.61s**。
+
+**验证中的小问题。** 第一次扩大定向集时命令误写了不存在的 `tests/test_recognize_errors.py`，pytest 因找不到文件而没有收集测试。这不是代码失败；删除错误路径后重新运行真实的 batch 与 defect-register 文件并全部通过。项目环境仍报告 `.pytest_cache` 无写权限警告，不影响测试结果。
+
+**完整验证与边界。** 项目环境 root 全量 **1090 passed / 90.81s**；`compileall -q src tests` 通过；isolated plain import 为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查在提交前执行。本轮无网络、provider 真实调用或付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** #040 审计公共 `Config.progress`：先查实际调用者、文档承诺和 direct-Python 使用价值，再在“删除无消费者字段”与“实现一个明确、很小的 callback”之间做产品决定。worker progress events 属于已经冻结的独立边界，不得为了保留一个未使用字段而扩建通用 progress 框架。

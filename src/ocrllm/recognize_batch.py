@@ -243,6 +243,8 @@ def _settle_dispatched_outcomes(
     outcomes: list[BatchItemOutcome | None],
 ) -> None:
     """Settle calls that were already dispatched, and therefore already paid for."""
+    from concurrent.futures import CancelledError
+
     for future, result_index in future_indexes.items():
         try:
             outcomes[result_index] = BatchItemOutcome(
@@ -252,7 +254,7 @@ def _settle_dispatched_outcomes(
         except OCRLLMError as error:
             clear_public_error(error)
             outcomes[result_index] = BatchItemOutcome(index=result_index, error=error)
-        except BaseException:
+        except CancelledError:
             outcomes[result_index] = BatchItemOutcome(
                 index=result_index,
                 error=Cancelled(_NOT_ATTEMPTED_MESSAGE),

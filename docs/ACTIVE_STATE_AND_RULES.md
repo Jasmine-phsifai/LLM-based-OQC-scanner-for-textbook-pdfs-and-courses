@@ -146,12 +146,20 @@ Future agents must assume the following and verify before trusting any claim:
   leaves the partial sidecar byte-identical. A later uncancelled resume reuses
   the slots and completes with zero new calls.
 
-- **Open: batch settlement can mislabel a process-control exception from an
-  already-dispatched sibling.** After another item fails, the settlement path
-  currently catches `BaseException` from each remaining future and replaces it
-  with `CANCELLED` saying the item was not attempted. Audit coordinated
-  `KeyboardInterrupt` / `SystemExit` propagation separately; do not solve it by
-  swallowing process-control exceptions or discarding other settled outcomes.
+- **Batch settlement preserves process-control exceptions.** After one item
+  returns a typed failure, settlement maps only a genuinely cancelled
+  `Future` to the not-attempted `CANCELLED` outcome. `KeyboardInterrupt`,
+  `SystemExit`, and unexpected exceptions from already-running siblings
+  propagate unchanged; executor shutdown still waits for dispatched work.
+  Coordinated public regressions cover both process-control exception types,
+  and a cancelled-Future regression protects the narrower mapping.
+
+- **Open: `Config.progress` is accepted but unused by the direct library
+  facade.** The active non-worker code does not read this public field. The
+  frozen worker protocol has its own progress events and is a separate
+  boundary. Audit actual callers and documentation before deciding whether to
+  remove the field or implement a deliberately small direct-Python callback;
+  do not invent a wider progress framework to justify the existing field.
 
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an

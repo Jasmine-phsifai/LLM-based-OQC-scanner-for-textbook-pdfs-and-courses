@@ -396,3 +396,72 @@ def test_parallel_failure_aborts_provider_calls_still_waiting_for_the_gate(tmp_p
     assert codes.count("PROVIDER_UNAVAILABLE") == 1
     assert codes.count("CANCELLED") == 3
     assert provider.call_count == 1
+
+
+@pytest.mark.parametrize("process_exception_type", [KeyboardInterrupt, SystemExit])
+def test_parallel_settlement_propagates_process_control_from_running_item(
+    tmp_path,
+    monkeypatch,
+    process_exception_type,
+):
+    sources = [
+        write_test_image(tmp_path / "failure.png"),
+        write_test_image(tmp_path / "process-control.png"),
+    ]
+    process_call_started = threading.Event()
+    settlement_started = threading.Event()
+    process_exception_raised = threading.Event()
+    process_exception = process_exception_type("process-control-sentinel")
+
+    class CoordinatedProvider:
+        def recognize_images(self, image_paths, *, prompt, config):
+            if image_paths[0].name == "failure.png":
+                assert process_call_started.wait(timeout=5)
+                raise ProviderError(
+                    "The first provider request failed.",
+                    code="PROVIDER_UNAVAILABLE",
+                )
+
+            process_call_started.set()
+            assert settlement_started.wait(timeout=5)
+            process_exception_raised.set()
+            raise process_exception
+
+    batch_module = importlib.import_module("ocrllm.recognize_batch")
+    real_settle = batch_module._settle_dispatched_outcomes
+
+    def signal_settlement(*args, **kwargs):
+        settlement_started.set()
+        return real_settle(*args, **kwargs)
+
+    monkeypatch.setattr(
+        batch_module,
+        "_settle_dispatched_outcomes",
+        signal_settlement,
+    )
+
+    with pytest.raises(process_exception_type) as captured:
+        recognize_batch(
+            sources,
+            config=Config(
+                provider=CoordinatedProvider(),
+                execution=RecognitionExecutionPolicy(max_parallel_requests=2),
+            ),
+        )
+
+    assert captured.value is process_exception
+    assert process_exception_raised.is_set()
+
+
+def test_parallel_settlement_marks_cancelled_future_as_not_attempted():
+    from concurrent.futures import Future
+
+    batch_module = importlib.import_module("ocrllm.recognize_batch")
+    cancelled_future = Future()
+    assert cancelled_future.cancel()
+    outcomes = [None]
+
+    batch_module._settle_dispatched_outcomes({cancelled_future: 0}, outcomes)
+
+    assert outcomes[0].index == 0
+    assert outcomes[0].error.code == "CANCELLED"
