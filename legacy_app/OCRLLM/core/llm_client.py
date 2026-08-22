@@ -69,6 +69,27 @@ def _looks_like_free_tier_exhausted(exc: Exception) -> bool:
     return False
 
 
+def _status_code(exc: Exception) -> int | None:
+    status_code = getattr(exc, "status_code", None)
+    if status_code is None:
+        response = getattr(exc, "response", None)
+        status_code = getattr(response, "status_code", None)
+    try:
+        return int(status_code) if status_code is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _should_advance_vision_queue(exc: Exception, vision_api, *, enabled: bool) -> bool:
+    if _looks_like_free_tier_exhausted(exc):
+        return True
+    if not enabled or not vision_api.advance_queue_on_retriable_errors:
+        return False
+    if not vision_api.vision_model_queue:
+        return False
+    return _status_code(exc) in _RETRIABLE_STATUS_CODES
+
+
 def _is_retriable(exc: Exception) -> bool:
     if isinstance(exc, FreeTierExhaustedError):
         return False  # 用模型切换处理，不要让 _retry_call 反复重试
@@ -291,6 +312,8 @@ class LLMClient:
         *,
         client: Optional[OpenAI] = None,
         extra_body: Optional[dict] = None,
+        queue_on_retriable_errors: bool = False,
+        retry_nonstream_on_stream_status_error: bool = False,
     ) -> str:
         api_client = client or self.client
         if api_client is None:
@@ -302,6 +325,17 @@ class LLMClient:
         }
         if extra_body:
             request_kwargs["extra_body"] = extra_body
+
+        def _nonstream_result() -> str:
+            completion = api_client.chat.completions.create(
+                **request_kwargs,
+                stream=False,
+            )
+            result = self._extract_message_text(completion)
+            if result:
+                return result
+            raise EmptyResponseError("LLM 响应为空")
+
         try:
             stream = api_client.chat.completions.create(
                 **request_kwargs,
@@ -309,7 +343,19 @@ class LLMClient:
             )
             result = self._collect_stream(stream)
         except Exception as exc:
-            if _looks_like_free_tier_exhausted(exc):
+            if retry_nonstream_on_stream_status_error and _status_code(exc) in _RETRIABLE_STATUS_CODES:
+                logger.warning("[LLM] 流式请求返回 %s，回退到非流式请求", _status_code(exc))
+                try:
+                    return _nonstream_result()
+                except Exception as fallback_exc:
+                    if _should_advance_vision_queue(
+                        fallback_exc, self.cfg.vision_api, enabled=queue_on_retriable_errors
+                    ):
+                        raise FreeTierExhaustedError(model, str(fallback_exc)) from fallback_exc
+                    raise
+            if _should_advance_vision_queue(
+                exc, self.cfg.vision_api, enabled=queue_on_retriable_errors
+            ):
                 raise FreeTierExhaustedError(model, str(exc)) from exc
             raise
         if result:
@@ -317,18 +363,13 @@ class LLMClient:
 
         logger.warning("[LLM] 流式响应为空，回退到非流式请求")
         try:
-            completion = api_client.chat.completions.create(
-                **request_kwargs,
-                stream=False,
-            )
+            return _nonstream_result()
         except Exception as exc:
-            if _looks_like_free_tier_exhausted(exc):
+            if _should_advance_vision_queue(
+                exc, self.cfg.vision_api, enabled=queue_on_retriable_errors
+            ):
                 raise FreeTierExhaustedError(model, str(exc)) from exc
             raise
-        result = self._extract_message_text(completion)
-        if result:
-            return result
-        raise EmptyResponseError("LLM 响应为空")
 
     @staticmethod
     def _extract_responses_text(response) -> str:
@@ -365,7 +406,9 @@ class LLMClient:
         try:
             response = self._active_vision_client().responses.create(**self._responses_payload(model, prompt, image_paths))
         except Exception as exc:
-            if _looks_like_free_tier_exhausted(exc):
+            if _should_advance_vision_queue(
+                exc, self.cfg.vision_api, enabled=self.cfg.vision_api.enabled
+            ):
                 raise FreeTierExhaustedError(model, str(exc)) from exc
             raise
         result = self._extract_responses_text(response)
@@ -374,13 +417,12 @@ class LLMClient:
         raise EmptyResponseError("Responses API 响应为空")
 
     def _chat_messages_for_images(self, prompt: str, image_paths: list[str]) -> list[dict]:
-        content = []
+        content = [{"type": "text", "text": prompt}]
         for img in image_paths:
             content.append({
                 "type": "image_url",
                 "image_url": {"url": self._encode_image(img)},
             })
-        content.append({"type": "text", "text": prompt})
         return [{"role": "user", "content": content}]
 
     def _vision_chat_extra_body(self) -> Optional[dict]:
@@ -399,6 +441,8 @@ class LLMClient:
             messages or self._chat_messages_for_images(prompt, image_paths),
             client=self._active_vision_client(),
             extra_body=self._vision_chat_extra_body(),
+            queue_on_retriable_errors=self.cfg.vision_api.enabled,
+            retry_nonstream_on_stream_status_error=self.cfg.vision_api.enabled,
         )
 
     def _vision_fallback_chain(self) -> list[str]:
@@ -547,13 +591,12 @@ class LLMClient:
 
         primary_model = model or self.cfg.models.vision_model
         messages = list(history) if history else []
-        content = []
+        content = [{"type": "text", "text": prompt}]
         for img in image_paths:
             content.append({
                 "type": "image_url",
                 "image_url": {"url": self._encode_image(img)},
             })
-        content.append({"type": "text", "text": prompt})
         messages.append({"role": "user", "content": content})
 
         def _call_one(model_name: str):

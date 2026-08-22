@@ -42,7 +42,7 @@ from OCRLLM.core.provider_selection import (
 from OCRLLM.core.provider_errors import is_provider_setup_error
 from OCRLLM.core.task_runner import ProgressReporter, CancelledError
 from OCRLLM.core.utils import (
-    batch_list, ensure_dir, resize_image_if_needed, resolve_workers, strip_md_fence,
+    batch_list, ensure_dir, long_path, resize_image_if_needed, resolve_workers, strip_md_fence,
 )
 from OCRLLM.core.video_capture import open_video_capture
 from OCRLLM.core.progress_tracker import ProgressTracker
@@ -63,6 +63,13 @@ logger = logging.getLogger(__name__)
 _FRAME_META_RE = re.compile(
     r"^<!--\s*meta:frame\s+id=(\S+?)(?:\s+time=(\d{1,3}:\d{2}))?\s*-->$",
     flags=re.MULTILINE,
+)
+
+_FAILED_FRAME_RE = re.compile(
+    r"<!--\s*帧\s+(\S+?)\s+识别失败:\s*.*?-->",
+)
+_FAILED_BATCH_RE = re.compile(
+    r"<!--\s*批次\s+(\d+)\s+失败:\s*.*?-->",
 )
 
 
@@ -187,6 +194,211 @@ class VideoProcessor(BaseProcessor):
             "frames": cls._file_has_content(cls._phase4_board_path(directory, stem)),
             "audio": cls._file_has_content(cls._phase5_output_path(directory, stem)),
         }
+
+    @staticmethod
+    def find_failed_frames(md_path: str) -> list[str]:
+        """Return frame IDs that have failure placeholders in the board MD."""
+        try:
+            text = Path(md_path).read_text(encoding="utf-8")
+        except OSError:
+            return []
+        ids: list[str] = []
+        for m in _FAILED_FRAME_RE.finditer(text):
+            fid = m.group(1)
+            if fid not in ids:
+                ids.append(fid)
+        return ids
+
+    @staticmethod
+    def find_failed_batch_indices(md_path: str) -> list[int]:
+        """Return 1-based batch indices that have failure placeholders."""
+        try:
+            text = Path(md_path).read_text(encoding="utf-8")
+        except OSError:
+            return []
+        indices: list[int] = []
+        for m in _FAILED_BATCH_RE.finditer(text):
+            idx = int(m.group(1))
+            if idx not in indices:
+                indices.append(idx)
+        return sorted(indices)
+
+    @staticmethod
+    def board_has_failures(md_path: str) -> bool:
+        """Check if board MD contains any failure markers."""
+        try:
+            text = Path(md_path).read_text(encoding="utf-8")
+        except OSError:
+            return False
+        return bool(_FAILED_FRAME_RE.search(text) or _FAILED_BATCH_RE.search(text))
+
+    def repair_board(
+        self,
+        video_path: str,
+        output_dir: str,
+        prompt_template: str = None,
+    ) -> str:
+        """Re-recognize failed frames in an existing board MD.
+
+        Requires frame_info.json and frame images to still be on disk.
+        Returns the md_path, or raises on total/partial failure.
+        """
+        stem = self._safe_output_stem(Path(video_path).stem)
+        md_path = self._phase4_board_path(output_dir, stem)
+        info_path = os.path.join(output_dir, "frame_info.json")
+        prompt_template = prompt_template or prompts.BOARD_WITH_HOTWORDS
+
+        failed_frame_ids = self.find_failed_frames(md_path)
+        failed_batch_indices = self.find_failed_batch_indices(md_path)
+
+        if not failed_frame_ids and not failed_batch_indices:
+            logger.info("[VIDEO-REPAIR] 没有发现识别失败的帧: %s", md_path)
+            return md_path
+
+        # Load frame info to resolve frame images
+        frame_results = self._load_frame_info_if_valid(info_path)
+        if frame_results is None:
+            raise RuntimeError(
+                f"帧信息文件 frame_info.json 不存在或无效，无法修复。"
+                f"请勾选「保留中间文件」后重新处理视频，再尝试修复。"
+            )
+
+        # Build frame_id → (frame_dict, image_path) mapping
+        processed_dir = self._phase3_dir(output_dir)
+        manifest_path = self._phase3_manifest_path(output_dir)
+        processed_map = {}
+        if os.path.isfile(manifest_path):
+            try:
+                with open(manifest_path, "r", encoding="utf-8") as f:
+                    for item in json.load(f):
+                        src = item.get("source_path", "")
+                        processed_map[Path(src).stem] = item.get("processed_path", src)
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        # Resolve which frames to repair
+        repair_targets: list[tuple[dict, str]] = []  # (frame_dict, image_path)
+        batch_size = self._phase4_batch_size()
+        all_batches = batch_list(list(frame_results), batch_size)
+
+        # From batch failures: expand to individual frames
+        for bi in failed_batch_indices:
+            if 1 <= bi <= len(all_batches):
+                for frame in all_batches[bi - 1]:
+                    fid = Path(frame.get("path", "")).stem
+                    if fid not in [Path(t[0].get("path", "")).stem for t in repair_targets]:
+                        img = processed_map.get(fid) or frame.get("path", "")
+                        if os.path.isfile(img):
+                            repair_targets.append((frame, img))
+
+        # From per-frame failures
+        frame_by_id = {Path(f.get("path", "")).stem: f for f in frame_results}
+        for fid in failed_frame_ids:
+            if fid in frame_by_id and fid not in [Path(t[0].get("path", "")).stem for t in repair_targets]:
+                frame = frame_by_id[fid]
+                img = processed_map.get(fid) or frame.get("path", "")
+                if os.path.isfile(img):
+                    repair_targets.append((frame, img))
+
+        if not repair_targets:
+            raise RuntimeError("所有失败帧的图片文件均已丢失，无法修复。")
+
+        total = len(repair_targets)
+        logger.info("[VIDEO-REPAIR] 需要修复 %d 帧", total)
+        self._report(0, total, f"修复 {total} 个失败帧...")
+
+        results: dict[str, str] = {}  # frame_id → recognized text
+        still_failed: list[str] = []
+
+        for idx, (frame, img_path) in enumerate(repair_targets):
+            self._check_cancelled()
+            fid = Path(frame.get("path", "")).stem
+            ts = frame.get("timestamp", 0)
+            image_name = f"{fid} [{self._format_frame_time(ts)}]"
+            self._report(idx + 1, total, f"识别帧 {fid} ({idx + 1}/{total})")
+
+            prompt = prompt_template.format(image_names=image_name, extra_instruction="")
+            try:
+                if self._use_api_pool_for_llm():
+                    with self.api_pool.get_client() as client:
+                        result = client.chat_with_images(prompt=prompt, image_paths=[img_path])
+                else:
+                    result = self.llm.chat_with_images(prompt=prompt, image_paths=[img_path])
+                text = strip_md_fence(result)
+                text = self._ensure_batch_frame_markers(text, (frame,))
+                if looks_like_refusal(text):
+                    logger.warning("[VIDEO-REPAIR] 帧 %s 模型拒识", fid)
+                    still_failed.append(fid)
+                    continue
+                results[fid] = text
+                self._report_content(text, f"修复识别 — 帧 {fid}")
+            except CancelledError:
+                raise
+            except Exception as e:
+                if is_provider_setup_error(e):
+                    raise
+                logger.error("[VIDEO-REPAIR] 帧 %s 识别失败: %s", fid, e)
+                still_failed.append(fid)
+
+        if not results:
+            raise RuntimeError(f"视频板书修复全部 {total} 帧失败")
+
+        # Replace failure placeholders in MD
+        content = Path(md_path).read_text(encoding="utf-8")
+
+        # Replace per-frame failures
+        for fid, text in results.items():
+            pattern = re.compile(
+                r"(<!--\s*meta:frame\s+id=" + re.escape(fid) + r"[^>]*-->\s*\n*)"
+                r"(\s*<!--\s*帧\s+" + re.escape(fid) + r"\s+识别失败:.*?-->)",
+                re.DOTALL,
+            )
+            if pattern.search(content):
+                content = pattern.sub(text, content, count=1)
+            else:
+                # Standalone frame failure without meta marker
+                standalone = re.compile(
+                    r"<!--\s*帧\s+" + re.escape(fid) + r"\s+识别失败:.*?-->",
+                )
+                if standalone.search(content):
+                    content = standalone.sub(text, content, count=1)
+
+        # Replace batch failures where all frames in that batch are now repaired
+        for bi in failed_batch_indices:
+            if 1 <= bi <= len(all_batches):
+                batch_frames = all_batches[bi - 1]
+                batch_fids = [Path(f.get("path", "")).stem for f in batch_frames]
+                repaired_in_batch = [fid for fid in batch_fids if fid in results]
+                still_failed_in_batch = [fid for fid in batch_fids if fid not in results]
+                if not repaired_in_batch:
+                    continue
+                replacement_parts = []
+                for f in batch_frames:
+                    fid = Path(f.get("path", "")).stem
+                    if fid in results:
+                        replacement_parts.append(results[fid])
+                    else:
+                        safe_err = "修复重试后仍失败"
+                        replacement_parts.append(
+                            f"{self._build_frame_marker(f)}\n\n"
+                            f"<!-- 帧 {fid} 识别失败: {safe_err} -->"
+                        )
+                batch_pattern = re.compile(
+                    r"\s*<!--\s*批次\s+" + str(bi) + r"\s+失败:.*?-->\s*",
+                )
+                replacement = "\n\n" + "\n\n".join(replacement_parts) + "\n\n"
+                content = batch_pattern.sub(replacement, content, count=1)
+
+        Path(md_path).write_text(content, encoding="utf-8")
+        logger.info(
+            "[VIDEO-REPAIR] 修复完成: %d/%d 帧成功, %d 帧仍失败 -> %s",
+            len(results), total, len(still_failed), md_path,
+        )
+        if still_failed:
+            raise RuntimeError(
+                f"视频板书修复后仍有 {len(still_failed)} 帧失败: {still_failed}: {md_path}"
+            )
+        return md_path
 
     def process(
         self,
@@ -392,20 +604,19 @@ class VideoProcessor(BaseProcessor):
 
     @staticmethod
     def _phase4_board_path(output_dir: str, stem: str) -> str:
-        return os.path.join(output_dir, f"{stem}_板书识别.md")
+        return long_path(os.path.join(output_dir, f"{stem}_板书识别.md"))
 
     @staticmethod
     def _phase4_merged_board_path(output_dir: str, stem: str) -> str:
-        return os.path.join(output_dir, f"{stem}_板书识别_合并.md")
+        return long_path(os.path.join(output_dir, f"{stem}_板书识别_合并.md"))
 
     @staticmethod
     def _phase4_hotword_path(output_dir: str, stem: str) -> str:
-        return os.path.join(output_dir, f"{stem}_热词表.txt")
+        return long_path(os.path.join(output_dir, f"{stem}_热词表.txt"))
 
     @staticmethod
     def _phase5_output_path(output_dir: str, stem: str) -> str:
-        return os.path.join(output_dir, f"{stem}_录音识别.md")
-
+        return long_path(os.path.join(output_dir, f"{stem}_录音识别.md"))
     @staticmethod
     def _format_frame_time(timestamp: float) -> str:
         return f"{int(timestamp // 60):02d}:{int(timestamp % 60):02d}"
@@ -1505,6 +1716,11 @@ class VideoProcessor(BaseProcessor):
         output_dir = context.output_dir
         stem = context.stem
         board_path = self._phase4_board_path(output_dir, stem)
+
+        # Preserve intermediates when board MD has failures — needed for future repair
+        if context.selection.frames and self.board_has_failures(board_path):
+            logger.info("[VIDEO] 板书识别含失败帧，保留中间文件以便修复")
+            return
 
         if context.selection.frames and not self._file_has_content(board_path):
             logger.warning("[VIDEO] 板书 MD 不存在或为空，跳过清理以便排查")

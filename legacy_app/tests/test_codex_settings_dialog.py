@@ -51,6 +51,7 @@ class CodexSettingsDialogTests(unittest.TestCase):
             dlg._api_key_input.setText("")
             dlg._codex_enabled_cb.setChecked(True)
             dlg._codex_reasoning_combo.setCurrentText("medium")
+            dlg._codex_fast_mode_cb.setChecked(True)
             dlg._codex_parallel_input.setValue(6)
             dlg._codex_stagger_input.setValue(2.5)
             dlg._codex_vision_batch_input.setValue(7)
@@ -65,6 +66,7 @@ class CodexSettingsDialogTests(unittest.TestCase):
 
             inspect.assert_called_once()
             self.assertEqual(inspect.call_args.args[0].model, "gpt-5.5")
+            self.assertTrue(inspect.call_args.args[0].fast_mode)
             self.assertEqual(inspect.call_args.args[0].parallel_requests, 6)
             accept.assert_called_once()
             warning.assert_not_called()
@@ -73,6 +75,7 @@ class CodexSettingsDialogTests(unittest.TestCase):
             self.assertEqual(applied.codex_vision.request_stagger_seconds, 2.5)
             self.assertEqual(applied.codex_vision.vision_batch_size, 7)
             self.assertEqual(applied.codex_vision.video_frame_batch_size, 8)
+            self.assertTrue(applied.codex_vision.fast_mode)
             self.assertEqual(applied.concurrency.llm_parallel_requests, 6)
             self.assertEqual(applied.concurrency.llm_request_stagger_seconds, 2.5)
             self.assertEqual(applied.processing.batch_size, 7)
@@ -86,6 +89,7 @@ class CodexSettingsDialogTests(unittest.TestCase):
         settings.setValue("ui/codex_request_stagger_seconds", 4.5)
         settings.setValue("ui/codex_vision_batch_size", 12)
         settings.setValue("ui/codex_video_frame_batch_size", 13)
+        settings.setValue("ui/codex_fast_mode", True)
         settings.sync()
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -96,6 +100,7 @@ class CodexSettingsDialogTests(unittest.TestCase):
             self.assertEqual(dlg._codex_stagger_input.value(), 4.5)
             self.assertEqual(dlg._codex_vision_batch_input.value(), 12)
             self.assertEqual(dlg._codex_video_batch_input.value(), 13)
+            self.assertTrue(dlg._codex_fast_mode_cb.isChecked())
             dlg.deleteLater()
             self._app.processEvents()
 
@@ -109,6 +114,37 @@ class CodexSettingsDialogTests(unittest.TestCase):
             dlg = SettingsDialog(None, cfg)
 
             self.assertEqual(dlg._codex_model_combo.currentText(), "gpt-5.4-mini")
+            dlg.deleteLater()
+            self._app.processEvents()
+
+    def test_vision_queue_error_switch_setting_round_trips(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = AppConfig().with_updates(paths={"output_dir": tmp, "temp_dir": tmp})
+            dlg = SettingsDialog(None, cfg)
+            dlg._vision_advance_queue_cb.setChecked(True)
+
+            applied = dlg.apply_config()
+
+            self.assertTrue(applied.vision_api.advance_queue_on_retriable_errors)
+            dlg.deleteLater()
+            self._app.processEvents()
+
+    def test_codex_fetch_models_repopulates_model_combo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = AppConfig().with_updates(paths={"output_dir": tmp, "temp_dir": tmp})
+            dlg = SettingsDialog(None, cfg)
+
+            def run_fetch(_fn, on_done):
+                on_done(["gpt-5.6-luna", "gpt-5.5"], None)
+
+            with patch.object(dlg, "_run_fetch_async", side_effect=run_fetch), \
+                    patch.object(QMessageBox, "information"):
+                dlg._on_codex_fetch_models_clicked()
+
+            self.assertEqual(
+                [dlg._codex_model_combo.itemText(i) for i in range(dlg._codex_model_combo.count())],
+                ["gpt-5.6-luna", "gpt-5.5"],
+            )
             dlg.deleteLater()
             self._app.processEvents()
 
@@ -165,6 +201,7 @@ class CodexSettingsDialogTests(unittest.TestCase):
         settings.setValue("ui/codex_request_stagger_seconds", 1.5)
         settings.setValue("ui/codex_vision_batch_size", 10)
         settings.setValue("ui/codex_video_frame_batch_size", 11)
+        settings.setValue("ui/codex_fast_mode", True)
         settings.sync()
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -177,6 +214,7 @@ class CodexSettingsDialogTests(unittest.TestCase):
             self.assertEqual(window._cfg.codex_vision.request_stagger_seconds, 1.5)
             self.assertEqual(window._cfg.codex_vision.vision_batch_size, 10)
             self.assertEqual(window._cfg.codex_vision.video_frame_batch_size, 11)
+            self.assertTrue(window._cfg.codex_vision.fast_mode)
             self.assertEqual(window._cfg.concurrency.llm_parallel_requests, 9)
             self.assertEqual(window._cfg.concurrency.llm_request_stagger_seconds, 1.5)
             self.assertEqual(window._cfg.processing.batch_size, 10)

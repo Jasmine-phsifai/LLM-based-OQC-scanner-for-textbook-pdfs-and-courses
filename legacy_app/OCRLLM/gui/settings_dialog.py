@@ -39,6 +39,7 @@ try:
         CODEX_VISION_DEFAULT_REASONING,
         CODEX_VISION_MODEL_CHOICES,
         CODEX_VISION_REASONING_LEVELS,
+        fetch_codex_vision_models,
         inspect_codex_cli,
         migrate_stored_codex_vision_model,
         normalize_codex_vision_model,
@@ -63,6 +64,9 @@ except ImportError:
             ok: bool = False
             message: str = "codex_vision 模块未安装"
         return _R()
+
+    def fetch_codex_vision_models(_cfg):  # type: ignore[no-redef]
+        raise RuntimeError("codex_vision 模块未安装")
 
 SETTINGS_ORG = "OCRLLM"
 SETTINGS_APP = "QCR"
@@ -346,11 +350,18 @@ class SettingsDialog(QDialog):
         self._codex_model_combo.setCurrentText(CODEX_VISION_DEFAULT_MODEL)
         self._codex_model_combo.currentTextChanged.connect(self._on_codex_model_changed)
         codex_row.addWidget(self._codex_model_combo, stretch=1)
+        self._codex_fetch_models_btn = QPushButton("获取模型")
+        self._codex_fetch_models_btn.setToolTip("调用 Codex CLI 模型目录，加载当前可用的图片模型")
+        self._codex_fetch_models_btn.clicked.connect(self._on_codex_fetch_models_clicked)
+        codex_row.addWidget(self._codex_fetch_models_btn)
         codex_row.addWidget(QLabel("思考强度:"))
         self._codex_reasoning_combo = QComboBox()
         self._codex_reasoning_combo.addItems(CODEX_VISION_REASONING_LEVELS)
         self._codex_reasoning_combo.setCurrentText(CODEX_VISION_DEFAULT_REASONING)
         codex_row.addWidget(self._codex_reasoning_combo)
+        self._codex_fast_mode_cb = QCheckBox("Fast mode")
+        self._codex_fast_mode_cb.setToolTip("使用 Codex priority 服务档位；速度更快，但会增加用量")
+        codex_row.addWidget(self._codex_fast_mode_cb)
         codex_layout.addLayout(codex_row)
 
         codex_row2 = QHBoxLayout()
@@ -438,6 +449,9 @@ class SettingsDialog(QDialog):
         self._vision_reasoning_input = QLineEdit()
         self._vision_reasoning_input.setPlaceholderText("留空或 high")
         vis_row4.addWidget(self._vision_reasoning_input)
+        self._vision_advance_queue_cb = QCheckBox("429/5xx 切换模型")
+        self._vision_advance_queue_cb.setToolTip("启用模型队列时，代理限流或网关错误直接尝试下一个模型")
+        vis_row4.addWidget(self._vision_advance_queue_cb)
         self._vision_network_cb = QCheckBox("network_access")
         vis_row4.addWidget(self._vision_network_cb)
         self._vision_no_store_cb = QCheckBox("disable_response_storage")
@@ -787,10 +801,45 @@ class SettingsDialog(QDialog):
             self._pending_vision_model = self._codex_model()
             self._vision_model_combo.setCurrentText(self._pending_vision_model)
 
+    def _on_codex_fetch_models_clicked(self):
+        self._codex_fetch_models_btn.setEnabled(False)
+        self._codex_fetch_models_btn.setText("获取中...")
+        cfg = self._codex_config_from_ui()
+
+        def _on_done(models, error):
+            self._codex_fetch_models_btn.setEnabled(True)
+            self._codex_fetch_models_btn.setText("获取模型")
+            if error is not None:
+                QMessageBox.warning(self, "获取 Codex 模型失败", str(error))
+                return
+            if not models:
+                QMessageBox.warning(self, "获取 Codex 模型失败", "Codex 模型目录中没有支持图片输入的模型。")
+                return
+
+            current = self._codex_model()
+            names = list(dict.fromkeys(models))
+            if current and current not in names:
+                names.insert(0, current)
+            self._codex_model_combo.blockSignals(True)
+            try:
+                self._codex_model_combo.clear()
+                self._codex_model_combo.addItems(names)
+                self._codex_model_combo.setCurrentText(current or names[0])
+            finally:
+                self._codex_model_combo.blockSignals(False)
+            if self._codex_enabled_cb.isChecked():
+                self._pending_vision_model = self._codex_model()
+                self._vision_model_combo.setCurrentText(self._pending_vision_model)
+            QMessageBox.information(self, "Codex 模型获取完成", f"已加载 {len(models)} 个图片模型。")
+
+        self._run_fetch_async(lambda: fetch_codex_vision_models(cfg), _on_done)
+
     def _apply_codex_ui_state(self):
         codex = self._codex_enabled_cb.isChecked()
         self._codex_model_combo.setEnabled(True)
         self._codex_reasoning_combo.setEnabled(True)
+        self._codex_fast_mode_cb.setEnabled(True)
+        self._codex_fetch_models_btn.setEnabled(True)
         self._codex_command_input.setEnabled(True)
         self._codex_timeout_input.setEnabled(True)
         self._codex_parallel_input.setEnabled(True)
@@ -827,6 +876,7 @@ class SettingsDialog(QDialog):
             command=self._codex_command_input.text().strip() or "codex",
             model=self._codex_model(),
             reasoning_effort=self._codex_reasoning_combo.currentText().strip() or CODEX_VISION_DEFAULT_REASONING,
+            fast_mode=self._codex_fast_mode_cb.isChecked(),
             timeout_seconds=self._codex_timeout_input.value(),
             parallel_requests=self._codex_parallel_input.value(),
             request_stagger_seconds=self._codex_stagger_input.value(),
@@ -836,7 +886,7 @@ class SettingsDialog(QDialog):
 
     def _codex_check_signature(self) -> str:
         cfg = self._codex_config_from_ui()
-        return f"{cfg.command}|{cfg.model}|{cfg.reasoning_effort}|{cfg.timeout_seconds}"
+        return f"{cfg.command}|{cfg.model}|{cfg.reasoning_effort}|{int(cfg.fast_mode)}|{cfg.timeout_seconds}"
 
     def _validate_codex_environment_if_needed(self, *, force: bool = False) -> bool:
         if not self._codex_enabled_cb.isChecked() and not force:
@@ -992,6 +1042,8 @@ class SettingsDialog(QDialog):
         self._codex_model_combo.setCurrentText(codex_model)
         if self._settings.contains("ui/codex_reasoning_effort"):
             self._codex_reasoning_combo.setCurrentText(self._settings.value("ui/codex_reasoning_effort", type=str) or CODEX_VISION_DEFAULT_REASONING)
+        if self._settings.contains("ui/codex_fast_mode"):
+            self._codex_fast_mode_cb.setChecked(self._settings.value("ui/codex_fast_mode", type=bool))
         if self._settings.contains("ui/codex_timeout_seconds"):
             self._codex_timeout_input.setValue(int(self._settings.value("ui/codex_timeout_seconds")))
         else:
@@ -1047,6 +1099,12 @@ class SettingsDialog(QDialog):
             self._vision_no_store_cb.setChecked(self._settings.value("ui/vision_disable_response_storage", type=bool))
         else:
             self._vision_no_store_cb.setChecked(self._cfg.vision_api.disable_response_storage)
+        if self._settings.contains("ui/vision_advance_queue_on_retriable_errors"):
+            self._vision_advance_queue_cb.setChecked(
+                self._settings.value("ui/vision_advance_queue_on_retriable_errors", type=bool)
+            )
+        else:
+            self._vision_advance_queue_cb.setChecked(self._cfg.vision_api.advance_queue_on_retriable_errors)
         if self._settings.contains("ui/vision_model"):
             saved = self._settings.value("ui/vision_model", type=str) or ""
             if saved:
@@ -1120,6 +1178,7 @@ class SettingsDialog(QDialog):
         self._settings.setValue("ui/codex_command", self._codex_command_input.text())
         self._settings.setValue("ui/codex_model", self._codex_model())
         self._settings.setValue("ui/codex_reasoning_effort", self._codex_reasoning_combo.currentText().strip())
+        self._settings.setValue("ui/codex_fast_mode", self._codex_fast_mode_cb.isChecked())
         self._settings.setValue("ui/codex_timeout_seconds", self._codex_timeout_input.value())
         self._settings.setValue("ui/codex_parallel_requests", self._codex_parallel_input.value())
         self._settings.setValue("ui/codex_request_stagger_seconds", self._codex_stagger_input.value())
@@ -1134,6 +1193,10 @@ class SettingsDialog(QDialog):
         self._settings.setValue("ui/vision_reasoning_effort", self._vision_reasoning_input.text())
         self._settings.setValue("ui/vision_network_access", self._vision_network_cb.isChecked())
         self._settings.setValue("ui/vision_disable_response_storage", self._vision_no_store_cb.isChecked())
+        self._settings.setValue(
+            "ui/vision_advance_queue_on_retriable_errors",
+            self._vision_advance_queue_cb.isChecked(),
+        )
         self._settings.setValue("ui/vision_model", self._pending_vision_model)
         self._settings.setValue("ui/audio_model", self._pending_audio_model)
         self._settings.setValue("ui/llm_parallel_requests", self._llm_parallel_input.value())
@@ -1228,6 +1291,7 @@ class SettingsDialog(QDialog):
         vis_reasoning = self._vision_reasoning_input.text().strip()
         vis_network = self._vision_network_cb.isChecked()
         vis_no_store = self._vision_no_store_cb.isChecked()
+        vis_advance_queue = self._vision_advance_queue_cb.isChecked()
         vision_model = self._pending_vision_model
         audio_model = self._pending_audio_model
         new_parallel = self._llm_parallel_input.value()
@@ -1289,6 +1353,7 @@ class SettingsDialog(QDialog):
                 "command": self._codex_command_input.text().strip() or "codex",
                 "model": self._codex_model(),
                 "reasoning_effort": self._codex_reasoning_combo.currentText().strip() or CODEX_VISION_DEFAULT_REASONING,
+                "fast_mode": self._codex_fast_mode_cb.isChecked(),
                 "timeout_seconds": self._codex_timeout_input.value(),
                 "parallel_requests": codex_parallel,
                 "request_stagger_seconds": codex_stagger,
@@ -1304,6 +1369,7 @@ class SettingsDialog(QDialog):
                 "model_reasoning_effort": vis_reasoning,
                 "network_access": vis_network,
                 "disable_response_storage": vis_no_store,
+                "advance_queue_on_retriable_errors": vis_advance_queue,
                 "vision_model_queue": self._get_queue_items(),
             },
             "concurrency": {

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -22,6 +23,10 @@ from OCRLLM import prompts
 logger = logging.getLogger(__name__)
 
 _BOARD_HISTORY_MESSAGES = 8
+
+_FAILED_BATCH_RE = re.compile(
+    r"<!--\s*批次\s+(\d+)\s+\(([^)]*)\)\s+识别失败:\s*.*?-->",
+)
 
 
 def _default_board_output_path(output_dir: str, image_paths: list[str]) -> str:
@@ -166,3 +171,101 @@ class BoardProcessor(BaseProcessor):
             raise RuntimeError(f"板书识别输出包含识别失败，失败批次: {failed}: {output_path}")
         logger.info("[BOARD] 板书识别完成 -> %s", output_path)
         return output_path
+
+    @staticmethod
+    def find_failed_batches(md_path: str) -> list[tuple[int, list[str]]]:
+        """Return (1-based batch index, image names list) for failed batches."""
+        try:
+            text = Path(md_path).read_text(encoding="utf-8")
+        except OSError:
+            return []
+        results: list[tuple[int, list[str]]] = []
+        for m in _FAILED_BATCH_RE.finditer(text):
+            idx = int(m.group(1))
+            names = [n.strip() for n in m.group(2).split(",") if n.strip()]
+            results.append((idx, names))
+        return results
+
+    def repair(
+        self,
+        image_paths: list[str],
+        md_path: str,
+        skip_preprocess: bool = False,
+        prompt_template: str = None,
+    ) -> str:
+        """Re-recognize failed batches in an existing board MD.
+
+        Uses the original image files to re-process only the failed batches.
+        Returns md_path, or raises on total/partial failure.
+        """
+        failed = self.find_failed_batches(md_path)
+        if not failed:
+            logger.info("[BOARD-REPAIR] 没有发现识别失败的批次: %s", md_path)
+            return md_path
+
+        prompt_template = prompt_template or prompts.BOARD
+        # Build name → path map from the original images
+        name_to_path = {Path(p).name: p for p in image_paths}
+
+        total = len(failed)
+        logger.info("[BOARD-REPAIR] 需要修复 %d 个批次", total)
+        self._report(0, total, f"修复 {total} 个失败批次...")
+
+        results: dict[int, str] = {}  # batch index → recognized text
+        still_failed: list[int] = []
+
+        preprocessor = ImagePreprocessor(self.cfg)
+
+        for order, (batch_idx, names) in enumerate(failed):
+            self._check_cancelled()
+            batch_paths = [name_to_path[n] for n in names if n in name_to_path]
+            if not batch_paths:
+                still_failed.append(batch_idx)
+                continue
+
+            self._report(order + 1, total, f"识别批次 {batch_idx} ({order + 1}/{total})")
+            names_str = ", ".join(names)
+            prompt = prompt_template.format(image_names=names_str)
+
+            # Preprocess
+            if not skip_preprocess:
+                proc_paths = preprocessor.process_batch(batch_paths, None)
+                for p in proc_paths:
+                    resize_image_if_needed(
+                        p, self.cfg.processing.image_max_side, self.cfg.processing.image_quality,
+                    )
+            else:
+                proc_paths = batch_paths
+
+            try:
+                result = self.llm.chat_with_images(prompt=prompt, image_paths=proc_paths)
+                text = strip_md_fence(result)
+                if looks_like_refusal(text):
+                    raise RuntimeError("模型拒识")
+                results[batch_idx] = text
+                self._report_content(text, f"修复识别 — 批次 {batch_idx}")
+            except Exception as e:
+                logger.error("[BOARD-REPAIR] 批次 %d 失败: %s", batch_idx, e)
+                still_failed.append(batch_idx)
+
+        if not results:
+            raise RuntimeError(f"板书修复全部 {total} 个批次失败")
+
+        # Replace placeholders in MD
+        content = Path(md_path).read_text(encoding="utf-8")
+        for batch_idx, text in results.items():
+            pattern = re.compile(
+                r"\s*<!--\s*批次\s+" + str(batch_idx) + r"\s+\([^)]*\)\s+识别失败:.*?-->\s*",
+            )
+            content = pattern.sub("\n\n" + text + "\n\n", content, count=1)
+
+        Path(md_path).write_text(content, encoding="utf-8")
+        logger.info(
+            "[BOARD-REPAIR] 修复完成: %d/%d 批次成功, %d 批次仍失败 -> %s",
+            len(results), total, len(still_failed), md_path,
+        )
+        if still_failed:
+            raise RuntimeError(
+                f"板书修复后仍有 {len(still_failed)} 个批次失败: {still_failed}: {md_path}"
+            )
+        return md_path

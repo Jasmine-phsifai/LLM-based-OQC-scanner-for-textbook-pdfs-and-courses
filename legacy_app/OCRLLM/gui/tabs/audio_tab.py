@@ -63,6 +63,15 @@ class AudioTab(QWidget):
             self._prompt.reset_to_default,
             extra_widgets=[self._prompt]))
 
+        from PyQt5.QtWidgets import QPushButton
+        repair_row = QHBoxLayout()
+        self._repair_btn = QPushButton("🔧 修复失败分段")
+        self._repair_btn.setToolTip("扫描已有识别结果中的失败分段，仅重新识别那些部分")
+        self._repair_btn.clicked.connect(self._run_repair)
+        repair_row.addWidget(self._repair_btn)
+        repair_row.addStretch()
+        vbox.addLayout(repair_row)
+
     def set_input_paths(self, paths: list[str] | tuple[str, ...]):
         """从外部设置音频文件路径（如拖放）。
 
@@ -148,3 +157,79 @@ class AudioTab(QWidget):
 
         if self._start_worker(task):
             self._prompt.consume_temporary()
+
+    def _run_repair(self):
+        audio_paths = split_paths_text(self._audio_path.text())
+        if not audio_paths:
+            QMessageBox.warning(self, "提示", "请先选择需要修复的音频文件")
+            return
+
+        from OCRLLM.processors.audio import AudioProcessor
+
+        cfg = self._get_cfg()
+
+        def _output_path_for(audio_path: str) -> str:
+            if self._get_output_in_place():
+                src_dir = os.path.dirname(os.path.abspath(audio_path))
+                stem = os.path.splitext(os.path.basename(audio_path))[0]
+                return os.path.join(src_dir, f"{stem}_录音识别.md")
+            stem = os.path.splitext(os.path.basename(audio_path))[0]
+            return os.path.join(cfg.paths.output_dir, f"{stem}_录音识别.md")
+
+        # Pre-check
+        repair_targets = []
+        for audio_path in audio_paths:
+            md_path = _output_path_for(audio_path)
+            if not os.path.isfile(md_path):
+                continue
+            failed = AudioProcessor.find_failed_segments(md_path)
+            if failed:
+                repair_targets.append((audio_path, md_path, failed))
+
+        if not repair_targets:
+            QMessageBox.information(self, "修复", "所选音频的识别结果中没有发现失败分段。")
+            return
+
+        hw_text = self._hotwords.text().strip()
+        hw_file = self._hotword_file.text().strip()
+        hotwords = []
+        if hw_text:
+            hotwords.extend([w.strip() for w in hw_text.split(",") if w.strip()])
+        if hw_file and os.path.isfile(hw_file):
+            with open(hw_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    word = line.strip()
+                    if word:
+                        hotwords.append(word)
+
+        prompt_text = self._prompt.prompt_text()
+
+        def task(reporter):
+            task_cfg = self._get_cfg()
+            results = []
+            any_success = False
+            for audio_path, md_path, failed in repair_targets:
+                proc = AudioProcessor(cfg=task_cfg, reporter=reporter)
+                try:
+                    proc.repair(audio_path, md_path,
+                                hotwords=hotwords or None,
+                                prompt_template=prompt_text or None)
+                    results.append(f"✓ {os.path.basename(audio_path)}: 全部 {len(failed)} 分段修复成功")
+                    any_success = True
+                except RuntimeError:
+                    remaining = AudioProcessor.find_failed_segments(md_path)
+                    fixed = len(failed) - len(remaining)
+                    if fixed > 0:
+                        results.append(
+                            f"⚠ {os.path.basename(audio_path)}: {fixed}/{len(failed)} 分段已修复，"
+                            f"仍有 {len(remaining)} 分段失败"
+                        )
+                        any_success = True
+                    else:
+                        results.append(f"✗ {os.path.basename(audio_path)}: 全部 {len(failed)} 分段修复失败")
+                except Exception as e:
+                    results.append(f"✗ {os.path.basename(audio_path)}: {e}")
+            header = "修复完成" if any_success else "修复失败 — 所有分段仍无法识别"
+            return f"{header}:\n" + "\n".join(results)
+
+        self._start_worker(task)

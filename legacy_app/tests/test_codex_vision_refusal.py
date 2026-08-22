@@ -1,5 +1,7 @@
+import os
 import tempfile
 import subprocess
+from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -7,6 +9,19 @@ import pytest
 
 from OCRLLM.config import CodexVisionConfig
 from OCRLLM.core.codex_vision import CodexCLIUnavailableError, CodexVisionRunner
+
+
+@contextmanager
+def _closed_temp_image():
+    image_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    try:
+        image_file.write(b"image")
+    finally:
+        image_file.close()
+    try:
+        yield image_file.name
+    finally:
+        os.unlink(image_file.name)
 
 
 def _run_codex_with_output(output_text: str):
@@ -17,13 +32,13 @@ def _run_codex_with_output(output_text: str):
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
     cfg = CodexVisionConfig(enabled=True, command="codex")
-    with tempfile.NamedTemporaryFile(suffix=".png") as image_file, \
+    with _closed_temp_image() as image_path, \
             patch("OCRLLM.core.codex_vision.shutil.which", return_value="codex"), \
             patch("OCRLLM.core.codex_vision.subprocess.run", side_effect=fake_run) as run_mock, \
             patch("OCRLLM.core.codex_vision.time.sleep"):
         runner = CodexVisionRunner(cfg)
         try:
-            return runner.recognize("识别图片", [image_file.name]), run_mock.call_count
+            return runner.recognize("识别图片", [image_path]), run_mock.call_count
         except Exception as exc:
             exc.run_call_count = run_mock.call_count
             raise
@@ -54,14 +69,14 @@ def test_codex_prompt_declares_exact_refusal_contract():
 
 def test_codex_default_timeout_is_1800_and_timeout_is_not_retried():
     cfg = CodexVisionConfig(enabled=True, command="codex")
-    with tempfile.NamedTemporaryFile(suffix=".png") as image_file, \
+    with _closed_temp_image() as image_path, \
             patch("OCRLLM.core.codex_vision.shutil.which", return_value="codex"), \
             patch(
                 "OCRLLM.core.codex_vision.subprocess.run",
                 side_effect=subprocess.TimeoutExpired("codex", 1800),
             ) as run_mock:
         with pytest.raises(CodexCLIUnavailableError, match="超时"):
-            CodexVisionRunner(cfg).recognize("识别图片", [image_file.name])
+            CodexVisionRunner(cfg).recognize("识别图片", [image_path])
 
     assert cfg.timeout_seconds == 1800
     assert run_mock.call_count == 1

@@ -46,11 +46,11 @@ class IncrementalMDWriter:
         self._flush_in_progress: bool = False
 
         # 确保输出目录存在
-        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+        os.makedirs(os.path.dirname(self._output_path) or ".", exist_ok=True)
 
         # 仅在非续传场景清空文件；续传时由 seed_slots + flush 安全覆盖
         if truncate:
-            with open(output_path, "w", encoding="utf-8") as f:
+            with open(self._output_path, "w", encoding="utf-8") as f:
                 f.write("")
 
     def write_slot(self, index: int, content: str):

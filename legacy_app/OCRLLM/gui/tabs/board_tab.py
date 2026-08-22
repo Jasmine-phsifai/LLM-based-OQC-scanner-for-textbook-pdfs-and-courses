@@ -53,6 +53,15 @@ class BoardTab(QWidget):
             self._prompt.reset_to_default,
             extra_widgets=[self._prompt]))
 
+        from PyQt5.QtWidgets import QPushButton
+        repair_row = QHBoxLayout()
+        self._repair_btn = QPushButton("🔧 修复失败批次")
+        self._repair_btn.setToolTip("扫描已有识别结果中的失败批次，仅重新识别那些部分")
+        self._repair_btn.clicked.connect(self._run_repair)
+        repair_row.addWidget(self._repair_btn)
+        repair_row.addStretch()
+        vbox.addLayout(repair_row)
+
     def set_input_paths(self, paths: list[str] | tuple[str, ...]):
         """从外部设置图片文件路径列表。
 
@@ -124,3 +133,60 @@ class BoardTab(QWidget):
 
         if self._start_worker(task):
             self._prompt.consume_temporary()
+
+    def _run_repair(self):
+        raw = self._files.text().strip()
+        if not raw:
+            QMessageBox.warning(self, "提示", "请先选择原始图片文件（用于修复识别结果）")
+            return
+
+        files = [f.strip() for f in raw.split(";") if f.strip()]
+        missing = [f for f in files if not os.path.isfile(f)]
+        if missing:
+            QMessageBox.warning(self, "提示", "文件不存在:\n" + "\n".join(missing[:5]))
+            return
+
+        from OCRLLM.processors.board import BoardProcessor
+
+        # Determine output path to scan for failures
+        output_path = None
+        if self._get_output_in_place():
+            src_dir = os.path.dirname(os.path.abspath(files[0]))
+            output_path = os.path.join(src_dir, "板书识别.md")
+        else:
+            from OCRLLM.processors.board import _default_board_output_path
+            cfg = self._get_cfg()
+            output_path = _default_board_output_path(cfg.paths.output_dir, files)
+
+        if not os.path.isfile(output_path):
+            QMessageBox.information(self, "修复", "未找到对应的识别结果文件。")
+            return
+
+        failed = BoardProcessor.find_failed_batches(output_path)
+        if not failed:
+            QMessageBox.information(self, "修复", "识别结果中没有发现失败批次。")
+            return
+
+        skip = self._skip.isChecked()
+        prompt_text = self._prompt.prompt_text()
+        total = len(failed)
+
+        def task(reporter):
+            from OCRLLM.processors.board import BoardProcessor
+            cfg = self._get_cfg()
+            proc = BoardProcessor(cfg=cfg, reporter=reporter)
+            try:
+                proc.repair(files, output_path,
+                            skip_preprocess=skip,
+                            prompt_template=prompt_text or None)
+                return f"修复完成: 全部 {total} 个批次修复成功"
+            except RuntimeError:
+                remaining = BoardProcessor.find_failed_batches(output_path)
+                fixed = total - len(remaining)
+                if fixed > 0:
+                    return f"修复完成: {fixed}/{total} 批次已修复，仍有 {len(remaining)} 批次失败"
+                return f"修复失败: 全部 {total} 个批次仍无法识别"
+            except Exception as e:
+                return f"修复失败: {e}"
+
+        self._start_worker(task)

@@ -380,6 +380,7 @@ class QCRMainWindow(QMainWindow):
         codex_command = _str("ui/codex_command", self._cfg.codex_vision.command) or "codex"
         codex_model = migrate_stored_codex_vision_model(_str("ui/codex_model", self._cfg.codex_vision.model))
         codex_reasoning = _str("ui/codex_reasoning_effort", self._cfg.codex_vision.reasoning_effort) or CODEX_VISION_DEFAULT_REASONING
+        codex_fast_mode = _bool("ui/codex_fast_mode", self._cfg.codex_vision.fast_mode)
         codex_timeout = _int("ui/codex_timeout_seconds", self._cfg.codex_vision.timeout_seconds)
         codex_parallel = max(1, _int("ui/codex_parallel_requests", self._cfg.codex_vision.parallel_requests))
         codex_stagger = max(0.0, _float("ui/codex_request_stagger_seconds", self._cfg.codex_vision.request_stagger_seconds))
@@ -393,6 +394,10 @@ class QCRMainWindow(QMainWindow):
         vis_reasoning = _str("ui/vision_reasoning_effort", self._cfg.vision_api.model_reasoning_effort)
         vis_network = _bool("ui/vision_network_access", self._cfg.vision_api.network_access)
         vis_no_store = _bool("ui/vision_disable_response_storage", self._cfg.vision_api.disable_response_storage)
+        vis_advance_queue = _bool(
+            "ui/vision_advance_queue_on_retriable_errors",
+            self._cfg.vision_api.advance_queue_on_retriable_errors,
+        )
         vision_model = codex_model if codex_enabled else (_str("ui/vision_model") or self._cfg.models.vision_model)
         audio_model = _str("ui/audio_model") or self._cfg.models.asr_model
         new_parallel = _int("ui/llm_parallel_requests", self._cfg.concurrency.llm_parallel_requests)
@@ -449,6 +454,7 @@ class QCRMainWindow(QMainWindow):
                 "command": codex_command,
                 "model": codex_model,
                 "reasoning_effort": codex_reasoning,
+                "fast_mode": codex_fast_mode,
                 "timeout_seconds": codex_timeout,
                 "parallel_requests": codex_parallel,
                 "request_stagger_seconds": codex_stagger,
@@ -464,6 +470,7 @@ class QCRMainWindow(QMainWindow):
                 "model_reasoning_effort": vis_reasoning,
                 "network_access": vis_network,
                 "disable_response_storage": vis_no_store,
+                "advance_queue_on_retriable_errors": vis_advance_queue,
                 "vision_model_queue": _queue("ui/vision_model_queue", self._cfg.vision_api.vision_model_queue),
             },
             "concurrency": {
@@ -494,6 +501,7 @@ class QCRMainWindow(QMainWindow):
             "codex_enabled": codex_enabled,
             "codex_model": codex_model,
             "codex_reasoning_effort": codex_reasoning,
+            "codex_fast_mode": codex_fast_mode,
             "vision_api_enabled": vis_enabled,
             "vision_provider": vis_provider,
             "vision_api_key": vis_key,

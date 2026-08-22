@@ -11,7 +11,7 @@ if PROJECT_PARENT not in sys.path:
 
 from PIL import Image
 
-from OCRLLM.config import AppConfig, APIConfig, VisionAPIConfig
+from OCRLLM.config import AppConfig, APIConfig, ModelConfig, VisionAPIConfig
 from OCRLLM.core.llm_client import LLMClient
 
 
@@ -24,6 +24,7 @@ class VisionProviderConfigTests(unittest.TestCase):
             "OCRLLM_VISION_BASE_URL": "https://vision.example/v1",
             "OCRLLM_VISION_WIRE_API": "responses",
             "OCRLLM_VISION_MODEL": "oasis-vision-model",
+            "OCRLLM_VISION_ADVANCE_QUEUE_ON_RETRIABLE_ERRORS": "true",
         }, clear=True):
             cfg = AppConfig.from_env()
 
@@ -33,7 +34,70 @@ class VisionProviderConfigTests(unittest.TestCase):
         self.assertEqual(cfg.vision_api.api_key, "vision-key")
         self.assertEqual(cfg.vision_api.base_url, "https://vision.example/v1")
         self.assertEqual(cfg.vision_api.wire_api, "responses")
+        self.assertTrue(cfg.vision_api.advance_queue_on_retriable_errors)
         self.assertEqual(cfg.models.vision_model, "oasis-vision-model")
+
+    def test_retriable_proxy_error_can_advance_independent_vision_queue(self):
+        class ProxyStatusError(RuntimeError):
+            status_code = 429
+
+        cfg = AppConfig(
+            api=APIConfig(api_key="dash-key"),
+            models=ModelConfig(vision_model="primary-model"),
+            vision_api=VisionAPIConfig(
+                enabled=True,
+                api_key="vision-key",
+                base_url="https://vision.example/v1",
+                advance_queue_on_retriable_errors=True,
+                vision_model_queue=["fallback-model"],
+            ),
+        )
+        client = LLMClient(cfg)
+        client.vision_client.chat.completions.create = MagicMock(
+            side_effect=[
+                ProxyStatusError("proxy rate limit"),
+                ProxyStatusError("proxy rate limit"),
+                ["OCRLLM TEST 12345"],
+            ]
+        )
+
+        with patch("OCRLLM.core.llm_client._notify_free_tier_switch"):
+            result = client.chat_with_images("read", [], max_retries=1)
+
+        self.assertEqual(result, "OCRLLM TEST 12345")
+        calls = client.vision_client.chat.completions.create.call_args_list
+        self.assertEqual(calls[0].kwargs["model"], "primary-model")
+        self.assertTrue(calls[0].kwargs["stream"])
+        self.assertEqual(calls[1].kwargs["model"], "primary-model")
+        self.assertFalse(calls[1].kwargs["stream"])
+        self.assertEqual(calls[2].kwargs["model"], "fallback-model")
+
+    def test_external_vision_stream_status_error_falls_back_to_nonstream(self):
+        class ProxyStatusError(RuntimeError):
+            status_code = 502
+
+        cfg = AppConfig(
+            api=APIConfig(api_key="dash-key"),
+            vision_api=VisionAPIConfig(
+                enabled=True,
+                api_key="vision-key",
+                base_url="https://vision.example/v1",
+            ),
+        )
+        client = LLMClient(cfg)
+        client.vision_client.chat.completions.create = MagicMock(
+            side_effect=[
+                ProxyStatusError("streaming image bridge failed"),
+                {"choices": [{"message": {"content": "OCRLLM TEST 12345"}}]},
+            ]
+        )
+
+        result = client.chat_with_images("read", [], max_retries=1)
+
+        self.assertEqual(result, "OCRLLM TEST 12345")
+        calls = client.vision_client.chat.completions.create.call_args_list
+        self.assertTrue(calls[0].kwargs["stream"])
+        self.assertFalse(calls[1].kwargs["stream"])
 
     def test_responses_payload_carries_image_and_requested_provider_options(self):
         cfg = AppConfig(
@@ -121,6 +185,30 @@ class VisionProviderConfigTests(unittest.TestCase):
         self.assertEqual(result, "OCRLLM TEST 12345")
         kwargs = client.vision_client.chat.completions.create.call_args.kwargs
         self.assertNotIn("extra_body", kwargs)
+
+    def test_chat_image_payload_places_text_before_images(self):
+        cfg = AppConfig(
+            api=APIConfig(api_key="dash-key"),
+            vision_api=VisionAPIConfig(
+                enabled=True,
+                api_key="vision-key",
+                base_url="https://vision.example/v1",
+            ),
+        )
+        client = LLMClient(cfg)
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            image_path = tmp.name
+        try:
+            Image.new("RGB", (8, 8), "white").save(image_path)
+            content = client._chat_messages_for_images("read", [image_path])[0]["content"]
+        finally:
+            try:
+                os.unlink(image_path)
+            except OSError:
+                pass
+
+        self.assertEqual(content[0], {"type": "text", "text": "read"})
+        self.assertEqual(content[1]["type"], "image_url")
 
     def test_vision_provider_can_initialize_without_dashscope_key(self):
         cfg = AppConfig(

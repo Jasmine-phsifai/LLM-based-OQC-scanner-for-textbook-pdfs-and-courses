@@ -8,7 +8,7 @@ import os
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QCheckBox, QMessageBox,
+    QCheckBox, QMessageBox, QPushButton,
 )
 
 from OCRLLM import prompts
@@ -69,6 +69,14 @@ class VideoTab(QWidget):
             "▶ 开始处理视频", self._run,
             self._reset_prompts_to_default,
             extra_widgets=[self._board_prompt, self._audio_prompt]))
+
+        repair_row = QHBoxLayout()
+        self._repair_btn = QPushButton("🔧 修复失败帧/分段")
+        self._repair_btn.setToolTip("扫描已有识别结果中的失败帧或分段，仅重新识别那些部分")
+        self._repair_btn.clicked.connect(self._run_repair)
+        repair_row.addWidget(self._repair_btn)
+        repair_row.addStretch()
+        vbox.addLayout(repair_row)
 
     def _reset_prompts_to_default(self):
         self._board_prompt.reset_to_default()
@@ -220,3 +228,114 @@ class VideoTab(QWidget):
         if self._start_worker(task):
             self._board_prompt.consume_temporary()
             self._audio_prompt.consume_temporary()
+
+    def _run_repair(self):
+        video_paths = split_paths_text(self._video_path.text())
+        if not video_paths:
+            QMessageBox.warning(self, "提示", "请先选择需要修复的视频文件")
+            return
+
+        from pathlib import Path as _Path
+        from OCRLLM.processors.video import VideoProcessor
+        from OCRLLM.processors.audio import AudioProcessor
+
+        cfg = self._get_cfg()
+
+        def _output_dir_for(video_path: str) -> str:
+            if self._get_output_in_place():
+                src_dir = os.path.dirname(os.path.abspath(video_path))
+                return os.path.join(src_dir, _Path(video_path).stem)
+            return VideoProcessor.default_output_dir(cfg, video_path)
+
+        # Pre-check: find repair targets
+        repair_targets = []  # (video_path, output_dir, board_failed, audio_failed)
+        for video_path in video_paths:
+            output_dir = _output_dir_for(video_path)
+            stem = VideoProcessor._safe_output_stem(_Path(video_path).stem)
+            board_md = VideoProcessor._phase4_board_path(output_dir, stem)
+            audio_md = VideoProcessor._phase5_output_path(output_dir, stem)
+
+            board_frames = VideoProcessor.find_failed_frames(board_md)
+            board_batches = VideoProcessor.find_failed_batch_indices(board_md)
+            audio_segments = AudioProcessor.find_failed_segments(audio_md)
+
+            if board_frames or board_batches or audio_segments:
+                repair_targets.append((
+                    video_path, output_dir,
+                    len(board_frames) + len(board_batches),
+                    len(audio_segments),
+                ))
+
+        if not repair_targets:
+            QMessageBox.information(self, "修复", "所选视频的识别结果中没有发现失败项。")
+            return
+
+        prompt_text = self._board_prompt.prompt_text()
+        audio_prompt_text = self._audio_prompt.prompt_text()
+
+        def task(reporter):
+            task_cfg = self._get_cfg()
+            results = []
+            any_success = False
+
+            for video_path, output_dir, n_board, n_audio in repair_targets:
+                stem = VideoProcessor._safe_output_stem(_Path(video_path).stem)
+                basename = os.path.basename(video_path)
+                file_results = []
+
+                # Board repair
+                if n_board > 0:
+                    try:
+                        proc = VideoProcessor(cfg=task_cfg, reporter=reporter)
+                        proc.repair_board(
+                            video_path, output_dir,
+                            prompt_template=prompt_text or None,
+                        )
+                        file_results.append(f"板书: 全部修复成功")
+                        any_success = True
+                    except RuntimeError as e:
+                        board_md = VideoProcessor._phase4_board_path(output_dir, stem)
+                        remaining = (
+                            len(VideoProcessor.find_failed_frames(board_md))
+                            + len(VideoProcessor.find_failed_batch_indices(board_md))
+                        )
+                        fixed = n_board - remaining
+                        if fixed > 0:
+                            file_results.append(f"板书: {fixed}/{n_board} 项已修复，仍有 {remaining} 项失败")
+                            any_success = True
+                        else:
+                            file_results.append(f"板书: 全部修复失败")
+                    except Exception as e:
+                        file_results.append(f"板书: {e}")
+
+                # Audio repair
+                if n_audio > 0:
+                    try:
+                        audio_path = VideoProcessor._phase1_audio_path(output_dir, stem)
+                        audio_md = VideoProcessor._phase5_output_path(output_dir, stem)
+                        proc = AudioProcessor(cfg=task_cfg, reporter=reporter)
+                        proc.repair(
+                            audio_path, audio_md,
+                            prompt_template=audio_prompt_text or None,
+                        )
+                        file_results.append(f"录音: 全部修复成功")
+                        any_success = True
+                    except RuntimeError as e:
+                        audio_md = VideoProcessor._phase5_output_path(output_dir, stem)
+                        remaining = len(AudioProcessor.find_failed_segments(audio_md))
+                        fixed = n_audio - remaining
+                        if fixed > 0:
+                            file_results.append(f"录音: {fixed}/{n_audio} 分段已修复，仍有 {remaining} 分段失败")
+                            any_success = True
+                        else:
+                            file_results.append(f"录音: 全部修复失败")
+                    except Exception as e:
+                        file_results.append(f"录音: {e}")
+
+                status = "✓" if all("成功" in r for r in file_results) else ("⚠" if any_success else "✗")
+                results.append(f"{status} {basename}: {'; '.join(file_results)}")
+
+            header = "修复完成" if any_success else "修复失败 — 所有项仍无法识别"
+            return f"{header}:\n" + "\n".join(results)
+
+        self._start_worker(task)

@@ -488,3 +488,44 @@ WARNING FOR src/ocrllm: any future Codex-CLI provider must treat "model says
 it cannot see the attachment" as transient infrastructure failure with long
 backoff — not as a content refusal and not as caller error. CLI exit code 0
 does not mean the attachments were delivered.
+
+## 2026-08-20 - CLIProxyAPI direct vision integration
+
+What broke: the legacy app's Codex mode always launched the full local
+`codex exec` harness, even when the task only needed a direct multimodal model
+request. The existing independent OpenAI-compatible vision path could already
+send base64 images, but its model queue only advanced for DashScope's
+`FreeTierOnly` error and its chat helper did not recover when a gateway rejected
+the streaming image request.
+
+True root cause: CLIProxyAPI v7.2.137 exposes the ChatGPT/Codex subscription at
+a local OpenAI-compatible endpoint, but its Codex image bridge can return
+429/5xx for a streamed image request. The pinned proxy source maps ordinary
+`image_url` parts to Codex `input_image` parts; therefore the OCRLLM-side
+compatibility gaps were status-error recovery and payload ordering, not image
+base64 encoding. Live testing also showed the current proxy session could serve
+text while intermittently returning 500/502 for all image requests, including
+the native Codex Responses alias. That residual failure is upstream/proxy-side.
+
+Fix: added opt-in `VisionAPIConfig.advance_queue_on_retriable_errors`, its
+environment and QSettings/UI wiring, and a vision-only fallback that advances
+the configured model queue on 429/500/502/503/504. Independent vision chat
+requests now retry non-stream when the streaming request itself returns one of
+those status codes. Chat image payloads put text before image parts, matching
+the Codex translator's tested input shape. The independent provider can now be
+configured with `http://127.0.0.1:8318/v1` while Codex CLI mode remains disabled.
+
+Verification: focused provider/settings tests passed 21; the broader edited
+legacy slice passed 47; compileall and git diff checks passed. A separate
+CLIProxyAPI v7.2.137 instance is running on localhost port 8318 with an
+isolated auth directory and successful Codex OAuth. Its authenticated
+`/v1/models` endpoint returns 10 models, including gpt-5.5 and the gpt-5.6
+family. Text-only Chat Completions succeeds. Image requests reached the proxy
+but ended in its current 500/502 upstream failure window, so no successful
+end-to-end image result is claimed from this session.
+
+Carry-forward judgement: yes. **WARNING FOR src/ocrllm**: an OpenAI-compatible
+provider adapter must distinguish stream transport failure from model refusal,
+offer a non-stream fallback for gateways that cannot stream multimodal Codex
+responses, and make status-code-to-candidate switching an explicit policy.
+Do not copy the legacy shared-provider settings field into the new library.

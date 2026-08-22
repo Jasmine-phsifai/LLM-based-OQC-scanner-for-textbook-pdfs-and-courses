@@ -112,6 +112,7 @@ class VisionAPIConfig:
     model_reasoning_effort: str = ""
     network_access: bool = False
     disable_response_storage: bool = True
+    advance_queue_on_retriable_errors: bool = False
     vision_model_queue: list[str] = field(default_factory=list)
 
 
@@ -122,6 +123,7 @@ class CodexVisionConfig:
     command: str = "codex"
     model: str = DEFAULT_CODEX_VISION_MODEL
     reasoning_effort: str = DEFAULT_CODEX_VISION_REASONING_EFFORT
+    fast_mode: bool = False
     timeout_seconds: int = 1800
     parallel_requests: int = CODEX_VISION_RUNTIME_PARALLEL
     request_stagger_seconds: float = CODEX_VISION_RUNTIME_STAGGER_SECONDS
@@ -352,6 +354,9 @@ class AppConfig:
         vision_wire_api = os.environ.get("OCRLLM_VISION_WIRE_API")
         if vision_wire_api:
             updates.setdefault("vision_api", {})["wire_api"] = vision_wire_api
+        vision_queue_on_errors = _env_bool("OCRLLM_VISION_ADVANCE_QUEUE_ON_RETRIABLE_ERRORS")
+        if vision_queue_on_errors is not None:
+            updates.setdefault("vision_api", {})["advance_queue_on_retriable_errors"] = vision_queue_on_errors
         vision_model = os.environ.get("OCRLLM_VISION_MODEL")
         if vision_model:
             updates.setdefault("models", {})["vision_model"] = vision_model
@@ -369,6 +374,9 @@ class AppConfig:
         codex_reasoning = os.environ.get("OCRLLM_CODEX_REASONING_EFFORT")
         if codex_reasoning:
             updates.setdefault("codex_vision", {})["reasoning_effort"] = codex_reasoning
+        codex_fast_mode = _env_bool("OCRLLM_CODEX_FAST_MODE")
+        if codex_fast_mode is not None:
+            updates.setdefault("codex_vision", {})["fast_mode"] = codex_fast_mode
         codex_parallel = _env_int("OCRLLM_CODEX_PARALLEL_REQUESTS")
         if codex_parallel is not None:
             updates.setdefault("codex_vision", {})["parallel_requests"] = max(1, codex_parallel)

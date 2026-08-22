@@ -816,6 +816,109 @@ class AudioProcessor(BaseProcessor):
         finally:
             self._close_http_session()
 
+    # ---- Repair: re-transcribe failed segments in an existing short-ASR output ----
+
+    _FAILED_SEGMENT_RE = re.compile(
+        r"（分段\s+(\d+)\s+(?:识别失败|未完成)(?::.*?)?）",
+    )
+
+    @staticmethod
+    def find_failed_segments(md_path: str) -> list[int]:
+        """Return 1-based segment indices that have failure markers."""
+        try:
+            text = Path(md_path).read_text(encoding="utf-8")
+        except OSError:
+            return []
+        indices: list[int] = []
+        for m in AudioProcessor._FAILED_SEGMENT_RE.finditer(text):
+            idx = int(m.group(1))
+            if idx not in indices:
+                indices.append(idx)
+        return sorted(indices)
+
+    def repair(
+        self,
+        audio_path: str,
+        md_path: str,
+        hotwords: Optional[list[str]] = None,
+        prompt_template: str = None,
+    ) -> str:
+        """Re-transcribe only the failed segments in an existing short-ASR output.
+
+        Re-splits the audio identically and retranscribes failed chunks.
+        Returns md_path, or raises on total/partial failure.
+        """
+        failed_indices = self.find_failed_segments(md_path)
+        if not failed_indices:
+            logger.info("[ASR-REPAIR] 没有发现识别失败的分段: %s", md_path)
+            return md_path
+
+        if not os.path.isfile(audio_path):
+            raise RuntimeError(f"音频文件不存在，无法修复: {audio_path}")
+
+        # Re-split audio identically
+        actual_path = audio_path
+        if not _is_remote(audio_path):
+            actual_path = self._ensure_upload_format(audio_path)
+        _, duration = self._should_use_short_asr(actual_path)
+        chunks = self._split_audio(actual_path, duration=duration)
+
+        sys_prompt = self._build_system_prompt(hotwords, prompt_template)
+        total = len(failed_indices)
+        logger.info("[ASR-REPAIR] 需要修复 %d 个分段", total)
+        self._report(0, total, f"修复 {total} 个失败分段...")
+
+        results: dict[int, str] = {}  # 1-based index → text
+        still_failed: list[int] = []
+
+        for order, seg_idx in enumerate(failed_indices):
+            self._check_cancelled()
+            chunk_idx = seg_idx - 1  # 0-based
+            if chunk_idx < 0 or chunk_idx >= len(chunks):
+                still_failed.append(seg_idx)
+                continue
+
+            chunk = chunks[chunk_idx]
+            self._report(order + 1, total, f"识别分段 {seg_idx} ({order + 1}/{total})")
+            try:
+                text = self.llm.transcribe_short_audio(
+                    audio_path=chunk.path,
+                    system_prompt=sys_prompt,
+                    model=self.cfg.models.asr_short_model,
+                )
+                text = strip_md_fence(text)
+                if not text or not text.strip():
+                    text = "（无文本）"
+                results[seg_idx] = text
+                self._report_content(text, f"修复识别 — 分段 {seg_idx}")
+            except CancelledError:
+                raise
+            except Exception as e:
+                logger.error("[ASR-REPAIR] 分段 %d 失败: %s", seg_idx, e)
+                still_failed.append(seg_idx)
+
+        if not results:
+            raise RuntimeError(f"音频修复全部 {total} 个分段失败")
+
+        # Replace failure markers in the MD
+        content = Path(md_path).read_text(encoding="utf-8")
+        for seg_idx, text in results.items():
+            pattern = re.compile(
+                r"（分段\s+" + str(seg_idx) + r"\s+(?:识别失败|未完成)(?::.*?)?）",
+            )
+            content = pattern.sub(text, content, count=1)
+
+        Path(md_path).write_text(content, encoding="utf-8")
+        logger.info(
+            "[ASR-REPAIR] 修复完成: %d/%d 分段成功, %d 分段仍失败 -> %s",
+            len(results), total, len(still_failed), md_path,
+        )
+        if still_failed:
+            raise RuntimeError(
+                f"音频修复后仍有 {len(still_failed)} 个分段失败: {still_failed}: {md_path}"
+            )
+        return md_path
+
     def _process_google_long_audio(
         self,
         audio_path: str,
