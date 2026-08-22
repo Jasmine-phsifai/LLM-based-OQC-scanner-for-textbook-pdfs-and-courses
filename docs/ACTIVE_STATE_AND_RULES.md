@@ -131,12 +131,19 @@ Future agents must assume the following and verify before trusting any claim:
   failed. Ordinary exceptions raised after entering the callable method remain
   provider failures and count as attempted calls.
 
-- **Open: completed image resume currently bypasses a pre-set cancellation
-  signal.** The completed-state reuse branch returns saved work without calling
-  the Event-compatible cancellation check. This spends no money and preserves
-  valid output, but contradicts the direct-call cancellation contract by
-  reporting success after the caller already cancelled. Fix this with a direct
-  failing resume regression before broader callback or progress work.
+- **Completed image resume honors pre-set cancellation without losing saved
+  work.** After validating the completed state's source/request identity and
+  final Markdown digest, the reuse branch checks the Event-compatible signal
+  before output validation or publication. Cancellation raises typed
+  `CANCELLED`, makes no provider call, and leaves both state and Markdown bytes
+  unchanged; a later uncancelled resume still reuses them with zero calls.
+
+- **Open: an all-slots-reusable partial checkpoint may still bypass
+  cancellation.** A partial v2 state whose saved slots already satisfy every
+  workflow pass can assemble and publish without reaching a provider start
+  check. Audit this path with a direct failing regression before changing
+  checkpoint or cancellation ordering; do not assume the completed-state fix
+  covers partial replay.
 
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an

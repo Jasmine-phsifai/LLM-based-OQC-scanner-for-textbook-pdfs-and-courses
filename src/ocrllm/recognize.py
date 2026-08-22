@@ -139,6 +139,9 @@ def _recognize(
                             resume_state,
                             resume_identity,
                         )
+                        from .raise_if_cancelled import raise_if_cancelled
+
+                        raise_if_cancelled(cfg.cancellation)
                     else:
                         from .image_slot_checkpoint import ImageSlotCheckpoint
                         from .recognize_validated_images import (

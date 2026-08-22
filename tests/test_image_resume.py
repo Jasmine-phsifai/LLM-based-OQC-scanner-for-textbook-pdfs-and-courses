@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from ocrllm import (
+    Cancelled,
     Config,
     CredentialPoolPolicy,
     DashScopeCredential,
@@ -34,6 +35,7 @@ def _vision_config(
     *,
     api_key: str = "resume-secret-key",
     timeout_seconds: float = 120,
+    cancellation: object | None = None,
 ) -> Config:
     return Config(
         provider=DashScopeSettings(
@@ -44,6 +46,7 @@ def _vision_config(
         output_dir=output_dir,
         timeout_seconds=timeout_seconds,
         resume=True,
+        cancellation=cancellation,
     )
 
 
@@ -137,6 +140,43 @@ def test_vision_resume_reuses_completed_result_without_provider_calls_or_secrets
     assert result.markdown == "# Resumable board\n"
     assert result.output_path == output_dir / "board_board.md"
     assert state_path.exists()
+
+
+def test_completed_resume_honors_pre_set_cancellation_without_losing_state(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+
+    initial = recognize(source, config=_vision_config(output_dir))
+    assert initial.output_path is not None
+    state_path = _state_path(output_dir)
+    output_before = initial.output_path.read_bytes()
+    state_before = state_path.read_bytes()
+
+    cancellation = threading.Event()
+    cancellation.set()
+    with pytest.raises(Cancelled) as captured:
+        recognize(
+            source,
+            config=_vision_config(output_dir, cancellation=cancellation),
+        )
+
+    assert captured.value.code == "CANCELLED"
+    assert len(calls) == 1
+    assert initial.output_path.read_bytes() == output_before
+    assert state_path.read_bytes() == state_before
+
+    resumed = recognize(source, config=_vision_config(output_dir))
+
+    assert resumed.markdown == initial.markdown
+    assert resumed.output_path == initial.output_path
+    assert len(calls) == 1
+    assert initial.output_path.read_bytes() == output_before
+    assert state_path.read_bytes() == state_before
 
 
 def test_local_ocr_resume_reuses_completed_result_without_backend_call(

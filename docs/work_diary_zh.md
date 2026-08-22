@@ -1498,3 +1498,19 @@ partial state 低于 16 MiB，却让 completed state 因最终 Markdown 的额�
 **完整验证与边界。** 项目环境 root 全量 **1085 passed / 89.69s**；`compileall -q src tests` 通过；isolated plain import 为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮没有网络、provider 真实调用或付费调用；未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
 
 **下一步。** #037 只处理 completed image resume 的 pre-set cancellation：先证明 completed state 与 provider call count 不变，再在复用点加入最晚且明确的一次 cancellation check。不要把检查全局提前到 config snapshot 之前，也不要趁机实现 progress protocol 或修改 batch 的 process-control 异常政策。
+
+## #037 — 2026-08-23：completed resume 不再绕过调用前取消
+
+**原子任务与假设。** 本轮只修 iteration #036 已记录的 completed image resume cancellation 缺口：caller 在调用前已经 set Event 时，不允许因为 final state 可复用而返回 success；同时必须保留已付费 state 与 Markdown，之后一次未取消的 resume 仍应零调用复用。同步 origin 并重读权威状态、入口、package 规则与近期日记后，比较两条路径：一是在 public operation 入口统一检查取消；二是在 completed state validation 完成后、复用结果进入 output validation/publication 前检查。选择路径二，避免改变 invalid config/source/path/state 的既有错误优先级，也不把 caller callback 提前到 built-in config snapshot 之前。
+
+**失败优先证据。** 公共回归使用真实 completed-state 流程：第一次 fake DashScope 识别成功，保存 final sidecar 与 Markdown bytes；第二次用已经 set 的 `threading.Event` 和完全相同 request 执行 `resume=True`；第三次用未取消 config 再 resume。修复前第二次稳定 **1 failed / 0.97s**，因为没有抛 `Cancelled`，而是直接返回 saved success。这个测试不是只调用 private helper：它经过 source snapshot、output claim、request fingerprint、state parser 与 public error boundary。
+
+**两名只读 scout 与个人复核。** topology 审计确认 completed branch 是 DashScope、stable injected provider、local OCR 和 batch item 共同使用的 `_recognize()` 路径；单独增加 batch case只会重复同一个 invariant。test 审计要求同时证明：provider 总调用保持 1；取消前后 state/output bytes 完全相同；取消错误 code 为 `CANCELLED`；之后未取消 resume 返回相同 Markdown/output path，仍不新增调用。主代理采纳了“先 validation、后 cancellation”的更精确位置，没有把 check 放进 `reuse_image_resume_state()`，因为该文件只负责 state identity/digest validation 与 reconstruction。
+
+**最小实现与边界。** `recognize.py` 只在 completed `reuse_image_resume_state()` 成功返回后 lazy import 并调用现有 `raise_if_cancelled(cfg.cancellation)`。因此 corrupt/mismatched completed state 仍先报告 resume error；有效 state 遇到取消时在 output validation或 publication 前退出。没有删除、重写 sidecar/Markdown，也没有触碰 provider、candidate、checkpoint schema、worker 或 contract。单例修后 **1 passed / 0.34s**；image resume/M2/defect/batch focused 集 **64 passed / 3.62s**。
+
+**新发现（尚未修复）。** partial v2 state 可能已经保存所有当前 workflow slots，却还没有 final result；`run_pass()` 可以全部从 slot reuse 返回，整个 processor 不进入 provider start gate，随后 assemble/publish success。completed 分支的新 check 不覆盖它。该路径需要先构造真实 partial state 并明确 validation/output-conflict 后的 cancellation 顺序，不能把本轮一行检查扩大成“所有 resume 已修”。权威 open debt 已改为这个更窄的剩余问题。batch settle 对 `BaseException` 的误标和完全未消费的 `Config.progress` 仍保持独立，不在本轮夹带。
+
+**完整验证与边界。** 项目环境 root 全量 **1086 passed / 89.59s**；`compileall -q src tests` 通过；isolated plain import 为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮无网络、provider 真实调用或付费调用，未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** #038 审计 all-slots-reusable partial checkpoint：先证明预设取消是否会组装并发布 final output，再决定在 partial identity/conflict validation 后统一检查一次，还是在 slot replay 边界逐次检查。不得重新支付已保存 slots，也不得因取消破坏 partial state。
