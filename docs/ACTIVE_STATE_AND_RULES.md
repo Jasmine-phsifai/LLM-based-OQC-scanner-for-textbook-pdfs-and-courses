@@ -90,8 +90,8 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1059 passed, 0 skipped, 0 failed (83.58 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
-| Import weight | 0.89 ms wall median, 1.98 ms p95; 0 ms CPU median, 15.63 ms p95 | clean-wheel gate, 30 measured fresh processes after two warm-ups |
+| Test suite | 1059 passed, 0 skipped, 0 failed (86.68 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
+| Import weight | 0.86 ms wall median, 1.49 ms p95; 0 ms CPU median, 15.63 ms p95 | clean-wheel gate, 30 measured fresh processes after two warm-ups |
 | Heavy-module isolation | `PIL`, `pypdfium2`, `openai`, `httpx`, `onnxruntime`, and `legacy_app` absent after plain import | outside-repository clean-wheel `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
@@ -528,21 +528,19 @@ session closes.
 These changes are current, verified, and should not be mistaken for open
 defects:
 
-- The non-frozen tiny-module audit removed
-   `resolve_dashscope_maximum_images.py`. Its model parameter was unused, it
-   always returned 10, and `resolve_effective_image_limit` had already inserted
-   the same library limit first. The DashScope candidate therefore could never
-   win the `min()` tie or alter public limit metadata.
-- Model catalog validation remains in `resolve_vision_provider` and the
-   DashScope adapter, where provider settings are available. Shared constants,
-   value types, evidence-identified policies, platform-safe output naming, and
-   dependency seams were retained rather than merged by line count.
-- Focused limit/model/catalog coverage passed 63 tests; the full local suite
-   passed 1,059 tests. The archived source gate passed 1,058 tests with the
-   expected base-profile RapidOCR skip, fixture/compile/wheel/import/extras and
-   offline smoke gates. Its wheel was 150,217 bytes and base target 734,036
-   bytes. These counts are verification snapshots, not permanent gates for
-   future changes.
+- The final tiny-file candidate, `output/build_job_state_path.py`, was removed.
+   Its exact one-expression body now sits beside the only use in `recognize.py`;
+   the durable `<stem>.ocrllm-state.json` convention, state discovery, and
+   resume format are unchanged. No public export or evidence identity named the
+   internal module path.
+- The current execution-contract and target-layout documents no longer list
+   that deleted implementation module. Their public sidecar naming rules remain
+   intact, and dated resume decision/checkpoint records were not rewritten.
+- Seven focused persistence flows and the full 1,059-test local suite passed.
+   The archived source gate passed 1,058 tests with the expected base-profile
+   RapidOCR skip plus fixture/compile/wheel/import/extras/offline smoke gates.
+   The wheel is 149,884 bytes and base target 733,049 bytes. These counts are
+   verification snapshots, not permanent gates for future changes.
 
 ### M2. Flowed output and true resume, 2026-08-19
 

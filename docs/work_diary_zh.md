@@ -27,12 +27,13 @@
 2. ~~快修孤立小缺陷 G10/G4/G5~~ → 已完成,见 #002。
 3. ~~恢复簇:G1 余项 + G2 + G3 + G8~~ → 已完成离线实现与验证,见 #003;
    provider 账户/模型配额语义仍须任务 5 的付费 live smoke 复核。
-4. 精简轮:非冻结区的超小文件归并(coding rule 1 授权)。
+4. ~~精简轮:非冻结区的超小文件归并(coding rule 1 授权)~~ → 已完成,见 #005-#008。
    ~~两个 `recognize_images.py` 同名~~ → 审计后保留(职责/导入明确,不是冲突),见 #005;
    ~~DashScope key 校验重叠~~ → 已统一并修掉环境变量控制字符漏检,见 #005。
    ~~tests/quality 归一化器 v2..v7 重复~~ → 审计后保留(累积协议 + evidence identity),见 #006。
    ~~无效的 DashScope 单模型图片上限 resolver~~ → 已删除(永远不可能影响结果),见 #007。
-   剩余明确候选仅 `output/build_job_state_path.py`;其余小文件已证明是共享/证据/策略边界。
+   ~~`output/build_job_state_path.py`~~ → 唯一表达式已并回唯一调用者,见 #008。
+   其余小文件已证明是共享/证据/策略边界,不再按行数继续清理。
    注意:contracts/ 与 worker/ 是冻结区,不动。
 5. Stage M 出口门收尾:~~全量绿 + import 重量 + 中断实测 + 未知模型可用 +
    候选链配额模拟~~ → 离线出口已完成,见 #004;仅剩一次付费 live smoke(需用户明确预算)。
@@ -376,3 +377,49 @@ clean archive gate 全绿;其余小文件逐类给出保留理由。
 它确实是单调用纯 helper,但也命名稳定 sidecar 约定并被当前执行契约列出;下一轮应在“减少一次
 导航”与“保留持久化命名边界”之间单独裁决,不要顺带动其他已证明合理的小文件。若选择保留,
 精简队列即可关闭并转入 legacy 日记补录或 Stage A 调研;paid Stage M smoke 仍须明确预算。
+
+---
+
+## #008 — 2026-08-22:内联唯一 sidecar 路径表达式,关闭小文件精简队列
+
+**任务**:裁决并关闭最后一个小文件候选 `output/build_job_state_path.py`:要么证明它是必要的
+持久化边界,要么在完全保留 sidecar 兼容性的前提下并回唯一调用者。
+
+**上下文**:该文件 8 行,实际行为只有一条 `Path.with_name` 表达式。保留路径强调命名约定,
+内联路径则符合 ACTIVE coding rule 1“纯小 helper 与唯一调用者归组”。两名只读 scout 分别从
+当前文档/导出/历史与行为/兼容/测试角度复核;主代理检查调用图、Git 历史、evidence identity、
+public facade 与 resume 集成测试。未跟踪交接文件仍属用户;冻结区与 live provider 均不动。
+
+**成功标准**:精确 `<stem>.ocrllm-state.json` 字节命名不变;已有 sidecar 可继续发现;state schema、
+request fingerprint、resume version 与输出顺序不变;没有 public/evidence 合约依赖模块路径;
+focused/full/compile/clean archive 全绿;当前结构文档不保留幽灵文件名。
+
+**为什么重要**:sidecar 命名是付费工作复用契约,必须稳定;但为一条只用一次的表达式制造模块,
+会让冷读者在核心 orchestration 与 leaf helper 间无收益跳转。把“行为合约”与“实现文件存在”
+分开,才能既守住兼容性又停止架构碎片化。
+
+**结果**:
+
+- 两个 scout 均建议内联。仓库只有 `recognize.py` 一处生产 import/call;`ocrllm.__all__`、懒导出、
+  `output/__init__.py`、public README/START_HERE、测试 patch 与 evidence JSON 均不暴露该模块。
+  Git 历史也只有 `f7465db` 创建记录,没有独立演化。
+- `recognize.py` 直接执行完全相同的
+  `output_path.with_name(f"{output_path.stem}.ocrllm-state.json")`,并在旁注中钉住 durable
+  persistence convention。`Path` 本来已导入;删除 leaf import 不增加循环或 import 重量。
+- 删除 8 行模块后源码净减 6 行、少一个动态模块加载。接受的唯一风险是未文档化的第三方若
+  直接 import 内部路径会断;该路径不是公共 API,保留 deprecated shim 会抵消本轮精简,故不留。
+- `docs/ocrllm_library_go_no_go.md` 与 `docs/ocrllm_module_target_design.md` 删除幽灵模块条目,
+  但 sibling JSON 命名规则保留。两份 dated resume 记录未改;`MIGRATION_STATUS.md` 与
+  `START_HERE.md` 无公共边界变化,无需更新。
+- 修改前 focused **7 passed / 0.99s**,修改后同 7 条真实写入/复用/崩溃窗口/进程终止流程
+  **7 passed / 0.90s**。`compileall -q src tests` 干净;本地全量 **1059 passed / 86.68s**。
+- 文档合并前的精确源码树 clean archive gate:**1058 passed,1 skipped / 87.50s**(base profile
+  预期 RapidOCR skip),fixture/compile/wheel/outside-import/metadata/extras/两种 profile/offline
+  smoke 全绿。wheel **149,884 bytes**,base target **733,049 bytes**;`image` / `image,dashscope`
+  增量 **16,421,593 / 40,994,282 bytes**;OCRLLM import wall 中位/p95 **0.86/1.49ms**,
+  base Python **0.44/0.70ms**。
+- `contracts/`、`worker/`、历史 evidence 与用户交接文件均未动;没有 provider 请求。
+
+**遗留/下一步**:小文件精简队列关闭;不要继续为减行数重开已证明合理的边界。下一轮优先补
+`legacy_app/AGENTS.md` 对提交 `6b2d9eb` 的日记缺口(仓库硬规则),随后进入 Stage A 音频调研;
+Stage 2/Stage A 实现仍按当前计划受 Stage M paid live smoke 与 provider split 前置门约束。

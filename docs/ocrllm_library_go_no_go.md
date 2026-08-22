@@ -1176,9 +1176,6 @@ src/ocrllm/output/save_job_state_atomically.py
 src/ocrllm/output/delete_job_state.py
     Delete validated state after final output is durable.
 
-src/ocrllm/output/build_job_state_path.py
-    Append `.ocrllm-state.json` to the final Markdown stem.
-
 src/ocrllm/fingerprint_recognition_request.py
     SHA-256 canonical JSON for sources, processor/version, provider/model,
     languages, profile/mode, selection, and safety settings, excluding secrets,

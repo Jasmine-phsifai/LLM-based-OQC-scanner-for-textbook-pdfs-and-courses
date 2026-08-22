@@ -676,7 +676,6 @@ src/ocrllm/
     load_job_state.py                 Versioned resume-state load.
     save_job_state_atomically.py      Atomic resume-state save.
     delete_job_state.py               Validated state cleanup.
-    build_job_state_path.py           Deterministic sibling state path.
 
   worker/
     read_jsonl_command.py             Read one versioned worker command.

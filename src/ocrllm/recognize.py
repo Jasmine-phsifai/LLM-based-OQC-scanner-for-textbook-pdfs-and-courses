@@ -80,7 +80,6 @@ def _recognize(
                     assert output_path is not None
                     from .fingerprint_image_request import fingerprint_image_request
                     from .fingerprint_image_sources import fingerprint_image_sources
-                    from .output.build_job_state_path import build_job_state_path
                     from .output.load_image_resume_state import load_image_resume_state
                     from .reuse_image_resume_state import reuse_image_resume_state
 
@@ -89,7 +88,10 @@ def _recognize(
                         profile=profile,
                         config=cfg,
                     )
-                    resume_state_path = build_job_state_path(output_path)
+                    # The sibling suffix is a durable persistence convention.
+                    resume_state_path = output_path.with_name(
+                        f"{output_path.stem}.ocrllm-state.json"
+                    )
                     resume_state = (
                         load_image_resume_state(resume_state_path)
                         if cfg.resume
