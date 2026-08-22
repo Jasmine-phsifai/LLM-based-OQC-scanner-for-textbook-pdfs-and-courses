@@ -679,3 +679,30 @@ revision/CAS；当前 GUI 单任务降低了发生面，但不等于库级保证
 前生成强 source/input fingerprint 和稳定毫秒 unit ID，并在每次付费成功后把 slot 原子写入
 versioned sidecar；取消必须先发布已完成 slot。ordinal 与 Markdown 时间只用于展示，不能作为
 恢复身份；修改 prompt/model 可以形成新 attempt，但不得改变 unit identity。
+
+## 2026-08-22 — production short-ASR 取消丢失已付费结果（已修复）
+
+**现象与根因。** `_short_asr()` 原先一次提交全部分段，把 future 结果只保存在内存 `ordered`
+列表，直到所有任务结束才首次写 Markdown 与 repair manifest。任一 future 或 progress reporter
+抛 `CancelledError` 会越过最终写入，丢掉已经成功的付费结果；provider setup failure 还会被
+worker 降格成普通分段失败。即使用户取消，已全量提交的队列也可能继续扩大调用成本。
+
+**修复。** provider dispatch 前先发布版本化 repair manifest 与全未完成 Markdown skeleton。
+生产循环改为最多 worker 数的 rolling window，由 coordinator 用 `wait(FIRST_COMPLETED)` 消费
+乱序完成，并在每个成功或普通失败落入固定 slot 后原子发布完整文档。取消/setup failure 会停止
+新提交、取消尚未运行的 future、排空已运行的有界调用并保存其中成功，最后传播 terminal error；
+两者同时出现时取消优先。没有修改通用 `BaseProcessor` iterator，也没有让 worker 线程写文件。
+
+**失败优先证据与验证。** 修前三条核心回归为 **3 failed / 4.15s**：取消无输出、乱序完成无
+中间快照、首次 dispatch 前无 checkpoint。最终五条 checkpoint 测试与 audio repair 集为
+**16 passed / 2.34s**；除真实 ffmpeg e2e 外 legacy 全量为
+**258 passed, 1 skipped / 62.02s**，唯一 skip 是显式 live Google discovery；相关模块
+`py_compile` 与 `git diff --check` 通过。没有网络、provider 或付费调用。
+
+**仍开放。** board batch 仍靠可被逗号拆坏的本地化 marker 与 basename 恢复身份；video
+failed-batch 仍按 current batch size 解释历史失败。并发运行同一输出仍没有 revision/CAS，当前
+GUI 单任务只缩小发生面，不构成库级保证。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 音频批处理必须在首次 dispatch 前
+建立 typed/versioned slots；提交采用有界 rolling window；取消停止新工作但排空已运行调用，并在
+传播前原子提交每个已付费成功。不要使用“全量 submit 后等待”或只在整批结束时保存的实现。

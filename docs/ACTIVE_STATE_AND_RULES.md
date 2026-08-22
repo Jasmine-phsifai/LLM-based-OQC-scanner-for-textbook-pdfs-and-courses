@@ -529,7 +529,7 @@ while retaining the last successful catalog during refresh outages.
 
 ## Legacy Status, 2026-08-22
 
-Three legacy repair-hardening slices are complete. `repair_board()` reads the
+Four legacy durability/repair-hardening slices are complete. `repair_board()` reads the
 normal `{"items": [...]}` manifest, accounts for unavailable processed frames
 as explicit partial failures, and video cleanup retains extracted audio while
 failed transcript segments remain. Audio, board, and video repair now publish
@@ -538,13 +538,37 @@ another provider call can be cancelled. Board no longer swallows cancellation
 or provider-setup failures. Short-audio outputs now persist source/input SHA-256,
 exact millisecond windows, stable unit IDs, splitter metadata, and request audit
 metadata in a versioned adjacent manifest. Repair fails before provider dispatch
-when that identity is missing or inconsistent. Stable board/video repair identity
-remains open and continues to outrank Stage A feature research. Earlier legacy
+when that identity is missing or inconsistent. Production short-ASR now publishes
+that manifest plus an all-unfinished Markdown checkpoint before dispatch, uses a
+bounded rolling request window, and atomically republishes every settled segment.
+Cancellation or provider setup failure stops new submissions, drains already-running
+calls, preserves their successes, and then propagates. Stable board/video repair
+identity remains open and continues to outrank Stage A feature research. Earlier legacy
 fixes remain recorded history, not proof that all compatibility paths are
 defect-free.
 ## New And Fixed In This Working Update
 
-Short-audio repair now has a stable unit-identity contract:
+Production short-ASR now durably checkpoints paid parallel work:
+
+- Before the first provider request, `_short_asr()` publishes the versioned repair
+  manifest and a complete Markdown skeleton whose slots are explicitly unfinished.
+- It submits only a rolling window bounded by the configured worker count. The
+  coordinator consumes futures in completion order and atomically republishes the
+  complete ordered document after every settled success or ordinary failure.
+- Cancellation and provider setup failure stop further submission and cancel work
+  that has not started. Already-running calls are drained so successful responses are
+  checkpointed before the terminal error is propagated; cancellation takes precedence
+  if both terminal conditions occur.
+- Three direct regressions first failed. Five checkpoint tests plus audio-repair tests
+  passed 16 tests; the legacy suite excluding the real ffmpeg e2e file passed 258 tests
+  with one explicit live-Google skip. `py_compile` and diff checks passed. No provider,
+  network, active-library, or frozen-boundary behavior changed.
+
+Board batch/basename identity and video failed-batch identity remain open.
+
+### Previous working update: stable audio repair identity
+
+Short-audio repair has a stable unit-identity contract:
 
 - `_short_asr()` publishes a versioned `.audio-repair.json` sidecar containing
   SHA-256 and size for both the selected source and actual ASR input, exact
@@ -566,9 +590,6 @@ Short-audio repair now has a stable unit-identity contract:
   frozen-boundary behavior changed.
 
 Board batch/basename identity and video failed-batch identity remain open.
-Short-ASR production cancellation can also still discard successful parallel
-results before final publication; that newly observed durability gap is recorded
-in `legacy_app/AGENTS.md` and is not disguised as part of repair identity.
 
 ### Previous working update: atomic repair publication
 

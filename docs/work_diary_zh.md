@@ -53,7 +53,9 @@
     ~~为 audio/board/video 引入同目录原子文本发布；取消时先保存本轮已付费成功再传播；
     board 不得吞 `CancelledError`/provider setup~~ → 已完成,见 #011。
     ~~audio 以持久化 source/input SHA-256 + 原始毫秒边界替代 current split 重建~~ →
-    已完成,见 #012。仍开放:board batch/basename 与 video failed-batch/current batch size
+    已完成,见 #012。
+    ~~production short-ASR 在取消/setup failure 前逐段保存，且停止扩大付费请求~~ →
+    已完成,见 #013。仍开放:board batch/basename 与 video failed-batch/current batch size
     的稳定身份。不要把 Markdown regex repair 移植到 `src/ocrllm`;新库按现有 typed
     sidecar/checkpoint 扩展。
 11. 独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
@@ -618,3 +620,47 @@ failed-batch 按 current batch size 重建。逐行主审另发现 `_short_asr()
 抛 `CancelledError`，会在最终 Markdown/manifest 发布前丢掉其他已付费成功结果；已登记 legacy
 日记，下一轮应优先以失败测试定义 production cancellation checkpoint，而不是误写成已由 repair
 原子性覆盖。Stage A 调研继续后移。
+
+## #013 — 2026-08-22:让 production short-ASR 逐段落盘并限制取消后的付费扩散
+
+**任务**:让 legacy `_short_asr()` 在每个并行分段完成时原子保存；取消或 provider setup failure
+停止新提交，保留已付费成功后再传播，不再等全批结束才首次发布。
+
+**上下文**:#012 已让 repair 拥有稳定 source/request/unit identity，但生产识别仍一次提交全部
+future，并把结果留在内存。任一 future 取消会越过最终 Markdown/manifest 写入，既丢已付费成功，
+也没有可供 repair 接手的初始状态。两名 Luna scout 分别审查取消契约和测试 seam，主代理逐行
+复核 executor、reporter、manifest 与 atomic writer。比较两条路径：①修改 `BaseProcessor` 的通用
+future iterator；②在 short-ASR 内实现有界 rolling drain。选择②，因为通用 iterator 会在取消时
+立即抛出并丢弃已完成 future，而“先发布再传播”是本流程特有的付费恢复契约。
+
+**成功标准**:provider 前已有 manifest + 全未完成 Markdown；乱序完成可观察到中间原子快照；
+取消保留已成功分段并传播；取消/setup failure 后不再提交新分段，但排空已经运行的有界窗口；
+普通识别错误仍写失败 marker；focused、legacy 广集、编译和 diff 检查全绿。
+
+**为什么重要**:repair 只有在生产阶段先留下稳定且持续更新的断点才真正可用。无限预提交会在
+用户取消后继续扩大成本，而立即抛取消又会丢弃已经产生费用的成功；成熟产品必须同时限制
+推测工作和保存不可逆成果。
+
+**结果**:
+
+- 三条核心测试先以 **3 failed / 4.15s** 复现：取消后无输出、乱序成功没有中间快照、首次
+  provider dispatch 时没有 repairable checkpoint。随后补齐单 worker 的 reporter cancellation
+  与 setup failure 测试，证明后续分段没有被提交。
+- `_short_asr()` 在创建 executor 前先原子写 v1 repair manifest 和完整未完成 Markdown。
+  coordinator 只维持不超过 worker 数的 rolling window，直接使用 `wait(FIRST_COMPLETED)` 消费
+  乱序结果；每个成功或普通失败落入固定 slot 后重建并原子发布完整文档。
+- 取消或 setup failure 成为 terminal condition：停止补充窗口、取消未启动 future、继续排空
+  已运行 future 并发布其中成功，最后传播原异常；若两者同时出现，用户取消优先。没有改动
+  `BaseProcessor`，也没有新增跨 modality executor 抽象。
+- 因果 Event 测试避免依赖 sleep：后续取消只有在第一段已真正发布后才释放，首段也只有在
+  “第二段已发布、第一段未完成”的快照出现后才释放。checkpoint + audio repair 集
+  **16 passed / 2.34s**；排除真实 ffmpeg `test_social_e2e.py` 的 legacy 全量
+  **258 passed, 1 skipped / 62.02s**，唯一 skip 是显式 live Google discovery。
+  两个修改 Python 文件 `py_compile`、`git diff --check` 通过；无网络/provider/付费调用。
+- 主审确认只有 coordinator 写输出，worker 只返回 `(index, text)`；最大未决付费调用受 worker
+  配置约束。`contracts/`、`worker/` 与用户未跟踪交接文件未动。
+
+**遗留/下一步**:任务 10 只剩 board 的 basename/逗号 marker 与 batch identity，以及 video
+failed-batch 按 current batch size 重建。下一轮优先为 board 建立稳定身份失败测试；若调查证明
+两种 modality 需要不同 schema，则分别做小型 sidecar，不抽象出未经证明的通用媒体恢复框架。
+Stage A 调研继续后移。

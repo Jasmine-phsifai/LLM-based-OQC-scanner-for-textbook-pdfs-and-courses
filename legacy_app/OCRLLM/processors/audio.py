@@ -13,7 +13,7 @@ import re
 import ssl
 import time
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -1399,12 +1399,12 @@ class AudioProcessor(BaseProcessor):
             hotwords=hotwords or (),
         )
 
-        md_lines = [f"<!-- meta:audio title={stem} -->\n"]
+        md_header_lines = [f"<!-- meta:audio title={stem} -->\n"]
         if hotwords:
-            md_lines.append(f"> 热词: {', '.join(hotwords)}\n")
-        md_lines.append(f"> 模型: {self.cfg.models.asr_short_model}\n")
+            md_header_lines.append(f"> 热词: {', '.join(hotwords)}\n")
+        md_header_lines.append(f"> 模型: {self.cfg.models.asr_short_model}\n")
         if fallback_mode:
-            md_lines.append(
+            md_header_lines.append(
                 f"> 回退切片: 逻辑 {self.cfg.processing.asr_fallback_chunk_seconds}s，"
                 f"上下文 {self.cfg.processing.asr_fallback_context_seconds}s\n"
             )
@@ -1416,9 +1416,7 @@ class AudioProcessor(BaseProcessor):
         )
         total = len(chunks) + 1
 
-        def _transcribe_one(idx: int, chunk: AudioChunk) -> tuple[int, str, str, str]:
-            t1 = _ms_ts(int(chunk.logical_start * 1000))
-            t2 = _ms_ts(int(chunk.logical_end * 1000))
+        def _transcribe_one(idx: int, chunk: AudioChunk) -> tuple[int, str]:
             try:
                 text = self.llm.transcribe_short_audio(
                     audio_path=chunk.path,
@@ -1429,44 +1427,108 @@ class AudioProcessor(BaseProcessor):
             except CancelledError:
                 raise
             except Exception as e:
+                if is_provider_setup_error(e):
+                    raise
                 logger.error("[ASR] 分段 %d 失败: %s", idx + 1, e)
                 text = f"（分段 {idx + 1} 识别失败: {e}）"
-            return idx, t1, t2, text or "（无文本）"
+            return idx, text or "（无文本）"
 
-        ordered = [None] * len(chunks)
-        executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="audio-asr")
-        future_map = {}
-        try:
+        ordered: list[str | None] = [None] * len(chunks)
+
+        def _publish_progress() -> None:
+            md_lines = list(md_header_lines)
             for idx, chunk in enumerate(chunks):
-                self._check_cancelled()
-                future = executor.submit(_transcribe_one, idx, chunk)
-                future_map[future] = idx
-
-            done = 0
-            for future in self._iter_completed_futures(set(future_map)):
-                future_map.pop(future, None)
-                idx, t1, t2, text = future.result()
-                ordered[idx] = (t1, t2, text)
-                done += 1
-                self._report(done, total, f"识别分段 {done}/{len(chunks)}...")
-                self._report_content(text, f"语音识别 — [{t1} ~ {t2}]")
-        finally:
-            self._cancel_futures(future_map)
-            executor.shutdown(wait=False, cancel_futures=True)
-
-        for idx, entry in enumerate(ordered):
-            if entry is None:
-                chunk = chunks[idx]
                 t1 = _ms_ts(int(chunk.logical_start * 1000))
                 t2 = _ms_ts(int(chunk.logical_end * 1000))
-                md_lines.extend([f"<!-- meta:segment index={idx + 1} time={t1}~{t2} -->\n", f"（分段 {idx + 1} 未完成）", ""])
-            else:
-                t1, t2, text = entry
-                md_lines.extend([f"<!-- meta:segment index={idx + 1} time={t1}~{t2} -->\n", text, ""])
+                text = ordered[idx]
+                if text is None:
+                    text = f"（分段 {idx + 1} 未完成）"
+                md_lines.extend(
+                    [f"<!-- meta:segment index={idx + 1} time={t1}~{t2} -->\n", text, ""]
+                )
+            write_text_atomically(output_path, "\n".join(md_lines).strip() + "\n")
 
         ensure_dir(os.path.dirname(output_path))
-        write_text_atomically(output_path, "\n".join(md_lines).strip() + "\n")
         save_audio_repair_manifest(output_path, manifest)
+        _publish_progress()
+
+        executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="audio-asr")
+        future_map = {}
+        next_index = 0
+        terminal_error: Exception | None = None
+        done_count = 0
+
+        def _remember_terminal_error(error: Exception) -> None:
+            nonlocal terminal_error
+            if terminal_error is None or isinstance(error, CancelledError):
+                terminal_error = error
+
+        def _submit_until_full() -> None:
+            nonlocal next_index
+            while terminal_error is None and next_index < len(chunks) and len(future_map) < workers:
+                try:
+                    self._check_cancelled()
+                except CancelledError as exc:
+                    _remember_terminal_error(exc)
+                    return
+                future = executor.submit(_transcribe_one, next_index, chunks[next_index])
+                future_map[future] = next_index
+                next_index += 1
+
+        try:
+            _submit_until_full()
+            while future_map:
+                if terminal_error is None:
+                    try:
+                        self._check_cancelled()
+                    except CancelledError as exc:
+                        _remember_terminal_error(exc)
+                if terminal_error is not None:
+                    self._cancel_futures(future_map)
+
+                completed, _pending = wait(
+                    set(future_map),
+                    timeout=0.25,
+                    return_when=FIRST_COMPLETED,
+                )
+                if not completed:
+                    continue
+                for future in completed:
+                    future_map.pop(future, None)
+                    if future.cancelled():
+                        continue
+                    try:
+                        idx, text = future.result()
+                    except CancelledError as exc:
+                        _remember_terminal_error(exc)
+                        continue
+                    except Exception as exc:
+                        _remember_terminal_error(exc)
+                        continue
+
+                    ordered[idx] = text
+                    _publish_progress()
+                    done_count += 1
+                    chunk = chunks[idx]
+                    t1 = _ms_ts(int(chunk.logical_start * 1000))
+                    t2 = _ms_ts(int(chunk.logical_end * 1000))
+                    try:
+                        self._report(
+                            done_count,
+                            total,
+                            f"识别分段 {done_count}/{len(chunks)}...",
+                        )
+                    except CancelledError as exc:
+                        _remember_terminal_error(exc)
+                    self._report_content(text, f"语音识别 — [{t1} ~ {t2}]")
+
+                _submit_until_full()
+        finally:
+            self._cancel_futures(future_map)
+            executor.shutdown(wait=True, cancel_futures=True)
+
+        if terminal_error is not None:
+            raise terminal_error
 
         try:
             total_duration = sum(chunk.logical_end - chunk.logical_start for chunk in chunks)
