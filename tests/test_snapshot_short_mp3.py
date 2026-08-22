@@ -228,6 +228,90 @@ def test_snapshot_short_mp3_cleans_partial_copy_after_midstream_read_failure(
     assert list((tmp_path / "temp").glob("ocrllm-audio-*")) == []
 
 
+def test_snapshot_short_mp3_closes_source_before_probe_and_yield(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "valid.mp3"
+    source.write_bytes(b"bytes")
+    original_open = Path.open
+    source_closed = False
+
+    class ObservedReader:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def fileno(self):
+            return self.wrapped.fileno()
+
+        def read(self, size):
+            return self.wrapped.read(size)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, error_type, error, traceback):
+            nonlocal source_closed
+            source_closed = True
+            return self.wrapped.__exit__(error_type, error, traceback)
+
+    def observe_source_open(path, *args, **kwargs):
+        opened = original_open(path, *args, **kwargs)
+        return ObservedReader(opened) if path == source else opened
+
+    def assert_source_closed_before_probe(_snapshot_path: Path) -> float:
+        assert source_closed is True
+        return 0.25
+
+    monkeypatch.setattr(Path, "open", observe_source_open)
+    monkeypatch.setattr(
+        snapshot_module,
+        "probe_short_mp3",
+        assert_source_closed_before_probe,
+    )
+
+    with snapshot_module.snapshot_short_mp3(
+        source,
+        temp_dir=tmp_path / "temp",
+    ):
+        assert source_closed is True
+
+
+def test_snapshot_short_mp3_rejects_short_snapshot_write(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "valid.mp3"
+    source.write_bytes(b"bytes")
+    original_open = Path.open
+
+    class ShortWriter:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def write(self, data):
+            return self.wrapped.write(data[:-1])
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, error_type, error, traceback):
+            return self.wrapped.__exit__(error_type, error, traceback)
+
+    def short_write_snapshot(path, *args, **kwargs):
+        opened = original_open(path, *args, **kwargs)
+        return ShortWriter(opened) if path.name == "source.mp3" else opened
+
+    monkeypatch.setattr(Path, "open", short_write_snapshot)
+
+    with pytest.raises(OutputError) as caught:
+        with snapshot_module.snapshot_short_mp3(source, temp_dir=tmp_path / "temp"):
+            raise AssertionError("unreachable")
+
+    assert caught.value.code == "OUTPUT_WRITE_FAILED"
+    assert list((tmp_path / "temp").glob("ocrllm-audio-*")) == []
+
+
 def test_snapshot_short_mp3_rejects_non_directory_temp_parent(tmp_path) -> None:
     source = tmp_path / "valid.mp3"
     source.write_bytes(b"bytes")

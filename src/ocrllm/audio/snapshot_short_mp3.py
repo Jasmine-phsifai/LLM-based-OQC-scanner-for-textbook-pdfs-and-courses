@@ -48,34 +48,35 @@ def snapshot_short_mp3(
     _validate_mp3_suffix(source)
     _validate_source_path(source)
     source_stream = _open_source(source)
+    snapshot_root: Path | None = None
+    try:
+        with source_stream:
+            source_size = _opened_source_size(source_stream)
+            temporary_parent = _prepare_temporary_parent(temp_dir)
+            try:
+                snapshot_root = Path(
+                    tempfile.mkdtemp(prefix="ocrllm-audio-", dir=temporary_parent)
+                )
+            except (OSError, ValueError) as error:
+                raise OutputError(
+                    "A temporary audio-snapshot directory could not be created.",
+                    code="OUTPUT_WRITE_FAILED",
+                ) from error
 
-    with source_stream:
-        source_size = _opened_source_size(source_stream)
-        temporary_parent = _prepare_temporary_parent(temp_dir)
-        try:
-            snapshot_root = Path(
-                tempfile.mkdtemp(prefix="ocrllm-audio-", dir=temporary_parent)
-            )
-        except (OSError, ValueError) as error:
-            raise OutputError(
-                "A temporary audio-snapshot directory could not be created.",
-                code="OUTPUT_WRITE_FAILED",
-            ) from error
-
-        try:
             snapshot_path = snapshot_root / "source.mp3"
             copied_size = _copy_open_source(
                 source_stream,
                 snapshot_path,
                 expected_size=source_size,
             )
-            duration_seconds = probe_short_mp3(snapshot_path)
-            yield ShortMP3Snapshot(
-                path=snapshot_path,
-                byte_size=copied_size,
-                duration_seconds=duration_seconds,
-            )
-        finally:
+        duration_seconds = probe_short_mp3(snapshot_path)
+        yield ShortMP3Snapshot(
+            path=snapshot_path,
+            byte_size=copied_size,
+            duration_seconds=duration_seconds,
+        )
+    finally:
+        if snapshot_root is not None:
             active_error = sys.exc_info()[1]
             try:
                 _delete_snapshot_directory(snapshot_root)
@@ -224,12 +225,17 @@ def _copy_open_source(
             if copied_size > expected_size:
                 _raise_source_changed()
             try:
-                snapshot_stream.write(chunk)
+                written_size = snapshot_stream.write(chunk)
             except (OSError, ValueError) as error:
                 raise OutputError(
                     "A temporary audio snapshot could not be written.",
                     code="OUTPUT_WRITE_FAILED",
                 ) from error
+            if written_size != len(chunk):
+                raise OutputError(
+                    "A temporary audio snapshot could not be written completely.",
+                    code="OUTPUT_WRITE_FAILED",
+                ) from None
 
         try:
             if source_stream.read(1):

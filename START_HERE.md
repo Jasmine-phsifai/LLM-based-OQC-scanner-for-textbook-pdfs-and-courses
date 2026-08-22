@@ -31,7 +31,7 @@ docs/plan_phase1_maturation_and_phase2_audio.md
                                       complete with its live exit gate open.
 docs/plan_phase1_defects_and_provider_split.md
                                       Stage 1 closed; Stage 2 folded into A1
-                                      and its first probe is implemented.
+                                      and its snapshot/probe seam is implemented.
 docs/ocrllm_library_go_no_go.md       Phase gates, file responsibilities,
                                       migrate/rewrite/reject boundary.
 src/ocrllm/README_ACTIVE_LIBRARY.md   Package boundary and capability surface.

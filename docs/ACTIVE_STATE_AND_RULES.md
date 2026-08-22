@@ -74,9 +74,10 @@ does not claim that every frame-aligned MP3 truncation can be distinguished
 from an intentionally shorter valid file.
 The snapshot copies one regular local `.mp3` through an open file handle into a
 fixed `source.mp3` name, rejects growth/shrink and a 25 MiB local resource
-ceiling, then probes those owned bytes before yielding. This ceiling is not a
-provider request limit; the selected adapter must separately preflight its exact
-Base64/JSON envelope.
+ceiling, closes the caller's handle, then probes those owned bytes before
+yielding. Short destination writes fail as output errors instead of being
+misreported by the decoder. This ceiling is not a provider request limit; the
+selected adapter must separately preflight its exact Base64/JSON envelope.
 The built-in Google image adapter is now scoped as a later optional
 vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
 does not copy legacy retry, audio, GUI, or social architecture. It is planned,
