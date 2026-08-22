@@ -323,6 +323,37 @@ These are additive to the implementation directive in
    Silent extra paid calls remain forbidden.
 7. **New structure requires a failing case.** Add an abstraction when a real
    failure demands it, not when one is imagined.
+8. **Legacy evidence is a warning, not inheritance.** A failure observed in the
+   legacy parent deserves a focused check when that capability is ported. Do not
+   assume the new library has the same defect or add a defense before proving the
+   analogous path exists.
+9. **Sustainability includes comprehension.** Defensive code must cover real side
+   effects without making the child product stronger or wider than the legacy app.
+   The maintenance cost paid by the next agent is part of the design cost.
+
+## Google Robustness Test Authority
+
+Updated 2026-08-23. The maintainer directly authorizes bounded Google API use for
+image and audio robustness tests without a separate budget request. Google is free
+for this account and is valuable precisely because real calls frequently expose
+quota-window limits, temporary overload, API errors, empty replies, unsupported
+formats, and excessive-image limits. These are expected test outcomes, not reasons
+to weaken validation or report false success.
+
+Select models from the live Google catalog rather than a hardcoded list. Audio is
+supported by fewer Google models than images, so verify current audio capability
+before dispatch; native multimodal models are valid candidates when served. Keep
+calls purposeful and bounded, preserve exact outcomes, never print credentials, and
+submit only authorized data. This authority does not activate a deferred provider
+adapter or social-media feature. The detailed operational policy is
+`docs/provider_cost_and_reliability_policy.md`.
+
+Real legacy incidents have higher evidence weight than code-only suspicions but do
+not prove inheritance. In particular, Windows paths beyond roughly 260 characters
+caused failures across multiple legacy stages. The source record is the 2026-08-18
+path-handling entry in `legacy_app/AGENTS.md`. Test the analogous boundary when a
+filesystem-producing child capability is actually ported; do not pre-build a generic
+path framework for capabilities that do not yet exist.
 
 ## Policy Change: Disclosed Automatic Recovery
 

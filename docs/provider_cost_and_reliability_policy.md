@@ -2,7 +2,7 @@
 
 Status: user-confirmed operational policy.
 
-Decision date: 2026-07-11.
+Decision date: 2026-07-11. Google test authority updated 2026-08-23.
 
 This file records account-specific cost and reliability facts that influence
 future provider selection. It does not make a deferred provider available and
@@ -49,9 +49,20 @@ entitlements and current product terms before a large run.
   package plan and is suitable for large audio robustness tests without
   incremental usage cost under that account. FileTrans remains Phase 4 work;
   this policy does not authorize audio implementation during Phase 1.
-- Google models are available without usage cost to the user but have been less
-  stable. A future Google adapter must prove its own error and quality gates;
-  price does not compensate for unreliable completion.
+- Google models are available without usage cost to the user and are directly
+  authorized for robustness testing without a separate budget request. They are
+  intentionally useful as a demanding test source because observed behavior
+  includes refreshing quota windows, service overload, API errors, empty replies,
+  unsupported input formats, and excessive-image rejection. A Google path must
+  surface those outcomes honestly rather than turning them into success.
+- Query the live Google model catalog when selecting a test model. One API key can
+  serve many models and the set changes; do not treat a repository list as current
+  availability. Audio support is narrower than image/multimodal support, so confirm
+  audio capability with the live catalog and a small request. Native multimodal
+  models remain strong audio candidates when the API reports support.
+- This authorization permits purposeful, bounded Google image/audio calls with
+  authorized inputs. It does not activate a deferred adapter, authorize hidden or
+  unbounded retry, expose credentials, or resume deferred social-media work.
 - The user describes Codex Mini 5.4 as inexpensive and very stable, but not
   free. Treat that name as a user-facing provider choice until a future adapter
   decision pins an exact API model identifier and verifies current availability.
@@ -64,9 +75,9 @@ entitlements and current product terms before a large run.
   and media processing as separate responsibilities. A future execution-policy
   object may rank approved workflows, but it must not turn one `Config` into an
   implicit multi-provider state machine.
-- Provider pools, automatic switching, Google, Codex, and FileTrans remain
-  behind their phase decisions. The completed one-provider image gate does not
-  activate any of them.
+- Provider pools, automatic switching, new Google/Codex adapters, and FileTrans
+  remain behind their phase decisions. Direct Google test authority applies to
+  already available test paths; it does not itself activate a new adapter.
 - Every paid or quota-consuming evidence run records its exact call plan before
   dispatch and preserves failures rather than cherry-picking a better result.
 - The four screenshots and PDF under `docs/` are authorized as private local
@@ -76,6 +87,6 @@ entitlements and current product terms before a large run.
 
 ## Change Rule
 
-Update this file and the authoritative GO/NO-GO decision together when a
-provider's billing, entitlement, model identifier, region, or observed
-reliability changes. Never commit credentials or account balances.
+Update this file and the authoritative current-state decision together when a
+provider's billing, entitlement, model identifier, region, test authorization,
+or observed reliability changes. Never commit credentials or account balances.

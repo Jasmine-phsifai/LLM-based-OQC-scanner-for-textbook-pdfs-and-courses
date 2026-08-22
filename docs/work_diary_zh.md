@@ -18,6 +18,12 @@
   git 提交。推送 origin 由用户确认或会话收尾时统一做。
 - 付费 live 调用必须先有用户明确预算;密钥从 `HKCU\Software\OCRLLM\QCR\ui` 读,
   永不打印。legacy 侧的观察/修复记入 `legacy_app/AGENTS.md` 日记。
+- 2026-08-23 用户追加:Google image/audio API 是免费且直接授权的 robustness test source,
+  无需逐次预算确认；实时拉模型，预期会遇到窗口额度、繁忙、API error、空回复、不支持格式、
+  图片过多。调用仍须有界、不得泄密。social media 功能延后。
+- legacy 是新库的行为父级。真实发生过的 legacy bug 比代码猜测更值得警惕，但不能直接假定
+  child 同样有 bug；先证明对应路径存在，再加最小回归。防御代码的未来可读性也是可持续性成本，
+  不得把 child 做得比 legacy 产品更宽。
 
 ## 任务队列(动态维护,完成即划掉并写明去向)
 
@@ -64,8 +70,8 @@
 11. 独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
     “免费额度耗尽”提示；应建立中性 failover disposition 后再修。
 12. legacy offline suite 边界:`tests/test_bilibili_api.py` 在 collection 顶层执行真实 Bilibili
-    API 与 `curl b23.tv`；#014 广集因该公开网络超时中断。应移为显式 opt-in/script，默认 pytest
-    collection 必须零网络。修复后再回到 production board checkpoint。
+    API 与 `curl b23.tv`；#014 广集因该公开网络超时中断。该项随 social media 一并延后，不再作为
+    当前 heartbeat 下一项；未来恢复时应移为显式 opt-in/script，默认 pytest collection 零网络。
 
 ## 条目格式
 
@@ -724,3 +730,38 @@ production `BoardProcessor.process()`：它仍把所有 `md_parts` 留到循环�
 可越过最终写入，丢掉前面已付费成功。这比 video identity 更直接影响生产成果，应随后用失败测试
 定义“initial skeleton + 每批原子发布 + terminal error 传播”；随后再修 video historical batch size。
 并发同一输出仍是 last-writer-wins，另立 revision/CAS 证据前不加锁。
+
+## #015 — 2026-08-23:记录 Google 直接测试授权与 legacy-parent 证据规则
+
+**任务**:把用户新授权写成英文 repo memory：Google image/audio 可直接用于免费 robustness 测试；
+实时拉模型；把常见不稳定行为当错误处理证据；同时记录 legacy 真实 bug 只提高警惕、不自动证明
+新库继承，以及 Windows 超 260 字符路径的真实历史。
+
+**上下文**:用户在暂停后纠正两种可能偏差。第一，Google 的经常出错不是避用理由，而是测试
+稳定性、错误分类和空结果处理的理想来源。第二，防御编程不能靠“legacy 曾有 bug”就给 child
+预装更强更宽的机制；真实 incident 是高权重参考，仍须先证明 child 有对应路径。比较两条记录
+路径：另建新 decision 文档，或更新 root `AGENTS.md` + 既有 provider policy + 权威现状；选择后者，
+减少未来查找成本。已有 long-path 细节继续链接 `legacy_app/AGENTS.md`，不复制整段历史。
+
+**成功标准**:英文权威规则明确 Google 无需逐次预算、live catalog、image/audio 差异和已知错误；
+明确隐私/有界调用；明确 social 延后；明确 legacy parent 的“先验证再防御”和不扩产品范围原则；
+引用 Windows >260 真实记录；文档无冲突、diff 干净、提交推送。
+
+**为什么重要**:API 测试权限和 bug 证据权重如果只留在聊天里，下一代理会重复询问、避开最有价值
+的错误源，或反过来依据旧 bug 过度建设。把授权、边界和理解成本放在同一规则里，能同时提高
+鲁棒性和可维护性。
+
+**结果**:
+
+- root `AGENTS.md` 新增 Provider Test Authority 与 Legacy Parent Evidence Rule；Google 测试不需
+  单独预算，模型必须实时发现，audio 支持较窄；列出窗口额度、繁忙、API error、空回复、格式和
+  图片数限制，同时保留有界调用、凭据与测试数据隐私边界。
+- `docs/provider_cost_and_reliability_policy.md` 更新用户账号事实与授权，不把授权误写成新 adapter
+  已启用；`docs/ACTIVE_STATE_AND_RULES.md` 增加“legacy evidence 不是继承证明”“下一代理理解成本
+  是设计成本”，并链接既有 2026-08-18 Windows long-path incident。
+- social media 明确延后，队列 #12 不再抢占 production board 等非社交产品缺陷。没有新增 feature、
+  schema、测试框架或代码路径；没有 API 调用。
+
+**遗留/下一步**:恢复后的下一原子任务回到 production board 已证明的取消/setup 丢成果问题。
+实现前先检查 #014 新增的 manifest helper 是否能直接承担 initial skeleton/slot render；若需要新增
+抽象，必须先有重复失败证据，不能把 board 改造成比 legacy 产品更宽的通用任务系统。

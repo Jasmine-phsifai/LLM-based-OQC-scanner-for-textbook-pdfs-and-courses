@@ -21,6 +21,43 @@ against code and tests before relying on them.
   there unless they are intentionally ported behind the new library API.
 - Legacy code may be used as a behavior reference, not as a new public API.
 
+## Provider Test Authority
+
+- Google APIs are directly authorized for image and audio robustness testing.
+  They are free for this account, so no separate budget confirmation is needed
+  before a bounded Google test run.
+- Discover the currently served Google models from the live API. One credential
+  can expose many models, and the catalog changes; do not replace discovery with
+  a hardcoded support list.
+- Treat window limits, refreshed quotas, temporary overload, API errors, empty
+  replies, unsupported formats, and excessive image counts as expected robustness
+  inputs. Tests must prove honest errors, bounded behavior, and no false success.
+- Google audio has fewer compatible models than Google image/multimodal input.
+  Verify audio capability from the current catalog and a small real request before
+  choosing a model. Native multimodal models remain valid audio test candidates.
+- Keep credentials private and use synthetic, committed, or otherwise authorized
+  inputs. Direct test authorization does not authorize publishing user data.
+- Social-media download and recognition work is deferred. Do not use this Google
+  authority to expand or resume the social-media feature surface.
+
+## Legacy Parent Evidence Rule
+
+- The legacy application is the behavioral parent of the new library. A bug that
+  occurred in a real legacy run is strong evidence and deserves extra scrutiny
+  when the related capability is ported.
+- Do not assume the child library has inherited the bug. First prove that the
+  analogous code path exists, then add the smallest regression and fix that covers
+  the proven risk. If the capability is not present yet, record a warning instead
+  of adding speculative machinery.
+- Do not make a port stronger or broader than the legacy product unless the user
+  separately asks for that product change. Defensive code must remain readable;
+  future-agent comprehension is part of sustainability.
+- Windows paths beyond about 260 characters caused real multi-stage legacy
+  failures. The independent incident record is in `legacy_app/AGENTS.md` under
+  `2026-08-18: path handling and silent-refusal "fake success"`. When a new
+  filesystem-producing capability is ported, test long output and temporary paths,
+  while keeping path-component sanitization distinct from extended-length handling.
+
 ## Suspended Plan
 
 - `Architecture.md` is future planning only.
@@ -72,6 +109,7 @@ the other's defects.
 - Keep new library code free of GUI, FastAPI, social downloader, and heavy media
   imports at module import time.
 - Keep the recognization features (pdf, audio, video, pictures) ultimately, exclude social media downloading-recognizing workflow ultimately. 
+- Social-media features are explicitly delayed; do not select them for heartbeat work.
 - Keep the application done part by part.
 - Record what you edit before each dialogue ends.
 - Keep the filename as the functions.
