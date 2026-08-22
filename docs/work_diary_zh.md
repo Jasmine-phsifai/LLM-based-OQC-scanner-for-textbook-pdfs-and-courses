@@ -49,10 +49,11 @@
    缺口只在媒体修复,且复核时发现真实开放缺陷。
 9. ~~legacy video repair 产物边界:manifest 格式崩溃、丢帧假成功、音频中间件误删~~ →
    已按失败优先测试修复,见 #010。
-10. legacy repair 发布与身份加固(仍优先于 Stage A):为 audio/board/video 引入同目录原子文本
-    发布；取消时先保存本轮已付费成功再传播；board 不得吞 `CancelledError`/provider setup；
-    以稳定单元身份替代当前 batch size/segment index/basename 重建。不要把 Markdown regex
-    repair 移植到 `src/ocrllm`;新库按现有 typed sidecar/checkpoint 扩展。
+10. legacy repair 发布与身份加固(仍优先于 Stage A):
+    ~~为 audio/board/video 引入同目录原子文本发布；取消时先保存本轮已付费成功再传播；
+    board 不得吞 `CancelledError`/provider setup~~ → 已完成,见 #011。
+    仍开放:以稳定单元身份替代当前 batch size/segment index/basename 重建。不要把 Markdown
+    regex repair 移植到 `src/ocrllm`;新库按现有 typed sidecar/checkpoint 扩展。
 11. 独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
     “免费额度耗尽”提示；应建立中性 failover disposition 后再修。
 
@@ -524,3 +525,46 @@ Luna 只读 scout 分别审查测试 seam 与修复风险，主代理逐行复�
 current split、board basename 仍没有稳定身份；三条 repair 仍非原子写。新观察到 audio/video
 取消会丢掉本轮已成功结果，board 还会吞 `CancelledError`。下一轮优先用失败测试定义“成功即
 原子发布、取消仍可见”的跨 repair 契约，再决定共用 writer 的最小位置；Stage A 调研继续后移。
+
+## #011 — 2026-08-22:让 legacy media repair 原子保存成功并诚实传播取消
+
+**任务**:让 audio、board、video repair 在每次付费成功后立即原子发布；后续取消仍抛
+`CancelledError`，不能丢掉先前成功；setup error 不得降格成普通识别失败。
+
+**上下文**:#010 关闭 video 的 manifest/缺失产物/cleanup 边界后，逐行复核发现三个 repair
+都在整个循环结束后才 `write_text()`。两名 Luna 只读 scout 分别审查跨 processor 的取消控制流
+和最小原子 writer 契约，主代理复核所有 marker 结构、失败传播测试与实现。考虑过两条路径：
+①复用 `IncrementalMDWriter` 或抽出共享 marker finalizer；②只共享文件提交原语，各 modality 保留
+自己的替换规则。选择②，因为 writer 的 append/slot 语义不匹配，三个 marker 又确实不同；统一
+它们会把 legacy 隐式状态固化成错误抽象。
+
+**成功标准**:先以确定性测试复现三个取消路径和 audio/board setup 误分类；一个共享 writer
+保证编码、fsync、replace 失败均不破坏旧文件；每个成功单元在下一可取消操作前落盘；既有普通
+partial-failure 与 resume 契约不变；focused、legacy 广集、编译和 diff 检查全绿。
+
+**为什么重要**:repair 的价值就是避免重复付费。进程取消或文件替换失败若能抹掉已经成功的
+重试，产品会在最需要恢复时失信。新库以后也需要区分“原子文件发布”“稳定恢复身份”和“并发
+协调”，不能用一个看似方便的 writer 掩盖三种不同责任。
+
+**结果**:
+
+- 新增 `core/write_text_atomically.py`，只负责同目录唯一临时文件、UTF-8/LF、flush + fsync、
+  `os.replace()` 与失败清理。单元测试证明精确 UTF-8 无 BOM；编码、fsync、replace 任一失败均
+  原样传播、保留旧输出且无临时残留。
+- audio/board/video 都在单元成功后先用 `subn(..., count=1)` 验证恰好命中一个失败 marker，
+  再原子发布，最后登记成功并进入下一轮。marker 漂移成为显式错误，不再静默“成功但没替换”。
+- board 显式 re-raise `CancelledError` 和 provider setup error；audio 补齐 setup error 传播；
+  video 保留原有异常分类，并能把 failed-batch placeholder 展开成“已成功帧 + 其余显式失败帧”，
+  所以后续取消仍保有精确 partial accounting。
+- 修前 repair 直接集为 **5 failed, 3 passed / 2.09s**。修后 writer + repair 直接集
+  **12 passed / 5.78s**；含 resume/failure propagation 的 focused 集 **43 passed / 22.41s**；排除真实
+  ffmpeg `test_social_e2e.py` 的 legacy 广集 **244 passed, 1 skipped / 65.93s**，唯一 skip 为
+  显式 live Google model discovery。四个修改模块 `py_compile` 通过；无网络/provider/付费调用。
+- 主审采纳 scout 的共享边界，但没有顺手迁移 `pdf.py`、checkpoint 或 incremental writer；这些
+  路径的状态/吞错契约不同，应分别失败优先。`contracts/`、`worker/` 和用户未跟踪交接文件未动。
+
+**遗留/下一步**:任务 10 只剩稳定身份：audio 不能按当前切分重建旧 segment，board 不能靠
+batch index + basename，video 不能按当前 batch size 解释历史失败。下一轮先定义持久化
+source/request/unit identity 及向后兼容边界；不把 Markdown regex 移入 `src/ocrllm`。另记录但
+不混做：legacy PDF/checkpoint/incremental writer 的旧原子性和吞错策略需要各自契约测试；同一
+输出上的并发 repair 仍需调用层协调，唯一临时文件只防碰撞，不防最后写者覆盖。

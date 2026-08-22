@@ -24,6 +24,8 @@ from urllib.parse import urlsplit, urlunsplit
 from urllib3.util.ssl_ import create_urllib3_context
 
 from OCRLLM.core.task_runner import CancelledError
+from OCRLLM.core.provider_errors import is_provider_setup_error
+from OCRLLM.core.write_text_atomically import write_text_atomically
 from OCRLLM.core.checkpoint import Checkpoint
 from OCRLLM.core.provider_selection import uses_google_for_audio
 from OCRLLM.core.utils import ensure_dir, get_ffmpeg, get_ffprobe, resolve_workers, run_subprocess_cancellable, strip_md_fence
@@ -870,6 +872,7 @@ class AudioProcessor(BaseProcessor):
 
         results: dict[int, str] = {}  # 1-based index → text
         still_failed: list[int] = []
+        content = Path(md_path).read_text(encoding="utf-8")
 
         for order, seg_idx in enumerate(failed_indices):
             self._check_cancelled()
@@ -889,26 +892,29 @@ class AudioProcessor(BaseProcessor):
                 text = strip_md_fence(text)
                 if not text or not text.strip():
                     text = "（无文本）"
-                results[seg_idx] = text
-                self._report_content(text, f"修复识别 — 分段 {seg_idx}")
             except CancelledError:
                 raise
             except Exception as e:
+                if is_provider_setup_error(e):
+                    raise
                 logger.error("[ASR-REPAIR] 分段 %d 失败: %s", seg_idx, e)
                 still_failed.append(seg_idx)
+                continue
+
+            pattern = re.compile(
+                r"（分段\s+" + str(seg_idx) + r"\s+(?:识别失败|未完成)(?::.*?)?）",
+            )
+            updated_content, replacement_count = pattern.subn(text, content, count=1)
+            if replacement_count != 1:
+                raise RuntimeError(f"音频修复标记已变化，无法安全发布分段 {seg_idx}: {md_path}")
+            write_text_atomically(md_path, updated_content)
+            content = updated_content
+            results[seg_idx] = text
+            self._report_content(text, f"修复识别 — 分段 {seg_idx}")
 
         if not results:
             raise RuntimeError(f"音频修复全部 {total} 个分段失败")
 
-        # Replace failure markers in the MD
-        content = Path(md_path).read_text(encoding="utf-8")
-        for seg_idx, text in results.items():
-            pattern = re.compile(
-                r"（分段\s+" + str(seg_idx) + r"\s+(?:识别失败|未完成)(?::.*?)?）",
-            )
-            content = pattern.sub(text, content, count=1)
-
-        Path(md_path).write_text(content, encoding="utf-8")
         logger.info(
             "[ASR-REPAIR] 修复完成: %d/%d 分段成功, %d 分段仍失败 -> %s",
             len(results), total, len(still_failed), md_path,

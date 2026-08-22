@@ -612,3 +612,36 @@ batch size 重新展开，audio 仍按当前切分配置重建旧分段；三条
 必须把恢复所需 source snapshot、原始单元边界与 request identity 放进 versioned sidecar；缺失
 artifact 必须成为显式 outcome。cleanup 只能删除已证明可重建且不再被失败恢复引用的文件；取消
 必须先原子保存已付费成功槽位再传播。不要移植 localized Markdown marker 作为状态源。
+
+## 2026-08-22 — media repair 原子发布与取消语义（已修复）
+
+**现象与根因。** audio、board、video repair 都先把成功结果留在内存，循环结束才直接
+`Path.write_text()` 覆盖唯一 Markdown。第二个 provider 调用若取消，第一个已经付费得到的成功
+会随异常丢失；写入/替换失败也可能截断旧成果。board 的 `except Exception` 还会吞掉
+`CancelledError` 和 provider setup error，把取消或环境缺失误报成普通批次失败。audio 同样会把
+provider setup error 降格为普通失败。
+
+**修复与结构选择。** 新增单一职责 `core/write_text_atomically.py`：在目标同目录独占创建短名
+临时文件，以 UTF-8 写入、flush、`fsync` 后只用 `os.replace()` 发布；编码、fsync 或 replace
+失败均清理临时文件、保留旧输出并传播原异常。三个 processor 保留各自不同的 marker 变换，
+每个单元识别成功后先确认 marker 恰好替换一次，再原子发布，然后才记录结果并进入下一次可取消
+操作。没有引入共享 regex/finalizer，也没有把 legacy marker 变成新库 API。board 显式传播取消
+与 setup error，audio 补齐 setup error 传播，video 保留既有传播契约。
+
+**失败优先证据与验证。** 修前五条直接回归为 **5 failed, 3 passed / 2.09s**：audio/video
+取消丢成功、board 吞取消，以及 audio/board setup error 被误分类。修后 writer + 三条 repair
+直接集为 **12 passed / 5.78s**；repair/resume/failure-propagation focused 集为
+**43 passed / 22.41s**；除真实 ffmpeg e2e 外的 legacy 全量为
+**244 passed, 1 skipped / 65.93s**，唯一 skip 是显式 live Google model discovery；四个修改模块
+`py_compile` 通过。没有网络、provider 或付费调用。
+
+**已观察、仍开放。** `pdf.py`、`CheckpointManager.save()`、`IncrementalMDWriter.flush()` 仍有
+各自旧的直接写或确定性临时名/吞写错策略；本轮没有把不同状态契约强行并入 repair writer。
+同进程并发 repair 仍是最后替换者胜出，原子文件替换不等于逻辑锁。更关键的是 audio segment、
+board batch/basename、video failed batch 仍按当前配置和本地化 Markdown 重建身份；下一原子任务
+应先定义持久化 identity，而不是继续增长 regex。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 新库恢复链必须在 typed、versioned
+sidecar 中原子保存每个已付费 slot，取消前先提交成功；文件发布失败必须显式失败。原子 replace
+只解决破坏性覆盖，不能替代稳定 source/request/unit identity 或并发协调。不要移植本轮的
+localized Markdown marker 变换。

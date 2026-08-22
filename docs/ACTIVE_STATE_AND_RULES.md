@@ -86,13 +86,14 @@ Future agents must assume the following and verify before trusting any claim:
 
 - **Legacy media repair is open debt, not a porting template.** The normal
   video manifest crash, missing-frame false success, and failed-audio cleanup
-  deletion found in commit `6b2d9eb` are fixed with direct regressions. Repair
-  identity still depends on current batch/chunk configuration and Markdown
-  markers, all three processors still publish replacements non-atomically, and
-  cancellation can discard or misclassify paid partial success. The exact open
-  findings are recorded in `legacy_app/AGENTS.md`. New library modalities must
-  extend typed, versioned checkpoint state and atomic publication rather than
-  copy localized Markdown-regex repair.
+  deletion found in commit `6b2d9eb` are fixed with direct regressions. Audio,
+  board, and video repair now atomically publish each successful retry before
+  the next cancellable operation, and cancellation/provider setup errors remain
+  visible. Repair identity still depends on current batch/chunk configuration
+  and Markdown markers. The exact open findings are recorded in
+  `legacy_app/AGENTS.md`. New library modalities must extend typed, versioned
+  checkpoint state and atomic publication rather than copy localized
+  Markdown-regex repair.
 
 ## Verified State, 2026-08-22
 
@@ -525,16 +526,40 @@ while retaining the last successful catalog during refresh outages.
 
 ## Legacy Status, 2026-08-22
 
-The first video-repair hardening slice is complete: `repair_board()` reads the
+Two legacy repair-hardening slices are complete. `repair_board()` reads the
 normal `{"items": [...]}` manifest, accounts for unavailable processed frames
 as explicit partial failures, and video cleanup retains extracted audio while
-failed transcript segments remain. Three direct failing-first regressions now
-cover that artifact boundary. Stable repair identity, cancellation publication,
-and atomic Markdown replacement remain open and continue to outrank Stage A
-feature research. Earlier legacy fixes remain recorded history, not proof that
-all compatibility paths are defect-free.
-
+failed transcript segments remain. Audio, board, and video repair now publish
+each successful retry through a shared same-directory atomic text writer before
+another provider call can be cancelled. Board no longer swallows cancellation
+or provider-setup failures. Stable repair identity remains open and continues
+to outrank Stage A feature research. Earlier legacy fixes remain recorded
+history, not proof that all compatibility paths are defect-free.
 ## New And Fixed In This Working Update
+
+Legacy repair publication now has one explicit durability contract:
+
+- `write_text_atomically()` stages UTF-8 text in a unique file beside the
+  destination, flushes and fsyncs it, and publishes only with `os.replace()`.
+  Encoding, fsync, and replace failures preserve the prior output, clean the
+  staging file, and propagate the original exception.
+- Audio, board, and video publish a recognized unit immediately after its
+  modality-specific failure marker is replaced. A later `CancelledError`
+  therefore remains observable without discarding earlier paid success.
+- Board now re-raises cancellation and provider setup errors; audio also
+  propagates provider setup errors consistently with video. Ordinary partial
+  failures retain their prior error contract.
+- Twelve direct repair/writer tests passed after five repair regressions first
+  failed. The focused repair/resume/failure-propagation set passed 43 tests; the
+  legacy suite excluding the real ffmpeg e2e file passed 244 tests with one
+  explicit live-Google skip. Compilation passed. No active-library,
+  frozen-boundary, network, or provider behavior changed.
+
+Stable audio segment, board batch, and video frame/batch identity remains open.
+The shared writer is intentionally only a file-publication primitive; localized
+marker transformations were not centralized or promoted into a library API.
+
+### Previous working update: video repair artifact boundary
 
 The current legacy video-repair artifact boundary is verified as follows:
 
@@ -549,7 +574,8 @@ The current legacy video-repair artifact boundary is verified as follows:
   video/audio slice passed 73 tests; the legacy suite excluding the real ffmpeg
   e2e file passed 235 tests with one explicit live-Google skip. Compilation also
   passed. No active-library, frozen-boundary, network, or provider behavior was
-  changed. Non-atomic publication and unstable repair identity remain open.
+  changed. The later working update closed non-atomic/cancellation publication;
+  unstable repair identity remains open.
 
 ### M2. Flowed output and true resume, 2026-08-19
 

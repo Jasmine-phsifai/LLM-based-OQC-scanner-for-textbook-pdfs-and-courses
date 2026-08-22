@@ -41,6 +41,7 @@ from OCRLLM.core.provider_selection import (
 )
 from OCRLLM.core.provider_errors import is_provider_setup_error
 from OCRLLM.core.task_runner import ProgressReporter, CancelledError
+from OCRLLM.core.write_text_atomically import write_text_atomically
 from OCRLLM.core.utils import (
     batch_list, ensure_dir, long_path, resize_image_if_needed, resolve_workers, strip_md_fence,
 )
@@ -342,6 +343,7 @@ class VideoProcessor(BaseProcessor):
 
         results: dict[str, str] = {}  # frame_id → recognized text
         still_failed: list[str] = list(unavailable_targets)
+        content = Path(md_path).read_text(encoding="utf-8")
 
         for idx, (frame, img_path) in enumerate(repair_targets):
             self._check_cancelled()
@@ -367,8 +369,6 @@ class VideoProcessor(BaseProcessor):
                     logger.warning("[VIDEO-REPAIR] 帧 %s 模型拒识", fid)
                     still_failed.append(fid)
                     continue
-                results[fid] = text
-                self._report_content(text, f"修复识别 — 帧 {fid}")
             except CancelledError:
                 raise
             except Exception as e:
@@ -376,57 +376,72 @@ class VideoProcessor(BaseProcessor):
                     raise
                 logger.error("[VIDEO-REPAIR] 帧 %s 识别失败: %s", fid, e)
                 still_failed.append(fid)
+                continue
 
-        if not results:
-            raise RuntimeError(f"视频板书修复全部 {requested_total} 帧失败")
+            candidate_results = {**results, fid: text}
+            updated_content = content
+            replacement_count = 0
 
-        # Replace failure placeholders in MD
-        content = Path(md_path).read_text(encoding="utf-8")
-
-        # Replace per-frame failures
-        for fid, text in results.items():
             pattern = re.compile(
                 r"(<!--\s*meta:frame\s+id=" + re.escape(fid) + r"[^>]*-->\s*\n*)"
                 r"(\s*<!--\s*帧\s+" + re.escape(fid) + r"\s+识别失败:.*?-->)",
                 re.DOTALL,
             )
-            if pattern.search(content):
-                content = pattern.sub(text, content, count=1)
-            else:
-                # Standalone frame failure without meta marker
+            updated_content, replacement_count = pattern.subn(
+                text,
+                updated_content,
+                count=1,
+            )
+            if replacement_count == 0:
                 standalone = re.compile(
                     r"<!--\s*帧\s+" + re.escape(fid) + r"\s+识别失败:.*?-->",
                 )
-                if standalone.search(content):
-                    content = standalone.sub(text, content, count=1)
-
-        # Replace batch failures where all frames in that batch are now repaired
-        for bi in failed_batch_indices:
-            if 1 <= bi <= len(all_batches):
-                batch_frames = all_batches[bi - 1]
-                batch_fids = [Path(f.get("path", "")).stem for f in batch_frames]
-                repaired_in_batch = [fid for fid in batch_fids if fid in results]
-                still_failed_in_batch = [fid for fid in batch_fids if fid not in results]
-                if not repaired_in_batch:
-                    continue
-                replacement_parts = []
-                for f in batch_frames:
-                    fid = Path(f.get("path", "")).stem
-                    if fid in results:
-                        replacement_parts.append(results[fid])
-                    else:
-                        safe_err = "修复重试后仍失败"
-                        replacement_parts.append(
-                            f"{self._build_frame_marker(f)}\n\n"
-                            f"<!-- 帧 {fid} 识别失败: {safe_err} -->"
-                        )
-                batch_pattern = re.compile(
-                    r"\s*<!--\s*批次\s+" + str(bi) + r"\s+失败:.*?-->\s*",
+                updated_content, replacement_count = standalone.subn(
+                    text,
+                    updated_content,
+                    count=1,
                 )
-                replacement = "\n\n" + "\n\n".join(replacement_parts) + "\n\n"
-                content = batch_pattern.sub(replacement, content, count=1)
 
-        Path(md_path).write_text(content, encoding="utf-8")
+            if replacement_count == 0:
+                for batch_idx in failed_batch_indices:
+                    if not 1 <= batch_idx <= len(all_batches):
+                        continue
+                    batch_frames = all_batches[batch_idx - 1]
+                    batch_fids = [Path(item.get("path", "")).stem for item in batch_frames]
+                    if fid not in batch_fids:
+                        continue
+                    replacement_parts = []
+                    for batch_frame in batch_frames:
+                        batch_fid = Path(batch_frame.get("path", "")).stem
+                        if batch_fid in candidate_results:
+                            replacement_parts.append(candidate_results[batch_fid])
+                        else:
+                            safe_err = "修复重试后仍失败"
+                            replacement_parts.append(
+                                f"{self._build_frame_marker(batch_frame)}\n\n"
+                                f"<!-- 帧 {batch_fid} 识别失败: {safe_err} -->"
+                            )
+                    batch_pattern = re.compile(
+                        r"\s*<!--\s*批次\s+" + str(batch_idx) + r"\s+失败:.*?-->\s*",
+                    )
+                    replacement = "\n\n" + "\n\n".join(replacement_parts) + "\n\n"
+                    updated_content, replacement_count = batch_pattern.subn(
+                        replacement,
+                        updated_content,
+                        count=1,
+                    )
+                    break
+
+            if replacement_count != 1:
+                raise RuntimeError(f"视频修复标记已变化，无法安全发布帧 {fid}: {md_path}")
+            write_text_atomically(md_path, updated_content)
+            content = updated_content
+            results[fid] = text
+            self._report_content(text, f"修复识别 — 帧 {fid}")
+
+        if not results:
+            raise RuntimeError(f"视频板书修复全部 {requested_total} 帧失败")
+
         logger.info(
             "[VIDEO-REPAIR] 修复完成: %d/%d 帧成功, %d 帧仍失败 -> %s",
             len(results), requested_total, len(still_failed), md_path,

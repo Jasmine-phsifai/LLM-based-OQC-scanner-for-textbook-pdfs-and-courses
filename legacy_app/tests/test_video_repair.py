@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from OCRLLM.config import AppConfig
+from OCRLLM.core.task_runner import CancelledError
 from OCRLLM.processors.video import VideoProcessor
 from OCRLLM.processors.video_pipeline import VideoProcessContext
 from OCRLLM.processors.video_pipeline_selection import VideoPipelineSelection
@@ -26,6 +27,17 @@ class _SingleClientPool:
 
     def set_cancel_event(self, *_args):
         pass
+
+
+class _CancelAfterOneVisionLLM:
+    def __init__(self):
+        self.calls = 0
+
+    def chat_with_images(self, *_args, **_kwargs):
+        self.calls += 1
+        if self.calls == 1:
+            return "第一帧已修复"
+        raise CancelledError("任务已取消")
 
 
 def _video_processor(tmp_path: Path, batch_size: int = 1):
@@ -124,3 +136,38 @@ def test_cleanup_keeps_extracted_audio_when_transcript_has_failed_segments(tmp_p
     assert audio_path.exists()
     assert transcript_path.exists()
     assert not info_path.exists()
+
+
+def test_video_repair_publishes_success_before_cancellation(tmp_path):
+    originals = [tmp_path / f"frame_00{index}.jpg" for index in (1, 2)]
+    processed = [tmp_path / f"processed_frame_00{index}.jpg" for index in (1, 2)]
+    for path in [*originals, *processed]:
+        path.write_bytes(b"image")
+    frames = [
+        {"path": str(path), "timestamp": float(index * 10), "frame_idx": index}
+        for index, path in enumerate(originals, start=1)
+    ]
+    _write_frame_info(tmp_path, frames)
+    processor, _ = _video_processor(tmp_path)
+    processor.llm = _CancelAfterOneVisionLLM()
+    processor._save_phase3_manifest(
+        str(tmp_path),
+        frames,
+        [str(path) for path in processed],
+    )
+    board_path = tmp_path / "lecture_板书识别.md"
+    board_path.write_text(
+        "<!-- meta:frame id=frame_001 time=00:10 -->\n\n"
+        "<!-- 帧 frame_001 识别失败: timeout -->\n\n"
+        "<!-- meta:frame id=frame_002 time=00:20 -->\n\n"
+        "<!-- 帧 frame_002 识别失败: timeout -->",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(CancelledError):
+        processor.repair_board("lecture.mp4", str(tmp_path))
+
+    content = board_path.read_text(encoding="utf-8")
+    assert "第一帧已修复" in content
+    assert "帧 frame_001 识别失败" not in content
+    assert "帧 frame_002 识别失败" in content

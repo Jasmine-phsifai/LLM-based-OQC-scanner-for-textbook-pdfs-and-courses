@@ -17,6 +17,9 @@ from OCRLLM.core.utils import (
     sort_files_by_time, resize_image_if_needed, strip_md_fence,
 )
 from OCRLLM.core.output_quality import failed_placeholder_quality_reason, looks_like_refusal
+from OCRLLM.core.provider_errors import is_provider_setup_error
+from OCRLLM.core.task_runner import CancelledError
+from OCRLLM.core.write_text_atomically import write_text_atomically
 from OCRLLM.imaging.preprocess import ImagePreprocessor
 from OCRLLM import prompts
 
@@ -213,6 +216,7 @@ class BoardProcessor(BaseProcessor):
 
         results: dict[int, str] = {}  # batch index → recognized text
         still_failed: list[int] = []
+        content = Path(md_path).read_text(encoding="utf-8")
 
         preprocessor = ImagePreprocessor(self.cfg)
 
@@ -242,24 +246,35 @@ class BoardProcessor(BaseProcessor):
                 text = strip_md_fence(result)
                 if looks_like_refusal(text):
                     raise RuntimeError("模型拒识")
-                results[batch_idx] = text
-                self._report_content(text, f"修复识别 — 批次 {batch_idx}")
+            except CancelledError:
+                raise
             except Exception as e:
+                if is_provider_setup_error(e):
+                    raise
                 logger.error("[BOARD-REPAIR] 批次 %d 失败: %s", batch_idx, e)
                 still_failed.append(batch_idx)
+                continue
+
+            pattern = re.compile(
+                r"\s*<!--\s*批次\s+" + str(batch_idx) + r"\s+\([^)]*\)\s+识别失败:.*?-->\s*",
+            )
+            updated_content, replacement_count = pattern.subn(
+                "\n\n" + text + "\n\n",
+                content,
+                count=1,
+            )
+            if replacement_count != 1:
+                raise RuntimeError(
+                    f"板书修复标记已变化，无法安全发布批次 {batch_idx}: {md_path}"
+                )
+            write_text_atomically(md_path, updated_content)
+            content = updated_content
+            results[batch_idx] = text
+            self._report_content(text, f"修复识别 — 批次 {batch_idx}")
 
         if not results:
             raise RuntimeError(f"板书修复全部 {total} 个批次失败")
 
-        # Replace placeholders in MD
-        content = Path(md_path).read_text(encoding="utf-8")
-        for batch_idx, text in results.items():
-            pattern = re.compile(
-                r"\s*<!--\s*批次\s+" + str(batch_idx) + r"\s+\([^)]*\)\s+识别失败:.*?-->\s*",
-            )
-            content = pattern.sub("\n\n" + text + "\n\n", content, count=1)
-
-        Path(md_path).write_text(content, encoding="utf-8")
         logger.info(
             "[BOARD-REPAIR] 修复完成: %d/%d 批次成功, %d 批次仍失败 -> %s",
             len(results), total, len(still_failed), md_path,
