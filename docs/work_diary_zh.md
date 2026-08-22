@@ -84,6 +84,9 @@
 16. ~~active 同目标并发事务竞态~~ → 已用进程内 nonblocking target claim 覆盖所有 file-producing
     recognition，从首次 checkpoint 前持有到结果构建后；稳定与 identity-less loser 均有回归，见 #022。
     跨进程同目标协调不在当前承诺内，未引入持久 lock file 或 stale-owner 协议。
+17. ~~Google image provider 最小迁移边界~~ → 已完成只读代码/测试/依赖审计，见 #023。结论是先完成
+    Stage 2 provider/modality split，再接入窄 Google image adapter；不得提前扩展旧的单 provider 配置，
+    也不得复制 legacy 内部重试、模型切换、audio/Files API、GUI 或 social 结构。该计划不阻塞 Stage A。
 
 ## 条目格式
 
@@ -1046,3 +1049,52 @@ winner pair 一致且 resume 零调用，最终 **2 passed / 0.38s**。这也证
 全量 **1064 passed / 84.47s**。四个修改/新增 Python 文件 `py_compile` 通过；独立 import probe 确认
 `import ocrllm` 未加载 Pillow/OpenAI/httpx，`git diff --check` 通过。无网络/provider/付费调用；未修改
 冻结的 `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+## #023 — 2026-08-23：确定 Google 图片 provider 的最小迁移边界
+
+**任务。** 在不提前启动 Stage 2、不复制 legacy 架构的前提下，判断 Google 图片能力是否值得迁移、现有
+active image seam 能复用多少、需要哪些依赖和错误语义，并把可执行的门禁顺序写进当前计划。
+
+**上下文与假设复核。** 开工时假设可能只需在当前 `Config.provider` 旁增加一个 Google settings 和
+adapter。代码审计推翻了这个假设：当前配置归一化只把精确 `DashScopeSettings` 当内置 provider；image
+processor 仍含 DashScope-only scout/证据元数据；capability 只认识 DashScope；resume fingerprint 也只有
+DashScope 内置身份，其他对象走 injected `resume_identity`。因此“现在直接加 Google”并不是一个独立 adapter
+改动，而是一次不完整的 Stage 2，随后还要迁移第二次。当前环境已安装 `google-genai 2.9.0`，本轮只检查其
+本地公开签名，没有安装、升级或联网调用。
+
+**两条路径与选择。** ①现在把 `GoogleSettings` 塞进旧的单 provider 配置，同时补 resolver、capability、
+fingerprint 和 processor 特判；短期文件数少，但会固化即将被 Stage 2 替换的 public shape。②先完成既定
+vision/audio provider/modality split，保留 `ResolvedVisionProvider`、`call_vision_provider`、共享 Markdown
+验证、候选 ledger 与 checkpoint，再登记一个只做 Google SDK 请求/解析/错误映射的内置 vision adapter。
+选择②。它不是为了通用框架，而是避免同一配置迁移两次，并让重试和模型切换继续只有一个 owner。
+
+**值得迁移的最小产品行为。** 官方 `google-genai` 延迟导入并放在独立 optional extra；通过有界
+`models.list()` 获取支持 `generateContent` 的当前目录，不把名称或“免费”状态硬编码为事实；按已验证顺序
+发送 active library 已经快照/校验的图片字节与 prompt；解析顶层 text 和 candidate/content/part fallback；
+空回复、JSON error、blocked/truncated/无文本都不能假成功。Google-specific mapper 只产出现有 typed
+error/disposition，由 active candidate loop 决定是否切下一个模型。已有真实回归支持的 quota 规则仍是完整
+`You exceeded your current quota ... check your plan and billing details` 文案；普通 429/RESOURCE_EXHAUSTED
+及 RPM/TPM/RPD marker 是窗口限流，marker 优先。不得搬入 DashScope 的 `FreeTierOnly` 等标记，也不得把
+真实 billing/payment 冒充 quota。legacy 对 5xx/503 high demand 只重试同模型而不切 vision 候选；首版
+active adapter 不复制隐藏重试，因此从单次调用返回 typed transient failure，但也不能借错误映射自动切模型。
+
+**明确不迁移。** legacy `GoogleProviderClient` 内部 retry/switch loop、最后成功模型的可变缓存、24 小时 GUI
+catalog cache、AppConfig/QSettings、hybrid/provider priority、text/context chat、audio upload/Files API、
+credential pool、video 参数与 social workflow 都不进入首个图片 slice。legacy 对任意 MIME 回退 JPEG、默认
+20 图片和“目录内全部模型免费”的假设也不作为新库契约。unsupported format、图片过多和空 image response
+缺少直接 image 回归，先列为获授权的有界 live 测试目标，不预造限制。
+
+**验证与计划结果。** 两名只读 scout 分别审计 legacy 行为/测试与 active seam，主代理随后逐文件复核
+`config.py`、resolver/caller、image processor、resume fingerprint、capability、Google provider/model catalog
+和 SDK 本地签名。legacy Google error + discovery focused 集 **25 passed / 2.63s**；active provider boundary +
+Stage M + image resume focused 集 **88 passed / 1.34s**。首个 SDK 签名探针因 PowerShell 引号被吃掉产生
+`NameError`，改用标准输入脚本后确认当前 `Client(http_options=...)`、`HttpOptions(timeout=int)`、
+`Part.from_bytes`、`models.list()` 与 `generate_content()` seam；这是探针命令错误，不是产品失败。
+`docs/plan_phase1_maturation_and_phase2_audio.md` 现在记录 Google image follow-on：Stage M paid exit 与
+Stage 2 都完成后才可实现；它可与 Stage A 独立排序，不成为 audio 新门禁。没有改代码、安装依赖、
+联网/provider 调用，也没有动
+冻结区、legacy、social media 或用户临时交接文件。
+
+**遗留/下一步。** Stage 2 写代码前仍有计划中已登记的人类选择：旧 `Config.provider`/`vision_model` 保留一版
+兼容映射，还是在 0.2.0 明确破坏。Google 调研不替用户猜这个 public API 决定。当前 heartbeat 下一项仍应
+优先找已建功能的可证明缺陷；若无更高优先级缺陷，则可继续 Stage A 只读调研。Google adapter 实现保持门禁关闭。

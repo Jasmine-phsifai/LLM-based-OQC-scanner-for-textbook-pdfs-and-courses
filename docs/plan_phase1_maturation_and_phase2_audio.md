@@ -190,6 +190,98 @@ The documentation rules in `docs/ACTIVE_STATE_AND_RULES.md` apply. Concretely:
 - One live smoke, budget approved in advance, proving the DashScope path still
   works end to end.
 
+## Google Image Follow-on — Built-in Adapter
+
+**Investigated 2026-08-23. Plan only. Do not implement before Stage M exits and
+the Stage 2 provider/modality split lands. This does not block Stage A.**
+
+### Decision and boundary
+
+Two implementation paths were compared:
+
+1. Add `GoogleSettings` beside the current single `Config.provider` field now.
+   This looks small but would also require special cases in configuration
+   normalization, DashScope-only scout behavior and evidence metadata,
+   capability reporting, and image resume identity. Stage 2 would then replace
+   the same public configuration shape immediately afterward.
+2. Complete the provider-neutral Stage 2 split once, retain the shared vision
+   call seam, and then register one narrow Google image adapter.
+
+Choose path 2. It avoids an intermediate public API and keeps one owner for
+candidate routing, request pacing, checkpointing, attempt disclosure, refusal
+detection, and Markdown validation. The Google adapter translates one SDK call
+and its failures; it must not copy legacy `GoogleProviderClient` or introduce a
+second retry/model-switch loop.
+
+Explicitly out of scope: Google audio and Files API, text chat, contextual chat
+history, GUI/QSettings, provider priority toggles, credential pools, persistent
+"last successful model" routing, video policy, and every social workflow.
+
+### Smallest useful slice
+
+- Add immutable, secret-redacted Google provider settings and a separate
+  optional `google` dependency extra. Load the official `google-genai` SDK only
+  inside the adapter; plain `import ocrllm` and capability inspection remain
+  lightweight.
+- Discover models lazily with the provider's `models.list()` API and a bounded
+  timeout. Accept only catalog entries that advertise `generateContent` and
+  normalize the `models/` prefix. Catalog presence makes a model selectable,
+  not quality-proven or necessarily free. Do not hardcode the legacy model
+  names or assume every catalog entry has free quota.
+- Build one ordered inline-image request from the active library's already
+  validated snapshot paths, append the prompt, make one synchronous
+  `generate_content` call, and close the client. Use the SDK transport timeout;
+  cancellation remains pre-dispatch because the synchronous call cannot be
+  interrupted honestly.
+- Parse top-level response text and the documented candidate/content/part text
+  fallback. Empty, missing, blocked, truncated, JSON-error-shaped, or otherwise
+  invalid output is a typed failure and still passes through the common
+  provider-Markdown validator.
+- Map Google failures into the existing public error vocabulary with safe
+  provider/model details and a truthful `failure_scope`. The established exact
+  quota wording (`You exceeded your current quota ... check your plan and
+  billing details`) is distinct from generic 429/`RESOURCE_EXHAUSTED`; explicit
+  RPM/TPM/RPD/rate markers take precedence. Do not copy DashScope-only
+  `FreeTierOnly` or `FreeAllocationQuotaExceeded` markers. Actual payment or
+  billing failure must not be mislabeled as quota merely to reuse candidate
+  switching. Before implementation, decide whether the existing account-stopped
+  error is honest for that observed state; if it is not, add one narrow billing
+  error rather than distorting an existing code.
+- Give the built-in adapter a stable, secret-free resume identity containing
+  provider name, model, prompt versions, and output-affecting Google settings.
+  Bump the image request identity version if its canonical document changes;
+  never silently reinterpret v2 state.
+- Report Google separately in capabilities and result metadata. A catalog-only
+  adapter is experimental; only the bounded live gate below can support a live
+  availability claim, and it does not establish board-prompt quality.
+
+### Verification sequence
+
+1. Failing-first offline tests for exact settings types, immutability, secret
+   redaction, missing/incompatible SDK, lazy imports, resolver selection, ordered
+   image/MIME request construction, timeout conversion, client cleanup, response
+   parsing, and redacted error mapping.
+2. Reuse the existing candidate and checkpoint tests with Google-shaped fake
+   SDK responses. Prove that eligible model-scoped failures advance the
+   caller's explicit queue while window rate limits, generic 5xx/503 overload,
+   invalid responses, empty output, safety blocks, and refusals do not. Google
+   image handling starts with one transport attempt; any later retry belongs to
+   an explicit shared execution policy, not a hidden adapter loop. Prove attempt
+   disclosure and zero-call resume without putting retry policy in the adapter.
+3. Prove Google and DashScope have distinct secret-free fingerprints and that
+   model/output-setting changes invalidate reuse. Run the full suite and import
+   weight gate without loading Google, OpenAI, Pillow, or network clients during
+   plain import.
+4. After Stage 2, use the maintainer's standing Google authorization for one
+   bounded live catalog fetch and one small authorized image request against a
+   catalog-served image-capable model. Preserve real outcomes for window quota,
+   overload, API error, empty reply, unsupported format, and excessive image
+   count; add only narrow mappings or local limits supported by that evidence.
+
+Legacy offline evidence currently proves catalog filtering and the narrow
+quota/rate distinction, but not Google image-count or unsupported-format limits.
+Those are live-test targets, not reasons to invent provider limits in advance.
+
 ## Stage A — Phase 2: MP3-Only Audio Recognizer
 
 **Not started. Plan only. Do not begin until Stage M exits and Stage 2 lands.**
