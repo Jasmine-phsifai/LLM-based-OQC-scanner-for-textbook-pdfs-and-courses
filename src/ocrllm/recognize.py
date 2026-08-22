@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -21,7 +22,12 @@ def recognize(
     """Recognize one image or one ordered same-context image group."""
     public_error: OCRLLMError | None = None
     try:
-        return _recognize(source, config=config)
+        with ExitStack() as output_claims:
+            return _recognize(
+                source,
+                config=config,
+                output_claims=output_claims,
+            )
     except OCRLLMError as error:
         public_error = error
 
@@ -36,6 +42,7 @@ def _recognize(
     source: str | Path | Sequence[str | Path],
     *,
     config: Config | None,
+    output_claims: ExitStack,
 ) -> RecognitionResult:
     from .build_recognition_result import build_recognition_result
     from .coerce_source_paths import coerce_source_paths
@@ -72,6 +79,16 @@ def _recognize(
                     profile=profile,
                     config=cfg,
                 )
+                if output_path is not None:
+                    from .output.claim_output_target import claim_output_target
+
+                    output_claims.enter_context(claim_output_target(output_path))
+                    # The first existence check can become stale before ownership.
+                    output_path = build_output_path(
+                        source_paths,
+                        profile=profile,
+                        config=cfg,
+                    )
                 checkpoint_enabled = (
                     output_path is not None
                     and (cfg.resume or _can_checkpoint_image(cfg))

@@ -169,7 +169,7 @@ class OutputError(OCRLLMError):
 
 
 class OutputExists(OutputError):
-    """The output target exists and overwrite/resume was not requested."""
+    """The output target exists or is owned by another recognition."""
 
     default_code = "OUTPUT_EXISTS"
     default_message = "The output target already exists."

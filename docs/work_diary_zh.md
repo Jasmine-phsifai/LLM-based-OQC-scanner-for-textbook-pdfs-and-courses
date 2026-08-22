@@ -81,9 +81,9 @@
     不承诺任意深目录或通用 `\\?\` long-path 支持。
 15. ~~automatic checkpoint 的非法 sidecar 目标延迟到 provider 之后才失败~~ → 已在非 resume 路径
     增加零写入的 regular-file preflight，保留 resume 原有错误类型，见 #021。
-16. **active 同目标并发事务竞态（高优先级，下一轮）**：两个调用可同时通过 output 不存在检查，
-    winner Markdown 最终与 loser sidecar 配对。已用 Events + 真实 writer 稳定复现；先确定 active API
-    是否只承诺进程内并发，再选择覆盖 checkpoint 到 publication 的 per-output lock，不能只锁最终 writer。
+16. ~~active 同目标并发事务竞态~~ → 已用进程内 nonblocking target claim 覆盖所有 file-producing
+    recognition，从首次 checkpoint 前持有到结果构建后；稳定与 identity-less loser 均有回归，见 #022。
+    跨进程同目标协调不在当前承诺内，未引入持久 lock file 或 stale-owner 协议。
 
 ## 条目格式
 
@@ -1009,3 +1009,40 @@ social media，也未触碰用户临时交接文件。race scout 在系统 temp 
 `NullReferenceException`，目录仍在。路径为
 `C:\Users\OMG\AppData\Local\Temp\ocrllm-race-audit-tujt3s9x`，不在仓库且不含文件；不使用跨 shell 或
 更危险删除手段绕过该环境问题。
+
+## #022 — 2026-08-23：同目标 Markdown 与 sidecar 的进程内所有权一致
+
+**任务。** 关闭 #021 已稳定复现的 active 同目标并发竞态：两个 `recognize()` 都能在 output 尚不存在时
+进入 provider/slot checkpoint；no-overwrite Markdown 最终虽只有一个 winner，canonical sidecar 却可能
+已被 loser 替换。成功标准是 supported concurrency boundary 有明确证据，Events 回归修前失败，所有
+checkpoint/load/final publication 都处在同一所有权内；winner Markdown 与 state 一致，后续 resume 零
+provider 调用。
+
+**边界与方案选择。** 当前公开 `recognize_batch()` 明确使用一个进程内线程池；README 同时说明
+credential pool 没有跨进程状态，仓库没有多进程共享 output 的承诺。比较两条路径：①建立 sibling lock
+file + OS advisory lock，补齐 Windows/POSIX、稳定 inode、残留文件、network filesystem 与权限语义；
+②建立进程内、nonblocking 的 target claim。选择②：它完整覆盖已建 public batch/direct-thread 并发，冲突
+调用在 provider 前以已有 `OUTPUT_EXISTS` 失败，不会等待另一个外部 provider；也不增加持久文件或新的
+public error taxonomy。`overwrite=True`/`resume=True` 仍允许顺序调用，但重叠调用同样受 active ownership
+约束。跨进程两个 writer 不是本轮声称解决的范围，文档必须明确，不能把进程内 claim 宣传成文件事务。
+
+**失败优先回归。** 使用 `threading.Condition` 和真实 atomic writer，不用 sleep。winner 在 completed
+state 已保存、Markdown 尚未发布时暂停；loser 此时启动。修前 **1 failed / 0.42s**：winner 返回成功、
+loser 得到 `OUTPUT_EXISTS`，但最终文件为 `# Winner A`、state 却为 `# Loser B`。断言还要求后续
+`resume=True` 使用 winner identity 且 provider 调用数为零，因此不仅比较文本，也通过生产 validation
+证明 durable pair 可复用。
+
+**实现与反向审查。** 新增 `output/claim_output_target.py`，只负责将 resolved + `normcase` target 放进
+进程内 guarded set；重叠 claim 立即抛 `OutputExists`，`finally` 删除 key，不创建 lock file，也没有等待
+或 registry 增长。公共 `recognize()` 用标准库 `ExitStack` 保证普通异常、typed error、取消或成功返回都
+释放 claim；claim 后重新执行 `build_output_path()`，关闭首次 preflight 变旧的窗口。首次实现只在
+`checkpoint_enabled` 内 claim，focused 单例曾 **1 passed / 0.25s**；只读反向审查随即指出 identity-less
+provider 可先发布 Markdown，使 checkpoint owner 留下错误 state。该决定被推翻：现在任何
+`output_path` 非空的 recognition 都在 capability 分支前 claim。回归参数化为：①stable loser 尝试替换
+sidecar 后输掉 Markdown；②identity-less loser 试图先赢 Markdown。两种最终都在 provider 前被拒，
+winner pair 一致且 resume 零调用，最终 **2 passed / 0.38s**。这也证明不能只保护 sidecar writer。
+
+**验证与边界。** image-resume/output/M2/process-kill/batch focused 集 **38 passed / 2.27s**；最终 root
+全量 **1064 passed / 84.47s**。四个修改/新增 Python 文件 `py_compile` 通过；独立 import probe 确认
+`import ocrllm` 未加载 Pillow/OpenAI/httpx，`git diff --check` 通过。无网络/provider/付费调用；未修改
+冻结的 `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。

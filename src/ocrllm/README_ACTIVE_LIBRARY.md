@@ -115,7 +115,11 @@ hashes and byte counts are returned in metadata.
 Qwen-VL Max remains an explicit supported scout option but is not the Phase 1
 evidence baseline. A DashScope in-memory credential scheduler, model-aware
 blocking, candidate recovery, and request/batch image resume are available;
-there is no cross-process pool state. PDF, audio, and video remain unavailable.
+there is no cross-process pool state. File-producing calls claim one output target
+for the duration of a recognition, so direct threads and `recognize_batch()` cannot
+split final Markdown from its resume sidecar. The claim is process-local: separate
+processes must not target the same output path concurrently. PDF, audio, and video
+remain unavailable.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.

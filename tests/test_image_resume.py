@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
+import threading
 from pathlib import Path
 
 import pytest
@@ -16,6 +18,8 @@ from ocrllm import (
     DashScopeSettings,
     LocalOCRSettings,
     OutputError,
+    OutputExists,
+    RecognitionResult,
     ResumeStateError,
     recognize,
 )
@@ -270,6 +274,122 @@ def test_state_directory_is_rejected_before_provider_in_both_modes(
 
     assert resume_error.value.code == "RESUME_STATE_INVALID"
     assert provider.calls == 0
+
+
+@pytest.mark.parametrize("loser_identity", ["same-target-loser-v1", None])
+def test_concurrent_same_target_keeps_winner_markdown_and_state_together(
+    tmp_path,
+    monkeypatch,
+    loser_identity,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+
+    class Provider:
+        def __init__(self, identity: str | None, markdown: str) -> None:
+            if identity is not None:
+                self.resume_identity = identity
+            self.markdown = markdown
+            self.calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            return self.markdown
+
+    winner = Provider("same-target-winner-v1", "# Winner A\n")
+    loser = Provider(loser_identity, "# Loser B\n")
+    writer = importlib.import_module("ocrllm.output.write_markdown_atomically")
+    real_writer = writer.write_markdown_atomically
+    condition = threading.Condition()
+    stages = {
+        "winner_at_publish": False,
+        "loser_at_publish": False,
+        "winner_published": False,
+        "loser_finished": False,
+    }
+
+    def coordinated_writer(output_path, markdown, *, overwrite):
+        if markdown == winner.markdown:
+            with condition:
+                stages["winner_at_publish"] = True
+                condition.notify_all()
+                assert condition.wait_for(
+                    lambda: stages["loser_at_publish"] or stages["loser_finished"],
+                    timeout=5,
+                )
+            real_writer(output_path, markdown, overwrite=overwrite)
+            with condition:
+                stages["winner_published"] = True
+                condition.notify_all()
+            return
+
+        if loser_identity is None:
+            real_writer(output_path, markdown, overwrite=overwrite)
+            with condition:
+                stages["loser_at_publish"] = True
+                condition.notify_all()
+            return
+
+        with condition:
+            stages["loser_at_publish"] = True
+            condition.notify_all()
+            assert condition.wait_for(
+                lambda: stages["winner_published"],
+                timeout=5,
+            )
+        real_writer(output_path, markdown, overwrite=overwrite)
+
+    monkeypatch.setattr(writer, "write_markdown_atomically", coordinated_writer)
+    outcomes: dict[str, object] = {}
+
+    def run(label: str, provider: Provider) -> None:
+        try:
+            outcomes[label] = recognize(
+                source,
+                config=Config(provider=provider, output_dir=output_dir),
+            )
+        except BaseException as error:
+            outcomes[label] = error
+        finally:
+            if label == "loser":
+                with condition:
+                    stages["loser_finished"] = True
+                    condition.notify_all()
+
+    winner_thread = threading.Thread(target=run, args=("winner", winner))
+    loser_thread = threading.Thread(target=run, args=("loser", loser))
+    winner_thread.start()
+    with condition:
+        assert condition.wait_for(
+            lambda: stages["winner_at_publish"],
+            timeout=5,
+        )
+    loser_thread.start()
+    winner_thread.join(timeout=5)
+    loser_thread.join(timeout=5)
+
+    assert not winner_thread.is_alive()
+    assert not loser_thread.is_alive()
+    assert isinstance(outcomes["winner"], RecognitionResult)
+    assert isinstance(outcomes["loser"], OutputExists)
+    assert loser.calls == 0
+    final_markdown = (output_dir / "board_board.md").read_text(encoding="utf-8")
+    state_document = json.loads(_state_path(output_dir).read_text(encoding="utf-8"))
+    assert final_markdown == winner.markdown
+    assert state_document["result"]["markdown"] == final_markdown
+
+    resume_provider = Provider("same-target-winner-v1", "must not run")
+    resumed = recognize(
+        source,
+        config=Config(
+            provider=resume_provider,
+            output_dir=output_dir,
+            resume=True,
+        ),
+    )
+
+    assert resumed.markdown == winner.markdown
+    assert resume_provider.calls == 0
 
 
 def test_resume_rejects_changed_source_bytes_and_request_settings(

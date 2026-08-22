@@ -93,17 +93,17 @@ Future agents must assume the following and verify before trusting any claim:
   change. This closes suffix-induced overflow only; it is not general `\\?\`
   extended-path support, and a deeper directory can still exceed the OS limit.
 
-- **Concurrent recognition of one output target can split Markdown and resume
-  ownership (open, high priority).** Two calls can both pass the absent-output
-  preflight. Slot/completed checkpoints replace the same canonical sidecar before
-  no-overwrite Markdown publication selects a winner, so the winner's Markdown can
-  remain beside the loser's state. An event-coordinated offline probe reproduced
-  this with one success, one `OUTPUT_EXISTS`, and mismatched durable artifacts.
-  Fixing only the final writer is insufficient because partial slot checkpoints
-  can arrive later. The next correction must coordinate one output from the first
-  checkpoint through publication and recheck state/output after ownership is
-  acquired; decide and document whether the supported boundary is process-local or
-  cross-process before choosing the lock mechanism.
+- **Same-target output/state ownership is consistent for supported in-process
+  concurrency.** Every file-producing `recognize()` claims its resolved target
+  without waiting before provider dispatch, rechecks output existence under that
+  claim, and holds ownership through all slot/completed checkpoints, Markdown
+  publication, and result construction. An overlapping call gets `OUTPUT_EXISTS`
+  before its provider runs, including when it requests overwrite/resume or has no
+  checkpoint identity. Event-coordinated tests cover both a state-writing loser and
+  an identity-less Markdown-only loser, then prove the winner resumes with zero
+  provider calls. This is deliberately process-local; separate processes targeting
+  one output directory are not coordinated, and no cross-process transaction is
+  claimed.
 
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an
