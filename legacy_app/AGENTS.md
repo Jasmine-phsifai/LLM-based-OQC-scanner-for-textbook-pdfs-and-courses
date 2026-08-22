@@ -576,3 +576,39 @@ sidecar 与 slot/batch checkpoint，记录稳定单元 ID、源快照、切分�
 恢复状态源，也不得按当前配置重建旧单元。未来 Codex/OpenAI-compatible adapter 可以借鉴
 text-first payload 和 stream fallback，但候选切换必须沿用显式 disposition，不得复用
 quota-specific exception 表示普通 5xx。Windows 深目录还需覆盖临时后缀后的最终路径测试。
+
+## 2026-08-22 — video repair 产物边界崩溃、假成功与音频误删（已修复）
+
+**现象与根因。** 对 `6b2d9eb` 的补录审计发现三个相互关联的已建功能缺陷：
+
+1. `_save_phase3_manifest()` 写入 `{"items": [...]}`，但 `repair_board()` 直接迭代顶层 JSON；
+   正常修复会在字符串 `items` 上调用 `.get()` 并崩溃。
+2. manifest 明确指向已丢失的 processed frame 时，该帧被静默排除。只要同批另一帧修复成功，
+   Markdown 虽仍含失败 marker，方法却可能返回成功。
+3. `_prune_completed_outputs()` 只因板书失败保留中间件。只有录音分段失败时，它仍删除
+   `{stem}.mp3`，使 GUI 随后提供的音频修复必然缺源文件。
+
+**修复。** `repair_board()` 现在按 writer 的 dict schema 读取并校验 `items`，跳过畸形条目且
+对损坏 JSON 留 warning；没有 manifest 映射时仍允许既有 source-frame fallback，但 manifest
+明确指向丢失文件时会把稳定 frame ID 加入 unresolved 集。可用帧照常重试并写回，任何不可用
+帧仍保留显式失败 marker，最终抛出带 ID 的 partial-failure，而不是假成功。目标 ID 用 set 去掉
+了原来循环内反复构造列表的查重。cleanup 复用 `AudioProcessor.find_failed_segments()`，仅在录音
+Markdown 仍有失败分段时保留提取音频；干净 transcript 仍按原策略清掉可重建 mp3，没有笼统
+保留全部中间文件。
+
+**失败优先证据与验证。** 新增 `tests/test_video_repair.py`。修前三个回归为 **3 failed**：分别
+精确落在 manifest `AttributeError`、缺帧假成功和 mp3 被删除；修后 video/audio/cleanup 相关集
+**73 passed / 36.37s**。除真实 ffmpeg e2e 文件外的 legacy 全量为
+**235 passed, 1 skipped / 51.00s**，skip 是显式 live Google model discovery；
+`compileall -q OCRLLM tests` 通过。没有网络、provider 或付费调用。
+
+**仍开放。** 本轮没有把 regex-in-Markdown repair 追认为成熟设计。failed batch 仍按当前
+batch size 重新展开，audio 仍按当前切分配置重建旧分段；三条 repair 仍用非原子 `write_text()`。
+进一步复核还确认：audio/video 在循环中已有成功付费结果后若取消，会在发布前直接抛出而丢掉
+本轮成功；board 的宽泛 `except Exception` 会把 `CancelledError` 吞成普通批次失败。这些问题
+必须另立失败测试与原子发布/稳定身份任务，不能由本轮绿灯掩盖。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 未来 audio/video vertical slice
+必须把恢复所需 source snapshot、原始单元边界与 request identity 放进 versioned sidecar；缺失
+artifact 必须成为显式 outcome。cleanup 只能删除已证明可重建且不再被失败恢复引用的文件；取消
+必须先原子保存已付费成功槽位再传播。不要移植 localized Markdown marker 作为状态源。

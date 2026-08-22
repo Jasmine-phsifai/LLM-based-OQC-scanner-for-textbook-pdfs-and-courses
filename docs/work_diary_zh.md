@@ -47,9 +47,14 @@
 8. ~~legacy 日记补录:提交 6b2d9eb 的 media repair 缺少对应条目~~ → 已完成,见 #009。
    审计纠正了原判断:CLIProxy fallback 在原提交已有日记,Codex discovery 后来也有条目;
    缺口只在媒体修复,且复核时发现真实开放缺陷。
-9. legacy media repair 加固(优先于 Stage A 调研):先红测复现 video manifest 格式崩溃、
-   丢帧假成功与音频中间件误删;再修复原子写、稳定单元身份和取消/配置错误传播。不要把
-   Markdown regex repair 直接移植到 `src/ocrllm`;新库按现有 typed sidecar/checkpoint 扩展。
+9. ~~legacy video repair 产物边界:manifest 格式崩溃、丢帧假成功、音频中间件误删~~ →
+   已按失败优先测试修复,见 #010。
+10. legacy repair 发布与身份加固(仍优先于 Stage A):为 audio/board/video 引入同目录原子文本
+    发布；取消时先保存本轮已付费成功再传播；board 不得吞 `CancelledError`/provider setup；
+    以稳定单元身份替代当前 batch size/segment index/basename 重建。不要把 Markdown regex
+    repair 移植到 `src/ocrllm`;新库按现有 typed sidecar/checkpoint 扩展。
+11. 独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
+    “免费额度耗尽”提示；应建立中性 failover disposition 后再修。
 
 ## 条目格式
 
@@ -472,3 +477,50 @@ legacy 缺陷穿过迁移边界。
 manifest 崩溃、丢帧假成功和 audio cleanup 建立失败测试，再以最小修复恢复可信行为；随后处理
 原子发布与稳定 repair identity。`src/ocrllm` 不移植 regex-in-Markdown 方案，而应扩展现有
 versioned sidecar、源/request fingerprint、slot/batch checkpoint 与原子写。
+
+---
+
+## #010 — 2026-08-22:修复 legacy video repair 的产物边界
+
+**任务**:让已发布的 video repair 在自己的 manifest、缺失 processed frame 和失败音频 cleanup
+边界上可信；先写必红测试，再做最小连贯修复。
+
+**上下文**:#009 证明 `repair_board()` 读不懂 `_save_phase3_manifest()` 的正常产物，还能漏掉
+丢失帧后假成功；只有音频分段失败时 cleanup 会删掉后续修复必需的 mp3。两条路径是只修一行
+manifest unwrap，或把三者视为同一“恢复所需产物能否定位并诚实报告”边界；选择后者。两名
+Luna 只读 scout 分别审查测试 seam 与修复风险，主代理逐行复核实现、调用与既有 cleanup 测试。
+
+**成功标准**:三个回归修前精确失败；正常 writer manifest 可修复且实际发送 processed frame；
+一帧可修、一帧丢失时保存成功结果、保留失败 marker 并抛出带缺失 ID 的错误；音频 marker 尚在
+时保留 mp3、干净 transcript 仍可清理；本轮不掩盖既有取消/setup 风险；相关集、legacy 广集
+与 compile 通过；冻结区、交接文件与 provider 不动。
+
+**为什么重要**:repair 会再次消费 provider 请求并改写用户唯一的付费输出。崩溃、误删恢复输入
+或残留失败却返回成功，都会让“只补失败项”失去产品意义，也会把错误范式带入新库音视频切片。
+
+**结果**:
+
+- 新建单一职责测试文件 `tests/test_video_repair.py`。三个测试先以 **3 failed / 2.55s** 精确
+  复现:dict manifest 在 `item.get` 崩溃、部分 processed frame 丢失未抛错、失败 transcript
+  的 mp3 被 cleanup 删除。首个测试随后改为直接调用生产 `_save_phase3_manifest()` 造 fixture，
+  避免测试手抄 schema 后与 writer 再次漂移。
+- `repair_board()` 按 `{"items": [...]}` 解包，校验 outer/items/item/path 类型，对 corrupt JSON
+  记录 warning；没有映射才退回原 frame，manifest 明确给出的缺失 processed path 则登记稳定
+  frame ID。可用帧仍完成识别和替换，unavailable/provider-failed ID 合并进入 `still_failed`，
+  因此 partial success 会落盘后抛错，不再假成功。另以 set 替代循环中的 O(n²) 临时列表查重。
+- cleanup 懒导入并复用 `AudioProcessor.find_failed_segments()`，只保留修复所需 mp3；没有复制
+  marker regex，也没有像板书失败路径那样提前 return 并泄漏所有其他可重建中间件。既有 clean
+  transcript cleanup 测试继续证明 mp3 可正常删除。
+- 修后 `test_video_repair.py + test_resume_chain.py` 为 **22 passed / 1.62s**；video/audio/cleanup
+  六文件相关集 **73 passed / 36.37s**；排除真实 ffmpeg `test_social_e2e.py` 的 legacy 广集
+  **235 passed, 1 skipped / 51.00s**，唯一 skip 是明确的 live Google model discovery。
+  `compileall -q OCRLLM tests` 与 `git diff --check` 通过。
+- scout 建议整体复用 `_load_phase3_processed_paths()`，主审否决:该 loader 对任一缺失项全量返回
+  `None`，会丢失 repair 必需的逐帧 partial accounting。保留局部严格 parser 是更小、更诚实的
+  行为差异，不新增抽象层。
+- `contracts/`、`worker/`、用户未跟踪交接文件均未动；没有网络、provider 或付费调用。
+
+**遗留/下一步**:本轮只关闭任务 9 的三个已证明缺陷。failed batch/current batch-size、audio
+current split、board basename 仍没有稳定身份；三条 repair 仍非原子写。新观察到 audio/video
+取消会丢掉本轮已成功结果，board 还会吞 `CancelledError`。下一轮优先用失败测试定义“成功即
+原子发布、取消仍可见”的跨 repair 契约，再决定共用 writer 的最小位置；Stage A 调研继续后移。

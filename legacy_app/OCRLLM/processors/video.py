@@ -264,58 +264,95 @@ class VideoProcessor(BaseProcessor):
             )
 
         # Build frame_id → (frame_dict, image_path) mapping
-        processed_dir = self._phase3_dir(output_dir)
         manifest_path = self._phase3_manifest_path(output_dir)
         processed_map = {}
         if os.path.isfile(manifest_path):
             try:
                 with open(manifest_path, "r", encoding="utf-8") as f:
-                    for item in json.load(f):
-                        src = item.get("source_path", "")
-                        processed_map[Path(src).stem] = item.get("processed_path", src)
-            except (json.JSONDecodeError, OSError):
-                pass
+                    manifest = json.load(f)
+                items = manifest.get("items") if isinstance(manifest, dict) else None
+                if not isinstance(items, list):
+                    logger.warning(
+                        "[VIDEO-REPAIR] Phase 3 manifest 格式无效: %s",
+                        manifest_path,
+                    )
+                    items = []
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    src = item.get("source_path")
+                    processed_path = item.get("processed_path")
+                    if isinstance(src, str) and src:
+                        processed_map[Path(src).stem] = (
+                            processed_path
+                            if isinstance(processed_path, str) and processed_path
+                            else src
+                        )
+            except (json.JSONDecodeError, OSError, UnicodeError) as exc:
+                logger.warning("[VIDEO-REPAIR] 读取 Phase 3 manifest 失败: %s", exc)
 
         # Resolve which frames to repair
         repair_targets: list[tuple[dict, str]] = []  # (frame_dict, image_path)
+        repair_target_ids: set[str] = set()
+        unavailable_targets: list[str] = []
         batch_size = self._phase4_batch_size()
         all_batches = batch_list(list(frame_results), batch_size)
 
         # From batch failures: expand to individual frames
         for bi in failed_batch_indices:
-            if 1 <= bi <= len(all_batches):
-                for frame in all_batches[bi - 1]:
-                    fid = Path(frame.get("path", "")).stem
-                    if fid not in [Path(t[0].get("path", "")).stem for t in repair_targets]:
-                        img = processed_map.get(fid) or frame.get("path", "")
-                        if os.path.isfile(img):
-                            repair_targets.append((frame, img))
+            if not 1 <= bi <= len(all_batches):
+                unavailable_targets.append(f"batch {bi}")
+                continue
+            for frame in all_batches[bi - 1]:
+                fid = Path(frame.get("path", "")).stem
+                if fid in repair_target_ids or fid in unavailable_targets:
+                    continue
+                img = processed_map.get(fid) or frame.get("path", "")
+                if os.path.isfile(img):
+                    repair_targets.append((frame, img))
+                    repair_target_ids.add(fid)
+                else:
+                    unavailable_targets.append(fid)
 
         # From per-frame failures
         frame_by_id = {Path(f.get("path", "")).stem: f for f in frame_results}
         for fid in failed_frame_ids:
-            if fid in frame_by_id and fid not in [Path(t[0].get("path", "")).stem for t in repair_targets]:
-                frame = frame_by_id[fid]
-                img = processed_map.get(fid) or frame.get("path", "")
-                if os.path.isfile(img):
-                    repair_targets.append((frame, img))
+            if fid in repair_target_ids or fid in unavailable_targets:
+                continue
+            frame = frame_by_id.get(fid)
+            if frame is None:
+                unavailable_targets.append(fid)
+                continue
+            img = processed_map.get(fid) or frame.get("path", "")
+            if os.path.isfile(img):
+                repair_targets.append((frame, img))
+                repair_target_ids.add(fid)
+            else:
+                unavailable_targets.append(fid)
 
         if not repair_targets:
-            raise RuntimeError("所有失败帧的图片文件均已丢失，无法修复。")
+            raise RuntimeError(
+                f"所有失败帧的图片文件均已丢失或无法定位，无法修复: {unavailable_targets}"
+            )
 
-        total = len(repair_targets)
-        logger.info("[VIDEO-REPAIR] 需要修复 %d 帧", total)
-        self._report(0, total, f"修复 {total} 个失败帧...")
+        attempt_total = len(repair_targets)
+        requested_total = attempt_total + len(unavailable_targets)
+        logger.info("[VIDEO-REPAIR] 需要修复 %d 帧", requested_total)
+        self._report(0, attempt_total, f"修复 {attempt_total} 个可用失败帧...")
 
         results: dict[str, str] = {}  # frame_id → recognized text
-        still_failed: list[str] = []
+        still_failed: list[str] = list(unavailable_targets)
 
         for idx, (frame, img_path) in enumerate(repair_targets):
             self._check_cancelled()
             fid = Path(frame.get("path", "")).stem
             ts = frame.get("timestamp", 0)
             image_name = f"{fid} [{self._format_frame_time(ts)}]"
-            self._report(idx + 1, total, f"识别帧 {fid} ({idx + 1}/{total})")
+            self._report(
+                idx + 1,
+                attempt_total,
+                f"识别帧 {fid} ({idx + 1}/{attempt_total})",
+            )
 
             prompt = prompt_template.format(image_names=image_name, extra_instruction="")
             try:
@@ -341,7 +378,7 @@ class VideoProcessor(BaseProcessor):
                 still_failed.append(fid)
 
         if not results:
-            raise RuntimeError(f"视频板书修复全部 {total} 帧失败")
+            raise RuntimeError(f"视频板书修复全部 {requested_total} 帧失败")
 
         # Replace failure placeholders in MD
         content = Path(md_path).read_text(encoding="utf-8")
@@ -392,7 +429,7 @@ class VideoProcessor(BaseProcessor):
         Path(md_path).write_text(content, encoding="utf-8")
         logger.info(
             "[VIDEO-REPAIR] 修复完成: %d/%d 帧成功, %d 帧仍失败 -> %s",
-            len(results), total, len(still_failed), md_path,
+            len(results), requested_total, len(still_failed), md_path,
         )
         if still_failed:
             raise RuntimeError(
@@ -1734,11 +1771,26 @@ class VideoProcessor(BaseProcessor):
         if self._file_has_content(board_path):
             context.board_md = board_path
 
-        for path, label in [
+        audio_path = self._phase1_audio_path(output_dir, stem)
+        keep_audio_for_repair = False
+        if context.selection.runs_audio_recognize:
+            from OCRLLM.processors.audio import AudioProcessor
+
+            transcript_path = self._phase5_output_path(output_dir, stem)
+            keep_audio_for_repair = bool(
+                AudioProcessor.find_failed_segments(transcript_path)
+            )
+            if keep_audio_for_repair:
+                logger.info("[VIDEO] 录音识别含失败分段，保留提取音频以便修复")
+
+        cleanup_targets = [
             (context.info_path, "帧信息"),
             (self._phase4_merged_board_path(output_dir, stem), "合并板书 MD"),
-            (self._phase1_audio_path(output_dir, stem), "提取的音频"),
-        ]:
+        ]
+        if not keep_audio_for_repair:
+            cleanup_targets.append((audio_path, "提取的音频"))
+
+        for path, label in cleanup_targets:
             try:
                 if os.path.isfile(path):
                     os.remove(path)
