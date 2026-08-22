@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ocrllm"
 version = "0.1.0"
-description = "Importable OCRLLM library facade for multimodal course content recognition."
+description = "Importable OCRLLM library for board and image recognition."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Proprietary" }

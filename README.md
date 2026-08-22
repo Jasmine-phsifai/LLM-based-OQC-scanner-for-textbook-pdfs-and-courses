@@ -11,25 +11,26 @@ Current truth is maintained in
 before relying on any dated phase, decision, checkpoint, review, or incident
 record. Those files preserve history and do not override current status.
 
-As of 2026-08-19:
+As of 2026-08-23:
 
 - Phase 0 contract honesty, the Phase 1 image gate, the Phase 2 development
   worker, and Phase 2A image-library completion are GO.
-- Stage M Phase 1 maturation is partially implemented. Shipped pieces include
-  lazy DashScope catalog checks, atomic file-backed image state, and an opt-in
-  candidate model queue.
-- Stage M is not complete. Attempt-spend disclosure, complete recovery-policy
-  routing, model-aware credential scheduling, flowed output, and resume identity
-  migration remain open.
-- Stage 2 vision/audio provider splitting and Stage A mp3 recognition are not
-  started. PDF, audio, and video remain unavailable in the active package.
-- The legacy application has no currently open product bug in its diary. Its
-  historical failures remain traceable in `legacy_app/AGENTS.md`.
+- Stage M is offline implementation-complete: lazy DashScope catalog checks,
+  atomic file-backed image state, opt-in disposition-gated candidate recovery,
+  complete spend disclosure, model-aware credential blocking, and slot-indexed
+  intra-request checkpoints are shipped. Its paid live exit smoke remains open.
+- The former standalone Stage 2 vision/audio scaffold was removed. Audio-specific
+  configuration now lands with executable Stage A1 short-MP3 recognition;
+  Stage A1/A2 and the active PDFium phase have not started. PDF, audio, and
+  video remain unavailable in the active package.
+- The optional Google image adapter is planned, not implemented. Legacy
+  compatibility work and carry-forward warnings remain recorded in
+  `legacy_app/AGENTS.md`.
 
-Current open defects are listed only in
-[`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md): residual D4
-intra-request checkpointing plus G1, G2, G3, G4, G5, G6, G7, G8, and G10. D1-D7
-and F1-F4 are closed; G9 is closed.
+The authoritative defect register is in
+[`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,
+F1-F4, and G1-G10 are closed in offline code and tests; only the paid Stage M
+exit gate and live provider-account/model-quota re-verification remain open.
 
 ## Active Library
 
@@ -50,10 +51,10 @@ not a formula/table/layout-equivalent replacement for the vision workflow. The
 JSONL worker is a development capability with a frozen v1alpha1 contract;
 packaged Electron compatibility is not claimed.
 
-### Install
+### Install from this checkout
 
 ```powershell
-pip install "ocrllm[image,dashscope]"
+pip install ".[image,dashscope]"
 ```
 
 ### Built-in DashScope example

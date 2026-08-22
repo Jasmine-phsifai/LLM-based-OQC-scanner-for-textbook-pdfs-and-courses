@@ -7,16 +7,25 @@ this repo intended for direct import by other projects.
 
 ```python
 from ocrllm import (
+    AllCandidatesExhausted,
+    BatchItemOutcome,
     Cancelled,
     CapabilityReport,
     ConcurrencyLimited,
     Config,
     ConfigError,
+    CredentialPoolPolicy,
+    DashScopeCredential,
+    DashScopeCredentialPool,
+    DashScopeCredentialPoolReport,
+    DashScopeCredentialSlotReport,
     DashScopeSettings,
     DependencyMissing,
     InvalidSource,
     LocalOCRSettings,
     NoSpeechDetected,
+    NoTextDetected,
+    OCRBackendError,
     OCRLLMError,
     OutputError,
     OutputExists,
@@ -32,6 +41,7 @@ from ocrllm import (
     RecognitionExecutionPolicy,
     RecognitionPreferences,
     RecognitionResult,
+    ResumeStateError,
     UnsupportedFormat,
     VisionModelSettings,
     recognize,
@@ -42,12 +52,15 @@ from ocrllm import (
 ```
 
 Phase 0 contract honesty, Phase 1 real board/image, the Phase 2 development
-worker, and Phase 2A image-library completion are GO. Stage M is partially
-implemented: lazy DashScope catalog validation, atomic file-backed image state,
-and an opt-in candidate queue are shipped. Complete attempt disclosure,
-disposition-gated recovery, model-aware credential scheduling, flowed output,
-and resume identity migration remain open. Stage 2 provider splitting, Phase 2
-audio, and Phase 3 PDFium are not started.
+worker, and Phase 2A image-library completion are GO. Stage M is offline
+implementation-complete: lazy DashScope catalog validation, atomic file-backed
+image state, opt-in disposition-gated candidate recovery, complete
+attempt-spend disclosure, model-aware credential scheduling, and slot-indexed
+intra-request checkpoints with explicit v1-to-v2 resume identity are shipped.
+Its paid live exit smoke remains open. The former standalone Stage 2
+provider-splitting scaffold was removed; audio-specific configuration will land
+with executable Stage A1 short-MP3 recognition. Stage A1/A2 and the active
+PDFium phase have not started.
 
 The current image facade:
 

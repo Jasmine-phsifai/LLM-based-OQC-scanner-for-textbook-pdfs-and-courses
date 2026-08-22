@@ -1622,3 +1622,19 @@ RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 
 **完整验证与边界。** legacy offline suite 现在只排除真实 ffmpeg `test_social_e2e.py`，不再排除 Bilibili 文件，结果 **279 passed, 1 skipped / 51.94s**；唯一 skip 是显式 live Google discovery。active root suite **1090 passed / 88.95s**。`compileall -q src tests legacy_app`、isolated lightweight import、diff/EOL whitespace 全部通过。没有运行 Bilibili/Google/provider/付费 live 调用，网络仅用于 Git 同步和最终 push；用户临时交接文件、active Python、frozen contracts/worker 和 social production code 保持不动。
 
 **下一轮。** #044 审计 packaging-facing `README.md` 与 `src/ocrllm/README_ACTIVE_LIBRARY.md` 是否仍把 Stage M 写成 partial、把已关闭 defect 写成 open。只对照当前 authority、代码和最新验证修正文档事实；不借文档更新启动 Stage A、Google adapter、PDF 或付费 smoke。
+
+## #044 — 2026-08-23：修正 package 用户首先看到的当前状态
+
+**本轮英文自我任务。** Atomic task: make `README.md` and `src/ocrllm/README_ACTIVE_LIBRARY.md` tell the same verified current story as authoritative state, without rewriting historical evidence or claiming the unpaid live gate is complete. Success means present-tense claims、public export list、install command 和 wheel metadata 都与代码/authority 一致，改动保持最小，package/docs 验证、中文日记、提交与 push 完成。
+
+**假设、两条路径与选择。** 开工假设是 implementation/API examples 大体正确，问题集中在 stale status prose；比较①替换过期 current-state paragraphs 与②重组两份 README，选择①。同步 origin、重读 authority/entry/package 规则和 #043 后，两名只读 scout 与主代理复核一致发现：root README 仍写 2026-08-19、Stage M partial、D4/G1-G10 多项 open、旧 Stage 2 split 未开始，还绝对声称 legacy diary 没有 open bug；package README 开头同样写 partial，却在后文正确写 G1-G10 已 offline closed，文件内部自相矛盾。
+
+**同一 package-truth 边界里的额外证据。** `src/ocrllm/README_ACTIVE_LIBRARY.md` 把代码块标为 Public Contract，却比 `ocrllm.__all__` 少 10 个真实 export：`AllCandidatesExhausted`、`BatchItemOutcome`、credential pool 的 5 个 policy/value/report 类型、`NoTextDetected`、`OCRBackendError`、`ResumeStateError`。root README 又给出 `pip install "ocrllm[...]"`，但仓库无 tag/release，官方 PyPI JSON endpoint 对 `ocrllm` 返回 404；因此改成明确的 checkout install `pip install ".[image,dashscope]"`。`pyproject.toml` 的 wheel Summary 还称当前库为 multimodal，超过实际 image/local-OCR 能力，收窄为 board and image recognition。
+
+**最小编辑。** 两份 README 只替换 current status 段；root 明确 Stage M offline implementation-complete、D/F/G offline closed、paid live gate 与 provider-account/model-quota re-verification 仍 open，旧 standalone Stage 2 已合入未来 executable A1，Google image adapter 仅 planned。package public import block补齐 exact exports。没有改历史 milestone table、dated evidence、代码、API、依赖、版本或 phase gate。
+
+**验证过程中的工具事实。** stale-phrase 搜索没有命中，`rg` 因“零匹配”返回 1，这是预期结果，不是失败；AST 解析 package README 的首个 Python import block，并与运行时 `ocrllm.__all__` 比较，41 个名字完全相等。首次组合过长的 PowerShell build/检查/清理命令被执行策略在启动前拒绝，未读写仓库也未创建临时物；拆成显式路径的小命令后继续。项目环境没有可选 `build` frontend，`pip wheel --no-build-isolation` 又明确暴露该环境没有 Hatchling backend；没有为文档验证安装依赖，改用机器上已有的 `uv build` 隔离构建。编辑时还发现 root README 被 patch 形成 mixed EOL；一次机械归一化误把四个文件都设成 CRLF，随即根据 index 逐文件恢复为 README CRLF、其余三文件 LF，提交前已确认一致。这些都是验证/格式工具问题，不是产品运行缺陷。
+
+**构建、测试与个人复核。** 主代理用已有 `uv` 在显式临时目录成功生成 `ocrllm-0.1.0-py3-none-any.whl`（154759 bytes），再直接检查压缩包：METADATA Summary 精确等于新的 board/image 文本，long description 含新的 Stage M 状态且不含旧 partial 句，`ocrllm/README_ACTIVE_LIBRARY.md` 确实打入 wheel。`tests/test_import_contract.py` 与 `tests/test_lightweight_import.py` 为 **7 passed / 0.41s**；pytest 仍只有已知 `.pytest_cache` 无写权限警告。`compileall -q src tests` 与 isolated lightweight import 通过，后者没有加载 PIL、OpenCV、DashScope、Google GenAI、PyMuPDF 或 FastAPI。上一轮已经在紧邻代码状态上跑过 root 全量 **1090 passed**；本轮只改 packaging prose/metadata，因此 wheel + 相关 contract tests 是合比例验证，没有重复 90 秒全量。构建物位于系统 temp 的唯一显式目录；在精确解析路径后，执行策略仍拒绝递归清理命令，因此没有绕过保护，临时 wheel 目录保留且不进入 worktree。
+
+**边界与下一步。** 本轮没有改 active 行为、frozen `contracts/`/`worker/`、legacy、social media、依赖、版本或用户临时交接文件；网络只用于先前的 Git 同步、官方 PyPI 只读 404 检查和最终 push，没有 provider 或付费调用。下一轮先做一个有边界的发布准备度审计：比较①立即设计发布流水线与②只查明当前 0.1.0 wheel 在真正发布前缺少哪些最小证据/元数据，优先选择②；不发布到 PyPI、不增加自动化平台，也不把尚未实现的 PDF/audio 写进产品承诺。
