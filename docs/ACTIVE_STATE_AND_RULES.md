@@ -82,8 +82,8 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1030 passed, 0 skipped, 0 failed (114 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` with empty `PYTHONPATH` |
-| Import weight | 112 ms, 122 modules, no heavy module loaded (2026-08-22 single process; consistent with the 131 ms median / 222 ms max five-process probe of 2026-08-19) | timed plain import with `src` on `sys.path` |
+| Test suite | 1039 passed, 0 skipped, 0 failed (120 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` with empty `PYTHONPATH` |
+| Import weight | 93 ms, 121 modules, no heavy module loaded (2026-08-22) | timed plain import with `src` on `sys.path` |
 | Heavy-module isolation | `PIL`, `openai`, `httpx`, `onnxruntime` all absent after plain import | `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
@@ -99,9 +99,9 @@ snapshot isolation are the two strongest parts of this codebase; build on them.
 
 Severity is impact on a real user, not implementation effort. D1-D7 are closed,
 including the residual D4 limitation (closed 2026-08-22 by `cd7429c`). Of the
-Stage M findings, G6, G7, and G9 are closed; G1 is partially addressed; G2,
-G3, G4, G5, G8, and G10 remain open. Do not close an entry without a test that
-fails before the fix.
+Stage M findings, G4, G5, G6, G7, G9, and G10 are closed; G1 is partially
+addressed; G2, G3, and G8 remain open. Do not close an entry without a test
+that fails before the fix.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
@@ -353,10 +353,10 @@ A model outside the evidence baseline is usable and must be reported as
 unproven, not blocked. Do not silently imply baseline quality for a model that
 was never gated.
 
-Implementation status: the catalog path is shipped for names outside the
-static set, but the static set still bypasses catalog validation. That is the
-remaining discovery/evidence mismatch tracked by G5; the policy above is the
-target behavior, not a claim that M1 has passed.
+Implementation status: shipped. Since 2026-08-22 the static set is deleted;
+catalog validation applies to every non-pinned model, and only the pinned v17
+baseline bypasses the catalog because its proof is the live gate itself. The
+policy text above now matches the code.
 
 Relevant measurement: the `board.v17` prompt against `qwen3.5-ocr` produced 16
 completion tokens and no usable output, while the pinned model produced a full
@@ -380,8 +380,9 @@ tested offline:
    requires a caller-declared nonempty `resume_identity`.
 - An explicit `VisionModelSettings.candidate_models` queue is attempted in
    caller order and currently advances on `PROVIDER_QUOTA_EXHAUSTED` only. The
-   queue is bounded and its attempts are visible, but the ledger and terminal
-   error contract are not complete; see G1, G2, and G4 below.
+   queue is bounded, its attempts are visible, and chain exhaustion raises the
+   distinct `ALL_CANDIDATES_EXHAUSTED` code; the spend ledger and the
+   approved recovery dispositions are not complete; see G1, G2, and G3 below.
 
 The Stage M exit gate has **not** passed. Full disposition-gated recovery,
 model-aware credential scheduling, complete spend disclosure (the G1
@@ -416,17 +417,24 @@ The credential pool can record a quota or permission block at account scope.
 That account-wide state prevents acquisition for the next candidate even when
 the candidate-specific model may still be usable.
 
-#### G4 — Chain exhaustion has the wrong public identity. **Medium. Open.**
+#### G4 — Chain exhaustion has the wrong public identity. **Medium. Closed 2026-08-22.**
 
-`AllCandidatesExhausted` subclasses `QuotaExhausted` and therefore does not yet
-give callers a distinct code/disposition for “the entire configured chain
-ended” versus “one model exhausted.”
+`AllCandidatesExhausted` no longer subclasses `QuotaExhausted`. It is a direct
+`ProviderError` with the new stable code `ALL_CANDIDATES_EXHAUSTED`
+(non-retryable, disposition `("stop", "account")`), so callers can distinguish
+"the entire configured chain ended" from "one model exhausted." The class moved
+from the deleted `all_candidates_exhausted.py` shim into `errors.py`.
 
-#### G5 — Proven-model metadata is too broad. **Medium. Open.**
+#### G5 — Proven-model metadata is too broad. **Medium. Closed 2026-08-22.**
 
-The static supported-model set is still treated as evidence-backed metadata,
-although the live quality evidence proves only the pinned model with the exact
-v17 workflow. Selection and proof status must remain separate.
+The retired static set lost both remaining roles. `model_evidence` metadata is
+now `"proven"` only for the pinned v17 baseline `DEFAULT_DASHSCOPE_MODEL`;
+every other model is selectable but `"unproven"`. Catalog validation in
+`resolve_dashscope_model` now applies to every non-pinned model (formerly the
+static set bypassed it); the pinned baseline keeps its bypass because its proof
+is the v17 live gate, not a catalog row. `SUPPORTED_DASHSCOPE_MODELS` is
+deleted, and `resolve_dashscope_maximum_images` collapsed to the uniform cap
+constant it always returned.
 
 #### G6 — Resume identity version is stale for candidate queues. **Medium. Closed 2026-08-22.**
 
@@ -452,10 +460,12 @@ The omission-scout workflow uses a separate fixed scout model, but a scout
 failure is raised through the primary candidate loop. Recovery can therefore
 switch or retry the wrong model.
 
-#### G10 — Candidate validation is weaker than primary validation. **Low. Open.**
+#### G10 — Candidate validation is weaker than primary validation. **Low. Closed 2026-08-22.**
 
-Candidate names reject empty text but do not enforce the primary model field's
-exact trimming and control-character rules.
+`VisionModelSettings` now validates `name` and every `candidate_models` entry
+through one shared exact-text predicate (nonempty, already-trimmed, no control
+characters), so the recovery chain can no longer accept a name the primary
+field would reject.
 
 #### G9 — Catalog outage fail-open. **Closed 2026-08-19.**
 

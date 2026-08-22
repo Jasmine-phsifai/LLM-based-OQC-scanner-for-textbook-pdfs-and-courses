@@ -44,6 +44,10 @@ _DEFAULT_BY_CODE: dict[str, tuple[ProviderFailureAction, ProviderFailureScope]] 
     "PROVIDER_RATE_LIMITED": ("cooldown", "provider"),
     "PROVIDER_CONCURRENCY_LIMITED": ("cooldown", "provider"),
     "PROVIDER_QUOTA_EXHAUSTED": ("stop", "account"),
+    # The whole caller-configured chain is spent: nothing this library can do;
+    # the account or the candidate list must change. Distinct from single-model
+    # quota exhaustion so callers can tell "chain ended" from "one model ended".
+    "ALL_CANDIDATES_EXHAUSTED": ("stop", "account"),
     "PROVIDER_TIMEOUT": ("retry", "provider"),
     "PROVIDER_NETWORK": ("retry", "provider"),
     "PROVIDER_UNAVAILABLE": ("retry", "provider"),

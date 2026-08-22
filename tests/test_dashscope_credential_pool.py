@@ -432,6 +432,14 @@ def test_public_recognition_shares_pool_across_primary_and_scout_calls(
     fake_openai = _FakeOpenAI()
     adapter = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
     monkeypatch.setattr(adapter, "load_openai", lambda: fake_openai)
+    resolver = importlib.import_module(
+        "ocrllm.providers.dashscope.resolve_dashscope_model"
+    )
+    monkeypatch.setattr(
+        resolver,
+        "fetch_dashscope_model_catalog",
+        lambda settings: frozenset({"qwen-vl-max"}),
+    )
 
     result = recognize(source, config=_pooled_config(pool, scout=True))
 

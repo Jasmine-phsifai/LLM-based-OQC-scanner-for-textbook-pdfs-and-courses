@@ -8,6 +8,15 @@ from .errors import ConfigError
 from .image_group_limits import MAX_IMAGE_GROUP_COUNT
 
 
+def _is_exact_model_text(value: object) -> bool:
+    return (
+        type(value) is str
+        and bool(value)
+        and value == value.strip()
+        and not any(ord(character) < 32 or ord(character) == 127 for character in value)
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class VisionModelSettings:
     """Select one vision model and an optional ordered recovery chain."""
@@ -17,22 +26,17 @@ class VisionModelSettings:
     maximum_images_per_request: int | None = None
 
     def __post_init__(self) -> None:
-        if self.name is not None and (
-            type(self.name) is not str
-            or not self.name
-            or self.name != self.name.strip()
-            or any(ord(character) < 32 or ord(character) == 127 for character in self.name)
-        ):
+        if self.name is not None and not _is_exact_model_text(self.name):
             raise ConfigError(
                 "VisionModelSettings.name must be nonempty exact text when set.",
                 code="CONFIG_INVALID",
             ) from None
         if type(self.candidate_models) is not tuple or any(
-            type(model) is not str or not model.strip()
-            for model in self.candidate_models
+            not _is_exact_model_text(model) for model in self.candidate_models
         ):
             raise ConfigError(
-                "VisionModelSettings.candidate_models must be a tuple of nonempty text.",
+                "VisionModelSettings.candidate_models must be a tuple of "
+                "nonempty exact text.",
                 code="CONFIG_INVALID",
             ) from None
         if len(set(self.candidate_models)) != len(self.candidate_models):

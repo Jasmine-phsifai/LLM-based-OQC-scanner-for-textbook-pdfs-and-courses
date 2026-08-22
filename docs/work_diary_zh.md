@@ -24,8 +24,7 @@
 当前主线:Stage M 收尾(缺陷登记册 G 簇),然后 Stage 2 provider 拆分 → Stage A mp3 音频。
 
 1. ~~集成 stage-m2(M2 槽位断点)~~ → 已完成,见 #001。
-2. 快修孤立小缺陷:G10(候选名校验与主模型对齐)、G4(AllCandidatesExhausted 公共身份)、
-   G5(proven 元数据过宽)。先写失败测试再修。
+2. ~~快修孤立小缺陷 G10/G4/G5~~ → 已完成,见 #002。
 3. 恢复簇:G1 余项(配置类失败也进 attempt 台账)+ G2(按处置门控推进,不止 quota)+
    G3(凭据池账户级阻塞挡住合格候选)+ G8(scout 失败挂到了主模型)。四处同根,
    都在 recognize_images.py 候选循环 + dashscope/credential_pool.py,一刀切。
@@ -86,3 +85,45 @@ G6、G7,并部分改善 G1;后续 G 簇修复(G1/G2/G3/G8)都改同一个 `recog
 
 **遗留**:G1 余项转入任务 3 一并处理;`stage-m2` worktree 与备份目录待用户确认后清理
 (任务 7)。分支 `response-validation-api-json-md` 同样未合并,尚未评估,列入待办。
+
+---
+
+## #002 — 2026-08-22:快修孤立缺陷 G10 / G4 / G5(先红后绿)
+
+**任务**:关闭 G 簇中仅剩的三个孤立小缺陷,顺手删掉已退役的静态模型集合。
+
+**上下文**:G10=`candidate_models` 条目只拒空串,不执行主模型 `name` 的
+trim/控制字符规则;G4=`AllCandidatesExhausted` 继承 `QuotaExhausted`,调用方无法区分
+「整链耗尽」与「单模型配额尽」;G5=`model_evidence="proven"` 按静态三模型集合判定,
+而 M1 政策规定只有钉住的 v17 基线算 proven,且静态集合仍在 resolve 时绕过目录校验。
+
+**成功标准**:每个缺陷先有一条修前必红的测试;修复后全量绿;登记表三条目关闭;
+不产生新的公共面破坏(`AllCandidatesExhausted` 导入路径保持可用)。
+
+**为什么重要**:修完后开放缺陷只剩恢复簇(G1余/G2/G3/G8),它们同根于
+recognize_images.py 候选循环,下一次可以一刀切;G5 还顺带完成 M1 的最后一块
+(静态集合彻底退役)。
+
+**结果**:
+
+- 先红:新增/改写 9 条测试,修前 8 处失败,正是目标缺陷。
+- G10:`vision_model_settings.py` 抽出共享谓词 `_is_exact_model_text`,name 与
+  candidate 条目同规则。
+- G4:新稳定码 `ALL_CANDIDATES_EXHAUSTED`(不可重试,处置 `("stop","account")`);
+  类迁入 `errors.py` 并直接继承 `ProviderError`;删除 11 行 shim 文件
+  `all_candidates_exhausted.py`(精简)。
+- G5:删除 `SUPPORTED_DASHSCOPE_MODELS`;目录校验改为「除钉住基线外一律过 live 目录」
+  (钉住模型的证明是 v17 实门本身,不是目录行——绕过是刻意的,注释写明);
+  `model_evidence` 仅钉住模型为 proven;`resolve_dashscope_maximum_images.py` 的
+  字典恒返回 10,塌缩为常量 `DASHSCOPE_MAXIMUM_IMAGES_PER_REQUEST`(砍过度设计)。
+- 波及处理:6 个既有测试用 `qwen-vl-max`/`qwen3.7-plus` 做 scout/显式模型且依赖旧绕过,
+  现按政策 fail-closed;为这些内置路径测试补上目录 mock(顺带消除测试误触真实
+  dashscope 端点的隐患——urllib 目录抓取不被 OpenAI mock 拦截)。
+- 验证:全量 **1039 passed**(120s);compileall 干净;import 探针 **93ms / 121 模块**
+  (删掉 shim 后少一个模块)/ 无重模块。
+- flake 记录(未修):`test_recognize_batch_execution.py::
+  test_direct_recognition_applies_interval_between_draft_and_review` 在全量负载下
+  超时断言失败一次,单跑即过,与本次改动无关(门控时序测试)。按日记规则留痕,
+  若再犯应加宽容差或改假时钟。
+
+**遗留**:无。任务 3(恢复簇)为下一刀:G1 余项 + G2 + G3 + G8。

@@ -1,7 +1,6 @@
 """Public OCRLLM library facade."""
 
 from .config import Config
-from .all_candidates_exhausted import AllCandidatesExhausted
 from .batch_item_outcome import BatchItemOutcome
 from .credential_pool_policy import CredentialPoolPolicy
 from .capability_report import CapabilityReport
@@ -13,6 +12,7 @@ from .providers.dashscope.credential_pool_report import (
     DashScopeCredentialSlotReport,
 )
 from .errors import (
+    AllCandidatesExhausted,
     Cancelled,
     ConcurrencyLimited,
     ConfigError,

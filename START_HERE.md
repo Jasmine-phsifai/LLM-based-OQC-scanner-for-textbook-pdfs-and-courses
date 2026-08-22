@@ -91,8 +91,8 @@ remain unavailable. Local user PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 
 The current open defect list is only in
-`docs/ACTIVE_STATE_AND_RULES.md`: G1 (partial), G2, G3, G4, G5, G8, and G10.
-D1-D7 including residual D4, F1-F4, G6, G7, and G9 are closed.
+`docs/ACTIVE_STATE_AND_RULES.md`: G1 (partial), G2, G3, and G8. D1-D7
+including residual D4, F1-F4, G4, G5, G6, G7, G9, and G10 are closed.
 
 ## Legacy Application
 

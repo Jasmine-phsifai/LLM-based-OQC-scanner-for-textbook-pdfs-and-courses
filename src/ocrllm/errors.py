@@ -25,6 +25,7 @@ STABLE_ERROR_CODES = frozenset(
         "PROVIDER_RATE_LIMITED",
         "PROVIDER_CONCURRENCY_LIMITED",
         "PROVIDER_QUOTA_EXHAUSTED",
+        "ALL_CANDIDATES_EXHAUSTED",
         "PROVIDER_TIMEOUT",
         "PROVIDER_NETWORK",
         "PROVIDER_UNAVAILABLE",
@@ -213,6 +214,14 @@ class QuotaExhausted(ProviderError):
 
     default_code = "PROVIDER_QUOTA_EXHAUSTED"
     default_message = "The provider quota is exhausted."
+    allowed_codes = frozenset({default_code})
+
+
+class AllCandidatesExhausted(ProviderError):
+    """Every configured model candidate failed with a model-serving disposition."""
+
+    default_code = "ALL_CANDIDATES_EXHAUSTED"
+    default_message = "All configured provider model candidates are exhausted."
     allowed_codes = frozenset({default_code})
 
 

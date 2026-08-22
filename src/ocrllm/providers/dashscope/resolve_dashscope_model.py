@@ -10,9 +10,6 @@ from ...errors import ConfigError, ProviderError
 
 
 DEFAULT_DASHSCOPE_MODEL = "qwen3.7-plus-2026-05-26"
-SUPPORTED_DASHSCOPE_MODELS = frozenset(
-    {"qwen3.7-plus", DEFAULT_DASHSCOPE_MODEL, "qwen-vl-max"}
-)
 DASHSCOPE_MODEL_CATALOG_CACHE_TTL_SECONDS = 600
 _CATALOG_CACHE: dict[str, tuple[frozenset[str], float]] = {}
 _CATALOG_LOCK = Lock()
@@ -26,7 +23,11 @@ def resolve_dashscope_model(configured_model: str | None, *, settings=None) -> s
             code="CONFIG_INVALID",
         ) from None
     model = DEFAULT_DASHSCOPE_MODEL if configured_model is None else configured_model
-    if settings is not None and model not in SUPPORTED_DASHSCOPE_MODELS:
+    # The pinned default is proven by the Phase 1 v17 live gate, so it needs no
+    # catalog row. Every other model is validated against the live catalog:
+    # unknown means "the provider does not serve this", never "this repository
+    # has not heard of it".
+    if settings is not None and model != DEFAULT_DASHSCOPE_MODEL:
         catalog = fetch_dashscope_model_catalog(settings)
         if catalog is None:
             raise ProviderError(

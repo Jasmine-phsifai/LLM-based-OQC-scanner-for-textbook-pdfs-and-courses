@@ -348,6 +348,11 @@ def test_scout_slots_survive_mid_scout_crash_and_resume_pays_missing_scouts(
         "load_openai",
         lambda: _FakeOpenAIModule(client),
     )
+    monkeypatch.setattr(
+        importlib.import_module("ocrllm.providers.dashscope.resolve_dashscope_model"),
+        "fetch_dashscope_model_catalog",
+        lambda settings: frozenset({"qwen-vl-max"}),
+    )
 
     with pytest.raises(ProviderError) as killed:
         recognize(

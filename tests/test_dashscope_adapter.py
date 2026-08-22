@@ -115,6 +115,17 @@ def _install_fake_openai(monkeypatch, client: FakeClient) -> FakeOpenAIModule:
     return module
 
 
+def _serve_model_catalog(monkeypatch, *models: str) -> None:
+    resolver = importlib.import_module(
+        "ocrllm.providers.dashscope.resolve_dashscope_model"
+    )
+    monkeypatch.setattr(
+        resolver,
+        "fetch_dashscope_model_catalog",
+        lambda settings: frozenset(models),
+    )
+
+
 def test_builtin_dashscope_adapter_builds_one_no_retry_request(tmp_path, monkeypatch):
     source = write_test_image(tmp_path / "board.png", size=(12, 13))
     client = FakeClient()
@@ -176,6 +187,7 @@ def test_explicit_dashscope_model_reaches_request_and_result(tmp_path, monkeypat
     source = write_test_image(tmp_path / "board.jpg", size=(11, 11))
     client = FakeClient(response=_response(model="qwen3.7-plus"))
     _install_fake_openai(monkeypatch, client)
+    _serve_model_catalog(monkeypatch, "qwen3.7-plus")
 
     result = recognize(
         source,
@@ -272,6 +284,7 @@ def test_builtin_sign_scout_workflow_uses_one_primary_and_three_nonthinking_scou
     source = write_test_image(tmp_path / "board.png", size=(12, 13))
     client = RequestedModelClient()
     fake_openai = _install_fake_openai(monkeypatch, client)
+    _serve_model_catalog(monkeypatch, "qwen-vl-max")
     ordinary = _settings()
     settings = DashScopeSettings(
         region=ordinary.region,
@@ -358,6 +371,7 @@ def test_builtin_sign_scout_workflow_restores_only_two_scout_quorum_sign(
     source = write_test_image(tmp_path / "board.png", size=(12, 13))
     client = SequentialResponseClient()
     _install_fake_openai(monkeypatch, client)
+    _serve_model_catalog(monkeypatch, "qwen-vl-max")
     ordinary = _settings()
     settings = DashScopeSettings(
         region=ordinary.region,
@@ -400,6 +414,7 @@ def test_builtin_sign_scout_workflow_records_malformed_scout_abstentions(
     source = write_test_image(tmp_path / "board.png", size=(12, 13))
     client = MalformedScoutClient()
     _install_fake_openai(monkeypatch, client)
+    _serve_model_catalog(monkeypatch, "qwen-vl-max")
     ordinary = _settings()
     settings = DashScopeSettings(
         region=ordinary.region,

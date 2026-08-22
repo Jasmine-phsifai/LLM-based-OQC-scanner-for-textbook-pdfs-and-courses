@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ..config import Config
-from ..all_candidates_exhausted import AllCandidatesExhausted
-from ..errors import OCRLLMError, ProviderError
+from ..errors import AllCandidatesExhausted, OCRLLMError, ProviderError
 from ..image_slot_state import ImageSlotState
 from ..processor_output import ProcessorOutput
 from ..profiles.build_board_consensus_prompt import build_board_consensus_prompt
@@ -26,10 +25,7 @@ from ..provider_error_disposition import get_provider_error_disposition
 from ..providers.dashscope.resolve_sign_scout_enable_thinking import (
     resolve_sign_scout_enable_thinking,
 )
-from ..providers.dashscope.resolve_dashscope_model import (
-    DEFAULT_DASHSCOPE_MODEL,
-    SUPPORTED_DASHSCOPE_MODELS,
-)
+from ..providers.dashscope.resolve_dashscope_model import DEFAULT_DASHSCOPE_MODEL
 from ..providers.dashscope.provider_settings import DashScopeSettings
 from ..providers.resolved_vision_provider import ResolvedVisionProvider
 from ..providers.resolve_vision_provider import resolve_vision_provider
@@ -285,9 +281,11 @@ def _recognize_images_once(
     metadata: dict[str, object] = {
         "image_count": len(image_paths),
         "model": resolved_provider.model,
+        # Only the pinned v17-gated snapshot is proven; every other model is
+        # selectable but unproven. Selection and proof status stay separate.
         "model_evidence": (
             "proven"
-            if resolved_provider.model in SUPPORTED_DASHSCOPE_MODELS
+            if resolved_provider.model == DEFAULT_DASHSCOPE_MODEL
             else "unproven"
         ),
         "model_proven": resolved_provider.model == DEFAULT_DASHSCOPE_MODEL,

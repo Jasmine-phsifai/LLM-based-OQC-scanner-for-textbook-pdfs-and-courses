@@ -57,6 +57,17 @@ def test_vision_model_settings_reject_invalid_names(bad_name) -> None:
         VisionModelSettings(name=bad_name)  # type: ignore[arg-type]
 
 
+@pytest.mark.parametrize("bad_candidate", ["", "  ", " padded ", "line\nbreak", 1, True])
+def test_vision_model_settings_reject_nonexact_candidate_entries(bad_candidate) -> None:
+    with pytest.raises(ConfigError, match="candidate_models"):
+        VisionModelSettings(candidate_models=(bad_candidate,))  # type: ignore[arg-type]
+
+
+def test_vision_model_settings_reject_one_bad_candidate_among_good() -> None:
+    with pytest.raises(ConfigError, match="candidate_models"):
+        VisionModelSettings(candidate_models=("good-model", " padded "))
+
+
 def test_vision_model_settings_reject_string_subclass_without_overrides() -> None:
     with pytest.raises(ConfigError) as captured:
         VisionModelSettings(name=HostileText("model"))
@@ -159,9 +170,7 @@ def test_unavailable_builtin_model_is_reported_by_provider_catalog(tmp_path, mon
     assert captured.value.code == "CONFIG_INVALID"
 
 
-def test_dashscope_model_capability_is_explicit_for_every_supported_model() -> None:
+def test_dashscope_image_cap_is_uniform_regardless_of_model() -> None:
     assert resolve_dashscope_maximum_images(DEFAULT_DASHSCOPE_MODEL) == 10
     assert resolve_dashscope_maximum_images("qwen3.7-plus") == 10
-    assert resolve_dashscope_maximum_images("qwen-vl-max") == 10
-
-    assert resolve_dashscope_maximum_images("unknown") == 10
+    assert resolve_dashscope_maximum_images("never-heard-of") == 10

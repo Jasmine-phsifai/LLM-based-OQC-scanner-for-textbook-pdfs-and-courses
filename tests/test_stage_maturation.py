@@ -165,3 +165,33 @@ def test_candidate_chain_raises_after_the_last_model_and_names_it(tmp_path):
     assert provider.models == ["quota-model", "last-model"]
     assert captured.value.details["all_candidates_exhausted"] is True
     assert captured.value.details["last_model"] == "last-model"
+    assert captured.value.code == "ALL_CANDIDATES_EXHAUSTED"
+    assert not isinstance(captured.value, QuotaExhausted)
+
+
+def test_all_candidates_exhausted_has_distinct_code_and_disposition() -> None:
+    from ocrllm import get_provider_error_disposition
+
+    error = AllCandidatesExhausted()
+
+    assert error.code == "ALL_CANDIDATES_EXHAUSTED"
+    assert error.retryable is False
+    disposition = get_provider_error_disposition(error)
+    assert (disposition.action, disposition.scope) == ("stop", "account")
+
+
+def test_unpinned_former_static_set_model_reports_unproven_evidence(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    provider = _CandidateProvider()
+
+    result = recognize(
+        source,
+        config=Config(
+            provider=provider,
+            vision_model=VisionModelSettings(name="qwen3.7-plus"),
+        ),
+    )
+
+    assert result.metadata["model"] == "qwen3.7-plus"
+    assert result.metadata["model_evidence"] == "unproven"
+    assert result.metadata["model_proven"] is False

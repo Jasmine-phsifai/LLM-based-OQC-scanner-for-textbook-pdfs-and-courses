@@ -136,12 +136,35 @@ def test_credential_error_propagates_without_catalog_outage_mapping(
     assert captured.value.code == "CONFIG_MISSING"
 
 
-@pytest.mark.parametrize("model", resolver.SUPPORTED_DASHSCOPE_MODELS)
-def test_static_model_never_fetches_catalog(monkeypatch, model) -> None:
+def test_pinned_baseline_model_never_fetches_catalog(monkeypatch) -> None:
     monkeypatch.setattr(
         resolver,
         "fetch_dashscope_model_catalog",
-        lambda settings: pytest.fail("static model must bypass catalog fetch"),
+        lambda settings: pytest.fail("pinned baseline model must bypass catalog fetch"),
     )
 
+    assert (
+        resolver.resolve_dashscope_model(
+            resolver.DEFAULT_DASHSCOPE_MODEL,
+            settings=_settings(),
+        )
+        == resolver.DEFAULT_DASHSCOPE_MODEL
+    )
+
+
+@pytest.mark.parametrize("model", ["qwen3.7-plus", "qwen-vl-max"])
+def test_unpinned_models_are_validated_against_the_catalog(monkeypatch, model) -> None:
+    monkeypatch.setattr(
+        resolver,
+        "fetch_dashscope_model_catalog",
+        lambda settings: frozenset({model}),
+    )
     assert resolver.resolve_dashscope_model(model, settings=_settings()) == model
+
+    monkeypatch.setattr(
+        resolver,
+        "fetch_dashscope_model_catalog",
+        lambda settings: frozenset(),
+    )
+    with pytest.raises(ConfigError, match="DashScope does not serve"):
+        resolver.resolve_dashscope_model(model, settings=_settings())

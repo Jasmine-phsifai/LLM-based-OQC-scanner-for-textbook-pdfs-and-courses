@@ -30,8 +30,8 @@ and image resume. Stage M Phase 1 maturation is partially implemented:
 
 The current open defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md): G1
-(partial), G2, G3, G4, G5, G8, and G10. D1-D7 including residual D4, F1-F4,
-G6, G7, and G9 are closed. Do not create a second defect list in this file.
+(partial), G2, G3, and G8. D1-D7 including residual D4, F1-F4, G4, G5, G6,
+G7, G9, and G10 are closed. Do not create a second defect list in this file.
 
 ## Read Order
 
