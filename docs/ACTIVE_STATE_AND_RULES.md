@@ -84,6 +84,15 @@ Future agents must assume the following and verify before trusting any claim:
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
 
+- **Legacy media repair is open debt, not a porting template.** Commit
+  `6b2d9eb` added audio/board/video repair without direct repair tests. The
+  video repair reads its own processed-frame manifest with the wrong shape,
+  missing artifacts can be reported as success, and all three processors
+  overwrite paid Markdown non-atomically. The exact open findings are recorded
+  in `legacy_app/AGENTS.md`. New library modalities must extend typed,
+  versioned checkpoint state and atomic publication rather than copy localized
+  Markdown-regex repair.
+
 ## Verified State, 2026-08-22
 
 Confirmed by execution, not by reading prose. Method noted so it can be redone.
@@ -513,34 +522,35 @@ field would reject.
 Commit `4c5293d` made first-fetch catalog failure retryable and fail closed,
 while retaining the last successful catalog during refresh outages.
 
-## Legacy Status, 2026-08-19
+## Legacy Status, 2026-08-22
 
-The legacy diary contains no currently open product bug. The recorded path,
-refusal, atomic-write, partial-failure, PDF-render, resume-root, and checkpoint
-cancellation defects are fixed and retained as trace in `legacy_app/AGENTS.md`.
-The latest checkpoint-cancellation fix preserves generated outputs when a task
-is dismissed; it does not delete paid Markdown implicitly. Any legacy issue
-found or fixed in a later session still belongs in that diary before the
-session closes.
+The legacy diary now records open media-repair defects recovered by the
+`6b2d9eb` audit. Most urgently, video board repair cannot read the normal
+`{"items": [...]}` processed-frame manifest; repair paths have no direct tests,
+can lose artifact identity, and publish Markdown non-atomically. These defects
+outrank Stage A feature research until failing-first tests establish their
+boundary. Earlier path, refusal, PDF-render, resume-root, and checkpoint-
+cancellation fixes remain recorded history, not proof that all legacy paths
+are currently defect-free.
 
 ## New And Fixed In This Working Update
 
-These changes are current, verified, and should not be mistaken for open
-defects:
+This iteration changed documentation only. The audit conclusions below are
+current and verified; the listed runtime defects remain open:
 
-- The final tiny-file candidate, `output/build_job_state_path.py`, was removed.
-   Its exact one-expression body now sits beside the only use in `recognize.py`;
-   the durable `<stem>.ocrllm-state.json` convention, state discovery, and
-   resume format are unchanged. No public export or evidence identity named the
-   internal module path.
-- The current execution-contract and target-layout documents no longer list
-   that deleted implementation module. Their public sidecar naming rules remain
-   intact, and dated resume decision/checkpoint records were not rewritten.
-- Seven focused persistence flows and the full 1,059-test local suite passed.
-   The archived source gate passed 1,058 tests with the expected base-profile
-   RapidOCR skip plus fixture/compile/wheel/import/extras/offline smoke gates.
-   The wheel is 149,884 bytes and base target 733,049 bytes. These counts are
-   verification snapshots, not permanent gates for future changes.
+- The missing `6b2d9eb` media-repair diary has been reconstructed without
+  duplicating its already-present CLIProxyAPI entry or the later Codex model
+  discovery/Fast mode entry.
+- Review found no repair-specific regression coverage and confirmed the open
+  manifest-shape, artifact-loss/identity, false-success, and non-atomic publish
+  defects. They are now explicit in `legacy_app/AGENTS.md` and the loop queue;
+  no runtime behavior was changed or claimed fixed in this documentation-only
+  iteration.
+- The currently existing provider/settings/refusal/writer slice passed 26 tests
+  from the required `legacy_app` package root. A first root-level invocation
+  produced four import collection errors because that legacy test entry point
+  does not put `OCRLLM` on `sys.path`; the corrected run is the verification
+  result, not evidence for media repair.
 
 ### M2. Flowed output and true resume, 2026-08-19
 

@@ -529,3 +529,50 @@ provider adapter must distinguish stream transport failure from model refusal,
 offer a non-stream fallback for gateways that cannot stream multimodal Codex
 responses, and make status-code-to-candidate switching an explicit policy.
 Do not copy the legacy shared-provider settings field into the new library.
+
+## 2026-08-22 — 补录 6b2d9eb 的媒体失败项修复（功能已加入，但存在开放缺陷）
+
+**补录范围。** 提交 `6b2d9eb` 同时包含三组变化。CLIProxyAPI vision fallback 已在该提交的
+日记条目中记录；Codex model discovery / Fast mode 后来另有条目。真正漏记的是 audio、board、
+video 的失败项修复及 video 长路径/中间文件保留变化。本条只恢复这段历史，不把未经测试的功能
+追认为成熟实现。
+
+**当时要解决的问题。** 三条 legacy 管线会把失败分段、失败批次或失败帧留在 Markdown 中，
+但用户只能整项重跑或手工改文件。该提交增加三个 GUI 修复入口和对应 processor API：从既有
+Markdown 找失败标记，只重付失败单元，成功后替换相应标记，部分失败则保留未修复项。video
+还会在板书失败时保留帧/预处理产物，并把部分 Phase 4/5 输出路径交给 `long_path()`。
+
+**本次代码与测试复核。** 提交新增/修改的测试覆盖 Codex settings、独立 vision provider 的
+stream→non-stream fallback、429/5xx 候选切换、payload 顺序与 Windows 临时图片关闭；没有测试
+引用 `find_failed_segments`、`find_failed_batches`、`repair`、`repair_board`、三个 `_run_repair`
+入口或新增 long-path 行为。原日记记录的 live proxy 图片请求全部停在 500/502，不能据此声明
+端到端图片成功。2026-08-22 从 `legacy_app` 目录重跑现存相关测试为 **26 passed / 3.10s**；
+这只证明已存在的 provider/settings/writer 测试仍绿，不证明 media repair 正确。
+
+**已观察、尚未修复。** 本次逐行复核确认以下开放缺陷：
+
+1. `VideoProcessor.repair_board()` 把 `processed_frame_manifest.json` 当 list 迭代，但
+   `_save_phase3_manifest()` 写的是 `{"items": [...]}`；正常 manifest 会让修复在 `item.get`
+   处抛出未捕获的 `AttributeError`。
+2. video 修复会静默跳过已丢失的帧文件，且未把它们加入 `still_failed`；若另有帧修复成功，
+   方法可能在 Markdown 仍有失败标记时返回成功。失败批次还按**当前** batch size 重新展开，
+   配置漂移后可能选错帧。
+3. video 清理只因板书失败保留中间文件；若只有音频分段失败，仍删除提取出的音频，之后 GUI
+   提供的音频修复会因源文件不存在而失败。
+4. audio 修复按当前配置重新切段，只以分段序号关联旧 Markdown，没有持久化原始时间边界、
+   源文件/请求指纹或切分参数；配置或输入漂移后可能把文字写到错误区间。
+5. board 修复仅用 basename 映射原图。重名文件会覆盖，含逗号文件名会被 marker parser
+   拆开；部分图片能解析时仍可能替换整批 placeholder。
+6. audio、board、video 都用 `Path.write_text()` 原地覆盖唯一的付费 Markdown。进程终止、磁盘
+   错误或部分写入可破坏原有成果；本提交没有 crash/atomicity 回归。
+7. 独立 vision 的普通 proxy 500/502 被转成 `FreeTierExhaustedError` 以复用候选切换，旧 UI
+   因而可能把普通上游故障误报为“免费额度耗尽”。该语义问题也未在本提交解决。
+
+**Carry-forward judgement.** 是，而且不应直接移植当前实现。
+
+**WARNING FOR src/ocrllm**: audio/video/board 的 resume/repair 应扩展现有 typed、versioned
+sidecar 与 slot/batch checkpoint，记录稳定单元 ID、源快照、切分参数、prompt/provider/model
+身份和每次付费尝试，并以原子替换发布 state 与 Markdown。不得把本地化 Markdown regex 当作
+恢复状态源，也不得按当前配置重建旧单元。未来 Codex/OpenAI-compatible adapter 可以借鉴
+text-first payload 和 stream fallback，但候选切换必须沿用显式 disposition，不得复用
+quota-specific exception 表示普通 5xx。Windows 深目录还需覆盖临时后缀后的最终路径测试。

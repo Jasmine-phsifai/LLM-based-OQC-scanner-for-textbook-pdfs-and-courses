@@ -44,8 +44,12 @@
 7. 仓库卫生(需用户确认,有破坏性):已合并 worktree(stage-m1/stage-m3)、
    stable_7a5bcf3、_m2_leftover_backup_2026-08-19 的清理;stage-m2 worktree 在合并后
    亦可清理。根目录 social_long_full_batch1_resume*.log 六个遗留日志的处置。
-8. legacy 日记补录:提交 6b2d9eb(vision fallback + media repair)在
-   `legacy_app/AGENTS.md` 无对应日记条目,违反 working-diary 规则,需补。
+8. ~~legacy 日记补录:提交 6b2d9eb 的 media repair 缺少对应条目~~ → 已完成,见 #009。
+   审计纠正了原判断:CLIProxy fallback 在原提交已有日记,Codex discovery 后来也有条目;
+   缺口只在媒体修复,且复核时发现真实开放缺陷。
+9. legacy media repair 加固(优先于 Stage A 调研):先红测复现 video manifest 格式崩溃、
+   丢帧假成功与音频中间件误删;再修复原子写、稳定单元身份和取消/配置错误传播。不要把
+   Markdown regex repair 直接移植到 `src/ocrllm`;新库按现有 typed sidecar/checkpoint 扩展。
 
 ## 条目格式
 
@@ -423,3 +427,48 @@ focused/full/compile/clean archive 全绿;当前结构文档不保留幽灵文�
 **遗留/下一步**:小文件精简队列关闭;不要继续为减行数重开已证明合理的边界。下一轮优先补
 `legacy_app/AGENTS.md` 对提交 `6b2d9eb` 的日记缺口(仓库硬规则),随后进入 Stage A 音频调研;
 Stage 2/Stage A 实现仍按当前计划受 Stage M paid live smoke 与 provider split 前置门约束。
+
+---
+
+## #009 — 2026-08-22:恢复 6b2d9eb 媒体修复日记并登记真实开放缺陷
+
+**任务**:重建提交 `6b2d9eb` 的行为、测试与缺陷边界，补齐 `legacy_app/AGENTS.md` 遗漏的
+media repair 日记；不把既有 vision/Codex 条目重复包装成新结论。
+
+**上下文**:队列原称该提交的 vision fallback + media repair 全部缺日记。两名只读 scout
+分别审查 15 文件 diff 与 changed-test/carry-forward；主代理逐行复核提交、当前 repair 代码、
+manifest 写入/读取、清理与 Markdown 发布路径。工作树起始只含用户未跟踪交接文件；冻结区与
+provider 均不动。两条路径是写一个笼统“已补录”条目，或按已记录/未记录/已验证/未验证拆分；
+选择后者，避免把历史测试绿误写成 repair 质量证明。
+
+**成功标准**:指出原提交中每组变化的既有日记位置；准确描述媒体修复的产品目的；核清直接
+测试是否存在；每个已修/仅观察问题均写 carry-forward；权威现状不再声称 legacy 无开放 bug；
+相关测试与 compile 通过，文档 diff 干净，提交并推送。
+
+**为什么重要**:失败项修复会再次花费 provider 调用并改写用户唯一的付费成果。如果恢复身份、
+原子性和成功判定不可信，“只补失败项”比整项重跑更危险；新库若照搬这种隐式状态，会把
+legacy 缺陷穿过迁移边界。
+
+**结果**:
+
+- 纠正队列事实:`6b2d9eb` 自身已写 CLIProxyAPI direct vision 日记；后来条目已覆盖 Codex
+  model discovery/Fast mode。真正违反规则的是 audio/board/video repair 与长路径/中间文件
+  保留变化没有记录。本轮已在 `legacy_app/AGENTS.md` 用中文补录，且明确不追认成熟度。
+- 提交当时的 21/47 测试只覆盖 settings、provider fallback、payload 顺序、Codex 拒识与
+  Windows 临时文件；没有任何测试引用 processor repair、GUI `_run_repair` 或新增 long-path
+  行为。原 live proxy 图片请求只有 500/502，不存在成功端到端证据。
+- 主审确认首要 P1 缺陷:`repair_board()` 直接迭代 manifest，而 writer 保存 `{"items": [...]}`；
+  正常产物会在字符串 `items` 上调用 `.get()` 并崩溃。另确认丢帧可漏记后假成功、当前 batch
+  size/当前音频切分配置可误定位旧单元、仅音频失败时 cleanup 会删掉修复所需音频、board
+  basename 冲突，以及三条 repair 都非原子覆盖 Markdown。
+- 还登记 provider 语义债:普通 500/502 为复用候选链被包装成 `FreeTierExhaustedError`，可能
+  触发错误的“免费额度耗尽”提示。该问题与媒体 repair 分开，未在文档补录轮顺手改 runtime。
+- 第一次从仓库根运行 legacy tests 因 `OCRLLM` 不在 import path 出现 4 个 collection errors；
+  改从 `legacy_app` 包根执行后，现存相关集 **26 passed / 3.10s**。这次失败是测试入口边界，
+  不是产品回归，已如实保留。随后 `compileall -q OCRLLM tests` 通过。
+- `contracts/`、`worker/`、运行时代码与用户交接文件均未动；无网络或付费 provider 请求。
+
+**遗留/下一步**:新发现的已建功能缺陷优先级高于 Stage A 新功能调研。下一轮先为 video
+manifest 崩溃、丢帧假成功和 audio cleanup 建立失败测试，再以最小修复恢复可信行为；随后处理
+原子发布与稳定 repair identity。`src/ocrllm` 不移植 regex-in-Markdown 方案，而应扩展现有
+versioned sidecar、源/request fingerprint、slot/batch checkpoint 与原子写。
