@@ -173,6 +173,18 @@ Future agents must assume the following and verify before trusting any claim:
   with a specifically named executable consumer and explicit lifetime,
   provisioning, offline, and concurrency semantics.
 
+- **PDF-only configuration is deferred to the executable PDF slice.** The
+  pre-release constructor no longer accepts the never-consumed `pdf_mode`,
+  `pdf_pages`, `pdf_password`, or `pdf_allow_partial` placeholders. All four
+  were validated but silently ignored by the image-only facade, and no active
+  PDF router, processor, caller, example, tag, or release consumed them. Their
+  proposed semantics also exceed or differ from the legacy parent: legacy uses
+  a contiguous page range, has no password option, and preserves page failures
+  without a caller-controlled partial-success flag. Keep PDFium, typed errors,
+  resource bounds, and durable repair/resume lessons as future constraints,
+  but choose and introduce PDF settings only with the first executable PDF
+  vertical slice.
+
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an
   existing non-file canonical sidecar target, including a dangling symbolic link,

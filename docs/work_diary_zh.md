@@ -1584,3 +1584,25 @@ RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 
 **完整验证与边界。** 项目环境 root 全量 **1092 passed / 92.03s**；`compileall -q src tests` 通过；isolated `import ocrllm` 本次只加载 root package module，且没有加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮网络只用于 Git 同步和最终 push，没有真实 provider 或付费调用。修改范围是 `Config` 两行删除、一条公开回归以及三份 current/design/migration 文档和本日记；用户未跟踪的临时交接文件保持不动。
 
 **下一步。** 不把这次删除机械复制到 `pdf_mode`、`pdf_pages`、`pdf_password`、`pdf_allow_partial`。它们共同表达尚未启动的 PDF slice，去留必须作为一个整体核对 target API、现有 constructor 测试和 Stage A/PDF gate；若下一轮没有更高优先级的已建功能缺陷，只做这组字段的只读产品审计，不顺手实现 PDF 或一次删四个字段。
+
+## #042 — 2026-08-23：把 PDF 配置推迟到可执行 PDF slice
+
+**本轮英文自我任务。** Atomic task: decide whether the four dormant PDF-specific `Config` fields should remain in the active pre-release constructor before the PDF slice exists, without implementing PDF or repeating one-field-at-a-time cleanup. Success means current consumer、测试、历史和 legacy 行为都已核实；若有现行缺陷，先失败后修复；future PDF gate 保留，但没有把未证明的选项伪装成当前 API；最后完整验证、中文日记、提交并推送。
+
+**开工假设与仓库复核后的改变。** 起初把四个字段视为一个已经研究好的 coherent future contract，倾向保留并在 image call 时拒绝。同步 origin、重读权威状态、入口、package 规则和 #041 后，先比较两条路：①保留四个 validator，再加 modality-specific rejection；②整体删除，等第一个 executable PDF slice 再定义。三名只读 scout 中，test scout 起初支持①，因为这样不改 constructor；history 和 active-topology scout 支持②。主代理继续查 `5018ad0`、current `recognize.py`、fingerprint、tests、target/go-no-go 和 legacy 后改变选择，采用②。
+
+**改变决定的证据。** 四个字段从初始 image-contract commit 一起进入 `Config`，之后没有 active reader；image-only `recognize()` 会静默忽略每个非默认值并照常调用 provider，resume fingerprint 也刻意不包含它们。没有 PDF router、processor、caller、example、tag 或 release。更重要的是，旧计划并非 legacy 的准确迁移：legacy PDF 使用 contiguous `(start, end)` page range 和 `need_formula` 路由，没有 password 参数，也没有 caller-controlled `allow_partial`；任意有序页、encrypted password 和 opt-in partial success 都是更宽的新产品决定。当前 Stage A/PDF 均未开始，为这些假设维护 validator 再加一个只能报错的 runtime layer，会增加理解成本和未来改名成本。
+
+**失败优先证据与最小实现。** 新参数化回归把 `pdf_mode`、`pdf_pages`、`pdf_password`、`pdf_allow_partial` 当作同一个 dormant boundary：默认实例不应有属性，旧 keyword 应由 Python 拒绝。旧实现按预期 **4 failed / 0.25s**，四例都在 `hasattr(Config(), field_name)` 为真。实现删除四个 dataclass fields、`_PDF_MODES`、page normalization、password text validator 和关联 object assignment；没有增加新文件或 image runtime branch。测试只移除原先证明 future PDF normalization/secret 可以混入 image call 的断言，保留真实 provider/extra/cancellation/language/timeout/resume/secret coverage。修复后的定向集 **10 passed / 0.34s**。
+
+**编辑中的小问题。** 第一次把 source 和两份 test cleanup 合在一个 patch 时，一段参数列表上下文不精确，`apply_patch` 整体拒绝且没有部分修改。随后按 source、config tests、image secrecy tests 拆成小 patch 并逐段复核。本轮没有为追求“一个 patch 成功”而绕过上下文检查。
+
+**文档和未来边界。** 权威状态与迁移状态记录 pre-release API reduction；target design 和 go/no-go 仍保留 PDFium、lazy dependency、资源限制、typed errors、原子 checkpoint/repair、序列化 native calls 等值得迁移的约束，但不再把四个字段、encrypted PDF 或 caller-controlled partial success 写成已决定的当前合同。未来 PDF worker 必须在 direct Python slice 证明最小设置之后，用新协议版本新增 concrete request，不能修改 frozen image protocol。`profile`、`input_languages`、`output_language` 保留，因为 active image recognition 和 fingerprint 确实消费它们。
+
+**下一步。** 先运行完整 config/image 定向集和 root suite，再做 compile/import/diff 检查。若全部通过，本轮提交只包含 active Config/tests、current authority/migration/target/go-no-go 和本日记；不修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**个人复核和完整验证。** 主代理逐行复核 111 行净删除后的 diff，发现并修正 `MIGRATION_STATUS.md` 中删除连接词造成的语病；没有照搬 scout 提议的新 validator 文件。config/image/resume/import 定向集 **99 passed / 2.39s**。项目环境 root 全量按预期为 **1090 passed / 89.07s**：旧套件删除 6 个证明 dormant PDF behavior 的 case，新边界增加 4 个 keyword rejection case，active coverage 没有丢失。`compileall -q src tests` 通过；isolated `import ocrllm` 只加载 root package module，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。
+
+**最后一次非产品命令错误。** 为寻找下一项明确 open debt，第一次 PowerShell `rg` pattern 混入未配对的双引号，shell 在执行搜索前报 terminator error，没有读写仓库。改用单引号和更简单的两个独立 pattern 后成功。该扫描确认 active 已登记的主要外部门禁仍是付费 Stage M smoke，另有 legacy Bilibili diagnostic 在 pytest collection 期间做 public HTTP 的已知 test debt。
+
+**本轮边界与下一轮。** 本轮没有网络/provider/付费调用，除 Git 同步和最终 push；没有修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。#043 优先审计并修复已建 legacy 测试基础设施：定位为何 Bilibili live diagnostic 在 collection/import 时联网，比较显式 opt-in integration test 与离线 collection seam，先证明 broad suite 会被 import-time HTTP 拖死，再做最小修正。它是测试隔离修复，不是恢复 social media feature 开发。

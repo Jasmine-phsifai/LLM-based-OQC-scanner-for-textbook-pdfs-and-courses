@@ -89,13 +89,12 @@ For batch use:
 from ocrllm import Config, DashScopeSettings, recognize_batch
 
 results = recognize_batch(
-    ["board.png", "slides.pdf", "lecture.mp4"],
+    ["board.png", "detail.jpg"],
     config=Config(
         provider=DashScopeSettings(
             region="cn-beijing",
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         ),
-        pdf_mode="vision",
         output_dir="out",
     ),
 )
@@ -307,13 +306,11 @@ type. `RecognitionRequest.sources` is nonempty, preserves caller order, and
 contains one media type; mixed media belongs in independent batch requests.
 For `ocrllm.v1alpha1`, every source is an image and every `uri` is an absolute
 RFC 8089 `file:` URI. HTTP(S), relative paths, and provider credentials are
-rejected. Phase 3 adds PDF fields under `ocrllm.v1alpha2`; it does not silently
-widen `v1alpha1`. `v1alpha2` carries one PDF file URI with `profile=null`;
-text mode requires `provider=None` and default `vision_model`, while vision requires
-`provider="dashscope"` and permits a model or its documented default. Added
-options are exactly `pdf_mode`, `pdf_pages`, `pdf_password`,
-`pdf_allow_partial`, and `resume`; resume defaults false, requires output, and
-conflicts with overwrite.
+rejected. A future PDF worker request must use a new concrete protocol version;
+it must not silently widen `v1alpha1`. Define that request only after the direct
+Python PDF slice proves its minimal configuration. Text-versus-vision routing,
+page selection, encrypted-file support, partial-result policy, and resume are
+candidate decisions, not current option names or commitments.
 
 ### `recognize`
 
@@ -398,10 +395,6 @@ class Config:
     profile: str | None = None
     input_languages: tuple[str, ...] = ()
     output_language: str | None = None
-    pdf_mode: Literal["text", "vision"] | None = None
-    pdf_pages: tuple[int, ...] | None = None
-    pdf_password: str | None = field(default=None, repr=False)
-    pdf_allow_partial: bool = False
     output_dir: str | Path | None = None
     temp_dir: str | Path | None = None
     timeout_seconds: float = 120.0
@@ -446,12 +439,8 @@ Design rules:
   `import ocrllm`.
 - `profile=None` selects the modality's only approved profile; for Phase 1 image
   recognition that profile is `board`.
-- A PDF request requires explicit `pdf_mode`. `pdf_pages=None` means every page;
-  otherwise it is a nonempty ordered tuple of unique one-based indices.
-- `pdf_password` is secret data: never log, serialize into results, or echo it
-  in errors. `pdf_allow_partial=False` is the default.
 - Generated/custom repr omits provider objects, `api_key`, `dashscope`,
-  `pdf_password`, `cancellation`, and `extra`. Tests place unique
+  `cancellation`, and `extra`. Tests place unique
   sentinels in each and assert none appears in repr, errors, events, logs, or
   serialized results.
 - Routing and evidence-affecting provider options belong in an approved immutable
@@ -1112,15 +1101,15 @@ class JobState:
 
 The request fingerprint includes source fingerprints, processor/version,
 provider/model, languages, profile/mode, page selection, and safety settings.
-It excludes API keys, PDF passwords, output location, and cancellation objects.
+It excludes API keys, output location, and cancellation objects.
 Save after each completed unit and immediately after a remote task ID;
 reject corrupt or mismatched state instead of silently starting over. Before
 completion, persist the final Markdown hash, atomically replace the output, then
 delete state. If a crash leaves state plus output, matching hashes finish without
 provider calls and mismatched hashes fail. Completed-unit Markdown is plaintext
 beside caller-selected output, so the caller owns directory permissions. Resume
-of an encrypted PDF must reopen/authenticate with the current password before
-state reuse; store only whether a password was supplied, never its value.
+If encrypted-PDF support is explicitly approved later, resume must
+reopen/authenticate before state reuse and must never store the password value.
 
 ## Configuration And Secrets
 

@@ -137,7 +137,7 @@ is retained for gate provenance, not as a current implementation inventory.
   empty PDF, audio, video, or `all` extra is published. The Phase 0 wheel
   measurements below predate the `dashscope` extra and remain historical
   Phase 0 evidence.
-- `Config` repr omits provider objects, `api_key`, `dashscope`, `pdf_password`,
+- `Config` repr omits provider objects, `api_key`, `dashscope`,
   `cancellation`, and `extra`. Boundary tests use unique sentinels so
   these values cannot leak through repr, public errors, or results.
 - Every public `recognize()` call rejects `Config` subclasses and freshly
@@ -455,8 +455,8 @@ src/ocrllm/contracts/image_recognition_request.py
     DashScope provider/model, languages, board profile, and allowed options.
 
 src/ocrllm/contracts/pdf_recognition_request.py
-    Define the exact `ocrllm.v1alpha2` one-PDF command with nullable
-    provider/model/profile and the allowed PDF/common options.
+    Add a one-PDF command only after the direct Python PDF slice proves its
+    minimal provider/model/profile and PDF/common options.
 
 src/ocrllm/contracts/recognition_request.py
     Export only the ImageRecognitionRequest | PdfRecognitionRequest type union.
@@ -1082,20 +1082,15 @@ PDF rules:
 - Never return `PdfDocument`, `PdfPage`, `PdfTextPage`, `PdfBitmap`, or a PIL
   view backed by a live PDFium buffer across the PDF helper boundary. Copy or
   save the page before closing every native object.
-- Direct Python Phase 3 fields are `pdf_mode`, `pdf_pages`, `pdf_password`, and
-  `pdf_allow_partial`. `pdf_mode` is required; `pdf_pages=None` selects every
-  page, otherwise pages are unique positive one-based indices in requested
-  order. Passwords are never logged or echoed. `pdf_allow_partial` defaults to
-  false.
-- The Phase 3 worker extension is `ocrllm.v1alpha2`, not
-  `ocrllm.v1alpha1`. It carries exactly one PDF `file:` URI and `profile=null`.
-  Its `provider`/`model` are both `null` for PDF `text` mode; PDF `vision` uses
-  `provider="dashscope"` and a model string or `null` for the documented default.
-  Its only new option keys are `pdf_mode`, `pdf_pages`, `pdf_password`,
-  `pdf_allow_partial`, and `resume`; unknown keys fail with `CONFIG_INVALID`.
-  `resume` defaults false, requires a non-null `output_directory_uri`, and
-  conflicts with `overwrite=true`. Add its JSON fixtures only after the Python
-  PDF contract passes; do not alter the frozen `v1alpha1` image fixtures.
+- Direct Python PDF settings are not part of the current `Config`. Introduce
+  only settings consumed by the first executable PDF slice. Reconsider the
+  earlier arbitrary-page, password, and caller-controlled partial-result ideas
+  against legacy's contiguous page range and durable failure markers; do not
+  implement them merely because old planning named them.
+- Any Phase 3 worker extension must use a new version rather than widening
+  `ocrllm.v1alpha1`. Define its option keys only after the Python PDF contract
+  passes, then add matching JSON fixtures without altering the frozen image
+  fixtures.
 
 ### Audio slice
 
@@ -1911,12 +1906,13 @@ GO when all are true:
   3.13 environments. A passing 3.13 spike does not waive the 3.10 gate.
 - A clean environment can open, text-extract, and render with PDFium.
 - Fixtures cover text-layer, image-only scan, formula-heavy, mixed-language,
-  encrypted, malformed, empty, and out-of-range selection cases.
+  malformed, empty, and out-of-range selection cases.
 - Fixtures also cover CJK plus supplementary Unicode, rotation, crop boxes,
-  transparency, correct and incorrect passwords, and a huge-page pixel limit.
-- On a mixed text/scanned fixture, `text` mode fails at the raster-only selected
-  page unless the caller explicitly permits a partial result; `vision` mode
-  renders every selected page. `auto` remains deferred.
+  transparency, and a huge-page pixel limit. Add encrypted/password fixtures
+  only if encrypted-PDF support is approved for that slice.
+- The first slice must define and test mixed text/scanned failure behavior.
+  Do not add caller-controlled partial success unless a real product need is
+  approved; durable page failure evidence and repairability remain required.
 - Text and vision modes preserve page order and page markers.
 - `pdf.text` passes every deterministic text-corpus threshold and `pdf.vision`
   passes both independent full-corpus live runs in `Recognition Quality
@@ -1928,8 +1924,8 @@ GO when all are true:
   resume makes zero new calls for pages one/two and produces the same ordered
   final Markdown as an uninterrupted run. Separate tests reject corrupt state,
   changed source bytes, changed page selection/model/profile/processor version,
-  missing state artifacts, a mismatched final-output hash, and resume of an
-  encrypted PDF with a missing or incorrect password.
+  missing state artifacts, and a mismatched final-output hash. Add encrypted
+  resume cases only if encrypted-PDF support is approved.
 - `ocrllm.v1alpha2` Node fixtures prove PDF `resume` default/conflict rules and
   the sibling state-file URI round-trip.
 - Wheel/application artifacts contain required PDFium dependency notices.

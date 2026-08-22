@@ -598,13 +598,11 @@ def test_config_secrets_never_enter_error_traceback_or_success_result(tmp_path):
     source = write_test_image(tmp_path / "board.png")
     sentinels = (
         "PROVIDER_OBJECT_SECRET_1f3b",
-        "PDF_PASSWORD_SECRET_3d5e",
         "PROVIDER_EXTRA_SECRET_4f6a",
     )
     failing_config = Config(
         provider=RaisingProvider(RuntimeError("provider failed"), sentinels[0]),
-        pdf_password=sentinels[1],
-        extra={"provider_token": sentinels[2]},
+        extra={"provider_token": sentinels[1]},
     )
 
     with pytest.raises(ProviderError) as captured:
@@ -630,8 +628,7 @@ def test_config_secrets_never_enter_error_traceback_or_success_result(tmp_path):
 
     successful_config = Config(
         provider=RecordingProvider("# Safe result\n"),
-        pdf_password=sentinels[1],
-        extra={"provider_token": sentinels[2]},
+        extra={"provider_token": sentinels[1]},
     )
     result = recognize(source, config=successful_config)
     rendered_result = f"{result!r} {result.metadata!r} {result.markdown}"

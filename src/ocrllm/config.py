@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 
 _LANGUAGE_SUBTAG = re.compile(r"^[A-Za-z0-9]{1,8}$")
-_PDF_MODES = frozenset({"text", "vision"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,10 +42,6 @@ class Config:
     profile: str | None = None
     input_languages: tuple[str, ...] = ()
     output_language: str | None = None
-    pdf_mode: Literal["text", "vision"] | None = None
-    pdf_pages: tuple[int, ...] | None = None
-    pdf_password: str | None = field(default=None, repr=False)
-    pdf_allow_partial: bool = False
     output_dir: str | Path | None = None
     temp_dir: str | Path | None = None
     timeout_seconds: float = 120.0
@@ -59,7 +54,6 @@ class Config:
         provider = _normalize_provider(self.provider)
         vision_model = _normalize_vision_model(self.vision_model)
         _validate_optional_nonempty_text(self.profile, field_name="profile")
-        _validate_optional_text(self.pdf_password, field_name="pdf_password")
         image_mode = _normalize_image_mode(self.image_mode)
         local_ocr = _normalize_local_ocr_pair(image_mode, self.local_ocr)
         execution = _normalize_execution_policy(self.execution)
@@ -71,12 +65,8 @@ class Config:
 
         input_languages = _normalize_input_languages(self.input_languages)
         output_language = _normalize_output_language(self.output_language)
-        pdf_pages = _normalize_pdf_pages(self.pdf_pages)
         timeout_seconds = _normalize_timeout(self.timeout_seconds)
 
-        if self.pdf_mode is not None and self.pdf_mode not in _PDF_MODES:
-            raise ConfigError("Config.pdf_mode must be 'text', 'vision', or None") from None
-        _require_boolean(self.pdf_allow_partial, field_name="pdf_allow_partial")
         _require_boolean(self.resume, field_name="resume")
         _require_boolean(self.overwrite, field_name="overwrite")
 
@@ -101,7 +91,6 @@ class Config:
         extra = _freeze_extra(self.extra)
         object.__setattr__(self, "input_languages", input_languages)
         object.__setattr__(self, "output_language", output_language)
-        object.__setattr__(self, "pdf_pages", pdf_pages)
         object.__setattr__(self, "timeout_seconds", timeout_seconds)
         object.__setattr__(self, "provider", provider)
         object.__setattr__(self, "vision_model", vision_model)
@@ -255,11 +244,6 @@ def _validate_optional_nonempty_text(
         raise ConfigError(f"Config.{field_name} must be nonempty text when set") from None
 
 
-def _validate_optional_text(value: object | None, *, field_name: str) -> None:
-    if value is not None and type(value) is not str:
-        raise ConfigError(f"Config.{field_name} must be text when set") from None
-
-
 def _validate_dashscope_scout_workflow(
     *,
     provider: object | None,
@@ -317,24 +301,6 @@ def _validate_language_tag(value: object, *, field_name: str) -> None:
         raise ConfigError(f"Config.{field_name} contains an invalid language tag") from None
     if any(_LANGUAGE_SUBTAG.fullmatch(subtag) is None for subtag in subtags):
         raise ConfigError(f"Config.{field_name} contains an invalid language tag") from None
-
-
-def _normalize_pdf_pages(value: object | None) -> tuple[int, ...] | None:
-    if value is None:
-        return None
-    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise ConfigError("Config.pdf_pages must be an ordered sequence of page numbers") from None
-    try:
-        pages = tuple(value)
-    except Exception:
-        raise ConfigError("Config.pdf_pages could not be read safely") from None
-    if not pages:
-        raise ConfigError("Config.pdf_pages must not be empty when set") from None
-    if any(isinstance(page, bool) or not isinstance(page, int) or page <= 0 for page in pages):
-        raise ConfigError("Config.pdf_pages must contain positive one-based integers") from None
-    if len(set(pages)) != len(pages):
-        raise ConfigError("Config.pdf_pages must contain unique page numbers") from None
-    return cast(tuple[int, ...], pages)
 
 
 def _normalize_timeout(value: object) -> float:

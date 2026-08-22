@@ -28,10 +28,11 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   destination basenames near the traditional Windows path boundary; a process-local
   output claim keeps concurrent batch/direct-thread Markdown and state ownership
   consistent; finite batch-iterable failures become redacted terminal outcomes
-  without discarding earlier paid work; the never-consumed `Config.progress`
-  and generic `Config.cache_dir` placeholders are removed rather than promoted
-  into unproven callback or persistence APIs; frozen worker progress remains
-  separate, while local OCR retains its zero-network model-loading contract;
+  without discarding earlier paid work; the never-consumed `Config.progress`,
+  generic `Config.cache_dir`, and four dormant PDF-only placeholders are
+  removed rather than promoted into unproven callback, persistence, or PDF
+  APIs; frozen worker progress remains separate, while local OCR retains its
+  zero-network model-loading contract;
   all no-cost exit criteria pass through the clean-archive runner at `2e9c770`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
