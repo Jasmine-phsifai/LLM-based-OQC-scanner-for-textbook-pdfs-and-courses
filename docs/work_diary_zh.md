@@ -52,8 +52,10 @@
 10. legacy repair 发布与身份加固(仍优先于 Stage A):
     ~~为 audio/board/video 引入同目录原子文本发布；取消时先保存本轮已付费成功再传播；
     board 不得吞 `CancelledError`/provider setup~~ → 已完成,见 #011。
-    仍开放:以稳定单元身份替代当前 batch size/segment index/basename 重建。不要把 Markdown
-    regex repair 移植到 `src/ocrllm`;新库按现有 typed sidecar/checkpoint 扩展。
+    ~~audio 以持久化 source/input SHA-256 + 原始毫秒边界替代 current split 重建~~ →
+    已完成,见 #012。仍开放:board batch/basename 与 video failed-batch/current batch size
+    的稳定身份。不要把 Markdown regex repair 移植到 `src/ocrllm`;新库按现有 typed
+    sidecar/checkpoint 扩展。
 11. 独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
     “免费额度耗尽”提示；应建立中性 failover disposition 后再修。
 
@@ -568,3 +570,51 @@ batch index + basename，video 不能按当前 batch size 解释历史失败。�
 source/request/unit identity 及向后兼容边界；不把 Markdown regex 移入 `src/ocrllm`。另记录但
 不混做：legacy PDF/checkpoint/incremental writer 的旧原子性和吞错策略需要各自契约测试；同一
 输出上的并发 repair 仍需调用层协调，唯一临时文件只防碰撞，不防最后写者覆盖。
+
+## #012 — 2026-08-22:用版本化身份阻止 audio repair 修错分段
+
+**任务**:让 legacy short-ASR 输出保存可验证的源身份和原始分段边界；repair 不再按当前配置
+重新切音频，缺失/损坏/漂移身份时必须在 provider 调用前失败。
+
+**上下文**:#011 只保证成功内容不被破坏，却不能证明“分段 2”今天仍指向昨天的同一段音频。
+原实现重新执行 `_should_use_short_asr()` + `_split_audio()`，配置缩短后可把原本整段的失败项变成
+开头局部。两名 Luna 只读 scout 分别审查 schema/原子性/兼容政策和失败测试 seam；主代理复核
+short/Google/filetrans 三条路径、GUI 错误呈现和 ffmpeg 参数。考虑两条路径：①把更多机器状态写进
+Markdown；②使用邻接 versioned sidecar。选择②，避免继续把本地化展示文本升级成恢复数据库。
+
+**成功标准**:配置漂移测试证明 current split 不再被调用；源文件即使同路径也按 SHA-256 拒绝
+字节漂移；missing/corrupt/unsupported manifest 都在零 provider 调用时显式失败；生产 `_short_asr`
+确实写出 exact-ms windows；ffmpeg 使用保存的 `-ss/-t`；旧输出安全拒绝且 GUI 显示真实原因。
+
+**为什么重要**:原子写只能保证文件完整，不能保证付费请求对应正确内容。错修一个时间区间会把
+“恢复”变成静默数据污染；比明确要求旧输出重跑更坏。新库音频切片也必须把 source、request、
+unit identity 分层，而不是把序号当身份。
+
+**结果**:
+
+- 新增单一职责 `processors/audio_repair_manifest.py`。v1 sidecar 保存 source 与实际 ASR input
+  的 size + SHA-256、input duration、splitter/fallback 参数、原始 model/prompt/hotwords 哈希，
+  以及每个 unit 的 actual/logical 毫秒边界和由 input hash + 边界生成的稳定 ID。writer 复用
+  #011 的同目录 atomic replace，并对深文件名使用短化 sidecar 名。
+- loader 严格验证 schema/version、哈希、连续完整的逻辑窗口、上下文包络、稳定 ID 和 Markdown
+  `meta:segment` 映射。旧版无 sidecar、损坏/未知版本、源或转换后输入漂移、展示映射漂移一律在
+  provider 前失败；不提供隐式 unsafe fallback。
+- `repair()` 只选择 manifest 中失败 index 对应的 stable unit；完整单元直接复用已验证输入，局部
+  单元按保存的 actual window 生成 `ffmpeg -ss/-t`，完全不读取当前 chunk/context 设置。
+  `_short_asr()` 把 Markdown 与 manifest 都原子发布；原始 request 字段用于审计，不阻止用户用
+  新模型/提示词修复。`AudioRepairIdentityError` 不继承普通识别 `RuntimeError`，因此现有
+  audio/video GUI generic error 汇总会保留其原文，不会降格成“全部分段失败”。
+- 三个核心回归修前为 **3 failed, 2 passed / 3.64s**。修后 identity/生产 writer/边界提取直接集
+  **11 passed / 1.22s**；最终 audio/video/resume/failure/GUI focused 集
+  **112 passed / 34.12s**；排除真实 ffmpeg `test_social_e2e.py` 的 legacy 全量
+  **253 passed, 1 skipped / 44.40s**，唯一 skip 为显式 live Google discovery。相关 Python 模块
+  `py_compile` 与 `git diff --check` 通过；无网络/provider/付费调用。
+- 主审没有照搬 scout 的“当前请求必须与原 prompt/model 相同”：repair 的产品用途本就包含改进
+  prompt/model，真正不可变的是源字节与时间单元。也没有在本轮加入并发锁或永久 chunk cache；
+  当前 GUI 单任务，且已验证源可按 exact window 免费重建，这两项尚无失败案例支撑结构增长。
+
+**遗留/下一步**:任务 10 仍需处理 board 的 basename/逗号解析与 batch identity，以及 video
+failed-batch 按 current batch size 重建。逐行主审另发现 `_short_asr()` 生产循环若某并行 future
+抛 `CancelledError`，会在最终 Markdown/manifest 发布前丢掉其他已付费成功结果；已登记 legacy
+日记，下一轮应优先以失败测试定义 production cancellation checkpoint，而不是误写成已由 repair
+原子性覆盖。Stage A 调研继续后移。

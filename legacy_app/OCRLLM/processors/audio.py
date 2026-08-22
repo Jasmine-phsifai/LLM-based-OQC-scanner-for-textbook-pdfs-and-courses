@@ -35,6 +35,12 @@ from OCRLLM.processors.audio_filetrans_task_state import (
     load_filetrans_task_id,
     save_filetrans_task_state,
 )
+from OCRLLM.processors.audio_repair_manifest import (
+    AudioRepairSegment,
+    create_audio_repair_manifest,
+    load_audio_repair_manifest,
+    save_audio_repair_manifest,
+)
 from OCRLLM.core.document_model import SourceType
 from OCRLLM import prompts
 
@@ -724,7 +730,14 @@ class AudioProcessor(BaseProcessor):
             use_short, duration = self._should_use_short_asr(actual_path)
             if use_short:
                 self._report(1, 5, f"使用短音频模型: {self.cfg.models.asr_short_model}")
-                return self._short_asr(actual_path, hotwords, output_path, prompt_template, duration=duration)
+                return self._short_asr(
+                    actual_path,
+                    hotwords,
+                    output_path,
+                    prompt_template,
+                    duration=duration,
+                    source_path=audio_path,
+                )
         else:
             duration = None
 
@@ -858,12 +871,24 @@ class AudioProcessor(BaseProcessor):
         if not os.path.isfile(audio_path):
             raise RuntimeError(f"音频文件不存在，无法修复: {audio_path}")
 
-        # Re-split audio identically
         actual_path = audio_path
         if not _is_remote(audio_path):
             actual_path = self._ensure_upload_format(audio_path)
-        _, duration = self._should_use_short_asr(actual_path)
-        chunks = self._split_audio(actual_path, duration=duration)
+
+        content = Path(md_path).read_text(encoding="utf-8")
+        manifest = load_audio_repair_manifest(
+            output_path=md_path,
+            markdown=content,
+            source_path=audio_path,
+            asr_input_path=actual_path,
+        )
+        segment_by_index = {segment.index: segment for segment in manifest.segments}
+        repair_segments = [segment_by_index[index] for index in failed_indices]
+        chunks = self._split_audio_from_repair_manifest(
+            actual_path,
+            repair_segments,
+            manifest.input_duration_ms,
+        )
 
         sys_prompt = self._build_system_prompt(hotwords, prompt_template)
         total = len(failed_indices)
@@ -872,16 +897,14 @@ class AudioProcessor(BaseProcessor):
 
         results: dict[int, str] = {}  # 1-based index → text
         still_failed: list[int] = []
-        content = Path(md_path).read_text(encoding="utf-8")
 
         for order, seg_idx in enumerate(failed_indices):
             self._check_cancelled()
-            chunk_idx = seg_idx - 1  # 0-based
-            if chunk_idx < 0 or chunk_idx >= len(chunks):
+            chunk = chunks.get(seg_idx)
+            if chunk is None:
                 still_failed.append(seg_idx)
                 continue
 
-            chunk = chunks[chunk_idx]
             self._report(order + 1, total, f"识别分段 {seg_idx} ({order + 1}/{total})")
             try:
                 text = self.llm.transcribe_short_audio(
@@ -1344,10 +1367,37 @@ class AudioProcessor(BaseProcessor):
 
     def _short_asr(self, audio_path: str, hotwords, output_path: str,
                    prompt_template: str = None, duration: float = None,
-                   fallback_mode: bool = False) -> str:
+                   fallback_mode: bool = False, source_path: str = None) -> str:
         stem = Path(audio_path).stem
         chunks = self._split_audio(audio_path, duration=duration, fallback_mode=fallback_mode)
         sys_prompt = self._build_system_prompt(hotwords, prompt_template)
+        input_duration = duration if duration is not None else max(chunk.actual_end for chunk in chunks)
+        manifest = create_audio_repair_manifest(
+            source_path=source_path or audio_path,
+            asr_input_path=audio_path,
+            boundaries=(
+                (
+                    chunk.actual_start,
+                    chunk.actual_end,
+                    chunk.logical_start,
+                    chunk.logical_end,
+                )
+                for chunk in chunks
+            ),
+            input_duration=input_duration,
+            fallback_mode=fallback_mode,
+            chunk_seconds=(
+                self.cfg.processing.asr_fallback_chunk_seconds
+                if fallback_mode
+                else self.cfg.processing.asr_short_chunk_seconds
+            ),
+            context_seconds=(
+                self.cfg.processing.asr_fallback_context_seconds if fallback_mode else 0
+            ),
+            model=self.cfg.models.asr_short_model,
+            prompt=sys_prompt,
+            hotwords=hotwords or (),
+        )
 
         md_lines = [f"<!-- meta:audio title={stem} -->\n"]
         if hotwords:
@@ -1415,8 +1465,8 @@ class AudioProcessor(BaseProcessor):
                 md_lines.extend([f"<!-- meta:segment index={idx + 1} time={t1}~{t2} -->\n", text, ""])
 
         ensure_dir(os.path.dirname(output_path))
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(md_lines).strip() + "\n")
+        write_text_atomically(output_path, "\n".join(md_lines).strip() + "\n")
+        save_audio_repair_manifest(output_path, manifest)
 
         try:
             total_duration = sum(chunk.logical_end - chunk.logical_start for chunk in chunks)
@@ -1427,6 +1477,68 @@ class AudioProcessor(BaseProcessor):
         except Exception as e:
             logger.warning(f"[ASR] 无法计算短音频总时长: {e}")
         return output_path
+
+    def _split_audio_from_repair_manifest(
+        self,
+        audio_path: str,
+        segments: list[AudioRepairSegment],
+        input_duration_ms: int,
+    ) -> dict[int, AudioChunk]:
+        """Materialize the exact saved windows without consulting current settings."""
+        if not segments:
+            return {}
+
+        ffmpeg = None
+        chunk_dir = None
+        chunks: dict[int, AudioChunk] = {}
+        for segment in segments:
+            self._check_cancelled()
+            actual_start = segment.actual_start_ms / 1000.0
+            actual_end = segment.actual_end_ms / 1000.0
+            logical_start = segment.logical_start_ms / 1000.0
+            logical_end = segment.logical_end_ms / 1000.0
+            if segment.actual_start_ms == 0 and segment.actual_end_ms == input_duration_ms:
+                chunk_path = audio_path
+            else:
+                if ffmpeg is None:
+                    ffmpeg = get_ffmpeg()
+                    chunk_dir = ensure_dir(
+                        os.path.join(self.cfg.paths.temp_dir, "audio_repair_chunks")
+                    )
+                chunk_path = os.path.join(chunk_dir, f"{segment.unit_id}.mp3")
+                run_subprocess_cancellable(
+                    [
+                        ffmpeg,
+                        "-ss",
+                        f"{actual_start:.3f}",
+                        "-i",
+                        audio_path,
+                        "-t",
+                        f"{actual_end - actual_start:.3f}",
+                        "-vn",
+                        "-ac",
+                        "1",
+                        "-ar",
+                        "16000",
+                        "-ab",
+                        "32k",
+                        "-acodec",
+                        "libmp3lame",
+                        "-y",
+                        chunk_path,
+                    ],
+                    cancel_event=self.reporter.cancel_event,
+                    timeout=600,
+                    check=True,
+                )
+            chunks[segment.index] = AudioChunk(
+                path=chunk_path,
+                actual_start=actual_start,
+                actual_end=actual_end,
+                logical_start=logical_start,
+                logical_end=logical_end,
+            )
+        return chunks
 
     def _ensure_upload_format(self, audio_path: str) -> str:
         ext = Path(audio_path).suffix.lower()

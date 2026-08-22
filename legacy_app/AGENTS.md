@@ -645,3 +645,37 @@ board batch/basename、video failed batch 仍按当前配置和本地化 Markdow
 sidecar 中原子保存每个已付费 slot，取消前先提交成功；文件发布失败必须显式失败。原子 replace
 只解决破坏性覆盖，不能替代稳定 source/request/unit identity 或并发协调。不要移植本轮的
 localized Markdown marker 变换。
+
+## 2026-08-22 — audio repair 配置漂移可修错时间段（已修复）
+
+**现象与根因。** `AudioProcessor.repair()` 只从 Markdown 取得“分段 N”，随后按当前
+`asr_short_chunk_seconds` 重新 `_split_audio()` 并取 `chunks[N-1]`。原输出若是一整个两分钟单元，
+后来配置改成一分钟，“分段 1”会静默变成开头一分钟；源文件同路径换字节也不会阻止 provider
+调用。Markdown 已有显示时间，但没有原始 actual window、强源指纹或版本化机器身份。
+
+**修复与兼容政策。** 新增 `processors/audio_repair_manifest.py`。每次 short-ASR 输出都在 Markdown
+旁原子保存 v1 sidecar：原始 source 和实际 ASR input 的 size/SHA-256、input duration、splitter/
+fallback 参数、model/prompt/hotwords 审计哈希，以及 actual/logical 毫秒窗口与 stable unit ID。
+repair 在任何 provider 调用前严格校验 schema/version、源字节、连续窗口、unit ID 和 Markdown
+meta 映射，然后只按保存的窗口直接复用完整输入或执行 `ffmpeg -ss/-t`。current chunk/context
+配置不再参与。没有 sidecar 的旧版输出明确拒绝，不做可能修错内容的 best-effort fallback。
+`AudioRepairIdentityError` 不继承普通识别 `RuntimeError`，所以现有 audio/video GUI generic
+汇总会显示具体 identity 错误，不再把它吞成“全部分段修复失败”。
+
+**失败优先证据与验证。** 修前配置漂移、source drift、missing identity 为
+**3 failed, 2 passed / 3.64s**。修后 direct identity/writer/extraction 集
+**11 passed / 1.22s**；audio/video/resume/failure/GUI focused 集
+**112 passed / 34.12s**；除真实 ffmpeg e2e 外的 legacy 全量
+**253 passed, 1 skipped / 44.40s**，唯一 skip 是显式 live Google discovery；相关模块
+`py_compile` 与 `git diff --check` 通过。没有网络、provider 或付费调用。
+
+**已观察、尚未修复。** `_short_asr()` 的生产并行循环仍把所有结果留在 `ordered`，直到全部
+future 完成才写 Markdown/manifest；任一 future 抛 `CancelledError` 会越过最终发布，丢掉其他
+已经付费成功的分段。repair 的逐单元原子发布没有覆盖生产识别。board 仍以 basename 和可被逗号
+拆坏的 marker 恢复批次，video failed-batch 仍按 current batch size 展开。并发 repair 仍没有
+revision/CAS；当前 GUI 单任务降低了发生面，但不等于库级保证。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 音频 vertical slice 必须在 provider
+前生成强 source/input fingerprint 和稳定毫秒 unit ID，并在每次付费成功后把 slot 原子写入
+versioned sidecar；取消必须先发布已完成 slot。ordinal 与 Markdown 时间只用于展示，不能作为
+恢复身份；修改 prompt/model 可以形成新 attempt，但不得改变 unit identity。

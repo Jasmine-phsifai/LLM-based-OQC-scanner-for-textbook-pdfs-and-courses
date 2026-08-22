@@ -89,8 +89,11 @@ Future agents must assume the following and verify before trusting any claim:
   deletion found in commit `6b2d9eb` are fixed with direct regressions. Audio,
   board, and video repair now atomically publish each successful retry before
   the next cancellable operation, and cancellation/provider setup errors remain
-  visible. Repair identity still depends on current batch/chunk configuration
-  and Markdown markers. The exact open findings are recorded in
+  visible. Short-audio repair now requires a versioned sidecar containing exact
+  source hashes and millisecond unit windows, so current chunk settings cannot
+  reinterpret an old failed segment. Board identity still depends on current
+  batch/basename reconstruction, and video failed batches still depend on the
+  current batch size. The exact open findings are recorded in
   `legacy_app/AGENTS.md`. New library modalities must extend typed, versioned
   checkpoint state and atomic publication rather than copy localized
   Markdown-regex repair.
@@ -526,16 +529,48 @@ while retaining the last successful catalog during refresh outages.
 
 ## Legacy Status, 2026-08-22
 
-Two legacy repair-hardening slices are complete. `repair_board()` reads the
+Three legacy repair-hardening slices are complete. `repair_board()` reads the
 normal `{"items": [...]}` manifest, accounts for unavailable processed frames
 as explicit partial failures, and video cleanup retains extracted audio while
 failed transcript segments remain. Audio, board, and video repair now publish
 each successful retry through a shared same-directory atomic text writer before
 another provider call can be cancelled. Board no longer swallows cancellation
-or provider-setup failures. Stable repair identity remains open and continues
-to outrank Stage A feature research. Earlier legacy fixes remain recorded
-history, not proof that all compatibility paths are defect-free.
+or provider-setup failures. Short-audio outputs now persist source/input SHA-256,
+exact millisecond windows, stable unit IDs, splitter metadata, and request audit
+metadata in a versioned adjacent manifest. Repair fails before provider dispatch
+when that identity is missing or inconsistent. Stable board/video repair identity
+remains open and continues to outrank Stage A feature research. Earlier legacy
+fixes remain recorded history, not proof that all compatibility paths are
+defect-free.
 ## New And Fixed In This Working Update
+
+Short-audio repair now has a stable unit-identity contract:
+
+- `_short_asr()` publishes a versioned `.audio-repair.json` sidecar containing
+  SHA-256 and size for both the selected source and actual ASR input, exact
+  actual/logical millisecond windows, a source-and-window-derived unit ID,
+  splitter settings, and original model/prompt/hotword hashes for audit.
+- `repair()` validates schema, source bytes, ASR-input bytes, contiguous windows,
+  unit IDs, and the Markdown-to-manifest segment map before any provider call.
+  Missing, corrupt, unsupported, source-drifted, or presentation-mismatched state
+  fails closed; old output is not silently re-split with today's settings.
+- Failed windows are regenerated from saved `-ss`/`-t` bounds. The current chunk
+  duration and context configuration is not consulted. The domain identity error
+  is deliberately distinct from ordinary recognition `RuntimeError`, so the
+  existing audio/video GUI summaries preserve its explanation rather than
+  collapsing it into a generic “all segments failed” result.
+- Three regressions failed before the implementation. The final focused
+  audio/video/resume/failure/GUI set passed 112 tests; the legacy suite excluding
+  the real ffmpeg e2e file passed 253 tests with one explicit live-Google skip.
+  Compilation and diff checks passed. No provider, network, active-library, or
+  frozen-boundary behavior changed.
+
+Board batch/basename identity and video failed-batch identity remain open.
+Short-ASR production cancellation can also still discard successful parallel
+results before final publication; that newly observed durability gap is recorded
+in `legacy_app/AGENTS.md` and is not disguised as part of repair identity.
+
+### Previous working update: atomic repair publication
 
 Legacy repair publication now has one explicit durability contract:
 
@@ -555,7 +590,7 @@ Legacy repair publication now has one explicit durability contract:
   explicit live-Google skip. Compilation passed. No active-library,
   frozen-boundary, network, or provider behavior changed.
 
-Stable audio segment, board batch, and video frame/batch identity remains open.
+Stable board batch/basename and video failed-batch identity remains open.
 The shared writer is intentionally only a file-publication primitive; localized
 marker transformations were not centralized or promoted into a library API.
 
