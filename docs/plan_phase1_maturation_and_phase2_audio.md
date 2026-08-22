@@ -1,7 +1,7 @@
 # Plan: Phase 1 Maturation, Then Phase 2 MP3 Audio
 
 Status: **approved current work; Stage M offline implementation complete, live
-exit gate open.** Updated 2026-08-22.
+exit gate open; Stage A1 local MP3 probe implemented.** Updated 2026-08-23.
 
 Read `docs/ACTIVE_STATE_AND_RULES.md` first. It defines document precedence, the
 two policy changes this plan depends on, and the coding rules.
@@ -13,7 +13,8 @@ Defect repair D1-D7    docs/plan_phase1_defects_and_provider_split.md, Stage 1.
                        CLOSED 2026-08-18. Do not duplicate.
 Phase 1 maturation     This document, Stage M. Offline implementation complete;
                        paid live exit smoke remains open.
-Phase 2 mp3 audio      This document, Stage A1/A2. Not started. Plan only.
+Phase 2 mp3 audio      This document, Stage A1/A2. A1 probe implemented; the
+                       recognition slice remains in progress. A2 not started.
 Audio config boundary docs/plan_phase1_defects_and_provider_split.md, Stage 2.
                        Lands with the first executable Stage A1 slice.
 ```
@@ -285,10 +286,11 @@ Those are live-test targets, not reasons to invent provider limits in advance.
 
 ## Stage A — Phase 2: MP3-Only Audio Recognizer
 
-**Not started. Boundary-audited for offline implementation. The Stage 2 audio
-configuration boundary lands with A1, not as unused scaffolding. A1 does not
-wait on Stage M's independent paid image smoke; its own live gate remains
-separately budgeted.**
+**In progress. The provider-independent A1 local MP3 probe is implemented; the
+audio configuration, provider call, response mapping, persistence, and public
+facade are not. The Stage 2 audio configuration boundary lands with the rest of
+A1, not as unused scaffolding. A1 does not wait on Stage M's independent paid
+image smoke; its own live gate remains separately budgeted.**
 
 Phase 2's original framing was an Electron JSONL worker. That is superseded:
 the worker is frozen and Phase 2 is redefined as the first audio capability.
@@ -350,12 +352,13 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   money is spent. Do not claim universal truncation detection: an MP3 cut on a
   valid frame boundary without Xing/VBRI or an external expected length is also
   a valid shorter MP3 and cannot be distinguished locally.
-- The first executable probe adds lazy `miniaudio>=1.71,<2` under `[audio]` and
-  consumes it immediately. Use MP3-specific metadata on the immutable snapshot,
-  then fully exhaust the MP3 stream while discarding PCM chunks and counting
-  decoded frames. Reject a material advertised/decoded duration mismatch outside
-  a fixture-proven MPEG-frame/encoder-padding tolerance. Enforce the provider
-  duration boundary on decoded duration and never silently switch protocols.
+- The first executable probe uses lazy `miniaudio>=1.71,<2` under `[audio]`.
+  It consumes MP3-specific metadata on the immutable snapshot, then fully
+  exhausts the MP3 stream while discarding PCM chunks and counting decoded
+  frames. The selected decoder reports exact frame equality for the committed
+  valid CBR, VBR, and ID3 fixtures, so any reported/decoded mismatch is rejected.
+  The provider duration boundary is enforced on decoded duration; the probe
+  never silently switches protocols.
 - Do not require or bundle FFmpeg for A1. The tested `imageio-ffmpeg` Windows
   binary is about 87.6 MB and GPLv3-configured, while no system FFmpeg exists on
   the target machine; full FFmpeg decode also accepts clean EOF truncation. Keep

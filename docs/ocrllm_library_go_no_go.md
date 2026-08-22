@@ -2014,17 +2014,18 @@ ocrllm[image]          Phase 0: Pillow>=10.4,<13 for lazy decode validation.
 ocrllm[pdf-text]       pypdfium2>=5.11.0,<5.12 only.
 ocrllm[pdf-vision]     pypdfium2>=5.11.0,<5.12 plus Pillow>=10.4,<13.
 ocrllm[dashscope]      Phase 1 vision starts with lazy openai>=2.30,<3.
-ocrllm[audio]          Not created until the Phase 4 spike identifies and tests
-                       exact Python requirements; ffmpeg stays external.
+ocrllm[audio]          Stage A1: lazy miniaudio>=1.71,<2 for the local MP3
+                       probe; ffmpeg stays outside the runtime.
 ocrllm[video]          Not created until Phase 5; it includes approved audio
                        requirements and does not bundle ffmpeg.
 ocrllm[all]            Only after every included extra is individually GO.
 ocrllm[dev]            Tests, build, lint, and fixture tools.
 ```
 
-The current Phase 1 metadata declares exactly `dev`, `image`, and `dashscope`;
-the later extras in this target list do not exist yet. The base distribution has
-no runtime requirements.
+The current metadata declares exactly `audio`, `dashscope`, `dev`, `image`, and
+`ocr`. The base distribution has no runtime requirements. The audio extra is
+consumed only by the internal Stage A1 probe; it does not imply that public
+audio recognition is available.
 
 The base target uses fresh-process imports after two discarded warm-ups, not an
 unmeasured cold-cache claim. The actual hard budgets are:
@@ -2037,7 +2038,7 @@ unmeasured cold-cache claim. The actual hard budgets are:
 | PDF text | Clean installed delta <= 12 MiB | pypdfium2 remains lazy; Pillow is absent. |
 | PDF vision | Clean installed delta <= 35 MiB | pypdfium2 and Pillow remain lazy. |
 | PDF vision + DashScope | Clean installed delta <= 96 MiB | Same lazy-import rule; no second vision client. |
-| Audio | Python installed delta <= 64 MiB | ffmpeg is an external capability, not bundled. |
+| Audio | Clean installed delta <= 8 MiB | miniaudio remains lazy; ffmpeg is not bundled or required. |
 | Video | Python installed delta <= 64 MiB | Reuses audio; ffmpeg is not bundled. |
 
 The self-contained Electron worker bundle has no proven size budget yet. Phase
@@ -2232,7 +2233,7 @@ if ($LASTEXITCODE -ne 0) { throw "generated image recognition proof failed" }
 Each later extra uses a separate new venv and real phase fixture. Phase 1 must
 install `[image,dashscope]`; Phase 3 must independently install `[pdf-text]` and
 `[pdf-vision]`, assert Pillow is absent from the text venv and present in the
-vision venv, then run text extraction/rendering; Phase 4 installs `[audio]`; and
+vision venv, then run text extraction/rendering; Stage A1 installs `[audio]`; and
 Phase 5 installs `[video]`. Installing metadata without executing the capability
 fixture is a failed gate.
 

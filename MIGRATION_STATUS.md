@@ -36,14 +36,16 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   all no-cost exit criteria pass through the clean-archive runner at `271d96d`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
-- replanned, not started: the standalone Stage 2 vision/audio scaffold was
+- replanned, in progress: the standalone Stage 2 vision/audio scaffold was
   removed; its audio-specific configuration boundary now lands with executable
   Stage A1 short-MP3 recognition, followed by Stage A2 FileTrans. The A1
   offline slice may proceed independently of the open Stage M paid image smoke;
-  its own live gate remains separately budgeted. The probe dependency spike
-  selected lazy `miniaudio>=1.71,<2`; it lands with the executable MP3 probe,
-  while FFmpeg/PyAV/Mutagen remain outside the A1 runtime;
-- not started: Stage A1/A2 audio recognition and the active PDFium phase.
+  its own live gate remains separately budgeted. The provider-independent MP3
+  probe now uses lazy `miniaudio>=1.71,<2`, fully decodes bounded five-minute
+  snapshots, and rejects the fixture-proven malformed cases before dispatch;
+  FFmpeg/PyAV/Mutagen remain outside the A1 runtime. Audio configuration,
+  provider dispatch, persistence, and the public facade are not implemented;
+- not started: Stage A2 audio recognition and the active PDFium phase.
 
 The defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,
@@ -215,8 +217,9 @@ The following directions remain traceable but are not current work:
 - Browser/React service: deferred until the core modality contracts are useful.
 - Social downloading in `src/ocrllm`: rejected as a new-library boundary;
   retained only in `legacy_app/`.
-- PDF, audio, and video in the active package: phase-gated and not started as
-  stated in the current active-state document.
+- Public PDF, audio recognition, and video in the active package: phase-gated
+  and unavailable as stated in the current active-state document. A1's internal
+  local MP3 probe is the only implemented audio component.
 
 ## Obsolete Prose Kept For Trace
 

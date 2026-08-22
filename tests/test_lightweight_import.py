@@ -14,7 +14,7 @@ def test_plain_import_does_not_load_optional_image_or_provider_packages():
         "sys.path.insert(0, sys.argv[1]); "
         "import ocrllm; "
         "loaded={name.split('.')[0] for name in sys.modules}; "
-        "forbidden={'PIL','pypdfium2','openai','httpx','rapidocr','onnxruntime','cv2','numpy'}; "
+        "forbidden={'PIL','pypdfium2','openai','httpx','rapidocr','onnxruntime','cv2','numpy','miniaudio','_miniaudio'}; "
         "assert not loaded & forbidden, loaded & forbidden"
     )
 

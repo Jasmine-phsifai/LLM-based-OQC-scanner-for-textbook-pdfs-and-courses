@@ -44,7 +44,10 @@ cpu_ms = (time.process_time_ns() - cpu_started) / 1e6
 origin = pathlib.Path(ocrllm.__file__).resolve()
 assert target in origin.parents, (target, origin)
 loaded = {name.split('.')[0] for name in sys.modules}
-forbidden = {'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime', 'legacy_app'}
+forbidden = {
+    'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
+    'miniaudio', '_miniaudio', 'legacy_app',
+}
 assert not loaded & forbidden, loaded & forbidden
 print(json.dumps({'wall': wall_ms, 'cpu': cpu_ms}))
 '@
@@ -155,7 +158,10 @@ import ocrllm
 origin = pathlib.Path(ocrllm.__file__).resolve()
 assert target in origin.parents, (target, origin)
 loaded = {name.split('.')[0] for name in sys.modules}
-forbidden = {'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime', 'legacy_app'}
+forbidden = {
+    'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
+    'miniaudio', '_miniaudio', 'legacy_app',
+}
 assert not loaded & forbidden, loaded & forbidden
 print(ocrllm.__version__, origin)
 '@
@@ -183,7 +189,7 @@ native_payloads = [
 declared_extras = set(distribution.metadata.get_all('Provides-Extra') or [])
 assert not base_requirements, base_requirements
 assert not native_payloads, native_payloads
-assert declared_extras == {'dashscope', 'dev', 'image', 'ocr'}, declared_extras
+assert declared_extras == {'audio', 'dashscope', 'dev', 'image', 'ocr'}, declared_extras
 print(sorted(declared_extras))
 '@
     & $python -I -c $metadataProbe $targetDir
@@ -200,14 +206,16 @@ print(sorted(declared_extras))
 
     if (-not $SkipOptionalProfiles) {
         $profileLimits = @{
+            'audio' = 8388608
             'image' = 26214400
             'image,dashscope' = 67108864
         }
         $expectedDistributions = @{
+            'audio' = @('miniaudio')
             'image' = @('Pillow')
             'image,dashscope' = @('Pillow', 'openai')
         }
-        foreach ($profile in @('image', 'image,dashscope')) {
+        foreach ($profile in @('audio', 'image', 'image,dashscope')) {
             $safeProfile = $profile.Replace(',', '-')
             $profileVenv = Join-Path $proofRoot "venv-$safeProfile"
             & $python -m venv $profileVenv
@@ -235,7 +243,9 @@ for name in expected_distributions:
     assert metadata.version(name)
 import ocrllm
 loaded = {name.split('.')[0] for name in sys.modules}
-assert not loaded & {'PIL', 'openai', 'httpx', 'onnxruntime'}, loaded
+assert not loaded & {
+    'PIL', 'openai', 'httpx', 'onnxruntime', 'miniaudio', '_miniaudio'
+}, loaded
 origin = pathlib.Path(ocrllm.__file__).resolve()
 assert pathlib.Path(sys.prefix).resolve() in origin.parents, origin
 print(sorted(declared))
@@ -270,6 +280,24 @@ print(result.status)
 '@
                 $imageSmoke | & $profilePython -I - $imageFixture
                 Assert-LastExitCode 'generated image recognition smoke failed'
+            }
+
+            if ($profile -eq 'audio') {
+                $audioFixture = Join-Path $sourceRoot (
+                    'tests\fixtures\audio\a1\mp3\valid_cbr.mp3'
+                )
+                $audioSmoke = @'
+from pathlib import Path
+import sys
+
+from ocrllm.audio.probe_short_mp3 import probe_short_mp3
+
+duration = probe_short_mp3(Path(sys.argv[1]))
+assert duration == 0.5, duration
+print(duration)
+'@
+                $audioSmoke | & $profilePython -I - $audioFixture
+                Assert-LastExitCode 'MP3 probe package smoke failed'
             }
 
             if ($profile -eq 'image,dashscope') {

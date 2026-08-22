@@ -31,7 +31,7 @@ docs/plan_phase1_maturation_and_phase2_audio.md
                                       complete with its live exit gate open.
 docs/plan_phase1_defects_and_provider_split.md
                                       Stage 1 closed; Stage 2 folded into A1
-                                      is not started.
+                                      and its first probe is implemented.
 docs/ocrllm_library_go_no_go.md       Phase gates, file responsibilities,
                                       migrate/rewrite/reject boundary.
 src/ocrllm/README_ACTIVE_LIBRARY.md   Package boundary and capability surface.
@@ -62,9 +62,10 @@ identity migration, complete attempt-spend disclosure, disposition-gated
 recovery, model-aware pool behavior, and correct scout-failure attribution.
 Its paid live exit smoke remains open. The former standalone Stage 2 scaffold
 was removed from the queue: its audio-specific configuration boundary will be
-implemented with executable Stage A1 short-MP3 recognition. Stage A1/A2 are not
-started. The A1 dependency spike selected lazy `miniaudio>=1.71,<2`; it lands
-with the first executable MP3 probe, not as unused packaging metadata.
+implemented with complete Stage A1 short-MP3 recognition. Stage A1 is in
+progress: the lazy `miniaudio>=1.71,<2` local MP3 probe and deterministic
+validation corpus are implemented, but no audio provider, facade, persistence,
+or recognition result exists yet. Stage A2 has not started.
 
 All no-cost Stage M exit criteria pass at committed checkpoint `271d96d`.
 `tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,

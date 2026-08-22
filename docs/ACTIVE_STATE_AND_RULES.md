@@ -59,18 +59,19 @@ model-aware credential blocking have shipped. Its exit gate remains open until
 the authorized paid live smoke verifies current provider behavior. The former
 standalone Stage 2 vision/audio scaffold was replanned on 2026-08-23: the
 working image configuration stays unchanged and the audio-specific
-configuration boundary will land with the first executable Stage A1 short-MP3
-slice. Stage A1 and A2 have not started. Stage A1 offline implementation may
-begin after its 2026-08-23 boundary audit; it does not wait on the independent
-Stage M paid image smoke. Each audio live gate remains separately budgeted and
-must not run without explicit maintainer authorization.
-The A1 dependency spike selected lazy `miniaudio>=1.71,<2` for MP3-specific
-metadata plus bounded-memory full decode. It will land with the first executable
-probe, not as an unused extra. FFmpeg, PyAV, Mutagen, and external executable
-requirements are rejected for this slice. Validation will reject malformed or
-undecodable audio and detectable declared/decoded duration mismatch; it will not
-claim that every frame-aligned MP3 truncation can be distinguished from an
-intentionally shorter valid file.
+configuration boundary will land with complete Stage A1 short-MP3 recognition.
+Stage A1 is in progress: its provider-independent local MP3 probe has landed,
+while source snapshotting, provider/model configuration, request construction,
+response handling, completed-result persistence, and the public facade remain
+absent. Stage A2 has not started. A1 does not wait on the independent Stage M
+paid image smoke. Each audio live gate remains separately budgeted and must not
+run without explicit maintainer authorization.
+The A1 probe uses lazy `miniaudio>=1.71,<2` for MP3-specific metadata plus
+bounded-memory full decode. FFmpeg, PyAV, Mutagen, and external executable
+requirements remain outside the A1 runtime. The probe rejects malformed or
+undecodable audio, zero decoded frames, and declared/decoded frame mismatch; it
+does not claim that every frame-aligned MP3 truncation can be distinguished
+from an intentionally shorter valid file.
 The built-in Google image adapter is now scoped as a later optional
 vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
 does not copy legacy retry, audio, GUI, or social architecture. It is planned,

@@ -1000,18 +1000,18 @@ ocrllm[image]    Pillow>=10.4,<13 for lazy image decoding and conversion.
 ocrllm[pdf-text] pypdfium2>=5.11.0,<5.12 without Pillow.
 ocrllm[pdf-vision] pypdfium2>=5.11.0,<5.12 and Pillow>=10.4,<13.
 ocrllm[dashscope] Lazy openai>=2.30,<3 for the first DashScope vision adapter.
-ocrllm[audio]    Do not create until Phase 4 proves exact Python requirements;
-                 ffmpeg remains external.
+ocrllm[audio]    Stage A1 local MP3 probe uses lazy miniaudio>=1.71,<2;
+                  ffmpeg remains outside the runtime.
 ocrllm[video]    Do not create until Phase 5; include approved audio requirements
                  and do not bundle ffmpeg.
 ocrllm[all]      All supported optional features.
 ocrllm[dev]      Test and development tools.
 ```
 
-The current Phase 1 distribution declares exactly `dev`, `image`, and
-`dashscope`; all later target extras above remain uncreated. Base runtime
-requirements are empty. Plain `import ocrllm` must not import `PIL`, `openai`,
-or transitive `httpx`.
+The current distribution declares exactly `audio`, `dashscope`, `dev`, `image`,
+and `ocr`; later target extras remain uncreated. Base runtime requirements are
+empty. Plain `import ocrllm` must not import `PIL`, `openai`, transitive
+`httpx`, `miniaudio`, or `_miniaudio`.
 
 Rules:
 

@@ -10,8 +10,9 @@ gates and file responsibilities.
 The approved current work is
 `../../docs/plan_phase1_maturation_and_phase2_audio.md`. Stage M is offline
 implementation-complete and all no-cost exit criteria pass; only its explicitly
-budgeted live smoke remains open. Stage 2 has not started. Do not start
-unrelated feature work ahead of the current plan.
+budgeted live smoke remains open. Stage A1 is in progress with only its
+provider-independent local MP3 probe implemented; Stage A2 has not started. Do
+not start unrelated feature work ahead of the current plan.
 
 `contracts/` and `worker/` are frozen. Do not change them.
 
