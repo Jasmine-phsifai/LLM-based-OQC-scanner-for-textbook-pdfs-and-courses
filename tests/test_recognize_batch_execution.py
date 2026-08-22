@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import threading
 import time
 
@@ -66,6 +67,99 @@ class ImmediateFailureProvider:
             "The first provider request failed.",
             code="PROVIDER_UNAVAILABLE",
         )
+
+
+class NumberedProvider:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self.calls = 0
+
+    def recognize_images(self, image_paths, *, prompt, config):
+        with self._lock:
+            self.calls += 1
+            call_number = self.calls
+        return f"# Result {call_number}\n"
+
+
+def _colliding_sources(tmp_path):
+    return [
+        write_test_image(tmp_path / directory / "same.png", color=color)
+        for directory, color in (("first", (1, 0, 0)), ("second", (2, 0, 0)))
+    ]
+
+
+def test_serial_batch_reserves_colliding_overwrite_target_until_batch_ends(tmp_path):
+    sources = _colliding_sources(tmp_path)
+    output_dir = tmp_path / "output"
+    provider = NumberedProvider()
+
+    outcomes = recognize_batch(
+        sources,
+        config=Config(provider=provider, output_dir=output_dir, overwrite=True),
+    )
+
+    assert provider.calls == 1
+    assert outcomes[0].succeeded
+    assert outcomes[1].error.code == "OUTPUT_EXISTS"
+    assert (output_dir / "same_board.md").read_text(encoding="utf-8") == (
+        "# Result 1\n"
+    )
+    assert outcomes[1].error.__cause__ is None
+    assert outcomes[1].error.__context__ is None
+    assert outcomes[1].error.__traceback__ is None
+
+    standalone = recognize(
+        sources[1],
+        config=Config(provider=provider, output_dir=output_dir, overwrite=True),
+    )
+
+    assert provider.calls == 2
+    assert standalone.markdown == "# Result 2\n"
+    assert standalone.output_path.read_text(encoding="utf-8") == standalone.markdown
+
+
+def test_parallel_batch_reserves_target_after_first_item_finishes(
+    tmp_path,
+    monkeypatch,
+):
+    sources = _colliding_sources(tmp_path)
+    output_dir = tmp_path / "output"
+    provider = NumberedProvider()
+    batch_module = importlib.import_module("ocrllm.recognize_batch")
+    real_batch_item = batch_module._recognize_batch_item
+    first_finished = threading.Event()
+
+    def run_first_item_before_second(source, **kwargs):
+        if source.parent.name == "second":
+            assert first_finished.wait(timeout=5)
+            return real_batch_item(source, **kwargs)
+        try:
+            return real_batch_item(source, **kwargs)
+        finally:
+            first_finished.set()
+
+    monkeypatch.setattr(
+        batch_module,
+        "_recognize_batch_item",
+        run_first_item_before_second,
+    )
+
+    outcomes = recognize_batch(
+        sources,
+        config=Config(
+            provider=provider,
+            output_dir=output_dir,
+            overwrite=True,
+            execution=RecognitionExecutionPolicy(max_parallel_requests=2),
+        ),
+    )
+
+    assert provider.calls == 1
+    assert [outcome.succeeded for outcome in outcomes] == [True, False]
+    assert outcomes[1].error.code == "OUTPUT_EXISTS"
+    assert (output_dir / "same_board.md").read_text(encoding="utf-8") == (
+        outcomes[0].result.markdown
+    )
 
 
 def test_parallel_batch_is_bounded_and_returns_caller_order(tmp_path):

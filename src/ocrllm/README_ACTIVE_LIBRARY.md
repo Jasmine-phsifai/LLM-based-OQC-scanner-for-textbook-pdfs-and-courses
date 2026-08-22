@@ -70,7 +70,8 @@ The current image facade:
   revalidated copy.
 - rejects groups above `Config.execution.maximum_images_per_request` before
   source/provider work and bounds ordered, fail-fast `recognize_batch()` jobs
-  that report one `BatchItemOutcome` per source;
+  that report one `BatchItemOutcome` per source while retaining output-target
+  ownership until every dispatched batch item settles;
 - applies one monotonic provider-start interval to every draft/review/scout
   call in a direct operation or across one concurrent batch.
 - distinguishes provider permission, suspension, concurrency, quota,

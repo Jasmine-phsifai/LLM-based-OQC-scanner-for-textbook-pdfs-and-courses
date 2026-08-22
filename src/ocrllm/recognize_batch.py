@@ -7,9 +7,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .batch_item_outcome import BatchItemOutcome
+from .clear_public_error import clear_public_error
 from .config import Config
 from .errors import Cancelled, OCRLLMError
-from .recognize import recognize
+from .output.output_target_claims import OutputTargetClaims
+from .recognize import _recognize
 from .validate_config import validate_config
 
 if TYPE_CHECKING:
@@ -44,10 +46,21 @@ def recognize_batch(
     gate = ProviderRequestStartGate(
         cfg.execution.provider_request_start_interval_seconds
     )
-    if cfg.execution.max_parallel_requests == 1:
-        with activate_provider_request_start_gate(gate):
-            return _recognize_batch_serially(sources, config=cfg, gate=gate)
-    return _recognize_batch_in_parallel(sources, config=cfg, gate=gate)
+    with OutputTargetClaims() as output_claims:
+        if cfg.execution.max_parallel_requests == 1:
+            with activate_provider_request_start_gate(gate):
+                return _recognize_batch_serially(
+                    sources,
+                    config=cfg,
+                    gate=gate,
+                    output_claims=output_claims,
+                )
+        return _recognize_batch_in_parallel(
+            sources,
+            config=cfg,
+            gate=gate,
+            output_claims=output_claims,
+        )
 
 
 def _recognize_batch_serially(
@@ -55,6 +68,7 @@ def _recognize_batch_serially(
     *,
     config: Config,
     gate: ProviderRequestStartGate,
+    output_claims: OutputTargetClaims,
 ) -> list[BatchItemOutcome]:
     """Recognize one source at a time, stopping after the first failure."""
     outcomes: list[BatchItemOutcome] = []
@@ -62,9 +76,17 @@ def _recognize_batch_serially(
     for index, source in enumerate(source_iterator):
         try:
             outcomes.append(
-                BatchItemOutcome(index=index, result=recognize(source, config=config))
+                BatchItemOutcome(
+                    index=index,
+                    result=_recognize(
+                        source,
+                        config=config,
+                        output_claims=output_claims,
+                    ),
+                )
             )
         except OCRLLMError as error:
+            clear_public_error(error)
             gate.abort()
             outcomes.append(BatchItemOutcome(index=index, error=error))
             _append_not_attempted(outcomes, source_iterator, first_index=index + 1)
@@ -77,6 +99,7 @@ def _recognize_batch_in_parallel(
     *,
     config: Config,
     gate: ProviderRequestStartGate,
+    output_claims: OutputTargetClaims,
 ) -> list[BatchItemOutcome]:
     """Recognize with a bounded worker pool, settling every dispatched item."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -96,6 +119,7 @@ def _recognize_batch_in_parallel(
                     executor=executor,
                     config=config,
                     gate=gate,
+                    output_claims=output_claims,
                     outcomes=outcomes,
                     future_indexes=future_indexes,
                 ):
@@ -110,6 +134,7 @@ def _recognize_batch_in_parallel(
                         result=future.result(),
                     )
                 except OCRLLMError as error:
+                    clear_public_error(error)
                     outcomes[result_index] = BatchItemOutcome(
                         index=result_index,
                         error=error,
@@ -121,6 +146,7 @@ def _recognize_batch_in_parallel(
                     executor=executor,
                     config=config,
                     gate=gate,
+                    output_claims=output_claims,
                     outcomes=outcomes,
                     future_indexes=future_indexes,
                 )
@@ -150,6 +176,7 @@ def _submit_next_batch_item(
     executor: ThreadPoolExecutor,
     config: Config,
     gate: ProviderRequestStartGate,
+    output_claims: OutputTargetClaims,
     outcomes: list[BatchItemOutcome | None],
     future_indexes: dict[Future[RecognitionResult], int],
 ) -> bool:
@@ -166,6 +193,7 @@ def _submit_next_batch_item(
         source,
         config=config,
         gate=gate,
+        output_claims=output_claims,
     )
     future_indexes[future] = result_index
     return True
@@ -176,6 +204,7 @@ def _recognize_batch_item(
     *,
     config: Config,
     gate: ProviderRequestStartGate,
+    output_claims: OutputTargetClaims,
 ) -> RecognitionResult:
     """Run one batch item with the operation-wide provider start gate."""
     from .providers.provider_request_start_gate import (
@@ -183,7 +212,11 @@ def _recognize_batch_item(
     )
 
     with activate_provider_request_start_gate(gate):
-        return recognize(source, config=config)
+        return _recognize(
+            source,
+            config=config,
+            output_claims=output_claims,
+        )
 
 
 def _settle_dispatched_outcomes(
@@ -198,6 +231,7 @@ def _settle_dispatched_outcomes(
                 result=future.result(),
             )
         except OCRLLMError as error:
+            clear_public_error(error)
             outcomes[result_index] = BatchItemOutcome(index=result_index, error=error)
         except BaseException:
             outcomes[result_index] = BatchItemOutcome(

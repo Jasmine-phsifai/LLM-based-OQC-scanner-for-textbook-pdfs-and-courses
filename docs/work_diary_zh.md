@@ -1236,3 +1236,42 @@ reservation。该缺陷已写入 authoritative Known Debt，下一轮优先做�
 **验证与边界。** root 全量 **1069 passed / 90.24s**。无网络/provider/付费调用；未修改 frozen
 `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。下一步是上述 deterministic batch
 overwrite collision，不因它需要更宽的调用生命周期就降级为文档长期债务。
+
+## #028 — 2026-08-23：batch 生命周期内保留 output target ownership
+
+**任务。** 修复 #027 发现的 durable-success 漏洞：两个不同 source 归一化到同一个 Markdown path 时，
+`recognize_batch(..., overwrite=True)` 不能让两个 item 都调用 provider、都报告成功，再由后者静默覆盖前者。
+成功标准是串行和非重叠并行都在第二次 provider 前返回 item-level `OUTPUT_EXISTS`，第一份已付费 artifact 保持，
+batch 结束后 claim 正常释放；standalone 行为、lazy iterable、fail-fast 和错误脱敏不改变。
+
+**方案比较与选择。** ①在 batch 开始前展开 iterable、重复 source/profile/output-name 计算并预留全部 path；这可
+固定最低 index 获胜，但会改变 lazy/fail-fast 行为，并制造一套可能与真实 `build_output_path()` 漂移的预测逻辑。
+②让真实 `_recognize()` 在已经解析出的 output path 上申请 claim，但由 batch 共享一个 thread-safe owner，把每个
+claim 保留到所有 dispatched futures settle。选择②。并行执行只承诺 outcome 按 caller order 返回，并不承诺
+worker/provider 启动顺序；因此不为碰撞另造 prepare/execute 两阶段。实现新增单一职责的
+`output/output_target_claims.py`：Lock 保护一个 `ExitStack`，同一 owner 的重复 path 仍由已有 process-local
+`claim_output_target()` 产生 `OUTPUT_EXISTS`。standalone `recognize()` 使用一次调用范围的 owner；batch 把同一
+owner 显式传过 serial、submit、worker 和 settle 路径，没有 ContextVar 或 public 参数。
+
+**失败优先证据。** 两个目录各放一个 `same.png`，同一 output_dir、`overwrite=True`。串行修前调用 provider
+两次、两个 outcome 都成功，磁盘只剩 `# Result 2`。最初并行测试直接同时启动，反而被已有 active-call claim
+挡住而通过，不能证明 batch lifetime；因此撤回该弱 seam。最终用 Event 让第二个 worker 等到第一个真实
+`_recognize_batch_item` 完全返回（旧 per-call claim 已释放）再进入，不用 sleep。修前最终 **2 failed / 0.43s**：
+串行和受控并行都调用两次并覆盖。修后两者均只调用一次；item 0 成功、item 1 为 `OUTPUT_EXISTS`，磁盘等于
+item 0 result。串行回归还检查 duplicate error 无 cause/context/traceback，并在 batch 返回后执行 standalone
+overwrite，确认 claim 没有泄漏。
+
+**错误边界与审查。** batch 改为直接调用 core `_recognize()` 才能共享 owner；如果直接保存异常，会绕过公共
+`recognize()` 原来清除内部 traceback/exception chain 的边界。把原四项清理提取为
+`clear_public_error.py::clear_public_error()`，standalone 仍在同一位置清理后 `raise ... from None`；serial
+catch、parallel completion catch 和 settle catch 在写入 `BatchItemOutcome` 前执行同一清理。主代理逐段复核
+BaseException unwind、executor 等待、fail-fast cancel、memory-only no-op、resume collision 与 owner close：
+claims 只在所有已派发 future settle 后关闭，异常退出也先由 executor 等待运行中任务，再释放 owner。
+
+**验证与边界。** batch/output/resume/traceback focused 集 **108 passed / 4.54s**；root 全量
+**1071 passed / 91.56s**。`recognize_batch()` 当前文档已改为“整个 batch 保持 output ownership”，#027 的
+open Known Debt 已删除。无网络/provider/付费调用；未修改 frozen `contracts/`、`worker/`、legacy、social
+media 或用户临时交接文件。仍不声称跨进程文件事务；不同进程写同一 output_dir 是单独、未支持的边界。
+
+**下一步。** 继续优先审计已建 active surface，尤其新 shared owner 周边的 cancellation/iterable 异常释放；
+若没有可证明缺陷，再按队列进入 Stage A 音频只读迁移调研。

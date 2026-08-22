@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from collections.abc import Sequence
-from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -13,6 +12,7 @@ from .errors import OCRLLMError, OutputError
 from .providers.dashscope.provider_settings import DashScopeSettings
 
 if TYPE_CHECKING:
+    from .output.output_target_claims import OutputTargetClaims
     from .result import RecognitionResult
 
 
@@ -22,9 +22,12 @@ def recognize(
     config: Config | None = None,
 ) -> RecognitionResult:
     """Recognize one image or one ordered same-context image group."""
+    from .clear_public_error import clear_public_error
+    from .output.output_target_claims import OutputTargetClaims
+
     public_error: OCRLLMError | None = None
     try:
-        with ExitStack() as output_claims:
+        with OutputTargetClaims() as output_claims:
             return _recognize(
                 source,
                 config=config,
@@ -33,10 +36,7 @@ def recognize(
     except OCRLLMError as error:
         public_error = error
 
-    public_error.__cause__ = None
-    public_error.__context__ = None
-    public_error.__suppress_context__ = True
-    public_error.__traceback__ = None
+    clear_public_error(public_error)
     raise public_error from None
 
 
@@ -44,7 +44,7 @@ def _recognize(
     source: str | Path | Sequence[str | Path],
     *,
     config: Config | None,
-    output_claims: ExitStack,
+    output_claims: OutputTargetClaims,
 ) -> RecognitionResult:
     from .build_recognition_result import build_recognition_result
     from .coerce_source_paths import coerce_source_paths
@@ -82,9 +82,7 @@ def _recognize(
                     config=cfg,
                 )
                 if output_path is not None:
-                    from .output.claim_output_target import claim_output_target
-
-                    output_claims.enter_context(claim_output_target(output_path))
+                    output_claims.claim(output_path)
                     # The first existence check can become stale before ownership.
                     output_path = build_output_path(
                         source_paths,

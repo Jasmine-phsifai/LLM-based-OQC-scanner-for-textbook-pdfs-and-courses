@@ -101,22 +101,15 @@ Future agents must assume the following and verify before trusting any claim:
   concurrency.** Every file-producing `recognize()` claims its resolved target
   without waiting before provider dispatch, rechecks output existence under that
   claim, and holds ownership through all slot/completed checkpoints, Markdown
-  publication, and result construction. An overlapping call gets `OUTPUT_EXISTS`
-  before its provider runs, including when it requests overwrite/resume or has no
-  checkpoint identity. Event-coordinated tests cover both a state-writing loser and
-  an identity-less Markdown-only loser, then prove the winner resumes with zero
-  provider calls. This is deliberately process-local; separate processes targeting
-  one output directory are not coordinated, and no cross-process transaction is
-  claimed.
-
-- **Batch overwrite can still silently collide across sequential items.** Two
-  distinct sources with the same normalized stem map to one deterministic
-  Markdown path. With `recognize_batch(..., overwrite=True)`, each item releases
-  its process-local claim before the next item starts, so both can report success
-  while the later item replaces the earlier paid result. Until a batch-lifetime
-  target reservation is implemented, callers must not combine batch overwrite
-  with colliding normalized source stems. This is the next high-priority active
-  defect; a per-call claim or another existence check cannot close it.
+  publication, and result construction. `recognize_batch()` shares one thread-safe
+  claim owner across all items and retains every acquired target until all
+  dispatched work settles, so sequential or non-overlapping colliding items cannot
+  both report success even with `overwrite=True`. A duplicate gets `OUTPUT_EXISTS`
+  before its provider runs; after the batch exits, ordinary sequential reuse is
+  allowed again. Event-coordinated tests cover direct state/Markdown races and the
+  longer batch lifetime. This is deliberately process-local; separate processes
+  targeting one output directory are not coordinated, and no cross-process
+  transaction is claimed.
 
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an
