@@ -123,6 +123,21 @@ Future agents must assume the following and verify before trusting any claim:
   and `SystemExit` still propagate. This is a finite-batch contract, not a
   streaming or infinite-input API.
 
+- **Injected-provider protocol lookup is pre-dispatch configuration work.** If
+  reading an injected object's required `recognize_images` method raises, the
+  call now returns redacted `CONFIG_INVALID` with
+  `provider_calls_attempted=0`; the candidate-attempt ledger records the same
+  zero. A provider request has not begun merely because method discovery
+  failed. Ordinary exceptions raised after entering the callable method remain
+  provider failures and count as attempted calls.
+
+- **Open: completed image resume currently bypasses a pre-set cancellation
+  signal.** The completed-state reuse branch returns saved work without calling
+  the Event-compatible cancellation check. This spends no money and preserves
+  valid output, but contradicts the direct-call cancellation contract by
+  reporting success after the caller already cancelled. Fix this with a direct
+  failing resume regression before broader callback or progress work.
+
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an
   existing non-file canonical sidecar target, including a dangling symbolic link,

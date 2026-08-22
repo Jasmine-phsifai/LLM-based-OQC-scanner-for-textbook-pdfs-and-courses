@@ -1482,3 +1482,19 @@ partial state 低于 16 MiB，却让 completed state 因最终 Markdown 的额�
 **个人复核、验证与边界。** 主代理没有照抄 scout 对具体 class 名的建议，而是对照当前 `Config` consumer、207 处测试构造、capability registry、legacy short/FileTrans 调用和恢复历史后收敛决策。旧计划里“先让 caller 表达 unavailable audio”与“新结构必须有 consumer”直接冲突，现已消除。Google image 后续也不再依赖音频抽象；它必须由自己的 image consumer 证明 resolver 设计。config/capability/import 定向集 **51 passed / 0.53s**，项目环境 root 全量 **1085 passed / 88.64s**，diff/EOL whitespace 检查通过。pytest 仍报告既有 `.pytest_cache` 写入权限 warning，但不影响测试结果，也没有为消除 warning 修改目录权限。Stage M 付费 DashScope smoke 仍然开放，因此 A1 仍未获准开始。本轮无网络、provider 或付费调用，未修改 active Python、legacy、social media 或用户临时交接文件。
 
 **下一步。** 回到已建 active surface 的缺陷优先队列。若没有更高价值的稳定缺陷，先向 maintainer 请求 Stage M 付费 live smoke 的明确预算；只有 Stage M 真正退出后，才为 A1 写 failing-first tests，并让 audio binding 与首个 short-MP3 consumer 同时出现。A2 的 FileTrans、长音频断点续传和分段 checkpoint 必须等 A1 契约稳定后再做。
+
+## #036 — 2026-08-23：provider 方法发现失败不再虚报一次调用
+
+**原子任务与假设修正。** 本轮先审计 active public error boundary 中 caller-owned object 抛出异常时，是否泄漏原始异常或丢失已完成工作。同步 origin、重读权威状态、入口文档、package 规则与近期日记后，确认 batch iterable 普通异常已经有明确的 typed terminal outcome，不能重复修。随后比较两个仍可能有问题的入口：progress/cancellation callback 与 injected provider 的 identity/method discovery。两名只读 scout 分别审计，两条路径都找到真实问题；本轮按原任务只关闭 provider discovery 的错误计数，不把 resume cancellation 混入同一提交。
+
+**失败证据。** injected provider 可用动态属性提供 `recognize_images`。若属性 getter 在方法发现阶段抛 `RuntimeError`，`call_vision_provider()` 原先先把它映射为 `PROVIDER_RESPONSE_INVALID`；外层 `run_pass()` 无法区分“发现方法失败”和“已经进入 provider callable 后失败”，统一增加一次 `provider_calls_attempted`。公开 API 因此在零 dispatch、零 provider method call 时返回 `workflow_pass=draft`、调用数 1，并在 `model_attempts` ledger 也记 1。已有测试只断言 typed/redacted，没有检查费用证据。新增断言后旧实现稳定 **1 failed / 0.38s**。
+
+**两条方案与选择。** 方案一保留 `ProviderError`，在底层附加“尚未 dispatch”的私有标记，再让 processor 特判；这会增加跨层控制元数据，还要解释 marker 是当前 pass 还是整个 invocation 的计数。方案二把 required-method lookup failure 与已有 non-callable branch 一样归类为 `ConfigError(CONFIG_INVALID)`。选择方案二：一个无法稳定暴露协议必需方法的对象没有满足 provider 结构契约；方法发现也没有进入 provider，因此 zero-call 语义直接由现有 ConfigError 分支表达。真正进入 callable 后抛出的普通异常仍是 provider failure 并计一次调用，不改变 retry/disposition 规则。
+
+**实现、复核与验证。** `call_vision_provider.py` 只在 `getattr(provider, "recognize_images")` 抛普通 `Exception` 时返回固定、无 caller text 的 `CONFIG_INVALID`；不捕获 `KeyboardInterrupt` / `SystemExit`，不增加 helper、marker 或公共类型。公开回归改为同时证明：错误类型和 code 正确；`workflow_pass=draft`；直接调用数为 0；唯一 candidate ledger 为 `fix_request` 且调用数 0；getter 异常中的 sentinel 不进入 traceback。单例修后 **1 passed / 0.19s**，recognize/provider-error/Stage M 定向集 **59 passed / 1.45s**。主代理逐行复核了 lookup、dispatch、validator 与 candidate accounting 的先后关系，确认 built-in/injected callable 的实际请求路径没有变化。
+
+**并行审计的新发现（尚未修复）。** completed image resume branch 在复用已有 final state 前没有检查 `Config.cancellation`；已经 set 的 Event 会得到成功结果而不是 `CANCELLED`，虽然不会新增 provider 调用。另有两个独立边界：batch 在 sibling failure 后 settle 已 dispatch future 时会把 `BaseException` 误标成“未尝试”；`Config.progress` 被公共 API 接受并称为 direct-Python convenience，却在 active non-worker 代码中完全未读取。后两项涉及 process-control 传播和公共字段去留，不能顺手扩展。本轮将 completed-resume cancellation 记入权威 open debt，下一轮先写公开失败回归。
+
+**完整验证与边界。** 项目环境 root 全量 **1085 passed / 89.69s**；`compileall -q src tests` 通过；isolated plain import 为 37 modules，未加载 PIL、pypdfium2、OpenAI/httpx、ONNX Runtime、RapidOCR、OpenCV 或 NumPy；diff/EOL whitespace 检查通过。本轮没有网络、provider 真实调用或付费调用；未修改 frozen `contracts/`、`worker/`、legacy、social media 或用户临时交接文件。
+
+**下一步。** #037 只处理 completed image resume 的 pre-set cancellation：先证明 completed state 与 provider call count 不变，再在复用点加入最晚且明确的一次 cancellation check。不要把检查全局提前到 config snapshot 之前，也不要趁机实现 progress protocol 或修改 batch 的 process-control 异常政策。

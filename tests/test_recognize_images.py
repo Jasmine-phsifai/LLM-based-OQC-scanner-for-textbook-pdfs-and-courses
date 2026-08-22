@@ -431,11 +431,11 @@ def test_provider_failures_are_typed_and_redacted(
     ]
 
 
-def test_provider_method_lookup_failure_is_typed_and_redacted(tmp_path):
+def test_provider_method_lookup_failure_is_config_error_with_zero_calls(tmp_path):
     source = write_test_image(tmp_path / "board.png")
     sentinel = "PROVIDER_LOOKUP_SECRET_2245f5f8"
 
-    with pytest.raises(ProviderError) as captured:
+    with pytest.raises(ConfigError) as captured:
         recognize(source, config=Config(provider=RaisingMethodLookupProvider(sentinel)))
 
     rendered_error = "".join(
@@ -445,7 +445,17 @@ def test_provider_method_lookup_failure_is_typed_and_redacted(tmp_path):
             captured.value.__traceback__,
         )
     )
-    assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.code == "CONFIG_INVALID"
+    assert captured.value.details["workflow_pass"] == "draft"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert [dict(attempt) for attempt in captured.value.details["model_attempts"]] == [
+        {
+            "model": None,
+            "outcome": "CONFIG_INVALID",
+            "disposition": "fix_request",
+            "provider_calls_attempted": 0,
+        }
+    ]
     assert sentinel not in rendered_error
 
 

@@ -24,17 +24,14 @@ def call_vision_provider(
     """Return one complete provider response or one redacted typed failure."""
 
     provider = resolved_provider.value
-    lookup_error: ProviderError | OCRLLMError | None = None
     try:
         recognize_method = getattr(provider, "recognize_images", None)
-    except Exception as error:
-        lookup_error = map_injected_provider_error(
-            error,
-            model=resolved_provider.model,
-        )
-    if lookup_error is not None:
+    except Exception:
         del provider
-        raise lookup_error
+        raise ConfigError(
+            "Config.provider recognize_images could not be inspected safely.",
+            code="CONFIG_INVALID",
+        ) from None
     if not callable(recognize_method):
         del provider, recognize_method
         raise ConfigError(
