@@ -2573,12 +2573,12 @@ smoke, and an offline DashScope client-construction smoke. It verifies import
 origin and forbids `PIL`, `pypdfium2`, `openai`, `httpx`, `onnxruntime`, and
 `legacy_app` after plain base import. Temporary files are removed in `finally`.
 
-Checkpoint `17904ca555573ed92288cbeb910bdfbe6122ce14` passed: archived tests
-reported 1057 passed and one expected optional-RapidOCR skip; the wheel was
-150,801 bytes and the base target 736,004 bytes; import wall median/p95 was
-1.38/2.19 ms in the OCRLLM environment and 0.81/1.45 ms in base Python;
+Checkpoint `2e9c7706d1fdeb21bc88976a1d49126ec5ab85db` passed: archived tests
+reported 1059 passed and one expected optional-RapidOCR skip; the wheel was
+150,795 bytes and the base target 736,133 bytes; import wall median/p95 was
+1.12/1.70 ms in the OCRLLM environment and 0.54/1.14 ms in base Python;
 process-CPU median/p95 was 0/15.63 ms in both. The fresh profile deltas were
-16,424,666 bytes (`image`) and 40,997,375 bytes (`image,dashscope`). No provider
+16,424,795 bytes (`image`) and 40,997,504 bytes (`image,dashscope`). No provider
 request occurred. This closes only the offline part of the Stage M exit gate;
 the paid live smoke still needs an explicit maintainer budget.
 

@@ -24,7 +24,7 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   opt-in disposition-gated candidate model queue, complete spend disclosure,
   model-aware credential blocking, scout-failure attribution, and slot-indexed
   intra-request checkpoints with an explicit v1-to-v2 identity migration; all
-  no-cost exit criteria pass through the clean-archive runner at `17904ca`;
+  no-cost exit criteria pass through the clean-archive runner at `2e9c770`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
 - not started: Stage 2 vision/audio provider splitting, Stage A mp3 recognition,

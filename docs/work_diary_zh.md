@@ -27,9 +27,9 @@
 2. ~~快修孤立小缺陷 G10/G4/G5~~ → 已完成,见 #002。
 3. ~~恢复簇:G1 余项 + G2 + G3 + G8~~ → 已完成离线实现与验证,见 #003;
    provider 账户/模型配额语义仍须任务 5 的付费 live smoke 复核。
-4. 精简轮:非冻结区的超小文件归并(coding rule 1 授权)、`processors/recognize_images.py`
-   与 `providers/dashscope/recognize_images.py` 同名冲突、`validate_dashscope_api_key` 与
-   `resolve_dashscope_credential` 重叠、tests/quality 归一化器 v2..v7 重复。
+4. 精简轮:非冻结区的超小文件归并(coding rule 1 授权)、tests/quality 归一化器 v2..v7 重复。
+   ~~两个 `recognize_images.py` 同名~~ → 审计后保留(职责/导入明确,不是冲突),见 #005;
+   ~~DashScope key 校验重叠~~ → 已统一并修掉环境变量控制字符漏检,见 #005。
    注意:contracts/ 与 worker/ 是冻结区,不动。
 5. Stage M 出口门收尾:~~全量绿 + import 重量 + 中断实测 + 未知模型可用 +
    候选链配额模拟~~ → 离线出口已完成,见 #004;仅剩一次付费 live smoke(需用户明确预算)。
@@ -230,3 +230,52 @@ resolver、M2 所谓「kill」只是同进程 `ProviderError`、清洁包门是�
 **遗留/下一步**:Stage M 只剩需用户明确预算的 live catalog/end-to-end smoke,用于复核当前
 账户/模型配额语义;没有预算不得运行。下一轮可先做任务 4 精简审计,也可调查任务 8 的
 legacy 日记缺口;Stage 2 实现仍受 live 出口门约束。
+
+---
+
+## #005 — 2026-08-22:统一 DashScope credential 校验,拒绝无证据重命名
+
+**任务**:在 Stage M 离线出口通过后做第一刀非冻结区精简:核实两个 `recognize_images.py`
+是否真有职责冲突,并消除 API key 校验的真实重复/漂移。
+
+**上下文**:队列 #4 同时提出文件同名与 `validate_dashscope_api_key` /
+`resolve_dashscope_credential` 重叠。两条可选路径是广泛整理 provider 模块,或只修证据证明的
+重复。两名轻量只读子代理分别追踪调用图与 credential 语义;主代理复核全部相关源码、测试
+和调用点。`contracts/`、`worker/` 冻结,无 live 预算。
+
+**成功标准**:只实施能证明降低歧义或修掉行为不一致的变化;显式、pool、环境变量、catalog
+与请求派发共享一套 key policy;缺失与无效错误身份清楚;错误不回显 secret;全量和清洁归档
+门通过;无外部 provider 请求。
+
+**为什么重要**:credential 是安全边界。若同一 secret 因来源不同而接受规则不同,配置验证
+只是表面安全;反过来,仅因文件同名就重构会制造 Stage 2 前不必要的路径 churn,违背「结构由
+观察到的失败证明」的现行原则。
+
+**结果**:
+
+- 同名审计结论是**不改**:`recognize_validated_images.py` 明确导入 processor;
+  `resolve_vision_provider.py` 明确动态导入 DashScope adapter;前者负责候选/槽位/prompt/scout/
+  metadata,后者只负责一次 SDK 请求与 client/lease 生命周期。测试也全部用完整模块路径。
+  没有误导入、重复实现或 patch 错对象证据,重命名收益为零。
+- 发现并先红验证真实缺陷:`DASHSCOPE_API_KEY="line1\nline2"` 与含 DEL 的值可直接由 resolver
+  返回;带首尾空格的值则被错报为 `CONFIG_MISSING`。新增 3 个参数化回归后修前为
+  **3 failed / 5 passed**,与目标缺陷完全一致。
+- `validate_dashscope_api_key` 的参数从模糊 `owner` 改为完整 `field_name`;settings、pool
+  credential 与环境变量均走该函数。`resolve_dashscope_credential` 只保留来源优先级、pool
+  拒绝和真正缺失判断;present-but-malformed 一律返回脱敏的 `CONFIG_INVALID`,None/空串才是
+  `CONFIG_MISSING`。catalog 也删除 `settings.api_key or ...` 旁路,统一走 resolver。
+- 主审查确认 pool 的 ID/调度/lease 状态职责与 key policy 不重复,不做更大重构。
+- focused provider 集 **162 passed / 14.80s**;本地全量 **1060 passed / 163.42s**;
+  `compileall -q src tests` 干净;轻量 import **2 passed**。
+- 精确提交 `2e9c7706d1fdeb21bc88976a1d49126ec5ab85db` 清洁归档门通过:
+  **1059 passed,1 skipped / 121.40s**(预期 RapidOCR extra skip),fixture/compile/wheel/
+  outside-import/两种 profile/offline smoke 全绿。wheel **150,795 bytes**,base target
+  **736,133 bytes**;`image` / `image,dashscope` 增量 **16,424,795 / 40,997,504 bytes**;
+  import wall 中位/p95 为 OCRLLM **1.12/1.70ms**、base Python **0.54/1.14ms**。
+- `git diff --name-only -- contracts worker` 为空;未发 provider 请求;用户未跟踪的交接文件未动。
+- 顺手修正 `src/ocrllm/AGENTS.md` 的过期导航:不再称 Stage M「部分实现/G 簇开放」,明确为
+  离线出口全过、仅付费 live smoke 开放;该改动只消除与权威状态的矛盾。
+
+**遗留/下一步**:精简队列只剩超小文件是否值得归并与 tests/quality v2..v7 归一化器重复
+审计。下一轮应先量化重复和历史 gate 依赖;没有实际维护成本证据就不改。Stage M 仍仅剩
+需明确预算的 paid live smoke。

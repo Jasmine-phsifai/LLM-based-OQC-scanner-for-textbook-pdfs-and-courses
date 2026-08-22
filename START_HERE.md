@@ -63,7 +63,7 @@ recovery, model-aware pool behavior, and correct scout-failure attribution.
 Its paid live exit smoke remains open. Stage 2 vision/audio provider splitting
 and Stage A mp3 recognition are not started.
 
-All no-cost Stage M exit criteria pass at committed checkpoint `17904ca`.
+All no-cost Stage M exit criteria pass at committed checkpoint `2e9c770`.
 `tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,
 fixture/compile checks, clean wheel and outside-repository import guards,
 dependency profiles, generated-image smoke, and offline DashScope construction.

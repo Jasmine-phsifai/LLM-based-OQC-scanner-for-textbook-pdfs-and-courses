@@ -83,8 +83,8 @@ Confirmed by execution, not by reading prose. Method noted so it can be redone.
 
 | Property | Result | Method |
 |---|---|---|
-| Test suite | 1058 passed, 0 skipped, 0 failed (182.12 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
-| Import weight | 1.38 ms wall median, 2.19 ms p95; 0 ms CPU median, 15.63 ms p95 | clean-wheel gate, 30 measured fresh processes after two warm-ups |
+| Test suite | 1060 passed, 0 skipped, 0 failed (163.42 s) | `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q -p no:cacheprovider` |
+| Import weight | 1.12 ms wall median, 1.70 ms p95; 0 ms CPU median, 15.63 ms p95 | clean-wheel gate, 30 measured fresh processes after two warm-ups |
 | Heavy-module isolation | `PIL`, `pypdfium2`, `openai`, `httpx`, `onnxruntime`, and `legacy_app` absent after plain import | outside-repository clean-wheel `sys.modules` probe |
 | Phase 1 evidence integrity | 107,246 bytes, SHA-256 `6f0454d6…a96b`, exact match to the recorded claim | `Get-FileHash` |
 | Pinned model exists | `qwen3.7-plus-2026-05-26` served by the account | live `GET /models` |
@@ -394,12 +394,12 @@ shipped and tested offline:
    queue. Injected typed errors retain only an allowlisted canonical
    `failure_scope`; arbitrary provider details remain discarded.
 
-Every non-paid Stage M exit criterion now passes. Commit `17904ca` passed the
+Every non-paid Stage M exit criterion now passes. Commit `2e9c770` passed the
 reusable clean-archive runner in `tools/run_stage_m_offline_gate.ps1`: its
-archived suite reported 1057 passed and one expected optional-RapidOCR skip,
-fixture verification and compilation passed, the wheel was 150,801 bytes, and
-the no-deps target was 736,004 bytes. Fresh `image` and `image,dashscope`
-profiles added 16,424,666 and 40,997,375 bytes respectively and passed their
+archived suite reported 1059 passed and one expected optional-RapidOCR skip,
+fixture verification and compilation passed, the wheel was 150,795 bytes, and
+the no-deps target was 736,133 bytes. Fresh `image` and `image,dashscope`
+profiles added 16,424,795 and 40,997,504 bytes respectively and passed their
 offline smokes. Plain import stayed below every documented wall and process-CPU
 budget in both Python environments. The built-in adapter now proves dispatch of
 a catalog-served model unknown to this repository, and an operating-system
@@ -520,20 +520,22 @@ session closes.
 These changes are current, verified, and should not be mistaken for open
 defects:
 
-- The Stage M no-cost exit criteria are executable through one clean-archive
-   runner instead of a copy-pasted manual command block. It verifies the exact
-   committed source and always removes its GUID-scoped temporary directory.
-- Process termination and repository-unknown built-in model dispatch now have
-   direct regression tests; earlier coverage stopped at simulated exceptions
-   and resolver-only catalog checks.
-- The public facade lazily resolves its existing 41 exports. This preserves the
-   import contract while reducing clean-wheel import from the failed
-   88.23/137.54 ms wall and 93.75/140.63 ms CPU median/p95 checkpoint to
-   1.38/2.19 ms wall and 0/15.63 ms CPU.
-- The local active suite passed 1,058 tests. The clean base-profile archive
-   passed 1,057 with the optional real-RapidOCR test skipped because the base
-   profile intentionally has no OCR extra. These counts are verification
-   snapshots, not permanent gates for future changes.
+- DashScope explicit settings, pooled credentials, environment credentials,
+   catalog authentication, and request dispatch now share one exact-text and
+   Coding-Plan rejection policy. Source precedence and pool leasing remain
+   separate responsibilities.
+- Environment credentials containing surrounding whitespace, embedded control
+   characters, or DEL now fail as redacted `CONFIG_INVALID`; only an absent or
+   empty credential is `CONFIG_MISSING`. Before this correction, newline and
+   DEL values reached the SDK path, while padded values were misclassified.
+- The duplicated `recognize_images.py` basename was audited and deliberately
+   retained: imports are fully qualified, one module owns board orchestration,
+   and the other implements the provider protocol. No collision or duplicated
+   behavior exists, so a rename would add churn without simplifying ownership.
+- The local active suite passed 1,060 tests. The clean base-profile archive at
+   `2e9c770` passed 1,059 with the optional real-RapidOCR test skipped because
+   the base profile intentionally has no OCR extra. These counts are
+   verification snapshots, not permanent gates for future changes.
 
 ### M2. Flowed output and true resume, 2026-08-19
 
