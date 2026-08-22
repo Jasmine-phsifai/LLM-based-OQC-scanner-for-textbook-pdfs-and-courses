@@ -800,3 +800,27 @@ Google discovery。相关三个 Python 文件 `py_compile`、`git diff --check` 
 **Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**: 新库遇到批请求失败时，应在 typed state
 中把失败落到请求时已知的精确 source/unit slot，不得只保存可被配置重新解释的 batch ordinal。这里使用
 逐帧 localized Markdown 是 legacy 现有 repair unit 的减法修复，不是新库应复制的持久化格式。
+
+## 2026-08-23 — 独立视觉普通 429/5xx 被误报为免费额度耗尽（已修复）
+
+**现象与根因。** 独立 vision provider 启用 `advance_queue_on_retriable_errors` 后，普通 429/5xx
+会被 `_should_advance_vision_queue()` 选中，但四个 wire error 出口都把它包装成
+`FreeTierExhaustedError`。候选链因此调用“免费额度耗尽”GUI notifier；若候选全失败，又把原始
+503 等异常改写成“所有免费额度模型均已耗尽”。显式 opt-in 切候选本身是已有产品能力，错误在于
+复用了带配额含义的控制异常。
+
+**修复。** 增加窄作用域 `VisionQueueAdvanceError` 保存原始异常，Chat Completions 与 Responses
+统一按“明确 quota”或“普通临时错误”创建对应信号。候选链改名为
+`_call_with_model_fallback()`：只有前一种信号调用 quota notifier；后一种静默切换并在候选耗尽时
+重新抛出原始 provider 异常。没有改变 429/5xx 设置、调用顺序、重试次数或 UI。
+
+**证据。** 新增/加固回归覆盖普通 429 成功 failover 不通知、普通 503 全失败保留异常、Responses
+503 中性 failover，以及明确 `AllocationQuota.FreeTierOnly` 仍通知并切换。修前 **2 failed,
+12 passed / 7.53s**；修后 `tests/test_vision_provider.py` **15 passed / 2.88s**。无 live/provider 调用。
+排除真实 ffmpeg e2e 与延期的 import-time Bilibili diagnostic 后，离线广集为
+**275 passed, 1 skipped / 43.57s**；唯一 skip 是显式 live Google discovery。`py_compile` 与
+`git diff --check` 通过。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：临时 provider failure 与 quota
+exhaustion 即使都能触发候选恢复，也必须是不同 disposition；不能让内部复用改变用户文案或最终
+异常。active library 已有对应 typed 边界，本次未修改。

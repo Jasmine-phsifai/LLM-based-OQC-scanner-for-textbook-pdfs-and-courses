@@ -58,6 +58,15 @@ class FreeTierExhaustedError(RuntimeError):
         self.original_message = original_message
 
 
+class VisionQueueAdvanceError(RuntimeError):
+    """An opted-in temporary provider failure that should try the next vision model."""
+
+    def __init__(self, model: str, original_error: Exception):
+        super().__init__(f"model {model} temporary provider failure: {original_error}")
+        self.model = model
+        self.original_error = original_error
+
+
 def _looks_like_free_tier_exhausted(exc: Exception) -> bool:
     """检查异常是否对应 AllocationQuota.FreeTierOnly。"""
     msg = str(exc)
@@ -88,6 +97,12 @@ def _should_advance_vision_queue(exc: Exception, vision_api, *, enabled: bool) -
     if not vision_api.vision_model_queue:
         return False
     return _status_code(exc) in _RETRIABLE_STATUS_CODES
+
+
+def _vision_queue_advance_error(model: str, exc: Exception) -> RuntimeError:
+    if _looks_like_free_tier_exhausted(exc):
+        return FreeTierExhaustedError(model, str(exc))
+    return VisionQueueAdvanceError(model, exc)
 
 
 def _is_retriable(exc: Exception) -> bool:
@@ -351,12 +366,12 @@ class LLMClient:
                     if _should_advance_vision_queue(
                         fallback_exc, self.cfg.vision_api, enabled=queue_on_retriable_errors
                     ):
-                        raise FreeTierExhaustedError(model, str(fallback_exc)) from fallback_exc
+                        raise _vision_queue_advance_error(model, fallback_exc) from fallback_exc
                     raise
             if _should_advance_vision_queue(
                 exc, self.cfg.vision_api, enabled=queue_on_retriable_errors
             ):
-                raise FreeTierExhaustedError(model, str(exc)) from exc
+                raise _vision_queue_advance_error(model, exc) from exc
             raise
         if result:
             return result
@@ -368,7 +383,7 @@ class LLMClient:
             if _should_advance_vision_queue(
                 exc, self.cfg.vision_api, enabled=queue_on_retriable_errors
             ):
-                raise FreeTierExhaustedError(model, str(exc)) from exc
+                raise _vision_queue_advance_error(model, exc) from exc
             raise
 
     @staticmethod
@@ -409,7 +424,7 @@ class LLMClient:
             if _should_advance_vision_queue(
                 exc, self.cfg.vision_api, enabled=self.cfg.vision_api.enabled
             ):
-                raise FreeTierExhaustedError(model, str(exc)) from exc
+                raise _vision_queue_advance_error(model, exc) from exc
             raise
         result = self._extract_responses_text(response)
         if result:
@@ -456,44 +471,66 @@ class LLMClient:
         from OCRLLM.core import model_catalog
         return model_catalog.free_vision_chain()
 
-    def _call_with_free_tier_fallback(
+    def _call_with_model_fallback(
         self,
         primary_model: str,
         chain: list[str],
         kind: str,
         invoke,
     ):
-        """在免费额度链上滑动调用 invoke(model)；遇到 FreeTierExhaustedError 自动切换。
+        """在明确免费额度耗尽或已启用的视觉临时故障策略下切换候选模型。
 
         Args:
             primary_model: 用户优先选用的模型。
-            chain: 整条免费链（catalog 提供）。
-            kind: "vision" / "audio" 之类的标签，仅用于通知文案。
+            chain: 按顺序排列的候选模型。
+            kind: 请求类型，仅用于日志和免费额度通知。
             invoke: callable(model_name) -> str。
 
         Returns:
             invoke 返回值。
 
         Raises:
-            FreeTierExhaustedError: 链上所有模型都用完时抛出（携带最后一个模型名）。
+            FreeTierExhaustedError: 所有候选都明确耗尽免费额度时抛出。
+            Exception: 临时故障候选队列耗尽时重新抛出原始供应商异常。
         """
         # 把 primary_model 提到链头，避免重复
         ordered = [primary_model] + [m for m in chain if m != primary_model]
-        last_exc: FreeTierExhaustedError | None = None
+        last_exc: FreeTierExhaustedError | VisionQueueAdvanceError | None = None
+        saw_temporary_failure = False
         previous_model = primary_model
         for idx, model_name in enumerate(ordered):
             try:
                 if idx > 0:
-                    logger.warning("[FREE_TIER] 切换到 %s 继续 (%s)", model_name, kind)
-                    _notify_free_tier_switch(previous_model, model_name, kind)
+                    if isinstance(last_exc, FreeTierExhaustedError):
+                        logger.warning("[FREE_TIER] 切换到 %s 继续 (%s)", model_name, kind)
+                        _notify_free_tier_switch(previous_model, model_name, kind)
+                    else:
+                        logger.warning(
+                            "[VISION_FAILOVER] temporary provider failure; switching to %s (%s)",
+                            model_name,
+                            kind,
+                        )
                 return invoke(model_name)
             except FreeTierExhaustedError as exc:
                 logger.warning("[FREE_TIER] %s 免费额度耗尽 (%s)", model_name, exc.original_message[:120])
                 last_exc = exc
                 previous_model = model_name
                 continue
-        # 所有候选都耗尽
-        if last_exc is not None:
+            except VisionQueueAdvanceError as exc:
+                logger.warning(
+                    "[VISION_FAILOVER] %s temporary provider failure (%s)",
+                    model_name,
+                    str(exc.original_error)[:120],
+                )
+                last_exc = exc
+                saw_temporary_failure = True
+                previous_model = model_name
+                continue
+        if isinstance(last_exc, VisionQueueAdvanceError):
+            raise last_exc.original_error from last_exc
+        if isinstance(last_exc, FreeTierExhaustedError):
+            if saw_temporary_failure:
+                raise last_exc
             raise FreeTierExhaustedError(
                 f"all-{kind}",
                 f"所有 {kind} 免费额度模型均已耗尽，最后尝试的是 {previous_model}",
@@ -552,7 +589,7 @@ class LLMClient:
             return self._retry_call(_call, max_retries)
 
         chain = self._vision_fallback_chain()
-        return self._call_with_free_tier_fallback(primary_model, chain, "vision", _call_one)
+        return self._call_with_model_fallback(primary_model, chain, "vision", _call_one)
 
     def chat_with_images_contextual(
         self,
@@ -609,7 +646,7 @@ class LLMClient:
             return self._retry_call(_call, max_retries)
 
         chain = self._vision_fallback_chain()
-        return self._call_with_free_tier_fallback(primary_model, chain, "vision", _call_one)
+        return self._call_with_model_fallback(primary_model, chain, "vision", _call_one)
 
     def chat_text(
         self,
@@ -646,7 +683,7 @@ class LLMClient:
 
         from OCRLLM.core import model_catalog
         chain = model_catalog.free_vision_chain()  # 文本任务沿用视觉链（含 general 类型）
-        return self._call_with_free_tier_fallback(primary_model, chain, "text", _call_one)
+        return self._call_with_model_fallback(primary_model, chain, "text", _call_one)
 
     def transcribe_short_audio(
         self,

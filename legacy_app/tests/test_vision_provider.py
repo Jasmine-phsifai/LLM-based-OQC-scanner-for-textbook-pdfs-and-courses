@@ -61,16 +61,109 @@ class VisionProviderConfigTests(unittest.TestCase):
             ]
         )
 
-        with patch("OCRLLM.core.llm_client._notify_free_tier_switch"):
+        with patch("OCRLLM.core.llm_client._notify_free_tier_switch") as notify_free_tier_switch:
             result = client.chat_with_images("read", [], max_retries=1)
 
         self.assertEqual(result, "OCRLLM TEST 12345")
+        notify_free_tier_switch.assert_not_called()
         calls = client.vision_client.chat.completions.create.call_args_list
         self.assertEqual(calls[0].kwargs["model"], "primary-model")
         self.assertTrue(calls[0].kwargs["stream"])
         self.assertEqual(calls[1].kwargs["model"], "primary-model")
         self.assertFalse(calls[1].kwargs["stream"])
         self.assertEqual(calls[2].kwargs["model"], "fallback-model")
+
+    def test_exhausted_retriable_vision_queue_preserves_provider_error(self):
+        class ProxyStatusError(RuntimeError):
+            status_code = 503
+
+        cfg = AppConfig(
+            api=APIConfig(api_key="dash-key"),
+            models=ModelConfig(vision_model="primary-model"),
+            vision_api=VisionAPIConfig(
+                enabled=True,
+                api_key="vision-key",
+                base_url="https://vision.example/v1",
+                advance_queue_on_retriable_errors=True,
+                vision_model_queue=["fallback-model"],
+            ),
+        )
+        client = LLMClient(cfg)
+        client.vision_client.chat.completions.create = MagicMock(
+            side_effect=[ProxyStatusError("provider unavailable")] * 4
+        )
+
+        with patch("OCRLLM.core.llm_client._notify_free_tier_switch") as notify_free_tier_switch:
+            with self.assertRaisesRegex(ProxyStatusError, "provider unavailable"):
+                client.chat_with_images("read", [], max_retries=1)
+
+        notify_free_tier_switch.assert_not_called()
+        self.assertEqual(client.vision_client.chat.completions.create.call_count, 4)
+
+    def test_explicit_free_tier_exhaustion_keeps_quota_switch_notification(self):
+        class QuotaStatusError(RuntimeError):
+            status_code = 403
+
+        cfg = AppConfig(
+            api=APIConfig(api_key="dash-key"),
+            models=ModelConfig(vision_model="primary-model"),
+            vision_api=VisionAPIConfig(
+                enabled=True,
+                api_key="vision-key",
+                base_url="https://vision.example/v1",
+                vision_model_queue=["fallback-model"],
+            ),
+        )
+        client = LLMClient(cfg)
+        client.vision_client.chat.completions.create = MagicMock(
+            side_effect=[
+                QuotaStatusError("AllocationQuota.FreeTierOnly"),
+                ["OCRLLM TEST 12345"],
+            ]
+        )
+
+        with patch("OCRLLM.core.llm_client._notify_free_tier_switch") as notify_free_tier_switch:
+            result = client.chat_with_images("read", [], max_retries=1)
+
+        self.assertEqual(result, "OCRLLM TEST 12345")
+        notify_free_tier_switch.assert_called_once_with(
+            "primary-model", "fallback-model", "vision"
+        )
+
+    def test_responses_503_failover_does_not_report_quota_exhaustion(self):
+        class ProxyStatusError(RuntimeError):
+            status_code = 503
+
+        cfg = AppConfig(
+            api=APIConfig(api_key="dash-key"),
+            models=ModelConfig(vision_model="primary-model"),
+            vision_api=VisionAPIConfig(
+                enabled=True,
+                api_key="vision-key",
+                base_url="https://vision.example/v1",
+                wire_api="responses",
+                advance_queue_on_retriable_errors=True,
+                vision_model_queue=["fallback-model"],
+            ),
+        )
+        client = LLMClient(cfg)
+        client.vision_client.responses.create = MagicMock(
+            side_effect=[
+                ProxyStatusError("provider unavailable"),
+                SimpleNamespace(output_text="OCRLLM TEST 12345"),
+            ]
+        )
+
+        with patch("OCRLLM.core.llm_client._notify_free_tier_switch") as notify_free_tier_switch:
+            result = client.chat_with_images("read", [], max_retries=1)
+
+        self.assertEqual(result, "OCRLLM TEST 12345")
+        notify_free_tier_switch.assert_not_called()
+        calls = client.vision_client.responses.create.call_args_list
+        self.assertEqual([call.kwargs["model"] for call in calls], [
+            "primary-model",
+            "fallback-model",
+        ])
 
     def test_external_vision_stream_status_error_falls_back_to_nonstream(self):
         class ProxyStatusError(RuntimeError):

@@ -67,11 +67,14 @@
     ~~video failed-batch/current batch size 的错误重建~~ → 已删除错误重建并改为生产阶段逐帧标记,见 #017。
     不要把 Markdown regex repair 移植到 `src/ocrllm`;新库按现有 typed
     sidecar/checkpoint 扩展。
-11. 独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
-    “免费额度耗尽”提示；应建立中性 failover disposition 后再修。
+11. ~~独立 vision provider 语义债:普通 429/5xx 不得借 `FreeTierExhaustedError` 切候选并触发
+    “免费额度耗尽”提示~~ → 已保留显式 opt-in 切候选，但改用中性内部信号并保留原异常，见 #018。
 12. legacy offline suite 边界:`tests/test_bilibili_api.py` 在 collection 顶层执行真实 Bilibili
     API 与 `curl b23.tv`；#014 广集因该公开网络超时中断。该项随 social media 一并延后，不再作为
     当前 heartbeat 下一项；未来恢复时应移为显式 opt-in/script，默认 pytest collection 零网络。
+13. Google JSON 错误分类顺序：`_classify_google_json_error()` 先以 `code == 429` 判普通限流，
+    因此同一 payload 即使明确含 `FreeTierOnly` / `FreeAllocationQuotaExceeded` 也不会走配额切模型。
+    下一轮先写失败测试，确认真实 payload 语义后做最小排序修复；不得把普通 429 扩大成配额。
 
 ## 条目格式
 
@@ -854,3 +857,32 @@ focused、离线广集、编译与 diff 全绿。
 把失败身份重定向到另一帧；没有独立失败证据前不把它并入本轮。legacy media repair 身份/原子发布队列已
 关闭。下一轮回到队列 #11，调查普通 429/5xx 被误报成免费额度耗尽并错误触发 candidate switch 的 provider
 语义债；先做只读路径证明与失败测试，不扩大到新的 provider 框架。
+
+## #018 — 2026-08-23：独立视觉故障不再冒充免费额度耗尽
+
+**任务。** 修正 legacy 独立 vision provider 的错误语义：普通 429/5xx 在用户明确启用候选队列
+切换时可以继续 failover，但不得转换成 `FreeTierExhaustedError`、弹出“免费额度耗尽”提示，或在
+候选全部失败后丢掉原始 provider 异常；明确 `AllocationQuota.FreeTierOnly` 仍保持原有配额恢复。
+
+**选择。** 路径一是删除普通 429/5xx 的候选切换；这会违背现有“429/5xx 切换模型”显式设置。
+路径二是保留这个 opt-in 产品行为，只拆开内部控制信号。选择路径二：新增仅在当前文件使用的
+`VisionQueueAdvanceError`，把候选执行函数改名为诚实的 `_call_with_model_fallback()`。中性信号只
+控制换候选，不调用 quota notifier；所有候选失败后重新抛出原始异常。显式免费额度标记仍使用
+`FreeTierExhaustedError`。没有增加配置、重试次数、provider 调用、UI 或通用错误框架。
+
+**失败优先证据与验证。** 修前 focused 集为 **2 failed, 12 passed / 7.53s**：普通 429 实际调用
+quota notifier，普通 503 候选耗尽被改写成“所有免费额度耗尽”。修后 Chat Completions 与 Responses
+两条 wire path、429/503、原异常保留和明确 FreeTier 回归共 **15 passed / 2.88s**。活跃库经代码和
+既有 `test_dashscope_provider_boundaries.py` 复核，已经以 typed disposition 区分 quota、throttle、
+provider unavailable，因此未把 legacy 修复复制过去。无网络、provider 或付费调用。
+排除真实 ffmpeg e2e 与延期的 import-time Bilibili diagnostic 后，legacy 离线广集为
+**275 passed, 1 skipped / 43.57s**，唯一 skip 是显式 live Google discovery；`py_compile` 与
+`git diff --check` 通过。
+
+**新发现与下一步。** Google 独立实现的 JSON 分类先判断 `code == 429`，会让同时含明确
+`FreeTierOnly` / `FreeAllocationQuotaExceeded` 的 payload 走普通限流重试；已进入任务 13，下一轮
+以真实结构的失败测试单独处理，不混入本轮第二个 provider。
+
+**Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：候选切换原因必须保留 typed
+disposition；临时限流、服务不可用和配额耗尽可以采取相似恢复动作，但不得共享会改变用户提示或
+最终异常语义的类型。active library 当前已满足，后续 provider adapter 必须继续按此边界扩展。

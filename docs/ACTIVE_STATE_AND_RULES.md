@@ -103,6 +103,15 @@ Future agents must assume the following and verify before trusting any claim:
   checkpoint state and atomic publication rather than copy localized
   Markdown-regex repair.
 
+- **Legacy independent-vision failover no longer lies about quota.** When the
+  explicit `advance_queue_on_retriable_errors` option advances after an
+  ordinary 429/5xx, the client now uses a neutral internal signal, suppresses
+  the "free quota exhausted" notification, and preserves the original
+  provider exception if all candidates fail. Only explicit free-tier markers
+  use `FreeTierExhaustedError` and its existing warning. This is a legacy-only
+  correction; the active library already has typed quota, throttle, and
+  unavailable-provider dispositions.
+
 ## Verified State, 2026-08-22
 
 Confirmed by execution, not by reading prose. Method noted so it can be redone.
