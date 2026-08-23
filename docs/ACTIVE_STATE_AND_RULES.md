@@ -64,13 +64,13 @@ queues, slot-indexed intra-request checkpoints, spend disclosure, and
 model-aware credential blocking have shipped. Its exit gate remains open until
 the authorized paid live smoke verifies current provider behavior. The former
 standalone Stage 2 vision/audio scaffold was replanned on 2026-08-23: the
-working image configuration stays unchanged and the audio-specific
-configuration boundary will land with complete Stage A1 short-MP3 recognition.
-Stage A1 is in progress: its provider-independent local MP3 snapshot and probe
-have landed, while provider/model configuration, request construction, response
-handling, completed-result persistence, and the public facade remain absent.
-Stage A2 has not started. A1 does not wait on the independent Stage M paid image
-smoke. Bounded Google image and audio live tests are already authorized without
+working image configuration stayed unchanged and the audio-specific boundary
+landed with the bounded Stage A1 short-MP3 recognition slice. That direct,
+experimental slice is implemented and live-proven through native Google GenAI;
+it remains memory-only and does not provide persistence, resume, groups,
+upload, long-audio routing, or worker support. Stage A2 has not started. A1 did
+not wait on the independent Stage M paid image smoke. Bounded Google image and
+audio live tests are already authorized without
 a separate budget request; paid DashScope live work still requires explicit
 maintainer budget and endpoint confirmation.
 The A1 probe uses lazy `miniaudio>=1.71,<2` for MP3-specific metadata plus
@@ -195,9 +195,9 @@ The direct Python API is proven. The shared capability and worker registry stays
 frozen at 20 entries; #067 did not modify `contracts/` or `worker/`, and this
 record does not claim Google is available through the development worker.
 
-### P0-c — Native Google short-audio vertical slice
+### P0-c — Native Google short-audio vertical slice (completed by #069)
 
-The bounded offline slice is implemented but this gate is not complete. The
+The bounded direct slice is implemented and live-proven. The
 direct public API accepts exactly one MP3 of at most 300 seconds, keeps the
 result in memory, and sends a prompt-first native `google-genai` inline request
 only after the owned snapshot and a conservative Base64/JSON bound below
@@ -207,27 +207,36 @@ one-call metadata. It rejects output persistence, resume, overwrite, groups,
 and other unsupported public options. It does not implement long audio, upload,
 retry, model switching, or fallback.
 
-The authorized synthetic-speech live gate selected
+The earlier #068 authorized synthetic-speech live gate selected
 `gemini-3.1-pro-preview`. Its final persisted safe capture returned
 `PROVIDER_QUOTA_EXHAUSTED` with `failure_scope="model"` before any successful
 transcription could be proven: exit 1 after 6,294 ms for a 14,332-byte,
 3.468888889-second MP3; stderr was empty and the credential scan was false.
-This is useful current quota evidence, not a recognition success. Continue
-P0-c after quota refresh or with an explicitly chosen currently served model;
-catalog membership does not prove audio support, so the real audio call must
-still do so. Do not hide the result through retry, candidate switching, or
-another transport.
+This remains useful current quota evidence, not a recognition success.
 
-Exit gate: one public real-MP3 result or one evidence-backed native endpoint
-blocker, with catalog/model selection and provider limits checked and no false
-success. A model-scoped quota failure is not an endpoint blocker and therefore
-does not close this gate. The private product ceiling of ten hours informs later
+#069 then selected the independently evidenced `gemini-2.5-flash` and ran one
+fresh 3.468888889-second, 26,488-byte synthetic-speech MP3 through the same
+public facade. The live catalog contained 37 `generateContent` models; the
+public `RecognitionResult` succeeded with exactly one provider call and
+provider-reported input/output usage of 150/10 tokens. The invalid-key probe
+returned `PROVIDER_AUTHENTICATION` with credential scope. The process exited 0
+after 13,341 ms, stderr was empty, the credential scan was false, and all
+temporary files and key-bearing environment variables were removed. Recognized
+text was validated internally but deliberately not published, so this proves a
+real public result and transport lifecycle, not transcription quality.
+
+Exit gate met: one public real-MP3 result completed with catalog/model selection,
+provider limits, exact call/usage evidence, and no false success. The earlier
+model-scoped quota failure remains recorded rather than hidden by retry or
+automatic model switching. The private product ceiling of ten hours informs later
 routing; it is not the scope of this short-audio iteration. Non-goals: long
 audio, Files API lifecycle, FileTrans, chunking, compatibility-endpoint
 exploration, or a modality-wide framework.
 
 The shared capability and worker registry remains frozen at 20 entries. The
 experimental direct audio API does not claim development-worker availability.
+
+The immediate queue now advances to P1-a below.
 
 ### P1-a — Live cancellation, checkpoint, and resume proof
 

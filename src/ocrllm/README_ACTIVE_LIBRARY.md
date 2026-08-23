@@ -62,12 +62,13 @@ attempt-spend disclosure, model-aware credential scheduling, and slot-indexed
 intra-request checkpoints with explicit v1-to-v2 resume identity are shipped.
 Its paid live exit smoke remains open. The former standalone Stage 2
 provider-splitting scaffold was removed; audio-specific configuration now lands
-with executable Stage A1 short-MP3 recognition. Stage A1 is in progress: the
+with executable Stage A1 short-MP3 recognition. The bounded direct slice is
+implemented and live-proven: the
 public direct facade copies one local MP3 to a compact owned snapshot, fully
 decodes it through lazy `ocrllm[audio]`, and can send one bounded native inline
-request through lazy `ocrllm[google]`. This path is experimental because its
-authorized live gate stopped at model-scoped quota before a transcript was
-proven. Stage A2 and the active PDFium phase have not started.
+request through lazy `ocrllm[google]`. This path remains experimental and
+memory-only despite its successful #069 public-result gate. Stage A2 and the
+active PDFium phase have not started.
 
 The current image facade:
 
@@ -208,7 +209,7 @@ explicit authorized MP3 from the repository root:
 ```powershell
 # GOOGLE_API_KEY is already present in this process; do not echo it.
 python tools/run_google_genai_audio_smoke.py `
-  --model gemini-3.1-pro-preview `
+  --model gemini-2.5-flash `
   --audio path/to/authorized-short-speech.mp3 `
   --timeout 120
 ```
@@ -219,10 +220,11 @@ status, call count, nullable token usage, and typed error code/scope. It never
 prints the transcript, source path, credential, or raw provider response and
 does not retry, choose another model, upload through the Files API, or fall back
 to another transport. The #068 gate returned
-`PROVIDER_QUOTA_EXHAUSTED` / `model`; run it after quota refresh or with an
-explicitly selected currently served model rather than treating that result as
-successful recognition. Catalog membership does not prove audio support; the
-real call must still prove it.
+`PROVIDER_QUOTA_EXHAUSTED` / `model` on `gemini-3.1-pro-preview`. The #069 gate
+then used `gemini-2.5-flash` and completed one real public result with exactly
+one provider call, input/output usage 150/10, and a credential-scoped invalid-key
+failure. Its recognized text was validated internally but not published, so the
+gate proves this bounded result path rather than transcription quality.
 
 ## Current Maturation Boundary
 

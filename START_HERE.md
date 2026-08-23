@@ -63,7 +63,8 @@ slot-indexed intra-request checkpoints with an explicit v1-to-v2 resume
 identity migration, complete attempt-spend disclosure, disposition-gated
 recovery, model-aware pool behavior, and correct scout-failure attribution.
 Its paid live exit smoke remains open. The former standalone Stage 2 scaffold
-was removed from the queue. Stage A1 is in progress: the lazy
+was removed from the queue. The bounded Stage A1 direct slice is implemented
+and live-proven: the lazy
 `miniaudio>=1.71,<2` local MP3 probe, deterministic validation corpus, bounded
 compact-name snapshot, exact audio-model configuration, native Google inline
 request, public facade, and in-memory result are implemented for one MP3 of at
@@ -77,16 +78,17 @@ The ordered current work is `#065 Unified Execution Queue` in
 group in one call each, reported real input/output usage, and returned a typed
 credential-scope authentication error for the invalid-key probe. The shared
 capability/worker registry remains frozen at 20 and does not claim Google worker
-support. The smallest native Google short-audio direct API is now implemented
-offline for one memory-only MP3 and a bounded native inline request below
-20,000,000 bytes. Its authorized live gate reached
-`gemini-3.1-pro-preview` but returned typed
-`PROVIDER_QUOTA_EXHAUSTED` / `model`; it did not produce or prove a transcript.
-P0-c therefore remains open until quota refresh or an explicitly selected
-currently served model proves audio support through one real result. Catalog
-membership alone is insufficient. There is no hidden retry, fallback, upload,
-persistence, resume, or worker-registry claim. The queue
-explicitly stops further proactive filesystem/accounting edge scans.
+support. The smallest native Google short-audio direct API is live-proven for
+one memory-only MP3 and a bounded native inline request below 20,000,000 bytes.
+#068 first returned honest `PROVIDER_QUOTA_EXHAUSTED` / `model` on
+`gemini-3.1-pro-preview`. #069 then selected `gemini-2.5-flash`: a
+3.468888889-second, 26,488-byte synthetic MP3 produced one successful public
+result in exactly one provider call with input/output usage 150/10; its separate
+invalid-key probe returned credential-scoped authentication. No transcript was
+published, so this proves the result boundary rather than transcription
+quality. P0-c is complete and the immediate queue is P1-a. There is no hidden
+retry, fallback, upload, persistence, resume, or worker-registry claim. The
+queue explicitly stops further proactive filesystem/accounting edge scans.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203
@@ -122,9 +124,10 @@ bounded design evidence where it does not conflict with that queue.
 The active library has a region-bound in-memory credential scheduler and
 request/batch image resume. Candidate switching is opt-in, bounded,
 disposition-gated, and fully disclosed offline. Experimental direct Google
-short-audio recognition is memory-only and still lacks a successful live
-transcription; PDF, long audio, persisted/resumable audio, and video remain
-unavailable. Local user PDFs/screenshots under `docs/` are untracked
+short-audio recognition is live-proven but remains memory-only; its published
+gate is not a transcription-quality evaluation. PDF, long audio,
+persisted/resumable audio, and video remain unavailable. Local user
+PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 
 The defect register is only in `docs/ACTIVE_STATE_AND_RULES.md`. D1-D7,

@@ -91,12 +91,15 @@ proved one `gemini-2.5-flash` image plus one eight-image group, one call each,
 with input/output usage and an honest credential-scope authentication failure.
 The direct API is proven, but the frozen 20-entry shared capability/worker
 registry was deliberately unchanged and does not advertise Google worker support.
-P0-c remains open. Its offline public slice is implemented, but the authorized
-`gemini-3.1-pro-preview` live run returned model-scoped
-`PROVIDER_QUOTA_EXHAUSTED` before a transcript was proven. Continue only after
-quota refresh or with an explicitly selected currently served model whose real
-audio call still proves support; catalog membership alone is insufficient. Do
-not add hidden retry, fallback, or a Files lifecycle to make the gate appear green.
+P0-c is complete. The earlier authorized `gemini-3.1-pro-preview` run remains
+recorded as model-scoped `PROVIDER_QUOTA_EXHAUSTED`; #069 then selected
+`gemini-2.5-flash` and completed one 3.468888889-second, 26,488-byte synthetic
+MP3 through the public facade in exactly one provider call, with input/output
+usage 150/10 and a separate credential-scoped invalid-key failure. No transcript
+was published, so this is public-result and lifecycle proof, not a
+transcription-quality evaluation. The direct path remains experimental and
+memory-only. P1-a is now the immediate queue; do not add hidden retry, fallback,
+or a Files lifecycle.
 The shared 20-entry capability/worker registry remains unchanged and does not
 advertise this direct audio path.
 The generic compatibility endpoint and future local-model compatibility remain
@@ -277,9 +280,10 @@ The following directions remain traceable but are not current work:
 - Browser/React service: deferred until the core modality contracts are useful.
 - Social downloading in `src/ocrllm`: rejected as a new-library boundary;
   retained only in `legacy_app/`.
-- Public PDF, audio recognition, and video in the active package: phase-gated
-  and unavailable as stated in the current active-state document. A1's internal
-  local MP3 snapshot/probe seam is the only implemented audio component.
+- Public PDF, long or persisted/resumable audio, and video in the active package:
+  phase-gated and unavailable as stated in the current active-state document.
+  The experimental direct short-audio API is implemented and live-proven only
+  for one in-memory MP3 of at most 300 seconds.
 
 ## Obsolete Prose Kept For Trace
 

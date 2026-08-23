@@ -169,9 +169,10 @@ is often accepted.
 - Follow the actual legacy built-in Google transport: native `google-genai` for
   image and audio. The #066 repository audit found the Google compatibility URL
   only in the generic independent-vision configuration and found no
-  Google-specific compatibility live-success or error-history record. #067 has
-  now live-verified the native image path; it does not prove a compatibility
-  transport or worker integration.
+  Google-specific compatibility live-success or error-history record. #067
+  live-verified the native image path, and #069 live-verified one bounded native
+  inline short-audio result. Neither proves a compatibility transport or worker
+  integration.
 - For short bounded A1 audio, parity with the legacy built-in means the same
   native SDK transport, not mechanically copying its all-audio Files upload
   lifecycle. The active direct path deliberately uses one bounded inline MP3
@@ -206,11 +207,13 @@ is often accepted.
   Migrate the smallest legacy-proven markers and behavior, and preserve existing
   successful content atomically while applying the repaired range.
 
-## Decisions still requiring exact implementation confirmation
+## Resolved confirmation and next authority
 
-- After quota refresh, or with an explicitly selected currently served model,
-  confirm audio support through one successful real result on the implemented
-  native inline boundary; catalog membership alone is insufficient. Do not
-  expand it into Files upload, long-audio
-  chunking, a secondary Google compatibility transport, or the future
-  local-model OpenAI-compatible path merely to bypass a model-scoped quota.
+- #069 confirmed the implemented native inline boundary with one successful
+  `gemini-2.5-flash` public result. The result content was validated internally
+  but not published, so this is not a transcription-quality evaluation. Keep
+  Files upload, long-audio chunking, a secondary Google compatibility transport,
+  and the future local-model OpenAI-compatible path deferred.
+- The next product decision and proof are P1-a in
+  [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-a--live-cancellation-checkpoint-and-resume-proof).
+  Do not create a parallel queue here.
