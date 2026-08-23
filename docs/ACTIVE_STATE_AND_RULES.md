@@ -147,12 +147,13 @@ See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 This is the only current execution order. The shipped public product recognizes
 images through built-in DashScope, native Google GenAI, or an injected vision provider, supports local
 OCR, file-backed image checkpoint/resume, and a fail-fast batch API that still
-accepts an arbitrary `Iterable`. PDF, content repair, and public audio
-recognition are not implemented. The Google adapter reports per-model input/output
-token usage when the endpoint supplies it; other adapters do not yet make a general
-usage claim. Existing attempt disclosure counts provider calls and model/workflow
-attempts separately from tokens. Resume is the primary recovery mechanism;
-repair is a later, bounded fallback for missing or unusable state.
+accepts an arbitrary `Iterable`. It also has an experimental, memory-only native
+Google short-audio path for one MP3 of at most 300 seconds. PDF and content
+repair are not implemented. The Google adapters report per-model input/output
+token usage when the endpoint supplies it; other adapters do not yet make a
+general usage claim. Existing attempt disclosure counts provider calls and
+model/workflow attempts separately from tokens. Resume is the primary recovery
+mechanism; repair is a later, bounded fallback for missing or unusable state.
 
 ### P0-a — Bounded legacy provider-error evidence audit (completed by #066)
 
@@ -196,18 +197,37 @@ record does not claim Google is available through the development worker.
 
 ### P0-c — Native Google short-audio vertical slice
 
-Next, perform the smallest bounded investigation needed to send one real,
-authorized short MP3 through native `google-genai`, then implement only the
-public configuration, request, validation, result, and facade needed by that
-slice. Reuse the existing bounded MP3 snapshot/probe. If the current native API
-does not support the required request, record the exact blocker and ask the
-maintainer rather than adding a second Google transport.
+The bounded offline slice is implemented but this gate is not complete. The
+direct public API accepts exactly one MP3 of at most 300 seconds, keeps the
+result in memory, and sends a prompt-first native `google-genai` inline request
+only after the owned snapshot and a conservative Base64/JSON bound below
+20,000,000 bytes pass. It exposes exact `AudioModelSettings`, typed no-speech,
+refusal, response, and provider failures, nullable per-model token usage, and
+one-call metadata. It rejects output persistence, resume, overwrite, groups,
+and other unsupported public options. It does not implement long audio, upload,
+retry, model switching, or fallback.
+
+The authorized synthetic-speech live gate selected
+`gemini-3.1-pro-preview`. Its final persisted safe capture returned
+`PROVIDER_QUOTA_EXHAUSTED` with `failure_scope="model"` before any successful
+transcription could be proven: exit 1 after 6,294 ms for a 14,332-byte,
+3.468888889-second MP3; stderr was empty and the credential scan was false.
+This is useful current quota evidence, not a recognition success. Continue
+P0-c after quota refresh or with an explicitly chosen currently served model;
+catalog membership does not prove audio support, so the real audio call must
+still do so. Do not hide the result through retry, candidate switching, or
+another transport.
 
 Exit gate: one public real-MP3 result or one evidence-backed native endpoint
 blocker, with catalog/model selection and provider limits checked and no false
-success. The private product ceiling of ten hours informs later routing; it is
-not the scope of this short-audio iteration. Non-goals: long audio, FileTrans,
-chunking, compatibility-endpoint exploration, or a modality-wide framework.
+success. A model-scoped quota failure is not an endpoint blocker and therefore
+does not close this gate. The private product ceiling of ten hours informs later
+routing; it is not the scope of this short-audio iteration. Non-goals: long
+audio, Files API lifecycle, FileTrans, chunking, compatibility-endpoint
+exploration, or a modality-wide framework.
+
+The shared capability and worker registry remains frozen at 20 entries. The
+experimental direct audio API does not claim development-worker availability.
 
 ### P1-a — Live cancellation, checkpoint, and resume proof
 

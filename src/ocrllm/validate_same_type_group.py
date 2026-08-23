@@ -10,11 +10,11 @@ from .detect_source_type import detect_source_type
 from .errors import InvalidSource
 
 
-def validate_same_type_group(sources: Sequence[str | Path]) -> Literal["image"]:
+def validate_same_type_group(sources: Sequence[str | Path]) -> Literal["image", "audio"]:
     """Return the one canonical media type for a nonempty ordered group.
 
-    Phase 0 authorizes image groups only, so any unsupported member is rejected
-    by ``detect_source_type``. The caller's order is never changed.
+    The caller's order is never changed. Audio cardinality is enforced by its
+    public dispatch branch after this type-only check.
     """
     if not sources:
         raise InvalidSource(

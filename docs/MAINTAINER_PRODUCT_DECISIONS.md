@@ -172,6 +172,11 @@ is often accepted.
   Google-specific compatibility live-success or error-history record. #067 has
   now live-verified the native image path; it does not prove a compatibility
   transport or worker integration.
+- For short bounded A1 audio, parity with the legacy built-in means the same
+  native SDK transport, not mechanically copying its all-audio Files upload
+  lifecycle. The active direct path deliberately uses one bounded inline MP3
+  request. Files upload, polling, remote cleanup, long-audio routing, and
+  chunking remain deferred until a real product need justifies that lifecycle.
 - Treat a Google OpenAI-compatible transport as a possible later, separate path,
   not as evidence for native behavior. Add it only for a proven need and after
   maintainer confirmation.
@@ -203,7 +208,9 @@ is often accepted.
 
 ## Decisions still requiring exact implementation confirmation
 
-- Confirm the smallest native `google-genai` short-audio request and public
-  boundary without expanding the proven image adapter into long-audio chunking,
-  a possible secondary Google compatibility transport, or the future local-model
-  OpenAI-compatible path.
+- After quota refresh, or with an explicitly selected currently served model,
+  confirm audio support through one successful real result on the implemented
+  native inline boundary; catalog membership alone is insufficient. Do not
+  expand it into Files upload, long-audio
+  chunking, a secondary Google compatibility transport, or the future
+  local-model OpenAI-compatible path merely to bypass a model-scoped quota.

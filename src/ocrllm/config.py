@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, cast
 
+from .audio_model_settings import AudioModelSettings
 from .errors import ConfigError
 from .freeze_json_value import FrozenJSONValue, JSONValue, freeze_json_value
 from .local_ocr_settings import LocalOCRSettings
@@ -34,6 +35,7 @@ class Config:
         repr=False,
     )
     vision_model: VisionModelSettings = field(default_factory=VisionModelSettings)
+    audio_model: AudioModelSettings = field(default_factory=AudioModelSettings)
     image_mode: Literal["vision", "ocr"] = "vision"
     local_ocr: LocalOCRSettings | None = field(default=None, repr=False)
     execution: RecognitionExecutionPolicy = field(
@@ -54,6 +56,7 @@ class Config:
     def __post_init__(self) -> None:
         provider = _normalize_provider(self.provider)
         vision_model = _normalize_vision_model(self.vision_model)
+        audio_model = _normalize_audio_model(self.audio_model)
         _validate_optional_nonempty_text(self.profile, field_name="profile")
         image_mode = _normalize_image_mode(self.image_mode)
         local_ocr = _normalize_local_ocr_pair(image_mode, self.local_ocr)
@@ -95,6 +98,7 @@ class Config:
         object.__setattr__(self, "timeout_seconds", timeout_seconds)
         object.__setattr__(self, "provider", provider)
         object.__setattr__(self, "vision_model", vision_model)
+        object.__setattr__(self, "audio_model", audio_model)
         object.__setattr__(self, "image_mode", image_mode)
         object.__setattr__(self, "local_ocr", local_ocr)
         object.__setattr__(self, "execution", execution)
@@ -146,6 +150,15 @@ def _normalize_vision_model(value: object) -> VisionModelSettings:
         candidate_models=value.candidate_models,
         maximum_images_per_request=value.maximum_images_per_request,
     )
+
+
+def _normalize_audio_model(value: object) -> AudioModelSettings:
+    if type(value) is not AudioModelSettings:
+        raise ConfigError(
+            "Config.audio_model must be an exact AudioModelSettings instance",
+            code="CONFIG_INVALID",
+        ) from None
+    return AudioModelSettings(name=value.name)
 
 
 def _normalize_provider(value: object | None) -> object | None:

@@ -9,10 +9,11 @@ from .errors import UnsupportedFormat
 
 
 IMAGE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg"})
+AUDIO_EXTENSIONS = frozenset({".mp3"})
 
 
-def detect_source_type(source: str | Path) -> Literal["image"]:
-    """Return ``image`` for an authorized Phase 0 image suffix.
+def detect_source_type(source: str | Path) -> Literal["image", "audio"]:
+    """Return the canonical type for an authorized image or short MP3 suffix.
 
     Detection deliberately does not touch the filesystem or inspect content.
     ``validate_source`` and ``decode_image`` own those responsibilities.
@@ -20,6 +21,8 @@ def detect_source_type(source: str | Path) -> Literal["image"]:
     suffix = Path(source).suffix.casefold()
     if suffix in IMAGE_EXTENSIONS:
         return "image"
+    if suffix in AUDIO_EXTENSIONS:
+        return "audio"
 
     if not suffix:
         message = "The recognition source has no file extension."

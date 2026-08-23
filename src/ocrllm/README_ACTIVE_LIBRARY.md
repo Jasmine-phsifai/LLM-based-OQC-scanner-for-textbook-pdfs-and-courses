@@ -8,6 +8,7 @@ this repo intended for direct import by other projects.
 ```python
 from ocrllm import (
     AllCandidatesExhausted,
+    AudioModelSettings,
     BatchItemOutcome,
     Cancelled,
     CapabilityReport,
@@ -60,12 +61,13 @@ image state, opt-in disposition-gated candidate recovery, complete
 attempt-spend disclosure, model-aware credential scheduling, and slot-indexed
 intra-request checkpoints with explicit v1-to-v2 resume identity are shipped.
 Its paid live exit smoke remains open. The former standalone Stage 2
-provider-splitting scaffold was removed; audio-specific configuration will land
-with complete Stage A1 short-MP3 recognition. Stage A1 is in progress: an
-internal, provider-independent seam copies one local MP3 to a compact owned
-snapshot and fully decodes it through the lazy `ocrllm[audio]` extra. There is
-no public audio facade, provider dispatch, or transcript result yet. Stage A2
-and the active PDFium phase have not started.
+provider-splitting scaffold was removed; audio-specific configuration now lands
+with executable Stage A1 short-MP3 recognition. Stage A1 is in progress: the
+public direct facade copies one local MP3 to a compact owned snapshot, fully
+decodes it through lazy `ocrllm[audio]`, and can send one bounded native inline
+request through lazy `ocrllm[google]`. This path is experimental because its
+authorized live gate stopped at model-scoped quota before a transcript was
+proven. Stage A2 and the active PDFium phase have not started.
 
 The current image facade:
 
@@ -114,6 +116,25 @@ workflow's proven status rather than treating installed code as sufficient.
 The direct Google image adapter is experimental. Its current model catalog is
 queried only by explicit Google operations, not by import or shared capability
 reporting.
+
+The experimental direct Google short-audio facade:
+
+- requires `ocrllm[audio,google]`, exact `GoogleGenAISettings`, and exact
+  `AudioModelSettings(name=...)`;
+- accepts exactly one `.mp3` of at most 300 decoded seconds;
+- snapshots and fully decodes the source, then preflights a conservative native
+  inline Base64/JSON envelope below 20,000,000 bytes;
+- sends the prompt first and one `audio/mpeg` Part second;
+- returns an in-memory `RecognitionResult` with `source_type="audio"`, exact
+  provider/model/call metadata, duration and byte size, and nullable per-model
+  input/output token usage;
+- rejects output persistence, `resume=True`, `overwrite=True`, groups, long
+  audio, and false no-speech/refusal success;
+- performs no internal retry, model switching, Files upload, cache, fallback,
+  or output logging.
+
+This direct path is not registered in the frozen 20-entry shared
+capability/worker contract and must not be presented as worker audio support.
 Phase 2 exposes a spawned one-job manager with bounded JSON event bridging and
 verified five-second descendant cancellation. The production image job adapter
 reuses the same unified facade once per ordered group, fixes the Beijing v17
@@ -144,8 +165,8 @@ blocking, candidate recovery, and request/batch image resume are available;
 there is no cross-process pool state. File-producing calls claim one output target
 for the duration of a recognition, so direct threads and `recognize_batch()` cannot
 split final Markdown from its resume sidecar. The claim is process-local: separate
-processes must not target the same output path concurrently. PDF, audio, and video
-remain unavailable.
+processes must not target the same output path concurrently. PDF, long audio,
+persisted/resumable audio, and video remain unavailable.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.
@@ -177,6 +198,31 @@ The script performs current catalog discovery, one single-image call, one
 explicit eight-image call, and one invalid-credential failure probe. It prints
 only a bounded JSON summary, never recognized Markdown or paths, and does not
 retry, cache, choose another model, or fall back to another transport.
+
+## Bounded Google Short-Audio Live Smoke
+
+Install `ocrllm[audio,google]`, set `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) in
+the environment without placing its value on the command line, and run one
+explicit authorized MP3 from the repository root:
+
+```powershell
+# GOOGLE_API_KEY is already present in this process; do not echo it.
+python tools/run_google_genai_audio_smoke.py `
+  --model gemini-3.1-pro-preview `
+  --audio path/to/authorized-short-speech.mp3 `
+  --timeout 120
+```
+
+The script performs current catalog discovery, one recognition call, and one
+invalid-credential failure probe. It prints only a bounded JSON summary of
+status, call count, nullable token usage, and typed error code/scope. It never
+prints the transcript, source path, credential, or raw provider response and
+does not retry, choose another model, upload through the Files API, or fall back
+to another transport. The #068 gate returned
+`PROVIDER_QUOTA_EXHAUSTED` / `model`; run it after quota refresh or with an
+explicitly selected currently served model rather than treating that result as
+successful recognition. Catalog membership does not prove audio support; the
+real call must still prove it.
 
 ## Current Maturation Boundary
 

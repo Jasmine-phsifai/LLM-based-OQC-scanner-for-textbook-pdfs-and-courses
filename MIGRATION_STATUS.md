@@ -68,15 +68,19 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   snapshots, and rejects the fixture-proven malformed cases before dispatch.
   One local `.mp3` is copied through an open handle to fixed `source.mp3`, with
   a separate 25 MiB local safety ceiling and cleanup ownership;
-  FFmpeg/PyAV/Mutagen remain outside the A1 runtime. Audio configuration,
-  provider dispatch, persistence, and the public facade are not implemented;
+  FFmpeg/PyAV/Mutagen remain outside the A1 runtime. Exact public audio
+  configuration, facade dispatch, and in-memory result construction are now
+  implemented for one native Google inline MP3 of at most 300 seconds, with a
+  conservative provider envelope below 20,000,000 bytes. Persistence, resume,
+  groups, long audio, Files upload, retries, and fallback are not implemented;
 - not started: Stage A2 audio recognition and the active PDFium phase.
 
 The ordered current work is
 [`#065 Unified Execution Queue`](docs/ACTIVE_STATE_AND_RULES.md#065-unified-execution-queue).
-Public audio recognition, PDF, and content repair remain unimplemented. Native
-Google direct-Python image recognition and per-model usage reporting are now
-implemented; no general cross-provider token-usage claim is made. Resume is the primary recovery
+PDF and content repair remain unimplemented. Native Google direct-Python image
+recognition and experimental memory-only short-audio recognition are now
+implemented, with per-model usage reporting when Google supplies it; no general
+cross-provider token-usage claim is made. Resume is the primary recovery
 path; bounded marker-based repair follows only after a stable PDF path exists.
 Offline tests are a regression floor, not live-provider evidence.
 P0-a is complete in
@@ -87,7 +91,14 @@ proved one `gemini-2.5-flash` image plus one eight-image group, one call each,
 with input/output usage and an honest credential-scope authentication failure.
 The direct API is proven, but the frozen 20-entry shared capability/worker
 registry was deliberately unchanged and does not advertise Google worker support.
-P0-c is now the smallest native Google short-audio investigation and one real MP3.
+P0-c remains open. Its offline public slice is implemented, but the authorized
+`gemini-3.1-pro-preview` live run returned model-scoped
+`PROVIDER_QUOTA_EXHAUSTED` before a transcript was proven. Continue only after
+quota refresh or with an explicitly selected currently served model whose real
+audio call still proves support; catalog membership alone is insufficient. Do
+not add hidden retry, fallback, or a Files lifecycle to make the gate appear green.
+The shared 20-entry capability/worker registry remains unchanged and does not
+advertise this direct audio path.
 The generic compatibility endpoint and future local-model compatibility remain
 separate later directions.
 

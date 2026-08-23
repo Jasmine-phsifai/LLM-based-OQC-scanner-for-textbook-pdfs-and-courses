@@ -1,6 +1,7 @@
 """Lazy public OCRLLM library facade."""
 
 _PUBLIC_IMPORTS = {
+    "AudioModelSettings": (".audio_model_settings", "AudioModelSettings"),
     "AllCandidatesExhausted": (".errors", "AllCandidatesExhausted"),
     "BatchItemOutcome": (".batch_item_outcome", "BatchItemOutcome"),
     "Cancelled": (".errors", "Cancelled"),
@@ -80,6 +81,7 @@ _PUBLIC_IMPORTS = {
 }
 
 __all__ = [
+    "AudioModelSettings",
     "BatchItemOutcome",
     "Cancelled",
     "ConcurrencyLimited",

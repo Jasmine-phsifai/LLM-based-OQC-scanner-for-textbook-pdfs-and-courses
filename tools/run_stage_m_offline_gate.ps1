@@ -210,14 +210,22 @@ print(sorted(declared_extras))
             'image' = 26214400
             'image,dashscope' = 67108864
             'google' = 67108864
+            'audio,google' = 67108864
         }
         $expectedDistributions = @{
             'audio' = @('miniaudio')
             'image' = @('Pillow')
             'image,dashscope' = @('Pillow', 'openai')
             'google' = @('google-genai')
+            'audio,google' = @('miniaudio', 'google-genai')
         }
-        foreach ($profile in @('audio', 'image', 'image,dashscope', 'google')) {
+        foreach ($profile in @(
+            'audio',
+            'image',
+            'image,dashscope',
+            'google',
+            'audio,google'
+        )) {
             $safeProfile = $profile.Replace(',', '-')
             $profileVenv = Join-Path $proofRoot "venv-$safeProfile"
             & $python -m venv $profileVenv
@@ -359,6 +367,57 @@ print(google_module.__version__)
 '@
                 $googleSmoke | & $profilePython -I -
                 Assert-LastExitCode 'Google GenAI offline construction smoke failed'
+            }
+
+            if ($profile -eq 'audio,google') {
+                $audioFixture = Join-Path $sourceRoot (
+                    'tests\fixtures\audio\a1\mp3\valid_cbr.mp3'
+                )
+                $googleAudioSmoke = @'
+from pathlib import Path
+import sys
+
+from ocrllm import GoogleGenAISettings
+from ocrllm.audio.snapshot_short_mp3 import snapshot_short_mp3
+from ocrllm.providers.google_genai.build_google_genai_audio_request import (
+    build_google_genai_audio_request,
+)
+from ocrllm.providers.google_genai.load_google_genai import load_google_genai
+
+fixture = Path(sys.argv[1])
+temporary_parent = Path(sys.argv[2])
+model = 'gemini-offline-package-probe'
+prompt = 'Transcribe this short audio.'
+with snapshot_short_mp3(fixture, temp_dir=temporary_parent) as snapshot:
+    request = build_google_genai_audio_request(
+        snapshot.path,
+        prompt=prompt,
+        model=model,
+    )
+    assert request.model == model
+    assert request.contents[0] == prompt
+    assert request.contents[1].mime_type == 'audio/mpeg'
+    assert request.inline_byte_count == snapshot.byte_size
+    google_module = load_google_genai()
+    part = google_module.types.Part.from_bytes(
+        data=request.contents[1].data,
+        mime_type=request.contents[1].mime_type,
+    )
+    assert part.inline_data.mime_type == 'audio/mpeg'
+
+settings = GoogleGenAISettings(api_key='offline-package-probe')
+client = google_module.Client(
+    api_key=settings.api_key,
+    http_options=google_module.types.HttpOptions(timeout=3000),
+)
+client.close()
+print(snapshot.duration_seconds, request.wire_byte_upper_bound)
+'@
+                $googleAudioSmoke | & $profilePython -I - `
+                    $audioFixture $profileVenv
+                Assert-LastExitCode (
+                    'Google GenAI audio offline construction smoke failed'
+                )
             }
 
             $afterBytes = Get-DirectoryByteCount $sitePackages

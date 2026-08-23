@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .config import Config
-from .errors import OCRLLMError, OutputError, ResumeStateError
+from .errors import ConfigError, InvalidSource, OCRLLMError, OutputError, ResumeStateError
 from .providers.dashscope.provider_settings import DashScopeSettings
 from .providers.google_genai.provider_settings import GoogleGenAISettings
 
@@ -63,9 +63,7 @@ def _recognize(
     from .validate_config import validate_config
 
     cfg = validate_config(config)
-    profile = resolve_image_profile(cfg.profile)
     source_paths = coerce_source_paths(source)
-    validate_execution_image_count(source_paths, config=cfg)
     media_type = validate_same_type_group(source_paths)
     output_path = None
     resume_identity = None
@@ -80,6 +78,8 @@ def _recognize(
         cfg.execution.provider_request_start_interval_seconds
     ):
         if media_type == "image":
+            profile = resolve_image_profile(cfg.profile)
+            validate_execution_image_count(source_paths, config=cfg)
             try:
                 with snapshot_image_group(source_paths, config=cfg) as validated_paths:
                     output_path = build_output_path(
@@ -229,8 +229,33 @@ def _recognize(
                 if current_model_attempts is not None:
                     error._add_safe_detail("model_attempts", current_model_attempts)
                 raise
-        else:  # pragma: no cover - routing is closed until another phase is authorized.
-            raise AssertionError(f"unhandled validated media type: {media_type}")
+        else:
+            if len(source_paths) != 1:
+                raise InvalidSource(
+                    "Short-audio recognition accepts exactly one MP3 source.",
+                    code="SOURCE_INVALID",
+                ) from None
+            if cfg.output_dir is not None or cfg.resume or cfg.overwrite:
+                raise ConfigError(
+                    "Short-audio recognition is currently in-memory only.",
+                    code="CONFIG_INVALID",
+                ) from None
+            if type(cfg.provider) is not GoogleGenAISettings:
+                raise ConfigError(
+                    "Short-audio recognition requires GoogleGenAISettings.",
+                    code="CONFIG_INVALID",
+                ) from None
+            if type(cfg.audio_model.name) is not str or not cfg.audio_model.name:
+                raise ConfigError(
+                    "Short-audio recognition requires an explicit audio model.",
+                    code="CONFIG_MISSING",
+                ) from None
+            from .processors.recognize_short_mp3 import recognize_validated_short_mp3
+
+            processor_output = recognize_validated_short_mp3(
+                source_paths[0],
+                config=cfg,
+            )
 
     try:
         if output_path is not None and resume_identity is not None:

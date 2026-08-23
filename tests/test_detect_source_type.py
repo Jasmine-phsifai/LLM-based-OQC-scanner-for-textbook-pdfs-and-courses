@@ -12,6 +12,11 @@ def test_detect_source_type_accepts_only_phase_zero_image_suffixes(suffix):
     assert detect_source_type(Path(f"does-not-need-to-exist{suffix}")) == "image"
 
 
+@pytest.mark.parametrize("suffix", [".mp3", ".MP3", ".Mp3"])
+def test_detect_source_type_accepts_stage_a1_mp3(suffix):
+    assert detect_source_type(Path(f"does-not-need-to-exist{suffix}")) == "audio"
+
+
 @pytest.mark.parametrize(
     "name",
     [
@@ -37,6 +42,10 @@ def test_validate_same_type_group_accepts_an_ordered_image_group():
 
     assert validate_same_type_group(sources) == "image"
     assert sources == (Path("third.jpeg"), Path("first.png"), Path("second.jpg"))
+
+
+def test_validate_same_type_group_accepts_one_mp3():
+    assert validate_same_type_group((Path("lecture.mp3"),)) == "audio"
 
 
 def test_validate_same_type_group_rejects_an_empty_group():
