@@ -1971,10 +1971,10 @@ RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 
 
 **计划与减法边界。** 详细计划应继续维护，并明确标记为 active、frozen 或 superseded，避免接手者把历史方案当成当前任务。删除没有当前引用的配置前，仍须分别核对 frozen 边界、legacy 行为、可能存在的外部合同和并行开发时间线；“仓库内没有 reader”本身不足以授权删除。
 
-**未来 batch 与 usage 方向。** batch 后续只考虑有限的 `Sequence` 输入、dispatch 前完整预检和重复输出目标拒绝，不借此扩展成任意 iterable 调度框架。usage 按模型累计，以 provider 实际报告的 input tokens、output tokens 和 calls 为准；缺失 usage 不能伪装成 0。具体输入类型是否只接受 `list` / `tuple` 仍待维护者确认。
+**未来 batch 与 usage 方向。** batch runtime 已确认只接受 concrete `tuple`，不接受 `list`、generator 或 custom `Sequence`；完整 tuple、成员和重复输出目标必须在 dispatch 前全部预检。usage 按模型累计，以 provider 实际报告的 input tokens、output tokens 和 calls 为准；缺失 usage 不能伪装成 0。
 
 **真实验证方向。** offline suite 只是 regression floor，不代表真实 provider 行为已经验证。Google 作为直接授权的稳健性来源，应覆盖有界的真实图片、音频、batch 和 resume 场景，包括其常见限流、临时错误、空回复和格式限制；每次运行仍须限制输入与调用规模，并保护凭据和数据。
 
-**PDF 与 provider 顺序。** PDF 应复用已经证明的图片识别路径，不另建平行识别体系。当前对普通测试规模的理解是约 7—8 批、每批 7—8 页；600—700 页只作为明确标注的压力测试，不应混入普通回归。该数量理解仍待维护者确认。下一条新增 provider 路径优先 Google native；OpenAI-compatible 和 local 路径留作后续独立切片，不提前建立统一抽象。
+**PDF 与 provider 顺序。** PDF 应复用已经证明的图片识别路径，不另建平行识别体系。规模现已确认：每个 provider request 约 7—8 页；首次打通时的 batch 总数由当轮目标和真实结果决定；打通后的程序化 live regression 默认 2 批，通常共 14—16 页；600—700 页只用于明确标注的压力测试。下一条新增 provider 路径优先 Google native；OpenAI-compatible 和 local 路径留作后续独立切片，不提前建立统一抽象。
 
-**暂停边界。** 本条只整理维护者决定和待确认项，没有启动 #065，没有修改产品代码，也没有调用任何 provider。
+**暂停边界。** batch 输入和 PDF live regression 规模两项已由维护者确认；最小 provider interface 仍待后续实现决策。本条不计为 #065，没有启动新的 iteration，没有修改产品代码，也没有调用任何 provider。

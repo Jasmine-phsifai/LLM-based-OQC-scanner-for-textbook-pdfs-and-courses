@@ -40,9 +40,9 @@ is often accepted.
 
 ## Batch input and output collisions
 
-- The intended future `recognize_batch()` input contract is a finite
-  `Sequence`, not an arbitrary lazy iterable. Whether runtime acceptance should
-  be limited to concrete `list`/`tuple` remains an implementation decision.
+- The intended future `recognize_batch()` runtime contract accepts only a
+  concrete `tuple`. Reject `list`, generators, and custom `Sequence`
+  implementations before provider dispatch.
 - Validate the complete batch before provider dispatch. Reject invalid container
   shape, invalid members, and duplicate resolved output targets before spending
   provider calls.
@@ -53,7 +53,7 @@ is often accepted.
   folder beside the source. Cross-media name collisions are therefore unusual.
   Prefer simple duplicate rejection and normal active-call protection over a
   speculative cross-process transaction or locking system.
-- Reassess the batch-lifetime output owner after the Sequence/preflight contract
+- Reassess the batch-lifetime output owner after the tuple/preflight contract
   is implemented; do not retain it solely for compatibility with the old lazy
   iterable behavior.
 
@@ -99,10 +99,12 @@ is often accepted.
 - PDF recognition is fundamentally an ordered image-recognition workflow. Reuse
   the image provider and recovery path instead of creating an unrelated PDF LLM
   protocol.
-- Test size depends on the iteration objective. A normal live product exercise
-  is currently understood as 7-8 batches with roughly 7-8 pages/images per
-  provider request (about 49-64 pages total). This interpretation should be
-  corrected if the maintainer intended a different count.
+- Each provider request should contain roughly 7-8 pages/images.
+- During the first working vertical slice, the total batch count is determined
+  by that iteration's objective and the real provider results rather than a
+  fixed regression count.
+- After the path works, the default programmatic live regression uses 2 batches,
+  normally 14-16 pages in total.
 - A 600-700 page PDF is acceptable for an explicitly planned stress or endurance
   test, but is not required for every ordinary iteration.
 - Google is the available free live API authority for this path. Lack of paid
@@ -125,10 +127,6 @@ is often accepted.
 
 ## Decisions still requiring exact implementation confirmation
 
-- Should batch runtime inputs accept every finite `Sequence`, or only concrete
-  `list` and `tuple` values?
-- Confirm that ordinary PDF live verification means 7-8 batches of 7-8 pages,
-  rather than 7-8 pages total.
 - Choose the smallest explicit provider interface that supports native Google
   now and OpenAI-compatible/local endpoints later without hiding protocol-specific
   behavior.
