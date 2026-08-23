@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from ocrllm.errors import ConfigError, InvalidSource, OutputError, UnsupportedFormat
+from install_close_failing_stream import install_close_failing_stream
 
 
 snapshot_module = importlib.import_module("ocrllm.audio.snapshot_short_mp3")
@@ -22,25 +23,6 @@ FIXTURE = (
 )
 
 
-class _CloseFailingStream:
-    def __init__(self, wrapped, *, close_error, write_error=None) -> None:
-        self.wrapped = wrapped
-        self.close_error = close_error
-        self.write_error = write_error
-
-    def __getattr__(self, name):
-        return getattr(self.wrapped, name)
-
-    def write(self, data):
-        if self.write_error is not None:
-            raise self.write_error
-        return self.wrapped.write(data)
-
-    def close(self) -> None:
-        self.wrapped.close()
-        raise self.close_error
-
-
 def _install_stream_close_failure(
     monkeypatch,
     *,
@@ -49,27 +31,21 @@ def _install_stream_close_failure(
     close_error: BaseException,
     write_error: BaseException | None = None,
 ) -> None:
-    original_open = Path.open
-
-    def wrap_opened_stream(path, *args, **kwargs):
-        opened = original_open(path, *args, **kwargs)
-        mode = args[0] if args else kwargs.get("mode", "r")
-        is_target = (
+    def matches(path: Path, mode: str) -> bool:
+        return (
             stream_kind == "source" and path == source and mode == "rb"
         ) or (
             stream_kind == "destination"
             and path.name == "source.mp3"
             and mode == "xb"
         )
-        if not is_target:
-            return opened
-        return _CloseFailingStream(
-            opened,
-            close_error=close_error,
-            write_error=write_error,
-        )
 
-    monkeypatch.setattr(Path, "open", wrap_opened_stream)
+    install_close_failing_stream(
+        monkeypatch,
+        matches=matches,
+        close_error=close_error,
+        write_error=write_error,
+    )
 
 
 def _primary_error(primary_kind: str) -> BaseException:

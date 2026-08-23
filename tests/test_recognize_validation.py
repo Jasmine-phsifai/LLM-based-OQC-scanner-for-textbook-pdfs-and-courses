@@ -16,6 +16,7 @@ from ocrllm.validate_image_group import (
     MAX_AGGREGATE_SOURCE_BYTES,
 )
 from ocrllm.validate_source import MAX_SOURCE_BYTES
+from install_close_failing_stream import install_close_failing_stream
 from write_test_image import write_test_image
 
 
@@ -113,12 +114,6 @@ def test_short_snapshot_write_fails_before_provider(tmp_path, monkeypatch):
         def write(self, data):
             return self.wrapped.write(data[:-1])
 
-        def __enter__(self):
-            return self
-
-        def __exit__(self, error_type, error, traceback):
-            return self.wrapped.__exit__(error_type, error, traceback)
-
     def short_write_snapshot(path, *args, **kwargs):
         opened = original_open(path, *args, **kwargs)
         if path.parent.name.isdigit() and path.parent.parent.name.startswith(
@@ -138,6 +133,70 @@ def test_short_snapshot_write_fails_before_provider(tmp_path, monkeypatch):
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
     assert provider.calls == 0
     assert list(temp_dir.glob("ocrllm-images-*")) == []
+
+
+@pytest.mark.parametrize(
+    ("stream_kind", "expected_error", "expected_code"),
+    [
+        ("source", InvalidSource, "SOURCE_UNREADABLE"),
+        ("destination", OutputError, "OUTPUT_WRITE_FAILED"),
+    ],
+)
+def test_snapshot_stream_close_failure_is_typed_before_provider(
+    tmp_path,
+    monkeypatch,
+    stream_kind,
+    expected_error,
+    expected_code,
+) -> None:
+    sources = tuple(
+        write_test_image(tmp_path / f"board-{index}.png", color=(index, 2, 3))
+        for index in range(3)
+    )
+    target_source = sources[1]
+    temp_dir = tmp_path / "snapshots"
+    provider = CountingProvider()
+    secret = f"{stream_kind}-close-secret-6254"
+    snapshot_source_opens: list[Path] = []
+
+    def matches(path: Path, mode: str) -> bool:
+        snapshot_started = any(temp_dir.glob("ocrllm-images-*"))
+        if snapshot_started and mode == "rb" and path in sources:
+            snapshot_source_opens.append(path)
+        if stream_kind == "source":
+            return snapshot_started and path == target_source and mode == "rb"
+        return (
+            mode == "xb"
+            and path.name == target_source.name
+            and path.parent.parent.name.startswith("ocrllm-images-")
+        )
+
+    install_close_failing_stream(
+        monkeypatch,
+        matches=matches,
+        close_error=OSError(secret),
+    )
+
+    with pytest.raises(expected_error) as captured:
+        recognize(
+            sources,
+            config=Config(provider=provider, temp_dir=temp_dir),
+        )
+
+    assert captured.value.code == expected_code
+    assert provider.calls == 0
+    assert sources[2] not in snapshot_source_opens
+    assert list(temp_dir.glob("ocrllm-images-*")) == []
+    rendered = "".join(
+        traceback.format_exception(
+            type(captured.value),
+            captured.value,
+            captured.value.__traceback__,
+        )
+    )
+    assert secret not in rendered
+    assert secret not in str(captured.value)
+    assert secret not in repr(captured.value.details)
 
 
 def test_oversized_source_fails_before_provider(tmp_path):

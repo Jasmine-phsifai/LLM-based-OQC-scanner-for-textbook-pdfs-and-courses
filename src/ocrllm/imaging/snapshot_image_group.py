@@ -5,7 +5,6 @@ from __future__ import annotations
 import atexit
 import os
 import shutil
-import sys
 import tempfile
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -56,6 +55,7 @@ def snapshot_image_group(
             code="OUTPUT_WRITE_FAILED",
         ) from error
 
+    primary_error: BaseException | None = None
     try:
         snapshot_paths: list[Path] = []
         aggregate_bytes = 0
@@ -80,15 +80,17 @@ def snapshot_image_group(
         validated_paths = tuple(snapshot_paths)
         validate_image_group(validated_paths)
         yield validated_paths
+    except BaseException as error:
+        primary_error = error
+        raise
     finally:
-        active_error = sys.exc_info()[1]
         try:
             _delete_snapshot_directory(snapshot_root)
         except OutputError:
-            if active_error is None:
+            if primary_error is None:
                 raise
-            if isinstance(active_error, OCRLLMError):
-                active_error._add_safe_detail("snapshot_cleanup_failed", True)
+            if isinstance(primary_error, OCRLLMError):
+                primary_error._add_safe_detail("snapshot_cleanup_failed", True)
 
 
 def _prepare_temporary_parent(configured_parent: str | Path | None) -> Path | None:
@@ -132,7 +134,8 @@ def _copy_source_bounded(
         ) from error
 
     copied_bytes = 0
-    with source_stream:
+    source_error: BaseException | None = None
+    try:
         try:
             snapshot_stream = snapshot_path.open("xb")
         except (OSError, ValueError) as error:
@@ -141,7 +144,8 @@ def _copy_source_bounded(
                 code="OUTPUT_WRITE_FAILED",
             ) from error
 
-        with snapshot_stream:
+        snapshot_error: BaseException | None = None
+        try:
             while True:
                 try:
                     chunk = source_stream.read(COPY_CHUNK_BYTES)
@@ -189,7 +193,67 @@ def _copy_source_bounded(
                     "A temporary image snapshot could not be made durable.",
                     code="OUTPUT_WRITE_FAILED",
                 ) from error
+        except BaseException as error:
+            snapshot_error = error
+            raise
+        finally:
+            _close_snapshot_stream(
+                snapshot_stream,
+                primary_error=snapshot_error,
+            )
+    except BaseException as error:
+        source_error = error
+        raise
+    finally:
+        _close_source_stream(
+            source_stream,
+            primary_error=source_error,
+        )
     return copied_bytes
+
+
+def _close_source_stream(
+    source_stream,
+    *,
+    primary_error: BaseException | None,
+) -> None:
+    """Close one image source without replacing an active failure."""
+
+    try:
+        source_stream.close()
+    except (OSError, ValueError):
+        if primary_error is None:
+            raise InvalidSource(
+                "The opened image source could not be closed safely.",
+                code="SOURCE_UNREADABLE",
+            ) from None
+        if isinstance(primary_error, OCRLLMError):
+            primary_error._add_safe_detail(
+                "source_stream_cleanup_failed",
+                True,
+            )
+
+
+def _close_snapshot_stream(
+    snapshot_stream,
+    *,
+    primary_error: BaseException | None,
+) -> None:
+    """Close one image snapshot without replacing an active failure."""
+
+    try:
+        snapshot_stream.close()
+    except (OSError, ValueError):
+        if primary_error is None:
+            raise OutputError(
+                "A temporary image snapshot could not be closed safely.",
+                code="OUTPUT_WRITE_FAILED",
+            ) from None
+        if isinstance(primary_error, OCRLLMError):
+            primary_error._add_safe_detail(
+                "snapshot_stream_cleanup_failed",
+                True,
+            )
 
 
 def _delete_snapshot_directory(snapshot_root: Path) -> None:

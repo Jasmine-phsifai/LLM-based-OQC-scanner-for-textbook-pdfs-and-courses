@@ -84,6 +84,11 @@ The built-in Google image adapter is now scoped as a later optional
 vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
 does not copy legacy retry, audio, GUI, or social architecture. It is planned,
 not implemented, and does not block Stage A.
+The shipped image snapshot closes every source and destination before image
+validation or provider dispatch. Short writes and close-only failures become
+typed, redacted errors; an earlier library, ordinary, or process-control
+failure remains primary, and cleanup state is tracked by the current operation
+rather than inherited from a caller's ambient exception.
 See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
@@ -116,14 +121,6 @@ Future agents must assume the following and verify before trusting any claim:
   total 1,059 lines. Most of the library is contract and validation. That ratio
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
-
-- **Image snapshot stream-close failures still need typed precedence.** The
-  image and short-MP3 copy paths reject short destination writes before decode
-  or provider dispatch. Audio now explicitly closes both streams, types a
-  close-only failure, and preserves an earlier primary. Image source and
-  destination context managers can still let an `OSError` or `ValueError` from
-  close escape raw and replace an earlier typed copy failure. Repair image
-  locally with the same policy; do not create a generic media stream framework.
 
 - **Active atomic output no longer amplifies user filenames, but arbitrary deep
   Windows paths remain unsupported.** Markdown and image-resume state writers use
