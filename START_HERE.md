@@ -26,6 +26,8 @@ Read in this order:
 
 ```text
 docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
+docs/MAINTAINER_PRODUCT_DECISIONS.md  Maintainer choices preserved across handoffs;
+                                      scope changes still require authority updates.
 docs/plan_phase1_maturation_and_phase2_audio.md
                                       Current work plan; Stage M is offline
                                       complete with its live exit gate open.

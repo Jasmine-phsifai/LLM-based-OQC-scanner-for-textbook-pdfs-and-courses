@@ -1966,3 +1966,15 @@ RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 
 **范围与下一步。** authority 现同时记录 batch conversion 已证明正确，以及 gate-aborted worker 的调用账目修复。没有改变 batch ordering、并行上限、start interval、candidate recovery policy、error schema 或 public API；没有增加 helper、配置、依赖或 provider adapter。未改 frozen `contracts/`/`worker/`、legacy、social 或用户交接文件，没有 Google、网络识别或付费调用。第一 built-in audio provider 的 DashScope-first/Google-first 仍是 material ambiguity，不能暗中代选。下一轮继续审计 active 已建 seam 或有证据的减法，不把本轮 dispatch bit 扩成通用 accounting framework。clean-archive gate 将从产品提交的精确 commit 运行，证据随后追加。
 
 **提交后 clean-archive 证明。** 产品、回归、authority 与本轮日记先提交为 `700cc05`；维护 gate 从精确 commit `700cc0537a246041634292076252671b5d5e53f7` 构建 Git archive。隔离 base suite **1193 passed, 10 skipped / 119.65s**，fixture pixel-equivalent、compile、clean wheel、outside-repo import、metadata/extras 与 import budget 均通过。wheel **162,532 bytes**，base target **807,525 bytes**；audio profile 增量 **2,987,108 bytes** 且 snapshot→miniaudio smoke 为 0.5 秒；image **16,496,659 bytes**，image+DashScope **41,069,448 bytes**，DashScope client 仅 offline construction。最终输出 `Stage M offline gate passed for commit 700cc0537a246041634292076252671b5d5e53f7`；没有 provider 请求。
+
+## 暂停期维护者决策整理 — 2026-08-23（不计为 #065）
+
+**计划与减法边界。** 详细计划应继续维护，并明确标记为 active、frozen 或 superseded，避免接手者把历史方案当成当前任务。删除没有当前引用的配置前，仍须分别核对 frozen 边界、legacy 行为、可能存在的外部合同和并行开发时间线；“仓库内没有 reader”本身不足以授权删除。
+
+**未来 batch 与 usage 方向。** batch 后续只考虑有限的 `Sequence` 输入、dispatch 前完整预检和重复输出目标拒绝，不借此扩展成任意 iterable 调度框架。usage 按模型累计，以 provider 实际报告的 input tokens、output tokens 和 calls 为准；缺失 usage 不能伪装成 0。具体输入类型是否只接受 `list` / `tuple` 仍待维护者确认。
+
+**真实验证方向。** offline suite 只是 regression floor，不代表真实 provider 行为已经验证。Google 作为直接授权的稳健性来源，应覆盖有界的真实图片、音频、batch 和 resume 场景，包括其常见限流、临时错误、空回复和格式限制；每次运行仍须限制输入与调用规模，并保护凭据和数据。
+
+**PDF 与 provider 顺序。** PDF 应复用已经证明的图片识别路径，不另建平行识别体系。当前对普通测试规模的理解是约 7—8 批、每批 7—8 页；600—700 页只作为明确标注的压力测试，不应混入普通回归。该数量理解仍待维护者确认。下一条新增 provider 路径优先 Google native；OpenAI-compatible 和 local 路径留作后续独立切片，不提前建立统一抽象。
+
+**暂停边界。** 本条只整理维护者决定和待确认项，没有启动 #065，没有修改产品代码，也没有调用任何 provider。

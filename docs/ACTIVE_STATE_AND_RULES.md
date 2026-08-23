@@ -29,6 +29,12 @@ file never overrides a higher-ranked one.
                                       them as current state.
 ```
 
+Open maintainer choices are preserved in
+[`MAINTAINER_PRODUCT_DECISIONS.md`](MAINTAINER_PRODUCT_DECISIONS.md) so that
+handoffs do not lose product direction. That record does not silently override
+this authority: any accepted choice that changes current behavior or scope must
+first be reflected in this file.
+
 Every dated phase, decision, checkpoint, and incident file is a frozen record
 of one past attempt. It keeps the trace but does not define the present. Read
 this file first, then verify the named code and tests before trusting any
