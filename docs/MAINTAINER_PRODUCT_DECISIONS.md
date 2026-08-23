@@ -93,6 +93,10 @@ is often accepted.
   continue enumerating hypothetical filesystem exceptions merely because a new
   branch can be imagined; prefer failures observed in legacy, tests, or live
   product runs.
+- Iterations #060-#064 reached the acceptable upper bound for proactive snapshot
+  adversary and call-accounting edge work. Keep those fixes, but stop actively
+  scanning for more variants unless a real failure or current feature exposes
+  one.
 - Large-file paths still require bounded streaming plus explicit read, write,
   close, and cleanup handling. Never replace them with whole-file memory loads.
 
@@ -118,6 +122,12 @@ is often accepted.
   explicitly authorized data and never publish credentials or private inputs.
 - A live resume exercise should prove that completed checkpoint slots are not
   paid for again and only missing work is dispatched after `resume=True`.
+- Before live provider work, audit the roughly two months of legacy Google,
+  DashScope, and Codex-mode fixes for error handling, retry/switch behavior,
+  cancellation, and repair. This should reduce repeated trial and error.
+- Apply the legacy-parent rule during that audit: migrate only behavior whose
+  analogous path exists in the new library and is still supported by the
+  current API. Do not copy legacy patches or architecture wholesale.
 - Exercise Google audio live as early as the smallest executable slice permits.
   Getting a real request to run is more valuable than continuing to polish
   isolated offline edge cases before provider behavior is known.
@@ -152,15 +162,15 @@ is often accepted.
 - Do not remain indefinitely in "scope first" investigations. Once feasibility
   and boundaries are known, deliver a usable vertical slice and exercise it with
   real requests.
-- Prioritize Google's official native SDK and live model discovery. Its
-  documented behavior and complete native capability surface make it the
-  default foundation for the next Google path.
-- The Google OpenAI-compatible endpoint used by legacy is a grey path not
-  clearly established by the official documentation. Keep it only for
-  comparison and bounded experiments, not as the default implementation base.
+- For now, continue using the Google OpenAI-compatible endpoint that the legacy
+  application has already exercised and matured in real use.
+- Google's native SDK remains an unexplored path and is deferred. Investigate it
+  separately only when long-audio support, live model-catalog behavior, or a
+  required complete native capability cannot be served by the current path.
 - Also preserve an intentional OpenAI-compatible provider direction because
-  later local models may expose that protocol. Implement it later as a separate
-  path and do not assume it is equivalent to a provider's native SDK.
+  later local models may expose that protocol. Implement local compatibility as
+  a separate future path; a shared wire shape does not prove equivalent models,
+  limits, errors, or switching behavior.
 - Existing provider paths are not removed merely because Google is prioritized.
   Keep provider-specific request and error behavior explicit; do not force
   different protocols through a misleading common implementation.
@@ -170,8 +180,21 @@ is often accepted.
   supported by evidence for the specific provider and error scope.
 - This direction does not reactivate social-media downloading or recognition.
 
+## Resume and bounded manual repair
+
+- Resume is the primary recovery path.
+- Repair is a small manual fallback when the resume sidecar/state is missing or
+  unusable, or when historical Markdown exists without compatible state.
+- For PDF image batches, repair identifies the failed range from already
+  produced Markdown, resubmits only that range, and preserves successful
+  content. This supports delayed retry after a provider is down for hours or a
+  daily quota is exhausted.
+- Do not build a generic repair workflow or speculative defensive framework.
+  Migrate the smallest legacy-proven markers and behavior, and preserve existing
+  successful content atomically while applying the repaired range.
+
 ## Decisions still requiring exact implementation confirmation
 
-- Choose the smallest explicit provider interface that supports native Google
-  now and OpenAI-compatible/local endpoints later without hiding protocol-specific
-  behavior.
+- Choose the smallest explicit provider boundary for the legacy-proven Google
+  OpenAI-compatible path without conflating it with the future local-compatible
+  path or the deferred native SDK investigation.

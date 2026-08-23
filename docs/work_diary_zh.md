@@ -1975,14 +1975,16 @@ RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 
 
 **真实验证方向。** offline suite 只是 regression floor，不代表真实 provider 行为已经验证。Google 作为直接授权的稳健性来源，应覆盖有界的真实图片、音频、batch 和 resume 场景，包括其常见限流、临时错误、空回复和格式限制；每次运行仍须限制输入与调用规模，并保护凭据和数据。
 
-**PDF 与 provider 顺序。** PDF 应复用已经证明的图片识别路径，不另建平行识别体系。规模现已确认：每个 provider request 约 7—8 页；首次打通时的 batch 总数由当轮目标和真实结果决定；打通后的程序化 live regression 默认 2 批，通常共 14—16 页；600—700 页只用于明确标注的压力测试。下一条新增 provider 路径优先 Google native；OpenAI-compatible 和 local 路径留作后续独立切片，不提前建立统一抽象。
+**PDF 与 provider 顺序。** PDF 应复用已经证明的图片识别路径，不另建平行识别体系。规模现已确认：每个 provider request 约 7—8 页；首次打通时的 batch 总数由当轮目标和真实结果决定；打通后的程序化 live regression 默认 2 批，通常共 14—16 页；600—700 页只用于明确标注的压力测试。Google 暂时继续使用 legacy 已成熟实战的 OpenAI-compatible endpoint；native SDK 作为未探索路径暂缓，只有长音频、模型目录或必要完整能力确实要求时再单独调查。未来 local OpenAI-compatible 仍是独立路径，不能因 wire shape 相似就假定行为等价。
 
 **仓库、公开与 UI 边界。** 旧 `main` 属于维护者的另一个 GitHub 账号；维护者暂时因邮箱权限无法登录，当前用 Jasmine fork 的 `master` 继续开发。这是临时账号访问问题，不得擅自修改旧账号默认分支，也不得解释为架构问题。项目目前不公开。library 暂不包含 PyQt6/UI，UI 继续留在 legacy，不建立预备 UI 脚手架。
 
-**文件生命周期边界。** 既有 read/write/close/cleanup/checkpoint/publication 防御不回退，但其中一部分可能过度防御或尚未经过 live 证明；后续不再穷举假想异常。大文件仍必须 bounded streaming，并明确处理 read、write、close 和 cleanup，禁止为了简化控制流把整文件装入内存。
+**文件生命周期边界。** 既有 read/write/close/cleanup/checkpoint/publication 防御不回退，但其中一部分可能过度防御或尚未经过 live 证明；#060—#064 已接近 snapshot 对抗和调用计数边角的过度设计上限，停止继续主动扫描同类变体，除非真实失败或当前功能再次暴露。大文件仍必须 bounded streaming，并明确处理 read、write、close 和 cleanup，禁止为了简化控制流把整文件装入内存。
 
 **音频产品界限。** Google 音频 live 调测应在最小可执行切片出现后尽早进行，“先让真实请求跑起来”优先于继续雕琢离线边角。音频全局最高 10 小时，主要按时长路由，但还必须同时满足每个 provider 的时长上限以及 file size、transport envelope 和 token 限制；dispatch 前应按实际 adapter 完整预检。
 
-**provider 实证策略。** Google 新路径优先官方 native SDK，因为官方文档更明确且能力完整。legacy 使用的 Google OpenAI-compatible endpoint 属于官方文档未明确的灰色路径，只用于对照和有限实验，不作为默认基础。OpenAI-compatible 仍保留给未来 local 模型的独立路径，不假设它与 native SDK 等价。provider 难点是机械地 live 核对真实 catalog、错误码以及 retry、switch、terminal 行为；不设通用“重试六次”，策略必须按 provider 和 error scope 的实证制定。social media 继续延期。
+**provider 实证策略。** live 调测前先审计 legacy 约两个月积累的 Google、DashScope 和 Codex mode 错误处理、retry/switch/cancel/repair 补丁，以减少重复试错；但严格服从 legacy-parent rule，只迁移新库已有同类路径且当前 API 仍能证明的行为，不盲拷贝补丁或架构。Google 当前默认沿用 legacy 实战过的 OpenAI-compatible endpoint，而非尚未探索的 native SDK。provider 难点仍是机械地 live 核对真实 catalog、错误码以及 retry、switch、terminal 行为；不设通用“重试六次”，策略必须按 provider 和 error scope 的实证制定。social media 继续延期，项目仍不公开。
 
-**暂停边界。** batch 输入和 PDF live regression 规模两项已由维护者确认；最小 provider interface 仍待后续实现决策。本条及本次补充均不计为 #065，没有启动新的 iteration，没有修改产品代码，也没有调用任何 provider。
+**resume 与 repair 边界。** resume 是主恢复路径。repair 只是在 resume sidecar/state 丢失、不可用，或历史 Markdown 没有兼容状态时使用的小型人工补救：从已经生产的 Markdown 识别 PDF 图片批次失败范围，仅重提失败范围并保留成功内容，支持 provider 停机数小时或日 quota 耗尽后的延迟重试。repair 不建立通用 workflow 或复杂防御，只按 legacy 的真实 marker/行为做最小迁移，并原子保留成功内容。
+
+**暂停边界。** batch 输入和 PDF live regression 规模两项已由维护者确认；当前仍待决定的是如何为 legacy-proven Google OpenAI-compatible 路径定义最小显式 provider 边界，同时不混同未来 local-compatible 路径和暂缓的 native SDK。本条及本次补充均不计为 #065，没有启动新的 iteration，没有修改产品代码，也没有调用任何 provider。
