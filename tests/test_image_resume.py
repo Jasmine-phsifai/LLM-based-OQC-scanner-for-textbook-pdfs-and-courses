@@ -540,6 +540,61 @@ def test_resume_rejects_corrupt_duplicate_key_and_oversized_state(
     assert calls == []
 
 
+def test_resume_bounds_state_that_grows_after_size_preflight(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    state_path = _state_path(output_dir)
+    state_path.write_bytes(b"{}")
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    loader = importlib.import_module("ocrllm.output.load_image_resume_state")
+    monkeypatch.setattr(loader, "_MAX_STATE_BYTES", 2)
+    monkeypatch.setattr(
+        loader,
+        "parse_image_resume_state",
+        lambda _raw: pytest.fail("oversized state must not reach the parser"),
+    )
+    real_open = Path.open
+    growth_injected = False
+    read_sizes: list[int] = []
+
+    class ObservedStateStream:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+        def read(self, size=-1):
+            read_sizes.append(size)
+            return self.wrapped.read(size)
+
+    def grow_state_before_open(path, *args, **kwargs):
+        nonlocal growth_injected
+        mode = args[0] if args else kwargs.get("mode", "r")
+        if Path(path) == state_path and mode == "rb" and not growth_injected:
+            growth_injected = True
+            with real_open(state_path, "wb") as replacement:
+                replacement.write(b'{"oversized":true}')
+            return ObservedStateStream(real_open(path, *args, **kwargs))
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", grow_state_before_open)
+
+    with pytest.raises(ResumeStateError) as captured:
+        recognize(source, config=_vision_config(output_dir))
+
+    assert captured.value.code == "RESUME_STATE_INVALID"
+    assert growth_injected is True
+    assert read_sizes == [3]
+    assert calls == []
+    assert not (output_dir / "board_board.md").exists()
+
+
 def test_resume_rejects_edited_final_output(tmp_path, monkeypatch) -> None:
     source = write_test_image(tmp_path / "board.png")
     output_dir = tmp_path / "output"

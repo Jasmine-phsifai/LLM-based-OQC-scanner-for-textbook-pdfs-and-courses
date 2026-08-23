@@ -105,6 +105,12 @@ binary stream: every serialized byte must be accepted before flush, fsync,
 close, and replacement. A failed completed-state save leaves the last valid
 partial checkpoint reusable, final Markdown unpublished, and an earlier typed,
 ordinary, or process-control failure primary.
+Image resume-state loading enforces its 16 MiB limit on the bytes actually read,
+not only on a preliminary path size. It reads at most one byte beyond the limit,
+so a sidecar that grows after preflight is rejected before parsing or provider
+dispatch. Read-time memory failure and close-only failure are typed and
+redacted; later close failure cannot replace an earlier typed, ordinary, or
+process-control primary.
 See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
