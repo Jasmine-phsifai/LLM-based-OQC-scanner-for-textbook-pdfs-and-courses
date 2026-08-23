@@ -32,7 +32,10 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   generic `Config.cache_dir`, and four dormant PDF-only placeholders are
   removed rather than promoted into unproven callback, persistence, or PDF
   APIs; frozen worker progress remains separate, while local OCR retains its
-  zero-network model-loading contract;
+  zero-network model-loading contract; resume source hashing is bounded on
+  actual snapshot reads, and fresh provider/local-OCR results are rejected
+  before checkpoint or final publication if those owned bytes no longer match
+  the recorded request identity;
   all no-cost exit criteria pass through the clean-archive runner at `271d96d`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;

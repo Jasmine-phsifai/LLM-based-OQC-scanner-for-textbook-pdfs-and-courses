@@ -26,11 +26,13 @@ class ImageSlotCheckpoint:
         state_path: Path,
         *,
         profile: str,
+        snapshot_paths: tuple[Path, ...],
         seeded_slots: tuple[ImageSlotState, ...] = (),
     ) -> None:
         self._identity = identity
         self._state_path = state_path
         self._profile = profile
+        self._snapshot_paths = snapshot_paths
         self._slots: dict[str, ImageSlotState] = {
             slot.slot_id: slot for slot in seeded_slots
         }
@@ -55,7 +57,9 @@ class ImageSlotCheckpoint:
 
     def persist_slot(self, slot: ImageSlotState) -> None:
         """Durably record one completed slot before the next call starts."""
-        self._slots[slot.slot_id] = slot
+        self.verify_snapshots()
+        candidate_slots = dict(self._slots)
+        candidate_slots[slot.slot_id] = slot
         state = ImageResumeState(
             state_version=IMAGE_RESUME_STATE_VERSION,
             identity_version=self._identity.identity_version,
@@ -69,6 +73,13 @@ class ImageSlotCheckpoint:
             status="partial",
             hotwords=(),
             warnings=(),
-            slots=self.slots,
+            slots=tuple(candidate_slots.values()),
         )
         save_image_resume_state_atomically(self._state_path, state)
+        self._slots = candidate_slots
+
+    def verify_snapshots(self) -> None:
+        """Reject owned snapshots that changed after request fingerprinting."""
+        from .verify_image_snapshots import verify_image_snapshots
+
+        verify_image_snapshots(self._snapshot_paths, self._identity.sources)

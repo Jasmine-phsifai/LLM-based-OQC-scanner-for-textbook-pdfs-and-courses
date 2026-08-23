@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import hashlib
 from collections.abc import Sequence
 from pathlib import Path
 
 from .contracts.source_fingerprint import SourceFingerprint
 from .errors import InvalidSource, OutputError
-
-
-_CHUNK_BYTES = 1024 * 1024
+from .hash_snapshot_bytes import hash_snapshot_bytes
+from .image_group_limits import MAX_AGGREGATE_SOURCE_BYTES
+from .validate_source import MAX_SOURCE_BYTES
 
 
 def fingerprint_image_sources(
@@ -21,14 +20,20 @@ def fingerprint_image_sources(
     if len(source_paths) != len(snapshot_paths) or not source_paths:
         raise ValueError("source and snapshot groups must be nonempty and aligned")
     fingerprints = []
+    aggregate_byte_size = 0
     for source_path, snapshot_path in zip(source_paths, snapshot_paths, strict=True):
+        remaining_group_bytes = MAX_AGGREGATE_SOURCE_BYTES - aggregate_byte_size
+        if remaining_group_bytes < 1:
+            raise OutputError(
+                "Validated image bytes changed beyond their aggregate safety limit.",
+                code="OUTPUT_WRITE_FAILED",
+            ) from None
+        byte_size, sha256 = hash_snapshot_bytes(
+            snapshot_path,
+            maximum_byte_size=min(MAX_SOURCE_BYTES, remaining_group_bytes),
+        )
+        aggregate_byte_size += byte_size
         try:
-            digest = hashlib.sha256()
-            byte_size = 0
-            with snapshot_path.open("rb") as stream:
-                while chunk := stream.read(_CHUNK_BYTES):
-                    digest.update(chunk)
-                    byte_size += len(chunk)
             source_uri = source_path.resolve(strict=True).as_uri()
         except FileNotFoundError:
             raise InvalidSource(
@@ -44,7 +49,7 @@ def fingerprint_image_sources(
             SourceFingerprint(
                 uri=source_uri,
                 byte_size=byte_size,
-                sha256=digest.hexdigest(),
+                sha256=sha256,
             )
         )
     return tuple(fingerprints)

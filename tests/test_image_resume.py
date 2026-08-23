@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import os
@@ -58,6 +59,57 @@ def _install_fake_dashscope(monkeypatch, calls: list[tuple[Path, ...]]) -> None:
         return "# Resumable board\n"
 
     monkeypatch.setattr(adapter, "recognize_images", fake_recognize_images)
+
+
+def test_resume_rejects_snapshot_mutation_after_identity_before_checkpoint(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png", color=(1, 2, 3))
+    replacement = write_test_image(tmp_path / "replacement.png", color=(7, 8, 9))
+    replacement_bytes = replacement.read_bytes()
+    replacement_sha256 = hashlib.sha256(replacement_bytes).hexdigest()
+    output_dir = tmp_path / "output"
+    provider_calls: list[str] = []
+
+    adapter = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
+
+    def recognize_changed_snapshot(image_paths, *, prompt, config):
+        provider_calls.append(hashlib.sha256(image_paths[0].read_bytes()).hexdigest())
+        return "# Changed snapshot\n"
+
+    monkeypatch.setattr(adapter, "recognize_images", recognize_changed_snapshot)
+
+    fingerprint_module = importlib.import_module(
+        "ocrllm.fingerprint_image_sources"
+    )
+    original_fingerprint = fingerprint_module.fingerprint_image_sources
+    fingerprint_calls = 0
+
+    def mutate_after_identity(source_paths, snapshot_paths):
+        nonlocal fingerprint_calls
+        fingerprints = original_fingerprint(source_paths, snapshot_paths)
+        fingerprint_calls += 1
+        snapshot_paths[0].write_bytes(replacement_bytes)
+        return fingerprints
+
+    monkeypatch.setattr(
+        fingerprint_module,
+        "fingerprint_image_sources",
+        mutate_after_identity,
+    )
+
+    with pytest.raises(OutputError) as raised:
+        recognize(source, config=_vision_config(output_dir))
+
+    assert raised.value.code == "OUTPUT_WRITE_FAILED"
+    assert raised.value.details["workflow_pass"] == "draft"
+    assert raised.value.details["provider_calls_attempted"] == 1
+    assert fingerprint_calls == 1
+    assert provider_calls == [replacement_sha256]
+    assert source.read_bytes() != replacement_bytes
+    assert not (output_dir / "board_board.md").exists()
+    assert not _state_path(output_dir).exists()
 
 
 def _fail_markdown_publication(monkeypatch):
@@ -213,6 +265,55 @@ def test_local_ocr_resume_reuses_completed_result_without_backend_call(
     assert result.markdown == "Offline resumed OCR"
     assert result.metadata["engine"] == "test-rapidocr"
     assert _state_path(output_dir).exists()
+
+
+def test_local_ocr_rejects_snapshot_mutation_after_identity(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png", color=(1, 2, 3))
+    replacement = write_test_image(tmp_path / "replacement.png", color=(7, 8, 9))
+    replacement_bytes = replacement.read_bytes()
+    output_dir = tmp_path / "output"
+
+    backend = importlib.import_module(
+        "ocrllm.local_ocr.recognize_images_with_rapidocr"
+    )
+
+    def fake_ocr(image_paths, *, profile, config):
+        assert image_paths[0].read_bytes() == replacement_bytes
+        return ProcessorOutput(
+            media_type="image",
+            profile=profile,
+            markdown="Changed offline snapshot",
+        )
+
+    monkeypatch.setattr(backend, "recognize_images_with_rapidocr", fake_ocr)
+    fingerprint_module = importlib.import_module(
+        "ocrllm.fingerprint_image_sources"
+    )
+    original_fingerprint = fingerprint_module.fingerprint_image_sources
+
+    def mutate_after_identity(source_paths, snapshot_paths):
+        fingerprints = original_fingerprint(source_paths, snapshot_paths)
+        snapshot_paths[0].write_bytes(replacement_bytes)
+        return fingerprints
+
+    monkeypatch.setattr(
+        fingerprint_module,
+        "fingerprint_image_sources",
+        mutate_after_identity,
+    )
+
+    with pytest.raises(OutputError) as raised:
+        recognize(
+            source,
+            config=Config(image_mode="ocr", output_dir=output_dir, resume=True),
+        )
+
+    assert raised.value.code == "OUTPUT_WRITE_FAILED"
+    assert not (output_dir / "board_board.md").exists()
+    assert not _state_path(output_dir).exists()
 
 
 @pytest.mark.skipif(

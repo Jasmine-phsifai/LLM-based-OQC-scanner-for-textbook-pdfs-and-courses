@@ -171,6 +171,7 @@ def _recognize(
                             resume_identity,
                             resume_state_path,
                             profile=profile,
+                            snapshot_paths=tuple(validated_paths),
                             seeded_slots=seeded_slots,
                         )
                         processor_output = recognize_validated_images(

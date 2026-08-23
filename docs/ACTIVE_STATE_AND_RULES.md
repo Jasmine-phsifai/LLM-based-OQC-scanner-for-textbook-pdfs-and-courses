@@ -118,6 +118,18 @@ rejects early EOF or trailing/grown content before further I/O, and then checks
 the saved digest. An edited artifact cannot force an unbounded scan or another
 provider call. Read-time memory and close-only failures are typed and redacted,
 and stream cleanup cannot replace an earlier primary.
+Image request fingerprinting now hashes owned snapshots with both the 25 MiB
+per-image and 100 MiB group ceilings enforced on bytes actually read. Missing,
+grown, empty, unreadable, memory-failing, or close-failing snapshots become
+redacted output failures instead of caller-source errors or unbounded work.
+After each fresh provider pass, the checkpoint re-hashes only the owned
+snapshots against the recorded size and SHA-256 before adding or saving the new
+slot; local OCR performs the same check after inference while the snapshot is
+still owned. A mismatch publishes neither a new slot nor final Markdown, and a
+failed atomic save no longer changes the checkpoint's in-memory slot view.
+This path-based check closes ordinary persistent mutation, not an adversarial
+mutate-then-restore race during the provider or OCR call; eliminating that race
+would require a larger immutable-byte request boundary.
 See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
@@ -205,6 +217,15 @@ Future agents must assume the following and verify before trusting any claim:
   cancelled replay makes no provider call, publishes no final Markdown, and
   leaves the partial sidecar byte-identical. A later uncancelled resume reuses
   the slots and completes with zero new calls.
+
+- **Candidate recovery does not yet aggregate spend when checkpoint persistence
+  raises an output error.** If an eligible provider failure advances from an
+  earlier model and a later model then completes a paid call but fails snapshot
+  verification or state saving, the terminal `OutputError` reports the later
+  candidate's local call count but omits earlier candidate attempts. The
+  checkpoint remains safe; the diagnostic total is incomplete. Repair this in
+  the candidate-attempt ledger with a focused multi-candidate regression rather
+  than broadening snapshot verification.
 
 - **Batch settlement preserves process-control exceptions.** After one item
   returns a typed failure, settlement maps only a genuinely cancelled

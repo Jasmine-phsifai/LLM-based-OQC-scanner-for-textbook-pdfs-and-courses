@@ -26,11 +26,14 @@ def recognize_validated_images(
             recognize_images_with_rapidocr,
         )
 
-        return recognize_images_with_rapidocr(
+        output = recognize_images_with_rapidocr(
             validated_paths,
             profile=profile,
             config=config,
         )
+        if slot_checkpoint is not None:
+            slot_checkpoint.verify_snapshots()
+        return output
     from .processors.recognize_images import recognize_images
 
     return recognize_images(
