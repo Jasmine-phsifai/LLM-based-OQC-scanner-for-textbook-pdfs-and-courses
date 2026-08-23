@@ -623,6 +623,77 @@ def test_completed_state_size_failure_reports_paid_call_and_keeps_partial_state(
     assert len(calls) == 1
 
 
+def test_completed_state_short_write_keeps_reusable_partial_state(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_path = output_dir / "board_board.md"
+    state_path = _state_path(output_dir)
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    real_open = Path.open
+    partial_before: bytes | None = None
+    completed_write_was_short = False
+
+    class OneShotCompletedStateShortWriter:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+        def write(self, data):
+            nonlocal completed_write_was_short, partial_before
+            if not completed_write_was_short and b'"status":"complete"' in data:
+                partial_before = state_path.read_bytes()
+                completed_write_was_short = True
+                return self.wrapped.write(data[:-1])
+            return self.wrapped.write(data)
+
+    def wrap_state_stream(path, *args, **kwargs):
+        opened = real_open(path, *args, **kwargs)
+        mode = args[0] if args else kwargs.get("mode", "r")
+        if (
+            path.parent == output_dir
+            and path.name.startswith(".ocrllm-")
+            and path.suffix == ".tmp"
+            and mode == "xb"
+        ):
+            return OneShotCompletedStateShortWriter(opened)
+        return opened
+
+    monkeypatch.setattr(Path, "open", wrap_state_stream)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(source, config=_vision_config(output_dir))
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert "workflow_pass" not in captured.value.details
+    assert len(calls) == 1
+    assert completed_write_was_short is True
+    assert partial_before is not None
+    assert state_path.read_bytes() == partial_before
+    partial_document = json.loads(partial_before)
+    assert partial_document["result"]["status"] == "partial"
+    assert partial_document["result"]["markdown"] == ""
+    assert [slot["slot_id"] for slot in partial_document["slots"]] == ["draft"]
+    assert not output_path.exists()
+    assert list(output_dir.glob(".ocrllm-*.tmp")) == []
+
+    resumed = recognize(source, config=_vision_config(output_dir))
+
+    assert resumed.markdown == "# Resumable board\n"
+    assert resumed.output_path == output_path
+    assert len(calls) == 1
+    assert output_path.read_text(encoding="utf-8") == resumed.markdown
+    assert json.loads(state_path.read_text(encoding="utf-8"))["result"][
+        "status"
+    ] == "complete"
+
+
 def test_all_slots_partial_resume_honors_cancellation_before_final_publication(
     tmp_path,
     monkeypatch,
