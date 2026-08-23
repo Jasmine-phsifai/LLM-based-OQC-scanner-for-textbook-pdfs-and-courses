@@ -173,13 +173,40 @@ def test_vision_resume_reuses_completed_result_without_provider_calls_or_secrets
     _install_fake_dashscope(monkeypatch, calls)
     writer, original_writer = _fail_markdown_publication(monkeypatch)
 
-    with pytest.raises(OutputError):
+    with pytest.raises(OutputError) as first_failure:
         recognize(source, config=_vision_config(output_dir))
 
     state_path = _state_path(output_dir)
     raw_state = state_path.read_text(encoding="utf-8")
+    state_before_resume = state_path.read_bytes()
+    state_document = json.loads(raw_state)
     assert len(calls) == 1
+    assert first_failure.value.details["provider_calls_attempted"] == 1
+    assert "workflow_pass" not in first_failure.value.details
+    first_attempts = [
+        dict(attempt)
+        for attempt in first_failure.value.details["model_attempts"]
+    ]
+    assert len(first_attempts) == 1
+    assert first_attempts[0]["outcome"] == "success"
+    assert first_attempts[0]["provider_calls_attempted"] == 1
+    assert state_document["result"]["status"] == "complete"
+    assert state_document["result"]["markdown"] == "# Resumable board\n"
+    assert [slot["slot_id"] for slot in state_document["slots"]] == ["draft"]
     assert "resume-secret-key" not in raw_state
+    assert not (output_dir / "board_board.md").exists()
+
+    with pytest.raises(OutputError) as resumed_failure:
+        recognize(
+            source,
+            config=_vision_config(output_dir, api_key="different-secret-key"),
+        )
+
+    assert resumed_failure.value.details["provider_calls_attempted"] == 0
+    assert "model_attempts" not in resumed_failure.value.details
+    assert "workflow_pass" not in resumed_failure.value.details
+    assert len(calls) == 1
+    assert state_path.read_bytes() == state_before_resume
     assert not (output_dir / "board_board.md").exists()
 
     monkeypatch.setattr(writer, "write_markdown_atomically", original_writer)
@@ -191,7 +218,8 @@ def test_vision_resume_reuses_completed_result_without_provider_calls_or_secrets
     assert len(calls) == 1
     assert result.markdown == "# Resumable board\n"
     assert result.output_path == output_dir / "board_board.md"
-    assert state_path.exists()
+    assert result.output_path.read_bytes() == b"# Resumable board\n"
+    assert state_path.read_bytes() == state_before_resume
 
 
 def test_completed_resume_honors_pre_set_cancellation_without_losing_state(
@@ -764,6 +792,8 @@ def test_resume_bounds_validation_of_grown_final_output(
         recognize(source, config=_vision_config(output_dir))
 
     assert captured.value.code == "RESUME_STATE_MISMATCH"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert "model_attempts" not in captured.value.details
     assert growth_injected is True
     assert consumed_bytes == len(expected_bytes) + 1
     assert len(calls) == 1

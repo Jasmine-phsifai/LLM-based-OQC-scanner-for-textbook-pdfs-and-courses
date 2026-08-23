@@ -231,6 +231,7 @@ def test_atomic_publish_failure_preserves_old_target_and_cleans_temporary_file(
         )
 
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 1
     assert provider.calls == 1
     assert target.read_text(encoding="utf-8") == "durable old content"
     assert list(output_dir.glob(".*.tmp")) == []

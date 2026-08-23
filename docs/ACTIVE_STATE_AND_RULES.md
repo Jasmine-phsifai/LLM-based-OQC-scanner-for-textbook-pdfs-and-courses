@@ -210,6 +210,25 @@ Future agents must assume the following and verify before trusting any claim:
   `CANCELLED`, makes no provider call, and leaves both state and Markdown bytes
   unchanged; a later uncancelled resume still reuses them with zero calls.
 
+- **Post-recognition output failures disclose only this invocation's spend.**
+  After the image processor returns, failures while assembling the public
+  result, saving completed state, validating an existing completed output, or
+  publishing Markdown report the current invocation's
+  `provider_calls_attempted`. Fresh work also retains its current ordered
+  `model_attempts` ledger. A completed-state replay reports zero and does not
+  copy historical attempts out of the sidecar; its durable completed state can
+  therefore survive a Markdown publication failure and be published later
+  without another provider call.
+
+- **Snapshot-exit spend disclosure is still incomplete.** A provider result
+  can succeed and then fail while the owned snapshot context is cleaning up;
+  that error currently leaves `_recognize()` before invocation accounting is
+  derived. Local OCR snapshot verification fails at the same earlier boundary
+  and consequently lacks an explicit zero-call detail. Checkpoint safety is
+  unaffected, but the diagnostic contract is incomplete. Repair this at the
+  snapshot execution boundary rather than widening the final output handler or
+  introducing a generic accounting framework.
+
 - **All-slots partial image resume honors pre-set cancellation without losing
   paid slots.** A valid partial state is identity-checked and rejected if a
   final output already conflicts; the operation then checks cancellation before
@@ -726,7 +745,12 @@ entry remains local to one candidate, while terminal `ConfigError`,
 `OutputError` expose the sum across all attempted candidates. A checkpoint
 output failure gets its own typed ledger entry and never advances again.
 Catalog discovery failure before dispatch defaults to zero calls rather than
-the ordinary provider-failure default of one.
+the ordinary provider-failure default of one. A second follow-up covers the
+post-recognition finalization boundary: completed-state saving, completed-output
+validation, Markdown publication, and result construction expose the current
+invocation total. Completed-state replay is explicitly zero-call and does not
+re-export the historical model ledger. Snapshot-context exit remains the
+separate known boundary documented above.
 
 #### G2 — Recovery is quota-only. **Medium. Closed 2026-08-22; scope corrected 2026-08-23.**
 

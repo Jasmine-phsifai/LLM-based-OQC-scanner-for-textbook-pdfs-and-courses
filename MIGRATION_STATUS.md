@@ -21,7 +21,8 @@ development JSONL worker, provider error disposition, credential scheduling,
 and image resume. Stage M Phase 1 maturation is offline implementation-complete:
 
 - shipped: lazy DashScope catalog checks, atomic file-backed image state, an
-  opt-in disposition-gated candidate model queue, complete spend disclosure,
+  opt-in disposition-gated candidate model queue, candidate and final-output
+  spend disclosure,
   model-aware credential blocking, scout-failure attribution, and slot-indexed
   intra-request checkpoints with an explicit v1-to-v2 identity migration;
   atomic Markdown/state temporary names are compact and do not repeat public
@@ -38,6 +39,9 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   the recorded request identity; terminal candidate failures retain local
   per-model ledger counts while reporting their sum at the top level, including
   checkpoint output failures and pre-dispatch zero-call catalog failures;
+  failures after processor return while saving/validating state, publishing
+  Markdown, or constructing the result likewise report only the current
+  invocation's calls, including zero for completed-state replay;
   all no-cost exit criteria pass through the clean-archive runner at `271d96d`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
