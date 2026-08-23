@@ -756,6 +756,8 @@ def test_pre_dispatch_cancellation_makes_zero_sdk_calls(tmp_path, monkeypatch):
         )
 
     assert captured.value.code == "CANCELLED"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert "model_attempts" not in captured.value.details
 
 
 def test_cancellation_during_client_setup_still_prevents_http_dispatch(

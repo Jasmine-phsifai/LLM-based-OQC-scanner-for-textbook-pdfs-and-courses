@@ -44,6 +44,9 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   invocation's calls, including zero for completed-state replay;
   snapshot cleanup after a normal processor return follows the same rule, and
   local-OCR post-inference snapshot verification explicitly reports zero;
+  batch outcomes preserve those structured item-local errors, while shared-gate
+  cancellation before callable entry reports zero rather than a fabricated
+  paid attempt and provider-raised cancellation after entry remains one;
   all no-cost exit criteria pass through the clean-archive runner at `271d96d`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;

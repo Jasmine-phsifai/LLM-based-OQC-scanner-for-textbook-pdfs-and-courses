@@ -248,6 +248,18 @@ Future agents must assume the following and verify before trusting any claim:
   Coordinated public regressions cover both process-control exception types,
   and a cancelled-Future regression protects the narrower mapping.
 
+- **Batch outcomes preserve item-local recovery facts and distinguish
+  pre-dispatch cancellation.** Serial, parallel-first-failure, and settlement
+  paths retain the same typed `OCRLLMError` object after clearing only its
+  traceback/cause/context links, so code, retryability, workflow attribution,
+  provider-call total, model ledger, and redacted details are not flattened.
+  Undispatched siblings receive separate `CANCELLED` errors. More narrowly,
+  a worker already waiting at an aborted shared provider-start gate now reports
+  zero calls and no model-attempt ledger; an injected provider that raises
+  `Cancelled` after its callable begins still reports one. Dispatch accounting
+  is owned by `call_vision_provider()`, while the workflow layer only adds
+  calls completed by earlier passes.
+
 - **The direct library no longer advertises an unimplemented progress hook.**
   The untyped, never-consumed `Config.progress` placeholder was removed from
   the pre-release `0.1.0` constructor. There was no repository caller, example,
@@ -755,6 +767,11 @@ invocation total. Completed-state replay is explicitly zero-call and does not
 re-export the historical model ledger. Snapshot-context cleanup after a normal
 processor return follows the same current-invocation rule, while local-OCR
 post-inference snapshot verification explicitly reports zero.
+The 2026-08-23 batch follow-up also moves the local zero/one distinction to the
+actual provider dispatch boundary: method lookup and start-gate cancellation
+are zero, while callable entry, timeout, provider failure, and response
+validation are one. Workflow aggregation adds prior completed calls instead of
+inferring dispatch from the error class.
 
 #### G2 — Recovery is quota-only. **Medium. Closed 2026-08-22; scope corrected 2026-08-23.**
 

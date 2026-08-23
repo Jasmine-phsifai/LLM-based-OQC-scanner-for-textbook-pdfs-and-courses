@@ -295,18 +295,19 @@ def _recognize_images_once(
         except OCRLLMError as error:
             error._add_safe_detail("workflow_pass", slot_id)
             error._add_safe_detail("failed_model", resolved.model)
-            # Config and catalog failures are raised before dispatch: no paid
-            # call happened for this pass, so only completed calls count.
-            dispatched_this_pass = not (
-                isinstance(error, ConfigError)
-                or (
-                    isinstance(error, ProviderError)
-                    and error.code == "PROVIDER_CATALOG_UNAVAILABLE"
-                )
+            local_calls_attempted = error.details.get(
+                "provider_calls_attempted"
             )
+            if (
+                type(local_calls_attempted) is not int
+                or local_calls_attempted < 0
+            ):
+                # Defensive fallback for an internal path that has not yet
+                # adopted call_vision_provider's exact dispatch accounting.
+                local_calls_attempted = 0 if isinstance(error, ConfigError) else 1
             error._add_safe_detail(
                 "provider_calls_attempted",
-                calls_dispatched + (1 if dispatched_this_pass else 0),
+                calls_dispatched + local_calls_attempted,
             )
             raise
         calls_dispatched += 1

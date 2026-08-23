@@ -13,7 +13,7 @@ from ocrllm import (
     recognize,
     recognize_batch,
 )
-from ocrllm.errors import ProviderError
+from ocrllm.errors import ProviderError, ProviderUnavailable
 
 from write_test_image import write_test_image
 
@@ -67,6 +67,18 @@ class ImmediateFailureProvider:
             "The first provider request failed.",
             code="PROVIDER_UNAVAILABLE",
         )
+
+
+class StructuredFailureProvider:
+    def __init__(self) -> None:
+        self.names: list[str] = []
+
+    def recognize_images(self, image_paths, *, prompt, config):
+        name = image_paths[0].name
+        self.names.append(name)
+        if name == "failure.png":
+            raise ProviderUnavailable(details={"failure_scope": "provider"})
+        return f"# {name}\n"
 
 
 class NumberedProvider:
@@ -126,6 +138,50 @@ def test_serial_batch_reserves_colliding_overwrite_target_until_batch_ends(tmp_p
     assert provider.calls == 2
     assert standalone.markdown == "# Result 2\n"
     assert standalone.output_path.read_text(encoding="utf-8") == standalone.markdown
+
+
+def test_serial_batch_preserves_paid_failure_details_without_copying_to_siblings(
+    tmp_path,
+):
+    sources = [
+        write_test_image(tmp_path / name)
+        for name in ("success.png", "failure.png", "never.png")
+    ]
+    provider = StructuredFailureProvider()
+
+    outcomes = recognize_batch(sources, config=Config(provider=provider))
+
+    assert provider.names == ["success.png", "failure.png"]
+    assert [outcome.succeeded for outcome in outcomes] == [True, False, False]
+    assert outcomes[0].result.markdown == "# success.png\n"
+
+    failure = outcomes[1].error
+    assert failure.code == "PROVIDER_UNAVAILABLE"
+    assert failure.retryable is True
+    assert dict(failure.details) == {
+        "failed_model": None,
+        "failure_scope": "provider",
+        "model_attempts": (
+            {
+                "disposition": "retry",
+                "model": "",
+                "outcome": "PROVIDER_UNAVAILABLE",
+                "provider_calls_attempted": 1,
+            },
+        ),
+        "provider_calls_attempted": 1,
+        "workflow_pass": "draft",
+    }
+    assert failure.__cause__ is None
+    assert failure.__context__ is None
+    assert failure.__traceback__ is None
+
+    cancelled = outcomes[2].error
+    assert cancelled.code == "CANCELLED"
+    assert cancelled.details == {}
+    assert cancelled.__cause__ is None
+    assert cancelled.__context__ is None
+    assert cancelled.__traceback__ is None
 
 
 def test_parallel_batch_reserves_target_after_first_item_finishes(
@@ -396,6 +452,19 @@ def test_parallel_failure_aborts_provider_calls_still_waiting_for_the_gate(tmp_p
     assert codes.count("PROVIDER_UNAVAILABLE") == 1
     assert codes.count("CANCELLED") == 3
     assert provider.call_count == 1
+    paid_failure = next(
+        outcome.error
+        for outcome in outcomes
+        if outcome.error.code == "PROVIDER_UNAVAILABLE"
+    )
+    assert paid_failure.details["workflow_pass"] == "draft"
+    assert paid_failure.details["provider_calls_attempted"] == 1
+    assert len(paid_failure.details["model_attempts"]) == 1
+    for outcome in outcomes:
+        if outcome.error.code != "CANCELLED":
+            continue
+        assert outcome.error.details.get("provider_calls_attempted", 0) == 0
+        assert "model_attempts" not in outcome.error.details
 
 
 @pytest.mark.parametrize("process_exception_type", [KeyboardInterrupt, SystemExit])

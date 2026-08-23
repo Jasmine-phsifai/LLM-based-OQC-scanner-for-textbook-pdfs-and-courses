@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from ocrllm import (
+    Cancelled,
     Config,
     ConfigError,
     ProviderError,
@@ -70,6 +71,23 @@ class HostileErrorCode:
 class HostileString(str):
     def __iter__(self):
         raise RuntimeError("HOSTILE_STRING_SECRET_94a8")
+
+
+def test_provider_raised_cancellation_after_dispatch_counts_one_call(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    provider = RaisingProvider(
+        Cancelled("provider cancellation with private detail"),
+        "provider-repr-secret",
+    )
+
+    with pytest.raises(Cancelled) as captured:
+        recognize(source, config=Config(provider=provider))
+
+    assert provider.calls == 1
+    assert captured.value.code == "CANCELLED"
+    assert captured.value.details["workflow_pass"] == "draft"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert "model_attempts" not in captured.value.details
 
 
 def test_ordered_image_group_reaches_provider_once_in_caller_order(tmp_path):

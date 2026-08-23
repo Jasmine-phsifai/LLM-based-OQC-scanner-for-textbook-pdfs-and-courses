@@ -31,15 +31,17 @@ def call_vision_provider(
         raise ConfigError(
             "Config.provider recognize_images could not be inspected safely.",
             code="CONFIG_INVALID",
+            details={"provider_calls_attempted": 0},
         ) from None
     if not callable(recognize_method):
         del provider, recognize_method
         raise ConfigError(
-            "Config.provider must be an injected object with a callable recognize_images method.",
+            "Config.provider must be an injected object with a callable "
+            "recognize_images method.",
             code="CONFIG_INVALID",
+            details={"provider_calls_attempted": 0},
         )
 
-    dispatch_error: OCRLLMError | None = None
     try:
         provider_value = _dispatch_provider_call(
             recognize_method,
@@ -57,22 +59,15 @@ def call_vision_provider(
             details={
                 **_known_provider_details(resolved_provider),
                 "timeout_seconds": config.timeout_seconds,
+                "provider_calls_attempted": 1,
                 # The blocked call cannot be interrupted; its worker thread is
                 # abandoned as a daemon rather than joined.
                 "abandoned_provider_thread": True,
             },
         ) from None
-    except Exception as error:
-        if resolved_provider.built_in and isinstance(error, OCRLLMError):
-            dispatch_error = error
-        else:
-            dispatch_error = map_injected_provider_error(
-                error,
-                model=resolved_provider.model,
-            )
-    if dispatch_error is not None:
+    except OCRLLMError:
         del provider, recognize_method
-        raise dispatch_error
+        raise
 
     validation_error: ProviderError | None = None
     try:
@@ -84,6 +79,7 @@ def call_vision_provider(
             details={
                 **dict(error.details),
                 **_known_provider_details(resolved_provider),
+                "provider_calls_attempted": 1,
             },
         )
     if validation_error is not None:
@@ -113,13 +109,30 @@ def _dispatch_provider_call(
     config: Config,
     resolved_provider: ResolvedVisionProvider,
 ) -> object:
-    """Pace the request, then bound injected providers that have no transport timeout."""
+    """Pace requests and bound providers without transport timeouts."""
     assert callable(recognize_method)
-    if resolved_provider.built_in:
-        wait_for_provider_request_start(config.cancellation)
-        return recognize_method(tuple(image_paths), prompt=prompt, config=config)
-    with BoundedProviderCall(
-        lambda: recognize_method(tuple(image_paths), prompt=prompt, config=config)
-    ) as bounded_call:
-        wait_for_provider_request_start(config.cancellation)
-        return bounded_call.run_within(config.timeout_seconds)
+    dispatch_started = False
+    try:
+        if resolved_provider.built_in:
+            wait_for_provider_request_start(config.cancellation)
+            dispatch_started = True
+            return recognize_method(tuple(image_paths), prompt=prompt, config=config)
+        with BoundedProviderCall(
+            lambda: recognize_method(tuple(image_paths), prompt=prompt, config=config)
+        ) as bounded_call:
+            wait_for_provider_request_start(config.cancellation)
+            dispatch_started = True
+            return bounded_call.run_within(config.timeout_seconds)
+    except ProviderDeadlineExceeded:
+        raise
+    except Exception as error:
+        public_error = (
+            error
+            if resolved_provider.built_in and isinstance(error, OCRLLMError)
+            else map_injected_provider_error(error, model=resolved_provider.model)
+        )
+        public_error._add_safe_detail(
+            "provider_calls_attempted",
+            1 if dispatch_started else 0,
+        )
+        raise public_error from None
