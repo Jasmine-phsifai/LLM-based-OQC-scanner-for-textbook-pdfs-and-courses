@@ -1977,4 +1977,12 @@ RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 
 
 **PDF 与 provider 顺序。** PDF 应复用已经证明的图片识别路径，不另建平行识别体系。规模现已确认：每个 provider request 约 7—8 页；首次打通时的 batch 总数由当轮目标和真实结果决定；打通后的程序化 live regression 默认 2 批，通常共 14—16 页；600—700 页只用于明确标注的压力测试。下一条新增 provider 路径优先 Google native；OpenAI-compatible 和 local 路径留作后续独立切片，不提前建立统一抽象。
 
-**暂停边界。** batch 输入和 PDF live regression 规模两项已由维护者确认；最小 provider interface 仍待后续实现决策。本条不计为 #065，没有启动新的 iteration，没有修改产品代码，也没有调用任何 provider。
+**仓库、公开与 UI 边界。** 旧 `main` 属于维护者的另一个 GitHub 账号；维护者暂时因邮箱权限无法登录，当前用 Jasmine fork 的 `master` 继续开发。这是临时账号访问问题，不得擅自修改旧账号默认分支，也不得解释为架构问题。项目目前不公开。library 暂不包含 PyQt6/UI，UI 继续留在 legacy，不建立预备 UI 脚手架。
+
+**文件生命周期边界。** 既有 read/write/close/cleanup/checkpoint/publication 防御不回退，但其中一部分可能过度防御或尚未经过 live 证明；后续不再穷举假想异常。大文件仍必须 bounded streaming，并明确处理 read、write、close 和 cleanup，禁止为了简化控制流把整文件装入内存。
+
+**音频产品界限。** Google 音频 live 调测应在最小可执行切片出现后尽早进行，“先让真实请求跑起来”优先于继续雕琢离线边角。音频全局最高 10 小时，主要按时长路由，但还必须同时满足每个 provider 的时长上限以及 file size、transport envelope 和 token 限制；dispatch 前应按实际 adapter 完整预检。
+
+**provider 实证策略。** Google 新路径优先官方 native SDK，因为官方文档更明确且能力完整。legacy 使用的 Google OpenAI-compatible endpoint 属于官方文档未明确的灰色路径，只用于对照和有限实验，不作为默认基础。OpenAI-compatible 仍保留给未来 local 模型的独立路径，不假设它与 native SDK 等价。provider 难点是机械地 live 核对真实 catalog、错误码以及 retry、switch、terminal 行为；不设通用“重试六次”，策略必须按 provider 和 error scope 的实证制定。social media 继续延期。
+
+**暂停边界。** batch 输入和 PDF live regression 规模两项已由维护者确认；最小 provider interface 仍待后续实现决策。本条及本次补充均不计为 #065，没有启动新的 iteration，没有修改产品代码，也没有调用任何 provider。

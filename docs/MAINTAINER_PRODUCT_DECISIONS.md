@@ -18,6 +18,20 @@ implementing the older plan.
   evidence, live-provider evidence, and capabilities that remain unproven in a
   real request.
 
+## Repository, publication, and UI boundary
+
+- The old `main` belongs to another GitHub account owned by the maintainer. That
+  account is temporarily inaccessible because the maintainer cannot currently
+  use the required email access. The Jasmine fork and its `master` branch are
+  the temporary development path.
+- Do not change the old account's default branch, rewrite its role, or describe
+  this temporary account-access situation as a product architecture problem.
+- The project is not public at present. Do not infer publication, release, or
+  compatibility commitments that the maintainer has not made.
+- The library does not currently include PyQt6 or another UI layer. UI remains
+  in `legacy_app/`; do not add library UI scaffolding in anticipation of a
+  future migration.
+
 ## Removing configuration and dormant work
 
 "Unused" must not mean only "no current code reference." A configuration field
@@ -71,6 +85,17 @@ is often accepted.
 - Distinguish current-invocation usage from historical usage restored from a
   checkpoint.
 
+## File lifecycle and bounded I/O
+
+- Do not roll back the existing file lifecycle protections. They close real
+  read, write, close, cleanup, checkpoint, and publication failure paths.
+- Some of that protection may be over-defensive or unproven by live use. Do not
+  continue enumerating hypothetical filesystem exceptions merely because a new
+  branch can be imagined; prefer failures observed in legacy, tests, or live
+  product runs.
+- Large-file paths still require bounded streaming plus explicit read, write,
+  close, and cleanup handling. Never replace them with whole-file memory loads.
+
 ## Live provider evidence
 
 - A fully passing offline suite is a regression floor, not proof that the
@@ -93,6 +118,17 @@ is often accepted.
   explicitly authorized data and never publish credentials or private inputs.
 - A live resume exercise should prove that completed checkpoint slots are not
   paid for again and only missing work is dispatched after `resume=True`.
+- Exercise Google audio live as early as the smallest executable slice permits.
+  Getting a real request to run is more valuable than continuing to polish
+  isolated offline edge cases before provider behavior is known.
+
+## Audio scale and routing
+
+- The product-wide maximum audio duration is 10 hours.
+- Duration is the primary routing signal, but it never overrides a provider's
+  own duration ceiling or its file-size, transport-envelope, and token limits.
+- Preflight all applicable limits before dispatch. A duration-valid file is not
+  automatically valid for a particular provider request.
 
 ## PDF verification scale
 
@@ -116,13 +152,22 @@ is often accepted.
 - Do not remain indefinitely in "scope first" investigations. Once feasibility
   and boundaries are known, deliver a usable vertical slice and exercise it with
   real requests.
-- Prioritize a native Google provider path and live model discovery.
+- Prioritize Google's official native SDK and live model discovery. Its
+  documented behavior and complete native capability surface make it the
+  default foundation for the next Google path.
+- The Google OpenAI-compatible endpoint used by legacy is a grey path not
+  clearly established by the official documentation. Keep it only for
+  comparison and bounded experiments, not as the default implementation base.
 - Also preserve an intentional OpenAI-compatible provider direction because
-  later local models may expose that protocol. It may follow Google rather than
-  block Google delivery.
+  later local models may expose that protocol. Implement it later as a separate
+  path and do not assume it is equivalent to a provider's native SDK.
 - Existing provider paths are not removed merely because Google is prioritized.
   Keep provider-specific request and error behavior explicit; do not force
   different protocols through a misleading common implementation.
+- The difficult provider work is mechanical live verification of the real model
+  catalog, error codes, retry/switch behavior, and terminal outcomes. Do not
+  install a generic policy such as "retry six times". Retry decisions must be
+  supported by evidence for the specific provider and error scope.
 - This direction does not reactivate social-media downloading or recognition.
 
 ## Decisions still requiring exact implementation confirmation
