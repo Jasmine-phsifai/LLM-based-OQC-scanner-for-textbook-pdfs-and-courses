@@ -156,6 +156,55 @@ def test_overwrite_reuses_the_reported_path_and_replaces_content(tmp_path):
     assert provider.calls == 1
     assert result.output_path == target
     assert target.read_text(encoding="utf-8") == "# Replacement\n"
+    assert list(output_dir.glob(".ocrllm-*.tmp")) == []
+
+
+def test_short_markdown_write_preserves_old_target_and_fails(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    target = output_dir / "board_board.md"
+    target.write_text("durable old content", encoding="utf-8")
+    provider = CountingProvider("# Content that must be complete\n")
+    original_open = Path.open
+
+    class ShortWritingStream:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+        def write(self, text):
+            return self.wrapped.write(text[:-1])
+
+    def short_write_temporary(path, *args, **kwargs):
+        opened = original_open(path, *args, **kwargs)
+        mode = args[0] if args else kwargs.get("mode", "r")
+        if (
+            path.parent == output_dir
+            and path.name.startswith(".ocrllm-")
+            and path.suffix == ".tmp"
+            and mode == "x"
+        ):
+            return ShortWritingStream(opened)
+        return opened
+
+    monkeypatch.setattr(Path, "open", short_write_temporary)
+
+    with pytest.raises(OutputError) as caught:
+        recognize(
+            source,
+            config=Config(provider=provider, output_dir=output_dir, overwrite=True),
+        )
+
+    assert caught.value.code == "OUTPUT_WRITE_FAILED"
+    assert provider.calls == 1
+    assert target.read_text(encoding="utf-8") == "durable old content"
+    assert list(output_dir.glob(".ocrllm-*.tmp")) == []
 
 
 def test_atomic_publish_failure_preserves_old_target_and_cleans_temporary_file(

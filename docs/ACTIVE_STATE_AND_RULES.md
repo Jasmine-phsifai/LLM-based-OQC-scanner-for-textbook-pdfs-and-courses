@@ -96,6 +96,10 @@ The subsequent bounded full-image read also preserves its distinct not-found,
 invalid-path, memory-limit, and unreadable classifications across open, read,
 and close-only failures. If reading already failed, later stream cleanup cannot
 replace that typed, ordinary, memory-limit, or process-control primary.
+Final Markdown publication requires the temporary text stream to accept every
+character before flush, fsync, close, and atomic publication. A short write or
+close failure cannot replace an existing target, and later stream cleanup
+cannot replace an earlier typed, ordinary, or process-control failure.
 See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
@@ -128,6 +132,16 @@ Future agents must assume the following and verify before trusting any claim:
   total 1,059 lines. Most of the library is contract and validation. That ratio
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
+
+- **The image resume-state atomic writer can still publish a short write as
+  success.** `save_image_resume_state_atomically()` ignores the binary write
+  count and uses one context manager for write/flush/fsync/close. Public
+  reproduction on the completed save returned success and published final
+  Markdown after one provider call, but replaced a valid partial checkpoint
+  with truncated JSON; a later resume failed `RESUME_STATE_INVALID`. A second
+  close failure can also replace an earlier typed, ordinary, or process-control
+  primary. Repair this state writer locally with exact-byte checking and
+  explicit close precedence; do not share the Markdown writer's implementation.
 
 - **Active atomic output no longer amplifies user filenames, but arbitrary deep
   Windows paths remain unsupported.** Markdown and image-resume state writers use
