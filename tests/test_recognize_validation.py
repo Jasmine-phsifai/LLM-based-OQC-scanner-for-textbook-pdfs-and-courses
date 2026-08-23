@@ -170,6 +170,70 @@ def test_validation_stream_close_failure_is_typed_before_snapshot_and_provider(
     assert secret not in repr(captured.value.details)
 
 
+def test_decoder_memory_failure_survives_close_failure_before_provider(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "decoder-memory.png")
+    temp_dir = tmp_path / "snapshots"
+    provider = CountingProvider()
+    snapshot_read_counts: dict[Path, int] = {}
+    selected_decode_reads: list[Path] = []
+    memory_secret = "decoder-memory-secret-1845"
+    close_secret = "decoder-close-secret-7360"
+
+    def matches(path: Path, mode: str) -> bool:
+        if (
+            mode != "rb"
+            or not path.parent.parent.name.startswith("ocrllm-images-")
+        ):
+            return False
+        snapshot_read_counts[path] = snapshot_read_counts.get(path, 0) + 1
+        selected = snapshot_read_counts[path] == 2
+        if selected:
+            selected_decode_reads.append(path)
+        return selected
+
+    install_close_failing_stream(
+        monkeypatch,
+        matches=matches,
+        read_error=MemoryError(memory_secret),
+        close_error=OSError(close_secret),
+    )
+    decode_module = importlib.import_module("ocrllm.imaging.decode_image")
+    monkeypatch.setattr(
+        decode_module,
+        "decode_image_bytes",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("byte decoding must not run after a bounded-read failure")
+        ),
+    )
+
+    with pytest.raises(InvalidSource) as caught:
+        recognize(
+            source,
+            config=Config(provider=provider, temp_dir=temp_dir),
+        )
+
+    assert caught.value.code == "SOURCE_TOO_LARGE"
+    assert caught.value.details["source_stream_cleanup_failed"] is True
+    assert len(selected_decode_reads) == 1
+    assert snapshot_read_counts[selected_decode_reads[0]] == 2
+    assert provider.calls == 0
+    assert list(temp_dir.glob("ocrllm-images-*")) == []
+    rendered = "".join(
+        traceback.format_exception(
+            type(caught.value),
+            caught.value,
+            caught.value.__traceback__,
+        )
+    )
+    assert memory_secret not in rendered
+    assert close_secret not in rendered
+    assert memory_secret not in str(caught.value)
+    assert close_secret not in repr(caught.value.details)
+
+
 @pytest.mark.parametrize(
     ("stream_kind", "expected_error", "expected_code"),
     [

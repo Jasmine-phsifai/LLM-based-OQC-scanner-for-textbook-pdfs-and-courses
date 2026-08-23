@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from ocrllm.errors import DependencyMissing, InvalidSource, UnsupportedFormat
-from ocrllm.imaging.decode_image import decode_image
+from ocrllm.imaging.decode_image import _read_image_bytes_bounded, decode_image
 from ocrllm.imaging.decode_image_bytes import MAX_IMAGE_PIXELS
 from ocrllm.imaging.decoded_image_info import DecodedImageInfo
 from ocrllm.validate_image_group import (
@@ -178,6 +178,80 @@ def test_decode_image_rejects_corrupt_and_truncated_data(tmp_path):
         with pytest.raises(InvalidSource) as raised:
             decode_image(source)
         assert raised.value.code == "SOURCE_INVALID"
+
+
+@pytest.mark.parametrize("primary_kind", ["typed", "ordinary", "keyboard_interrupt"])
+def test_bounded_image_read_preserves_primary_when_close_also_fails(
+    tmp_path,
+    monkeypatch,
+    primary_kind,
+) -> None:
+    source = write_test_image(tmp_path / "bounded-read-close.png")
+    if primary_kind == "typed":
+        primary = InvalidSource("primary decode failure", code="SOURCE_INVALID")
+    elif primary_kind == "ordinary":
+        primary = RuntimeError("primary ordinary decode failure")
+    else:
+        primary = KeyboardInterrupt("primary decode process control")
+    install_close_failing_stream(
+        monkeypatch,
+        matches=lambda path, mode: path == source and mode == "rb",
+        read_error=primary,
+        close_error=OSError("decode-close-secret-2916"),
+    )
+
+    with pytest.raises(type(primary)) as caught:
+        _read_image_bytes_bounded(source)
+
+    assert caught.value is primary
+    if isinstance(primary, InvalidSource):
+        assert primary.details["source_stream_cleanup_failed"] is True
+
+
+@pytest.mark.parametrize(
+    ("close_error", "expected_code"),
+    [
+        (OSError("decode-close-os-secret-3827"), "SOURCE_UNREADABLE"),
+        (ValueError("decode-close-value-secret-4938"), "SOURCE_INVALID"),
+    ],
+)
+def test_bounded_image_read_maps_close_only_failure(
+    tmp_path,
+    monkeypatch,
+    close_error,
+    expected_code,
+) -> None:
+    source = write_test_image(tmp_path / "bounded-close-only.png")
+    install_close_failing_stream(
+        monkeypatch,
+        matches=lambda path, mode: path == source and mode == "rb",
+        close_error=close_error,
+    )
+
+    with pytest.raises(InvalidSource) as caught:
+        _read_image_bytes_bounded(source)
+
+    assert caught.value.code == expected_code
+    assert str(close_error) not in str(caught.value)
+    assert str(close_error) not in repr(caught.value.details)
+
+
+def test_bounded_image_read_propagates_process_control_from_close(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "bounded-close-control.png")
+    control = SystemExit("decode close process control")
+    install_close_failing_stream(
+        monkeypatch,
+        matches=lambda path, mode: path == source and mode == "rb",
+        close_error=control,
+    )
+
+    with pytest.raises(SystemExit) as caught:
+        _read_image_bytes_bounded(source)
+
+    assert caught.value is control
 
 
 def test_decode_image_rejects_content_that_does_not_match_the_suffix(tmp_path):

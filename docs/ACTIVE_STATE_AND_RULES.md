@@ -92,6 +92,10 @@ rather than inherited from a caller's ambient exception.
 The preceding one-byte filesystem validation read follows the same local
 precedence rule: a close-only failure is typed, while an earlier validation,
 ordinary, or process-control failure remains primary.
+The subsequent bounded full-image read also preserves its distinct not-found,
+invalid-path, memory-limit, and unreadable classifications across open, read,
+and close-only failures. If reading already failed, later stream cleanup cannot
+replace that typed, ordinary, memory-limit, or process-control primary.
 See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository
@@ -124,15 +128,6 @@ Future agents must assume the following and verify before trusting any claim:
   total 1,059 lines. Most of the library is contract and validation. That ratio
   is acceptable for a library, but it means new capability is cheap and new
   ceremony is expensive. Bias toward capability.
-
-- **The bounded image decoder read still has close-error precedence debt.**
-  `_read_image_bytes_bounded()` already types a close-only ordinary failure,
-  but its context manager can let a second close `OSError` replace an earlier
-  typed error, ordinary error, `MemoryError`, or process-control exception from
-  the full-buffer read. Public reproduction reaches this owned-snapshot path
-  before provider dispatch and cleanup still succeeds, but `MemoryError` can be
-  misreported as `SOURCE_UNREADABLE` instead of `SOURCE_TOO_LARGE`. Repair this
-  inside `decode_image.py`; do not create a shared media cleanup framework.
 
 - **Active atomic output no longer amplifies user filenames, but arbitrary deep
   Windows paths remain unsupported.** Markdown and image-resume state writers use

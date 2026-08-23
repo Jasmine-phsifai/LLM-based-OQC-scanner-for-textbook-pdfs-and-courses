@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..errors import InvalidSource
+from ..errors import OCRLLMError, InvalidSource
 from ..validate_source import MAX_SOURCE_BYTES
 from .decode_image_bytes import decode_image_bytes
 from .decoded_image_info import DecodedImageInfo
@@ -19,28 +19,24 @@ def decode_image(source: str | Path) -> DecodedImageInfo:
 
 def _read_image_bytes_bounded(source_path: Path) -> bytes:
     try:
-        with source_path.open("rb") as source_stream:
+        source_stream = source_path.open("rb")
+    except (ValueError, MemoryError, OSError) as error:
+        raise _map_image_source_access_error(error) from None
+
+    primary_error: BaseException | None = None
+    try:
+        try:
             image_bytes = source_stream.read(MAX_SOURCE_BYTES + 1)
-    except FileNotFoundError:
-        raise InvalidSource(
-            "The image source is no longer available.",
-            code="SOURCE_NOT_FOUND",
-        ) from None
-    except ValueError:
-        raise InvalidSource(
-            "The image source path is invalid.",
-            code="SOURCE_INVALID",
-        ) from None
-    except MemoryError:
-        raise InvalidSource(
-            "The image source could not be read within safe memory limits.",
-            code="SOURCE_TOO_LARGE",
-        ) from None
-    except OSError:
-        raise InvalidSource(
-            "The image source could not be read.",
-            code="SOURCE_UNREADABLE",
-        ) from None
+        except (ValueError, MemoryError, OSError) as error:
+            raise _map_image_source_access_error(error) from None
+    except BaseException as error:
+        primary_error = error
+        raise
+    finally:
+        _close_bounded_image_stream(
+            source_stream,
+            primary_error=primary_error,
+        )
 
     if not image_bytes:
         raise InvalidSource(
@@ -53,3 +49,45 @@ def _read_image_bytes_bounded(source_path: Path) -> bytes:
             code="SOURCE_TOO_LARGE",
         ) from None
     return image_bytes
+
+
+def _close_bounded_image_stream(
+    source_stream,
+    *,
+    primary_error: BaseException | None,
+) -> None:
+    """Close the bounded image stream without replacing an active failure."""
+
+    try:
+        source_stream.close()
+    except (ValueError, MemoryError, OSError) as error:
+        if primary_error is None:
+            raise _map_image_source_access_error(error) from None
+        if isinstance(primary_error, OCRLLMError):
+            primary_error._add_safe_detail("source_stream_cleanup_failed", True)
+
+
+def _map_image_source_access_error(
+    error: OSError | ValueError | MemoryError,
+) -> InvalidSource:
+    """Map one expected image-file access failure without retaining its data."""
+
+    if isinstance(error, FileNotFoundError):
+        return InvalidSource(
+            "The image source is no longer available.",
+            code="SOURCE_NOT_FOUND",
+        )
+    if isinstance(error, ValueError):
+        return InvalidSource(
+            "The image source path is invalid.",
+            code="SOURCE_INVALID",
+        )
+    if isinstance(error, MemoryError):
+        return InvalidSource(
+            "The image source could not be read within safe memory limits.",
+            code="SOURCE_TOO_LARGE",
+        )
+    return InvalidSource(
+        "The image source could not be read.",
+        code="SOURCE_UNREADABLE",
+    )
