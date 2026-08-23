@@ -218,15 +218,6 @@ Future agents must assume the following and verify before trusting any claim:
   leaves the partial sidecar byte-identical. A later uncancelled resume reuses
   the slots and completes with zero new calls.
 
-- **Candidate recovery does not yet aggregate spend when checkpoint persistence
-  raises an output error.** If an eligible provider failure advances from an
-  earlier model and a later model then completes a paid call but fails snapshot
-  verification or state saving, the terminal `OutputError` reports the later
-  candidate's local call count but omits earlier candidate attempts. The
-  checkpoint remains safe; the diagnostic total is incomplete. Repair this in
-  the candidate-attempt ledger with a focused multi-candidate regression rather
-  than broadening snapshot verification.
-
 - **Batch settlement preserves process-control exceptions.** After one item
   returns a typed failure, settlement maps only a genuinely cancelled
   `Future` to the not-attempted `CANCELLED` outcome. `KeyboardInterrupt`,
@@ -720,7 +711,7 @@ These are current implementation findings, not historical phase failures.
 Their identifiers are stable so plans, tests, and future diary entries can
 refer to the same issue.
 
-#### G1 — Attempt ledger cannot reconstruct spend. **High. Closed 2026-08-22.**
+#### G1 — Attempt ledger cannot reconstruct spend. **High. Closed 2026-08-22; terminal aggregation corrected 2026-08-23.**
 
 `cd7429c` added `provider_calls_attempted` to every successful or typed-failure
 `model_attempts` entry and a `workflow_slots` disclosure in result metadata.
@@ -729,6 +720,13 @@ zero provider calls and `model: null`: no provider model was tried, and
 caller-controlled invalid text cannot leak through public error details. If a
 fixed scout model fails catalog resolution after a paid primary pass, the same
 entry retains that prior call count and names the setup workflow pass.
+The 2026-08-23 follow-up closes terminal aggregation as well: every ledger
+entry remains local to one candidate, while terminal `ConfigError`,
+`ProviderError` (including `AllCandidatesExhausted`), and checkpoint
+`OutputError` expose the sum across all attempted candidates. A checkpoint
+output failure gets its own typed ledger entry and never advances again.
+Catalog discovery failure before dispatch defaults to zero calls rather than
+the ordinary provider-failure default of one.
 
 #### G2 — Recovery is quota-only. **Medium. Closed 2026-08-22; scope corrected 2026-08-23.**
 
@@ -1049,9 +1047,11 @@ crash mid-request discards nothing that was already paid for.
   `model_attempts` ledger entry — success or typed failure — carries
   `provider_calls_attempted`, so a successful fallback no longer discards what
   the failed candidates spent. Typed failures keep their `workflow_pass` and
-  `provider_calls_attempted` details. If a validated paid pass then fails while
+  a terminal error's `provider_calls_attempted` is the sum of the local counts
+  in its model-attempt ledger. If a validated paid pass then fails while
   atomically persisting its slot, the `OUTPUT_WRITE_FAILED` error also names
-  that workflow pass and the current invocation's attempted-call count. Earlier
+  that workflow pass, adds a failed candidate entry without inventing a provider
+  disposition, and reports the full invocation's attempted-call count. Earlier
   slots remain intact, and no final Markdown is published. A completed-state
   write can separately exceed the 16 MiB sidecar limit after all slots fit,
   because completed state also carries the assembled result. That failure now

@@ -35,7 +35,9 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   zero-network model-loading contract; resume source hashing is bounded on
   actual snapshot reads, and fresh provider/local-OCR results are rejected
   before checkpoint or final publication if those owned bytes no longer match
-  the recorded request identity;
+  the recorded request identity; terminal candidate failures retain local
+  per-model ledger counts while reporting their sum at the top level, including
+  checkpoint output failures and pre-dispatch zero-call catalog failures;
   all no-cost exit criteria pass through the clean-archive runner at `271d96d`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;

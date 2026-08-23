@@ -171,6 +171,7 @@ def test_candidate_chain_raises_after_the_last_model_and_names_it(tmp_path):
     assert provider.models == ["quota-model", "last-model"]
     assert captured.value.details["all_candidates_exhausted"] is True
     assert captured.value.details["last_model"] == "last-model"
+    assert captured.value.details["provider_calls_attempted"] == 2
     assert captured.value.code == "ALL_CANDIDATES_EXHAUSTED"
     assert not isinstance(captured.value, QuotaExhausted)
 
@@ -454,3 +455,51 @@ def test_configuration_failure_is_recorded_in_the_attempt_ledger(tmp_path, monke
             "provider_calls_attempted": 0,
         }
     ]
+
+
+def test_candidate_chain_counts_prior_spend_before_configuration_failure(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    processor = importlib.import_module("ocrllm.processors.recognize_images")
+    real_resolve = processor.resolve_vision_provider
+
+    def reject_recovery_model(config):
+        if config.vision_model.name == "invalid-recovery-model":
+            raise ConfigError("test-only recovery model configuration failure")
+        return real_resolve(config)
+
+    monkeypatch.setattr(processor, "resolve_vision_provider", reject_recovery_model)
+    source = write_test_image(tmp_path / "board.png")
+    provider = _CandidateProvider()
+
+    with pytest.raises(ConfigError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(
+                    name="quota-model",
+                    candidate_models=("invalid-recovery-model",),
+                ),
+            ),
+        )
+
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert [
+        dict(attempt) for attempt in captured.value.details["model_attempts"]
+    ] == [
+        {
+            "model": "quota-model",
+            "outcome": "PROVIDER_QUOTA_EXHAUSTED",
+            "disposition": "stop",
+            "provider_calls_attempted": 1,
+        },
+        {
+            "model": None,
+            "outcome": "CONFIG_INVALID",
+            "disposition": "fix_request",
+            "provider_calls_attempted": 0,
+        },
+    ]
+    assert provider.models == ["quota-model"]

@@ -90,6 +90,7 @@ def recognize_images(
         ordered_models = [config.vision_model.name]
 
     attempts: list[dict[str, str | int | None]] = []
+    total_calls_attempted = 0
     for candidate_index, model in enumerate(ordered_models):
         candidate_config = config
         if model is not None:
@@ -114,6 +115,12 @@ def recognize_images(
             # earlier paid calls reported by the workflow, then stop. Never
             # advance: silently skipping a misserved model would hide the
             # caller's mistake behind a different model they did not pin.
+            local_calls_attempted = error.details.get(
+                "provider_calls_attempted",
+                0,
+            )
+            if type(local_calls_attempted) is not int or local_calls_attempted < 0:
+                local_calls_attempted = 0
             attempts.append(
                 {
                     # Resolution rejected caller-controlled text before any
@@ -122,22 +129,32 @@ def recognize_images(
                     "model": None,
                     "outcome": error.code,
                     "disposition": "fix_request",
-                    "provider_calls_attempted": error.details.get(
-                        "provider_calls_attempted", 0
-                    ),
+                    "provider_calls_attempted": local_calls_attempted,
                 }
+            )
+            total_calls_attempted += local_calls_attempted
+            error._add_safe_detail(
+                "provider_calls_attempted",
+                total_calls_attempted,
             )
             error._add_safe_detail("model_attempts", attempts)
             raise
         except ProviderError as error:
             disposition = get_provider_error_disposition(error)
+            default_local_calls = (
+                0 if error.code == "PROVIDER_CATALOG_UNAVAILABLE" else 1
+            )
+            local_calls_attempted = error.details.get(
+                "provider_calls_attempted",
+                default_local_calls,
+            )
+            if type(local_calls_attempted) is not int or local_calls_attempted < 0:
+                local_calls_attempted = default_local_calls
             entry: dict[str, str | int | None] = {
                 "model": model or "",
                 "outcome": error.code,
                 "disposition": disposition.action,
-                "provider_calls_attempted": error.details.get(
-                    "provider_calls_attempted", 1
-                ),
+                "provider_calls_attempted": local_calls_attempted,
             }
             failed_model = error.details.get("failed_model")
             own_failure = not (
@@ -146,12 +163,17 @@ def recognize_images(
             if not own_failure and type(failed_model) is str:
                 entry["failed_model"] = failed_model
             attempts.append(entry)
+            total_calls_attempted += local_calls_attempted
             if (
                 own_failure
                 and not is_last
                 and _may_advance_candidate(error, disposition)
             ):
                 continue
+            error._add_safe_detail(
+                "provider_calls_attempted",
+                total_calls_attempted,
+            )
             error._add_safe_detail("model_attempts", attempts)
             if (
                 candidate_recovery_enabled
@@ -172,6 +194,27 @@ def recognize_images(
                 error._add_safe_detail("all_candidates_exhausted", True)
                 error._add_safe_detail("last_model", model)
             raise error from None
+        except OutputError as error:
+            local_calls_attempted = error.details.get(
+                "provider_calls_attempted",
+                0,
+            )
+            if type(local_calls_attempted) is not int or local_calls_attempted < 0:
+                local_calls_attempted = 0
+            attempts.append(
+                {
+                    "model": model or "",
+                    "outcome": error.code,
+                    "provider_calls_attempted": local_calls_attempted,
+                }
+            )
+            total_calls_attempted += local_calls_attempted
+            error._add_safe_detail(
+                "provider_calls_attempted",
+                total_calls_attempted,
+            )
+            error._add_safe_detail("model_attempts", attempts)
+            raise
 
         attempts.append(
             {

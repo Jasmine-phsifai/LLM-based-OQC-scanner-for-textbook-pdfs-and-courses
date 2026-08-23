@@ -340,6 +340,73 @@ def test_fallback_does_not_reuse_or_discard_other_models_paid_slots(
     assert {slot["model"] for slot in persisted["slots"]} == {"recovery-model"}
 
 
+def test_fallback_checkpoint_failure_counts_every_model_attempt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    provider = _ModelAwareProvider(quota_model="quota-model")
+    saver = importlib.import_module("ocrllm.output.save_image_resume_state_atomically")
+    real_replace = saver.os.replace
+    replace_count = 0
+
+    def fail_recovery_draft_checkpoint(source_path, destination_path):
+        nonlocal replace_count
+        replace_count += 1
+        if replace_count == 2:
+            raise OSError("test-only recovery checkpoint failure")
+        return real_replace(source_path, destination_path)
+
+    monkeypatch.setattr(saver.os, "replace", fail_recovery_draft_checkpoint)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                vision_model=VisionModelSettings(
+                    name="quota-model",
+                    candidate_models=("recovery-model",),
+                ),
+                preferences=RecognitionPreferences(
+                    draft_candidates=1,
+                    review_passes=1,
+                ),
+            ),
+        )
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["workflow_pass"] == "draft"
+    assert captured.value.details["provider_calls_attempted"] == 3
+    assert [
+        dict(attempt) for attempt in captured.value.details["model_attempts"]
+    ] == [
+        {
+            "model": "quota-model",
+            "outcome": "PROVIDER_QUOTA_EXHAUSTED",
+            "disposition": "stop",
+            "provider_calls_attempted": 2,
+        },
+        {
+            "model": "recovery-model",
+            "outcome": "OUTPUT_WRITE_FAILED",
+            "provider_calls_attempted": 1,
+        },
+    ]
+    assert provider.calls == [
+        "quota-model",
+        "quota-model",
+        "recovery-model",
+    ]
+    assert not (output_dir / "board_board.md").exists()
+    partial_state = _state_document(output_dir)
+    assert [slot["slot_id"] for slot in partial_state["slots"]] == ["draft"]
+    assert {slot["model"] for slot in partial_state["slots"]} == {"quota-model"}
+    assert list(output_dir.glob(".*.tmp")) == []
+
+
 def test_completed_state_failure_counts_calls_across_model_fallback(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

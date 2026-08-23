@@ -697,6 +697,43 @@ def test_unavailable_dashscope_model_fails_from_provider_catalog(tmp_path, monke
     assert sentinel not in repr(captured.value.details)
 
 
+def test_catalog_outage_before_dispatch_reports_zero_provider_calls(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png", size=(11, 11))
+    resolver = importlib.import_module(
+        "ocrllm.providers.dashscope.resolve_dashscope_model"
+    )
+    monkeypatch.setattr(
+        resolver,
+        "fetch_dashscope_model_catalog",
+        lambda settings: None,
+    )
+
+    with pytest.raises(ProviderError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=_settings(),
+                vision_model=VisionModelSettings(name="catalog-model"),
+            ),
+        )
+
+    assert captured.value.code == "PROVIDER_CATALOG_UNAVAILABLE"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert [
+        dict(attempt) for attempt in captured.value.details["model_attempts"]
+    ] == [
+        {
+            "model": "catalog-model",
+            "outcome": "PROVIDER_CATALOG_UNAVAILABLE",
+            "disposition": "retry",
+            "provider_calls_attempted": 0,
+        }
+    ]
+
+
 def test_pre_dispatch_cancellation_makes_zero_sdk_calls(tmp_path, monkeypatch):
     from threading import Event
 
