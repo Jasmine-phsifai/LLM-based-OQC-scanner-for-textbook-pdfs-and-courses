@@ -117,6 +117,7 @@ try {
     $locationDepth += 1
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
         --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
+        --with 'miniaudio>=1.71,<2' `
         --python $python python -m pytest -q -p no:cacheprovider
     Assert-LastExitCode 'archived-source pytest failed'
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
