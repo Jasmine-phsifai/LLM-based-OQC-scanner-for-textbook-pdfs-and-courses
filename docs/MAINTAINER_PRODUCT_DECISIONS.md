@@ -166,11 +166,13 @@ is often accepted.
 - Do not remain indefinitely in "scope first" investigations. Once feasibility
   and boundaries are known, deliver a usable vertical slice and exercise it with
   real requests.
-- For now, continue using the Google OpenAI-compatible endpoint that the legacy
-  application has already exercised and matured in real use.
-- Google's native SDK remains an unexplored path and is deferred. Investigate it
-  separately only when long-audio support, live model-catalog behavior, or a
-  required complete native capability cannot be served by the current path.
+- Follow the actual legacy built-in Google transport: native `google-genai` for
+  image and audio. The #066 repository audit found the Google compatibility URL
+  only in the generic independent-vision configuration and found no
+  Google-specific compatibility live-success or error-history record.
+- Treat a Google OpenAI-compatible transport as a possible later, separate path,
+  not as evidence for native behavior. Add it only for a proven need and after
+  maintainer confirmation.
 - Also preserve an intentional OpenAI-compatible provider direction because
   later local models may expose that protocol. Implement local compatibility as
   a separate future path; a shared wire shape does not prove equivalent models,
@@ -199,6 +201,6 @@ is often accepted.
 
 ## Decisions still requiring exact implementation confirmation
 
-- Choose the smallest explicit provider boundary for the legacy-proven Google
-  OpenAI-compatible path without conflating it with the future local-compatible
-  path or the deferred native SDK investigation.
+- Confirm the smallest explicit native `google-genai` provider boundary without
+  conflating it with either a possible secondary Google compatibility transport
+  or the future local-model OpenAI-compatible path.

@@ -89,9 +89,10 @@ This ceiling is not a provider request limit; the selected adapter must
 separately preflight its exact Base64/JSON envelope.
 The earlier proposal that a built-in Google image adapter remain a later
 optional slice is superseded by the #065 queue below. Google is still not
-implemented in the active library; the next slice starts from the
-legacy-proven Google OpenAI-compatible endpoint, not an unproven native-SDK or
-generic-provider abstraction.
+implemented in the active library. The #066 transport audit proved that the
+legacy built-in Google image/audio path uses native `google-genai`; the generic
+OpenAI-compatible Google URL was only an independent-provider configuration
+hint. The next slice therefore follows the actual native legacy transport.
 The shipped image snapshot closes every source and destination before image
 validation or provider dispatch. Short writes and close-only failures become
 typed, redacted errors; an earlier library, ordinary, or process-control
@@ -151,34 +152,34 @@ implemented. Existing attempt disclosure counts provider calls and model/workflo
 attempts; it is not token usage. Resume is the primary recovery mechanism;
 repair is a later, bounded fallback for missing or unusable state.
 
-### P0-a — Bounded legacy provider-error evidence audit
+### P0-a — Bounded legacy provider-error evidence audit (completed by #066)
 
-Spend at most one bounded iteration auditing the roughly two months of legacy
-Google, DashScope, and Codex-mode fixes. Produce one evidence table mapping real
-provider errors to exactly one of: retry the same request, switch model, stop,
-reject input before dispatch, or defer to later manual repair. Apply the
-legacy-parent rule: include only behavior with an analogous active-library path
-or an immediately selected vertical slice. Do not copy legacy architecture.
+The bounded audit is complete in
+[`legacy_provider_error_action_evidence.md`](legacy_provider_error_action_evidence.md).
+It maps the relevant legacy Google, DashScope, generic OpenAI-compatible, Codex,
+and PDF evidence to one explicit action while separating incidents, offline
+tests, and code-only policy. Apply the legacy-parent rule; the table is
+historical evidence, not current-live provider truth.
 
 Exit gate: the table cites the exact legacy paths/incidents, distinguishes
 provider and error scope, and identifies which rows are proven current versus
 historical warnings. Non-goals: implementation, a generic retry count, or an
 open-ended legacy survey.
 
-### P0-b — Google OpenAI-compatible image vertical slice
+### P0-b — Native Google image vertical slice
 
-Implement the smallest built-in image path using the legacy-proven Google
-OpenAI-compatible endpoint. Keep provider-specific catalog, request, response,
-error, retry/switch, and terminal behavior explicit. Then run bounded live proof
-with one image, one group of 7-8 images, at least one honest failure, record the
-locally observed call count, and record whether the endpoint reports input/output
-token usage.
+Implement the smallest built-in image path using the actual legacy built-in
+transport, the native `google-genai` SDK. Keep provider-specific catalog,
+request, response, error, retry/switch, and terminal behavior explicit. Then run
+bounded live proof with one image, one group of 7-8 images, at least one honest
+failure, record the locally observed call count, and record whether the endpoint
+reports input/output token usage.
 
 Exit gate: public image recognition succeeds through the built-in adapter, the
 real failure remains typed and non-successful, live model discovery or the
 endpoint's actual catalog behavior is recorded, and usage availability is
-reported without inventing zero. Non-goals: native Google SDK, a universal
-provider interface, PDF, audio, or broad stress testing.
+reported without inventing zero. Non-goals: a second Google transport, a
+universal provider interface, PDF, audio, or broad stress testing.
 
 ### P0-c — Live cancellation, checkpoint, and resume proof
 
@@ -194,14 +195,14 @@ new checkpoint schemas, or repair.
 
 Deliver the smallest public short-MP3 path and run one real authorized MP3 as
 soon as the executable slice exists. Reuse the current bounded snapshot/probe,
-then add only the configuration, request, response, result, persistence, and
-facade required by the consumer. If the Google OpenAI-compatible endpoint is
-proven not to support the required audio request, record the blocker and ask the
-maintainer; do not switch to the native SDK autonomously.
+then add only the native `google-genai` configuration, request, response,
+result, persistence, and facade required by the consumer. If the native SDK is
+proven not to support the required bounded short-audio request, record the
+blocker and ask the maintainer; do not introduce a second Google transport.
 
 Exit gate: one public real-MP3 result or one evidence-backed endpoint blocker,
 with provider limits preflighted and no false success. Non-goals: long audio,
-FileTrans, native SDK exploration, or a modality-wide framework.
+FileTrans, Google compatibility-endpoint exploration, or a modality-wide framework.
 
 ### P1-b — Concrete-tuple batch contract and full preflight
 
@@ -243,9 +244,9 @@ repair as an alternative to normal resume.
 ### P2 — Explicitly deferred work
 
 Paid DashScope live re-verification, the future local-model OpenAI-compatible
-path, long audio, and Google native-SDK investigation are P2. Native SDK work
-starts only after a proven requirement such as unsupported long audio, missing
-catalog behavior, or a required complete capability.
+path, a possible secondary Google compatibility transport, and long audio are
+P2. A second Google transport starts only after a proven need and maintainer
+confirmation; wire-shape similarity is not evidence of equivalent behavior.
 
 Usage work is not a separate billing engine. As each real adapter lands,
 accumulate locally observed calls plus provider-reported input and output tokens
@@ -254,8 +255,9 @@ and historical checkpoint usage remains distinct from the current invocation.
 
 Stop conditions for #065: do not continue #060-#064-style proactive snapshot or
 call-accounting edge scans; do not enumerate hypothetical filesystem failures;
-do not build generic provider or repair frameworks, switch to the native Google
-SDK without maintainer confirmation, add cross-process locking, UI/PyQt, social
+do not build generic provider or repair frameworks, introduce a second Google
+transport or universal compatibility layer without maintainer confirmation,
+add cross-process locking, UI/PyQt, social
 features, unapproved stress tests, or mechanically delete dormant fields.
 Existing lifecycle fixes remain. Large-file paths still require bounded
 streaming and explicit read/write/close/cleanup. Offline tests are a regression
@@ -742,9 +744,9 @@ to weaken validation or report false success.
 
 Select models from the live Google catalog rather than a hardcoded list. Audio is
 supported by fewer Google models than images, so verify current audio capability
-before dispatch. This authorization permits bounded native-model tests, but #065
-defers native-SDK work and forbids an autonomous switch when the selected
-OpenAI-compatible endpoint is blocked; record evidence and ask the maintainer.
+before dispatch. This authorization permits the bounded native-SDK tests selected
+by #065. Do not add a second Google compatibility transport when the native path
+is blocked; record evidence and ask the maintainer.
 Keep calls purposeful and bounded, preserve exact outcomes, never print credentials,
 and submit only authorized data. This authority does not activate a deferred
 provider adapter or social-media feature. The detailed operational policy is

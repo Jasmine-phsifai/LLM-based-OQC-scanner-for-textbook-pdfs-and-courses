@@ -71,10 +71,10 @@ the bytes that the probe reads. No audio provider, facade, persistence, or
 recognition result exists yet. Stage A2 has not started.
 
 The ordered current work is `#065 Unified Execution Queue` in
-`docs/ACTIVE_STATE_AND_RULES.md`. It starts with one bounded legacy-provider
-evidence audit, then the legacy-proven Google OpenAI-compatible image slice and
-live proof; it explicitly stops further proactive filesystem/accounting edge
-scans.
+`docs/ACTIVE_STATE_AND_RULES.md`. Its bounded legacy-provider audit is complete
+in `docs/legacy_provider_error_action_evidence.md`; the next slice is native
+`google-genai` image recognition and live proof. It explicitly stops further
+proactive filesystem/accounting edge scans.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203

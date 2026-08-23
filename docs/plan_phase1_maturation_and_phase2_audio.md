@@ -4,10 +4,11 @@
 > alternatives, and completed Stage M history. Stage M is offline
 > implementation-complete. Any ordering or provider direction that conflicts
 > with `#065 Unified Execution Queue` in `ACTIVE_STATE_AND_RULES.md` is
-> superseded. Current execution is Google OpenAI-compatible first, using the
-> legacy-proven endpoint, with public short audio and bounded live proof early;
-> the unproven native Google SDK is deferred unless a concrete capability need
-> is established. The authority queue, not this historical sequence, controls
+> superseded. The #066 transport audit proved that the legacy built-in Google
+> path is native `google-genai`; current execution follows that native image
+> path, with public short audio and bounded live proof early. A possible Google
+> compatibility transport and the future local-compatible path are separate,
+> later work. The authority queue, not this historical sequence, controls
 > current work.
 
 Status: **retained detailed plan; Stage M offline implementation complete, paid

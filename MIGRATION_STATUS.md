@@ -77,6 +77,12 @@ Google, public audio recognition, PDF, content repair, and provider-reported
 per-model token usage remain unimplemented. Resume is the primary recovery
 path; bounded marker-based repair follows only after a stable PDF path exists.
 Offline tests are a regression floor, not live-provider evidence.
+P0-a is complete in
+[`docs/legacy_provider_error_action_evidence.md`](docs/legacy_provider_error_action_evidence.md).
+The transport audit proved that legacy built-in Google uses native
+`google-genai`; P0-b is the smallest native image slice plus bounded live proof.
+The generic compatibility endpoint and future local-model compatibility remain
+separate later directions.
 
 The defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,
