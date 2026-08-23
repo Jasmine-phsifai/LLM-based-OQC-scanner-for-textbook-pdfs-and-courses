@@ -28,6 +28,9 @@ def reuse_image_resume_state(
             "The completed result in image resume state is corrupt.",
             code="RESUME_STATE_INVALID",
         ) from None
+    metadata = dict(state.metadata)
+    if "current_model_token_usage" in metadata:
+        metadata["current_model_token_usage"] = ()
     return ProcessorOutput(
         media_type="image",
         markdown=state.markdown,
@@ -35,5 +38,5 @@ def reuse_image_resume_state(
         status=state.status,
         hotwords=state.hotwords,
         warnings=state.warnings,
-        metadata=state.metadata,
+        metadata=metadata,
     )

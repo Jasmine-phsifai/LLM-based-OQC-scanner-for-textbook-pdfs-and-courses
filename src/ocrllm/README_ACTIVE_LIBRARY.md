@@ -21,6 +21,7 @@ from ocrllm import (
     DashScopeCredentialSlotReport,
     DashScopeSettings,
     DependencyMissing,
+    GoogleGenAISettings,
     InvalidSource,
     LocalOCRSettings,
     NoSpeechDetected,
@@ -48,6 +49,7 @@ from ocrllm import (
     recognize_batch,
     get_capabilities,
     get_provider_error_disposition,
+    list_google_genai_models,
 )
 ```
 
@@ -79,6 +81,10 @@ The current image facade:
 - resolves the exact `DashScopeSettings` provider value as the built-in
   OpenAI-compatible adapter, while keeping `openai` and `httpx` lazy behind
   `ocrllm[dashscope]`; string provider categories are invalid;
+- resolves exact `GoogleGenAISettings` through the native lazy
+  `ocrllm[google]` adapter. Call `list_google_genai_models(settings)` for the
+  current real-time `generateContent` catalog; model support is not hardcoded,
+  and ordinary `import ocrllm` does not import `google-genai`;
 - composes exact `VisionModelSettings` and fails known model/group mismatches
   before source/provider work;
 - freshly revalidates an exact public `Config`; injected providers retain the
@@ -105,6 +111,9 @@ passed base, `image`, and `image,dashscope` clean profiles.
 `get_capabilities()` reports every known atomic capability without a network
 call or optional import. With an explicit config, it reports that exact
 workflow's proven status rather than treating installed code as sufficient.
+The direct Google image adapter is experimental. Its current model catalog is
+queried only by explicit Google operations, not by import or shared capability
+reporting.
 Phase 2 exposes a spawned one-job manager with bounded JSON event bridging and
 verified five-second descendant cancellation. The production image job adapter
 reuses the same unified facade once per ordered group, fixes the Beijing v17
@@ -140,6 +149,34 @@ remain unavailable.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.
+
+## Bounded Google Image Live Smoke
+
+Install `ocrllm[image,google]`, set `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) in
+the environment without placing its value on the command line, and run from the
+repository root with authorized images:
+
+```powershell
+# GOOGLE_API_KEY is already present in this process; do not echo it.
+python tools/run_google_genai_image_smoke.py `
+  --model gemini-2.5-flash `
+  --single-image tests/fixtures/phase1/images/bilingual_printed_slide.png `
+  --group-image `
+    tests/fixtures/phase1/images/bilingual_printed_slide.png `
+    tests/fixtures/phase1/images/bilingual_printed_slide_projected.jpg `
+    tests/fixtures/phase1/images/formula_board.png `
+    tests/fixtures/phase1/images/calibration_table.png `
+    tests/fixtures/phase1/images/handwritten_whiteboard.jpg `
+    tests/fixtures/phase1/images/bilingual_printed_slide.png `
+    tests/fixtures/phase1/images/bilingual_printed_slide_projected.jpg `
+    tests/fixtures/phase1/images/formula_board.png `
+  --timeout 120
+```
+
+The script performs current catalog discovery, one single-image call, one
+explicit eight-image call, and one invalid-credential failure probe. It prints
+only a bounded JSON summary, never recognized Markdown or paths, and does not
+retry, cache, choose another model, or fall back to another transport.
 
 ## Current Maturation Boundary
 

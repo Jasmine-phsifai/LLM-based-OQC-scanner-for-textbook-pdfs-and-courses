@@ -50,8 +50,9 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   batch outcomes preserve those structured item-local errors, while shared-gate
   cancellation before callable entry reports zero rather than a fabricated
   paid attempt and provider-raised cancellation after entry remains one;
-  this is call/attempt disclosure, not per-model input/output token usage, which
-  remains unimplemented; all no-cost exit criteria pass at product checkpoint
+  this is call/attempt disclosure; the native Google image adapter additionally
+  accumulates provider-reported per-model input/output usage for fresh successful
+  passes, preserving missing values as unknown; all no-cost exit criteria pass at product checkpoint
   `700cc05` through the clean-archive evidence recorded by `5d966e1` (root 1203
   passed; exact archive 1193 passed and 10 expected skips);
 - open: the Stage M paid live exit smoke and live re-verification of provider
@@ -73,14 +74,20 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
 
 The ordered current work is
 [`#065 Unified Execution Queue`](docs/ACTIVE_STATE_AND_RULES.md#065-unified-execution-queue).
-Google, public audio recognition, PDF, content repair, and provider-reported
-per-model token usage remain unimplemented. Resume is the primary recovery
+Public audio recognition, PDF, and content repair remain unimplemented. Native
+Google direct-Python image recognition and per-model usage reporting are now
+implemented; no general cross-provider token-usage claim is made. Resume is the primary recovery
 path; bounded marker-based repair follows only after a stable PDF path exists.
 Offline tests are a regression floor, not live-provider evidence.
 P0-a is complete in
 [`docs/legacy_provider_error_action_evidence.md`](docs/legacy_provider_error_action_evidence.md).
 The transport audit proved that legacy built-in Google uses native
-`google-genai`; P0-b is the smallest native image slice plus bounded live proof.
+`google-genai`; #067 completed P0-b. Its live gate discovered 37 models and
+proved one `gemini-2.5-flash` image plus one eight-image group, one call each,
+with input/output usage and an honest credential-scope authentication failure.
+The direct API is proven, but the frozen 20-entry shared capability/worker
+registry was deliberately unchanged and does not advertise Google worker support.
+P0-c is now the smallest native Google short-audio investigation and one real MP3.
 The generic compatibility endpoint and future local-model compatibility remain
 separate later directions.
 

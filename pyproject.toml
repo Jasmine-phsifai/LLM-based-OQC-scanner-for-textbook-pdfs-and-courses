@@ -17,12 +17,14 @@ dev = [
     "build>=1.2",
     "hatchling>=1.25",
     "openai>=2.30,<3",
+    "google-genai>=2.9,<3",
     "Pillow>=10.4,<13",
     "pytest>=8.0",
 ]
 image = ["Pillow>=10.4,<13"]
 audio = ["miniaudio>=1.71,<2"]
 dashscope = ["openai>=2.30,<3"]
+google = ["google-genai>=2.9,<3"]
 ocr = [
     "Pillow>=10.4,<13",
     "rapidocr>=3.9,<4",

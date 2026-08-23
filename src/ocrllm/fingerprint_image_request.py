@@ -14,6 +14,7 @@ from .profiles.build_board_prompt import BOARD_PROMPT_VERSION
 from .profiles.build_board_sign_scout_prompt import SIGN_SCOUT_PROMPT_VERSION
 from .providers.dashscope.provider_settings import DashScopeSettings
 from .providers.dashscope.resolve_dashscope_model import resolve_dashscope_model
+from .providers.google_genai.provider_settings import GoogleGenAISettings
 from .thaw_json_value import thaw_json_value
 
 
@@ -64,6 +65,15 @@ def fingerprint_image_request(
             }
             model_document = {
                 "name": resolve_dashscope_model(config.vision_model.name),
+                "candidate_models": list(config.vision_model.candidate_models),
+                "maximum_images_per_request": (
+                    config.vision_model.maximum_images_per_request
+                ),
+            }
+        elif type(config.provider) is GoogleGenAISettings:
+            provider_document = {"name": "google"}
+            model_document = {
+                "name": config.vision_model.name,
                 "candidate_models": list(config.vision_model.candidate_models),
                 "maximum_images_per_request": (
                     config.vision_model.maximum_images_per_request

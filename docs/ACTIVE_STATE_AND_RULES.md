@@ -86,13 +86,14 @@ yielding. Short destination writes fail as output errors instead of being
 misreported by the decoder. Source and destination close-only failures are
 typed and redacted; an earlier typed or process-control failure remains primary.
 This ceiling is not a provider request limit; the selected adapter must
-separately preflight its exact Base64/JSON envelope.
+separately preflight a conservative provider-specific bound for its Base64/JSON
+envelope.
 The earlier proposal that a built-in Google image adapter remain a later
-optional slice is superseded by the #065 queue below. Google is still not
-implemented in the active library. The #066 transport audit proved that the
+optional slice is superseded by the #065 queue below. The #067 direct-Python
+Google image slice is implemented and live-proven. The #066 transport audit proved that the
 legacy built-in Google image/audio path uses native `google-genai`; the generic
 OpenAI-compatible Google URL was only an independent-provider configuration
-hint. The next slice therefore follows the actual native legacy transport.
+hint. The image adapter therefore follows the actual native legacy transport.
 The shipped image snapshot closes every source and destination before image
 validation or provider dispatch. Short writes and close-only failures become
 typed, redacted errors; an earlier library, ordinary, or process-control
@@ -144,12 +145,13 @@ See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 ## #065 Unified Execution Queue
 
 This is the only current execution order. The shipped public product recognizes
-images through built-in DashScope or an injected vision provider, supports local
+images through built-in DashScope, native Google GenAI, or an injected vision provider, supports local
 OCR, file-backed image checkpoint/resume, and a fail-fast batch API that still
-accepts an arbitrary `Iterable`. Google, PDF, content repair, public audio
-recognition, and provider-reported per-model input/output token usage are not
-implemented. Existing attempt disclosure counts provider calls and model/workflow
-attempts; it is not token usage. Resume is the primary recovery mechanism;
+accepts an arbitrary `Iterable`. PDF, content repair, and public audio
+recognition are not implemented. The Google adapter reports per-model input/output
+token usage when the endpoint supplies it; other adapters do not yet make a general
+usage claim. Existing attempt disclosure counts provider calls and model/workflow
+attempts separately from tokens. Resume is the primary recovery mechanism;
 repair is a later, bounded fallback for missing or unusable state.
 
 ### P0-a — Bounded legacy provider-error evidence audit (completed by #066)
@@ -166,14 +168,21 @@ provider and error scope, and identifies which rows are proven current versus
 historical warnings. Non-goals: implementation, a generic retry count, or an
 open-ended legacy survey.
 
-### P0-b — Native Google image vertical slice
+### P0-b — Native Google image vertical slice (completed by #067)
 
-Implement the smallest built-in image path using the actual legacy built-in
-transport, the native `google-genai` SDK. Keep provider-specific catalog,
-request, response, error, retry/switch, and terminal behavior explicit. Then run
-bounded live proof with one image, one group of 7-8 images, at least one honest
-failure, record the locally observed call count, and record whether the endpoint
-reports input/output token usage.
+The smallest built-in image path now uses the actual legacy built-in transport,
+native `google-genai`. It keeps credential resolution, live catalog parsing,
+bounded inline request construction, response/usage parsing, error mapping, and
+client cleanup provider-specific, with no internal retry, cache, REST fallback,
+or automatic model choice. The public resolver remains pure and lazy.
+
+The authorized live gate used `gemini-2.5-flash`, discovered 37 current
+`generateContent` models, completed one image and one explicit eight-image group
+with exactly one provider call each, and reported input/output tokens of 595/367
+and 2401/1011 respectively. A deliberately invalid non-secret key produced
+`PROVIDER_AUTHENTICATION` with `failure_scope="credential"`; stderr was empty
+and the safe-output scan found no credential. The gate took 36.910 seconds and
+performed no retry.
 
 Exit gate: public image recognition succeeds through the built-in adapter, the
 real failure remains typed and non-successful, live model discovery or the
@@ -181,7 +190,26 @@ endpoint's actual catalog behavior is recorded, and usage availability is
 reported without inventing zero. Non-goals: a second Google transport, a
 universal provider interface, PDF, audio, or broad stress testing.
 
-### P0-c — Live cancellation, checkpoint, and resume proof
+The direct Python API is proven. The shared capability and worker registry stays
+frozen at 20 entries; #067 did not modify `contracts/` or `worker/`, and this
+record does not claim Google is available through the development worker.
+
+### P0-c — Native Google short-audio vertical slice
+
+Next, perform the smallest bounded investigation needed to send one real,
+authorized short MP3 through native `google-genai`, then implement only the
+public configuration, request, validation, result, and facade needed by that
+slice. Reuse the existing bounded MP3 snapshot/probe. If the current native API
+does not support the required request, record the exact blocker and ask the
+maintainer rather than adding a second Google transport.
+
+Exit gate: one public real-MP3 result or one evidence-backed native endpoint
+blocker, with catalog/model selection and provider limits checked and no false
+success. The private product ceiling of ten hours informs later routing; it is
+not the scope of this short-audio iteration. Non-goals: long audio, FileTrans,
+chunking, compatibility-endpoint exploration, or a modality-wide framework.
+
+### P1-a — Live cancellation, checkpoint, and resume proof
 
 Use the public API to interrupt real Google image work, preserve settled state,
 and resume it. Prove completed calls are not paid or dispatched again and only
@@ -190,19 +218,6 @@ missing work runs. Keep the exercise small and authorized.
 Exit gate: exact before/after request and usage evidence proves reuse; cancelled
 and terminal outcomes remain honest. Non-goals: adversarial filesystem races,
 new checkpoint schemas, or repair.
-
-### P1-a — Public Google short-audio vertical slice
-
-Deliver the smallest public short-MP3 path and run one real authorized MP3 as
-soon as the executable slice exists. Reuse the current bounded snapshot/probe,
-then add only the native `google-genai` configuration, request, response,
-result, persistence, and facade required by the consumer. If the native SDK is
-proven not to support the required bounded short-audio request, record the
-blocker and ask the maintainer; do not introduce a second Google transport.
-
-Exit gate: one public real-MP3 result or one evidence-backed endpoint blocker,
-with provider limits preflighted and no false success. Non-goals: long audio,
-FileTrans, Google compatibility-endpoint exploration, or a modality-wide framework.
 
 ### P1-b — Concrete-tuple batch contract and full preflight
 

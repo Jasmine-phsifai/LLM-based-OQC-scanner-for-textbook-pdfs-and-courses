@@ -52,7 +52,7 @@ a past decision was reached, never to learn current state.
 Minimal import example:
 
 ```python
-from ocrllm import Config, DashScopeSettings, VisionModelSettings, recognize
+from ocrllm import Config, GoogleGenAISettings, VisionModelSettings, recognize
 ```
 
 Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
@@ -71,10 +71,15 @@ the bytes that the probe reads. No audio provider, facade, persistence, or
 recognition result exists yet. Stage A2 has not started.
 
 The ordered current work is `#065 Unified Execution Queue` in
-`docs/ACTIVE_STATE_AND_RULES.md`. Its bounded legacy-provider audit is complete
-in `docs/legacy_provider_error_action_evidence.md`; the next slice is native
-`google-genai` image recognition and live proof. It explicitly stops further
-proactive filesystem/accounting edge scans.
+`docs/ACTIVE_STATE_AND_RULES.md`. Its bounded legacy-provider audit and native
+`google-genai` direct-Python image slice are complete. The #067 live gate found
+37 current models; `gemini-2.5-flash` completed one image and one eight-image
+group in one call each, reported real input/output usage, and returned a typed
+credential-scope authentication error for the invalid-key probe. The shared
+capability/worker registry remains frozen at 20 and does not claim Google worker
+support. The next slice is the smallest native Google short-audio investigation
+and one real authorized MP3. The queue explicitly stops further proactive
+filesystem/accounting edge scans.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203

@@ -38,6 +38,7 @@ from ..providers.dashscope.resolve_dashscope_model import DEFAULT_DASHSCOPE_MODE
 from ..providers.dashscope.provider_settings import DashScopeSettings
 from ..providers.resolved_vision_provider import ResolvedVisionProvider
 from ..providers.resolve_vision_provider import resolve_vision_provider
+from ..providers.vision_provider_response import VisionProviderResponse
 from ..snapshot_config import snapshot_config
 from ..vision_model_settings import VisionModelSettings
 from .restore_quorum_standalone_signs import restore_quorum_standalone_signs
@@ -258,6 +259,7 @@ def _recognize_images_once(
 
     calls_dispatched = 0
     slot_ledger: list[dict[str, str | int | bool | None]] = []
+    current_model_usage: dict[str, dict[str, int | None]] = {}
 
     def run_pass(
         slot_id: str,
@@ -286,7 +288,7 @@ def _recognize_images_once(
                 )
                 return persisted.markdown
         try:
-            markdown = call_vision_provider(
+            provider_response = call_vision_provider(
                 resolved,
                 image_paths,
                 prompt=prompt,
@@ -311,6 +313,28 @@ def _recognize_images_once(
             )
             raise
         calls_dispatched += 1
+        if type(provider_response) is VisionProviderResponse:
+            markdown = provider_response.markdown
+            if resolved.model is not None:
+                usage = current_model_usage.get(resolved.model)
+                if usage is None:
+                    current_model_usage[resolved.model] = {
+                        "input_tokens": provider_response.input_tokens,
+                        "output_tokens": provider_response.output_tokens,
+                    }
+                else:
+                    for key, reported in (
+                        ("input_tokens", provider_response.input_tokens),
+                        ("output_tokens", provider_response.output_tokens),
+                    ):
+                        previous = usage[key]
+                        usage[key] = (
+                            previous + reported
+                            if previous is not None and reported is not None
+                            else None
+                        )
+        else:
+            markdown = provider_response
         if slot_checkpoint is not None:
             try:
                 slot_checkpoint.persist_slot(
@@ -478,6 +502,15 @@ def _recognize_images_once(
                     scout_enable_thinking if scout_model is not None else None
                 ),
             }
+        )
+    if resolved_provider.name == "google":
+        metadata["current_model_token_usage"] = tuple(
+            {
+                "model": model,
+                "input_tokens": usage["input_tokens"],
+                "output_tokens": usage["output_tokens"],
+            }
+            for model, usage in current_model_usage.items()
         )
 
     return ProcessorOutput(

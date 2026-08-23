@@ -12,6 +12,7 @@ from .map_injected_provider_error import map_injected_provider_error
 from .provider_request_start_gate import wait_for_provider_request_start
 from .resolved_vision_provider import ResolvedVisionProvider
 from .validate_provider_markdown import validate_provider_markdown
+from .vision_provider_response import VisionProviderResponse
 
 
 def call_vision_provider(
@@ -20,7 +21,7 @@ def call_vision_provider(
     *,
     prompt: str,
     config: Config,
-) -> str:
+) -> str | VisionProviderResponse:
     """Return one complete provider response or one redacted typed failure."""
 
     provider = resolved_provider.value
@@ -71,7 +72,12 @@ def call_vision_provider(
 
     validation_error: ProviderError | None = None
     try:
-        markdown = validate_provider_markdown(provider_value)
+        markdown_value = (
+            provider_value.markdown
+            if type(provider_value) is VisionProviderResponse
+            else provider_value
+        )
+        markdown = validate_provider_markdown(markdown_value)
     except ProviderError as error:
         validation_error = ProviderError(
             str(error),
@@ -85,6 +91,12 @@ def call_vision_provider(
     if validation_error is not None:
         del provider, recognize_method, provider_value
         raise validation_error
+    if type(provider_value) is VisionProviderResponse:
+        return VisionProviderResponse(
+            markdown=markdown,
+            input_tokens=provider_value.input_tokens,
+            output_tokens=provider_value.output_tokens,
+        )
     return markdown
 
 

@@ -3,7 +3,8 @@
 ## Status and purpose
 
 This is the bounded P0-a evidence record required by `#065 Unified Execution
-Queue`. It is not a current-live provider report. Evidence is labelled as:
+Queue`. The table remains historical evidence rather than a general current-live
+provider report. #067 adds one narrowly scoped live observation below. Evidence is labelled as:
 
 - **incident** — a real legacy run or maintainer-observed failure recorded in
   `legacy_app/AGENTS.md`;
@@ -42,20 +43,20 @@ The legacy built-in Google image and audio path uses the official
 
 The repository therefore does not prove a Google-specific compatibility
 transport success or error history. Following the maintainer's evidence
-correction, the active library's next Google slice follows the actual legacy
-built-in transport: native `google-genai`. A future Google compatibility path
+correction, the active library's #067 Google image slice follows the actual legacy
+built-in transport: native `google-genai` and is now live-proven. A future Google compatibility path
 and the future local-model OpenAI-compatible path remain separate, later work.
 
 ## Bounded error-to-action table
 
 | Provider and observed signature/state | Action | Exact legacy evidence | Evidence level | Current active seam |
 |---|---|---|---|---|
-| Google `429` / `RESOURCE_EXHAUSTED` with `rate limit`, RPM, TPM, or RPD marker | `retry_same` | Classifier: `legacy_app/OCRLLM/core/providers/google_provider.py:165-185,348-380`; regressions and retry delay: `legacy_app/tests/test_google_provider_errors.py:149-175,187-194,250-265`; corrected distinction: `legacy_app/AGENTS.md:828-852` | incident + offline test | Typed rate-limit disposition exists in `src/ocrllm/provider_error_disposition.py:40-60`; native Google mapping is unimplemented and requires live confirmation. |
-| Google `RESOURCE_EXHAUSTED: You exceeded your current quota ... check your plan and billing details`, without a window marker | `switch_model` | `legacy_app/OCRLLM/core/providers/google_provider.py:182-189,355-380,505-546`; `legacy_app/tests/test_google_provider_errors.py:107-147`; `legacy_app/AGENTS.md:828-852` | incident + offline test | The image candidate seam exists at `src/ocrllm/processors/recognize_images.py:49-71,142-172`; failure scope must be proven live before advancing. |
-| Google `404 NOT_FOUND`, or unsupported-modality `400/INVALID_ARGUMENT` with `modality is not enabled`, `only supports`, or equivalent | `switch_model` | `legacy_app/OCRLLM/core/providers/google_provider.py:180-220,363-404`; `legacy_app/tests/test_google_provider_errors.py:205-212` | offline test + code-only | Candidate routing exists, but model scope and current catalog behavior need live confirmation. |
-| Google malformed/invalid request not proven to be a model capability mismatch | `reject_input` | Generic `400/INVALID_ARGUMENT` classification at `legacy_app/OCRLLM/core/providers/google_provider.py:209-220,391-405` currently mixes request and candidate behavior | code-only | Active `PROVIDER_REQUEST_INVALID` maps to `fix_request` at `src/ocrllm/provider_error_disposition.py:55-57`; reject locally provable bad requests before dispatch and preserve other provider errors. |
-| Google network error, `500 INTERNAL`, `503 UNAVAILABLE/high demand`, concurrency limit, or empty response | `retry_same` | `legacy_app/OCRLLM/core/providers/google_provider.py:165-208,383-390,451-502`; `legacy_app/tests/test_google_provider_errors.py:196-265` | offline test + code-only | Network/timeout/unavailable types exist, but no universal retry loop is active. Retry count and delay require current live evidence. |
-| Google authentication/permission failure, safety block, genuine billing failure, or unknown terminal response | `stop` | `legacy_app/OCRLLM/core/providers/google_provider.py:186-221,365-405` | code-only | Active typed authentication, permission, content-blocked, and invalid-response categories exist. Google-specific mapping is unimplemented. |
+| Google `429` / `RESOURCE_EXHAUSTED` with `rate limit`, RPM, TPM, or RPD marker | `retry_same` | Classifier: `legacy_app/OCRLLM/core/providers/google_provider.py:165-185,348-380`; regressions and retry delay: `legacy_app/tests/test_google_provider_errors.py:149-175,187-194,250-265`; corrected distinction: `legacy_app/AGENTS.md:828-852` | incident + offline test | `map_google_genai_error.py` maps ordinary 429 to provider-scoped `RateLimited`; focused tests cover it, but #067 did not observe 429 live and the adapter has no internal retry. |
+| Google `RESOURCE_EXHAUSTED: You exceeded your current quota ... check your plan and billing details`, without a window marker | `switch_model` | `legacy_app/OCRLLM/core/providers/google_provider.py:182-189,355-380,505-546`; `legacy_app/tests/test_google_provider_errors.py:107-147`; `legacy_app/AGENTS.md:828-852` | incident + offline test | The mapper emits model-scoped `QuotaExhausted` and the opt-in image candidate seam can advance; #067 did not observe quota live. |
+| Google `404 NOT_FOUND`, or unsupported-modality `400/INVALID_ARGUMENT` with `modality is not enabled`, `only supports`, or equivalent | `switch_model` | `legacy_app/OCRLLM/core/providers/google_provider.py:180-220,363-404`; `legacy_app/tests/test_google_provider_errors.py:205-212` | offline test + code-only | Exact 404 and narrowly proven image/modality phrases map to model-scoped `ProviderUnavailable`; broader parameter/count messages remain request-scoped. Neither branch was observed live in #067. |
+| Google malformed/invalid request not proven to be a model capability mismatch | `reject_input` | Generic `400/INVALID_ARGUMENT` classification at `legacy_app/OCRLLM/core/providers/google_provider.py:209-220,391-405` currently mixes request and candidate behavior | code-only | Local size/format preflight rejects before SDK construction; remaining generic 400 maps to request-scoped `PROVIDER_REQUEST_INVALID`. #067 did not observe it live. |
+| Google network error, `500 INTERNAL`, `503 UNAVAILABLE/high demand`, concurrency limit, or empty response | `retry_same` | `legacy_app/OCRLLM/core/providers/google_provider.py:165-208,383-390,451-502`; `legacy_app/tests/test_google_provider_errors.py:196-265` | offline test + code-only | The active mapper distinguishes timeout, network, and provider-unavailable; invalid empty text remains typed response failure. The adapter has no internal retry and #067 observed none of these live. |
+| Google authentication/permission failure, safety block, genuine billing failure, or unknown terminal response | `stop` | `legacy_app/OCRLLM/core/providers/google_provider.py:186-221,365-405` | code-only | Authentication, permission, content-blocked, and invalid-response mappings are implemented. #067 live-proved only credential-scoped `PROVIDER_AUTHENTICATION`; the other outcomes remain offline-only. |
 | Google audio returns nonempty false-success content (hotword list, prompt echo, implausibly short transcript, repetitive noise) | `stop` for the exhausted candidate; a caller-configured eligible candidate may `switch_model` | Validator/switch: `legacy_app/OCRLLM/core/providers/google_provider.py:451-471,505-562`; regressions: `legacy_app/tests/test_google_audio_routing.py:219-287,502-609`; real nonempty fake-success lesson: `legacy_app/AGENTS.md:82-107` | incident + offline test | Image refusal validation exists at `src/ocrllm/providers/looks_like_refusal.py:10-66`; public audio validation and adapter do not. This is audio evidence, not a general quality router. |
 | Google audio has settled one segment, then quota/network failure stops the run | `stop`, retaining state for normal resume | `legacy_app/tests/test_google_audio_routing.py:331-423` proves the later run requests only the missing segment | offline test | Image slot resume exists; public audio state does not. Do not add repair or chunk machinery to short audio. |
 | Generic OpenAI-compatible network/empty or HTTP `429/500/502/503/504` | `retry_same` | `legacy_app/OCRLLM/core/llm_client.py:28-35,108-120,539-554` | code-only | Typed retry dispositions exist. The legacy fixed six-attempt exponential loop is not portable policy. |
@@ -88,9 +89,16 @@ Do not migrate:
 ## P0-a exit and next action
 
 P0-a is complete with this bounded record. Do not extend the legacy survey.
-P0-b is next: implement the smallest public native `google-genai` image slice,
-then run the authorized bounded live gate with one image, one group of 7-8
-images, at least one honest failure, live catalog and credential behavior,
-locally observed call count, and provider-reported usage availability. Native
-historical classifications remain warnings until current live evidence confirms
-or replaces each mapping.
+P0-b is complete in #067. Native historical classifications remain warnings
+until current live evidence confirms or replaces each mapping.
+
+## #067 current live observation
+
+The bounded native image gate used `gemini-2.5-flash` and discovered 37 current
+`generateContent` models. One image and one eight-image group each succeeded in
+exactly one call and returned provider-reported input/output usage. A deliberately
+invalid non-secret key produced `PROVIDER_AUTHENTICATION` with credential scope.
+This confirms the current native credential-error seam only. No rate-limit,
+quota, timeout, network, unavailable, unsupported-modality, safety, empty-response,
+or model-switch outcome was observed live; their table rows remain incident,
+offline-test, or code-only evidence and must not be relabelled as current-live.

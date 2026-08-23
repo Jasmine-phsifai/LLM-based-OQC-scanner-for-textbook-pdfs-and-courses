@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from .config import Config
 from .errors import OCRLLMError, OutputError, ResumeStateError
 from .providers.dashscope.provider_settings import DashScopeSettings
+from .providers.google_genai.provider_settings import GoogleGenAISettings
 
 if TYPE_CHECKING:
     from .output.output_target_claims import OutputTargetClaims
@@ -288,7 +289,7 @@ def _can_checkpoint_image(config: Config) -> bool:
     """Return whether this provider has a stable identity for automatic reuse."""
     if config.image_mode == "ocr":
         return True
-    if type(config.provider) is DashScopeSettings:
+    if type(config.provider) in {DashScopeSettings, GoogleGenAISettings}:
         return True
     try:
         identity = getattr(config.provider, "resume_identity", None)

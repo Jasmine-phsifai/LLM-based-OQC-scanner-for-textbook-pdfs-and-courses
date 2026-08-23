@@ -46,7 +46,7 @@ assert target in origin.parents, (target, origin)
 loaded = {name.split('.')[0] for name in sys.modules}
 forbidden = {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
-    'miniaudio', '_miniaudio', 'legacy_app',
+    'miniaudio', '_miniaudio', 'google', 'legacy_app',
 }
 assert not loaded & forbidden, loaded & forbidden
 print(json.dumps({'wall': wall_ms, 'cpu': cpu_ms}))
@@ -160,7 +160,7 @@ assert target in origin.parents, (target, origin)
 loaded = {name.split('.')[0] for name in sys.modules}
 forbidden = {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
-    'miniaudio', '_miniaudio', 'legacy_app',
+    'miniaudio', '_miniaudio', 'google', 'legacy_app',
 }
 assert not loaded & forbidden, loaded & forbidden
 print(ocrllm.__version__, origin)
@@ -189,7 +189,7 @@ native_payloads = [
 declared_extras = set(distribution.metadata.get_all('Provides-Extra') or [])
 assert not base_requirements, base_requirements
 assert not native_payloads, native_payloads
-assert declared_extras == {'audio', 'dashscope', 'dev', 'image', 'ocr'}, declared_extras
+assert declared_extras == {'audio', 'dashscope', 'dev', 'google', 'image', 'ocr'}, declared_extras
 print(sorted(declared_extras))
 '@
     & $python -I -c $metadataProbe $targetDir
@@ -209,13 +209,15 @@ print(sorted(declared_extras))
             'audio' = 8388608
             'image' = 26214400
             'image,dashscope' = 67108864
+            'google' = 67108864
         }
         $expectedDistributions = @{
             'audio' = @('miniaudio')
             'image' = @('Pillow')
             'image,dashscope' = @('Pillow', 'openai')
+            'google' = @('google-genai')
         }
-        foreach ($profile in @('audio', 'image', 'image,dashscope')) {
+        foreach ($profile in @('audio', 'image', 'image,dashscope', 'google')) {
             $safeProfile = $profile.Replace(',', '-')
             $profileVenv = Join-Path $proofRoot "venv-$safeProfile"
             & $python -m venv $profileVenv
@@ -244,7 +246,8 @@ for name in expected_distributions:
 import ocrllm
 loaded = {name.split('.')[0] for name in sys.modules}
 assert not loaded & {
-    'PIL', 'openai', 'httpx', 'onnxruntime', 'miniaudio', '_miniaudio'
+    'PIL', 'openai', 'httpx', 'onnxruntime', 'miniaudio', '_miniaudio',
+    'google'
 }, loaded
 origin = pathlib.Path(ocrllm.__file__).resolve()
 assert pathlib.Path(sys.prefix).resolve() in origin.parents, origin
@@ -334,6 +337,28 @@ print(openai_module.__version__)
 '@
                 $dashscopeSmoke | & $profilePython -I -
                 Assert-LastExitCode 'DashScope offline construction smoke failed'
+            }
+
+            if ($profile -eq 'google') {
+                $googleSmoke = @'
+from ocrllm import GoogleGenAISettings
+from ocrllm.providers.google_genai.load_google_genai import load_google_genai
+
+settings = GoogleGenAISettings(api_key='offline-package-probe')
+assert 'offline-package-probe' not in repr(settings)
+google_module = load_google_genai()
+assert callable(google_module.Client)
+assert callable(google_module.types.HttpOptions)
+assert callable(google_module.types.Part.from_bytes)
+client = google_module.Client(
+    api_key=settings.api_key,
+    http_options=google_module.types.HttpOptions(timeout=3000),
+)
+client.close()
+print(google_module.__version__)
+'@
+                $googleSmoke | & $profilePython -I -
+                Assert-LastExitCode 'Google GenAI offline construction smoke failed'
             }
 
             $afterBytes = Get-DirectoryByteCount $sitePackages

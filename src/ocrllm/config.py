@@ -13,6 +13,7 @@ from .errors import ConfigError
 from .freeze_json_value import FrozenJSONValue, JSONValue, freeze_json_value
 from .local_ocr_settings import LocalOCRSettings
 from .providers.dashscope.provider_settings import DashScopeSettings
+from .providers.google_genai.provider_settings import GoogleGenAISettings
 from .recognition_execution_policy import RecognitionExecutionPolicy
 from .recognition_preferences import RecognitionPreferences
 from .vision_model_settings import VisionModelSettings
@@ -28,7 +29,7 @@ _LANGUAGE_SUBTAG = re.compile(r"^[A-Za-z0-9]{1,8}$")
 class Config:
     """Runtime options for OCRLLM library calls."""
 
-    provider: DashScopeSettings | VisionProvider | None = field(
+    provider: DashScopeSettings | GoogleGenAISettings | VisionProvider | None = field(
         default=None,
         repr=False,
     )
@@ -160,9 +161,16 @@ def _normalize_provider(value: object | None) -> object | None:
             vl_high_resolution_images=value.vl_high_resolution_images,
             standalone_sign_scout_model=value.standalone_sign_scout_model,
         )
+    if type(value) is GoogleGenAISettings:
+        return GoogleGenAISettings(api_key=value.api_key)
     if isinstance(value, DashScopeSettings):
         raise ConfigError(
             "Config.provider must use an exact DashScopeSettings instance.",
+            code="CONFIG_INVALID",
+        ) from None
+    if isinstance(value, GoogleGenAISettings):
+        raise ConfigError(
+            "Config.provider must use an exact GoogleGenAISettings instance.",
             code="CONFIG_INVALID",
         ) from None
     if isinstance(value, str):

@@ -31,6 +31,10 @@ _PUBLIC_IMPORTS = {
     ),
     "DependencyMissing": (".errors", "DependencyMissing"),
     "InvalidSource": (".errors", "InvalidSource"),
+    "GoogleGenAISettings": (
+        ".providers.google_genai.provider_settings",
+        "GoogleGenAISettings",
+    ),
     "LocalOCRSettings": (".local_ocr_settings", "LocalOCRSettings"),
     "NoSpeechDetected": (".errors", "NoSpeechDetected"),
     "NoTextDetected": (".errors", "NoTextDetected"),
@@ -63,6 +67,10 @@ _PUBLIC_IMPORTS = {
     "UnsupportedFormat": (".errors", "UnsupportedFormat"),
     "VisionModelSettings": (".vision_model_settings", "VisionModelSettings"),
     "get_capabilities": (".get_capabilities", "get_capabilities"),
+    "list_google_genai_models": (
+        ".providers.google_genai.list_google_genai_models",
+        "list_google_genai_models",
+    ),
     "get_provider_error_disposition": (
         ".provider_error_disposition",
         "get_provider_error_disposition",
@@ -87,6 +95,7 @@ __all__ = [
     "DashScopeCredentialSlotReport",
     "DependencyMissing",
     "InvalidSource",
+    "GoogleGenAISettings",
     "LocalOCRSettings",
     "NoTextDetected",
     "NoSpeechDetected",
@@ -112,6 +121,7 @@ __all__ = [
     "recognize",
     "recognize_batch",
     "get_capabilities",
+    "list_google_genai_models",
     "get_provider_error_disposition",
 ]
 __version__ = "0.1.0"

@@ -169,7 +169,9 @@ is often accepted.
 - Follow the actual legacy built-in Google transport: native `google-genai` for
   image and audio. The #066 repository audit found the Google compatibility URL
   only in the generic independent-vision configuration and found no
-  Google-specific compatibility live-success or error-history record.
+  Google-specific compatibility live-success or error-history record. #067 has
+  now live-verified the native image path; it does not prove a compatibility
+  transport or worker integration.
 - Treat a Google OpenAI-compatible transport as a possible later, separate path,
   not as evidence for native behavior. Add it only for a proven need and after
   maintainer confirmation.
@@ -201,6 +203,7 @@ is often accepted.
 
 ## Decisions still requiring exact implementation confirmation
 
-- Confirm the smallest explicit native `google-genai` provider boundary without
-  conflating it with either a possible secondary Google compatibility transport
-  or the future local-model OpenAI-compatible path.
+- Confirm the smallest native `google-genai` short-audio request and public
+  boundary without expanding the proven image adapter into long-audio chunking,
+  a possible secondary Google compatibility transport, or the future local-model
+  OpenAI-compatible path.
