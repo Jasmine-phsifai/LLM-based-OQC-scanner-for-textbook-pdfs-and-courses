@@ -6,6 +6,10 @@ still decide what is implemented. When an older plan conflicts with a decision
 below, agents must surface the conflict and update the active authority before
 implementing the older plan.
 
+The current ordered execution queue is `#065 Unified Execution Queue` in
+`ACTIVE_STATE_AND_RULES.md`. This file constrains that queue but does not copy
+or independently reorder it.
+
 ## Planning and documentation
 
 - Detailed planning documents are desirable. Their size is not itself

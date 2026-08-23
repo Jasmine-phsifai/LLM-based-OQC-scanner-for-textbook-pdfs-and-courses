@@ -28,8 +28,11 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   atomic Markdown/state temporary names are compact and do not repeat public
   destination basenames near the traditional Windows path boundary; a process-local
   output claim keeps concurrent batch/direct-thread Markdown and state ownership
-  consistent; finite batch-iterable failures become redacted terminal outcomes
-  without discarding earlier paid work; the never-consumed `Config.progress`,
+  consistent; the current batch API still accepts an `Iterable`, and iterable
+  failures become redacted terminal outcomes without discarding earlier paid
+  work; the future #065 contract narrows this to a concrete tuple with complete
+  zero-call preflight and duplicate-target rejection; the never-consumed
+  `Config.progress`,
   generic `Config.cache_dir`, and four dormant PDF-only placeholders are
   removed rather than promoted into unproven callback, persistence, or PDF
   APIs; frozen worker progress remains separate, while local OCR retains its
@@ -47,14 +50,19 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   batch outcomes preserve those structured item-local errors, while shared-gate
   cancellation before callable entry reports zero rather than a fabricated
   paid attempt and provider-raised cancellation after entry remains one;
-  all no-cost exit criteria pass through the clean-archive runner at `271d96d`;
+  this is call/attempt disclosure, not per-model input/output token usage, which
+  remains unimplemented; all no-cost exit criteria pass at product checkpoint
+  `700cc05` through the clean-archive evidence recorded by `5d966e1` (root 1203
+  passed; exact archive 1193 passed and 10 expected skips);
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;
 - replanned, in progress: the standalone Stage 2 vision/audio scaffold was
   removed; its audio-specific configuration boundary now lands with executable
   Stage A1 short-MP3 recognition, followed by Stage A2 FileTrans. The A1
   offline slice may proceed independently of the open Stage M paid image smoke;
-  its own live gate remains separately budgeted. The provider-independent MP3
+  bounded Google image/audio live work is already authorized without a separate
+  budget request, while paid DashScope live work still requires explicit
+  maintainer budget. The provider-independent MP3
   probe now uses lazy `miniaudio>=1.71,<2`, fully decodes bounded five-minute
   snapshots, and rejects the fixture-proven malformed cases before dispatch.
   One local `.mp3` is copied through an open handle to fixed `source.mp3`, with
@@ -62,6 +70,13 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   FFmpeg/PyAV/Mutagen remain outside the A1 runtime. Audio configuration,
   provider dispatch, persistence, and the public facade are not implemented;
 - not started: Stage A2 audio recognition and the active PDFium phase.
+
+The ordered current work is
+[`#065 Unified Execution Queue`](docs/ACTIVE_STATE_AND_RULES.md#065-unified-execution-queue).
+Google, public audio recognition, PDF, content repair, and provider-reported
+per-model token usage remain unimplemented. Resume is the primary recovery
+path; bounded marker-based repair follows only after a stable PDF path exists.
+Offline tests are a regression floor, not live-provider evidence.
 
 The defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,
@@ -72,14 +87,17 @@ gate remains open. Do not create a second defect list in this file.
 
 1. [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md) for
    current truth, defects, rules, and precedence.
-2. [`START_HERE.md`](START_HERE.md) for the one-screen repository map.
-3. [`docs/plan_phase1_maturation_and_phase2_audio.md`](docs/plan_phase1_maturation_and_phase2_audio.md)
-   for the current Stage M and Stage A plan.
-4. [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md) for
+2. [`docs/MAINTAINER_PRODUCT_DECISIONS.md`](docs/MAINTAINER_PRODUCT_DECISIONS.md)
+   for durable maintainer constraints that the authority queue must reflect.
+3. [`START_HERE.md`](START_HERE.md) for the one-screen repository map.
+4. [`docs/plan_phase1_maturation_and_phase2_audio.md`](docs/plan_phase1_maturation_and_phase2_audio.md)
+   for retained detailed Stage M and Stage A reasoning where not superseded by
+   the authority queue.
+5. [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md) for
    execution gates and migrate/rewrite/reject boundaries.
-5. [`src/ocrllm/README_ACTIVE_LIBRARY.md`](src/ocrllm/README_ACTIVE_LIBRARY.md)
+6. [`src/ocrllm/README_ACTIVE_LIBRARY.md`](src/ocrllm/README_ACTIVE_LIBRARY.md)
    and [`src/ocrllm/AGENTS.md`](src/ocrllm/AGENTS.md) for package work.
-6. [`legacy_app/AGENTS.md`](legacy_app/AGENTS.md) for legacy maintenance and
+7. [`legacy_app/AGENTS.md`](legacy_app/AGENTS.md) for legacy maintenance and
    the working diary.
 
 ## Boundary Rules
@@ -111,7 +129,9 @@ Run from the repository root with the maintained environment:
 The clean Git-archive wheel, isolated install, outside-repository import, and
 heavy-module guard are defined in
 [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md). A paid
-live gate requires an explicit maintainer budget and confirmed region/endpoint.
+DashScope live gate requires an explicit maintainer budget and confirmed
+region/endpoint. Bounded Google image/audio robustness tests are already
+authorized without a separate budget request.
 
 ## History Trace
 

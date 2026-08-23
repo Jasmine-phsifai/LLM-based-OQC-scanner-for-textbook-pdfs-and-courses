@@ -15,12 +15,12 @@ file never overrides a higher-ranked one.
 ```text
 1. docs/ACTIVE_STATE_AND_RULES.md     This file. Current truth and rules.
 2. docs/plan_phase1_maturation_and_phase2_audio.md
-                                      Current work plan; implementation status
-                                      is recorded here, not inferred from the
-                                      plan text.
+                                      Retained detailed Stage M/A plan; #065 in
+                                      this file supersedes conflicting order or
+                                      provider direction.
 3. docs/plan_phase1_defects_and_provider_split.md
-                                      Stage 1 history and the not-started
-                                      vision/audio split plan.
+                                      Stage 1 history; its standalone provider
+                                      split is superseded by executable slices.
 4. docs/ocrllm_library_go_no_go.md    Execution contract, gates, boundaries.
                                       Its dated verification log is history.
 5. MIGRATION_STATUS.md / START_HERE.md  Navigation copies of this state.
@@ -70,8 +70,9 @@ Stage A1 is in progress: its provider-independent local MP3 snapshot and probe
 have landed, while provider/model configuration, request construction, response
 handling, completed-result persistence, and the public facade remain absent.
 Stage A2 has not started. A1 does not wait on the independent Stage M paid image
-smoke. Each audio live gate remains separately budgeted and must not run without
-explicit maintainer authorization.
+smoke. Bounded Google image and audio live tests are already authorized without
+a separate budget request; paid DashScope live work still requires explicit
+maintainer budget and endpoint confirmation.
 The A1 probe uses lazy `miniaudio>=1.71,<2` for MP3-specific metadata plus
 bounded-memory full decode. FFmpeg, PyAV, Mutagen, and external executable
 requirements remain outside the A1 runtime. The probe rejects malformed or
@@ -86,10 +87,11 @@ misreported by the decoder. Source and destination close-only failures are
 typed and redacted; an earlier typed or process-control failure remains primary.
 This ceiling is not a provider request limit; the selected adapter must
 separately preflight its exact Base64/JSON envelope.
-The built-in Google image adapter is now scoped as a later optional
-vertical slice: it reuses the shared vision/candidate/checkpoint contracts and
-does not copy legacy retry, audio, GUI, or social architecture. It is planned,
-not implemented, and does not block Stage A.
+The earlier proposal that a built-in Google image adapter remain a later
+optional slice is superseded by the #065 queue below. Google is still not
+implemented in the active library; the next slice starts from the
+legacy-proven Google OpenAI-compatible endpoint, not an unproven native-SDK or
+generic-provider abstraction.
 The shipped image snapshot closes every source and destination before image
 validation or provider dispatch. Short writes and close-only failures become
 typed, redacted errors; an earlier library, ordinary, or process-control
@@ -138,6 +140,127 @@ mutate-then-restore race during the provider or OCR call; eliminating that race
 would require a larger immutable-byte request boundary.
 See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
+## #065 Unified Execution Queue
+
+This is the only current execution order. The shipped public product recognizes
+images through built-in DashScope or an injected vision provider, supports local
+OCR, file-backed image checkpoint/resume, and a fail-fast batch API that still
+accepts an arbitrary `Iterable`. Google, PDF, content repair, public audio
+recognition, and provider-reported per-model input/output token usage are not
+implemented. Existing attempt disclosure counts provider calls and model/workflow
+attempts; it is not token usage. Resume is the primary recovery mechanism;
+repair is a later, bounded fallback for missing or unusable state.
+
+### P0-a — Bounded legacy provider-error evidence audit
+
+Spend at most one bounded iteration auditing the roughly two months of legacy
+Google, DashScope, and Codex-mode fixes. Produce one evidence table mapping real
+provider errors to exactly one of: retry the same request, switch model, stop,
+reject input before dispatch, or defer to later manual repair. Apply the
+legacy-parent rule: include only behavior with an analogous active-library path
+or an immediately selected vertical slice. Do not copy legacy architecture.
+
+Exit gate: the table cites the exact legacy paths/incidents, distinguishes
+provider and error scope, and identifies which rows are proven current versus
+historical warnings. Non-goals: implementation, a generic retry count, or an
+open-ended legacy survey.
+
+### P0-b — Google OpenAI-compatible image vertical slice
+
+Implement the smallest built-in image path using the legacy-proven Google
+OpenAI-compatible endpoint. Keep provider-specific catalog, request, response,
+error, retry/switch, and terminal behavior explicit. Then run bounded live proof
+with one image, one group of 7-8 images, at least one honest failure, record the
+locally observed call count, and record whether the endpoint reports input/output
+token usage.
+
+Exit gate: public image recognition succeeds through the built-in adapter, the
+real failure remains typed and non-successful, live model discovery or the
+endpoint's actual catalog behavior is recorded, and usage availability is
+reported without inventing zero. Non-goals: native Google SDK, a universal
+provider interface, PDF, audio, or broad stress testing.
+
+### P0-c — Live cancellation, checkpoint, and resume proof
+
+Use the public API to interrupt real Google image work, preserve settled state,
+and resume it. Prove completed calls are not paid or dispatched again and only
+missing work runs. Keep the exercise small and authorized.
+
+Exit gate: exact before/after request and usage evidence proves reuse; cancelled
+and terminal outcomes remain honest. Non-goals: adversarial filesystem races,
+new checkpoint schemas, or repair.
+
+### P1-a — Public Google short-audio vertical slice
+
+Deliver the smallest public short-MP3 path and run one real authorized MP3 as
+soon as the executable slice exists. Reuse the current bounded snapshot/probe,
+then add only the configuration, request, response, result, persistence, and
+facade required by the consumer. If the Google OpenAI-compatible endpoint is
+proven not to support the required audio request, record the blocker and ask the
+maintainer; do not switch to the native SDK autonomously.
+
+Exit gate: one public real-MP3 result or one evidence-backed endpoint blocker,
+with provider limits preflighted and no false success. Non-goals: long audio,
+FileTrans, native SDK exploration, or a modality-wide framework.
+
+### P1-b — Concrete-tuple batch contract and full preflight
+
+Restrict runtime input to a concrete `tuple`; reject lists, generators, and
+custom `Sequence` implementations. Validate the complete tuple, every member,
+and every resolved output target before dispatch; duplicate targets must fail
+with zero provider calls. After offline regressions, run two bounded live
+batches. Only after proof may obsolete iterator and batch-lifetime owner
+complexity be removed.
+
+Exit gate: invalid or colliding batches make zero calls, valid tuple ordering and
+settled outcomes remain correct, and two live batches pass. Non-goals:
+arbitrary iterable compatibility, cross-process locks, or a transaction system.
+
+### P1-c — PDF through the image/resume path
+
+Build PDF as ordered image recognition through the proven image provider and
+resume path, not a parallel LLM protocol. Use roughly 7-8 pages per provider
+request. The first working slice chooses its total batch count from that
+iteration's evidence; after stabilization, programmatic live regression defaults
+to two batches, normally 14-16 pages.
+
+Exit gate: public PDF output preserves order, bounded reads, settled checkpoints,
+and zero repayment of completed resume work. Non-goals: a routine 600-700-page
+run, PyMuPDF, whole-file memory loading, or caller-designed partial semantics.
+
+### P1-d — Minimal PDF repair after stable markers
+
+Only after PDF checkpoint and Markdown markers are stable, migrate the smallest
+legacy-proven manual repair: when state is missing/unusable or historical
+Markdown has no compatible state, identify the failed PDF image range,
+resubmit only that range, and atomically retain successful content. This covers
+delayed recovery after multi-hour provider outage or daily-quota exhaustion.
+
+Exit gate: one real marker-based failure range is repaired without rerunning
+successes. Non-goals: a general repair workflow, speculative marker schema, or
+repair as an alternative to normal resume.
+
+### P2 — Explicitly deferred work
+
+Paid DashScope live re-verification, the future local-model OpenAI-compatible
+path, long audio, and Google native-SDK investigation are P2. Native SDK work
+starts only after a proven requirement such as unsupported long audio, missing
+catalog behavior, or a required complete capability.
+
+Usage work is not a separate billing engine. As each real adapter lands,
+accumulate locally observed calls plus provider-reported input and output tokens
+by the exact model. Missing provider token usage remains unknown, never zero,
+and historical checkpoint usage remains distinct from the current invocation.
+
+Stop conditions for #065: do not continue #060-#064-style proactive snapshot or
+call-accounting edge scans; do not enumerate hypothetical filesystem failures;
+do not build generic provider or repair frameworks, switch to the native Google
+SDK without maintainer confirmation, add cross-process locking, UI/PyQt, social
+features, unapproved stress tests, or mechanically delete dormant fields.
+Existing lifecycle fixes remain. Large-file paths still require bounded
+streaming and explicit read/write/close/cleanup. Offline tests are a regression
+floor only, not proof of current provider behavior.
+
 ## Known Debt In This Repository
 
 Future agents must assume the following and verify before trusting any claim:
@@ -154,13 +277,12 @@ Future agents must assume the following and verify before trusting any claim:
 - **Dated documentation is history.** Old phase and review files deliberately
    retain their original conclusions. Current navigation documents must point
    here and must not repeat those conclusions as present status.
-- **The public repository still opens on a stale branch.** On 2026-08-23 the
-  fork's GitHub default was `main` at `017de01`, a strict ancestor 161 commits
-  behind maintained `master` at `271d96d`. The current clean-archive gate passes
-  on `master`; a visitor following the default branch does not see that product.
-  Before any tag or public release, the maintainer must explicitly choose to
-  make `master` the default or reconcile the branches. Do not publish from the
-  stale default, and do not change this external repository setting implicitly.
+- **The old `main` is an account-access boundary, not architecture debt.** It
+  belongs to another GitHub account owned by the maintainer, which is temporarily
+  inaccessible because the required email access is unavailable. Development
+  continues on the Jasmine fork's `master`. The project is not currently public.
+  Do not change the old account's default branch or reinterpret this temporary
+  handoff as a release or architecture problem.
 - **Structure runs ahead of demand.** `contracts/` and `worker/` are 1,817
   lines (23% of the library) serving a subprocess protocol with no consumer.
   They are correct and tested; they are also not yet load-bearing.
@@ -547,8 +669,9 @@ correct: `SourceDescriptor.media_type`, `Artifact.media_type`, and
 
 - `errors.py`, `provider_error_disposition.py`, and the DashScope error mapping.
   Correct, live-verified, and the foundation for every future provider.
-- `imaging/snapshot_image_group.py` and the validation chain. Correct and
-  race-proof.
+- `imaging/snapshot_image_group.py` and the validation chain. Bounded and tested
+  against observed persistent mutation; not proof against a mutate-then-restore
+  race.
 - `config.py` immutability and exact-type validation.
 
 ### Keep but freeze
@@ -619,10 +742,12 @@ to weaken validation or report false success.
 
 Select models from the live Google catalog rather than a hardcoded list. Audio is
 supported by fewer Google models than images, so verify current audio capability
-before dispatch; native multimodal models are valid candidates when served. Keep
-calls purposeful and bounded, preserve exact outcomes, never print credentials, and
-submit only authorized data. This authority does not activate a deferred provider
-adapter or social-media feature. The detailed operational policy is
+before dispatch. This authorization permits bounded native-model tests, but #065
+defers native-SDK work and forbids an autonomous switch when the selected
+OpenAI-compatible endpoint is blocked; record evidence and ask the maintainer.
+Keep calls purposeful and bounded, preserve exact outcomes, never print credentials,
+and submit only authorized data. This authority does not activate a deferred
+provider adapter or social-media feature. The detailed operational policy is
 `docs/provider_cost_and_reliability_policy.md`.
 
 Real legacy incidents have higher evidence weight than code-only suspicions but do
@@ -728,22 +853,20 @@ shipped and tested offline:
    queue. Injected typed errors retain only an allowlisted canonical
    `failure_scope`; arbitrary provider details remain discarded.
 
-Every non-paid Stage M exit criterion now passes. Commit `271d96d` passed the
-reusable clean-archive runner in `tools/run_stage_m_offline_gate.ps1`: its
-archived suite reported 1089 passed and one expected optional-RapidOCR skip,
-fixture verification and compilation passed, the wheel was 153,382 bytes, and
-the no-deps target was 747,967 bytes. Fresh `image` and `image,dashscope`
-profiles added 16,436,747 and 41,009,476 bytes respectively and passed their
-offline smokes. Plain import stayed below every documented wall and process-CPU
-budget in both Python environments. The built-in adapter now proves dispatch of
-a catalog-served model unknown to this repository, and an operating-system
-process-termination test proves a completed paid slot survives and resume pays
-only for the missing slots. `worker/` and `contracts/` are unchanged and frozen.
+Every non-paid Stage M exit criterion now passes. The latest product checkpoint
+`700cc05` passed the reusable clean-archive runner recorded by evidence commit
+`5d966e1`: the repository-root suite reported 1203 passed, while the exact
+Git-archive suite reported 1193 passed and 10 expected skips. Fixture checks,
+compilation, clean wheel/install, outside-repository import, dependency profiles,
+generated-image smoke, and offline DashScope construction passed. No provider
+request ran. Earlier `271d96d` evidence remains historical. `worker/` and
+`contracts/` are unchanged and frozen.
 
-The Stage M exit gate has **not** passed because its paid live catalog and
-end-to-end smoke still requires an explicit maintainer budget. No paid provider
-request occurred in the offline gate. Do not convert this no-cost proof into a
-claim about current provider-account or model-quota semantics.
+The Stage M exit gate has **not** passed because its paid DashScope live catalog
+and end-to-end smoke still require an explicit maintainer budget. Bounded Google
+image/audio robustness calls are separately pre-authorized. No provider request
+occurred in the offline gate. Do not convert this no-cost proof into a claim
+about current provider-account or model-quota semantics.
 
 ### Stage M Findings
 

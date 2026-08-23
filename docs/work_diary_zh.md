@@ -1988,3 +1988,19 @@ RapidOCR 3.9.2 虽然提供 `Global.model_root_dir`，但 wheel 已自带默认 
 **resume 与 repair 边界。** resume 是主恢复路径。repair 只是在 resume sidecar/state 丢失、不可用，或历史 Markdown 没有兼容状态时使用的小型人工补救：从已经生产的 Markdown 识别 PDF 图片批次失败范围，仅重提失败范围并保留成功内容，支持 provider 停机数小时或日 quota 耗尽后的延迟重试。repair 不建立通用 workflow 或复杂防御，只按 legacy 的真实 marker/行为做最小迁移，并原子保留成功内容。
 
 **暂停边界。** batch 输入和 PDF live regression 规模两项已由维护者确认；当前仍待决定的是如何为 legacy-proven Google OpenAI-compatible 路径定义最小显式 provider 边界，同时不混同未来 local-compatible 路径和暂缓的 native SDK。本条及本次补充均不计为 #065，没有启动新的 iteration，没有修改产品代码，也没有调用任何 provider。
+
+## #065 — 2026-08-23：统一执行顺序，停止防御漂移
+
+**本轮英文原子任务。** Reconcile the authoritative state, navigation, migration summary, durable maintainer decisions, and retained Stage M/A plan into one evidence-ordered #065 execution queue without starting implementation. Success means current shipped capability and every unimplemented boundary are stated honestly; Google authorization and endpoint direction, live gates, batch/usage/PDF/repair ordering, stop conditions, and latest clean-archive evidence no longer contradict each other; historical plans remain readable but cannot override the queue. This matters because the next agent must deliver live product capability instead of resuming defensive edge-case drift.
+
+**初始假设、两条路线与选择。** 开始时假设主要问题只是把维护者决定链接进现有计划。比较两条路线：①继续让 Stage M/A 详细计划承担当前顺序，只在各导航文件追加例外；②在最高 authority 建立唯一 #065 队列，START/MIGRATION 只复制事实和链接，维护者决定只保存耐久约束，旧详细计划用 banner 标记冲突处 superseded。逐行对照后选择②，因为①会保留多个互相覆盖的“当前计划”，并让旧 Google/native、预算和 Stage M 优先级继续误导交接。
+
+**四项只读审计证据。** 第一，文档审计发现 authority 仍称所有 audio live 需另请预算、Google adapter 是 later optional、旧 `main` 是 public release/default-branch 风险、image snapshot chain `race-proof`，而维护者决定已分别推翻这些表述。第二，代码拓扑证明 active 公共能力仍是 image/DashScope/injected provider/local OCR/image resume，以及接受任意 `Iterable` 的 `recognize_batch()`；`src/ocrllm` 没有 Google、PDF 或内容 repair 模块。第三，audio 只有未公开的 `snapshot_short_mp3`、`probe_short_mp3` 和 lazy miniaudio loader；没有 provider/config/facade/persistence/result，`NoSpeechDetected` 和 deferred capability 名称不能当作已交付音频。第四，当前 metadata 只有 provider call、model attempt 和 workflow slot 账目，没有 provider-reported per-model input/output token usage；旧文档的 spend disclosure 不能再被理解成完整 usage。同步还确认最新产品 gate 是 `700cc05`、root **1203 passed**、exact archive **1193 passed, 10 skipped**，证据提交 `5d966e1`，而多份导航仍停在 `271d96d`。
+
+**最终队列与退出门。** authority 现按 P0-a bounded legacy Google/DashScope/Codex error audit、P0-b Google legacy-proven OpenAI-compatible image built-in + 单图/7—8 图/诚实失败/usage 可用性 live、P0-c public cancel/checkpoint/resume 不重复完成调用、P1-a 尽早 public Google short audio + 真实 MP3、P1-b concrete tuple batch + 全批零调用 preflight + 两批 live、P1-c 复用 image/resume 的 PDF、P1-d stable marker 后最小 repair、P2 paid DashScope/local-compatible/long audio/native-on-proven-need 排序。每项都有 exit gate 和 non-goals；usage 随真实 adapter 按 model 累计本地观测 calls 与 provider 实报 input/output tokens，missing token usage 保持 unknown，不另建 billing engine。
+
+**停止项与实际边界。** #060—#064 同类 snapshot 对抗和调用计数边角停止主动扫描；不继续穷举 filesystem 假想异常，不建通用 provider/repair，不自行切 native SDK，不加跨进程锁、UI/PyQt、social、未授权压力测试，也不机械删除 dormant fields。现有 lifecycle 修复不回退，大文件仍须 bounded streaming/read/write/close/cleanup。offline tests 只是 regression floor。项目当前不公开，旧账号问题不是架构问题。
+
+**工具阻塞、编辑与验证范围。** 主 shell 的 setup-refresh 无法创建进程，因此由已经成功读取仓库的代理按明确机械范围使用 `apply_patch` 编辑，再交主代理审查。此次只协调 `ACTIVE_STATE_AND_RULES.md`、`START_HERE.md`、`MIGRATION_STATUS.md`、`MAINTAINER_PRODUCT_DECISIONS.md`、保留计划的状态 banner 与本日记；没有修改产品代码或测试，没有运行测试，没有调用 Google、DashScope 或其他 provider，也没有触碰用户交接文件。
+
+**下一轮。** 下一轮不得回到开放式防御审计；必须先完成最多一个 bounded iteration 的 legacy error evidence table，随后立即进入 Google OpenAI-compatible image vertical slice 和有界 live 证明。若 short audio 的 compat endpoint 实证不支持，记录 blocker 并向维护者确认，不得自行转向 native SDK。

@@ -29,11 +29,11 @@ docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks al
 docs/MAINTAINER_PRODUCT_DECISIONS.md  Maintainer choices preserved across handoffs;
                                       scope changes still require authority updates.
 docs/plan_phase1_maturation_and_phase2_audio.md
-                                      Current work plan; Stage M is offline
-                                      complete with its live exit gate open.
+                                      Retained Stage M/A detail; authority #065
+                                      controls current ordering and providers.
 docs/plan_phase1_defects_and_provider_split.md
-                                      Stage 1 closed; Stage 2 folded into A1
-                                      and its snapshot/probe seam is implemented.
+                                      Stage 1 history; standalone Stage 2 was
+                                      superseded by executable slices.
 docs/ocrllm_library_go_no_go.md       Phase gates, file responsibilities,
                                       migrate/rewrite/reject boundary.
 src/ocrllm/README_ACTIVE_LIBRARY.md   Package boundary and capability surface.
@@ -49,7 +49,7 @@ purpose. Files with `phase*`, `*_decision_*`, `*_checkpoint_*`, `*_review_*`,
 or `*_incident_*` names are dated history; consult them only to understand how
 a past decision was reached, never to learn current state.
 
-Public import shape:
+Minimal import example:
 
 ```python
 from ocrllm import Config, DashScopeSettings, VisionModelSettings, recognize
@@ -70,7 +70,15 @@ validation corpus are implemented, and one bounded compact-name snapshot owns
 the bytes that the probe reads. No audio provider, facade, persistence, or
 recognition result exists yet. Stage A2 has not started.
 
-All no-cost Stage M exit criteria pass at committed checkpoint `271d96d`.
+The ordered current work is `#065 Unified Execution Queue` in
+`docs/ACTIVE_STATE_AND_RULES.md`. It starts with one bounded legacy-provider
+evidence audit, then the legacy-proven Google OpenAI-compatible image slice and
+live proof; it explicitly stops further proactive filesystem/accounting edge
+scans.
+
+All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
+the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203
+passed; the exact archive suite reported 1193 passed and 10 expected skips.
 `tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,
 fixture/compile checks, clean wheel and outside-repository import guards,
 dependency profiles, generated-image smoke, and offline DashScope construction.
@@ -95,8 +103,9 @@ Preserve
 bytes, SHA-256
 `6f0454d634dbe76f68f29c07a4c0ced4a047c080e46bb75dda2cb84ffca3a96b`.
 The clean Git-archive gate at `0278b66` is historical evidence for the image and
-worker boundaries. The current allowed work is Stage M maturation under
-`docs/plan_phase1_maturation_and_phase2_audio.md`; its exit gate has not passed.
+worker boundaries. The current allowed work follows the #065 queue in the
+authority file. The detailed maturation/audio plan is retained as history and
+bounded design evidence where it does not conflict with that queue.
 
 The active library has a region-bound in-memory credential scheduler and
 request/batch image resume. Candidate switching is opt-in, bounded,

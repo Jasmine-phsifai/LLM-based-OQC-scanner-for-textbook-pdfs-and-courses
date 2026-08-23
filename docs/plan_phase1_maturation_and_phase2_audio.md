@@ -1,8 +1,18 @@
 # Plan: Phase 1 Maturation, Then Phase 2 MP3 Audio
 
-Status: **approved current work; Stage M offline implementation complete, live
-exit gate open; Stage A1 local MP3 snapshot/probe implemented.** Updated
-2026-08-23.
+> **Status boundary, 2026-08-23:** this detailed plan is retained for evidence,
+> alternatives, and completed Stage M history. Stage M is offline
+> implementation-complete. Any ordering or provider direction that conflicts
+> with `#065 Unified Execution Queue` in `ACTIVE_STATE_AND_RULES.md` is
+> superseded. Current execution is Google OpenAI-compatible first, using the
+> legacy-proven endpoint, with public short audio and bounded live proof early;
+> the unproven native Google SDK is deferred unless a concrete capability need
+> is established. The authority queue, not this historical sequence, controls
+> current work.
+
+Status: **retained detailed plan; Stage M offline implementation complete, paid
+live exit gate open; Stage A1 local MP3 snapshot/probe implemented; current
+ordering is authority #065.** Updated 2026-08-23.
 
 Read `docs/ACTIVE_STATE_AND_RULES.md` first. It defines document precedence, the
 two policy changes this plan depends on, and the coding rules.
@@ -292,6 +302,8 @@ implemented; audio configuration, provider call, response mapping, persistence,
 and the public facade are not. The Stage 2 audio configuration boundary lands
 with the rest of A1, not as unused scaffolding. A1 does not wait on Stage M's
 independent paid image smoke; its own live gate remains separately budgeted.**
+The final budget sentence is superseded by authority #065: bounded Google
+image/audio live work is pre-authorized, while paid DashScope remains budgeted.
 
 Phase 2's original framing was an Electron JSONL worker. That is superseded:
 the worker is frozen and Phase 2 is redefined as the first audio capability.
