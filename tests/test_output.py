@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
 import shutil
 from pathlib import Path
@@ -294,7 +295,12 @@ def test_snapshot_cleanup_failure_is_typed_and_never_reported_as_success(
 ):
     source = write_test_image(tmp_path / "board.png")
     temp_dir = tmp_path / "snapshots"
-    provider = CountingProvider()
+    output_dir = tmp_path / "output"
+
+    class CheckpointedProvider(CountingProvider):
+        resume_identity = "test.snapshot-cleanup.v1"
+
+    provider = CheckpointedProvider()
     snapshot_module = importlib.import_module("ocrllm.imaging.snapshot_image_group")
     real_rmtree = shutil.rmtree
 
@@ -308,14 +314,50 @@ def test_snapshot_cleanup_failure_is_typed_and_never_reported_as_success(
     with pytest.raises(OutputError) as captured:
         recognize(
             source,
-            config=Config(provider=provider, temp_dir=temp_dir),
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
         )
 
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert [dict(attempt) for attempt in captured.value.details["model_attempts"]] == [
+        {
+            "model": "",
+            "outcome": "success",
+            "provider_calls_attempted": 1,
+        }
+    ]
     assert provider.calls == 1
+    state_path = output_dir / "board_board.ocrllm-state.json"
+    state_after_failure = json.loads(state_path.read_text(encoding="utf-8"))
+    assert state_after_failure["result"]["status"] == "partial"
+    assert state_after_failure["result"]["markdown"] == ""
+    assert [slot["slot_id"] for slot in state_after_failure["slots"]] == ["draft"]
+    assert not (output_dir / "board_board.md").exists()
     leaked_directories = list(temp_dir.glob("ocrllm-images-*"))
     assert len(leaked_directories) == 1
     real_rmtree(leaked_directories[0])
+
+    monkeypatch.setattr(snapshot_module.shutil, "rmtree", real_rmtree)
+    result = recognize(
+        source,
+        config=Config(
+            provider=provider,
+            output_dir=output_dir,
+            temp_dir=temp_dir,
+            resume=True,
+        ),
+    )
+
+    assert provider.calls == 1
+    assert result.markdown == "# Fresh board\n"
+    assert result.output_path == output_dir / "board_board.md"
+    completed_state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert completed_state["result"]["status"] == "complete"
+    assert completed_state["result"]["markdown"] == "# Fresh board\n"
 
 
 def test_snapshot_cleanup_failure_does_not_mask_primary_provider_failure(

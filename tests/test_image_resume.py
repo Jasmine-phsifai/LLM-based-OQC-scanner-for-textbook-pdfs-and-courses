@@ -303,13 +303,18 @@ def test_local_ocr_rejects_snapshot_mutation_after_identity(
     replacement = write_test_image(tmp_path / "replacement.png", color=(7, 8, 9))
     replacement_bytes = replacement.read_bytes()
     output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "snapshots"
+    backend_calls = 0
 
     backend = importlib.import_module(
         "ocrllm.local_ocr.recognize_images_with_rapidocr"
     )
 
     def fake_ocr(image_paths, *, profile, config):
-        assert image_paths[0].read_bytes() == replacement_bytes
+        nonlocal backend_calls
+        backend_calls += 1
+        assert image_paths[0].read_bytes() == source.read_bytes()
+        image_paths[0].write_bytes(replacement_bytes)
         return ProcessorOutput(
             media_type="image",
             profile=profile,
@@ -317,31 +322,26 @@ def test_local_ocr_rejects_snapshot_mutation_after_identity(
         )
 
     monkeypatch.setattr(backend, "recognize_images_with_rapidocr", fake_ocr)
-    fingerprint_module = importlib.import_module(
-        "ocrllm.fingerprint_image_sources"
-    )
-    original_fingerprint = fingerprint_module.fingerprint_image_sources
-
-    def mutate_after_identity(source_paths, snapshot_paths):
-        fingerprints = original_fingerprint(source_paths, snapshot_paths)
-        snapshot_paths[0].write_bytes(replacement_bytes)
-        return fingerprints
-
-    monkeypatch.setattr(
-        fingerprint_module,
-        "fingerprint_image_sources",
-        mutate_after_identity,
-    )
 
     with pytest.raises(OutputError) as raised:
         recognize(
             source,
-            config=Config(image_mode="ocr", output_dir=output_dir, resume=True),
+            config=Config(
+                image_mode="ocr",
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+                resume=True,
+            ),
         )
 
     assert raised.value.code == "OUTPUT_WRITE_FAILED"
+    assert raised.value.details["provider_calls_attempted"] == 0
+    assert "model_attempts" not in raised.value.details
+    assert backend_calls == 1
+    assert source.read_bytes() != replacement_bytes
     assert not (output_dir / "board_board.md").exists()
     assert not _state_path(output_dir).exists()
+    assert list(temp_dir.glob("ocrllm-images-*")) == []
 
 
 @pytest.mark.skipif(

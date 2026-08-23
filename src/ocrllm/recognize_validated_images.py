@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .config import Config
+from .errors import OutputError
 from .processor_output import ProcessorOutput
 
 if TYPE_CHECKING:
@@ -32,7 +33,11 @@ def recognize_validated_images(
             config=config,
         )
         if slot_checkpoint is not None:
-            slot_checkpoint.verify_snapshots()
+            try:
+                slot_checkpoint.verify_snapshots()
+            except OutputError as error:
+                error._add_safe_detail("provider_calls_attempted", 0)
+                raise
         return output
     from .processors.recognize_images import recognize_images
 

@@ -42,6 +42,8 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   failures after processor return while saving/validating state, publishing
   Markdown, or constructing the result likewise report only the current
   invocation's calls, including zero for completed-state replay;
+  snapshot cleanup after a normal processor return follows the same rule, and
+  local-OCR post-inference snapshot verification explicitly reports zero;
   all no-cost exit criteria pass through the clean-archive runner at `271d96d`;
 - open: the Stage M paid live exit smoke and live re-verification of provider
   account/model quota semantics;

@@ -220,14 +220,17 @@ Future agents must assume the following and verify before trusting any claim:
   therefore survive a Markdown publication failure and be published later
   without another provider call.
 
-- **Snapshot-exit spend disclosure is still incomplete.** A provider result
-  can succeed and then fail while the owned snapshot context is cleaning up;
-  that error currently leaves `_recognize()` before invocation accounting is
-  derived. Local OCR snapshot verification fails at the same earlier boundary
-  and consequently lacks an explicit zero-call detail. Checkpoint safety is
-  unaffected, but the diagnostic contract is incomplete. Repair this at the
-  snapshot execution boundary rather than widening the final output handler or
-  introducing a generic accounting framework.
+- **Snapshot-boundary failures disclose completed work without inventing
+  calls.** Invocation accounting is derived at the normal processor join while
+  the owned snapshot context is still active. If later snapshot cleanup fails,
+  fresh provider work reports its current model-attempt sum and ledger, while a
+  completed-state replay reports zero without historical attempts. Local OCR
+  snapshot verification attaches an explicit zero at its own post-inference
+  seam. Pre-inference snapshot/fingerprint failures still carry no fabricated
+  count, provider/checkpoint failures retain their existing accounting, and
+  process-control exceptions remain outside these handlers. A paid draft slot
+  remains resumable when cleanup fails; final Markdown is not published until a
+  later zero-call resume succeeds.
 
 - **All-slots partial image resume honors pre-set cancellation without losing
   paid slots.** A valid partial state is identity-checked and rejected if a
@@ -749,8 +752,9 @@ the ordinary provider-failure default of one. A second follow-up covers the
 post-recognition finalization boundary: completed-state saving, completed-output
 validation, Markdown publication, and result construction expose the current
 invocation total. Completed-state replay is explicitly zero-call and does not
-re-export the historical model ledger. Snapshot-context exit remains the
-separate known boundary documented above.
+re-export the historical model ledger. Snapshot-context cleanup after a normal
+processor return follows the same current-invocation rule, while local-OCR
+post-inference snapshot verification explicitly reports zero.
 
 #### G2 — Recovery is quota-only. **Medium. Closed 2026-08-22; scope corrected 2026-08-23.**
 

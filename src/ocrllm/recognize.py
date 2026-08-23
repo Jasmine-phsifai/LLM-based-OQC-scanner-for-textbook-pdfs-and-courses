@@ -72,143 +72,164 @@ def _recognize(
     resume_state_path = None
     slot_checkpoint = None
     completed_resume_reused = False
+    provider_calls_attempted: int | None = None
+    current_model_attempts = None
 
     with reuse_or_create_provider_request_start_gate(
         cfg.execution.provider_request_start_interval_seconds
     ):
         if media_type == "image":
-            with snapshot_image_group(source_paths, config=cfg) as validated_paths:
-                output_path = build_output_path(
-                    source_paths,
-                    profile=profile,
-                    config=cfg,
-                )
-                if output_path is not None:
-                    output_claims.claim(output_path)
-                    # The first existence check can become stale before ownership.
+            try:
+                with snapshot_image_group(source_paths, config=cfg) as validated_paths:
                     output_path = build_output_path(
                         source_paths,
                         profile=profile,
                         config=cfg,
                     )
-                checkpoint_enabled = (
-                    output_path is not None
-                    and (cfg.resume or _can_checkpoint_image(cfg))
-                )
-                if checkpoint_enabled:
-                    assert output_path is not None
-                    from .fingerprint_image_request import fingerprint_image_request
-                    from .fingerprint_image_sources import fingerprint_image_sources
-                    from .output.load_image_resume_state import load_image_resume_state
-                    from .reuse_image_resume_state import reuse_image_resume_state
-
-                    # The sibling suffix is a durable persistence convention.
-                    resume_state_path = output_path.with_name(
-                        f"{output_path.stem}.ocrllm-state.json"
-                    )
-                    if (
-                        not cfg.resume
-                        and os.path.lexists(resume_state_path)
-                        and not resume_state_path.is_file()
-                    ):
-                        raise OutputError(
-                            "The image resume state path is not a regular file.",
-                            code="OUTPUT_PATH_INVALID",
-                        ) from None
-                    resume_identity = fingerprint_image_request(
-                        fingerprint_image_sources(source_paths, validated_paths),
-                        profile=profile,
-                        config=cfg,
-                    )
-                    resume_state = (
-                        load_image_resume_state(resume_state_path)
-                        if cfg.resume
-                        else None
-                    )
-                    if cfg.resume and resume_state is None and output_path.exists():
-                        raise ResumeStateError(
-                            "Existing image output has no matching resume state.",
-                            code="RESUME_STATE_INVALID",
-                        ) from None
-                    if (
-                        cfg.resume
-                        and resume_state is not None
-                        and resume_state.markdown
-                    ):
-                        processor_output = reuse_image_resume_state(
-                            resume_state,
-                            resume_identity,
+                    if output_path is not None:
+                        output_claims.claim(output_path)
+                        # The first existence check can become stale before ownership.
+                        output_path = build_output_path(
+                            source_paths,
+                            profile=profile,
+                            config=cfg,
                         )
-                        completed_resume_reused = True
-                        raise_if_cancelled(cfg.cancellation)
+                    checkpoint_enabled = (
+                        output_path is not None
+                        and (cfg.resume or _can_checkpoint_image(cfg))
+                    )
+                    if checkpoint_enabled:
+                        assert output_path is not None
+                        from .fingerprint_image_request import (
+                            fingerprint_image_request,
+                        )
+                        from .fingerprint_image_sources import fingerprint_image_sources
+                        from .output.load_image_resume_state import (
+                            load_image_resume_state,
+                        )
+                        from .reuse_image_resume_state import reuse_image_resume_state
+
+                        # The sibling suffix is a durable persistence convention.
+                        resume_state_path = output_path.with_name(
+                            f"{output_path.stem}.ocrllm-state.json"
+                        )
+                        if (
+                            not cfg.resume
+                            and os.path.lexists(resume_state_path)
+                            and not resume_state_path.is_file()
+                        ):
+                            raise OutputError(
+                                "The image resume state path is not a regular file.",
+                                code="OUTPUT_PATH_INVALID",
+                            ) from None
+                        resume_identity = fingerprint_image_request(
+                            fingerprint_image_sources(source_paths, validated_paths),
+                            profile=profile,
+                            config=cfg,
+                        )
+                        resume_state = (
+                            load_image_resume_state(resume_state_path)
+                            if cfg.resume
+                            else None
+                        )
+                        if cfg.resume and resume_state is None and output_path.exists():
+                            raise ResumeStateError(
+                                "Existing image output has no matching resume state.",
+                                code="RESUME_STATE_INVALID",
+                            ) from None
+                        if (
+                            cfg.resume
+                            and resume_state is not None
+                            and resume_state.markdown
+                        ):
+                            processor_output = reuse_image_resume_state(
+                                resume_state,
+                                resume_identity,
+                            )
+                            completed_resume_reused = True
+                            raise_if_cancelled(cfg.cancellation)
+                        else:
+                            from .image_slot_checkpoint import ImageSlotCheckpoint
+                            from .recognize_validated_images import (
+                                recognize_validated_images,
+                            )
+
+                            seeded_slots = ()
+                            if cfg.resume and resume_state is not None:
+                                from .validate_image_resume_identity import (
+                                    validate_image_resume_identity,
+                                )
+
+                                validate_image_resume_identity(
+                                    resume_state,
+                                    resume_identity,
+                                )
+                                if output_path.exists():
+                                    raise ResumeStateError(
+                                        "Existing image output conflicts with a partial "
+                                        "resume state.",
+                                        code="RESUME_STATE_MISMATCH",
+                                    ) from None
+                                raise_if_cancelled(cfg.cancellation)
+                                seeded_slots = resume_state.slots
+                            slot_checkpoint = ImageSlotCheckpoint(
+                                resume_identity,
+                                resume_state_path,
+                                profile=profile,
+                                snapshot_paths=tuple(validated_paths),
+                                seeded_slots=seeded_slots,
+                            )
+                            processor_output = recognize_validated_images(
+                                validated_paths,
+                                profile=profile,
+                                config=cfg,
+                                slot_checkpoint=slot_checkpoint,
+                            )
                     else:
-                        from .image_slot_checkpoint import ImageSlotCheckpoint
                         from .recognize_validated_images import (
                             recognize_validated_images,
                         )
 
-                        seeded_slots = ()
-                        if cfg.resume and resume_state is not None:
-                            from .validate_image_resume_identity import (
-                                validate_image_resume_identity,
-                            )
-
-                            validate_image_resume_identity(
-                                resume_state,
-                                resume_identity,
-                            )
-                            if output_path.exists():
-                                raise ResumeStateError(
-                                    "Existing image output conflicts with a partial "
-                                    "resume state.",
-                                    code="RESUME_STATE_MISMATCH",
-                                ) from None
-                            raise_if_cancelled(cfg.cancellation)
-                            seeded_slots = resume_state.slots
-                        slot_checkpoint = ImageSlotCheckpoint(
-                            resume_identity,
-                            resume_state_path,
-                            profile=profile,
-                            snapshot_paths=tuple(validated_paths),
-                            seeded_slots=seeded_slots,
-                        )
                         processor_output = recognize_validated_images(
                             validated_paths,
                             profile=profile,
                             config=cfg,
-                            slot_checkpoint=slot_checkpoint,
                         )
-                else:
-                    from .recognize_validated_images import recognize_validated_images
 
-                    processor_output = recognize_validated_images(
-                        validated_paths,
-                        profile=profile,
-                        config=cfg,
+                    provider_calls_attempted = (
+                        0 if completed_resume_reused else None
                     )
+                    if not completed_resume_reused:
+                        model_attempts = processor_output.metadata.get("model_attempts")
+                        if type(model_attempts) is tuple:
+                            attempt_counts: list[int] = []
+                            for attempt in model_attempts:
+                                if not isinstance(attempt, Mapping):
+                                    break
+                                count = attempt.get("provider_calls_attempted")
+                                if type(count) is not int or count < 0:
+                                    break
+                                attempt_counts.append(count)
+                            else:
+                                provider_calls_attempted = sum(attempt_counts)
+                                current_model_attempts = model_attempts
+                        if provider_calls_attempted is None:
+                            fallback_count = processor_output.metadata.get(
+                                "provider_call_count"
+                            )
+                            if type(fallback_count) is int and fallback_count >= 0:
+                                provider_calls_attempted = fallback_count
+            except (OutputError, ResumeStateError) as error:
+                if provider_calls_attempted is not None:
+                    error._add_safe_detail(
+                        "provider_calls_attempted",
+                        provider_calls_attempted,
+                    )
+                if current_model_attempts is not None:
+                    error._add_safe_detail("model_attempts", current_model_attempts)
+                raise
         else:  # pragma: no cover - routing is closed until another phase is authorized.
             raise AssertionError(f"unhandled validated media type: {media_type}")
-
-    provider_calls_attempted: int | None = 0 if completed_resume_reused else None
-    current_model_attempts = None
-    if not completed_resume_reused:
-        model_attempts = processor_output.metadata.get("model_attempts")
-        if type(model_attempts) is tuple:
-            attempt_counts: list[int] = []
-            for attempt in model_attempts:
-                if not isinstance(attempt, Mapping):
-                    break
-                count = attempt.get("provider_calls_attempted")
-                if type(count) is not int or count < 0:
-                    break
-                attempt_counts.append(count)
-            else:
-                provider_calls_attempted = sum(attempt_counts)
-                current_model_attempts = model_attempts
-        if provider_calls_attempted is None:
-            fallback_count = processor_output.metadata.get("provider_call_count")
-            if type(fallback_count) is int and fallback_count >= 0:
-                provider_calls_attempted = fallback_count
 
     try:
         if output_path is not None and resume_identity is not None:
