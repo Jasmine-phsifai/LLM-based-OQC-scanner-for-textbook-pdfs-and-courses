@@ -111,6 +111,13 @@ so a sidecar that grows after preflight is rejected before parsing or provider
 dispatch. Read-time memory failure and close-only failure are typed and
 redacted; later close failure cannot replace an earlier typed, ordinary, or
 process-control primary.
+Completed-resume Markdown validation is bounded by the exact UTF-8 byte length
+derived from the Markdown stored in validated state: it reads at most one byte
+beyond that length,
+rejects early EOF or trailing/grown content before further I/O, and then checks
+the saved digest. An edited artifact cannot force an unbounded scan or another
+provider call. Read-time memory and close-only failures are typed and redacted,
+and stream cleanup cannot replace an earlier primary.
 See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## Known Debt In This Repository

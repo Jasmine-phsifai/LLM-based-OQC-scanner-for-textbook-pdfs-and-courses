@@ -611,6 +611,65 @@ def test_resume_rejects_edited_final_output(tmp_path, monkeypatch) -> None:
     assert len(calls) == 1
 
 
+def test_resume_bounds_validation_of_grown_final_output(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    initial = recognize(source, config=_vision_config(output_dir))
+    assert initial.output_path is not None
+    output_path = initial.output_path
+    state_path = _state_path(output_dir)
+    state_before = state_path.read_bytes()
+    expected_bytes = initial.markdown.encode("utf-8")
+    grown_bytes = expected_bytes + (b"x" * 100)
+    real_open = Path.open
+    growth_injected = False
+    consumed_bytes = 0
+    validator = importlib.import_module(
+        "ocrllm.output.validate_image_resume_output"
+    )
+    monkeypatch.setattr(validator, "_CHUNK_BYTES", 4)
+
+    class ObservedOutputStream:
+        def __init__(self, wrapped) -> None:
+            self.wrapped = wrapped
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+        def read(self, size=-1):
+            nonlocal consumed_bytes
+            chunk = self.wrapped.read(size)
+            consumed_bytes += len(chunk)
+            return chunk
+
+    def grow_output_before_open(path, *args, **kwargs):
+        nonlocal growth_injected
+        mode = args[0] if args else kwargs.get("mode", "r")
+        if Path(path) == output_path and mode == "rb" and not growth_injected:
+            growth_injected = True
+            with real_open(output_path, "wb") as replacement:
+                replacement.write(grown_bytes)
+            return ObservedOutputStream(real_open(path, *args, **kwargs))
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", grow_output_before_open)
+
+    with pytest.raises(ResumeStateError) as captured:
+        recognize(source, config=_vision_config(output_dir))
+
+    assert captured.value.code == "RESUME_STATE_MISMATCH"
+    assert growth_injected is True
+    assert consumed_bytes == len(expected_bytes) + 1
+    assert len(calls) == 1
+    assert state_path.read_bytes() == state_before
+    assert output_path.read_bytes() == grown_bytes
+
+
 def test_atomic_state_save_failure_publishes_no_output_or_temporary_state(
     tmp_path,
     monkeypatch,
