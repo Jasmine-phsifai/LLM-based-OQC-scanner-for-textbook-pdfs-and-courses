@@ -2090,3 +2090,19 @@ Atomic task — Iteration #069: close the remaining native Google short-audio li
 **清理、边界与过度设计复盘。** key 只从 QSettings 进入该任务进程的环境变量；执行后 Google/Gemini 环境变量均不存在。五个已知捕获文件逐一删除，空目录随后删除，最终 `capture_exists=False`；仓库没有运行时残留。没有为一次 live 调用新增候选路由、重试器、Files upload/poll/remote cleanup、第二 transport、长音频、checkpoint、worker/capability 登记或通用捕获框架，也没有为了让门禁变绿修改产品代码。第二候选只保留为分析路线，没有实际调用。持久捕获继续是外层运行规程，不进入 library；正文不公开既保护内容边界，也意味着不能夸大为质量评测。
 
 **结论与下一步。** #068 的 `gemini-3.1-pro-preview` model-scoped quota 仍作为真实失败证据保留；#069 的单次成功证明了现有 native inline、单 MP3、<=300 秒、内存结果的实验性直接 API 能完成有用工作，P0-c exit gate 因而关闭。共享 capability/worker registry 仍冻结为 20 项，Files、长音频、持久化/resume 与 audio worker 仍未实现。统一队列现在前进到既有 P1-a：用公共 Google 图片路径做一次小型真实 cancel/checkpoint/resume 证明，确认已完成调用不会再次 dispatch 或付费；不得借此扩展 snapshot 对抗、repair 或新 schema。
+
+## #070 — 2026-08-23：真实取消后只恢复未完成的 Google 图片工作
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #070: use the public native Google image path to prove, with one bounded authorized live run, that cancellation preserves settled checkpoint work and resume dispatches only the missing pass. Success means the first run cancels after one durable draft and before review, the second run reuses that draft with zero replay calls and performs exactly one fresh review call, usage and call evidence remain honest on both the typed cancellation and final result, and no new checkpoint schema, repair workflow, retry, model switching, or generic live framework is introduced. This matters because resume is the product's primary recovery mechanism and offline tests alone cannot prove that completed provider work is not paid for twice.
+```
+
+**假设、两条路线与 transport 复核。** 假设 public cancellation callable 能在 draft sidecar 原子落盘后观察到它，并在 review dispatch 前返回 true；恢复时 v2 slot identity 应复用 draft、只调用 review。两条路线是只用 fake provider 证明顺序，或先用真实 checkpoint 回归锁定行为，再做一次有界 Google live 证明账单边界。选择后者，因为 P1-a 明确要求真实 request/usage 证据，但先用 fake 回归限制风险。live 前从 GUI/QSettings、`provider_selection`、router、client construction 到图片调用重新复核 legacy：内建 Google 实际使用官方 native `google-genai`；`/v1beta/openai` 只是独立 generic compatible provider 的 placeholder。当前 `src/ocrllm` transport 已一致，无需改道。
+
+**实现与离线验证。** 失败先行测试证明取消错误缺少已结算 pass 的 token 证据。窄修正只在图片 processor 从本次 usage ledger 生成 `settled_model_usage`，附到逃逸的 typed error；不改 checkpoint schema，不复用历史 usage，成功 metadata 也不变。一度考虑全局 error sanitizer 的 model 白名单，但 model label 可由调用者控制，会扩大敏感字符面，因此完整撤回，只保留 processor 拥有的结构化数值证据。focused **5 passed**，相关 image/provider/resume **102 passed**，root **1274 passed / 250.86 s**；`compileall` 与 diff check 通过。
+
+**唯一一次 live 证据。** 外层先有一次 PowerShell 解析失败，发生在执行前，所以 Python、SDK、provider 调用均为 0；明确授权修正外层后只执行一次真实 gate。`gemini-2.5-flash` 处理八张授权 fixture。首轮 draft：**1 call，2401/1502 tokens**；一个 partial draft slot 可见后返回 `CANCELLED`，review 未 dispatch。`resume=True` 复用 draft（**0 replay calls**），只新调 review：**1 call，4278/1066 tokens**；最终 checkpoint `complete`、output published true。总调用 **2**，exit **0**，elapsed **70,431 ms**，stderr nonempty **false**，secret detected **false**。未读取或输出 Markdown、路径、key 或 raw response；capture、tool temp 残留和 Google/Gemini 环境变量最终均不存在，没有重跑。
+
+**过度设计复盘与下一步。** 没有新 schema、repair、跨进程锁、通用 live framework、retry、model switching 或第三次调用。live tool 只校验 sidecar/output 存在性和安全标量。`settled_model_usage` 是当前取消消费者所需的窄证据，不是 billing engine。P1-a 已完成；队列精确前进到既有 P1-b：batch runtime 收紧为 concrete tuple，完整 preflight，并对重复 output target 零调用拒绝。

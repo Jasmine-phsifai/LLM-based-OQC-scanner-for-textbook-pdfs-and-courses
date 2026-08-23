@@ -86,7 +86,10 @@ one memory-only MP3 and a bounded native inline request below 20,000,000 bytes.
 result in exactly one provider call with input/output usage 150/10; its separate
 invalid-key probe returned credential-scoped authentication. No transcript was
 published, so this proves the result boundary rather than transcription
-quality. P0-c is complete and the immediate queue is P1-a. There is no hidden
+quality. P0-c is complete. #070 then proved live cancellation after one settled
+Google image draft and resume of only the missing review: two total provider
+calls, the draft reused with zero replay calls, and a complete published result.
+P1-a is complete and the immediate queue is P1-b. The audio slice has no hidden
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 

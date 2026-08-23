@@ -98,8 +98,12 @@ MP3 through the public facade in exactly one provider call, with input/output
 usage 150/10 and a separate credential-scoped invalid-key failure. No transcript
 was published, so this is public-result and lifecycle proof, not a
 transcription-quality evaluation. The direct path remains experimental and
-memory-only. P1-a is now the immediate queue; do not add hidden retry, fallback,
-or a Files lifecycle.
+memory-only. #070 completed P1-a with eight authorized images: cancellation
+observed one persisted draft after one call (usage 2401/1502), resume reused it
+without replay and made one fresh review call (usage 4278/1066), then published
+a complete result. Total calls were exactly two. P1-b concrete-tuple batch
+preflight is now the immediate queue; do not add hidden retry, fallback, or a
+Files lifecycle.
 The shared 20-entry capability/worker registry remains unchanged and does not
 advertise this direct audio path.
 The generic compatibility endpoint and future local-model compatibility remain

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -12,6 +13,7 @@ import ocrllm
 from ocrllm import Config, VisionModelSettings, recognize as recognize_public
 from ocrllm.errors import (
     ConfigError,
+    Cancelled,
     DependencyMissing,
     InvalidSource,
     ProviderError,
@@ -112,6 +114,27 @@ class _FakeGoogleModule:
         client = _Client(self.models)
         self.clients.append(client)
         return client
+
+
+class _CheckpointAwareCancellation:
+    """Cancel only after the first workflow slot is durably visible."""
+
+    def __init__(self, state_path: Path) -> None:
+        self.state_path = state_path
+        self.observed_draft = False
+
+    def is_set(self) -> bool:
+        if not self.state_path.is_file():
+            return False
+        document = json.loads(self.state_path.read_text(encoding="utf-8"))
+        slots = document["slots"]
+        self.observed_draft = (
+            document["result"]["status"] == "partial"
+            and document["result"]["markdown"] == ""
+            and len(slots) == 1
+            and slots[0]["slot_id"] == "draft"
+        )
+        return self.observed_draft
 
 
 def test_google_settings_is_public_exact_frozen_and_secret_safe():
@@ -510,6 +533,83 @@ def test_completed_google_resume_makes_no_sdk_call_and_hides_historical_usage(
     assert len(fake.clients) == client_count
     assert resumed.metadata["provider_call_count"] == 1
     assert resumed.metadata["current_model_token_usage"] == ()
+
+
+def test_google_cancel_after_draft_then_resume_pays_only_for_review(
+    tmp_path, monkeypatch
+):
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+    fake = _FakeGoogleModule()
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+    image = write_test_image(tmp_path / "source.png")
+    output_dir = tmp_path / "output"
+    state_path = output_dir / "source_board.ocrllm-state.json"
+    cancellation = _CheckpointAwareCancellation(state_path)
+    preferences = ocrllm.RecognitionPreferences(review_passes=1)
+
+    with pytest.raises(Cancelled) as interrupted:
+        recognize_public(
+            image,
+            config=Config(
+                provider=_google_settings(),
+                vision_model=VisionModelSettings(name=MODEL),
+                output_dir=output_dir,
+                cancellation=cancellation,
+                preferences=preferences,
+            ),
+        )
+
+    assert cancellation.observed_draft is True
+    assert interrupted.value.details["workflow_pass"] == "review"
+    assert interrupted.value.details["provider_calls_attempted"] == 1
+    assert interrupted.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 123,
+            "output_count": 45,
+            "unit": "tokens",
+        },
+    )
+    assert len(fake.models.generate_calls) == 1
+    partial = json.loads(state_path.read_text(encoding="utf-8"))
+    assert partial["result"]["status"] == "partial"
+    assert [slot["slot_id"] for slot in partial["slots"]] == ["draft"]
+    assert not (output_dir / "source_board.md").exists()
+
+    resumed = recognize_public(
+        image,
+        config=Config(
+            provider=_google_settings(),
+            vision_model=VisionModelSettings(name=MODEL),
+            output_dir=output_dir,
+            resume=True,
+            preferences=preferences,
+        ),
+    )
+
+    assert len(fake.models.generate_calls) == 2
+    assert resumed.metadata["provider_call_count"] == 1
+    assert resumed.metadata["current_model_token_usage"] == (
+        {"model": MODEL, "input_tokens": 123, "output_tokens": 45},
+    )
+    assert tuple(dict(slot) for slot in resumed.metadata["workflow_slots"]) == (
+        {
+            "slot_id": "draft",
+            "workflow_pass": "draft",
+            "provider": "google",
+            "model": MODEL,
+            "reused": True,
+            "provider_calls_attempted": 0,
+        },
+        {
+            "slot_id": "review",
+            "workflow_pass": "review",
+            "provider": "google",
+            "model": MODEL,
+            "reused": False,
+            "provider_calls_attempted": 1,
+        },
+    )
 
 
 def test_oversized_inline_aggregate_is_rejected_before_sdk_construction(

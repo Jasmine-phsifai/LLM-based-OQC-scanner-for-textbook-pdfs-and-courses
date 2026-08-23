@@ -261,6 +261,35 @@ def _recognize_images_once(
     slot_ledger: list[dict[str, str | int | bool | None]] = []
     current_model_usage: dict[str, dict[str, int | None]] = {}
 
+    def current_model_token_usage() -> tuple[dict[str, str | int | None], ...]:
+        """Snapshot provider-reported usage for fresh successful calls."""
+        return tuple(
+            {
+                "model": model,
+                "input_tokens": usage["input_tokens"],
+                "output_tokens": usage["output_tokens"],
+            }
+            for model, usage in current_model_usage.items()
+        )
+
+    def settled_model_usage() -> tuple[dict[str, str | int | None], ...]:
+        """Snapshot successful usage in a secret-safe error-detail shape."""
+        return tuple(
+            {
+                "model": model,
+                "input_count": usage["input_tokens"],
+                "output_count": usage["output_tokens"],
+                "unit": "tokens",
+            }
+            for model, usage in current_model_usage.items()
+        )
+
+    def attach_settled_model_usage(error: OCRLLMError) -> None:
+        """Disclose settled current-run usage when later work fails."""
+        usage = settled_model_usage()
+        if usage:
+            error._add_safe_detail("settled_model_usage", usage)
+
     def run_pass(
         slot_id: str,
         resolved: ResolvedVisionProvider,
@@ -311,6 +340,7 @@ def _recognize_images_once(
                 "provider_calls_attempted",
                 calls_dispatched + local_calls_attempted,
             )
+            attach_settled_model_usage(error)
             raise
         calls_dispatched += 1
         if type(provider_response) is VisionProviderResponse:
@@ -356,6 +386,7 @@ def _recognize_images_once(
                     "provider_calls_attempted",
                     calls_dispatched,
                 )
+                attach_settled_model_usage(error)
                 raise
         slot_ledger.append(
             {
@@ -423,6 +454,7 @@ def _recognize_images_once(
                 "provider_calls_attempted",
                 calls_dispatched,
             )
+            attach_settled_model_usage(error)
             raise
         scout_prompt = build_board_sign_scout_prompt(markdown)
         scouts: list[str] = []
@@ -442,7 +474,7 @@ def _recognize_images_once(
                 minimum_agreement=2,
             )
         except ValueError:
-            raise ProviderError(
+            error = ProviderError(
                 "The standalone-sign scout responses could not be merged safely.",
                 code="PROVIDER_RESPONSE_INVALID",
                 details={
@@ -451,7 +483,9 @@ def _recognize_images_once(
                     "provider_calls_attempted": calls_dispatched,
                     "workflow_pass": "standalone_sign_merge",
                 },
-            ) from None
+            )
+            attach_settled_model_usage(error)
+            raise error from None
         markdown = restored.markdown
         restored_sign_count = restored.restored_count
         abstained_scout_count = restored.abstained_scout_count
@@ -504,14 +538,7 @@ def _recognize_images_once(
             }
         )
     if resolved_provider.name == "google":
-        metadata["current_model_token_usage"] = tuple(
-            {
-                "model": model,
-                "input_tokens": usage["input_tokens"],
-                "output_tokens": usage["output_tokens"],
-            }
-            for model, usage in current_model_usage.items()
-        )
+        metadata["current_model_token_usage"] = current_model_token_usage()
 
     return ProcessorOutput(
         media_type="image",

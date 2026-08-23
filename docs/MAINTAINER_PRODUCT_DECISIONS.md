@@ -214,6 +214,7 @@ is often accepted.
   but not published, so this is not a transcription-quality evaluation. Keep
   Files upload, long-audio chunking, a secondary Google compatibility transport,
   and the future local-model OpenAI-compatible path deferred.
-- The next product decision and proof are P1-a in
-  [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-a--live-cancellation-checkpoint-and-resume-proof).
+- #070 completed the P1-a live cancellation/resume proof without replaying the
+  settled draft. The next product decision and proof are P1-b in
+  [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-b--concrete-tuple-batch-contract-and-full-preflight).
   Do not create a parallel queue here.

@@ -236,17 +236,39 @@ exploration, or a modality-wide framework.
 The shared capability and worker registry remains frozen at 20 entries. The
 experimental direct audio API does not claim development-worker availability.
 
-The immediate queue now advances to P1-a below.
+The completed audio slice hands the queue to the image recovery proof below;
+#070 completed that proof, so the immediate queue is now P1-b.
 
-### P1-a — Live cancellation, checkpoint, and resume proof
+### P1-a — Live cancellation, checkpoint, and resume proof (completed by #070)
 
 Use the public API to interrupt real Google image work, preserve settled state,
 and resume it. Prove completed calls are not paid or dispatched again and only
 missing work runs. Keep the exercise small and authorized.
 
+#070 first verified the end-to-end legacy route: the built-in Google mode is
+native `google-genai`, while the `/v1beta/openai` URL is only a hint for the
+separate generic-compatible provider. The active adapter already matches that
+native transport. Its bounded live gate used eight authorized images and
+`gemini-2.5-flash`. The first run settled one draft call, reported input/output
+usage 2401/1502, saved one partial draft slot, and then raised `CANCELLED`
+before review dispatch. Resume reused that draft with zero replay calls and
+made exactly one fresh review call with usage 4278/1066. The final checkpoint
+was complete and the Markdown output was published. Total provider calls were
+two; the process exited 0 after 70,431 ms, stderr was empty, the secret scan was
+false, and capture/tool temporary directories and key-bearing environment
+variables were removed.
+
+Typed errors escaping after settled work now carry `settled_model_usage`,
+derived from the same current-run ledger, without changing the checkpoint
+schema or reusing historical token counts. A proposed global error-detail
+sanitizer whitelist was rejected because model labels are caller-controlled;
+the narrow processor-owned evidence is safer and easier to understand.
+
 Exit gate: exact before/after request and usage evidence proves reuse; cancelled
 and terminal outcomes remain honest. Non-goals: adversarial filesystem races,
 new checkpoint schemas, or repair.
+
+The immediate queue now advances to P1-b below.
 
 ### P1-b — Concrete-tuple batch contract and full preflight
 

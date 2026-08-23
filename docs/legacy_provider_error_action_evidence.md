@@ -47,6 +47,13 @@ correction, the active library's #067 Google image slice follows the actual lega
 built-in transport: native `google-genai` and is now live-proven. A future Google compatibility path
 and the future local-model OpenAI-compatible path remain separate, later work.
 
+#070 rechecked the complete legacy construction and call chain and confirmed
+the same distinction: GUI settings populate `GoogleAPIConfig`, provider
+selection constructs the native Google client, and image recognition reaches
+`models.generate_content`; the generic `/v1beta/openai` placeholder belongs to
+the independently enabled compatible-provider configuration. The current
+library's native adapter therefore needs no transport correction.
+
 ## Bounded error-to-action table
 
 | Provider and observed signature/state | Action | Exact legacy evidence | Evidence level | Current active seam |
