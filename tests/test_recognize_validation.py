@@ -135,6 +135,41 @@ def test_short_snapshot_write_fails_before_provider(tmp_path, monkeypatch):
     assert list(temp_dir.glob("ocrllm-images-*")) == []
 
 
+def test_validation_stream_close_failure_is_typed_before_snapshot_and_provider(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "validation-close.png")
+    temp_dir = tmp_path / "snapshots"
+    provider = CountingProvider()
+    secret = "validation-close-secret-7341"
+    install_close_failing_stream(
+        monkeypatch,
+        matches=lambda path, mode: path == source and mode == "rb",
+        close_error=OSError(secret),
+    )
+
+    with pytest.raises(InvalidSource) as captured:
+        recognize(
+            source,
+            config=Config(provider=provider, temp_dir=temp_dir),
+        )
+
+    assert captured.value.code == "SOURCE_UNREADABLE"
+    assert provider.calls == 0
+    assert not temp_dir.exists()
+    rendered = "".join(
+        traceback.format_exception(
+            type(captured.value),
+            captured.value,
+            captured.value.__traceback__,
+        )
+    )
+    assert secret not in rendered
+    assert secret not in str(captured.value)
+    assert secret not in repr(captured.value.details)
+
+
 @pytest.mark.parametrize(
     ("stream_kind", "expected_error", "expected_code"),
     [

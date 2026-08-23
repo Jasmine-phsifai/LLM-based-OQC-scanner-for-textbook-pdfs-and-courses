@@ -6,7 +6,7 @@ import stat
 from pathlib import Path
 
 from .detect_source_type import detect_source_type
-from .errors import InvalidSource
+from .errors import OCRLLMError, InvalidSource
 
 
 MAX_SOURCE_BYTES = 25 * 1024 * 1024
@@ -57,8 +57,7 @@ def validate_source(source: str | Path) -> int:
         )
 
     try:
-        with source_path.open("rb") as source_file:
-            first_byte = source_file.read(1)
+        source_file = source_path.open("rb")
     except ValueError as error:
         raise InvalidSource(
             "The recognition source path is invalid.",
@@ -70,9 +69,48 @@ def validate_source(source: str | Path) -> int:
             code="SOURCE_UNREADABLE",
         ) from error
 
+    primary_error: BaseException | None = None
+    try:
+        try:
+            first_byte = source_file.read(1)
+        except ValueError as error:
+            raise InvalidSource(
+                "The recognition source path is invalid.",
+                code="SOURCE_INVALID",
+            ) from error
+        except OSError as error:
+            raise InvalidSource(
+                "The recognition source is not readable.",
+                code="SOURCE_UNREADABLE",
+            ) from error
+    except BaseException as error:
+        primary_error = error
+        raise
+    finally:
+        _close_source_stream(source_file, primary_error=primary_error)
+
     if not first_byte:
         raise InvalidSource(
             "The recognition source became empty while it was being validated.",
             code="SOURCE_INVALID",
         )
     return source_stat.st_size
+
+
+def _close_source_stream(
+    source_file,
+    *,
+    primary_error: BaseException | None,
+) -> None:
+    """Close the validation stream without replacing an active failure."""
+
+    try:
+        source_file.close()
+    except (OSError, ValueError):
+        if primary_error is None:
+            raise InvalidSource(
+                "The recognition source could not be closed safely.",
+                code="SOURCE_UNREADABLE",
+            ) from None
+        if isinstance(primary_error, OCRLLMError):
+            primary_error._add_safe_detail("source_stream_cleanup_failed", True)

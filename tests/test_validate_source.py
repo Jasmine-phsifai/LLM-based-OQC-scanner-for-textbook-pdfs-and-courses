@@ -17,6 +17,7 @@ from ocrllm.validate_image_group import (
     MAX_IMAGE_GROUP_COUNT,
 )
 from ocrllm.validate_source import MAX_SOURCE_BYTES, validate_source
+from install_close_failing_stream import install_close_failing_stream
 from write_test_image import write_test_image
 
 
@@ -75,6 +76,52 @@ def test_validate_source_maps_open_failures_to_unreadable(tmp_path, monkeypatch)
         validate_source(source)
 
     assert raised.value.code == "SOURCE_UNREADABLE"
+
+
+@pytest.mark.parametrize("primary_kind", ["typed", "ordinary", "keyboard_interrupt"])
+def test_validate_source_preserves_read_failure_when_close_also_fails(
+    tmp_path,
+    monkeypatch,
+    primary_kind,
+) -> None:
+    source = write_test_image(tmp_path / "read-close-failure.png")
+    if primary_kind == "typed":
+        primary = InvalidSource("primary source failure", code="SOURCE_INVALID")
+    elif primary_kind == "ordinary":
+        primary = RuntimeError("primary ordinary failure")
+    else:
+        primary = KeyboardInterrupt("primary process control")
+    install_close_failing_stream(
+        monkeypatch,
+        matches=lambda path, mode: path == source and mode == "rb",
+        read_error=primary,
+        close_error=OSError("validation-close-secret-4158"),
+    )
+
+    with pytest.raises(type(primary)) as caught:
+        validate_source(source)
+
+    assert caught.value is primary
+    if isinstance(primary, InvalidSource):
+        assert primary.details["source_stream_cleanup_failed"] is True
+
+
+def test_validate_source_propagates_process_control_from_close(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "close-process-control.png")
+    control = SystemExit("validation close process control")
+    install_close_failing_stream(
+        monkeypatch,
+        matches=lambda path, mode: path == source and mode == "rb",
+        close_error=control,
+    )
+
+    with pytest.raises(SystemExit) as caught:
+        validate_source(source)
+
+    assert caught.value is control
 
 
 @pytest.mark.parametrize(
