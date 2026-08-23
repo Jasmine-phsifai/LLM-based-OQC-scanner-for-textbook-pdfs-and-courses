@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import threading
 import time
+from collections.abc import Sequence
 
 import pytest
 
@@ -13,7 +14,7 @@ from ocrllm import (
     recognize,
     recognize_batch,
 )
-from ocrllm.errors import ProviderError, ProviderUnavailable
+from ocrllm.errors import InvalidSource, OutputExists, ProviderError, ProviderUnavailable
 
 from write_test_image import write_test_image
 
@@ -85,22 +86,25 @@ class NumberedProvider:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self.calls = 0
+        self.groups: list[tuple[str, ...]] = []
 
     def recognize_images(self, image_paths, *, prompt, config):
         with self._lock:
             self.calls += 1
             call_number = self.calls
+            self.groups.append(tuple(path.name for path in image_paths))
         return f"# Result {call_number}\n"
 
 
-class SignallingProvider(NumberedProvider):
-    def __init__(self) -> None:
-        super().__init__()
-        self.started = threading.Event()
+class CustomInnerSources(Sequence):
+    def __init__(self, sources):
+        self.sources = tuple(sources)
 
-    def recognize_images(self, image_paths, *, prompt, config):
-        self.started.set()
-        return super().recognize_images(image_paths, prompt=prompt, config=config)
+    def __len__(self):
+        return len(self.sources)
+
+    def __getitem__(self, index):
+        return self.sources[index]
 
 
 def _colliding_sources(tmp_path):
@@ -110,43 +114,241 @@ def _colliding_sources(tmp_path):
     ]
 
 
-def test_serial_batch_reserves_colliding_overwrite_target_until_batch_ends(tmp_path):
-    sources = _colliding_sources(tmp_path)
+def test_batch_accepts_one_exact_tuple_and_preserves_order(tmp_path):
+    sources = tuple(
+        write_test_image(tmp_path / f"{index}.png", color=(index, 0, 0))
+        for index in range(2)
+    )
+    provider = NumberedProvider()
+
+    outcomes = recognize_batch(sources, config=Config(provider=provider))
+
+    assert provider.calls == 2
+    assert [outcome.succeeded for outcome in outcomes] == [True, True]
+
+
+@pytest.mark.parametrize(
+    "build_sources",
+    (
+        lambda source: [source],
+        lambda source: (item for item in (source,)),
+    ),
+)
+def test_batch_rejects_non_tuple_outer_container_before_provider_or_output(
+    tmp_path,
+    build_sources,
+):
+    source = write_test_image(tmp_path / "source.png")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    provider = NumberedProvider()
+
+    with pytest.raises(InvalidSource):
+        recognize_batch(
+            build_sources(source),
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert provider.calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
+def test_batch_rejects_custom_sequence_before_provider_or_output(tmp_path):
+    source = write_test_image(tmp_path / "source.png")
     output_dir = tmp_path / "output"
     provider = NumberedProvider()
 
+    class CustomSources(Sequence):
+        def __len__(self):
+            return 1
+
+        def __getitem__(self, index):
+            if index == 0:
+                return source
+            raise IndexError
+
+    with pytest.raises(InvalidSource):
+        recognize_batch(
+            CustomSources(),
+            config=Config(provider=provider, output_dir=output_dir),
+        )
+
+    assert provider.calls == 0
+    assert not output_dir.exists()
+
+
+@pytest.mark.parametrize(
+    "group_factory",
+    (
+        lambda sources: list(sources),
+        lambda sources: CustomInnerSources(sources),
+    ),
+)
+def test_batch_preserves_supported_sequence_group_items(
+    tmp_path,
+    group_factory,
+):
+    first = write_test_image(tmp_path / "first.png")
+    second = write_test_image(tmp_path / "second.png")
+    provider = NumberedProvider()
+
     outcomes = recognize_batch(
-        sources,
-        config=Config(provider=provider, output_dir=output_dir, overwrite=True),
+        (group_factory((first, second)),),
+        config=Config(provider=provider),
     )
 
     assert provider.calls == 1
-    assert outcomes[0].succeeded
-    assert outcomes[1].error.code == "OUTPUT_EXISTS"
-    assert (output_dir / "same_board.md").read_text(encoding="utf-8") == (
-        "# Result 1\n"
-    )
-    assert outcomes[1].error.__cause__ is None
-    assert outcomes[1].error.__context__ is None
-    assert outcomes[1].error.__traceback__ is None
+    assert provider.groups == [("first.png", "second.png")]
+    assert len(outcomes) == 1
+    assert outcomes[0].succeeded is True
 
-    standalone = recognize(
-        sources[1],
-        config=Config(provider=provider, output_dir=output_dir, overwrite=True),
-    )
 
-    assert provider.calls == 2
-    assert standalone.markdown == "# Result 2\n"
-    assert standalone.output_path.read_text(encoding="utf-8") == standalone.markdown
+def test_batch_rejects_tuple_subclass_before_provider_or_output(tmp_path):
+    source = write_test_image(tmp_path / "source.png")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    provider = NumberedProvider()
+
+    class BatchTuple(tuple):
+        pass
+
+    with pytest.raises(InvalidSource):
+        recognize_batch(
+            BatchTuple((source,)),
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert provider.calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
+def test_batch_rejects_non_path_group_member_before_provider_or_output(tmp_path):
+    source = write_test_image(tmp_path / "source.png")
+    output_dir = tmp_path / "output"
+    provider = NumberedProvider()
+
+    with pytest.raises(InvalidSource):
+        recognize_batch(
+            ((source, 7),),
+            config=Config(provider=provider, output_dir=output_dir),
+        )
+
+    assert provider.calls == 0
+    assert not output_dir.exists()
+
+
+def test_batch_preflights_colliding_targets_before_any_call_or_output(tmp_path):
+    sources = tuple(_colliding_sources(tmp_path))
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    provider = NumberedProvider()
+
+    with pytest.raises(OutputExists) as caught:
+        recognize_batch(
+            sources,
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+                overwrite=True,
+            ),
+        )
+    assert caught.value.code == "OUTPUT_EXISTS"
+    assert provider.calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
+def test_batch_preflights_existing_target_before_any_call_or_temp_work(tmp_path):
+    first = write_test_image(tmp_path / "first.png")
+    second = write_test_image(tmp_path / "second.png")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    existing_target = output_dir / "second_board.md"
+    existing_target.write_text("original", encoding="utf-8")
+    temp_dir = tmp_path / "temp"
+    provider = NumberedProvider()
+
+    with pytest.raises(OutputExists) as caught:
+        recognize_batch(
+            (first, second),
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert caught.value.code == "OUTPUT_EXISTS"
+    assert provider.calls == 0
+    assert existing_target.read_text(encoding="utf-8") == "original"
+    assert not (output_dir / "first_board.md").exists()
+    assert not temp_dir.exists()
+
+
+def test_batch_preflights_later_missing_source_before_any_call_or_output(tmp_path):
+    first = write_test_image(tmp_path / "first.png")
+    missing = tmp_path / "missing.png"
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    provider = NumberedProvider()
+
+    with pytest.raises(InvalidSource) as caught:
+        recognize_batch(
+            (first, missing),
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+    assert caught.value.code == "SOURCE_NOT_FOUND"
+    assert provider.calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
+def test_batch_preflights_later_corrupt_image_before_any_call_or_output(tmp_path):
+    first = write_test_image(tmp_path / "first.png")
+    corrupt = tmp_path / "corrupt.png"
+    corrupt.write_bytes(b"not an image")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    provider = NumberedProvider()
+
+    with pytest.raises(InvalidSource) as caught:
+        recognize_batch(
+            (first, corrupt),
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert caught.value.code == "SOURCE_INVALID"
+    assert provider.calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
 
 
 def test_serial_batch_preserves_paid_failure_details_without_copying_to_siblings(
     tmp_path,
 ):
-    sources = [
+    sources = tuple(
         write_test_image(tmp_path / name)
         for name in ("success.png", "failure.png", "never.png")
-    ]
+    )
     provider = StructuredFailureProvider()
 
     outcomes = recognize_batch(sources, config=Config(provider=provider))
@@ -184,182 +386,11 @@ def test_serial_batch_preserves_paid_failure_details_without_copying_to_siblings
     assert cancelled.__traceback__ is None
 
 
-def test_parallel_batch_reserves_target_after_first_item_finishes(
-    tmp_path,
-    monkeypatch,
-):
-    sources = _colliding_sources(tmp_path)
-    output_dir = tmp_path / "output"
-    provider = NumberedProvider()
-    batch_module = importlib.import_module("ocrllm.recognize_batch")
-    real_batch_item = batch_module._recognize_batch_item
-    first_finished = threading.Event()
-
-    def run_first_item_before_second(source, **kwargs):
-        if source.parent.name == "second":
-            assert first_finished.wait(timeout=5)
-            return real_batch_item(source, **kwargs)
-        try:
-            return real_batch_item(source, **kwargs)
-        finally:
-            first_finished.set()
-
-    monkeypatch.setattr(
-        batch_module,
-        "_recognize_batch_item",
-        run_first_item_before_second,
-    )
-
-    outcomes = recognize_batch(
-        sources,
-        config=Config(
-            provider=provider,
-            output_dir=output_dir,
-            overwrite=True,
-            execution=RecognitionExecutionPolicy(max_parallel_requests=2),
-        ),
-    )
-
-    assert provider.calls == 1
-    assert [outcome.succeeded for outcome in outcomes] == [True, False]
-    assert outcomes[1].error.code == "OUTPUT_EXISTS"
-    assert (output_dir / "same_board.md").read_text(encoding="utf-8") == (
-        outcomes[0].result.markdown
-    )
-
-
-@pytest.mark.parametrize("max_parallel_requests", [1, 2])
-def test_batch_preserves_completed_result_when_source_iteration_fails(
-    tmp_path,
-    max_parallel_requests,
-):
-    source = write_test_image(tmp_path / "board.png")
-    output_dir = tmp_path / "output"
-    provider = SignallingProvider()
-
-    def broken_sources():
-        yield source
-        assert provider.started.wait(timeout=5)
-        raise RuntimeError("source iterator exposed SECRET-ITERATION-TOKEN")
-
-    outcomes = recognize_batch(
-        broken_sources(),
-        config=Config(
-            provider=provider,
-            output_dir=output_dir,
-            overwrite=True,
-            execution=RecognitionExecutionPolicy(
-                max_parallel_requests=max_parallel_requests
-            ),
-        ),
-    )
-
-    assert provider.calls == 1
-    assert len(outcomes) == 2
-    assert outcomes[0].succeeded
-    assert outcomes[1].index == 1
-    assert outcomes[1].error.code == "SOURCE_INVALID"
-    assert "SECRET-ITERATION-TOKEN" not in str(outcomes[1].error)
-    assert (output_dir / "board_board.md").read_text(encoding="utf-8") == (
-        outcomes[0].result.markdown
-    )
-
-    standalone = recognize(
-        source,
-        config=Config(provider=provider, output_dir=output_dir, overwrite=True),
-    )
-    assert standalone.output_path == output_dir / "board_board.md"
-    assert provider.calls == 2
-
-
-@pytest.mark.parametrize("max_parallel_requests", [1, 2])
-def test_batch_preserves_item_failure_when_remaining_source_iteration_fails(
-    tmp_path,
-    max_parallel_requests,
-):
-    source = write_test_image(tmp_path / "board.png")
-    provider = ImmediateFailureProvider()
-
-    def broken_sources():
-        yield source
-        raise RuntimeError("remaining iterator exposed SECRET-ITERATION-TOKEN")
-
-    outcomes = recognize_batch(
-        broken_sources(),
-        config=Config(
-            provider=provider,
-            execution=RecognitionExecutionPolicy(
-                max_parallel_requests=max_parallel_requests
-            ),
-        ),
-    )
-
-    assert provider.call_count == 1
-    assert [outcome.index for outcome in outcomes] == [0, 1]
-    assert [outcome.error.code for outcome in outcomes] == [
-        "PROVIDER_UNAVAILABLE",
-        "SOURCE_INVALID",
-    ]
-    assert all(
-        "SECRET-ITERATION-TOKEN" not in str(outcome.error) for outcome in outcomes
-    )
-
-
-def test_batch_reports_source_iterable_that_cannot_be_opened():
-    class BrokenSources:
-        def __iter__(self):
-            raise RuntimeError("source iterable exposed SECRET-ITERATION-TOKEN")
-
-    outcomes = recognize_batch(BrokenSources(), config=Config(provider=TimedProvider()))
-
-    assert len(outcomes) == 1
-    assert outcomes[0].index == 0
-    assert outcomes[0].error.code == "SOURCE_INVALID"
-    assert "SECRET-ITERATION-TOKEN" not in str(outcomes[0].error)
-
-
-def test_parallel_batch_never_resumes_iterator_after_iteration_failure(tmp_path):
-    first = write_test_image(tmp_path / "first.png")
-    forbidden = write_test_image(tmp_path / "forbidden.png")
-    provider = SignallingProvider()
-
-    class RecoveringIterator:
-        def __init__(self):
-            self.position = 0
-
-        def __iter__(self):
-            return self
-
-        def __next__(self):
-            self.position += 1
-            if self.position == 1:
-                return first
-            if self.position == 2:
-                assert provider.started.wait(timeout=5)
-                raise RuntimeError("temporary iterator failure")
-            if self.position == 3:
-                return forbidden
-            raise StopIteration
-
-    outcomes = recognize_batch(
-        RecoveringIterator(),
-        config=Config(
-            provider=provider,
-            execution=RecognitionExecutionPolicy(max_parallel_requests=2),
-        ),
-    )
-
-    assert provider.calls == 1
-    assert [outcome.index for outcome in outcomes] == [0, 1]
-    assert outcomes[0].succeeded
-    assert outcomes[1].error.code == "SOURCE_INVALID"
-
-
 def test_parallel_batch_is_bounded_and_returns_caller_order(tmp_path):
-    sources = [
+    sources = tuple(
         write_test_image(tmp_path / f"{index}.png", color=(index, 0, 0))
         for index in range(4)
-    ]
+    )
     provider = BlockingProvider(expected_parallel=2)
     config = Config(
         provider=provider,
@@ -376,10 +407,10 @@ def test_parallel_batch_is_bounded_and_returns_caller_order(tmp_path):
 
 
 def test_provider_start_interval_covers_every_parallel_workflow_call(tmp_path):
-    sources = [
+    sources = tuple(
         write_test_image(tmp_path / f"{index}.png", color=(0, index, 0))
         for index in range(2)
-    ]
+    )
     provider = TimedProvider()
     configured_interval = 0.04
     config = Config(
@@ -427,15 +458,15 @@ def test_empty_parallel_batch_returns_without_provider_work():
         execution=RecognitionExecutionPolicy(max_parallel_requests=2),
     )
 
-    assert recognize_batch([], config=config) == []
+    assert recognize_batch((), config=config) == []
     assert provider.started_at == []
 
 
 def test_parallel_failure_aborts_provider_calls_still_waiting_for_the_gate(tmp_path):
-    sources = [
+    sources = tuple(
         write_test_image(tmp_path / f"{index}.png", color=(0, 0, index))
         for index in range(4)
-    ]
+    )
     provider = ImmediateFailureProvider()
     config = Config(
         provider=provider,
@@ -473,10 +504,10 @@ def test_parallel_settlement_propagates_process_control_from_running_item(
     monkeypatch,
     process_exception_type,
 ):
-    sources = [
+    sources = (
         write_test_image(tmp_path / "failure.png"),
         write_test_image(tmp_path / "process-control.png"),
-    ]
+    )
     process_call_started = threading.Event()
     settlement_started = threading.Event()
     process_exception_raised = threading.Event()

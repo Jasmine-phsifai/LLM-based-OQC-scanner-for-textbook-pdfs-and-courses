@@ -102,6 +102,34 @@ def test_single_and_ordered_group_output_names_are_deterministic(tmp_path):
     assert group.output_path.read_text(encoding="utf-8") == group.markdown
 
 
+def test_resolve_output_path_is_deterministic_without_creating_output_dir(tmp_path):
+    resolve_module = importlib.import_module("ocrllm.output.resolve_output_path")
+    output_dir = tmp_path / "not-created"
+    sources = (tmp_path / "lecture.png", tmp_path / "later.jpg")
+
+    resolved = resolve_module.resolve_output_path(
+        sources,
+        profile="board",
+        config=Config(output_dir=output_dir),
+    )
+
+    assert resolved == output_dir / "lecture_plus_1_board.md"
+    assert not output_dir.exists()
+
+
+def test_resolve_output_path_keeps_memory_only_mode_filesystem_free(tmp_path):
+    resolve_module = importlib.import_module("ocrllm.output.resolve_output_path")
+
+    resolved = resolve_module.resolve_output_path(
+        (tmp_path / "lecture.png",),
+        profile="board",
+        config=Config(),
+    )
+
+    assert resolved is None
+    assert list(tmp_path.iterdir()) == []
+
+
 @pytest.mark.skipif(
     os.name != "nt",
     reason="Windows legacy path-limit regression",

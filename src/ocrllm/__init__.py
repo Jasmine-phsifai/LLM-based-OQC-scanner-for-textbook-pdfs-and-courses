@@ -138,6 +138,16 @@ def __getattr__(name: str):
 
     from importlib import import_module
 
+    if name in {"recognize", "recognize_batch"}:
+        recognize_value = getattr(import_module(".recognize", __name__), "recognize")
+        batch_value = getattr(
+            import_module(".recognize_batch", __name__),
+            "recognize_batch",
+        )
+        globals()["recognize"] = recognize_value
+        globals()["recognize_batch"] = batch_value
+        return globals()[name]
+
     value = getattr(import_module(module_name, __name__), attribute_name)
     globals()[name] = value
     return value

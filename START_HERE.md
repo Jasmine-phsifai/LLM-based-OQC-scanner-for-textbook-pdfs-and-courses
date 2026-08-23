@@ -89,7 +89,12 @@ published, so this proves the result boundary rather than transcription
 quality. P0-c is complete. #070 then proved live cancellation after one settled
 Google image draft and resume of only the missing review: two total provider
 calls, the draft reused with zero replay calls, and a complete published result.
-P1-a is complete and the immediate queue is P1-b. The audio slice has no hidden
+P1-a is complete. #071 completed P1-b: `recognize_batch()` now requires an
+exact top-level tuple while preserving each item's existing atomic-path or
+grouped-`Sequence` contract, and validates the entire batch plus output targets
+before any snapshot, directory, executor, or provider work. Two live groups of
+eight images completed in order with exactly two total Google calls and complete
+published state. P1-c PDF-through-image/resume is now the immediate queue. The audio slice has no hidden
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 

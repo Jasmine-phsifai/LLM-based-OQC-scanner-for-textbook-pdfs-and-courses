@@ -1,5 +1,10 @@
 # Phase 2A Recognition Execution Policy
 
+> **OBSOLETE (#071; see P1-b completion):** historical lazy/arbitrary-iterable
+> batch statements below do not describe the current exact top-level tuple and
+> full-preflight contract. See
+> [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-b--concrete-tuple-batch-contract-and-full-preflight).
+
 Date: 2026-07-12.
 
 Status: implemented and verified. Provider transport/model configuration is

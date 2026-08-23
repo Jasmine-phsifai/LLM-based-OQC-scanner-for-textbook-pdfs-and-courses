@@ -28,10 +28,11 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   atomic Markdown/state temporary names are compact and do not repeat public
   destination basenames near the traditional Windows path boundary; a process-local
   output claim keeps concurrent batch/direct-thread Markdown and state ownership
-  consistent; the current batch API still accepts an `Iterable`, and iterable
-  failures become redacted terminal outcomes without discarding earlier paid
-  work; the future #065 contract narrows this to a concrete tuple with complete
-  zero-call preflight and duplicate-target rejection; the never-consumed
+  consistent; #071 narrowed only the top-level batch container to an exact
+  `tuple` while preserving each item's existing atomic path or grouped
+  `Sequence` contract. A complete read-only preflight rejects invalid sources,
+  existing or duplicate output targets, and unsupported media before gates,
+  claims, executors, snapshots, directories, or provider calls; the never-consumed
   `Config.progress`,
   generic `Config.cache_dir`, and four dormant PDF-only placeholders are
   removed rather than promoted into unproven callback, persistence, or PDF
@@ -101,9 +102,12 @@ transcription-quality evaluation. The direct path remains experimental and
 memory-only. #070 completed P1-a with eight authorized images: cancellation
 observed one persisted draft after one call (usage 2401/1502), resume reused it
 without replay and made one fresh review call (usage 4278/1066), then published
-a complete result. Total calls were exactly two. P1-b concrete-tuple batch
-preflight is now the immediate queue; do not add hidden retry, fallback, or a
-Files lifecycle.
+a complete result. Total calls were exactly two. #071 completed P1-b with an
+exact top-level tuple, zero-side-effect full preflight, and two live ordered
+eight-image groups. Both completed with one call each and complete published
+state; reported input/output usage was 2401/1131 and 2401/988. P1-c PDF through
+the existing image/resume path is now the immediate queue; do not add hidden
+retry, fallback, or a Files lifecycle.
 The shared 20-entry capability/worker registry remains unchanged and does not
 advertise this direct audio path.
 The generic compatibility endpoint and future local-model compatibility remain

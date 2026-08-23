@@ -146,8 +146,9 @@ See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 This is the only current execution order. The shipped public product recognizes
 images through built-in DashScope, native Google GenAI, or an injected vision provider, supports local
-OCR, file-backed image checkpoint/resume, and a fail-fast batch API that still
-accepts an arbitrary `Iterable`. It also has an experimental, memory-only native
+OCR, file-backed image checkpoint/resume, and a fail-fast batch API whose
+top-level container must be an exact `tuple`. Each tuple item retains the
+existing atomic path or grouped `Sequence` source contract. It also has an experimental, memory-only native
 Google short-audio path for one MP3 of at most 300 seconds. PDF and content
 repair are not implemented. The Google adapters report per-model input/output
 token usage when the endpoint supplies it; other adapters do not yet make a
@@ -268,20 +269,45 @@ Exit gate: exact before/after request and usage evidence proves reuse; cancelled
 and terminal outcomes remain honest. Non-goals: adversarial filesystem races,
 new checkpoint schemas, or repair.
 
-The immediate queue now advances to P1-b below.
+P1-a handed the queue to P1-b; #071 completed it, so the immediate queue now
+advances to P1-c below.
 
-### P1-b — Concrete-tuple batch contract and full preflight
+### P1-b — Concrete-tuple batch contract and full preflight (completed by #071)
 
-Restrict runtime input to a concrete `tuple`; reject lists, generators, and
-custom `Sequence` implementations. Validate the complete tuple, every member,
-and every resolved output target before dispatch; duplicate targets must fail
-with zero provider calls. After offline regressions, run two bounded live
-batches. Only after proof may obsolete iterator and batch-lifetime owner
-complexity be removed.
+`recognize_batch()` now requires `type(sources) is tuple`; top-level lists,
+generators, custom `Sequence` objects, and tuple subclasses are rejected
+synchronously. This restriction does not narrow the existing per-item source
+contract: each item is still an atomic `str`/`Path` or a supported grouped
+`Sequence[str | Path]`, including inner lists and custom sequences.
 
-Exit gate: invalid or colliding batches make zero calls, valid tuple ordering and
-settled outcomes remain correct, and two live batches pass. Non-goals:
-arbitrary iterable compatibility, cross-process locks, or a transaction system.
+Before creating gates, claims, executors, snapshots, directories, or provider
+calls, one read-only preflight normalizes and validates the complete batch,
+media/count/size/decode/audio constraints, resolved output targets, existing
+targets, and duplicate targets. Invalid, missing, corrupt, existing, or
+colliding input therefore raises its existing typed error with zero calls and
+zero batch-created output/state/temp side effects. A pure output-path resolver
+was extracted so preflight does not create directories; the mutating builder
+keeps its execution-time existence/race check. The four short-audio option
+checks are shared by one narrowly named helper rather than duplicated.
+
+#071 also fixed a public lazy-export ordering defect: resolving either
+`ocrllm.recognize` or `ocrllm.recognize_batch` now binds both public callables,
+without making bare `import ocrllm` heavier. Focused/related tests reported
+93 passed; the root suite reported 1286 passed, and compile/diff checks passed.
+The bounded live gate used two ordered groups of eight authorized images with
+`gemini-2.5-flash`. Each group completed with one provider call and a complete,
+published checkpoint/output; input/output usage was 2401/1131 and 2401/988.
+Total calls were exactly two. The safe tool JSON reported `status="passed"`,
+and the wrapper completed after 75,904 ms; a wrapper evidence bug serialized
+the child exit code as null, so no child OS exit code is claimed. Stderr/secret/
+path/private-content scans were false, and tool/capture temporary state was
+removed. No OCR text or provider raw response was published.
+
+Exit gate met: invalid and colliding batches make zero calls, exact top-level
+tuple ordering and per-item grouped-source compatibility remain correct, and
+two live batches passed. Non-goals remain arbitrary top-level iterable
+compatibility, cross-process locks, or a transaction system. The immediate
+queue now advances to P1-c below.
 
 ### P1-c — PDF through the image/resume path
 
@@ -382,7 +408,7 @@ Future agents must assume the following and verify before trusting any claim:
   targeting one output directory are not coordinated, and no cross-process
   transaction is claimed.
 
-- **Batch input iteration cannot erase settled work.** `recognize_batch()`
+- **OBSOLETE (#071; see P1-b completion) — Batch input iteration cannot erase settled work.** `recognize_batch()`
   accepts finite iterables and converts an ordinary failure while opening or
   advancing the iterable into one final, redacted `SOURCE_INVALID` outcome at
   that input position. Earlier successful or failed outcomes remain available,

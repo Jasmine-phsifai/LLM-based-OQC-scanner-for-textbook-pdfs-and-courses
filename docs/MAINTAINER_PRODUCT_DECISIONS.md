@@ -58,9 +58,12 @@ is often accepted.
 
 ## Batch input and output collisions
 
-- The intended future `recognize_batch()` runtime contract accepts only a
-  concrete `tuple`. Reject `list`, generators, and custom `Sequence`
-  implementations before provider dispatch.
+- #071 completed the `recognize_batch()` container decision: the top-level
+  runtime container must be an exact `tuple`, so top-level lists, generators,
+  custom `Sequence` objects, and tuple subclasses are rejected before dispatch.
+  This does not narrow the existing per-item contract: an item may remain an
+  atomic path or a supported grouped `Sequence`, including an inner list or
+  custom sequence.
 - Validate the complete batch before provider dispatch. Reject invalid container
   shape, invalid members, and duplicate resolved output targets before spending
   provider calls.
@@ -71,9 +74,9 @@ is often accepted.
   folder beside the source. Cross-media name collisions are therefore unusual.
   Prefer simple duplicate rejection and normal active-call protection over a
   speculative cross-process transaction or locking system.
-- Reassess the batch-lifetime output owner after the tuple/preflight contract
-  is implemented; do not retain it solely for compatibility with the old lazy
-  iterable behavior.
+- #071 removed the obsolete lazy-iterator machinery while retaining the
+  batch-lifetime output owner for valid concurrent execution and race protection;
+  do not replace it with speculative cross-process coordination.
 
 ## Provider usage accounting
 
@@ -215,6 +218,7 @@ is often accepted.
   Files upload, long-audio chunking, a secondary Google compatibility transport,
   and the future local-model OpenAI-compatible path deferred.
 - #070 completed the P1-a live cancellation/resume proof without replaying the
-  settled draft. The next product decision and proof are P1-b in
-  [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-b--concrete-tuple-batch-contract-and-full-preflight).
+  settled draft. #071 completed the formerly temporary P1-b tuple/preflight
+  clarification and its two-batch live proof. The next authority item is P1-c in
+  [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-c--pdf-through-the-imageresume-path).
   Do not create a parallel queue here.

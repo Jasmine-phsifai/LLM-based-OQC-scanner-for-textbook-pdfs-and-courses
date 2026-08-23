@@ -94,9 +94,12 @@ The current image facade:
   caller's config identity, while the built-in adapter uses an isolated,
   revalidated copy.
 - rejects groups above `Config.execution.maximum_images_per_request` before
-  source/provider work and bounds ordered, fail-fast `recognize_batch()` jobs
-  that report one `BatchItemOutcome` per source while retaining output-target
-  ownership until every dispatched batch item settles;
+  source/provider work. `recognize_batch()` requires an exact top-level `tuple`,
+  preserves the existing per-item atomic path or grouped `Sequence` contract,
+  and preflights every source and resolved output target before any batch-created
+  filesystem or provider work. Valid jobs remain ordered and fail-fast, report
+  one `BatchItemOutcome` per source, and retain output-target ownership until
+  every dispatched batch item settles;
 - applies one high-resolution monotonic provider-start interval to every
   draft/review/scout call in a direct operation or across one concurrent batch.
 - distinguishes provider permission, suspension, concurrency, quota,

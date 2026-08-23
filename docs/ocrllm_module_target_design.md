@@ -1,5 +1,10 @@
 # OCRLLM Module Target Design
 
+> **OBSOLETE (#071; see P1-b completion):** the historical
+> `recognize_batch()` `Iterable` signature below no longer describes the active
+> public contract. Current behavior is authoritative in
+> [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-b--concrete-tuple-batch-contract-and-full-preflight).
+
 Status: supporting target-state design map.
 
 This document describes the intended completed `ocrllm` Python module as if the

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .config import Config
-from .errors import ConfigError, InvalidSource, OCRLLMError, OutputError, ResumeStateError
+from .errors import OCRLLMError, OutputError, ResumeStateError
 from .providers.dashscope.provider_settings import DashScopeSettings
 from .providers.google_genai.provider_settings import GoogleGenAISettings
 
@@ -230,26 +230,9 @@ def _recognize(
                     error._add_safe_detail("model_attempts", current_model_attempts)
                 raise
         else:
-            if len(source_paths) != 1:
-                raise InvalidSource(
-                    "Short-audio recognition accepts exactly one MP3 source.",
-                    code="SOURCE_INVALID",
-                ) from None
-            if cfg.output_dir is not None or cfg.resume or cfg.overwrite:
-                raise ConfigError(
-                    "Short-audio recognition is currently in-memory only.",
-                    code="CONFIG_INVALID",
-                ) from None
-            if type(cfg.provider) is not GoogleGenAISettings:
-                raise ConfigError(
-                    "Short-audio recognition requires GoogleGenAISettings.",
-                    code="CONFIG_INVALID",
-                ) from None
-            if type(cfg.audio_model.name) is not str or not cfg.audio_model.name:
-                raise ConfigError(
-                    "Short-audio recognition requires an explicit audio model.",
-                    code="CONFIG_MISSING",
-                ) from None
+            from .validate_short_audio_options import validate_short_audio_options
+
+            validate_short_audio_options(source_paths, config=cfg)
             from .processors.recognize_short_mp3 import recognize_validated_short_mp3
 
             processor_output = recognize_validated_short_mp3(

@@ -64,10 +64,10 @@ class _InterruptibleProvider:
 def test_batch_preserves_completed_units_and_resume_reuses_them(
     tmp_path: Path,
 ) -> None:
-    sources = [
+    sources = (
         write_test_image(tmp_path / "first.png"),
         write_test_image(tmp_path / "second.png"),
-    ]
+    )
     output_dir = tmp_path / "output"
     provider = _InterruptibleProvider()
     config = Config(

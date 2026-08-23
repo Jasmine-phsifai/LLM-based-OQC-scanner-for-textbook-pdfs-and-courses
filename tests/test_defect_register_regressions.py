@@ -187,10 +187,10 @@ def test_serial_batch_reports_every_item_and_keeps_paid_results(
     tmp_path,
     failing_position,
 ) -> None:
-    sources = [
+    sources = tuple(
         write_test_image(tmp_path / f"{index}.png", color=(0, index, 0))
         for index in range(5)
-    ]
+    )
     provider = _FailAfterProvider(success_count=failing_position)
 
     outcomes = recognize_batch(sources, config=Config(provider=provider))
@@ -204,10 +204,10 @@ def test_serial_batch_reports_every_item_and_keeps_paid_results(
 
 
 def test_batch_successes_retain_their_output_path(tmp_path) -> None:
-    sources = [
+    sources = tuple(
         write_test_image(tmp_path / f"{index}.png", color=(0, index, 0))
         for index in range(3)
-    ]
+    )
     output_dir = tmp_path / "output"
     provider = _FailAfterProvider(success_count=2)
 
@@ -222,10 +222,10 @@ def test_batch_successes_retain_their_output_path(tmp_path) -> None:
 
 
 def test_parallel_batch_failure_keeps_completed_paid_results(tmp_path) -> None:
-    sources = [
+    sources = tuple(
         write_test_image(tmp_path / f"{index}.png", color=(0, index, 0))
         for index in range(6)
-    ]
+    )
     provider = _FailAfterProvider(success_count=2)
     config = Config(
         provider=provider,
@@ -240,7 +240,7 @@ def test_parallel_batch_failure_keeps_completed_paid_results(tmp_path) -> None:
 
 
 def test_successful_batch_reports_every_item_as_succeeded(tmp_path) -> None:
-    sources = [write_test_image(tmp_path / "only.png")]
+    sources = (write_test_image(tmp_path / "only.png"),)
     provider = _FailAfterProvider(success_count=1)
 
     outcomes = recognize_batch(sources, config=Config(provider=provider))
@@ -342,10 +342,10 @@ class _FailOneSourceProvider:
 
 
 def test_batch_resume_repays_only_the_failed_item(tmp_path) -> None:
-    sources = [
+    sources = tuple(
         write_test_image(tmp_path / f"{index}.png", color=(0, index, 0))
         for index in range(3)
-    ]
+    )
     output_dir = tmp_path / "output"
     failing = _FailOneSourceProvider("2.png")
 

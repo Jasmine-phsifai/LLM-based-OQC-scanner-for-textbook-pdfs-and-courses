@@ -265,11 +265,11 @@ def test_review_failure_rejects_draft_and_writes_no_output(tmp_path):
 
 
 def test_recognize_batch_preserves_request_call_and_result_order(tmp_path):
-    sources = [
+    sources = (
         write_test_image(tmp_path / "z.png", color=(9, 0, 0)),
         write_test_image(tmp_path / "a.jpg", color=(0, 9, 0)),
         write_test_image(tmp_path / "m.jpeg", color=(0, 0, 9)),
-    ]
+    )
     provider = RecordingProvider(lambda paths: f"# {paths[0].name}\n")
 
     outcomes = recognize_batch(sources, config=Config(provider=provider))

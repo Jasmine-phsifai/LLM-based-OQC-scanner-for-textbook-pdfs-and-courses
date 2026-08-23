@@ -37,7 +37,7 @@ def test_batch_returns_one_outcome_per_source(tmp_path):
     first = write_test_image(tmp_path / "a.png", color=(255, 0, 0))
     second = write_test_image(tmp_path / "b.jpeg", color=(0, 255, 0))
 
-    outcomes = recognize_batch([first, second], config=Config(provider=FakeProvider()))
+    outcomes = recognize_batch((first, second), config=Config(provider=FakeProvider()))
     results = [outcome.result for outcome in outcomes]
 
     assert [outcome.index for outcome in outcomes] == [0, 1]
