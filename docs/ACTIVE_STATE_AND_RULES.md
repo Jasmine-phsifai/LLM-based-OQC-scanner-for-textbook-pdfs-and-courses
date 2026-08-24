@@ -149,15 +149,16 @@ images through built-in DashScope, native Google GenAI, or an injected vision pr
 OCR, file-backed image checkpoint/resume, and a fail-fast batch API whose
 top-level container must be an exact `tuple`. Each tuple item retains the
 existing atomic path or grouped `Sequence` source contract. It also has an experimental, memory-only native
-Google short-audio path for one MP3 of at most 300 seconds. It now contains an
-offline-proven PDF vision slice that renders all pages through PDFium and reuses
-the image/resume path in serial groups of eight; its required Google live exit
-gate is still open because the current Windows profile exposes no authorized
-credential. Content repair is not implemented. The Google adapters report per-model input/output
-token usage when the endpoint supplies it; other adapters do not yet make a
-general usage claim. Existing attempt disclosure counts provider calls and
-model/workflow attempts separately from tokens. Resume is the primary recovery
-mechanism; repair is a later, bounded fallback for missing or unusable state.
+Google short-audio path for one MP3 of at most 300 seconds. Its PDF vision slice
+is proven offline, in an installed wheel, and live through Google; it renders all
+pages through PDFium and reuses the image/resume path in serial groups of eight.
+Content repair is not implemented; P1-d is paused at the explicit product
+choice recorded below because one failed marker cannot recover an unattempted
+suffix under the current fail-fast loop. The Google adapters report per-model
+input/output token usage when the endpoint supplies it; other adapters do not
+yet make a general usage claim. Existing attempt disclosure counts provider
+calls and model/workflow attempts separately from tokens. Resume is the primary
+recovery mechanism.
 
 ### P0-a — Bounded legacy provider-error evidence audit (completed by #066)
 
@@ -534,14 +535,10 @@ Future agents must assume the following and verify before trusting any claim:
   targeting one output directory are not coordinated, and no cross-process
   transaction is claimed.
 
-- **OBSOLETE (#071; see P1-b completion) — Batch input iteration cannot erase settled work.** `recognize_batch()`
-  accepts finite iterables and converts an ordinary failure while opening or
-  advancing the iterable into one final, redacted `SOURCE_INVALID` outcome at
-  that input position. Earlier successful or failed outcomes remain available,
-  including when iteration breaks while fail-fast handling is marking remaining
-  inputs `CANCELLED`. Process-control exceptions such as `KeyboardInterrupt`
-  and `SystemExit` still propagate. This is a finite-batch contract, not a
-  streaming or infinite-input API.
+- **Batch-iterable debt is obsolete (#071).** The top-level batch contract now
+  requires an exact `tuple` and preflights every item before dispatch. P1-b above
+  is the complete current contract; do not restore the historical lazy-iterable
+  behavior described by older records.
 
 - **Injected-provider protocol lookup is pre-dispatch configuration work.** If
   reading an injected object's required `recognize_images` method raises, the

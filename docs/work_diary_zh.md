@@ -2304,3 +2304,19 @@ Atomic task — Iteration #080: stress-test the recommended P1-d "failed marker 
 **当前三条诚实产品路线。** A：明确改变 producer，持久化覆盖所有范围的完整 partial 状态；它能实现脱离 sidecar 的 outage recovery，但属于更大的失败语义和恢复设计。B：只修 caller 明确指定或先前已经持久化的 exact failed range；它很小，但只能修已知坏内容，不能恢复中断后的未知后缀。C：暂时冻结 P1-d，当前 provider outage 继续由已经证明的 resume 承担；这是默认推荐，因为没有观察到 active 产品会生成可独立 repair 的失败 Markdown。legacy 中文 comment regex 不再作为候选。
 
 **provider 决策与本轮边界。** 维护者本次补充的未来约束已由 #077 写入 `MAINTAINER_PRODUCT_DECISIONS.md` 和 authority：核心稳定后，新 provider 以独立可读 class 增加，各自拥有有证据的并发、推理强度、同厂模型选择和错误处理默认值；multi-provider pool/fallback 是以后单独的协调层；额外免费 Volcengine OpenAI-compatible 来源只在相关能力排期后做有界 robustness test，不逐模型永久打补丁。本轮没有重复建文档，也没有实现 provider 抽象。没有 product code、测试、下载、provider call 或凭据读取；只更新当前 authority 和中文日记。下载与持续检查仍应交给轻量代理，主线同时推进不依赖它们的原子任务。
+
+## #081 — 2026-08-24：关闭最高状态摘要误报 PDF live gate 未完成的问题
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #081: while P1-d awaits the maintainer's product choice, find and close one evidence-backed defect in the already-shipped active-library surface without advancing deferred capabilities. Success means reconciling the current authority and diary, selecting a defect that has a real consumer or contradiction, applying the smallest readable fix, running focused verification, updating the Chinese diary/current state as needed, and committing and pushing one coherent change. This matters because the heartbeat should improve today's product without using an unresolved repair decision as permission for speculative architecture.
+```
+
+**初始假设、两条路线与复核后结论。** 初始假设是 P1-d 未获维护者选择，因此不能写 repair，也不能顺势启动 provider 泛化；可选路线①扫描并修复一个已经交付能力的真实缺陷，路线②把无决定可执行误解为可以研究新的边缘防御。选择①。主代理重读 authority、日记、当前代码和测试，轻量代理独立做只读扫描。双方只确认一个值得修改的问题：最高 authority 的 `#065 Unified Execution Queue` 自称“唯一当前顺序”，却仍写 PDF 只有 offline proof、Google live gate 因当前 profile 无凭据而开放；同一文件的 #078 已明确以 16 页、两次八页请求关闭该 gate。后续代理若只读入口摘要，会重复已完成 live 调用或误判外部 blocker。
+
+**最小修正与结构减法。** 当前摘要改为如实说明 PDF 已有 offline、installed-wheel 和 Google live 三层证据，并把立即状态写成 P1-d 等待明确产品选择。没有重写 #075/#077 的历史过程，因为“当时无凭据”和“首次 wrapper 丢证据”仍是真实记录。同一 current-state 文件的 Known Debt 还保留七行已标为 obsolete 的任意 iterable 行为说明；它与 exact top-level tuple 的现行 P1-b 契约相反，冷读成本高。该段缩成三行，只指向 P1-b，并明确不得恢复旧 lazy-iterable 行为。这是删除已经有明确替代时间线的过时文字，不是机械寻找未使用字段。
+
+**拒绝的假想缺陷。** 扫描还发现空 tuple 当前返回空列表，以及自定义 `Sequence` 在迭代时抛 `RuntimeError` 会原样传播；但现行契约没有要求 batch 非空，也没有真实生产证据要求吞掉任意自定义容器异常。为这两点写新防御会重新走向“兼容所有意外”，因此本轮不改代码、不加测试、不扩大 contract。
+
+**验证、过度设计复盘与边界。** 以 #078 的 authority 证据、现有 PDF regression 和 exact-tuple regression 作为事实来源；`tests/test_pdf_recognition.py` 与 `tests/test_recognize_batch_execution.py` 合计 **30 passed in 2.82s**，证明当前实现仍与修正文案一致。文档矛盾搜索确认唯一 current queue 不再声称 P1-c live gate 开放；`git diff --check` 和敏感模式扫描通过。没有 provider call、凭据读取、下载、依赖安装、产品代码、`contracts/` 或 `worker/` 修改。该轮只消除会导致重复工作的一处当前状态矛盾，不新建状态文件、文档层级、自动同步器或文档测试框架。
