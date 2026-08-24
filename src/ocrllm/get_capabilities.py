@@ -39,9 +39,16 @@ _DEFERRED_REASON_BY_CAPABILITY = {
     "provider.dashscope.filetrans": "Intentionally deferred to Stage A2.",
     "worker.jsonl.v1alpha2": "Intentionally deferred to Phase 3.",
     "pdf.text": "Intentionally deferred to Phase 3.",
-    "pdf.vision": "Intentionally deferred to Phase 3.",
+    "pdf.vision": (
+        "The direct PDF vision facade is implemented and live-proven; "
+        "shared capability/worker registration remains deferred."
+    ),
     "pdf.text.resume": "Intentionally deferred to Phase 3.",
-    "pdf.vision.resume": "Intentionally deferred to Phase 3.",
+    "pdf.vision.resume": (
+        "Direct PDF recognition reuses ordinary image sidecars for "
+        "offline-proven resume; shared capability/worker registration "
+        "remains deferred."
+    ),
     "audio.short.wav-pcm-s16": (
         "Intentionally deferred to a later audio-format gate."
     ),

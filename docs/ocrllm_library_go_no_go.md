@@ -360,10 +360,12 @@ video.mp4-h264
 video.mp4-h264-aac
 ```
 
-Add a registry name in this file before implementing another profile, format,
-codec, provider, or worker version. `get_capabilities()` returns every known
-name with one four-state status and a concrete reason; it never reports an
-aggregate `audio=available` when only one audio format passed.
+The 20 names above are the frozen shared capability/worker registry. New direct
+experimental facades may remain outside it while `contracts/` and `worker/` are
+frozen, as authorized by the current-state file; this does not advertise worker
+support. `get_capabilities()` returns every shared-registry name with one
+four-state status and a concrete reason; it never reports an aggregate
+`audio=available` when only one audio format passed.
 
 `get_capabilities(config: Config | None = None)` performs no network call and
 does not import optional packages. With `config=None`, it reports local
@@ -373,7 +375,7 @@ region. With a named provider/model and `DashScopeSettings`, it evaluates that
 exact configuration. An injected provider object proves protocol shape offline
 but is `experimental` at most unless it exposes a stable capability identity
 matching recorded live evidence. The worker `capabilities` command uses the
-zero-argument semantics and never returns secret values.
+zero-argument shared-registry semantics and never returns secret values.
 
 Canonical transport media types are `image`, `pdf`, `audio`, and `video`.
 `board` is an image recognition profile and prompt mode; it is not a transport

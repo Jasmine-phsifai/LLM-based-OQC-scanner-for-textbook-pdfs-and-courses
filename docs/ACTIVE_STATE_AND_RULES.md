@@ -90,6 +90,12 @@ status describes worker support, but its reason now names the separately
 live-proven experimental direct Google API. The DashScope short-audio entry
 likewise says that Stage A1 shipped Google only instead of claiming Stage A1 is
 still in the future. No registry name, worker route, or provider behavior changed.
+#112 applies the same already-settled distinction to PDF without widening it:
+`pdf.vision` now names the implemented, live-proven direct facade, while
+`pdf.vision.resume` names its offline-proven reuse of ordinary image sidecars.
+Both remain `deferred` in the shared registry because PDF worker registration
+does not exist. `pdf.text` and `pdf.text.resume` remain genuinely deferred;
+manual repair is a separate unresolved P1-d choice and is not advertised.
 One adjacent pre-existing defect is now proven but intentionally not hidden:
 if a process imports `ocrllm.worker.run_worker_control_loop` before resolving
 the lazy package attribute `ocrllm.get_capabilities`, Python installs the

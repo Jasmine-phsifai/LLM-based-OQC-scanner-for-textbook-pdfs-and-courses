@@ -176,6 +176,24 @@ def test_deferred_audio_capabilities_distinguish_the_direct_google_api() -> None
         )
 
 
+def test_deferred_pdf_capabilities_distinguish_direct_vision_and_resume() -> None:
+    reports = _by_name()
+
+    assert reports["pdf.vision"].reason == (
+        "The direct PDF vision facade is implemented and live-proven; "
+        "shared capability/worker registration remains deferred."
+    )
+    assert reports["pdf.vision.resume"].reason == (
+        "Direct PDF recognition reuses ordinary image sidecars for "
+        "offline-proven resume; shared capability/worker registration "
+        "remains deferred."
+    )
+    assert reports["pdf.text"].reason == "Intentionally deferred to Phase 3."
+    assert reports["pdf.text.resume"].reason == (
+        "Intentionally deferred to Phase 3."
+    )
+
+
 def test_get_capabilities_freshly_revalidates_exact_config() -> None:
     config = _proven_config()
     assert type(config.provider) is DashScopeSettings

@@ -127,9 +127,11 @@ no retry; both independent full-corpus runs passed. Run B repaired exactly one
 missing handwriting sign through generic two-of-three omission consensus; no
 handwriting route or model split exists. The committed Git-archive wheel then
 passed base, `image`, and `image,dashscope` clean profiles.
-`get_capabilities()` reports every known atomic capability without a network
-call or optional import. With an explicit config, it reports that exact
-workflow's proven status rather than treating installed code as sufficient.
+`get_capabilities()` reports every entry in the frozen shared
+capability/worker registry without a network call or optional import. With an
+explicit config, it reports that exact registered workflow's proven status
+rather than treating installed code as sufficient. Experimental direct facades
+may be described separately without implying worker registration.
 The direct Google image adapter is experimental. Its current model catalog is
 queried only by explicit Google operations, not by import or shared capability
 reporting.

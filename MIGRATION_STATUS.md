@@ -368,10 +368,11 @@ The following directions remain traceable but are not current work:
 - Browser/React service: deferred until the core modality contracts are useful.
 - Social downloading in `src/ocrllm`: rejected as a new-library boundary;
   retained only in `legacy_app/`.
-- Public PDF, long or persisted/resumable audio, and video in the active package:
-  phase-gated and unavailable as stated in the current active-state document.
-  The experimental direct short-audio API is implemented and live-proven only
-  for one in-memory MP3 of at most 300 seconds.
+- PDF text mode and repair, long or persisted/resumable audio, and video in the
+  active package remain phase-gated and unavailable. The direct PDF vision
+  facade and its ordinary image-sidecar resume are implemented; the
+  experimental direct short-audio API is implemented and live-proven only for
+  one in-memory MP3 of at most 300 seconds.
 
 ## Obsolete Prose Kept For Trace
 
