@@ -29,4 +29,6 @@ class RetainedVideoFrame:
             )
         if not isinstance(self.path, Path):
             raise TypeError("RetainedVideoFrame.path must be a pathlib.Path")
+        if self.path.suffix.casefold() != ".jpg":
+            raise ValueError("RetainedVideoFrame.path must use the .jpg extension")
         object.__setattr__(self, "timestamp_seconds", float(self.timestamp_seconds))

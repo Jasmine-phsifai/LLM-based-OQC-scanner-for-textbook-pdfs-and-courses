@@ -1886,6 +1886,19 @@ framework. Five focused tests and public `help()`/import introspection pass; no
 runtime behavior, API signature, dependency, frozen boundary, or open
 #127/#149/#152 choice changed.
 
+#190 closes a public retained-frame media-type contradiction. A caller could
+wrap a real PNG in `RetainedVideoFrame`, pass ordinary image validation, dispatch
+it to an injected provider, then construct and compose a `complete` video whose
+retained asset was still `.png`; this contradicted the shipped contract that the
+value represents one library-retained JPEG. `RetainedVideoFrame` now requires a
+case-insensitive `.jpg` suffix at construction, before any provider work. Full
+JPEG byte/existence validation remains in the existing image preflight; do not
+add filename/index binding, canonicalization, symlink policy, hashes, or a second
+decoder. The new focused regression failed before the fix. Seventy-four video
+neighbor tests and the complete 1,467-test offline suite pass. No provider call,
+API signature, output layout, dependency, frozen boundary, or open
+#127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

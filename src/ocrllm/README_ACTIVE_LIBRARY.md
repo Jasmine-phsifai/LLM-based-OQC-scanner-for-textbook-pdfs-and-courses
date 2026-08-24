@@ -346,6 +346,10 @@ a missing explicit Google vision model, raise before retained-JPEG validation
 instead of becoming a failure for the first frame group. This frame-only
 function does not compose a video document or persist/resume recognition;
 those are separate library responsibilities.
+Each public `RetainedVideoFrame` must name a `.jpg` path, matching the library's
+retained-asset format. The existing image preflight still owns file existence
+and JPEG byte validation; the value object does not add another decoder or path
+resolution policy.
 `extract_video_audio()` requires the output parent
 to exist, rejects an existing target, and atomically publishes a fully decoded
 mono 16 kHz / 32 kbps MP3. Extraction itself has no duration ceiling. The

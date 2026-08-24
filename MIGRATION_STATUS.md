@@ -439,6 +439,10 @@ The following directions remain traceable but are not current work:
   valid immutable identity, and the flattened identities must exactly match the
   retained-frame tuple at outcome construction. It does not resolve aliases or
   symlinks.
+  Each `RetainedVideoFrame` now requires the library's `.jpg` retained-asset
+  suffix at construction. Existing image preflight remains responsible for
+  existence and decoded JPEG validation; no filename/index identity or path
+  resolution rule was added.
   `compose_video_result()` explicitly
   converts a returned complete
   or partial outcome into a memory-only standard video result with ordered

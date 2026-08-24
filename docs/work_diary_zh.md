@@ -3953,3 +3953,17 @@ Atomic task — Iteration #189: while the #149 snapshot placement awaits the mai
 **实际修正。** 审计找到一个很小但确实会被 Python 用户通过源码和 `help()` 看到的错误：`recognize_video_frames()` docstring 仍说“直到视频 composition 和 recovery contract 被定义前”保持 memory-only，但 composition 和 publication 已经发布。只把它改成当前事实：本函数本身 memory-only；组合和发布是另外两个公开步骤；视频恢复仍不可用。没有新增测试，因为 README 和现有视频回归已经固定相同契约，重复一条 docstring 单测只会绑住措辞。
 
 **验证、失败记录与过度设计复查。** 第一次 introspection 断言错误地把换行后的句子当成连续字符串，且代理转述的一个测试节点名不存在；修正验证命令后，`STA` 环境又因没有 `cv2`/`imageio_ffmpeg` 在 fixture 生成前失败，纯配置测试为 1 passed。只读检查已有环境后改用项目 `OCRLLM` 环境，没有安装依赖；公开导入与 `inspect.getdoc()` 精确确认新事实且旧说法消失，五条 provider 分离/8+2/双配置 preflight 真实媒体聚焦测试为 **5 passed in 1.92s**。本轮是 docstring-only，不需要把完整 1,466 条离线套件当成更强证据。无 runtime、签名、输出、provider 调用、网络、凭据、依赖、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策改动；明确拒绝通用音频 adapter seam、provider base class 和重复分离测试。
+
+## #190 — 2026-08-25：`RetainedVideoFrame` 不再把真实 PNG 伪装成库留取 JPEG
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #190: audit the public retained-frame value itself as the smallest independent video-library input boundary, without touching #127, #149, or #152. Success means rereading the current authority and diary, checking whether `RetainedVideoFrame` can represent values that contradict its documented filesystem and timeline meaning, reproducing any caller-visible invalid state through public imports, choosing between a local invariant and no change, and adding only the smallest regression/fix if evidence exists. This matters because negative-feedback selection, provider grouping, composition, and publication all trust these immutable records; an invalid primitive should be rejected once at construction rather than defended repeatedly downstream.
+```
+
+**证据推翻了最初的“无需修改”判断。** 标量边界本身正确拒绝负数/布尔 frame index、负数/NaN/布尔 timestamp 和非 `Path`；不存在的 `.jpg` 也会在普通图片 preflight 以 `SOURCE_NOT_FOUND`、provider 零调用拒绝。可是轻量审计发现 media type 没锁住，主代理随后亲自用 Pillow 写出真实 PNG：`RetainedVideoFrame(0, 0.0, png_path)` 构造成功，`recognize_video_frames()` 把 `.png` 交给注入 provider 一次，`VideoRecognitionOutcome` 和 `compose_video_result()` 都报告 `complete`，asset 仍为 `.png`。普通图片本来支持 PNG，所以后续解码不会替视频层发现这个矛盾；这与 #121/#122 和公开 docstring 的“库留取 JPEG”直接冲突。
+
+**最小修复。** 路线 A 只在 `RetainedVideoFrame.__post_init__()` 要求 `path.suffix.casefold() == ".jpg"`；路线 B 再检查完整文件名、frame index 对应、存在性、真实解码、路径解析或 hash。选择 A：非本类型的媒体在唯一值边界直接拒绝，存在性与 JPEG 字节仍由已有图片 preflight 负责，没有第二套 decoder。新增独立 `tests/test_retained_video_frame.py`，PNG 构造回归在实现前如预期 **1 failed**，实现后通过；没有接受 `.jpeg` 这种库从不生成的新别名，也没有绑定 `frame-XXXXXXXX` 名称。
+
+**验证、环境事实与过度设计复查。** outcome、frame facade、composition、publication、combined video 和 smoke 的聚焦集合为 **74 passed in 4.97s**；`compileall -q src tests tools` 与 `git diff --check` 通过。第一次完整套件得到 **1,465 passed、2 failed**，两个失败都在冻结 Node worker gate，原因只是当前 PATH 找不到 Node，和本轮视频变更无关，但不能称为通过。按既定规则让轻量任务只读定位到已有 `D:\Anaconda\envs\STA\node.exe`（v22.23.2），没有下载或安装；只在第二次测试进程临时加入 PATH 后，完整离线套件为 **1,467 passed in 59.60s**。无网络、provider、凭据、依赖安装、legacy compatibility、frozen `contracts/worker` 修改或 #127/#149/#152 决策。没有加入 existence/resolve/symlink/hash/filename-index/内容快照防御；本轮只关闭真实复现的 PNG 假 JPEG。
