@@ -2188,3 +2188,19 @@ Atomic task — Iteration #073: strengthen the installed-package PDF release pro
 **轻量代理执行的首次 clean archive 门禁。** 按本轮新增工作规则，主代理提交 `bb166edfe7977d02a814c33ea5eec1af75cede60` 后，把依赖安装、长门禁和主动监视交给轻量代理；主线程并行完成提交 diff、authority/P1-c 边界和工作树审查，没有重复轮询下载。代理不编辑、不 push、不调用 provider，使用既定公开 PyPI 索引和缓存完整运行所有 profile，exit **0**。archive suite 为 **1309 passed, 1 skipped / 53.81 s**；fixture generator pixel-equivalent，worst changed **4.31%**、mean channel delta **1.81%**；wheel **200,965 bytes**，base target **990,917 bytes**。
 
 六个 profile 均通过：audio `miniaudio 1.71`、delta **3,172,802 bytes**；image `Pillow 12.3.0`、delta **16,682,487 bytes**；image+DashScope `openai 2.54.0`、delta **41,257,443 bytes**；Google `google-genai 2.19.0`、delta **41,307,065 bytes**；audio+Google `miniaudio 1.71` / `google-genai 2.19.0`、delta **42,207,142 bytes**；pdf-vision 输出 **`5.11.0 151.0.7920.0 2`**，即精确 binding/native PDFium/两组公共结果，delta **24,880,693 bytes**。import wall median/p95/max：OCRLLM Python **0.54685/0.619/0.6267 ms**，base Anaconda Python **0.54595/0.5916/1.09 ms**；两者 CPU median/p95/max 均为 **0/15.625/15.625 ms**。gate 临时目录残留 0，tracked tree clean，只有两个用户原有未跟踪文件。补记会 amend 提交，所以此哈希不是最终发布哈希；最终哈希必须由轻量代理再跑同一完整门禁，最终通知不得把本段哈希冒充最终精确证据。
+
+**最终哈希门禁与发布。** 日记补记后的最终单一提交为 `586bb94327585fa42c810d5aa5e78599cf53ecc9`。同一轻量代理对这个最终哈希完整重跑，不编辑、不跳 profile、不调用 provider；exit **0**，archive suite **1309 passed, 1 skipped / 63.93 s**，wheel/base 仍为 **200,965 / 990,917 bytes**，六个 profile delta 与上段一致，PDF smoke 仍为 **`5.11.0 151.0.7920.0 2`**。最终 import wall median/p95/max：OCRLLM Python **0.5892/0.71/0.7196 ms**、CPU **0/0/0 ms**；base Anaconda Python **0.56135/0.616/0.7284 ms**、CPU **0/15.625/15.625 ms**。临时目录残留 0，最终哈希通过 HTTPS 推送并只读 fetch 验证 `HEAD == origin/master`；两个用户未跟踪文件保持未动。P1-c 状态没有变化。
+
+## #074 — 2026-08-24：修复每轮都失败一次的仓库推送配置
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #074: repair the repository’s proven push workflow mismatch by replacing the unusable old-user SSH transport with the already authenticated `Jasmine-phsifai` HTTPS transport for the same authorized fork. Success means ordinary `git push --dry-run origin master` works without per-command credential overrides, `origin` still names the exact approved fork, `upstream` remains untouched, no credential is printed or persisted in tracked files, and the current workflow documentation matches reality. This matters because #072 and #073 both completed product work but standard publication failed on a nonexistent `C:/Users/OMG` private-key path; leaving every future iteration to rediscover a custom workaround is a maintainability defect.
+```
+
+**观察到的缺陷与两条路线。** #072 的普通 `git push origin master` 已真实失败：repo-local `core.sshCommand` 强制读取不存在的 `C:/Users/OMG/.ssh/supervised_win11_ed25519`，随后 host verification 失败；#073 因此仍需每次显式拼 GitHub CLI HTTPS credential helper。当前复核再次证明 `origin` owner/repo 正确、协议仍为 SSH、旧 key override 仍存在；`gh auth status` 则证明 active account 正是 `Jasmine-phsifai`、Git operations protocol 为 HTTPS。路线一是保留失效配置并让每个未来代理手工覆盖；路线二是只修正本仓库的 transport，保留 exact fork。选择路线二，因为这是已重复两轮的持久错误，不是瞬时网络失败。
+
+**最小修正与安全边界。** 仓库本地 `origin` 从 SSH URL 改为同一个 `Jasmine-phsifai/LLM-based-OQC-scanner-for-textbook-pdfs-and-courses` 的 HTTPS URL，删除失效的 repo-local `core.sshCommand`；没有改变 owner、repo、branch 或账号，没有改 global Git/credential 配置。`upstream` 的 fetch/push URL 都保持原始 `honggoldgoldgold` HTTPS 地址，仍禁止 push。tracked `AGENTS.md` 同步当前事实：普通 Git 使用已登录 GitHub CLI 的 HTTPS credential helper，禁止打印、导出或写入 token；删除已经错误的旧用户私钥说明。没有读取私钥、输出完整 token、创建 credential wrapper 或复制 key。
+
+**验证、过度设计复盘与发布计划。** 修正后普通 `git push --dry-run origin master` 直接返回 `Everything up-to-date`；origin fetch/push 精确为批准的 HTTPS fork，upstream 两个 URL 未变，local SSH override 为空，`HEAD == origin/master`。这轮不涉及产品代码、依赖、测试或 provider，因而不运行与变更无关的 1309 项 release suite；Git transport 的真实 dry-run 和随后普通 push 是比例正确的门禁。没有为多账号建 credential router、自动 fallback、SSH key discovery 或跨仓库配置器。本轮提交后必须用不带 `-c credential.helper` 的普通 `git push origin master` 成功发布，才算关闭缺陷。

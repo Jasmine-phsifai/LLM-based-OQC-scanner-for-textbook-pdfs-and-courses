@@ -68,14 +68,14 @@ against code and tests before relying on them.
 
 - The active GitHub CLI account is `Jasmine-phsifai`.
 - `origin` is the personal fork:
-  `git@github.com:Jasmine-phsifai/LLM-based-OQC-scanner-for-textbook-pdfs-and-courses.git`.
+  `https://github.com/Jasmine-phsifai/LLM-based-OQC-scanner-for-textbook-pdfs-and-courses.git`.
 - `upstream` is the original repository:
   `https://github.com/honggoldgoldgold/LLM-based-OQC-scanner-for-textbook-pdfs-and-courses.git`.
 - Push work to `origin`; fetch or compare the original repository through
   `upstream`. Do not push to `upstream` unless its write permission is restored.
-- This workspace uses the repository-local SSH key
-  `C:/Users/OMG/.ssh/supervised_win11_ed25519` through `core.sshCommand`; do not
-  print or upload the private key.
+- Ordinary Git operations use the active GitHub CLI account's HTTPS credential
+  helper. Do not print, export, or persist its token in commands, logs, tracked
+  files, or work records.
 - This is a temporary handoff because the active account can read the original
   repository but cannot write to it. Do not replace these remotes merely to
   work around a transient network or credential failure.
