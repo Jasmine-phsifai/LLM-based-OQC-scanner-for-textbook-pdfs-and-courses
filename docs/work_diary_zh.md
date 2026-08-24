@@ -3617,3 +3617,17 @@ Atomic task — Iteration #164: determine whether the maintained package video w
 **实际文档漂移、两条路线与最小修正。** 同一说明中，`recognize_video_frames()` 段落仍写它“不 yet compose a video document”，后文却已经正确说明并示范独立的 `compose_video_result()` 和 `publish_video_result()`。句法上的 `It` 虽指 frame-only 函数，但 `yet` 会把已发布的 package composition 误写成未来能力，也模糊了文件单一职责。路线 A 是加入执行 Markdown 示例的 parser/doctest 框架；路线 B 是只把句子改为“这个 frame-only function 本身不组合或持久化/resume；这些是独立 library responsibilities”。选择 B。既不把 composition 塞进帧识别函数，也不改示例流程、API 或能力范围。
 
 **验证与过度设计复查。** 搜索确认陈旧的 `does not yet compose` 已消失，当前 frame-only 责任句与后面的显式 composition 入口同时存在。import contract、lightweight import、frame recognition、composition 与 publication 合集为 **48 passed in 1.10s**，`compileall -q src tests` 通过。没有网络、provider、凭据、依赖安装、运行时代码、测试框架、frozen `contracts/worker` 或 #127/#149/#152 变化。没有为了一句维护文案增加文档执行器、AST guard 测试、职责抽象或新的状态文件。
+
+## #165 — 2026-08-25：包内执行规则删除已经完成的“下一步”并同步当前视频边界
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #165: reconcile the active-package `AGENTS.md` video instructions with the already-shipped publication path and the completed #137/#162 live runs, removing only stale future-tense directions that can misroute later maintainers. Success means synchronizing and rereading authority/diary, independently checking every suspect sentence against current code/tests and numbered authority entries, deleting or rewriting the minimum contradictory prose, preserving the three open decisions and all real historical evidence, verifying no capability claim changes, and committing/pushing one coherent documentation reduction. This matters because package-local instructions are operational authority for future agents; stale “next run” and “publication later” commands create repeated API calls and duplicate implementation work.
+```
+
+**事实、两条路线与独立核对。** 同步 origin、重读 authority、日记和完整 package `AGENTS.md` 后，确认三处当前指令漂移：#135 仍命令“下一次”使用 runner、#136 仍命令“未来”保留 session，尽管 #137/#162 已完成；同段说 final publication 以后再做，但 #144/#146 已发布并证明；#147 仍把 distribution 写成 short-audio，已被 #151 独立 long-MP3 API 推翻。路线 A 保留全部逐轮历史并继续追加纠正；路线 B 让 package-local 文件只表达当前可执行规则，把完整历史留在唯一 authority 和日记。选择 B。轻量只读代理独立逐项对照代码、导出和 #135—#162，得到同样结论，并列出不得删除的错误诚实性、资产布局、状态、发布和 lazy-import 规则。
+
+**最小减法与保留的历史理由。** 没有删除 #134/#136 的失败事实：它们仍解释为什么 live controller 必须拥有 exact yielded session、在清理前验证 redacted safe JSON。删掉的是已完成的“next/future gate”语气；当前文字记录 #137 的图片成功/音频 quota partial 与 #162 的图片 invalid-response/音频 quota failed，并规定只有相关边界或运行时变化后才值得再次 live，不能为了刷绿重跑。publication 明确为 #144/#146 已交付，只有 video recovery/resume 仍 unavailable 且不兼容 legacy。distribution scope 同步为 image/PDF/audio/video，同时明确不声称 `recognize()`/video 自动长音频路由、chunking/resume、fallback 或 worker。#148 改成尾帧不变量；#149 源快照位置和 #152 长音频切片范围显式继续等待维护者。
+
+**验证与过度设计复查。** 公开 `recognize_video`、`compose_video_result`、`publish_video_result` 均为 callable；runner、publication、import contract 和 lightweight import 合集为 **31 passed in 0.49s**，`git diff --check` 通过。无网络、provider、凭据、依赖安装、运行时代码、API、测试、frozen `contracts/worker` 或产品选择变化。没有新增状态文件、自动文档同步器、文档测试框架或 provider 抽象；这轮只是从会重复触发已完成工作的当前指令中删除陈旧时态，并保留真正仍有效的安全边界。

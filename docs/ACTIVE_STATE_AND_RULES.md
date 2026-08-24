@@ -1551,6 +1551,25 @@ composition, and publication tests pass 48 tests in 1.10 seconds; compilation
 passes. No runtime code, API, test framework, provider, credential, dependency,
 live call, frozen boundary, or open decision changed.
 
+#165 reconciles the package-local agent instructions with the video product
+that is actually shipped. Their #135/#136 wording still ordered a “next” live
+run and said final publication came later, although #137 and #162 had already
+used the maintained runner and #144/#146 had shipped and wheel-proven explicit
+atomic publication. The instructions now retain #136 as the reason for exact
+exec-session ownership, record both admissible live outcomes, and permit a
+future live recheck only after a relevant boundary or runtime change. Typed
+provider failures must not be rerun merely to obtain green evidence.
+
+The same current-instruction block now says publication is shipped while video
+recovery/resume remains unavailable, replaces #147's obsolete short-audio-only
+distribution wording with #151's image/PDF/audio/video scope, turns #148 into a
+preserved tail-frame invariant rather than future work, and explicitly keeps
+#149 source-snapshot placement and #152 long-audio chunk scope open. It does not
+claim automatic long-audio video routing, chunking, fallback, or worker support.
+Public video entry points remain callable; the runner, publication, import, and
+lightweight-import set passes 31 tests in 0.49 seconds. No runtime code, API,
+provider call, dependency, frozen boundary, or product decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

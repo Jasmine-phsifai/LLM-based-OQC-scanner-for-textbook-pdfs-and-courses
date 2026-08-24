@@ -32,16 +32,18 @@ maximum-length segment partitioning from rounding down. #134's bounded Google
 run returned honest partial output but its ephemeral controller lost the audio
 error code/call evidence. #135 adds a maintained, redacted combined-video smoke
 runner with independent image/audio configs and exact-or-null call evidence.
-The next controlled one-group live fixture must use it. Final publication and
-recovery come later and must be derived from real outcomes rather than copied
-from legacy. #136's first post-runner attempt lost the external exec
-session identifier after completion, so no provider result may be inferred; a
-future delegated run must poll the exact yielded session and validate captured
-safe JSON before cleanup. These are controller rules, not product features.
-#137 followed that protocol and proved a one-call image success plus a one-call
-audio `PROVIDER_QUOTA_EXHAUSTED`, with honest partial outcome/composition and
-two retained assets. Treat this as expected non-retryable provider evidence;
-do not add adapter retry, automatic model switching, or provider pooling.
+#136's first post-runner attempt lost the external exec session identifier after
+completion, so no provider result may be inferred from it. #137 followed the
+correct protocol and proved a one-call image success plus a one-call audio
+`PROVIDER_QUOTA_EXHAUSTED`, with honest partial outcome/composition and two
+retained assets. #162 later reused the same runner once: image returned
+`PROVIDER_RESPONSE_INVALID`, audio returned `PROVIDER_QUOTA_EXHAUSTED`, and the
+outcome remained honestly failed. A future live recheck is warranted only after
+a relevant boundary or runtime change; it must retain the exact yielded session,
+validate redacted safe JSON before cleanup, and must not be repeated merely to
+turn typed failures green. Final publication is shipped in #144/#146 below;
+video recovery/resume remains unavailable and must not copy legacy formats.
+Do not add adapter retry, automatic model switching, or provider pooling.
 #138 requires exact lexical artifact layout in every public video outcome:
 frames use `output_root/frames/*` and optional audio uses
 `output_root/audio.mp3`. Reject mismatches at construction, but do not turn
@@ -75,12 +77,14 @@ settled work.
 Future publication work should not add another build harness or repeat this
 proof unless the public surface, manifest, or runtime dependency boundary
 changes.
-#147 makes the distribution Summary name only the shipped image, PDF,
-short-audio, and video surfaces. Keep packaging metadata accurate, but do not
-turn it into claims for PDF text, long audio, fallback, or worker support.
-#148 requires the bounded coarse video scan to include the exact final source
-frame when the five-second grid does not. Preserve this tail coverage without
-adding a configurable sampler or a second scene detector.
+#151 supersedes #147's short-audio wording: the distribution Summary names the
+shipped image, PDF, audio, and video surfaces after the standalone long-MP3 API.
+It does not claim automatic long-audio routing from `recognize()` or video,
+chunking/resume, fallback, or worker support. #148 keeps the exact final source
+frame in the bounded coarse scan when the five-second grid does not; preserve
+this invariant without adding a configurable sampler or second scene detector.
+#149 keeps request-owned video source snapshot placement open, and #152 keeps
+long-audio chunk scope open. Do not implement either until the maintainer chooses.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
