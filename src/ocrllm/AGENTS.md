@@ -71,6 +71,10 @@ allow its Markdown target to replace a retained frame or audio asset.
 tests that freeze that behavior or implement #127 until the maintainer chooses
 returned branch cancellation versus propagated cancellation with recoverable
 settled work.
+#146 proves `publish_video_result()` is present and usable in the clean wheel.
+Future publication work should not add another build harness or repeat this
+proof unless the public surface, manifest, or runtime dependency boundary
+changes.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -3337,3 +3337,19 @@ Atomic task — Iteration #145: resolve the next video-maturity decision with ex
 **对子任务错误结论的纠正。** 当前代码矩阵的第一份只读报告错误声称 audio-only/both 会返回 outcome。主线用执行结果和 `recognize_video.py` 的 `except Cancelled: raise` 反问后，任务重新打开 exact HEAD `4845d69`，确认自己跳过了优先 exception 分支；现有测试也没有支持其旧结论。修正矩阵与主线执行一致。这一过程再次证明代码路径推断不能覆盖真实运行证据，尤其不能因为 `Cancelled` 也是 `OCRLLMError` 就忽略更早的专门 except。
 
 **Legacy parent 证据与未决问题。** legacy 的真实事故曾因 cancellation 跳过最终写入而丢掉已经付费成功的 audio 段；之后 board、short-ASR、audio repair、video repair 的代码和离线回归统一为：停止新提交、取消未运行任务、排空已运行调用、逐项原子保存成功结果，再传播 terminal cancellation。它强力支持“已结算付费工作不能丢”，但 legacy 有持久 checkpoint，新 library 当前 video facade 没有，因此它不能替我们决定 return 或 raise。为避免过度设计，本轮没有加入冻结错误行为的 characterization tests、取消状态、exception payload、sidecar、extractor cancellation framework 或 resume。需要维护者只回答一个问题：选择 A（返回现有 complete/partial/failed outcome，推荐且最小）还是 B（继续抛 `Cancelled`，同时授权一个新机制承载已结算 outcome）？
+
+## #146 — 2026-08-25：新视频发布入口通过 clean-wheel 外部消费证明
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #146: prove that the newly added publish_video_result() is genuinely shipped and usable from a clean, externally installed wheel without weakening the package's lightweight-import or static public-API contract. Success means reconciling the current authority and diary, building exact current tracked state offline, installing outside the repository, importing and exercising publication through the top-level facade on a local settled outcome, confirming atomic output and retained-asset safety, checking type visibility if the existing toolchain permits, and changing code only if this release-boundary proof exposes a real defect. This matters because a public function is not a mature library capability until downstream users receive it in the distribution rather than only from the source checkout.
+```
+
+**假设、两条路线与分工。** #144 改了 public export 和新模块，#143 的 wheel 证明早于它。路线一只查看 wheel 文件列表；路线二从 exact tracked state 建 clean archive、仓库外安装，再由 downstream consumer 真正发布。选择路线二，因为“文件在 wheel 中”不能证明 lazy facade、结果返回和原子 I/O 可消费。固定构建/安装/主动检查交给轻量任务；主线亲自确认新模块、`py.typed`、README、pyproject 都被跟踪，模块只导入标准库和轻量内部结果/输出代码，publication/lightweight/static-export 定向集合 **14 passed in 0.33s**。
+
+**离线 clean-wheel 与外部运行证据。** exact HEAD 为 `de10a2fca20b6eabe31e9b8f4a734e9d67dab4e0`；缓存 Hatchling 离线构建 `ocrllm-0.1.0-py3-none-any.whl`，大小 **228,594 bytes**，SHA-256 `E8EF125EE70B59BB93C12C84CA868D4308FD456EC5E81E85CCF2412DE8AF5469`。使用 `pip install --no-deps --no-index --target` 安装到仓库外，package/distribution origin 都在 external target。顶层 `publish_video_result`、`compose_video_result`、`VideoRecognitionOutcome` 可导入；plain import 未加载 cv2、NumPy、imageio-ffmpeg、miniaudio。wheel 包含新模块与 `py.typed`，metadata README 含新 API。
+
+**真实消费、诚实缺口与过度设计复查。** 外部 consumer 构造本地已结算 outcome，在新嵌套目录完成 Markdown 发布，核对内容、status、`output_path`、assets、默认不覆盖、显式覆盖、临时文件清理，以及 retained asset 冲突拒绝和原字节保留。现有环境没有 Pyright，因此本轮只证明 marker/static alias 随 wheel 存在，不声称新函数签名通过独立 checker；也没有为此下载或安装工具。精确临时根已删除。没有 repo 产品代码、测试、manifest、依赖、网络、provider、凭据或持久环境变化；没有再造第二个 gate script、兼容 legacy 格式、触碰 #127、resume、provider framework 或 worker/contracts。
+
+**相邻但不混入本轮的真实缺口。** 主线 manifest 审查发现 `pyproject.toml` 的 distribution description 仍只写 board/image，已经漏掉明确发布的 PDF、短音频和视频。这不会推翻 #146 对模块包含、外部 import 和 publication runtime 的证明，但会误导包索引。为了不在旧 wheel 哈希之后偷改 manifest 又继续引用旧证据，本轮只登记为下一项原子修正，不顺手扩展。

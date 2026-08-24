@@ -180,8 +180,11 @@ silent video ignores an audio-only signal. The maintainer must choose returned
 branch cancellation (recommended) or propagated cancellation with a new bounded
 way to recover settled work before implementation. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
-claim. The queue explicitly stops further proactive filesystem/accounting edge
-scans.
+claim. #146 additionally proves the new publication entry from an offline clean
+wheel installed outside the repository, including actual Markdown publication,
+overwrite safety, asset-collision refusal, packaged typing marker, and lazy
+heavy dependencies. The queue explicitly stops further proactive
+filesystem/accounting edge scans.
 
 #072 has implemented P1-c offline: `recognize(one.pdf)` lazily uses
 `ocrllm[pdf-vision]`, snapshots at most 100 MiB without whole-file Python reads,

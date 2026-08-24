@@ -1272,6 +1272,30 @@ caller to recover the already-settled outcome. B cannot continue hiding paid
 work as the current implementation does. No product code or characterization
 test changes until the maintainer chooses A or B.
 
+#146 proves #144 is a distributed library capability, not only a source-tree
+export. Exact tracked commit `de10a2fca20b6eabe31e9b8f4a734e9d67dab4e0`
+built offline from a clean Git archive into a 228,594-byte wheel (SHA-256
+`e8ef125ee70b59bb93c12c84ca868d4308fd456ec5e81e85ccf2412de8af5469`).
+The wheel installed with `--no-deps --no-index` into an external target;
+package and distribution origins were external, and top-level
+`publish_video_result`, `compose_video_result`, and `VideoRecognitionOutcome`
+were importable while OpenCV, NumPy, imageio-ffmpeg, and miniaudio stayed
+unloaded after plain import. The wheel contains `publish_video_result.py` and
+`py.typed`, and its packaged metadata README names the new public function.
+
+An outside-repository consumer then published a settled local video outcome to
+a nested Markdown target and verified content, status, output path, retained
+assets, default no-overwrite, successful explicit overwrite, temporary cleanup,
+and retained-asset collision refusal with original bytes preserved. Existing
+Pyright was not available, so #146 makes no new independent static-checker claim;
+it did not download one. The exact proof root was removed. No repository code,
+dependency, network, provider, credential, or persistent environment changed,
+and no second release-gate script was added.
+The same manifest audit found one adjacent packaging defect for the next atomic
+iteration: `project.description` still says board/image only and therefore
+understates the already shipped PDF, short-audio, and video surfaces. Do not
+silently treat that stale distribution summary as current product scope.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

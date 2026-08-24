@@ -433,6 +433,12 @@ The following directions remain traceable but are not current work:
   cancellation. Legacy requires preservation of settled paid work but does not
   determine return-versus-raise for this non-persistent API, so #127 remains a
   maintainer choice before implementation.
+  A clean wheel from exact commit `de10a2f` now independently proves
+  `publish_video_result()` is packaged and externally consumable: nested atomic
+  publication, no-overwrite, explicit overwrite, retained-asset collision
+  refusal, `py.typed`, and lazy heavy imports all passed without network or
+  provider calls. Pyright was unavailable, so no new static-checker result is
+  claimed.
   A clean archive of commit `c7f30f0` built and installed outside the
   repository without network, kept plain import free of heavy media modules,
   and completed one local video through separate injected image and fake-audio
