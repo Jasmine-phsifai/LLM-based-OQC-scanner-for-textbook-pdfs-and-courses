@@ -186,7 +186,8 @@ for the duration of a recognition, so direct threads and `recognize_batch()` can
 split final Markdown from its resume sidecar. The claim is process-local: separate
 processes must not target the same output path concurrently. PDF repair, long
 audio, persisted/resumable audio, and video remain unavailable. PDF recognition
-is offline-proven but not yet live-proven in the current environment.
+is offline- and Google-live-proven; the P1-d repair contract is paused at the
+product choice recorded in `docs/ACTIVE_STATE_AND_RULES.md`.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.

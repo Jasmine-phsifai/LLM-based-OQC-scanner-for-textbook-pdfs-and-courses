@@ -430,12 +430,29 @@ publishes no final PDF Markdown when a group fails; therefore no active failed
 range currently exists for repair to discover after sidecar loss. Legacy repair
 auto-detects localized Chinese failure comments, but those comments are not a
 stable active identity and legacy publishes them with a non-atomic direct write.
-Do not copy that regex or silently invent failure identity. P1-d remains the
-immediate queue, paused only for the maintainer to choose among: (1) a minimal
-exact active failed-range marker plus atomic partial publication (recommended,
-because it makes automatic repair real); (2) a caller-supplied exact range
-validated against existing success markers; or (3) narrow legacy-comment
-compatibility. No provider call or product edit was made by this audit.
+Do not copy that regex or silently invent failure identity.
+
+#080 withdrew #079's initial recommendation to add one failed-range marker and
+publish the settled prefix. The active PDF loop is serial and fail-fast. In a
+three-group document where group one succeeds and group two fails, group three
+is never attempted. A partial document containing only success one and failure
+two cannot honestly identify or recover group three after sidecar loss. Calling
+group three failed would be false; omitting it makes repair reconstruct and run
+unfinished work like a second resume engine; continuing all groups after an
+ordinary failure changes the proven fail-fast behavior and can waste calls
+during an outage. Legacy avoided this exact gap by submitting all known batches
+and writing placeholders, a materially different execution model.
+
+P1-d remains the immediate queue but no implementation is authorized until the
+maintainer selects its actual product meaning: either (A) change the producer to
+persist an honest, complete all-range partial status model, accepting the wider
+failure-semantics and recovery design; (B) narrow repair to a caller-identified
+or previously persisted exact failed range, accepting that it repairs known bad
+content but does not recover an interrupted missing-state suffix; or (C) freeze
+P1-d because ordinary resume already covers the current fail-fast outage path.
+Option C is the smallest honest default. A localized legacy-comment parser is no
+longer recommended. No provider call or product-code edit was made by either
+contract audit.
 
 ### P2 — Explicitly deferred work
 

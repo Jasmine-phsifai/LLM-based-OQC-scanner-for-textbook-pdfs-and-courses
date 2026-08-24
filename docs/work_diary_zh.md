@@ -2286,3 +2286,21 @@ Atomic task — Iteration #079: define and implement the smallest P1-d manual PD
 **active seam 与三条路线。** 最小公共入口应是独立 `repair_pdf(...)`，不能把 `repair=True` 塞进普通 `recognize()`，也不建 generic repair abstraction。路线①（推荐）定义一个精确、最小 active failed-range marker，并让 group failure 原子发布带既有有序 range sections 的 partial Markdown；repair 自动找一个失败 section，只渲染/调用该范围并原子替换。路线②不新增失败 marker，要求 caller 显式给 exact `(start,end)`，并只允许匹配已有 range marker；实现更小，但不能“从失败 Markdown 自动找”，也可能允许误选本来成功的 section。路线③只兼容一条 legacy 中文失败 comment；它能处理旧文件，却把本地化展示文字提升为 active identity，与已有规则冲突。三条路线会改变 public behavior，无法由代理替维护者决定。
 
 **过度设计复盘、验证与暂停点。** 两名轻量代理只读审查 legacy/active seam，主代理逐行复核 processor、marker assembler、atomic writer、output claims 和测试；无 provider、凭据、依赖或 tracked code 修改。没有提前写多 marker parser、版本化 repair schema、自动重试、per-page reconstruction、UI 或第二 sidecar。只更新 authority/迁移日记，要求先确认路线；确认后下一 iteration 才写失败优先测试，并保持一个失败 range、一个 provider call、原子保留 surrounding Markdown 的 exit gate。
+
+## #080 — 2026-08-24：撤回会暗中复制 resume 的 PDF repair 建议
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #080: stress-test the recommended P1-d "failed marker plus partial publication" contract against the active PDF loop's serial fail-fast behavior before it becomes public API. Success means tracing a document with a settled prefix, one failed group, and an unattempted suffix; deciding whether Markdown-only repair can remain honest without pending-state machinery or a second resume engine; and revising the recommendation instead of implementing a contract whose hidden scope exceeds P1-d. This matters because a superficially small marker can make the current recovery boundary fragile and constrain later provider diversity.
+```
+
+**假设复核与路线比较。** 开始时沿用 #079 的假设：成功 section 后追加一个精确 failed-range marker，便足以让 sidecar 丢失后的 repair 自动工作。逐行追踪 active loop 后该假设被推翻。比较两条实现路线：①失败时发布“已成功前缀 + 当前失败范围”；②先不实现，检查任意三批以上 PDF 是否仍能由这份 Markdown 独立恢复。选择②，因为路线①只在失败恰好发生于最后一批时完整；公共产品不能把这个偶然情况当作一般契约。
+
+**三批失败轨迹的事实。** `recognize_pdf()` 以八页为组串行调用，只有 `_recognize()` 成功后才把结果和页码范围加入 settled 列表；任何 typed error 都立即附加已结算证据并抛出，最终 combiner 根本不会运行。对于 24 页任务：第 1—8 页成功，第 9—16 页失败，第 17—24 页没有被调用。现有 cancellation regression 也证明中断后没有 final Markdown，只留下已完成 child sidecar，随后由普通 `resume=True` 仅补缺失组。独立轻量审查得到同一结论，并对照 legacy：legacy 先提交全部已知批次，才有条件为所有失败批次留下 placeholder；它不是 active 串行 fail-fast 的同一种执行模型。
+
+**为何撤回 #079 推荐。** 若 partial Markdown 只写第 9—16 页失败，sidecar 丢失后 repair 不知道第 17—24 页；若把未尝试的第三批也标成失败，就是虚假状态；若 repair 重新打开 PDF、推导全部分组并继续后缀，它已成为第二套 resume；若 recognition 在错误后继续请求后续批次，又改变了 fail-fast，并可能在 provider outage 时浪费调用。为解决这些问题再引入 pending marker、全范围状态表或另一版 checkpoint，正是本轮要阻止的隐藏扩张。因此 authority 已撤回“单个 failed marker 是最小方案”的判断。
+
+**当前三条诚实产品路线。** A：明确改变 producer，持久化覆盖所有范围的完整 partial 状态；它能实现脱离 sidecar 的 outage recovery，但属于更大的失败语义和恢复设计。B：只修 caller 明确指定或先前已经持久化的 exact failed range；它很小，但只能修已知坏内容，不能恢复中断后的未知后缀。C：暂时冻结 P1-d，当前 provider outage 继续由已经证明的 resume 承担；这是默认推荐，因为没有观察到 active 产品会生成可独立 repair 的失败 Markdown。legacy 中文 comment regex 不再作为候选。
+
+**provider 决策与本轮边界。** 维护者本次补充的未来约束已由 #077 写入 `MAINTAINER_PRODUCT_DECISIONS.md` 和 authority：核心稳定后，新 provider 以独立可读 class 增加，各自拥有有证据的并发、推理强度、同厂模型选择和错误处理默认值；multi-provider pool/fallback 是以后单独的协调层；额外免费 Volcengine OpenAI-compatible 来源只在相关能力排期后做有界 robustness test，不逐模型永久打补丁。本轮没有重复建文档，也没有实现 provider 抽象。没有 product code、测试、下载、provider call 或凭据读取；只更新当前 authority 和中文日记。下载与持续检查仍应交给轻量代理，主线同时推进不依赖它们的原子任务。

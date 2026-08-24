@@ -94,8 +94,11 @@ exact top-level tuple while preserving each item's existing atomic-path or
 grouped-`Sequence` contract, and validates the entire batch plus output targets
 before any snapshot, directory, executor, or provider work. Two live groups of
 eight images completed in order with exactly two total Google calls and complete
-published state. #078 completed P1-c PDF-through-image/resume, so bounded P1-d
-manual PDF repair is now the immediate queue. The audio slice has no hidden
+published state. #078 completed P1-c PDF-through-image/resume. Bounded P1-d
+manual PDF repair is the immediate decision point, but #080 proved that a
+single failed-range marker cannot recover an unattempted suffix under the
+current serial fail-fast loop; implementation is paused for the explicit
+product choice in the authority file. The audio slice has no hidden
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 
@@ -126,8 +129,9 @@ eight-page image requests. It reported aggregate usage of 4,802 input and 117
 output tokens, published ordered output with two complete child checkpoints,
 retained no rendered pages, cleaned both temporary roots, and exposed no key or
 OCR body. Combined with the earlier offline resume and installed-wheel proofs,
-the immediate queue is now the bounded P1-d manual PDF repair; provider
-generalization remains deferred.
+the immediate queue is the P1-d product choice: widen partial-state semantics,
+narrow repair to known bad content, or freeze it behind ordinary resume.
+Provider generalization remains deferred.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203

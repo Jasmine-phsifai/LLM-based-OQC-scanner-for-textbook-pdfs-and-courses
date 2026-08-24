@@ -255,6 +255,9 @@ is often accepted.
   one foreground `gemini-2.5-flash` run processed 16 pages as exactly two
   serial requests, published two complete child states plus ordered final
   output, reported current-model usage, and retained no rendered pages. The
-  next authority item is the already-bounded P1-d manual repair in
+  next authority item is the P1-d manual-repair product decision in
   [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-d--minimal-pdf-repair-after-stable-markers).
-  Do not create a parallel queue or start provider generalization here.
+  #080 proved that one failed-range marker cannot recover an unattempted suffix
+  under the current serial fail-fast loop. Do not implement repair until the
+  authority's wider/narrower/freeze choice is made, create a parallel queue, or
+  start provider generalization here.

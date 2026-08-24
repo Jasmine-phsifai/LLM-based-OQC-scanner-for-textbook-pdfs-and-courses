@@ -87,11 +87,14 @@ PDF recognition is implemented and live-proven: #078 discovered 37 current
 Google models, then `gemini-2.5-flash` completed 16 pages as exactly two serial
 requests with two complete checkpoints, ordered published output, aggregate
 usage 4,802/117, and no retained rendered pages. Content repair remains
-unimplemented and is now the immediate queue. #079 proved that active failed
-Markdown has no defined marker yet: the producer publishes only complete range
-sections and raises without final Markdown on a failed group. The maintainer
-must choose the minimal failed-range contract before implementation; localized
-legacy regex is not silently promoted into active identity.
+unimplemented and is now the immediate decision point. #079 proved that active
+failed Markdown has no defined marker yet: the producer publishes only complete
+range sections and raises without final Markdown on a failed group. #080 then
+proved that one failed-range marker plus the settled prefix cannot recover a
+later unattempted suffix without becoming a second resume path. The maintainer
+must choose whether to widen partial-state semantics, narrow repair to known bad
+content, or freeze it behind ordinary resume; localized legacy regex is not
+silently promoted into active identity.
 Native Google direct-Python image
 recognition and experimental memory-only short-audio recognition are now
 implemented, with per-model usage reporting when Google supplies it; no general
@@ -124,8 +127,8 @@ the existing image/resume path now passes focused tests and a real local
 16-page PDFium probe: two ordered eight-page calls, two complete child states,
 zero retained rendered PNGs, and a one-call resume after the second group is
 interrupted. #078 closed its Google gate with the same two-group shape and no
-retry, fallback, or Files lifecycle; the bounded manual repair slice is now the
-immediate queue.
+retry, fallback, or Files lifecycle; the bounded manual repair product choice
+is now the immediate queue and implementation remains paused.
 #073 strengthens the isolated installed-wheel proof for that same slice: a
 real 16-page PDF must traverse public `recognize()` as two serial groups of
 eight, publish two child states plus the final range-marked output, and leave

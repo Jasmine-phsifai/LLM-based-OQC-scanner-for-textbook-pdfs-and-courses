@@ -11,9 +11,12 @@ The approved current work is the `#065 Unified Execution Queue` in
 `../../docs/ACTIVE_STATE_AND_RULES.md`; the older Stage M/A plan supplies detail
 only where that queue has not superseded it. #078 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
-existing offline resume and installed-wheel proofs. P1-d minimal manual PDF
-repair is now the immediate queue. Do not broaden it into a general repair
-framework or start provider generalization in its place.
+existing offline resume and installed-wheel proofs. P1-d is now the immediate
+product decision, not authorized implementation: #080 proved that a single
+failed-range marker cannot recover an unattempted suffix under the current
+serial fail-fast loop. Follow the three explicit choices in the authority file.
+Do not broaden repair into a second resume framework or start provider
+generalization in its place.
 
 `contracts/` and `worker/` are frozen. Do not change them.
 
