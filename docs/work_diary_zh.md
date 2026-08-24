@@ -4037,3 +4037,17 @@ Atomic task — Iteration #195: verify the complete local combined-video library
 **真实结果与 provider 分离。** 测试先以 ASCII 名生成带 440 Hz AAC 音轨的真实 MP4，再移动到 `课程资料/讲座视频.mp4`，输出根为 `识别输出`。图片用注入 provider 和 `图片请求缓存`，音频用 Google 配置/fake adapter 和 `音频请求缓存`；公开 `recognize_video()` 一次通过。结果为 complete，留取索引 `[1]` 与严格文件名 `frame-00000001.jpg`，`audio.mp3` 真实存在；图片 provider 只收到图片临时根内的 JPEG，音频 adapter 只收到音频临时根内的 MP3，两边各一次，调用结束后两个 snapshot 均不存在、两个临时根无后代、输出根无 `.ocrllm-audio-*` staging。`compose_video_result()` 资产严格为 JPEG 后接 MP3，`current_run_provider_call_count == 2`。FFmpeg 和后续两条分支都没有暴露新的 Unicode 缺陷，所以运行时代码不改。
 
 **验证失误、最终证据与过度设计复查。** 精确新测试为 **1 passed in 0.46s**。第一次聚焦命令猜了不存在的 `tests/test_snapshot_mp3.py`，第二次虽然搜索得到 `test_snapshot_short_mp3.py`，命令仍误用了 `test_audio_snapshot.py`；两次都在收集前以零测试退出，均未冒充验证。第三次使用真实文件名后，combined video、frame/audio extraction、frame facade、图片快照和短 MP3 快照为 **89 passed in 7.23s**；`compileall -q src tests tools` 与 `git diff --check` 通过。轻量只读审计独立确认此前只有 ASCII combined 测试，并确认当前新回归正好补齐路径缺口。无网络、真实 provider、凭据、安装、runtime/API/dependency/output 变化、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策；不为每种文字重复一套 fixture，不直接记录/公开 Config 对象，也不添加 Unicode path manager。
+
+## #196 — 2026-08-25：同一中文音画结果继续完成最终 Markdown 发布
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #196: identify and close the next evidence-backed maturity gap in the already-shipped video result/publication surface that is independent of the open cancellation, source-snapshot, and long-audio choices. Success means reconciling the authoritative queue and diary, auditing current composition/publication behavior against real retained JPEG plus MP3 artifacts, selecting one caller-visible defect or a clearly missing regression rather than inventing a feature, and applying only the smallest maintainable correction with proportional offline proof. This matters because video parsing and provider separation now run end to end; the next product risk is whether settled results can be consumed and published honestly by downstream Python callers.
+```
+
+**审计结论与两条路线。** 主代理逐段检查 `VideoRecognitionOutcome`、`compose_video_result()`、`publish_video_result()`、通用 `build_recognition_result()` 及相关测试；轻量只读审计独立检查后也未发现不依赖 #127/#149/#152 的 caller-visible 缺陷。构造阶段已经拒绝空 retained frame、错误 artifact 布局、组顺序/身份漂移、媒体类型冲突和无音轨却带 MP3；composition 拒绝 fully failed 与缺失磁盘资产，保留 partial/error/调用数的 exact-or-unknown；publication 在修改文件前完成 composition，持有进程内 target claim，原子写 Markdown，失败保留旧文件，并拒绝 retained media 的词法路径或同文件别名。路线 A 是无改动记录审计；路线 B 是不新增媒体 fixture，把 #195 已有中文 combined 测试从 memory-only compose 推进到公开 publish。选择 B，因为这补的是最终 consumer 证据，不是新的防御逻辑。
+
+**最小测试变化与真实结果。** #195 的同一个 1 秒真实有声 MP4、同一个中文源/输出目录、同一对独立 image/audio provider seam 完全复用；测试不再只调用 `compose_video_result()`，而是调用 `publish_video_result(outcome, 识别输出/最终识别结果.md)`。最终结果为 complete，`output_path` 精确等于目标，磁盘 UTF-8 Markdown 与返回 `markdown` 完全相同，assets 仍为受控 JPEG 后接 `audio.mp3`，`current_run_provider_call_count == 2`，输出父目录没有 `.ocrllm-*.tmp`。因为 publish 内部已经调用 compose，删除同一测试里的直接 compose 是减少重复，而不是减少产品证据。没有运行时代码变更。
+
+**验证与过度设计复查。** 精确真实媒体测试为 **1 passed in 0.44s**；combined video、outcome、composition 与 publication 集合为 **45 passed in 4.58s**；`compileall -q src tests tools` 和 `git diff --check` 通过。轻量独立审计的相邻集合为 **60 passed in 5.20s**。#193 刚对 runtime 完成全量 1,468 项，本轮仅替换一条测试的最后消费步骤，因此不机械重跑全量或 clean wheel。无网络、provider、凭据、安装、runtime/API/dependency/output layout、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策；没有新增 manifest、resume、hash、通用 publication abstraction、第二 fixture 或每种 Unicode 字母表测试。

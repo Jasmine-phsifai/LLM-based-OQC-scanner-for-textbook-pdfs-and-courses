@@ -561,6 +561,9 @@ The following directions remain traceable but are not current work:
   `recognize_video()` call: independently configured image and audio branches
   each settle once, clean their separate snapshots, retain JPEG plus MP3, and
   compose in order. Existing multigroup tests continue to own 8+2 ordering.
+  #196 takes that same real outcome through public atomic Markdown publication
+  at a non-ASCII target and verifies returned path/content/assets/call metadata
+  plus cleanup. No second fixture or publication subsystem was added.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

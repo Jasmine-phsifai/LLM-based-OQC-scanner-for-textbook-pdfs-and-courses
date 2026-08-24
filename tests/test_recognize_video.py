@@ -19,6 +19,7 @@ from ocrllm import (
     VideoRecognitionOutcome,
     VisionModelSettings,
     compose_video_result,
+    publish_video_result,
     recognize_video,
 )
 from ocrllm.providers.google_genai.google_genai_audio_response import (
@@ -323,12 +324,16 @@ def test_recognize_video_keeps_separate_providers_on_unicode_paths(
     assert not any(audio_temp.rglob("*"))
     assert not list(outcome.output_root.glob(".ocrllm-audio-*"))
 
-    composed = compose_video_result(outcome)
-    assert composed.status == "complete"
-    assert composed.assets == tuple(
+    target = output_parent / "\u6700\u7ec8\u8bc6\u522b\u7ed3\u679c.md"
+    published = publish_video_result(outcome, target)
+    assert published.status == "complete"
+    assert published.output_path == target
+    assert target.read_text(encoding="utf-8") == published.markdown
+    assert published.assets == tuple(
         frame.path for frame in outcome.retained_frames
     ) + (outcome.audio_artifact,)
-    assert composed.metadata["current_run_provider_call_count"] == 2
+    assert published.metadata["current_run_provider_call_count"] == 2
+    assert not list(output_parent.glob(".ocrllm-*.tmp"))
 
 
 def test_recognize_video_keeps_real_multigroup_order_and_separate_audio(

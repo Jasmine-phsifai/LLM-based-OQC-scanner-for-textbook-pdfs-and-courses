@@ -1978,6 +1978,23 @@ boundary, or open #127/#149/#152 choice changed; do not generalize this into a
 path framework or repeat the already-proven multigroup scenario under every
 filename alphabet.
 
+#196 completes that same real Windows path through final public Markdown
+publication without adding another fixture or runtime policy. A direct audit of
+`VideoRecognitionOutcome`, `compose_video_result()`, and
+`publish_video_result()` found no independent false-success or artifact-loss
+defect: construction rejects contradictory branch/media identity, composition
+rejects fully failed or missing-artifact outcomes, and publication remains
+atomic while refusing retained-media aliases. The existing #195 Unicode
+combined regression now calls `publish_video_result()` instead of stopping at
+memory-only composition. It writes `最终识别结果.md`, verifies the returned
+`output_path`, exact Markdown bytes, JPEG-then-MP3 assets, exact two-call
+metadata, and no publication staging residue. The exact real-media test and 45
+combined/outcome/composition/publication tests pass; an independent read-only
+audit passed 60 focused tests. This is a test-evidence refinement, not a new
+publication feature. No runtime, API, provider, dependency, output layout,
+legacy compatibility, frozen boundary, or open #127/#149/#152 choice changed;
+do not add manifests, resume, or another path fixture from this proof.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
