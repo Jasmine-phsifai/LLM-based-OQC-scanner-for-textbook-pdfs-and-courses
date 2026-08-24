@@ -254,9 +254,9 @@ def _recognize(
             if type(pdf_calls) is int and pdf_calls >= 0:
                 provider_calls_attempted = pdf_calls
         else:
-            from .validate_short_audio_options import validate_short_audio_options
+            from .validate_google_mp3_options import validate_google_mp3_options
 
-            validate_short_audio_options(source_paths, config=cfg)
+            validate_google_mp3_options(source_paths, config=cfg)
             from .processors.recognize_short_mp3 import recognize_validated_short_mp3
 
             processor_output = recognize_validated_short_mp3(

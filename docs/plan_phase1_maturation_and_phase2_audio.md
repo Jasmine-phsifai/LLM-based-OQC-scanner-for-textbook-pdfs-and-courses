@@ -411,7 +411,8 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 
 ### Stage A2 — Provider-specific long MP3
 
-- #150 supersedes FileTrans-first ordering. A2a is one standalone native Google
+- #150 supersedes FileTrans-first ordering. #151 implements and live-proves A2a
+  with one 307.98-second input. A2a is one standalone native Google
   Files lifecycle for one local MP3 longer than A1's 300-second ceiling: discover
   the current catalog, upload once, wait within a bound, generate once, delete
   the remote file during cleanup, and close the client. Prove it with one
@@ -448,8 +449,8 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   large media files.
 - `import ocrllm` weight unchanged; audio dependencies lazy behind an extra.
 - A1: one bounded real short MP3 transcribed end to end.
-- A2a: one bounded real MP3 longer than 300 seconds, with one upload, one
-  generation, and verified remote deletion. A2b separately proves interrupted
+- A2a completed by #151: one bounded real MP3 longer than 300 seconds, with one
+  upload, one generation, verified remote deletion, and client cleanup. A2b separately proves interrupted
   work can resume without replaying settled provider calls.
 - Capability reporting changes atomically with the executable slice; video
   remains unavailable.

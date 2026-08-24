@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ocrllm"
 dynamic = ["version"]
-description = "Importable OCRLLM library for image, PDF, short audio, and video recognition."
+description = "Importable OCRLLM library for image, PDF, audio, and video recognition."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Proprietary" }

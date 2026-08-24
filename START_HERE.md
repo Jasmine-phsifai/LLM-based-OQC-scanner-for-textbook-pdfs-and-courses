@@ -71,11 +71,13 @@ implemented and live-proven: the lazy
 compact-name snapshot, exact audio-model configuration, native Google inline
 request, public facade, and in-memory result are implemented for one MP3 of at
 most 300 seconds. Persistence, resume, groups, upload, and long-audio routing
-do not exist. #150 activates Stage A2 planning from a real 301.056-second public
-video probe, but no Stage A2 runtime code exists yet. The next standalone A2a
-slice is one native Google Files upload/wait/generate/delete lifecycle for an
-MP3 longer than 300 seconds; chunking, resume, fallback, and video integration
-remain later gates.
+do not exist. #150 activated Stage A2 planning from a real 301.056-second public
+video probe. #151 now implements and live-proves standalone
+`recognize_long_mp3()` for one Google Files MP3 longer than 300 seconds and no
+longer than the current 9.5-hour single-prompt limit. It owns the source,
+uploads once, waits within the configured timeout, generates once, deletes the
+remote file, and closes the client. Chunking, resume, fallback, batch/worker
+support, and video integration remain later gates.
 
 #110 re-proved the distributable boundary after the recent audio changes. A
 clean archive ran 1325 tests with one expected skip, built a 202,692-byte wheel,
@@ -187,9 +189,11 @@ has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. #146 additionally proves the new publication entry from an offline clean
 wheel installed outside the repository, including actual Markdown publication,
 overwrite safety, asset-collision refusal, packaged typing marker, and lazy
-heavy dependencies. #147 updates only the wheel Summary so it names the shipped
-image, PDF, short-audio, and video surfaces; dual-wheel comparison proves extras,
-dependencies, members, and runtime payloads did not change. The queue explicitly
+heavy dependencies. #147 updated only the wheel Summary to name the then-shipped
+image, PDF, short-audio, and video surfaces; #151 supersedes that exact text with
+image, PDF, audio, and video after the standalone long-MP3 facade shipped. The
+earlier dual-wheel comparison proves extras, dependencies, members, and runtime
+payloads did not change. The queue explicitly
 records #148's frame-scan correction: the actual source final frame now always
 participates in bounded comparison, so a scene change after the last five-second
 grid position cannot disappear before negative-feedback selection. #149 then
@@ -207,9 +211,9 @@ one injected call; the audio branch made zero provider calls and returned typed
 `SOURCE_TOO_LARGE`, leaving the top-level result honestly `partial` and keeping
 the extracted MP3. This confirms provider separation and failure honesty, while
 also proving that the five-minute A1 audio ceiling is not mature lecture-video
-support. Standalone Google Files A2a can proceed independently; integrating it
-into video still waits for #127 cancellation semantics and #149 source snapshot
-placement.
+support. #151 completed standalone Google Files A2a independently; integrating
+it into video still waits for #127 cancellation semantics and #149 source
+snapshot placement.
 
 #072 has implemented P1-c offline: `recognize(one.pdf)` lazily uses
 `ocrllm[pdf-vision]`, snapshots at most 100 MiB without whole-file Python reads,
@@ -283,9 +287,10 @@ bounded design evidence where it does not conflict with that queue.
 The active library has a region-bound in-memory credential scheduler and
 request/batch image resume. Candidate switching is opt-in, bounded,
 disposition-gated, and fully disclosed offline. Experimental direct Google
-short-audio recognition is live-proven but remains memory-only; its published
-gate is not a transcription-quality evaluation. PDF repair, long audio, and
-persisted/resumable audio remain unavailable. Video recognition is now
+short-audio recognition and standalone single-request Google Files long-MP3
+recognition are live-proven but remain memory-only; their published gates are
+not transcription-quality evaluations. PDF repair, long-audio chunk/resume,
+and persisted/resumable audio remain unavailable. Video recognition is now
 available as one typed orchestration facade over retained-frame extraction and
 recognition plus independently configured extracted-audio recognition. It does
 not yet compose a final video document or resume those branches. Local user

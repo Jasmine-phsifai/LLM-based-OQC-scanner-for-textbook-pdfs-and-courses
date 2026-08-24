@@ -122,6 +122,60 @@ def test_audio_live_smoke_outputs_no_transcript_path_or_secret(monkeypatch, caps
     assert source not in raw
 
 
+def test_audio_live_smoke_long_mode_requires_complete_deleted_files_lifecycle(
+    monkeypatch,
+    capsys,
+) -> None:
+    transcript = "PRIVATE LONG AUDIO TRANSCRIPT"
+    source = "private-long-audio-name.mp3"
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda settings, timeout_seconds: (MODEL,),
+    )
+
+    def fake_long_recognize(actual_source, *, config):
+        assert str(actual_source) == source
+        return SimpleNamespace(
+            markdown=transcript,
+            source_type="audio",
+            status="complete",
+            output_path=None,
+            metadata=MappingProxyType(
+                {
+                    "provider": "google",
+                    "model": MODEL,
+                    "transport": "google_files",
+                    "provider_call_count": 1,
+                    "duration_seconds": 301.0,
+                    "byte_size": 2048,
+                    "remote_file_deleted": True,
+                    "provider_client_closed": True,
+                    "current_model_token_usage": (
+                        {"model": MODEL, "input_tokens": 21, "output_tokens": 8},
+                    ),
+                }
+            ),
+        )
+
+    monkeypatch.setattr(smoke, "recognize_long_mp3", fake_long_recognize)
+
+    assert smoke.main(
+        ["--model", MODEL, "--audio", source, "--timeout", "9", "--long"]
+    ) == 0
+    raw = capsys.readouterr().out.strip()
+    assert json.loads(raw)["recognition"] == {
+        "input_tokens": 21,
+        "model": MODEL,
+        "output_tokens": 8,
+        "provider_call_count": 1,
+        "remote_file_deleted": True,
+        "transport": "google_files",
+    }
+    assert transcript not in raw
+    assert source not in raw
+
+
 @pytest.mark.parametrize("failure_stage", ["catalog", "recognition"])
 def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
     failure_stage, monkeypatch, capsys

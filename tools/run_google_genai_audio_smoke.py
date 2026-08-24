@@ -16,6 +16,7 @@ from ocrllm import (
     GoogleGenAISettings,
     list_google_genai_models,
     recognize,
+    recognize_long_mp3,
 )
 from ocrllm.errors import ConfigError, OCRLLMError
 
@@ -35,6 +36,11 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model", required=True)
     parser.add_argument("--audio", required=True, type=Path)
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument(
+        "--long",
+        action="store_true",
+        help="Use the standalone Google Files route and require more than 300 seconds.",
+    )
     return parser.parse_args(argv)
 
 
@@ -56,7 +62,8 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
             ),
         ) from None
     try:
-        result = recognize(
+        recognize_audio = recognize_long_mp3 if arguments.long else recognize
+        result = recognize_audio(
             arguments.audio,
             config=Config(
                 provider=settings,
@@ -64,7 +71,11 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
                 timeout_seconds=arguments.timeout,
             ),
         )
-        recognition = _safe_recognition_summary(result, arguments.model)
+        recognition = _safe_recognition_summary(
+            result,
+            arguments.model,
+            require_google_files=arguments.long,
+        )
     except OCRLLMError as error:
         raise _LiveSmokeFailure("recognition", error) from None
     except Exception:
@@ -77,7 +88,12 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
     }
 
 
-def _safe_recognition_summary(result: Any, model: str) -> dict[str, object]:
+def _safe_recognition_summary(
+    result: Any,
+    model: str,
+    *,
+    require_google_files: bool = False,
+) -> dict[str, object]:
     metadata = result.metadata
     if result.source_type != "audio" or result.output_path is not None:
         raise ConfigError(
@@ -105,6 +121,17 @@ def _safe_recognition_summary(result: Any, model: str) -> dict[str, object]:
             "Google audio live recognition returned invalid source evidence.",
             code="CONFIG_INVALID",
         ) from None
+    if require_google_files and (
+        result.status != "complete"
+        or metadata.get("transport") != "google_files"
+        or metadata.get("remote_file_deleted") is not True
+        or metadata.get("provider_client_closed") is not True
+        or duration_seconds <= 300.0
+    ):
+        raise ConfigError(
+            "Google long-audio live recognition did not complete its Files lifecycle.",
+            code="CONFIG_INVALID",
+        ) from None
     if call_count != 1 or type(call_count) is not int:
         raise ConfigError(
             "Google audio live recognition did not report exactly one provider call.",
@@ -129,12 +156,16 @@ def _safe_recognition_summary(result: Any, model: str) -> dict[str, object]:
             "Google audio live recognition returned invalid token usage.",
             code="CONFIG_INVALID",
         ) from None
-    return {
+    summary = {
         "provider_call_count": call_count,
         "model": model,
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
     }
+    if require_google_files:
+        summary["transport"] = "google_files"
+        summary["remote_file_deleted"] = True
+    return summary
 
 
 def _is_optional_token_count(value: object) -> bool:

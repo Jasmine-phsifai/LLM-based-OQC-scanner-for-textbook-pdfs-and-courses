@@ -15,7 +15,7 @@ from .validate_execution_image_count import validate_execution_image_count
 from .validate_image_group import validate_image_group
 from .validate_same_type_group import validate_same_type_group
 from .validate_source import validate_source
-from .validate_short_audio_options import validate_short_audio_options
+from .validate_google_mp3_options import validate_google_mp3_options
 
 
 def preflight_recognition_batch(
@@ -47,7 +47,7 @@ def preflight_recognition_batch(
                 code="SOURCE_INVALID",
             ) from None
         else:
-            validate_short_audio_options(source_paths, config=config)
+            validate_google_mp3_options(source_paths, config=config)
 
     if len(set(resolved_targets)) != len(resolved_targets):
         raise OutputExists(

@@ -19,9 +19,10 @@ As of 2026-08-25:
   atomic file-backed image state, opt-in disposition-gated candidate recovery,
   complete spend disclosure, model-aware credential blocking, and slot-indexed
   intra-request checkpoints are shipped. Its paid live exit smoke remains open.
-- The former standalone Stage 2 vision/audio scaffold was removed. One bounded
-  native Google MP3 path is implemented and live-proven; it remains memory-only.
-  Stage A2 long audio has not started.
+- The former standalone Stage 2 vision/audio scaffold was removed. Native
+  Google inline short MP3 and Files-based single-request long MP3 paths are
+  implemented and live-proven; both remain memory-only. Long-audio chunking,
+  resume, and video routing have not started.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. Its bounded Google exit gate completed 16 pages in two
@@ -48,9 +49,9 @@ As of 2026-08-25:
   only when every settled branch supplies exact evidence; otherwise it is
   `None`, never a guessed zero. `publish_video_result()` can instead atomically
   publish the same complete or partial composition to an explicit caller-owned
-  path, with opt-in overwrite. Long-audio recognition, video resume, and worker
-  routing are not implemented yet.
-- Native Google image and short-audio adapters are implemented. Legacy
+  path, with opt-in overwrite. Long-audio video routing, video resume, and
+  worker routing are not implemented yet.
+- Native Google image, short-audio, and single-request long-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
 - Built wheels include the standard `py.typed` marker and static-only lazy-facade
@@ -204,8 +205,8 @@ Do not:
   through `pypdfium2`;
 - treat `output/`, `temp/`, `ocrllm_social_e2e/`, caches, or screenshots as
   source-of-truth evidence;
-- start HarmonyOS/ArkTS, Rust/PyO3, long audio, video recognition beyond the
-  ordered P1-e slice, or PDF repair outside the approved phase gate.
+- start HarmonyOS/ArkTS, Rust/PyO3, long-audio chunking/resume, video recognition
+  beyond the ordered P1-e slice, or PDF repair outside the approved phase gate.
 
 ## History Trace
 

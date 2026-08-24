@@ -69,8 +69,9 @@ working image configuration stayed unchanged and the audio-specific boundary
 landed with the bounded Stage A1 short-MP3 recognition slice. That direct,
 experimental slice is implemented and live-proven through native Google GenAI;
 it remains memory-only and does not provide persistence, resume, groups,
-upload, long-audio routing, or worker support. #150 has activated Stage A2 as a
-bounded implementation queue, but no Stage A2 product code exists yet. A1 did
+upload, long-audio routing, or worker support. #151 implements and live-proves
+the separate standalone Stage A2a Google Files lifecycle for one MP3 longer
+than 300 seconds; it does not alter A1 or route video. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
 audio live tests are already authorized without a separate budget request.
 DashScope live work still requires a nonempty recognized credential and an
@@ -834,15 +835,16 @@ exclusive same-directory staging file. A second bounded FFmpeg pass fully
 decodes that MP3 before `fsync` and atomic publication. Missing audio, backend
 failure, timeout, empty/invalid output, an existing target, and cleanup failure
 remain typed and cannot create false success or publish a partial target.
-Extraction has no media-duration policy; the independently existing short-MP3
-recognizer still rejects more than 300 decoded seconds or 25 MiB.
+Extraction has no media-duration policy; the video facade's short-MP3 consumer
+still rejects more than 300 decoded seconds or 25 MiB. #151's separate
+`recognize_long_mp3()` Files entry is not automatically selected here.
 
 Provider separation is deliberately expressed by two real calls rather than a
 new provider hierarchy: callers pass their image `Config` to
 `recognize_video_frames()` and a separate audio `Config` to `recognize()` for
 the extracted MP3. Either call can be made after the other fails. The current
-audio consumer remains native Google only; injected/general audio providers,
-long-audio routing, a combined video result, shared hotwords, composition,
+video-audio consumer remains native Google only; injected/general audio providers,
+long-audio video routing, a combined video result, shared hotwords, composition,
 resume, and worker support remain unavailable. The bounded live gate first
 observed honest model-scoped quota exhaustion from the configured
 `gemini-3.1-pro-preview` with one attempted call and no fallback. A separate
@@ -1302,6 +1304,12 @@ silently treat that stale distribution summary as current product scope.
 PDF, short audio, and video recognition.` It does not claim PDF text, long
 audio, provider fallback, worker support, or legacy compatibility.
 
+#151 supersedes only that exact Summary text after the standalone long-MP3
+surface shipped. The current candidate says `Importable OCRLLM library for
+image, PDF, audio, and video recognition.` It still does not claim automatic
+long-audio routing from `recognize()` or video, resume, fallback, worker
+support, or legacy compatibility.
+
 An offline dual-wheel comparison built the clean `161ee8d` baseline and a
 candidate with only the current `pyproject.toml` overlay. The baseline was
 228,594 bytes with SHA-256
@@ -1384,7 +1392,7 @@ No provider, credential, or network request was used, and the temporary root was
 removed. This is not a false-success bug, but it is executable evidence that the
 current video path cannot finish normal longer lectures.
 
-The next executable audio slice is Stage A2a: one standalone local MP3 longer
+#150 selected Stage A2a: one standalone local MP3 longer
 than 300 seconds through the native Google Files API, using the currently served
 catalog and exactly one selected model. It must prove upload, bounded processing
 wait, one generation, manual remote-file deletion in cleanup, typed secret-safe
@@ -1398,6 +1406,35 @@ private ten-hour product ceiling only after A2a is live-proven. Connecting long
 audio back to `recognize_video()` waits for the open #127 cancellation and #149
 snapshot-placement choices so it does not invent branch or source-lifetime
 semantics.
+
+#151 implements that exact A2a boundary as public `recognize_long_mp3()`. The
+entry accepts one in-memory-result MP3, requires exact Google and audio-model
+settings, snapshots through fixed-size disk chunks, fully decodes with bounded
+Python memory, and enforces more than 300 seconds, no more than Google's current
+9.5-hour single-prompt limit, and no more than the Files API's 2 GB per-file
+limit before SDK work. The existing short route now shares the same snapshot
+and decode cores without changing its 25 MiB/five-minute contract. Plain
+`import ocrllm` remains lazy.
+
+The adapter discovers the live catalog, uploads once, waits through only
+`PROCESSING` to `ACTIVE` within `Config.timeout_seconds`, generates once, then
+attempts remote deletion and client close on every post-upload exit. Provider
+and cancellation failures preserve generation-call evidence and annotate
+cleanup failure without exposing SDK text or remote identity. A successful
+transcript with failed remote/client cleanup is returned as `partial` with an
+explicit warning instead of being lost or falsely reported as fully clean.
+There is no retry, model switch, fallback, chunking, resume, persistence,
+parallel split, batch entry, worker route, or video integration.
+
+Offline verification is 106 focused tests plus the complete **1,451 passed in
+55.27 seconds** suite, compilation, and diff checks. The one authorized live
+gate used a generated 307.98-second, 1,232,161-byte MP3 and explicit
+`gemini-2.5-flash`: current catalog 37, exactly one generation, Google usage
+9,893 input / 25 output tokens, remote deletion true, client cleanup true,
+exit 0 in 19,172 ms, empty stderr, and no temp or credential residue. The
+runner printed neither transcript, source path, credential, remote URI, nor raw
+provider response. Stage A2a is complete; A2b chunk/checkpoint work and video
+routing remain separate future gates.
 
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide

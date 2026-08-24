@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     )
     from .recognize import recognize as recognize
     from .recognize_batch import recognize_batch as recognize_batch
+    from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
     from .recognize_video_frames import (
         recognize_video_frames as recognize_video_frames,
     )
@@ -176,6 +177,7 @@ _PUBLIC_IMPORTS = {
     ),
     "recognize": (".recognize", "recognize"),
     "recognize_batch": (".recognize_batch", "recognize_batch"),
+    "recognize_long_mp3": (".recognize_long_mp3", "recognize_long_mp3"),
     "recognize_video_frames": (
         ".recognize_video_frames",
         "recognize_video_frames",
@@ -233,6 +235,7 @@ __all__ = [
     "publish_video_result",
     "recognize",
     "recognize_batch",
+    "recognize_long_mp3",
     "recognize_video_frames",
     "recognize_video",
     "extract_video_frames",

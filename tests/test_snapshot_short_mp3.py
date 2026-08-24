@@ -13,6 +13,7 @@ from install_close_failing_stream import install_close_failing_stream
 
 
 snapshot_module = importlib.import_module("ocrllm.audio.snapshot_short_mp3")
+generic_snapshot_module = importlib.import_module("ocrllm.audio.snapshot_mp3")
 FIXTURE = (
     Path(__file__).parent
     / "fixtures"
@@ -115,7 +116,7 @@ def test_snapshot_short_mp3_rejects_wrong_suffix_before_temp_access(
         raise AssertionError("unsupported formats must fail before temp access")
 
     monkeypatch.setattr(
-        snapshot_module,
+        generic_snapshot_module,
         "_prepare_temporary_parent",
         fail_on_temp_access,
     )
@@ -184,7 +185,7 @@ def test_snapshot_short_mp3_rejects_source_growth_during_copy(
         result = real_fstat(file_descriptor)
         return SimpleNamespace(st_mode=result.st_mode, st_size=result.st_size - 1)
 
-    monkeypatch.setattr(snapshot_module.os, "fstat", report_smaller_opened_source)
+    monkeypatch.setattr(generic_snapshot_module.os, "fstat", report_smaller_opened_source)
 
     with pytest.raises(InvalidSource, match="changed while") as caught:
         with snapshot_module.snapshot_short_mp3(source, temp_dir=tmp_path / "temp"):
@@ -252,7 +253,7 @@ def test_snapshot_short_mp3_cleans_partial_copy_after_midstream_read_failure(
         return FailingReader(opened) if path == source else opened
 
     monkeypatch.setattr(Path, "open", wrap_source_open)
-    monkeypatch.setattr(snapshot_module, "COPY_CHUNK_BYTES", 2)
+    monkeypatch.setattr(generic_snapshot_module, "COPY_CHUNK_BYTES", 2)
 
     with pytest.raises(InvalidSource) as caught:
         with snapshot_module.snapshot_short_mp3(source, temp_dir=tmp_path / "temp"):
@@ -411,7 +412,7 @@ def test_snapshot_short_mp3_preserves_primary_when_stream_close_fails(
         def fail_copy(*_args, **_kwargs):
             raise primary
 
-        monkeypatch.setattr(snapshot_module, "_copy_open_source", fail_copy)
+        monkeypatch.setattr(generic_snapshot_module, "_copy_open_source", fail_copy)
     monkeypatch.setattr(
         snapshot_module,
         "probe_short_mp3",
@@ -503,7 +504,7 @@ def test_snapshot_short_mp3_maps_owned_snapshot_write_failures(
         monkeypatch.setattr(Path, "open", fail_snapshot_create)
     else:
         monkeypatch.setattr(
-            snapshot_module.os,
+            generic_snapshot_module.os,
             "fsync",
             lambda _descriptor: (_ for _ in ()).throw(OSError(secret)),
         )
@@ -531,7 +532,7 @@ def test_snapshot_cleanup_failure_is_typed_despite_ambient_exception(
             raise PermissionError("cleanup-secret")
         return real_rmtree(path, *args, **kwargs)
 
-    monkeypatch.setattr(snapshot_module.shutil, "rmtree", fail_normal_cleanup)
+    monkeypatch.setattr(generic_snapshot_module.shutil, "rmtree", fail_normal_cleanup)
 
     try:
         raise RuntimeError("ambient caller exception")
@@ -568,7 +569,7 @@ def test_snapshot_cleanup_failure_preserves_typed_primary_error(
             raise PermissionError("cleanup-secret")
         return real_rmtree(path, *args, **kwargs)
 
-    monkeypatch.setattr(snapshot_module.shutil, "rmtree", fail_normal_cleanup)
+    monkeypatch.setattr(generic_snapshot_module.shutil, "rmtree", fail_normal_cleanup)
 
     with pytest.raises(InvalidSource) as caught:
         with snapshot_module.snapshot_short_mp3(source, temp_dir=tmp_path / "temp"):

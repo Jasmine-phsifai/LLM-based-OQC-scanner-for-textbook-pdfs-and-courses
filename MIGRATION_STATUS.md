@@ -93,21 +93,26 @@ Phase 1 maturation is offline implementation-complete:
   conservative provider envelope below 20,000,000 bytes. Pre-set cancellation
   stops before snapshot/copy/decode and is checked again before dispatch; the
   synchronous SDK call itself is not interruptible. Persistence, resume, groups,
-  long audio, Files upload, retries, and fallback are not implemented. The
+  long audio, Files upload, retries, and fallback inside A1. The
   #097 returned an honest provider-scoped `PROVIDER_UNAVAILABLE` with no false
   success or snapshot residue and was not retried. After the maintained runner
   was simplified and its process contract was tightened, #103 refreshed the
   same bounded path successfully: catalog 37, exactly one provider call, and
   Google-reported input/output usage 150/9, with no retry or residue;
-- planned from executable evidence, not implemented: Stage A2 long-audio
-  recognition. #150 ran an audible 301.056-second MP4 through public
+- implemented and live-proven for one provider-specific single request: Stage
+  A2a long-audio recognition. #150 ran an audible 301.056-second MP4 through public
   `recognize_video()` without network. Five frames completed through one
   injected image call; the audio branch made zero provider calls and returned
   typed `SOURCE_TOO_LARGE`, so the outcome was honestly partial and retained
   its MP3. A2a is one standalone native Google Files upload, bounded readiness
   wait, generation, and remote deletion for an MP3 longer than 300 seconds.
-  Chunking/resume is A2b; video integration waits for #127 cancellation and
-  #149 snapshot placement. No A2 runtime code is currently shipped;
+  #151 ships public `recognize_long_mp3()` with chunked source snapshotting,
+  bounded-memory full decode, the Google 9.5-hour/2 GB single-request ceilings,
+  typed cleanup evidence, and no eager SDK/media imports. Its generated
+  307.98-second live input discovered 37 models, made one
+  `gemini-2.5-flash` generation, reported usage 9,893/25, deleted the remote
+  file, closed the client, and left no residue. Chunking/resume is A2b; video
+  integration waits for #127 cancellation and #149 snapshot placement;
 - implemented and live-proven: the first PDFium vision slice. One PDF
   becomes serial eight-page image groups, ordinary image sidecars preserve
   settled work, range markers preserve group order, and rendered pages have a
@@ -129,8 +134,8 @@ must now confirm whether historical Markdown with an explicit legacy failed-page
 marker is an intentional compatibility input; until then repair stays frozen
 behind ordinary resume. Active partial-state semantics will not be widened, and
 localized legacy regex is not silently promoted into active identity.
-Native Google direct-Python image
-recognition and experimental memory-only short-audio recognition are now
+Native Google direct-Python image recognition, experimental memory-only
+short-audio recognition, and standalone single-request long-MP3 recognition are now
 implemented, with per-model usage reporting when Google supplies it; no general
 cross-provider token-usage claim is made. Resume is the primary recovery
 path; bounded marker-based repair follows only after a stable PDF path exists.
@@ -405,8 +410,9 @@ The following directions remain traceable but are not current work:
   frame group self-identifying with exact frame indices and timestamps so later
   composition cannot infer membership from a changed group size. #125 gives a
   truly silent MP4 the distinct `VIDEO_NO_AUDIO_STREAM` code while corrupt
-  declared audio remains `VIDEO_INVALID`. Long-audio recognition remains
-  unavailable; final video-document publication is now the separate explicit
+  declared audio remains `VIDEO_INVALID`. Long-audio video routing remains
+  unavailable even though #151 ships a separate standalone Files facade; final
+  video-document publication is now the separate explicit
   step described below. The direct PDF vision
   facade and its ordinary image-sidecar resume are implemented; the
   experimental direct short-audio API is implemented and live-proven only for
@@ -450,8 +456,10 @@ The following directions remain traceable but are not current work:
   refusal, `py.typed`, and lazy heavy imports all passed without network or
   provider calls. Pyright was unavailable, so no new static-checker result is
   claimed.
-  #147 corrects the distribution Summary from the obsolete board/image-only
-  scope to image, PDF, short audio, and video. An offline baseline/candidate
+  #147 corrected the distribution Summary from the obsolete board/image-only
+  scope to image, PDF, short audio, and video. #151 now supersedes that exact
+  text with image, PDF, audio, and video after the standalone long-MP3 surface
+  shipped. An offline baseline/candidate
   wheel comparison proves identical extras, requirements, member lists, and
   runtime payloads outside generated metadata; external lightweight import also
   passes. This is metadata accuracy, not a new capability.
@@ -470,8 +478,9 @@ The following directions remain traceable but are not current work:
   open maintainer choice; no partial snapshot implementation is shipped.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
-  five-minute audio adapter rejects before dispatch. The next executable work
-  is therefore standalone Google Files A2a, not more selector tuning, a generic
+  five-minute audio adapter rejects before dispatch. #151 completes the
+  resulting standalone Google Files A2a slice; the remaining work is A2b
+  chunk/resume and later video routing, not more selector tuning, a generic
   provider framework, or an untestable FileTrans-first abstraction.
   A clean archive of commit `c7f30f0` built and installed outside the
   repository without network, kept plain import free of heavy media modules,

@@ -9,7 +9,7 @@ from .errors import Cancelled, ConfigError, OCRLLMError
 from .recognize import recognize
 from .recognize_video_frames import recognize_video_frames
 from .validate_config import validate_config
-from .validate_short_audio_options import validate_short_audio_options
+from .validate_google_mp3_options import validate_google_mp3_options
 from .video.extract_video_audio import extract_video_audio
 from .video.extract_video_frames import extract_video_frames
 from .video_recognition_outcome import VideoRecognitionOutcome
@@ -26,7 +26,7 @@ def recognize_video(
     validated_image_config = validate_config(image_config)
     _reject_image_persistence(validated_image_config)
     validated_audio_config = validate_config(audio_config)
-    validate_short_audio_options(
+    validate_google_mp3_options(
         (Path("video-audio.mp3"),),
         config=validated_audio_config,
     )

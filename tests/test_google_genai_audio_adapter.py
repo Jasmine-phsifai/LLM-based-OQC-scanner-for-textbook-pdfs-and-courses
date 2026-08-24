@@ -295,7 +295,7 @@ def test_google_audio_reports_completed_call_when_snapshot_cleanup_fails(
     adapter = importlib.import_module(
         "ocrllm.providers.google_genai.recognize_short_mp3"
     )
-    snapshot_module = importlib.import_module("ocrllm.audio.snapshot_short_mp3")
+    snapshot_module = importlib.import_module("ocrllm.audio.snapshot_mp3")
     fake = _FakeGoogleModule()
     monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
 

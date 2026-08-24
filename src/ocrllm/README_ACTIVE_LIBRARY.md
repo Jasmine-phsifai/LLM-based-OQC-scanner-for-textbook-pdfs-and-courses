@@ -56,6 +56,7 @@ from ocrllm import (
     extract_video_frames,
     recognize,
     recognize_batch,
+    recognize_long_mp3,
     recognize_video,
     recognize_video_frames,
     get_capabilities,
@@ -163,10 +164,38 @@ The experimental direct Google short-audio facade:
 - returns an in-memory `RecognitionResult` with `source_type="audio"`, exact
   provider/model/call metadata, duration and byte size, and nullable per-model
   input/output token usage;
-- rejects output persistence, `resume=True`, `overwrite=True`, groups, long
-  audio, and false no-speech/refusal success;
+- rejects output persistence, `resume=True`, `overwrite=True`, groups, MP3s
+  longer than 300 seconds, and false no-speech/refusal success;
 - performs no internal retry, model switching, Files upload, cache, fallback,
   or output logging.
+
+The standalone Google Files long-MP3 facade is also experimental:
+
+```python
+from ocrllm import AudioModelSettings, Config, GoogleGenAISettings, recognize_long_mp3
+
+result = recognize_long_mp3(
+    "lecture.mp3",
+    config=Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="gemini-2.5-flash"),
+        timeout_seconds=600,
+    ),
+)
+```
+
+- requires one fully decoded MP3 longer than 300 seconds and no longer than the
+  current Google single-prompt limit of 9.5 hours;
+- snapshots through bounded chunked disk I/O, with a 2 GB Files limit, and does
+  not load the complete audio or decoded PCM into Python memory;
+- discovers the live `generateContent` catalog, uploads once, waits only within
+  `timeout_seconds`, generates once, then deletes the remote file and closes the
+  client;
+- returns an in-memory audio result with exact model/usage/source facts and
+  explicit cleanup state; a successful transcript becomes `partial` with a
+  warning if remote or client cleanup fails;
+- has no chunking, resume, persistence, parallel splitting, fallback, model
+  switching, batch support, worker route, or automatic video integration.
 
 The PDF vision facade:
 
@@ -184,7 +213,7 @@ The PDF vision facade:
   selector, password input, partial-success setting, text mode, or retry path;
 - is rejected by `recognize_batch()` in this first slice.
 
-Neither the direct audio nor PDF path is registered in the frozen 20-entry
+Neither direct audio path nor the PDF path is registered in the frozen 20-entry
 shared capability/worker contract, and neither is worker support.
 Phase 2 exposes a spawned one-job manager with bounded JSON event bridging and
 verified five-second descendant cancellation. The production image job adapter
