@@ -2430,3 +2430,17 @@ Atomic task — Iteration #088: find one evidence-backed defect in the shipped P
 **最小修复与生命周期。** 只在 `decode_image(temporary_path)` 周围捕获 `InvalidSource`，映射成固定文案的 `OutputError(code="OUTPUT_WRITE_FAILED", page_number=9)`；`DependencyMissing`、PDF backend error、取消和其他 typed failure 不被吞掉。回归同时要求 attempted provider calls 为 1、settled group 为 1、provider 只收到第一组、第一组 complete sidecar 保留、final Markdown 不存在、正式页图与 `.tmp.png` 均为零。修复后单测 **1 passed in 0.25s**，PDF/render/source/image/defect 相关集合 **119 passed in 4.22s**。
 
 **过度设计复盘与边界。** 本轮没有把 legacy 的并行重编码 fallback 当成 active 必需品，也没有加入 retry、第二编码器、Pillow 初始化管理器、新错误码、repair 或 partial Markdown。`OUTPUT_WRITE_FAILED` 已经是同一函数对临时页图保存、durability 和替换失败的现有分类，这次只让解码验证保持同一责任。最终 root 为 **1312 passed in 42.75s**，compile、diff、敏感模式与用户文件保护通过；无 live provider、凭据、`contracts/` 或 `worker/` 修改。
+
+## #089 — 2026-08-24：用真实本地 PDFium 复验 #088 后的正常公共路径
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #089: verify #088 against a real local PDFium end-to-end path rather than treating mocked and full-suite success as sufficient. Success means reconciling authority and diary, using the existing installed dependency and public recognize() with a no-network injected provider on a real generated 16-page PDF, proving two ordered eight-page calls, complete output/sidecars, and zero rendered/snapshot residue; any failure must be classified before changing code. This matters because the renderer boundary changed, and production maturity requires one real decode/lifecycle proof, not only monkeypatched failure coverage.
+```
+
+**假设、两条路线与 runner 主审。** 初始假设是本机 `OCRLLM` 环境仍有门禁固定版本，不需要安装；路线①只引用 #088 mock 和 root suite，路线②复用 `tools/run_stage_m_offline_gate.ps1` 中唯一维护的 `pdf-vision` 真实 PDF 断言形状，在临时目录对当前 source public facade 执行一次。选择②。主代理逐项复核该段：PDFium 真正创建 16 页 PDF，injected provider 用 Pillow 完整 load 每张 PNG，要求两批严格顺序、最大并发一、两份 complete v2 sidecar、两份 child Markdown、最终范围 marker、空 snapshot parent 和零页图残留。没有新增第二个 runner 文件。
+
+**执行分工与真实结果。** 按维护者规则，固定执行、等待和清理由轻量代理负责；主线同时运行 PDF 定向测试 **20 passed in 1.87s**。代理只执行一次，exit **0**：`pypdfium2 5.11.0`、PDFium **151.0.7920.0**、Pillow **12.3.0**；公共 `recognize()` 得到 provider calls **2**、最大 active calls **1**、真实加载 PNG **16**、page/group/pages-per-group **16/2/8**、range markers **2**、complete v2 state **2**、child Markdown **2**。provider 只处理本地文件，不访问任何云端。
+
+**生命周期、证据边界与过度设计复盘。** page PNG、`.tmp.png`、snapshot 和 unexpected output residue 全部为 **0**，临时根目录确认删除。该次运行使用现有环境从当前 source tree 调公共 facade；它刷新 #088 后的真实本地 renderer/decode/lifecycle 证据，但不冒充 #073 的 isolated installed-wheel gate，也不替代 #078 Google live。没有失败，因此没有为了制造代码变化而增加 retry、fallback、runner、长期 evidence JSON 或产品代码；没有安装、下载、凭据、网络/provider service、`contracts/`、`worker/` 或用户未跟踪文件修改。

@@ -389,6 +389,17 @@ temporary PNG remain absent. The old behavior leaked the generated-image
 under `PDFIUM_LOCK`, so no retry, re-encoder, or Pillow initialization framework
 was added for the legacy-only parallel race.
 
+#089 refreshed the normal renderer path after #088 with exactly one no-network,
+real local PDFium run through the current source public facade. The existing
+`OCRLLM` interpreter supplied pinned `pypdfium2 5.11.0` (PDFium
+151.0.7920.0) and Pillow 12.3.0; no install was needed. A real generated 16-page
+PDF produced two ordered groups of eight, two provider calls with maximum active
+calls one, 16 Pillow-loaded PNGs, two ordered range markers, two complete v2
+sidecars, and two child Markdown files. Page-PNG, temporary-PNG, snapshot, and
+unexpected-output residue were all zero, and the temporary root was removed.
+This source-tree smoke complements rather than replaces #073's isolated-wheel
+gate or #078's Google live proof.
+
 #073 strengthens the existing `pdf-vision` release profile without changing
 the product contract. The isolated installed wheel must build a real 16-page
 PDF with PDFium, call public `recognize()` through an injected no-network

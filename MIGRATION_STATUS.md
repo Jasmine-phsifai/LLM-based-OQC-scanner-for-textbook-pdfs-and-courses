@@ -137,6 +137,8 @@ protocol annotation and public README now state that boundary directly.
 #088 maps decode failure of a library-generated PDF page PNG to local
 `OUTPUT_WRITE_FAILED` instead of caller `InvalidSource`, preserving settled PDF
 state and making no request for the failed group.
+#089 then refreshed the real local 16-page PDFium public-facade path: two serial
+groups, two complete sidecars, final output, and zero page/snapshot residue.
 #073 strengthens the isolated installed-wheel proof for that same slice: a
 real 16-page PDF must traverse public `recognize()` as two serial groups of
 eight, publish two child states plus the final range-marked output, and leave
