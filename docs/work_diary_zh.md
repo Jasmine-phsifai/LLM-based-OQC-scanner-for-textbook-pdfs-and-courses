@@ -2816,3 +2816,17 @@ Atomic task — Iteration #113: run one bounded, no-retry Google image regressio
 **离线与一次 live 结果。** image/audio runner 定向先为 **26 passed in 2.29s**；扩大到 Google image/audio adapter 为 **81 passed in 2.61s**。随后轻量代理用 committed `bilingual_printed_slide.png`、`gemini-2.5-flash` 和现有 QSettings 授权 key 只运行一次修订后的前台 CLI。实时 catalog 为 **37**，公共 recognition `provider_call_count=1`，Google usage **595 input / 443 output**，exit **0**，耗时 **14,627.478 ms**，stderr 空。没有 retry、换模型、第二次 invocation、八图或 invalid-key 请求；OCR body 未输出，credential pattern 为 false，child credential env 在 finally 删除，owned temp residue 为 0，精确 task temp root 删除后不存在。
 
 **文档与过度设计复盘。** package README 改成 routine 单图命令，并明确历史组图/credential evidence 仍保留；authority、START_HERE 和 migration 记录本次实时刷新。最可能的过度设计是加 `--mode historical/routine`、保留 opt-in invalid probe、建立通用 live-runner 状态机或顺手改 adapter；全部未做。最终全量为 **1333 passed in 54.35s**，`compileall -q src tests tools`、`git diff --check`、冻结目录 diff 和新增 diff 敏感模式检查全部通过。产品代码、provider 行为、注册表、P1-d、`contracts/`、`worker/` 和两个用户未跟踪文件均未动；没有下载或安装依赖。
+
+## #114 — 2026-08-24：调用计数与清理修正后再次真实跑通 Google 短音频
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #114: run one bounded Google short-MP3 regression through the maintained stage-aware CLI after #107–#110 changed attempted-call reporting, post-call cleanup accounting, batch composition, and clean-package dependencies. Success means reconciling authority and diary, proving offline that the runner still performs at most one recognition with sanitized output, delegating exactly one no-retry live check to a lightweight agent using the committed authorized MP3 and private credential handoff, and recording truthful catalog/model/call/usage or stage-aware failure plus cleanup evidence without publishing transcript text. This matters because the audio product path has not been exercised live since those lifecycle/accounting changes; green mocks and the image result do not prove it still runs against Google.
+```
+
+**假设、两条路线和分工。** #107—#110 修改的是调用事实、成功后清理、batch 组合证据和 clean-package 依赖，并没有改变音频请求协议；但这只能说明“理论上没影响”，不能替代真实 API。路线一继续审计 mock 和源码，成本低但无法证明当前 Google 目录、请求和清理仍能一起工作；路线二只运行维护中的 stage-aware runner 一次，用 committed 的 0.5 秒 MP3，不重试、不换模型、不做 invalid-key 探针。选择路线二。固定 live workflow 交给轻量代理；主代理同时逐段复核 runner、adapter 和 batch 的 0/1 调用边界，并亲自运行 audio runner、adapter、batch、snapshot 与 probe 的离线组合，得到 **102 passed in 2.16s**。
+
+**单次 live 证据。** 轻量代理从现有私密设置只向 child environment 传入 Google 凭据，使用 `tests/fixtures/audio/a1/mp3/valid_cbr.mp3` 和显式 `gemini-2.5-flash` 前台运行一次维护 CLI。实时 catalog 为 **37**；输入为 **0.5 秒 / 2,376 bytes**；公共 recognition 恰好 **1 次 provider call**，Google usage 为 **55 input / 2 output tokens**。child elapsed **5,975.988 ms**、wrapper **6.035 s**、exit 0、stderr 空。输出中的凭据模式计数为 0；父进程的 Google/Gemini credential environment 前后均不存在，child 在 `finally` 删除凭据；匹配 `ocrllm-audio-*` 的 snapshot/temp residue 为 0。没有 retry、换模型、invalid-key、第二次 invocation、transcript/provider 原文、编辑、下载或安装。
+
+**长期约束与过度设计复盘。** 维护者再次确认：OCRLLM 自身稳定后，新增 provider 应主要表现为新增一个可独立阅读的 provider class，每类拥有经过实测证明的并行、effort、模型选择与错误处理默认值，未来再考虑多 provider fallback/API pool；当前还额外配置了免费的 Volcengine OpenAI-compatible 测试源。该决定已在 `MAINTAINER_PRODUCT_DECISIONS.md` 和 active authority 中存在，本轮只补充“原子 iteration；固定下载/安装/主动检查交给轻量代理，主代理等待时做独立工作”的执行规则，不重复建文档。最可能的过度设计是借一次成功 smoke 提前抽象基类、fallback engine、API pool 或逐模型补丁；全部未做。最终 root suite 为 **1333 passed in 49.43s**；`compileall -q src tests tools`、EOL-aware diff check、冻结目录 diff 均通过，41 条新增 tracked 行中的 Google/OpenAI/Bearer credential pattern 均为 0。产品代码、provider 行为、frozen `contracts/`/`worker/`、P1-d 决策和两个用户未跟踪文件均保持不动。

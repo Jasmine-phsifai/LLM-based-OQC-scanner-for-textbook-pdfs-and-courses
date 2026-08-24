@@ -374,6 +374,17 @@ Pre-adapter option, source, and snapshot failures retain their existing typed
 local-error contract rather than receiving a modality-wide synthetic zero.
 This is one processor-local settled-call flag, not generalized accounting.
 
+#114 refreshed the maintained audio runner after those accounting and lifecycle
+changes. One committed 0.5-second, 2,376-byte MP3 completed on
+`gemini-2.5-flash`; the live catalog contained 37 models, recognition made
+exactly one provider call, and Google reported 55 input and 2 output tokens.
+The runner exited 0 after 5,975.988 ms with empty stderr. No retry, model switch,
+invalid-key probe, second invocation, transcript/provider-text publication,
+credential-pattern output, or audio snapshot residue occurred. The child
+credential environment was removed in `finally`, and the parent environment
+remained credential-free. This is a bounded runtime regression, not authority
+to broaden short audio or begin provider generalization.
+
 Exit gate met: one public real-MP3 result completed with catalog/model selection,
 provider limits, exact call/usage evidence, and no false success. The earlier
 model-scoped quota failure remains recorded rather than hidden by retry or

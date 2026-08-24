@@ -151,7 +151,11 @@ owned-snapshot cleanup subsequently fails. Neither adds retries or a billing
 ledger. The routine audio
 live runner now omits the redundant invalid-key
 request and reports a safe catalog/model-selection/recognition failure stage;
-historical credential evidence remains unchanged. #070 completed P1-a with eight authorized images: cancellation
+historical credential evidence remains unchanged. #114 refreshed that runner
+after the later attempted-call and cleanup-accounting changes: one committed
+0.5-second MP3 completed on `gemini-2.5-flash` in exactly one provider call,
+with usage 55/2 and no retry, second probe, credential leak, or temporary
+residue. #070 completed P1-a with eight authorized images: cancellation
 observed one persisted draft after one call (usage 2401/1502), resume reused it
 without replay and made one fresh review call (usage 4278/1066), then published
 a complete result. Total calls were exactly two. #071 completed P1-b with an

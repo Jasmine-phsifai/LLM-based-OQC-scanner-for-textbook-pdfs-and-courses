@@ -21,6 +21,13 @@ or independently reorder it.
 - Work-diary entries should distinguish offline regression evidence, clean-wheel
   evidence, live-provider evidence, and capabilities that remain unproven in a
   real request.
+- Keep each implementation iteration atomic: one concrete question, defect, or
+  proof boundary with explicit success criteria. Do not bundle adjacent future
+  architecture merely because it was discovered during the iteration.
+- Delegate fixed downloading, installation, and repeated active-check workflows
+  to a lightweight subagent. While that workflow runs, the primary agent should
+  advance an independent read-only audit, focused regression, or documentation
+  task instead of polling or repeating the same procedure.
 
 ## Repository, publication, and UI boundary
 

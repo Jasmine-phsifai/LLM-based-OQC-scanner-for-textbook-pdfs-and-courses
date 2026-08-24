@@ -101,7 +101,10 @@ quality. #107 additionally makes every error inside that adapter state whether
 the one recognition call was actually attempted: zero before
 `generate_content`, one after entering it. #108 also preserves that count when
 the call succeeds but later owned-audio-snapshot cleanup fails. P0-c is
-complete. #070 then proved live cancellation after one settled
+complete. #114 re-proved the maintained short-audio runner after those changes:
+one committed 0.5-second MP3 completed on `gemini-2.5-flash` with one provider
+call, usage 55/2, and no retry, second probe, credential leak, or temporary
+residue. #070 then proved live cancellation after one settled
 Google image draft and resume of only the missing review: two total provider
 calls, the draft reused with zero replay calls, and a complete published result.
 P1-a is complete. #071 completed P1-b: `recognize_batch()` now requires an
