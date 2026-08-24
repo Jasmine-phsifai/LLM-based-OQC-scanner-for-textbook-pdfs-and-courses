@@ -157,6 +157,20 @@ is often accepted.
   own duration ceiling or its file-size, transport-envelope, and token limits.
 - Preflight all applicable limits before dispatch. A duration-valid file is not
   automatically valid for a particular provider request.
+- #150 makes the first long-audio order concrete. Implement and live-prove A2a
+  as one standalone native Google Files lifecycle for an MP3 longer than 300
+  seconds: upload once, wait within a bound, generate once, and manually delete
+  the remote file during cleanup. [Google's Files API documentation](https://ai.google.dev/gemini-api/docs/files)
+  says uploaded files otherwise remain for up to 48 hours. The legacy Google
+  implementation proves the
+  upload/wait/generate shape but does not delete the remote file, so copy its
+  behavior only as evidence, not wholesale.
+- Do not add chunking, resume, parallel splitting, model switching, provider
+  fallback, or video integration to A2a. A2b may add the smallest proven
+  chunk/resume route toward the private ten-hour ceiling after A2a succeeds.
+  DashScope FileTrans remains a separate future provider path because current
+  live authorization is Google, not a reason to prebuild a shared long-audio
+  abstraction.
 
 ## PDF verification scale
 

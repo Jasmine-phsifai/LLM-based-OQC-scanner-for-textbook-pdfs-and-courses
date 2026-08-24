@@ -69,7 +69,10 @@ Phase 1 maturation is offline implementation-complete:
   Process/User/Machine environment or legacy QSettings, so no request was made;
 - replanned, in progress: the standalone Stage 2 vision/audio scaffold was
   removed; its audio-specific configuration boundary now lands with executable
-  Stage A1 short-MP3 recognition, followed by Stage A2 FileTrans. The A1
+  Stage A1 short-MP3 recognition, followed by provider-specific Stage A2 long
+  audio. #150 supersedes FileTrans-first ordering: the first A2a implementation
+  target is native Google Files because it is authorized for bounded live proof;
+  DashScope FileTrans remains a later independent provider route. The A1
   offline slice may proceed independently of the open Stage M paid image smoke;
   bounded Google image/audio live work is already authorized without a separate
   budget request, while DashScope live work still requires a recognized
@@ -96,7 +99,15 @@ Phase 1 maturation is offline implementation-complete:
   was simplified and its process contract was tightened, #103 refreshed the
   same bounded path successfully: catalog 37, exactly one provider call, and
   Google-reported input/output usage 150/9, with no retry or residue;
-- not started: Stage A2 long-audio recognition;
+- planned from executable evidence, not implemented: Stage A2 long-audio
+  recognition. #150 ran an audible 301.056-second MP4 through public
+  `recognize_video()` without network. Five frames completed through one
+  injected image call; the audio branch made zero provider calls and returned
+  typed `SOURCE_TOO_LARGE`, so the outcome was honestly partial and retained
+  its MP3. A2a is one standalone native Google Files upload, bounded readiness
+  wait, generation, and remote deletion for an MP3 longer than 300 seconds.
+  Chunking/resume is A2b; video integration waits for #127 cancellation and
+  #149 snapshot placement. No A2 runtime code is currently shipped;
 - implemented and live-proven: the first PDFium vision slice. One PDF
   becomes serial eight-page image groups, ordinary image sidecars preserve
   settled work, range markers preserve group order, and rendered pages have a
@@ -457,6 +468,11 @@ The following directions remain traceable but are not current work:
   A request-owned streamed disk snapshot is the recommended correction, but
   its output-sibling versus explicit public temp-directory contract remains an
   open maintainer choice; no partial snapshot implementation is shipped.
+  #150 then proves the next consumer gap with a real 301.056-second local video:
+  separate providers and partial outcomes behave honestly, but the current
+  five-minute audio adapter rejects before dispatch. The next executable work
+  is therefore standalone Google Files A2a, not more selector tuning, a generic
+  provider framework, or an untestable FileTrans-first abstraction.
   A clean archive of commit `c7f30f0` built and installed outside the
   repository without network, kept plain import free of heavy media modules,
   and completed one local video through separate injected image and fake-audio

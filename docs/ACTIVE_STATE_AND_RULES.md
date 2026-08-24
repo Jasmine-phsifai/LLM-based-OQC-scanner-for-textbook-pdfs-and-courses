@@ -69,7 +69,8 @@ working image configuration stayed unchanged and the audio-specific boundary
 landed with the bounded Stage A1 short-MP3 recognition slice. That direct,
 experimental slice is implemented and live-proven through native Google GenAI;
 it remains memory-only and does not provide persistence, resume, groups,
-upload, long-audio routing, or worker support. Stage A2 has not started. A1 did
+upload, long-audio routing, or worker support. #150 has activated Stage A2 as a
+bounded implementation queue, but no Stage A2 product code exists yet. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
 audio live tests are already authorized without a separate budget request.
 DashScope live work still requires a nonempty recognized credential and an
@@ -1371,6 +1372,32 @@ framework, add content-addressed storage, or implement only the frame half of
 combined-video stability. The maintainer must choose a hidden snapshot inside
 `output_dir` beside the final same-stem root, without a new API, versus an
 explicit temp-directory parameter before implementation.
+
+#150 proves that the separate audio branch is real but still too narrow for an
+ordinary lecture video. A generated, audible 301.056-second MP4 passed the
+public `recognize_video()` facade with an injected image provider and a guarded
+Google audio adapter. Frame recognition made exactly one injected call and
+retained five JPEGs; audio made zero provider calls because the fully decoded
+MP3 exceeded A1's 300-second ceiling. The returned outcome was honestly
+`partial`, with audio code `SOURCE_TOO_LARGE`, and retained the extracted MP3.
+No provider, credential, or network request was used, and the temporary root was
+removed. This is not a false-success bug, but it is executable evidence that the
+current video path cannot finish normal longer lectures.
+
+The next executable audio slice is Stage A2a: one standalone local MP3 longer
+than 300 seconds through the native Google Files API, using the currently served
+catalog and exactly one selected model. It must prove upload, bounded processing
+wait, one generation, manual remote-file deletion in cleanup, typed secret-safe
+failure, and lazy optional dependencies with a bounded authorized live request.
+Legacy supplies production evidence for this transport, but its current
+implementation does not delete the uploaded remote file; the active library
+must not copy that lifecycle gap. Stage A2a does not add chunking, resume,
+parallel splitting, model switching, fallback, a provider base class, or video
+integration. Stage A2b may add evidence-driven chunking/resume toward the
+private ten-hour product ceiling only after A2a is live-proven. Connecting long
+audio back to `recognize_video()` waits for the open #127 cancellation and #149
+snapshot-placement choices so it does not invent branch or source-lifetime
+semantics.
 
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide

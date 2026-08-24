@@ -71,7 +71,11 @@ implemented and live-proven: the lazy
 compact-name snapshot, exact audio-model configuration, native Google inline
 request, public facade, and in-memory result are implemented for one MP3 of at
 most 300 seconds. Persistence, resume, groups, upload, and long-audio routing
-do not exist. Stage A2 has not started.
+do not exist. #150 activates Stage A2 planning from a real 301.056-second public
+video probe, but no Stage A2 runtime code exists yet. The next standalone A2a
+slice is one native Google Files upload/wait/generate/delete lifecycle for an
+MP3 longer than 300 seconds; chunking, resume, fallback, and video integration
+remain later gates.
 
 #110 re-proved the distributable boundary after the recent audio changes. A
 clean archive ran 1325 tests with one expected skip, built a 202,692-byte wheel,
@@ -196,6 +200,16 @@ contract for one request-owned streamed video snapshot requires maintainer
 selection before implementation. The queue still
 stops further proactive
 filesystem/accounting edge scans.
+
+#150 additionally exercises an audible 301.056-second MP4 through the public
+video facade without network. The image branch retained five frames and made
+one injected call; the audio branch made zero provider calls and returned typed
+`SOURCE_TOO_LARGE`, leaving the top-level result honestly `partial` and keeping
+the extracted MP3. This confirms provider separation and failure honesty, while
+also proving that the five-minute A1 audio ceiling is not mature lecture-video
+support. Standalone Google Files A2a can proceed independently; integrating it
+into video still waits for #127 cancellation semantics and #149 source snapshot
+placement.
 
 #072 has implemented P1-c offline: `recognize(one.pdf)` lazily uses
 `ocrllm[pdf-vision]`, snapshots at most 100 MiB without whole-file Python reads,

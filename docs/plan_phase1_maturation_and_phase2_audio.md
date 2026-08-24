@@ -409,29 +409,36 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   live gates pass. All long-audio, FileTrans, WAV, M4A, and video entries remain
   deferred.
 
-### Stage A2 — Resumable Long MP3 / FileTrans
+### Stage A2 — Provider-specific long MP3
 
-- Add the separate FileTrans model identity to the audio settings when this
-  path consumes it. Short and long protocols remain explicit rather than
-  inferred from model names.
-- Submit, then atomically persist the provider task ID and strong source/request
-  identity before polling. Resume must reuse a matching task without upload or
-  resubmission.
-- Transcript segments are written incrementally under M2. A long transcription
-  that dies at 90% keeps 90%.
-- A failed or refused transcription is never presented as a transcript. This is
-  D1's rule applied to audio, and legacy shipped exactly this bug.
-- Do not copy the legacy stat-only task fingerprint, deterministic temporary
-  name, localized Markdown recovery regex, or automatic protocol fallback.
+- #150 supersedes FileTrans-first ordering. A2a is one standalone native Google
+  Files lifecycle for one local MP3 longer than A1's 300-second ceiling: discover
+  the current catalog, upload once, wait within a bound, generate once, delete
+  the remote file during cleanup, and close the client. Prove it with one
+  bounded authorized live request before adding chunking or video integration.
+- A2a has no chunking, resume, parallel splitting, model switching, fallback,
+  shared provider base class, or video orchestration. A failed or refused
+  transcription is never presented as a transcript, and cleanup failure must
+  not hide the primary result or error.
+- A2b may add the smallest evidence-driven Google chunk/checkpoint route after
+  A2a succeeds. Duration remains the routing input toward the private ten-hour
+  product ceiling, subject to current provider size and duration limits.
+- DashScope FileTrans remains a later independent provider path. When it is
+  implemented, add its explicit long-model identity, persist its task ID and
+  strong source/request identity before polling, and resume a matching task
+  without resubmission. Do not copy the legacy stat-only fingerprint,
+  deterministic temporary name, localized recovery regex, or automatic
+  protocol fallback.
 
 ### Stage A exit gate
 
-- A1 and A2 each have their own full-suite, import, capability, and live gates;
-  A1 does not claim FileTrans or long-audio maturity.
+- A1 and each A2 provider slice have their own full-suite, import, capability,
+  and live gates; A1 does not claim Files, FileTrans, or long-audio maturity.
 - A1 offline fake-provider tests cover exact one-call routing, source snapshot
   and validation, typed response failures, cancellation, completed-result
-  recovery, and output failure. A2 tests cover provider-task resume, segment
-  ordering, and incremental publication.
+  recovery, and output failure. A2a tests cover upload/readiness/generation,
+  remote cleanup, typed failures, and cancellation before remote work. Later
+  A2b tests cover segment ordering and incremental recovery.
 - A1 probe integration tests use committed synthetic CBR, VBR, and ID3-tagged
   MP3 fixtures plus empty, deterministic random, one-frame, incomplete-tail, and
   corrupted-middle cases. Their manifest pins hashes and expected decoded frame
@@ -441,8 +448,9 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   large media files.
 - `import ocrllm` weight unchanged; audio dependencies lazy behind an extra.
 - A1: one bounded real short MP3 transcribed end to end.
-- A2: one bounded real long MP3 plus interrupted polling/resume without
-  resubmission or repayment.
+- A2a: one bounded real MP3 longer than 300 seconds, with one upload, one
+  generation, and verified remote deletion. A2b separately proves interrupted
+  work can resume without replaying settled provider calls.
 - Capability reporting changes atomically with the executable slice; video
   remains unavailable.
 

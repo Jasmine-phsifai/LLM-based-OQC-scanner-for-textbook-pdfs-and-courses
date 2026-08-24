@@ -3397,3 +3397,19 @@ Audit and improve one remaining correctness property in provider-free video pars
 **真实 MP4 暴露的源生命周期缺陷。** 主审注意到 `extract_video_frames()` 依次通过不同 capture 打开同一个调用者路径：检查、粗扫、最终 JPEG 解码。实验建立两个同为 2 fps、6 帧、64×48 的 MP4，第一个全暗、第二个全亮；粗扫第一个后用 `os.replace()` 把同一路径换成第二个，再让公开函数继续。候选缩略图平均值全部小于 50，但最终成功发布 JPEG 的平均值大于 200，返回索引 `[5]`。也就是说选帧决定来自旧字节，保留图来自新字节，却没有错误。组合 `recognize_video()` 随后还会再次从原路径抽音频，因此图片与音频也可能来自不同版本。这比代码层猜测更强，是可执行的假成功证据；实验只使用自动清理的专属临时目录，没有仓库写入、provider 或网络。
 
 **两条修复路线与暂缓原因。** A（推荐）把 MP4 用固定块流式复制到 `output_dir` 下的隐藏兄弟快照，检查、比较、最终 JPEG、音频提取和两个识别分支共享同一快照，不新增公共参数。B 新增明确的 `video_temp_dir` 参数，让调用者选择大文件临时盘，但会扩大公共 API。只做前后 stat/hash 无法让多个 decoder 真正读取同一份字节，而且往往在产物产生后才发现；只修 `extract_video_frames()` 又会留下组合入口的音画版本混用。由于视频可能很大，临时盘位置是产品选择，本轮没有擅自提交半套 snapshot。后续无论选 A/B，都必须按块复制，不能整文件读入内存；也不应顺手抽象通用媒体缓存、内容寻址存储、恢复 manifest 或触碰 #127。
+
+## #150 — 2026-08-25：用 301 秒真实视频确定长音频下一步，而不是继续雕边角
+
+**本轮英文自我任务。**
+
+```text
+Establish the next executable video-product slice by testing how current public `recognize_video()` handles an ordinary lecture whose audio exceeds the short-audio adapter's 300-second limit, then reconcile that evidence with legacy parent behavior and the private ten-hour ceiling. Success means a real local MP4 probe with no provider calls, an honest distinction between deliberate current limits and false success, and the smallest end-to-end long-audio route that preserves image/audio provider separation. Implement only an authorized atomic slice or record an ordered plan. This matters because sub-five-minute video audio is not mature lecture-video support.
+```
+
+**假设、两条路线与实测。** 初始假设是当前视频的图片/音频 provider 已经分离，真正缺口是音频超过 A1 五分钟后无法完成，而不是再造 provider 框架。路线一继续检查离线代码边角；路线二直接造一个超过边界的有声视频，从公开入口观察是否假成功、是否误调用 provider、是否丢掉已有成果。选择路线二。使用本机已有 `imageio_ffmpeg` 生成低分辨率、**301.056 秒**、带音轨的 MP4；图片使用 injected provider，Google 音频 adapter 被替换成“一旦 dispatch 就报错”的哨兵。公开 `recognize_video()` 留取 **5** 张 JPEG，图片 provider 恰好 **1** 次调用；完整解码出的 MP3 因超过 300 秒返回 `SOURCE_TOO_LARGE`，音频 provider **0** 次调用。顶层是诚实的 `partial`，`audio_state="failed"`，并保留 MP3，没有把图片成果丢掉，也没有假称整体成功。专属临时根自动删除。这证明当前失败处理没有 bug，但也证明普通长一点的讲课视频还不能完整识别。
+
+**legacy 证据与主审改判。** 轻量只读审计确认两条父应用路线。DashScope FileTrans 是整文件异步任务，已有 **10,053.4 秒（约 2.79 小时）** MP3 的真实生产成功记录，任务状态会先落盘再轮询；legacy Google 长音频则使用 native `google-genai` Files API，默认按 1,800 秒逻辑段加 30 秒上下文切片，并逐段写 checkpoint。原先可以把 FileTrans 当作 A2 第一条路，但当前没有 DashScope 付费授权/凭据可完成 live gate，而 Google 已明确免费授权，不能优先制造一个暂时无法真实证明的抽象。因此把最小下一步改为 standalone Google A2a。主代理逐行核对 legacy `transcribe_long_audio()`：它上传、等待 `ACTIVE`、再 `generate_content()`，只删除中文路径所需的本地 ASCII 临时副本，**没有删除远端 Files 资源**。Google 官方当前文档确认 `client.files.delete(name=...)` 可手动删除，未删除文件最长保存 48 小时。新库应继承经生产证明的 transport，而不是继承这个生命周期缺口。
+
+**确定的执行顺序。** A2a 只接收一个已经由 library 拥有的本地 MP3，时长大于 300 秒；实时发现当前模型，显式选择一个模型；上传一次，在有界时间内等待处理，生成一次，并在 `finally` 中尝试删除远端文件和关闭 client。失败必须类型化、脱敏，不得让清理失败遮住主要错误，也不得把未完成说成成功。用一段授权的真实 301 秒以上音频做一次有界 live gate，同时继续保持 `import ocrllm` 不加载 Google SDK 或媒体重依赖。A2a **不**加入切片、并发、resume、模型切换、fallback、provider base class、视频接线或十小时压力测试。A2a live 证明后，A2b 才根据真实限制加入最小切片/checkpoint，朝私有十小时产品上限推进；DashScope FileTrans 以后作为独立 provider 路线，不强塞进共享协议。长音频接回 `recognize_video()` 要等 #127 取消语义与 #149 源快照位置确定，否则会同时偷定分支结算和大文件生命周期。
+
+**过度设计复查与本轮完成边界。** 本轮没有产品代码、依赖、公开 API、测试文件或 frozen `contracts/worker` 改动，也没有因为 301 秒失败去放宽 A1 硬上限。没有搬 legacy 的 30 分钟切片、六路 FFmpeg、重试/换模链、质量检查、FileTrans task schema 或通用 remote-resource manager。远端删除不是假想防御：Files 资源由本次请求创建，官方明确其保存期，明确回收是单请求生命周期的必要闭环。相反，现在直接设计十小时切片算法、双 provider 统一任务状态或视频 resume 才是过度扩张。本轮只把一个真实 consumer 缺口和下一项可运行原子任务写入现有权威文档。
