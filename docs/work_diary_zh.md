@@ -2648,3 +2648,17 @@ Atomic task — Iteration #102: re-evaluate the paused P1-d manual PDF repair de
 **三选一收紧与建议。** A 要把当前 fail-fast producer 改成完整 all-range partial 模型，仅为小 patch 制造 marker，明显超过 legacy feature，也违背“不要沿 60—64 的防御方向继续”。C 对 active outage 路径是事实：只有 resume 能恢复未尝试后缀；但维护者已明确希望 sidecar 丢失时仍能修已经产出的 Markdown。故唯一忠实候选是收紧后的 B：只处理调用者明确提供、且 Markdown 已有 exact legacy failed marker 的历史文件，明确不恢复任何未标记后缀。当前只剩一个必须由维护者确认的范围问题：这些 historical legacy Markdown 是否正式成为新 library 的兼容输入；确认“是”才设计独立窄 repair slice，确认“否”则冻结 P1-d。
 
 **验证、过度设计复盘与边界。** active PDF 单文件为 **11 passed in 1.73s**，legacy partial marker 单例和 parser probe 如上，`git diff --check` 通过。本轮没有写 parser、marker schema、partial state、第二 resume、caller range 字段、通用 repair framework 或 provider 代码；也没有把 legacy 的中文 regex、逐页调用、非原子 writer、GUI 和错误吞并复制进 active。`contracts/`、`worker/`、social、provider generalization 与两个用户未跟踪文件均未动，没有 API/凭据/下载。authority、maintainer decision、START_HERE、migration、package AGENTS/README 只把过时的宽泛三选一压缩成一条可回答的 compatibility-scope gate。
+
+## #103 — 2026-08-24：修改后的 Google 音频 runner 重新通过真实服务
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #103: run one bounded foreground Google short-audio regression through the #099/#100 maintained CLI and verify that its new stage-aware failure contract survives a real provider interaction. Success means reconciling current authority and diary, generating one synthetic authorized speech MP3 without adding dependencies, discovering the live catalog through the existing runner, making no retry or model switch, recording only sanitized status/model/call/usage or typed code/scope/stage evidence, and proving credential/source/snapshot cleanup. This matters because the runner was simplified and its failure schema changed after the last live outage; offline tests must not become a substitute for “the product path still works.”
+```
+
+**前提、路线与分工。** P1-d 的唯一问题仍是维护者是否把带有明确 legacy 失败标记的历史 Markdown 纳入新 library 的兼容输入；未得到回答前继续冻结，本轮没有借 live 测试暗中推进 repair。路线①继续引用 #069/#082 的成功和 #097 的临时失败；路线②在 #099 删除日常 invalid-key 请求、#100 补齐真实 CLI failure schema 后重新跑一次免费 Google。选择②。按照维护者关于固定下载/主动检查应交给轻量代理的规则，轻量代理只负责在 `%TEMP%` 生成和验证一次性语音；主代理负责审查 runner、凭据生命周期、唯一 provider 命令、结果解释和文档。
+
+**样本与一次真实调用。** 样本内容是无隐私合成短语 “OCR LLM audio test one two three.”，经既有 `D:\Anaconda\envs\STA\Library\bin\ffmpeg.exe` 转为单声道 22050 Hz MP3；大小 **28,464 bytes**，时长 **3.468889 秒**，SHA-256 为 `e05299231d7b719318c67b69d973cafba35c2cf1146cb7aa47cfc10a0b11b21b`。`D:\Anaconda\envs\OCRLLM\python.exe` 使用已装 miniaudio 完整解码通过，没有安装或下载依赖。主代理只以布尔值确认 QSettings 中 Google 凭据存在且非空，再把它限于 runner 子进程环境；没有把值写进命令、日志、源码或文档。唯一一次前台执行选择 `gemini-2.5-flash`，实时 catalog 为 **37**，公共 facade 成功，`provider_call_count=1`，Google 返回 input/output token **150/9**，exit **0**，耗时 **7,099 ms**。没有重试、换模型、fallback、invalid-key probe，也没有输出 transcript 或 provider 原文。
+
+**生命周期、验证、未来决定与过度设计复盘。** 调用结束后子进程 Google 环境变量已删除，父进程的 `GOOGLE_API_KEY`/`GEMINI_API_KEY` 均不存在；近十分钟 `ocrllm-audio-*` snapshot 目录为 **0**。轻量代理核对一次性目录位于 Windows TEMP 后只删除该精确目录，并确认 `EXISTS_AFTER=False`。Google audio runner/adapter 离线回归为 **31 passed in 1.24s**；`git diff --check` 通过，新增 tracked diff 的 key/bearer/credential 模式均为 **0**，冻结目录无 diff。维护者另行说明已配置多个免费 provider 测试源，其中包括额外的 OpenAI-compatible Volcengine endpoint；未来 OCRLLM 稳定后，希望新增 provider 像新增独立 class，各自承载并行、effort、实测错误处理默认值，之后才考虑多 provider fallback/API pool。本轮只把它写成“不堵死未来、但现在不实现”的约束：没有 provider base class、统一 fallback、连接池、模型逐个补丁、第二 transport 或公共 API 变化。真实成功说明 #099/#100 没破坏产品主路径，因此也没有为了制造代码变更而改 runner。两个用户未跟踪文件、`contracts/`、`worker/`、legacy 和 social 均未动。

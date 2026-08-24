@@ -304,6 +304,18 @@ also reduced to `UNEXPECTED_SAFE_FAILURE` with null scope and the known runner
 stage; their text is never published and process-control exceptions remain
 outside the `Exception` catch.
 
+#103 reran that maintained CLI once in the foreground after the #099/#100
+changes. A fresh 3.468889-second, 28,464-byte synthetic-speech MP3 passed
+through the public facade on `gemini-2.5-flash`; the live catalog contained 37
+models, recognition made exactly one provider call, and Google reported 150
+input and 9 output tokens. The runner exited 0 after 7,099 ms. No retry, model
+switch, fallback, invalid-key probe, transcript, provider text, or credential
+was published. The child credential environment was removed, the parent had no
+Google/Gemini credential environment, no recent audio snapshot directory
+remained, and the exact generated fixture directory was deleted. This refresh
+proves the revised routine runner against a real provider interaction; it does
+not expand the short-audio product boundary.
+
 Exit gate met: one public real-MP3 result completed with catalog/model selection,
 provider limits, exact call/usage evidence, and no false success. The earlier
 model-scoped quota failure remains recorded rather than hidden by retry or
@@ -600,6 +612,17 @@ Paid DashScope live re-verification, the future local-model OpenAI-compatible
 path, a possible secondary Google compatibility transport, and long audio are
 P2. A second Google transport starts only after a proven need and maintainer
 confirmation; wire-shape similarity is not evidence of equivalent behavior.
+
+The maintainer has configured multiple free provider test sources, including an
+additional OpenAI-compatible Volcengine endpoint, for later robustness work.
+They are test assets, not authorization to begin provider generalization now.
+After OCRLLM itself is stable, the intended direction is one independently
+configurable provider class per provider, with provider-specific defaults for
+parallelism, effort, and observed error handling; later fallback or API-pool
+behavior must be justified by real provider evidence. Current slices should
+keep their dispatch and error boundaries legible enough not to obstruct that
+future, but must not add a base class, common fallback engine, or per-model
+patchwork in anticipation of it.
 
 Usage work is not a separate billing engine. As each real adapter lands,
 accumulate locally observed calls plus provider-reported input and output tokens
