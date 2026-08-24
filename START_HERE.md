@@ -150,7 +150,10 @@ separate image/audio configs and exact-or-unknown branch call evidence; the next
 bounded live run must use it with a controlled one-image-group fixture. #136's
 first such attempt lost its external asynchronous session identifier after the
 runner completed, so it proves no provider outcome; the next controller must
-poll that exact session and preserve safe JSON before cleanup.
+poll that exact session and preserve safe JSON before cleanup. #137 did so: one
+image call succeeded, one audio call returned `PROVIDER_QUOTA_EXHAUSTED`, and
+the public outcome/composition honestly preserved a two-asset partial result
+without retry or model switching.
 Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

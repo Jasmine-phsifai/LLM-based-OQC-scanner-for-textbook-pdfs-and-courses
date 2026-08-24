@@ -371,6 +371,12 @@ is often accepted.
   unknown instead of becoming zero. Ordinary multi-group video remains valid
   library input; do not duplicate extraction or generalize provider routing to
   make this narrow smoke accept arbitrary media.
+- #137 live evidence confirms why the runner must preserve partial outcomes:
+  one Google image call succeeded, while one audio call returned
+  `PROVIDER_QUOTA_EXHAUSTED`; composition retained both the successful result
+  and extracted MP3. Do not retry or switch models inside the current adapter.
+  Future caller-owned provider/model routing may consume this typed evidence,
+  but this quota event does not authorize building that future layer now.
 
 ## Resolved confirmation and next authority
 

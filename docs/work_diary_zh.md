@@ -3205,3 +3205,19 @@ Atomic task — Iteration #136: use the maintained combined-video smoke runner t
 **零 provider 收尾核查。** 主代理没有自行补跑，而是让同一轻量任务只做只读/清理审计。精确 `ocrllm-video-runner-*` 临时根和其中捕获均不存在；没有任务相关 Python/FFmpeg 进程；当前任务环境没有 Google/Gemini 凭据变量；仓库无修改。这个结论只证明生命周期清理，没有证明产品结果。它与 #134 的区别是：#134 至少保留了 partial outcome，只丢音频失败细节；#136 连安全顶层 JSON 都没有，因此更不能归因于 provider 或 library。
 
 **决定、过度设计复查与下一步。** 本轮不改产品代码、不改维护 runner，也不为了外层工具失误添加 telemetry、第二个捕获系统、自动 retry 或 API pool。问题发生在协作任务没有对返回的 exec session 做后续 poll，不是当前 Python runner 的可复现缺陷。下一次独立、受控尝试必须把 session ID 作为唯一状态保存，并用同一 ID 等待到进程退出；安全 JSON 验证完成后才能删捕获根。若下次仍出现同一外层阻塞，才重新评估是否需要仓库内持久捕获入口。本轮只更新当前状态和日记，不把一次无证据执行写成绿色或红色产品结果。
+
+## #137 — 2026-08-25：真实 Google 视频门禁保留了 quota 失败与 partial 成果
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #137: repeat the controlled Google combined-video gate once with a recoverable controller protocol, preserving the maintained runner's safe JSON even if the outer execution becomes asynchronous. Success means one controlled fixture, one runner invocation, retained session ID polling, capture files that survive until zero-provider validation, exact branch/error/call evidence, no retry or fallback, and cleanup only after evidence is secured. This matters because #136 failed outside the library; repeating the same fragile cleanup order would waste another authorized request without testing the product.
+```
+
+**执行协议纠正。** 本轮没有给 Python runner 新增持久化参数，而是先修正已经被 #136 证明有错的外层顺序。轻量任务创建独立系统 TEMP 根，生成同一仓库自有文字图片加 `System.Speech` 固定短语的视频；provider 命令只运行一次，并把 stdout、stderr、exit、耗时留在外层根。若执行工具返回 session ID，任务必须保存并只轮询该 ID，不能另起 provider 命令。外层根不在 provider 命令的 finally 中删除，而是在进程结束、零 provider 解析和脱敏检查全部完成后单独删除。这样即使协作层再次断开，证据也不会和 session 一起丢失。
+
+**真实安全结果。** 当前 Google catalog 为 **37** 个模型，显式使用 `gemini-2.5-flash`。公开视频调用保留 **1** 张图片、形成 **1** 个组；图片分支 `complete`，恰好 **1** 次 generation。音频分支已经恰好进入 **1** 次 generation，随后返回稳定错误 `PROVIDER_QUOTA_EXHAUSTED`，固定 stage 为 `audio_recognition`。因此 library outcome 为 `partial`，没有把图片成功伪装成整体失败；provider-free composition 也为 `partial`，保留 JPEG 和已抽取 MP3 共 **2** 个 assets。runner 顶层为 `failed`、exit 1，是因为这项双分支门禁要求图片和音频都完成，不表示 partial 成果被丢弃。总耗时约 **20,982 ms**，没有 retry、fallback、第二模型或第二次 runner。
+
+**脱敏、生命周期和主审。** runner JSON/schema 校验通过，stderr 为空；凭据、识别正文、输入输出路径、raw exception/response 扫描均未命中。外层证据根在解析前一直保留，完成后先确认位于系统 TEMP，再删除并确认不存在；没有任务进程或凭据环境残留。主代理复核 Google adapter：在 `generate_content()` 前明确把 `provider_calls_attempted` 从 0 变为 1，quota advisory 映射为 `PROVIDER_QUOTA_EXHAUSTED`，该错误不可重试。第一次离线命令误写了不存在的 `tests/test_google_genai_error_mapping.py`，所以零测试执行；改用真实 `test_google_genai_adapter.py` 后，Google runner、adapter、公开视频和组合邻居共 **60 passed in 1.16s**，`compileall` 和 `git diff --check` 通过。
+
+**产品判断与过度设计复查。** 这次结果没有证明产品代码缺陷，反而证明当前分支独立结算、稳定错误分类、调用次数和 partial 组合都按预期工作。没有为了免费层 quota 暂时耗尽而降低响应验证、自动重试、立即换模、加入 provider pool 或实现未来 provider class。维护者已经明确未来会让不同 provider/模型有独立策略，但那要在 OCRLLM 本身稳定后由 caller-owned routing 消费现有类型化证据；本轮 quota 事件不授权提前搭建。下一步不应立刻再次消耗同一音频 quota，而应等待刷新期间继续修复/验证已有视频 library 边界，仍保留 #127 取消语义的维护者决策门槛。

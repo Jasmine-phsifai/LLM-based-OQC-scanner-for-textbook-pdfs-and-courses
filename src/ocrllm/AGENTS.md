@@ -38,6 +38,10 @@ from legacy. #136's first post-runner attempt lost the external exec
 session identifier after completion, so no provider result may be inferred; a
 future delegated run must poll the exact yielded session and validate captured
 safe JSON before cleanup. These are controller rules, not product features.
+#137 followed that protocol and proved a one-call image success plus a one-call
+audio `PROVIDER_QUOTA_EXHAUSTED`, with honest partial outcome/composition and
+two retained assets. Treat this as expected non-retryable provider evidence;
+do not add adapter retry, automatic model switching, or provider pooling.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

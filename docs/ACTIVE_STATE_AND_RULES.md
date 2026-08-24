@@ -1080,6 +1080,28 @@ completion, then validate the persisted safe JSON before deleting its owned
 capture root. This operational correction does not justify another runner,
 retry layer, telemetry system, or product API.
 
+#137 closes the post-runner evidence gap with one independently authorized,
+non-retried live attempt using the recoverable controller order required by
+#136. The current catalog contained 37 models and the runner used explicit
+`gemini-2.5-flash`. Public `recognize_video()` retained one frame in one group;
+the image branch completed in exactly one generation call. The audio branch
+entered exactly one generation call and returned the stable non-retryable code
+`PROVIDER_QUOTA_EXHAUSTED` at runner stage `audio_recognition`. The public
+outcome and provider-free composition both remained honestly partial, and the
+composition retained the JPEG plus extracted MP3 as two assets. The runner
+exited 1 after approximately 20,982 ms because this binary gate requires both
+branches, not because the successful image result was discarded.
+
+The safe JSON/schema check passed, stderr was empty, and scans found no
+credential, recognition content, source/output path, raw response, or exception
+text. The outer evidence root survived until zero-provider parsing, then was
+validated under system TEMP and removed; no retry, model switch, fallback,
+dependency change, or repository mutation occurred. This is expected robustness
+evidence, not a product defect: quota exhaustion must remain visible and must not
+trigger an adapter-internal retry. A future caller/provider-routing slice may
+decide when another model is appropriate, but this result does not authorize
+building that layer now. Sixty focused Google/video/composition regressions pass.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,
