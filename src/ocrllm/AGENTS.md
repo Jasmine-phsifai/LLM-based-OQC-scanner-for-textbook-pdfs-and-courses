@@ -88,6 +88,8 @@ long-audio chunk scope open. Do not implement either until the maintainer choose
 #166 makes source order a constructor invariant for every public video outcome:
 retained frame indices are strictly increasing and timestamps never move backward.
 Do not add path-identity, timestamp-uniqueness, or generic ordering machinery.
+#167 also makes contiguous `0..n-1` frame-group indices a constructor invariant;
+do not duplicate that immutable structural check during composition.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

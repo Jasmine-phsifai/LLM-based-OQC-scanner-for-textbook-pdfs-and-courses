@@ -195,3 +195,24 @@ def test_video_outcome_rejects_retained_frames_out_of_source_order(
             frame_outcomes=(BatchItemOutcome(index=0, result=frame_result),),
             audio_error=VideoError(code="VIDEO_NO_AUDIO_STREAM"),
         )
+
+
+def test_video_outcome_rejects_out_of_order_group_indices(tmp_path: Path) -> None:
+    output_root = tmp_path / "video"
+    retained_frames = (
+        RetainedVideoFrame(0, 0.0, output_root / "frames" / "frame-0.jpg"),
+        RetainedVideoFrame(10, 5.0, output_root / "frames" / "frame-10.jpg"),
+    )
+    frame_result = _frame_outcome().result
+    assert frame_result is not None
+
+    with pytest.raises(ValueError, match="contiguous caller ordering"):
+        VideoRecognitionOutcome(
+            output_root=output_root,
+            retained_frames=retained_frames,
+            frame_outcomes=(
+                BatchItemOutcome(index=1, result=frame_result),
+                BatchItemOutcome(index=0, result=frame_result),
+            ),
+            audio_error=VideoError(code="VIDEO_NO_AUDIO_STREAM"),
+        )

@@ -56,6 +56,14 @@ class VideoRecognitionOutcome:
             raise TypeError(
                 "video frame_outcomes must contain exact BatchItemOutcome values"
             ) from None
+        expected_group_indices = tuple(range(len(self.frame_outcomes)))
+        actual_group_indices = tuple(
+            outcome.index for outcome in self.frame_outcomes
+        )
+        if actual_group_indices != expected_group_indices:
+            raise ValueError(
+                "video frame group outcomes must have contiguous caller ordering"
+            ) from None
         for frame_outcome in self.frame_outcomes:
             if frame_outcome.result is None:
                 continue

@@ -1591,6 +1591,24 @@ tests. No path-identity rule, timestamp uniqueness, generic ordering layer,
 provider call, API signature, dependency, frozen boundary, or open decision
 changed.
 
+#167 relocates the existing contiguous frame-group ordering invariant to the
+public outcome boundary. Previously a caller could construct frame outcomes
+with indices `(0, 2)` or `(1, 0)`; `VideoRecognitionOutcome.status` reported
+`complete`, and only `compose_video_result()` later raised `ValueError`. This
+contradicted the documented workflow that asks callers to inspect status before
+composition.
+
+`VideoRecognitionOutcome.__post_init__()` now requires exact group indices
+`0..n-1`. The identical check was removed from composition rather than copied,
+because the outcome and its exact frozen child values cannot mutate after valid
+construction; `dataclasses.replace()` also reconstructs and revalidates. The
+existing regression moved from the composition suite to the constructor suite
+and failed before implementation. An independent public-type reproduction
+proved both gap and reordering cases falsely complete, while `(0, 1)` remained
+valid and composable. Outcome/composition tests pass 25 tests; the complete
+video/import neighbor set passes 76 tests. No metadata identity rule, provider
+behavior, API signature, dependency, frozen boundary, or open decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

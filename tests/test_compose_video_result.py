@@ -497,36 +497,3 @@ def test_compose_video_result_rejects_frame_identity_drift(tmp_path: Path) -> No
 
     with pytest.raises(ValueError, match="does not match retained frames"):
         compose_video_result(outcome)
-
-
-def test_compose_video_result_rejects_out_of_order_group_indices(
-    tmp_path: Path,
-) -> None:
-    first = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
-    second = _frame(tmp_path / "video" / "frames" / "frame-2.jpg", 10, 5.0)
-    outcome = VideoRecognitionOutcome(
-        output_root=tmp_path / "video",
-        retained_frames=(first, second),
-        frame_outcomes=(
-            BatchItemOutcome(
-                index=1,
-                result=_frame_result(
-                    markdown="First board.",
-                    indices=(0,),
-                    timestamps=(0.0,),
-                ),
-            ),
-            BatchItemOutcome(
-                index=0,
-                result=_frame_result(
-                    markdown="Second board.",
-                    indices=(10,),
-                    timestamps=(5.0,),
-                ),
-            ),
-        ),
-        audio_error=VideoError("No stream.", code="VIDEO_NO_AUDIO_STREAM"),
-    )
-
-    with pytest.raises(ValueError, match="contiguous caller ordering"):
-        compose_video_result(outcome)

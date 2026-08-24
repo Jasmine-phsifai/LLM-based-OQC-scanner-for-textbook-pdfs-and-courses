@@ -35,13 +35,6 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     composed_indices: list[int] = []
     composed_timestamps: list[float] = []
 
-    expected_group_indices = tuple(range(len(outcome.frame_outcomes)))
-    actual_group_indices = tuple(item.index for item in outcome.frame_outcomes)
-    if actual_group_indices != expected_group_indices:
-        raise ValueError(
-            "video frame group outcomes must have contiguous caller ordering"
-        ) from None
-
     for item in outcome.frame_outcomes:
         indices, timestamps = _read_frame_group_identity(item)
         composed_indices.extend(indices)

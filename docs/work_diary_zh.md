@@ -3645,3 +3645,17 @@ Atomic task — Iteration #166: prove and close one ordering invariant gap in th
 **独立复现与最小实现。** 轻量只读代理仅用公开类型和临时文件额外复现四种输入：index 递减、index 重复、timestamp 递减、两者组合。修复前四者都被构造器接受，顶层均为 `complete`，composition 也成功返回 `complete`。代理同样建议局部 constructor check，拒绝通用 ordering abstraction。实现只在 exact `RetainedVideoFrame` 类型确认后，用 stdlib `pairwise` 检查相邻项：`current.frame_index` 必须大于 previous，timestamp 只允许相等或增加；失败直接 `ValueError("...source order")`。有效 extractor tuple、路径布局和 child identity 逻辑不变。
 
 **验证、同步与过度设计复查。** outcome 全集为 **9 passed in 0.04s**；frame recognition、完整 orchestration、composition、publication、受控 runner、lightweight/import 邻接集合为 **67 passed in 1.96s**，`compileall -q src tests tools` 通过。公开构造契约变化同步到 package README、package `AGENTS.md`、迁移状态和唯一 authority。无网络、provider、凭据、依赖、API signature、frozen `contracts/worker` 或 #127/#149/#152 变化。没有增加 path canonicalization、same-file graph、timestamp 唯一性、generic media identity、serializer 或共享 validator；这些都超过已经复现的 source-order 假完成问题。
+
+## #167 — 2026-08-25：帧组顺序在 outcome 构造时拒绝，不再等到组合阶段
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #167: move the existing contiguous frame-group ordering invariant to the public `VideoRecognitionOutcome` constructor so an invalid outcome cannot report `complete` and fail only during composition. Success means synchronizing and rereading authority/diary, reproducing out-of-order group indices through public types, proving the current status/composition contradiction, relocating rather than duplicating the existing check, updating the regression at the correct boundary, preserving valid orchestration outcomes, running focused video tests, and committing/pushing one coherent change. This matters because callers are explicitly told to inspect outcome status before composition; structural invalidity must therefore be rejected before a misleading status can exist.
+```
+
+**真实矛盾、两条路线与红灯。** 同步 origin、重读 authority、日记和 package 规则后，定位到 composition 已有 `frame_outcomes` index 必须等于 `range(len(...))` 的检查，但 outcome 构造器没有。公开视频 outcome 不可变，却能先接受 `(0, 2)` 或 `(1, 0)` 的 group indices，并由完整 child 计算出 `status="complete"`，到 composition 才报 `contiguous caller ordering`；这直接冲突于 #143 要求调用者先看 status 的用法。路线 A 把同一检查复制到 constructor，保留 composition 防线；路线 B 移动检查并删除重复。选择 B：outcome、tuple 和 exact child 都 frozen，合法构造后不会改变；`dataclasses.replace()` 也会重新运行 constructor。现有 composition 回归迁到 outcome suite 后先稳定得到 **1 failed**，证明检查确实还在错误层级。
+
+**独立复现与最小移动。** 轻量只读代理用公开类型和真实临时 JPEG 分别证明 `(0, 2)` 与 `(1, 0)` 修复前构造成功、status 为 complete、composition 才失败；合法 `(0, 1)` 构造和组合均 complete。实现把原来四行 expected/actual/compare 逻辑原样放到 `VideoRecognitionOutcome.__post_init__()` 的 exact child type 检查之后，并从 `compose_video_result()` 删除；没有增加新函数、异常、状态或第二套规则。测试名称从“compose rejects”改为“outcome rejects”，对应真实职责。
+
+**验证、同步与过度设计复查。** outcome 与 composition 合集为 **25 passed in 0.11s**；frame recognition、完整 orchestration、publication、受控 runner、lightweight/import 邻接集合为 **51 passed in 1.89s**，`compileall -q src tests tools` 通过。公开 contract 同步到 README、package `AGENTS.md`、迁移状态和唯一 authority。无网络、provider、凭据、依赖、API signature、frozen `contracts/worker` 或 #127/#149/#152 变化。没有保留重复检查、增加 generic sequence validator、serializer、mutable builder 或 transaction；这轮既提前拒绝 false-complete 结构，也实际减少 composition 中的维护点。
