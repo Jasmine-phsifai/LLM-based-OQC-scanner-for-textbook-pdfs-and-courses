@@ -85,6 +85,9 @@ frame in the bounded coarse scan when the five-second grid does not; preserve
 this invariant without adding a configurable sampler or second scene detector.
 #149 keeps request-owned video source snapshot placement open, and #152 keeps
 long-audio chunk scope open. Do not implement either until the maintainer chooses.
+#166 makes source order a constructor invariant for every public video outcome:
+retained frame indices are strictly increasing and timestamps never move backward.
+Do not add path-identity, timestamp-uniqueness, or generic ordering machinery.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

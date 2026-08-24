@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import pairwise
 from pathlib import Path
 from typing import Literal
 
@@ -32,6 +33,14 @@ class VideoRecognitionOutcome:
         if any(type(frame) is not RetainedVideoFrame for frame in self.retained_frames):
             raise TypeError(
                 "video retained_frames must contain exact RetainedVideoFrame values"
+            ) from None
+        if any(
+            current.frame_index <= previous.frame_index
+            or current.timestamp_seconds < previous.timestamp_seconds
+            for previous, current in pairwise(self.retained_frames)
+        ):
+            raise ValueError(
+                "video retained_frames must remain in source order"
             ) from None
         frames_directory = self.output_root / "frames"
         if any(

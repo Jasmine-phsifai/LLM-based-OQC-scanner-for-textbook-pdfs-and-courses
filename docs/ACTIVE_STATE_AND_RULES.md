@@ -1570,6 +1570,27 @@ Public video entry points remain callable; the runner, publication, import, and
 lightweight-import set passes 31 tests in 0.49 seconds. No runtime code, API,
 provider call, dependency, frozen boundary, or product decision changed.
 
+#166 closes a public outcome ordering hole without changing provider execution.
+`recognize_video_frames()` already rejected duplicate or decreasing frame
+indices and backward timestamps before dispatch, but the separately public
+`VideoRecognitionOutcome` constructor did not. A downstream caller could supply
+retained frames and matching child metadata in the same invalid order; the
+outcome reported `complete` and `compose_video_result()` successfully published
+that order because identity equality alone cannot prove source order.
+
+The constructor now requires adjacent retained-frame indices to increase
+strictly and timestamps not to decrease. Two parameterized regressions first
+failed for duplicate indices and backward timestamps, then pass. An independent
+public-type reproduction additionally proved decreasing indices and combined
+invalid cases previously composed as complete. A local adjacent-pair check was
+chosen over a configurable shared validator because constructor errors and
+pre-dispatch `InvalidSource` errors have intentionally different public
+semantics. Outcome tests pass 9 tests; the complete outcome, recognition,
+composition, publication, runner-contract, and import neighbor set passes 76
+tests. No path-identity rule, timestamp uniqueness, generic ordering layer,
+provider call, API signature, dependency, frozen boundary, or open decision
+changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

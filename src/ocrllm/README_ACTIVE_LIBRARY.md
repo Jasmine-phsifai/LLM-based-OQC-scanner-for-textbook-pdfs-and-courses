@@ -351,6 +351,8 @@ complete. Successful frame-group outcomes must contain exact image
 `VideoRecognitionOutcome` uses an exact lexical artifact layout:
 every retained frame path has parent `output_root / "frames"`, and an audio
 artifact, when present, is exactly `output_root / "audio.mp3"`.
+Retained frame indices must be strictly increasing and their timestamps must
+not move backward.
 `VIDEO_NO_AUDIO_STREAM` must be carried by a `VideoError` and cannot be paired
 with an audio artifact. Manual constructors must reuse
 those same `Path` values; the contract does not resolve aliases or symlinks.

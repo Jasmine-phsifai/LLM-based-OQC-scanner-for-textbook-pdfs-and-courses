@@ -154,3 +154,44 @@ def test_video_outcome_does_not_resolve_lexical_path_aliases(
             frame_outcomes=(_frame_outcome(),),
             audio_error=VideoError(code="VIDEO_NO_AUDIO_STREAM"),
         )
+
+
+@pytest.mark.parametrize(
+    ("indices", "timestamps"),
+    [
+        ((0, 0), (0.0, 1.0)),
+        ((0, 10), (5.0, 0.0)),
+    ],
+)
+def test_video_outcome_rejects_retained_frames_out_of_source_order(
+    tmp_path: Path,
+    indices: tuple[int, int],
+    timestamps: tuple[float, float],
+) -> None:
+    output_root = tmp_path / "video"
+    retained_frames = tuple(
+        RetainedVideoFrame(
+            frame_index,
+            timestamp,
+            output_root / "frames" / f"frame-{position}.jpg",
+        )
+        for position, (frame_index, timestamp) in enumerate(
+            zip(indices, timestamps, strict=True)
+        )
+    )
+    frame_result = RecognitionResult(
+        markdown="Frames accepted in the supplied order.",
+        source_type="image",
+        metadata={
+            "video_frame_indices": indices,
+            "video_frame_timestamps_seconds": timestamps,
+        },
+    )
+
+    with pytest.raises(ValueError, match="source order"):
+        VideoRecognitionOutcome(
+            output_root=output_root,
+            retained_frames=retained_frames,
+            frame_outcomes=(BatchItemOutcome(index=0, result=frame_result),),
+            audio_error=VideoError(code="VIDEO_NO_AUDIO_STREAM"),
+        )

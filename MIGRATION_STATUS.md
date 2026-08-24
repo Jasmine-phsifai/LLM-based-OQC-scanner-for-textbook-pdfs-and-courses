@@ -431,7 +431,9 @@ The following directions remain traceable but are not current work:
   successful frame-group result must describe an image. Its public
   outcome also rejects frame/audio paths outside the exact
   lexical `output_root/frames/*` and optional `output_root/audio.mp3` layout;
-  it does not resolve aliases or symlinks. `compose_video_result()` explicitly
+  retained frame indices must be strictly increasing and timestamps cannot move
+  backward, including for manually constructed outcomes. It does not resolve
+  aliases or symlinks. `compose_video_result()` explicitly
   converts a returned complete
   or partial outcome into a memory-only standard video result with ordered
   frame and audio sections; it does not publish Markdown itself, resume video work,

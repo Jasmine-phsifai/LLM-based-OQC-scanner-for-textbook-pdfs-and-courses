@@ -3631,3 +3631,17 @@ Atomic task — Iteration #165: reconcile the active-package `AGENTS.md` video i
 **最小减法与保留的历史理由。** 没有删除 #134/#136 的失败事实：它们仍解释为什么 live controller 必须拥有 exact yielded session、在清理前验证 redacted safe JSON。删掉的是已完成的“next/future gate”语气；当前文字记录 #137 的图片成功/音频 quota partial 与 #162 的图片 invalid-response/音频 quota failed，并规定只有相关边界或运行时变化后才值得再次 live，不能为了刷绿重跑。publication 明确为 #144/#146 已交付，只有 video recovery/resume 仍 unavailable 且不兼容 legacy。distribution scope 同步为 image/PDF/audio/video，同时明确不声称 `recognize()`/video 自动长音频路由、chunking/resume、fallback 或 worker。#148 改成尾帧不变量；#149 源快照位置和 #152 长音频切片范围显式继续等待维护者。
 
 **验证与过度设计复查。** 公开 `recognize_video`、`compose_video_result`、`publish_video_result` 均为 callable；runner、publication、import contract 和 lightweight import 合集为 **31 passed in 0.49s**，`git diff --check` 通过。无网络、provider、凭据、依赖安装、运行时代码、API、测试、frozen `contracts/worker` 或产品选择变化。没有新增状态文件、自动文档同步器、文档测试框架或 provider 抽象；这轮只是从会重复触发已完成工作的当前指令中删除陈旧时态，并保留真正仍有效的安全边界。
+
+## #166 — 2026-08-25：公开视频结果不再接受逆序或重复的保留帧身份
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #166: prove and close one ordering invariant gap in the public `VideoRecognitionOutcome` constructor without changing extraction, provider dispatch, cancellation, source snapshots, or long-audio routing. Success means synchronizing and rereading authority/diary, reproducing a manually constructed outcome whose retained frames run backward while composition still succeeds, deciding whether constructor validation or a new shared abstraction is the smaller maintainable boundary, adding a failing regression first, preserving valid library-returned tuples, running focused video tests, and committing/pushing one coherent change. This matters because negative-feedback frame selection only remains meaningful if every public video outcome preserves unambiguous source order, including outcomes constructed by downstream Python callers.
+```
+
+**缺口、两条路线与红灯。** 同步 origin、重读 authority、日记和 package 规则后，确认 `recognize_video_frames()` 已在 provider 前要求 frame index 严格递增、timestamp 不倒退，但公开 `VideoRecognitionOutcome` 只验证 exact tuple、item type 和资产布局。只要手工构造的 child metadata 与错误 tuple 一起变化，composition 的 identity equality 无法证明真实源顺序。路线 A 抽出一个可配置异常类型的共享 validator，让 constructor `ValueError` 与 recognition `InvalidSource` 共用；路线 B 在 outcome 已有结构检查旁加入同样两项相邻值规则。选择 B：规则只有两项，共享会把两个不同公共错误语义耦合。参数化回归先稳定得到 **2 failed**：重复 index `(0, 0)` 和 index 递增但 timestamp 从 `5.0` 倒退到 `0.0` 均未抛错。
+
+**独立复现与最小实现。** 轻量只读代理仅用公开类型和临时文件额外复现四种输入：index 递减、index 重复、timestamp 递减、两者组合。修复前四者都被构造器接受，顶层均为 `complete`，composition 也成功返回 `complete`。代理同样建议局部 constructor check，拒绝通用 ordering abstraction。实现只在 exact `RetainedVideoFrame` 类型确认后，用 stdlib `pairwise` 检查相邻项：`current.frame_index` 必须大于 previous，timestamp 只允许相等或增加；失败直接 `ValueError("...source order")`。有效 extractor tuple、路径布局和 child identity 逻辑不变。
+
+**验证、同步与过度设计复查。** outcome 全集为 **9 passed in 0.04s**；frame recognition、完整 orchestration、composition、publication、受控 runner、lightweight/import 邻接集合为 **67 passed in 1.96s**，`compileall -q src tests tools` 通过。公开构造契约变化同步到 package README、package `AGENTS.md`、迁移状态和唯一 authority。无网络、provider、凭据、依赖、API signature、frozen `contracts/worker` 或 #127/#149/#152 变化。没有增加 path canonicalization、same-file graph、timestamp 唯一性、generic media identity、serializer 或共享 validator；这些都超过已经复现的 source-order 假完成问题。
