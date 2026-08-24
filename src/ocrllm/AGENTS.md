@@ -75,6 +75,9 @@ settled work.
 Future publication work should not add another build harness or repeat this
 proof unless the public surface, manifest, or runtime dependency boundary
 changes.
+#147 makes the distribution Summary name only the shipped image, PDF,
+short-audio, and video surfaces. Keep packaging metadata accurate, but do not
+turn it into claims for PDF text, long audio, fallback, or worker support.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

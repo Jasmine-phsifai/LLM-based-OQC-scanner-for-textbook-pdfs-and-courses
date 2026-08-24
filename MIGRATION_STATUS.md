@@ -439,6 +439,11 @@ The following directions remain traceable but are not current work:
   refusal, `py.typed`, and lazy heavy imports all passed without network or
   provider calls. Pyright was unavailable, so no new static-checker result is
   claimed.
+  #147 corrects the distribution Summary from the obsolete board/image-only
+  scope to image, PDF, short audio, and video. An offline baseline/candidate
+  wheel comparison proves identical extras, requirements, member lists, and
+  runtime payloads outside generated metadata; external lightweight import also
+  passes. This is metadata accuracy, not a new capability.
   A clean archive of commit `c7f30f0` built and installed outside the
   repository without network, kept plain import free of heavy media modules,
   and completed one local video through separate injected image and fake-audio

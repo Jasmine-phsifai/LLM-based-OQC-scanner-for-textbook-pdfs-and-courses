@@ -183,7 +183,10 @@ has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. #146 additionally proves the new publication entry from an offline clean
 wheel installed outside the repository, including actual Markdown publication,
 overwrite safety, asset-collision refusal, packaged typing marker, and lazy
-heavy dependencies. The queue explicitly stops further proactive
+heavy dependencies. #147 updates only the wheel Summary so it names the shipped
+image, PDF, short-audio, and video surfaces; dual-wheel comparison proves extras,
+dependencies, members, and runtime payloads did not change. The queue explicitly
+stops further proactive
 filesystem/accounting edge scans.
 
 #072 has implemented P1-c offline: `recognize(one.pdf)` lazily uses

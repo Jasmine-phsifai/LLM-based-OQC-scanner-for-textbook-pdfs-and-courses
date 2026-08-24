@@ -3353,3 +3353,19 @@ Atomic task — Iteration #146: prove that the newly added publish_video_result(
 **真实消费、诚实缺口与过度设计复查。** 外部 consumer 构造本地已结算 outcome，在新嵌套目录完成 Markdown 发布，核对内容、status、`output_path`、assets、默认不覆盖、显式覆盖、临时文件清理，以及 retained asset 冲突拒绝和原字节保留。现有环境没有 Pyright，因此本轮只证明 marker/static alias 随 wheel 存在，不声称新函数签名通过独立 checker；也没有为此下载或安装工具。精确临时根已删除。没有 repo 产品代码、测试、manifest、依赖、网络、provider、凭据或持久环境变化；没有再造第二个 gate script、兼容 legacy 格式、触碰 #127、resume、provider framework 或 worker/contracts。
 
 **相邻但不混入本轮的真实缺口。** 主线 manifest 审查发现 `pyproject.toml` 的 distribution description 仍只写 board/image，已经漏掉明确发布的 PDF、短音频和视频。这不会推翻 #146 对模块包含、外部 import 和 publication runtime 的证明，但会误导包索引。为了不在旧 wheel 哈希之后偷改 manifest 又继续引用旧证据，本轮只登记为下一项原子修正，不顺手扩展。
+
+## #147 — 2026-08-25：distribution Summary 与已发布媒体范围一致
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #147: correct the stale distribution summary so installed-package metadata accurately describes the already shipped image, PDF, short-audio, and video recognition surfaces without widening any runtime capability. Success means reconciling current authority and diary, changing only the authoritative package summary plus necessary current-state records, building the exact candidate offline, reading the wheel's METADATA to prove the new Summary, confirming dependency/extras and import behavior are unchanged, and committing and pushing one coherent correction. This matters because package indexes and installation tools present distribution metadata before users read the full documentation; a mature library must not describe only its earliest image slice.
+```
+
+**范围、两条路线与最小修改。** 旧 summary `board and image recognition` 是早期 image-only 阶段的真实历史，但现在会漏报 live-proven PDF、短音频和已打通的视频。路线一保留窄文本以避免看似扩张；路线二只列出已证实的媒体能力。选择路线二，改成 `Importable OCRLLM library for image, PDF, short audio, and video recognition.`。它没有声称 PDF text、long audio、provider fallback、worker 或 legacy 兼容。产品差异仅 `pyproject.toml` 一行；没有顺便改 classifier、关键词、版本、依赖或 extras。
+
+**主线检查与诚实的工具失败。** OCRLLM Python 是 3.10，标准库没有 `tomllib`，所以第一次直接解析 TOML 的命令报 `ModuleNotFoundError`；没有为一行 metadata 安装 `tomli`。随后 import/lightweight/type-marker 定向集合为 **12 passed in 0.42s**，word diff 只显示 description 的媒体词变化。真实 Hatch build 承担 TOML 有效性证明，不能把前一个解析命令写成通过。
+
+**双 wheel 离线证明。** 轻量固定任务从 clean `HEAD=161ee8d` 构建 baseline，再仅覆盖当前 `pyproject.toml` 构建 candidate；两次 Hatchling 离线构建均 exit 0。baseline 为 **228,594 bytes**、SHA-256 `E8EF125EE70B59BB93C12C84CA868D4308FD456EC5E81E85CCF2412DE8AF5469`；candidate 为 **228,601 bytes**、SHA-256 `D46AF9CE8624C361F1AFD49AA70CE7FA1E27CA059F07C147F12101B7FEAF56EB`。candidate METADATA Summary 精确匹配新文本；两个 wheel 的 member list、`Provides-Extra`、`Requires-Dist` 和所有非生成 metadata payload hash 完全相同。
+
+**仓库外消费与过度设计复查。** candidate 用 `--no-deps --no-index` 安装到外部 target，package/distribution origin 均在外部，版本 0.1.0，视频公开入口可导入；导入前后均未加载 cv2、NumPy、imageio-ffmpeg 或 miniaudio。精确临时根删除并确认不存在。没有网络、provider、凭据、持久安装、runtime code、tests、依赖、extras、frozen `contracts/worker` 或 legacy 修改；没有新增 metadata schema/test、classifier 大清理、发布流水线或重新打开 #127。已有完整 1,430-test 证据紧邻运行时代码，本轮一行 metadata 用双 wheel 对照和 12 项定向验证，不机械重跑全量。

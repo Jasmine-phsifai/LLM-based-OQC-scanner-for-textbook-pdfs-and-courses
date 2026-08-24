@@ -1296,6 +1296,28 @@ iteration: `project.description` still says board/image only and therefore
 understates the already shipped PDF, short-audio, and video surfaces. Do not
 silently treat that stale distribution summary as current product scope.
 
+#147 closes that distribution-summary defect without changing product scope.
+`project.description` now says exactly `Importable OCRLLM library for image,
+PDF, short audio, and video recognition.` It does not claim PDF text, long
+audio, provider fallback, worker support, or legacy compatibility.
+
+An offline dual-wheel comparison built the clean `161ee8d` baseline and a
+candidate with only the current `pyproject.toml` overlay. The baseline was
+228,594 bytes with SHA-256
+`e8ef125ee70b59bb93c12c84ca868d4308fd456ec5e81e85ccf2412de8af5469`;
+the candidate was 228,601 bytes with SHA-256
+`d46af9ce8624c361f1afd49aa70ce7fa1e27ca059f07c147f12101b7feaf56eb`.
+The candidate METADATA Summary matched exactly; member lists, Provides-Extra,
+Requires-Dist, and every non-generated-metadata payload hash were identical.
+The candidate installed outside the repository with `--no-deps --no-index`,
+reported external package/distribution origins and version 0.1.0, exposed the
+video public entries, and kept OpenCV, NumPy, imageio-ffmpeg, and miniaudio
+unloaded. Twelve focused import/type-marker tests pass. The Python 3.10 project
+environment lacks stdlib `tomllib`; no parser was installed because the real
+Hatch build proved TOML validity. Both build roots were removed. No runtime
+code, dependency, extra, provider, credential, frozen boundary, or persistent
+environment changed.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,
