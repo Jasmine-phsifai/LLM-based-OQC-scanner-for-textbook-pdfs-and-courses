@@ -160,6 +160,13 @@ is often accepted.
   normally 14-16 pages in total.
 - A 600-700 page PDF is acceptable for an explicitly planned stress or endurance
   test, but is not required for every ordinary iteration.
+- The first public slice has no arbitrary 500-page ceiling and no page-selection,
+  password, text-mode, or partial-result setting. It bounds source bytes, render
+  pixels, and live image-group lifetime instead. Add a total-page ceiling only
+  after real evidence requires one.
+- One provider response covers one 7-8-page group, so the stable Markdown unit is
+  an honest one-based page-range marker. Do not fabricate eight per-page bodies
+  or introduce a PDF-specific prompt merely to claim finer attribution.
 - Google is the available free live API authority for this path. Lack of paid
   OpenAI or desktop access is not a reason to replace live PDF/image evidence
   with offline tests alone.
@@ -219,6 +226,10 @@ is often accepted.
   and the future local-model OpenAI-compatible path deferred.
 - #070 completed the P1-a live cancellation/resume proof without replaying the
   settled draft. #071 completed the formerly temporary P1-b tuple/preflight
-  clarification and its two-batch live proof. The next authority item is P1-c in
+  clarification and its two-batch live proof. #072 implemented the P1-c offline
+  candidate and proved two serial eight-page groups plus one-group-only resume
+  with real local PDFium and injected-provider tests. Its bounded Google attempt
+  made zero calls because the current Windows profile exposed no credential, so
+  the next authority item remains P1-c in
   [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-c--pdf-through-the-imageresume-path).
   Do not create a parallel queue here.

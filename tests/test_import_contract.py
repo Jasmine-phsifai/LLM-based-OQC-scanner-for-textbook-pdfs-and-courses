@@ -62,13 +62,13 @@ def test_provider_is_required_for_board(tmp_path):
 
 
 def test_unsupported_extension_is_explicit(tmp_path):
-    source = tmp_path / "lecture.pdf"
+    source = tmp_path / "lecture.epub"
     source.write_bytes(b"fake")
 
     try:
         recognize(source, config=Config(provider=FakeProvider()))
     except UnsupportedFormat as exc:
         assert exc.code == "UNSUPPORTED_FORMAT"
-        assert exc.details["extension"] == ".pdf"
+        assert exc.details["extension"] == ".epub"
     else:
         raise AssertionError("UnsupportedFormat was not raised")

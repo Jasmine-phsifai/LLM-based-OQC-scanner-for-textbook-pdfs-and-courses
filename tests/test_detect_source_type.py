@@ -17,6 +17,11 @@ def test_detect_source_type_accepts_stage_a1_mp3(suffix):
     assert detect_source_type(Path(f"does-not-need-to-exist{suffix}")) == "audio"
 
 
+@pytest.mark.parametrize("suffix", [".pdf", ".PDF", ".PdF"])
+def test_detect_source_type_accepts_pdf_vision(suffix):
+    assert detect_source_type(Path(f"does-not-need-to-exist{suffix}")) == "pdf"
+
+
 @pytest.mark.parametrize(
     "name",
     [
@@ -26,7 +31,6 @@ def test_detect_source_type_accepts_stage_a1_mp3(suffix):
         "board.heif",
         "board.tif",
         "board.tiff",
-        "lecture.pdf",
         "no-extension",
     ],
 )
@@ -56,7 +60,7 @@ def test_validate_same_type_group_rejects_an_empty_group():
 
 
 def test_validate_same_type_group_rejects_an_unsupported_member():
-    with pytest.raises(UnsupportedFormat) as raised:
+    with pytest.raises(InvalidSource) as raised:
         validate_same_type_group((Path("board.png"), Path("lecture.pdf")))
 
-    assert raised.value.code == "UNSUPPORTED_FORMAT"
+    assert raised.value.code == "SOURCE_INVALID"

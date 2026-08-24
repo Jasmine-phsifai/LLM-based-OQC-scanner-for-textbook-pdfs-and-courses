@@ -117,7 +117,7 @@ try {
     $locationDepth += 1
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
         --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
-        --with 'miniaudio>=1.71,<2' `
+        --with 'miniaudio>=1.71,<2' --with 'pypdfium2==5.11.0' `
         --python $python python -m pytest -q -p no:cacheprovider
     Assert-LastExitCode 'archived-source pytest failed'
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
@@ -190,7 +190,9 @@ native_payloads = [
 declared_extras = set(distribution.metadata.get_all('Provides-Extra') or [])
 assert not base_requirements, base_requirements
 assert not native_payloads, native_payloads
-assert declared_extras == {'audio', 'dashscope', 'dev', 'google', 'image', 'ocr'}, declared_extras
+assert declared_extras == {
+    'audio', 'dashscope', 'dev', 'google', 'image', 'ocr', 'pdf-vision'
+}, declared_extras
 print(sorted(declared_extras))
 '@
     & $python -I -c $metadataProbe $targetDir
@@ -212,6 +214,7 @@ print(sorted(declared_extras))
             'image,dashscope' = 67108864
             'google' = 67108864
             'audio,google' = 67108864
+            'pdf-vision' = 36700160
         }
         $expectedDistributions = @{
             'audio' = @('miniaudio')
@@ -219,13 +222,15 @@ print(sorted(declared_extras))
             'image,dashscope' = @('Pillow', 'openai')
             'google' = @('google-genai')
             'audio,google' = @('miniaudio', 'google-genai')
+            'pdf-vision' = @('pypdfium2', 'Pillow')
         }
         foreach ($profile in @(
             'audio',
             'image',
             'image,dashscope',
             'google',
-            'audio,google'
+            'audio,google',
+            'pdf-vision'
         )) {
             $safeProfile = $profile.Replace(',', '-')
             $profileVenv = Join-Path $proofRoot "venv-$safeProfile"
@@ -255,8 +260,8 @@ for name in expected_distributions:
 import ocrllm
 loaded = {name.split('.')[0] for name in sys.modules}
 assert not loaded & {
-    'PIL', 'openai', 'httpx', 'onnxruntime', 'miniaudio', '_miniaudio',
-    'google'
+    'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime', 'miniaudio',
+    '_miniaudio', 'google'
 }, loaded
 origin = pathlib.Path(ocrllm.__file__).resolve()
 assert pathlib.Path(sys.prefix).resolve() in origin.parents, origin
@@ -419,6 +424,53 @@ print(snapshot.duration_seconds, request.wire_byte_upper_bound)
                 Assert-LastExitCode (
                     'Google GenAI audio offline construction smoke failed'
                 )
+            }
+
+            if ($profile -eq 'pdf-vision') {
+                $pdfiumSmoke = @'
+from pathlib import Path
+import sys
+
+from PIL import Image
+import pypdfium2 as pdfium
+
+assert pdfium.PYPDFIUM_INFO.api_tag == (5, 11, 0)
+assert pdfium.PYPDFIUM_INFO.beta is None
+assert callable(pdfium.PdfDocument)
+
+pdf_path = Path(sys.argv[1]) / 'generated-valid.pdf'
+png_path = Path(sys.argv[1]) / 'generated-page.png'
+with pdfium.PdfDocument.new() as created:
+    created_page = created.new_page(72, 72)
+    created_page.close()
+    created.save(pdf_path)
+
+with pdfium.PdfDocument(pdf_path) as document:
+    assert len(document) == 1
+    assert document.get_page_size(0) == (72.0, 72.0)
+    page = document.get_page(0)
+    bitmap = None
+    image = None
+    try:
+        bitmap = page.render(scale=1)
+        image = bitmap.to_pil()
+        image.save(png_path, format='PNG')
+    finally:
+        if image is not None:
+            image.close()
+        if bitmap is not None:
+            bitmap.close()
+        page.close()
+
+with Image.open(png_path) as rendered:
+    rendered.verify()
+assert document.raw is None
+assert page.raw is None
+assert bitmap.raw is None
+print(pdfium.PYPDFIUM_INFO.tag, pdfium.PDFIUM_INFO.tag)
+'@
+                $pdfiumSmoke | & $profilePython -I - $profileVenv
+                Assert-LastExitCode 'PDF vision package smoke failed'
             }
 
             $afterBytes = Get-DirectoryByteCount $sitePackages

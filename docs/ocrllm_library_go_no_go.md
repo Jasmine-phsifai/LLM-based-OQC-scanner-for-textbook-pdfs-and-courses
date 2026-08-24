@@ -21,6 +21,15 @@ migrate/rewrite/reject boundary. Tests and runtime trials establish evidence and
 gate status; they do not override a NO-GO or deferred boundary. Only an explicit
 update to this decision can change a boundary.
 
+**#072 boundary reconciliation (2026-08-24).** The authority activated the
+vision-only PDF slice. The executable contract is now fixed to one PDF, all
+pages, serial groups of eight, stable group-range markers, and reuse of ordinary
+image sidecars. The historical 500-page ceiling, `text`/`auto` modes, arbitrary
+page/password/partial options, and one-marker-per-page proposal are superseded;
+bounded source bytes, per-page render pixels, and aggregate live image pixels
+remain. `pdf-vision` is the only PDF extra. Offline implementation is present,
+but current status remains P1-c until the bounded Google gate passes.
+
 ## Implementation Directive
 
 Use the following as the prompt for every active-library change:

@@ -22,7 +22,7 @@ def recognize(
     *,
     config: Config | None = None,
 ) -> RecognitionResult:
-    """Recognize one image or one ordered same-context image group."""
+    """Recognize one image group, one PDF, or one short MP3."""
     from .clear_public_error import clear_public_error
     from .output.output_target_claims import OutputTargetClaims
 
@@ -220,6 +220,17 @@ def _recognize(
                             )
                             if type(fallback_count) is int and fallback_count >= 0:
                                 provider_calls_attempted = fallback_count
+                    if provider_calls_attempted is not None:
+                        from dataclasses import replace
+
+                        current_metadata = dict(processor_output.metadata)
+                        current_metadata["current_run_provider_call_count"] = (
+                            provider_calls_attempted
+                        )
+                        processor_output = replace(
+                            processor_output,
+                            metadata=current_metadata,
+                        )
             except (OutputError, ResumeStateError) as error:
                 if provider_calls_attempted is not None:
                     error._add_safe_detail(
@@ -229,6 +240,19 @@ def _recognize(
                 if current_model_attempts is not None:
                     error._add_safe_detail("model_attempts", current_model_attempts)
                 raise
+        elif media_type == "pdf":
+            from .processors.recognize_pdf import recognize_pdf
+
+            processor_output, output_path = recognize_pdf(
+                source_paths,
+                config=cfg,
+                output_claims=output_claims,
+            )
+            pdf_calls = processor_output.metadata.get(
+                "current_run_provider_call_count"
+            )
+            if type(pdf_calls) is int and pdf_calls >= 0:
+                provider_calls_attempted = pdf_calls
         else:
             from .validate_short_audio_options import validate_short_audio_options
 
@@ -275,7 +299,7 @@ def _recognize(
             write_markdown_atomically(
                 output_path,
                 processor_output.markdown,
-                overwrite=cfg.overwrite,
+                overwrite=cfg.overwrite or (media_type == "pdf" and cfg.resume),
             )
         result = build_recognition_result(
             processor_output,

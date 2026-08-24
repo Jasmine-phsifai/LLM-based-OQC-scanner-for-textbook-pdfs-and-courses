@@ -41,6 +41,11 @@ def preflight_recognition_batch(
             if output_path is not None:
                 _validate_output_target_without_writing(output_path, config=config)
                 resolved_targets.append(output_path)
+        elif media_type == "pdf":
+            raise InvalidSource(
+                "recognize_batch() does not accept PDF sources in this release.",
+                code="SOURCE_INVALID",
+            ) from None
         else:
             validate_short_audio_options(source_paths, config=config)
 

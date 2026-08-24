@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-23 against the
+Status: **authoritative and current.** Last verified 2026-08-24 against the
 working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
@@ -149,8 +149,11 @@ images through built-in DashScope, native Google GenAI, or an injected vision pr
 OCR, file-backed image checkpoint/resume, and a fail-fast batch API whose
 top-level container must be an exact `tuple`. Each tuple item retains the
 existing atomic path or grouped `Sequence` source contract. It also has an experimental, memory-only native
-Google short-audio path for one MP3 of at most 300 seconds. PDF and content
-repair are not implemented. The Google adapters report per-model input/output
+Google short-audio path for one MP3 of at most 300 seconds. It now contains an
+offline-proven PDF vision slice that renders all pages through PDFium and reuses
+the image/resume path in serial groups of eight; its required Google live exit
+gate is still open because the current Windows profile exposes no authorized
+credential. Content repair is not implemented. The Google adapters report per-model input/output
 token usage when the endpoint supplies it; other adapters do not yet make a
 general usage claim. Existing attempt disclosure counts provider calls and
 model/workflow attempts separately from tokens. Resume is the primary recovery
@@ -321,6 +324,27 @@ Exit gate: public PDF output preserves order, bounded reads, settled checkpoints
 and zero repayment of completed resume work. Non-goals: a routine 600-700-page
 run, PyMuPDF, whole-file memory loading, or caller-designed partial semantics.
 
+#072 implemented the offline candidate without adding PDF settings: public
+`recognize(one.pdf)` snapshots at most 100 MiB through bounded reads, inspects
+every page before dispatch, renders one page at a time behind the process-wide
+PDFium lock, retains at most one eight-page PNG group, and invokes the ordinary
+image facade serially. Final Markdown uses stable range markers such as
+`<!-- ocrllm:pdf-pages start=1 end=8 -->`; a same-named directory holds the
+ordinary child image outputs and sidecars, while rendered PNGs are removed.
+Focused tests and a real local 16-page PDFium probe prove two ordered calls,
+atomic output, typed malformed/password/oversize rejection, Windows paths up to
+the established 259-unit boundary, and cancellation/resume with group one reused
+and only group two dispatched. `recognize_batch()` deliberately rejects PDF in
+this first slice. The old planned 500-page cap, arbitrary page/password/partial
+options, and per-page attribution are not part of this contract.
+
+The authorized Google exit attempt stopped with zero provider calls because
+neither `GOOGLE_API_KEY`/`GEMINI_API_KEY` nor `OCRLLM/QCR` QSettings supplied a
+credential in the current `13301` profile. P1-c therefore remains the immediate
+queue until one bounded 16-page Google run proves exactly two image requests,
+current per-model usage, complete child checkpoints, ordered range markers, and
+no retained page PNGs. Do not advance to P1-d on offline evidence alone.
+
 ### P1-d — Minimal PDF repair after stable markers
 
 Only after PDF checkpoint and Markdown markers are stable, migrate the smallest
@@ -393,6 +417,11 @@ Future agents must assume the following and verify before trusting any claim:
   259-UTF-16-unit boundary. Public Markdown and `.ocrllm-state.json` names did not
   change. This closes suffix-induced overflow only; it is not general `\\?\`
   extended-path support, and a deeper directory can still exceed the OS limit.
+  The PDF slice follows the same rule: its same-named state directory contains
+  fixed `page-000001.png` and compact `.p-<16hex>.tmp.png` render names. A
+  deterministic Windows regression reaches exactly 259 UTF-16 units without
+  repeating the 96-character source stem; this does not claim arbitrary deep
+  path support.
 
 - **Same-target output/state ownership is consistent for supported in-process
   concurrency.** Every file-producing `recognize()` claims its resolved target
@@ -501,7 +530,7 @@ Future agents must assume the following and verify before trusting any claim:
   with a specifically named executable consumer and explicit lifetime,
   provisioning, offline, and concurrency semantics.
 
-- **PDF-only configuration is deferred to the executable PDF slice.** The
+- **COMPLETED BY #072 — PDF-only configuration was deferred to the executable PDF slice.** The
   pre-release constructor no longer accepts the never-consumed `pdf_mode`,
   `pdf_pages`, `pdf_password`, or `pdf_allow_partial` placeholders. All four
   were validated but silently ignored by the image-only facade, and no active
@@ -509,9 +538,10 @@ Future agents must assume the following and verify before trusting any claim:
   proposed semantics also exceed or differ from the legacy parent: legacy uses
   a contiguous page range, has no password option, and preserves page failures
   without a caller-controlled partial-success flag. Keep PDFium, typed errors,
-  resource bounds, and durable repair/resume lessons as future constraints,
-  but choose and introduce PDF settings only with the first executable PDF
-  vertical slice.
+  resource bounds, and durable repair/resume lessons were retained. The first
+  executable slice needs no PDF settings: it is fixed to vision mode, all pages,
+  serial eight-page groups, no password input, and no partial-success option.
+  Add a setting only with a concrete later consumer and separate authority.
 
 - **Automatic image checkpoint targets are preflighted before dispatch.** When
   `resume=False` but stable provider identity enables paid-work checkpoints, an

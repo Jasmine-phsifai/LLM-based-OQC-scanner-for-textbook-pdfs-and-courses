@@ -11,7 +11,7 @@ Current truth is maintained in
 before relying on any dated phase, decision, checkpoint, review, or incident
 record. Those files preserve history and do not override current status.
 
-As of 2026-08-23:
+As of 2026-08-24:
 
 - Phase 0 contract honesty, the Phase 1 image gate, the Phase 2 development
   worker, and Phase 2A image-library completion are GO.
@@ -19,12 +19,14 @@ As of 2026-08-23:
   atomic file-backed image state, opt-in disposition-gated candidate recovery,
   complete spend disclosure, model-aware credential blocking, and slot-indexed
   intra-request checkpoints are shipped. Its paid live exit smoke remains open.
-- The former standalone Stage 2 vision/audio scaffold was removed. Audio-specific
-  configuration now lands with complete Stage A1 short-MP3 recognition. Stage
-  A1 is in progress: its internal local MP3 snapshot/probe seam is implemented,
-  but no public audio recognition API exists. Stage A2 and the active PDFium
-  phase have not started. PDF, audio recognition, and video remain unavailable.
-- The optional Google image adapter is planned, not implemented. Legacy
+- The former standalone Stage 2 vision/audio scaffold was removed. One bounded
+  native Google MP3 path is implemented and live-proven; it remains memory-only.
+  Stage A2 long audio has not started.
+- The first PDFium vision slice is implemented offline. `recognize(one.pdf)`
+  uses serial eight-page image groups, ordinary image resume sidecars, and
+  stable range markers. Its bounded Google exit gate remains open because the
+  current Windows profile supplied no credential; PDF repair has not started.
+- Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
 
@@ -35,7 +37,7 @@ exit gate and live provider-account/model-quota re-verification remain open.
 
 ## Active Library
 
-The active package is `src/ocrllm/`. Its current image contract:
+The active package is `src/ocrllm/`. Its current image/PDF contract:
 
 - accepts valid PNG, JPG, and JPEG sources;
 - decodes and validates sources before provider dispatch;
@@ -46,6 +48,14 @@ The active package is `src/ocrllm/`. Its current image contract:
 - keeps output in memory unless `output_dir` is supplied;
 - publishes Markdown and resume state atomically;
 - keeps Pillow, OpenAI, HTTPX, and other heavy dependencies lazy at base import.
+- accepts exactly one PDF through the direct facade, snapshots at most 100 MiB,
+  and lazily loads `pypdfium2` only when PDF recognition is requested;
+- renders at most eight ordered pages per image request and removes rendered
+  PNGs after each settled group;
+- publishes `<stem>_board.md` and, when output is configured, keeps ordinary
+  child image outputs/checkpoints in the same-named `<stem>_board/` directory;
+- rejects PDF in `recognize_batch()` in this first slice and exposes no page,
+  password, partial-result, or text-mode settings.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The
@@ -55,7 +65,7 @@ packaged Electron compatibility is not claimed.
 ### Install from this checkout
 
 ```powershell
-pip install ".[image,dashscope]"
+pip install ".[image,dashscope,pdf-vision]"
 ```
 
 ### Built-in DashScope example
@@ -97,6 +107,10 @@ result = recognize("board.jpg", config=Config(provider=Provider()))
 print(result.markdown)
 ```
 
+The same facade accepts one PDF when `ocrllm[pdf-vision]` is installed. It uses
+the configured vision provider and board profile; no separate PDF provider
+protocol exists.
+
 An injected provider is an integration seam, not live quality evidence. The
 provider must return synchronously. Resume requires its nonempty
 `resume_identity` attribute.
@@ -123,11 +137,11 @@ Do not:
 - copy legacy processors wholesale into `src/ocrllm`;
 - add GUI, FastAPI, social downloading, browser automation, or heavy media
   imports to the base library;
-- use PyMuPDF or `fitz` for active PDF work; the approved future path is PDFium
+- use PyMuPDF or `fitz` for active PDF work; the approved path is PDFium
   through `pypdfium2`;
 - treat `output/`, `temp/`, `ocrllm_social_e2e/`, caches, or screenshots as
   source-of-truth evidence;
-- start HarmonyOS/ArkTS, Rust/PyO3, PDF, audio, or video work outside the
+- start HarmonyOS/ArkTS, Rust/PyO3, long audio, video, or PDF repair outside the
   approved phase gate.
 
 ## History Trace

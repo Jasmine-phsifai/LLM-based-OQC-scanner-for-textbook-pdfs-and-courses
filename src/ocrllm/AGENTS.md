@@ -7,12 +7,12 @@ document and carries current state, the open defect register, and the coding and
 documentation rules. Then read `../../docs/ocrllm_library_go_no_go.md` for phase
 gates and file responsibilities.
 
-The approved current work is
-`../../docs/plan_phase1_maturation_and_phase2_audio.md`. Stage M is offline
-implementation-complete and all no-cost exit criteria pass; only its explicitly
-budgeted live smoke remains open. Stage A1 is in progress with only its
-provider-independent local MP3 snapshot/probe seam implemented; Stage A2 has
-not started. Do not start unrelated feature work ahead of the current plan.
+The approved current work is the `#065 Unified Execution Queue` in
+`../../docs/ACTIVE_STATE_AND_RULES.md`; the older Stage M/A plan supplies detail
+only where that queue has not superseded it. P1-c now has an offline executable
+PDF-through-image/resume candidate, but its bounded Google gate is still open
+because the current Windows profile supplied no credential. Do not begin P1-d
+repair or unrelated work until that live boundary is resolved.
 
 `contracts/` and `worker/` are frozen. Do not change them.
 

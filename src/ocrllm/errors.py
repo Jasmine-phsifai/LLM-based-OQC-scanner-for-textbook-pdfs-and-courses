@@ -148,6 +148,22 @@ class DependencyMissing(OCRLLMError):
     allowed_codes = frozenset({default_code})
 
 
+class PDFError(OCRLLMError):
+    """A PDF could not be opened or processed by the approved backend."""
+
+    default_code = "PDF_INVALID"
+    default_message = "The PDF could not be processed."
+    allowed_codes = frozenset(
+        {
+            "PDF_BACKEND_UNAVAILABLE",
+            "PDF_PASSWORD_REQUIRED",
+            "PDF_PASSWORD_INVALID",
+            "PDF_INVALID",
+            "PDF_PAGE_RANGE_INVALID",
+        }
+    )
+
+
 class InvalidSource(OCRLLMError):
     """An input source is missing, unreadable, corrupt, empty, or unsafe."""
 

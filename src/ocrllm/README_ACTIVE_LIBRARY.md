@@ -67,8 +67,9 @@ implemented and live-proven: the
 public direct facade copies one local MP3 to a compact owned snapshot, fully
 decodes it through lazy `ocrllm[audio]`, and can send one bounded native inline
 request through lazy `ocrllm[google]`. This path remains experimental and
-memory-only despite its successful #069 public-result gate. Stage A2 and the
-active PDFium phase have not started.
+memory-only despite its successful #069 public-result gate. Stage A2 has not
+started. The first PDFium vision slice is implemented offline and awaits its
+bounded Google exit gate.
 
 The current image facade:
 
@@ -137,8 +138,22 @@ The experimental direct Google short-audio facade:
 - performs no internal retry, model switching, Files upload, cache, fallback,
   or output logging.
 
-This direct path is not registered in the frozen 20-entry shared
-capability/worker contract and must not be presented as worker audio support.
+The PDF vision facade:
+
+- requires `ocrllm[pdf-vision]` and accepts exactly one `.pdf`;
+- snapshots at most 100 MiB with bounded reads, inspects all page sizes before
+  dispatch, and serializes every PDFium call behind one process-wide lock;
+- renders one page at a time and at most eight PNGs per ordinary image request;
+- uses the image facade and its sidecars unchanged, so resume reuses settled
+  groups without another provider call;
+- publishes stable `ocrllm:pdf-pages` range markers in source order and removes
+  rendered PNGs after each group;
+- creates no PDF-specific provider, checkpoint schema, worker contract, page
+  selector, password input, partial-success setting, text mode, or retry path;
+- is rejected by `recognize_batch()` in this first slice.
+
+Neither the direct audio nor PDF path is registered in the frozen 20-entry
+shared capability/worker contract, and neither is worker support.
 Phase 2 exposes a spawned one-job manager with bounded JSON event bridging and
 verified five-second descendant cancellation. The production image job adapter
 reuses the same unified facade once per ordered group, fixes the Beijing v17
@@ -169,8 +184,9 @@ blocking, candidate recovery, and request/batch image resume are available;
 there is no cross-process pool state. File-producing calls claim one output target
 for the duration of a recognition, so direct threads and `recognize_batch()` cannot
 split final Markdown from its resume sidecar. The claim is process-local: separate
-processes must not target the same output path concurrently. PDF, long audio,
-persisted/resumable audio, and video remain unavailable.
+processes must not target the same output path concurrently. PDF repair, long
+audio, persisted/resumable audio, and video remain unavailable. PDF recognition
+is offline-proven but not yet live-proven in the current environment.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.
@@ -229,6 +245,19 @@ one provider call, input/output usage 150/10, and a credential-scoped invalid-ke
 failure. Its recognized text was validated internally but not published, so the
 gate proves this bounded result path rather than transcription quality.
 
+## Bounded Google PDF Live Smoke
+
+Install `ocrllm[pdf-vision,google]`, set `GOOGLE_API_KEY` (or
+`GEMINI_API_KEY`) without placing its value on the command line, and invoke
+`tools/run_google_genai_pdf_smoke.py` with exactly sixteen authorized
+`--page-image` arguments. The tool builds a temporary PDF, discovers the
+current catalog, and requires exactly two serial eight-page recognition calls,
+two complete child checkpoints, ordered range markers, atomic final output,
+current per-model token usage, and zero retained page PNGs. It prints no OCR
+body or path and performs no retry, fallback, model switching, or third batch.
+The #072 attempt made zero provider calls because the current Windows profile
+contained no Google credential; this live gate remains open.
+
 ## Current Maturation Boundary
 
 The authoritative defect register is in
@@ -258,7 +287,7 @@ the migrate/rewrite/reject boundary.
 - Desktop launcher behavior.
 - Package-relative runtime output defaults.
 - Direct imports from `legacy_app` or uppercase `OCRLLM`.
-- PyMuPDF or `fitz`; the future PDF slice uses PDFium through `pypdfium2`.
+- PyMuPDF or `fitz`; the active PDF slice uses PDFium through `pypdfium2`.
 - HarmonyOS/ArkTS code or compatibility claims; that work is deferred.
 
 ## Tests
@@ -268,6 +297,7 @@ Use the root test suite for this package:
 ```powershell
 uv run --no-project --isolated --with 'Pillow==12.3.0' `
   --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
+  --with 'pypdfium2==5.11.0' `
   --python 'D:\Anaconda\envs\OCRLLM\python.exe' `
   python -m pytest -q -p no:cacheprovider
 ```

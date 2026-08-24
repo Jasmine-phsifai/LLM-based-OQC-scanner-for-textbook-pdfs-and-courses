@@ -7,7 +7,7 @@ file and that file differ, that file wins.
 
 ## Current Status
 
-Last synchronized: 2026-08-23.
+Last synchronized: 2026-08-24.
 
 The repository has two boundaries:
 
@@ -74,11 +74,19 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   implemented for one native Google inline MP3 of at most 300 seconds, with a
   conservative provider envelope below 20,000,000 bytes. Persistence, resume,
   groups, long audio, Files upload, retries, and fallback are not implemented;
-- not started: Stage A2 audio recognition and the active PDFium phase.
+- not started: Stage A2 long-audio recognition;
+- implemented offline, live gate open: the first PDFium vision slice. One PDF
+  becomes serial eight-page image groups, ordinary image sidecars preserve
+  settled work, range markers preserve group order, and rendered pages have a
+  bounded lifetime. No PDF settings, PDF worker contract, repair, PyMuPDF,
+  whole-file memory load, or arbitrary page selection was added.
 
 The ordered current work is
 [`#065 Unified Execution Queue`](docs/ACTIVE_STATE_AND_RULES.md#065-unified-execution-queue).
-PDF and content repair remain unimplemented. Native Google direct-Python image
+PDF recognition is implemented offline; its bounded Google live exit remains
+open because the current Windows profile supplied no credential and the attempt
+therefore made zero provider calls. Content repair remains unimplemented.
+Native Google direct-Python image
 recognition and experimental memory-only short-audio recognition are now
 implemented, with per-model usage reporting when Google supplies it; no general
 cross-provider token-usage claim is made. Resume is the primary recovery
@@ -106,8 +114,11 @@ a complete result. Total calls were exactly two. #071 completed P1-b with an
 exact top-level tuple, zero-side-effect full preflight, and two live ordered
 eight-image groups. Both completed with one call each and complete published
 state; reported input/output usage was 2401/1131 and 2401/988. P1-c PDF through
-the existing image/resume path is now the immediate queue; do not add hidden
-retry, fallback, or a Files lifecycle.
+the existing image/resume path now passes focused tests and a real local
+16-page PDFium probe: two ordered eight-page calls, two complete child states,
+zero retained rendered PNGs, and a one-call resume after the second group is
+interrupted. Its Google gate remains the immediate queue; do not add hidden
+retry, fallback, or a Files lifecycle, and do not begin repair yet.
 The shared 20-entry capability/worker registry remains unchanged and does not
 advertise this direct audio path.
 The generic compatibility endpoint and future local-model compatibility remain

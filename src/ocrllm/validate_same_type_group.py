@@ -10,7 +10,9 @@ from .detect_source_type import detect_source_type
 from .errors import InvalidSource
 
 
-def validate_same_type_group(sources: Sequence[str | Path]) -> Literal["image", "audio"]:
+def validate_same_type_group(
+    sources: Sequence[str | Path],
+) -> Literal["image", "pdf", "audio"]:
     """Return the one canonical media type for a nonempty ordered group.
 
     The caller's order is never changed. Audio cardinality is enforced by its

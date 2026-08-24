@@ -98,6 +98,16 @@ published state. P1-c PDF-through-image/resume is now the immediate queue. The a
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 
+#072 has implemented P1-c offline: `recognize(one.pdf)` lazily uses
+`ocrllm[pdf-vision]`, snapshots at most 100 MiB without whole-file Python reads,
+renders one page at a time and one serial group of eight at a time, reuses the
+ordinary image checkpoints, and publishes ordered range-marked Markdown plus a
+same-named state directory. A real local 16-page PDFium probe and focused
+cancel/resume tests pass; `recognize_batch()` intentionally rejects PDF for this
+first slice. The bounded Google exit run made zero provider calls because the
+current Windows profile has no Google credential, so P1-c remains the immediate
+queue and P1-d repair has not started.
+
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203
 passed; the exact archive suite reported 1193 passed and 10 expected skips.

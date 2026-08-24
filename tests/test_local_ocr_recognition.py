@@ -88,6 +88,7 @@ def test_public_recognize_uses_one_local_engine_and_no_provider(tmp_path, monkey
         "minimum_confidence": 0.5,
         "mean_confidence": pytest.approx(0.865),
         "provider_call_count": 0,
+        "current_run_provider_call_count": 0,
         "network_call_count": 0,
     }
     assert len(result.warnings) == 1
