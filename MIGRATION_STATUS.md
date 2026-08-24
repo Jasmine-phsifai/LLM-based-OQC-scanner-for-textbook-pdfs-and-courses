@@ -130,6 +130,11 @@ The transport audit proved that legacy built-in Google uses native
 `google-genai`; #067 completed P0-b. Its live gate discovered 37 models and
 proved one `gemini-2.5-flash` image plus one eight-image group, one call each,
 with input/output usage and an honest credential-scope authentication failure.
+The maintained routine image runner now reuses that proof instead of replaying
+it: #113 reduced each normal run to catalog discovery plus one single-image
+public recognition and added safe catalog/model-selection/recognition failure
+stages. Its bounded refresh found 37 models and completed one call with usage
+595/443, no retry, output text, credential leak, or residue.
 The direct API is proven, but the frozen 20-entry shared capability/worker
 registry was deliberately unchanged and does not advertise Google worker support.
 P0-c is complete. The earlier authorized `gemini-3.1-pro-preview` run remains

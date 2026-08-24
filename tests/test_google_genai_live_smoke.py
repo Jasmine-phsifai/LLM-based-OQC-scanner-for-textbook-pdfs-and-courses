@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 from types import MappingProxyType, SimpleNamespace
 
 import pytest
@@ -11,20 +15,56 @@ from tools import run_google_genai_image_smoke as smoke
 
 
 MODEL = "gemini-live-smoke-model"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_live_smoke_requires_exactly_eight_explicit_group_images():
-    common = ["--model", MODEL, "--single-image", "one.png", "--group-image"]
-
-    with pytest.raises(SystemExit):
-        smoke.parse_arguments([*common, *(f"{index}.png" for index in range(7))])
-    with pytest.raises(SystemExit):
-        smoke.parse_arguments([*common, *(f"{index}.png" for index in range(9))])
-
-    parsed = smoke.parse_arguments(
-        [*common, *(f"{index}.png" for index in range(8))]
+def test_image_live_smoke_cli_reports_missing_credential_without_network(tmp_path):
+    environment = os.environ.copy()
+    environment.pop("GOOGLE_API_KEY", None)
+    environment.pop("GEMINI_API_KEY", None)
+    source_path = tmp_path / "never-opened-image-source.png"
+    source_pythonpath = str(PROJECT_ROOT / "src")
+    inherited_pythonpath = environment.get("PYTHONPATH")
+    environment["PYTHONPATH"] = (
+        os.pathsep.join((source_pythonpath, inherited_pythonpath))
+        if inherited_pythonpath
+        else source_pythonpath
     )
-    assert len(parsed.group_image) == 8
+
+    completed = subprocess.run(
+        (
+            sys.executable,
+            str(PROJECT_ROOT / "tools" / "run_google_genai_image_smoke.py"),
+            "--model",
+            "never-requested-model",
+            "--image",
+            str(source_path),
+        ),
+        cwd=PROJECT_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 1
+    assert completed.stderr == ""
+    assert json.loads(completed.stdout) == {
+        "error": {
+            "code": "CONFIG_MISSING",
+            "scope": None,
+            "stage": "catalog",
+        },
+        "status": "failed",
+    }
+    assert not source_path.exists()
+
+
+def test_live_smoke_accepts_one_explicit_image():
+    parsed = smoke.parse_arguments(["--model", MODEL, "--image", "one.png"])
+
+    assert parsed.image.name == "one.png"
 
 
 def test_live_smoke_emits_only_safe_summary(monkeypatch, capsys):
@@ -34,11 +74,7 @@ def test_live_smoke_emits_only_safe_summary(monkeypatch, capsys):
     calls: list[object] = []
 
     def fake_list(settings, timeout_seconds):
-        if settings.api_key is not None:
-            raise ProviderError(
-                code="PROVIDER_AUTHENTICATION",
-                details={"failure_scope": "credential"},
-            )
+        assert settings.api_key is None
         assert timeout_seconds == 9.0
         return (MODEL, "another-model")
 
@@ -67,8 +103,7 @@ def test_live_smoke_emits_only_safe_summary(monkeypatch, capsys):
     monkeypatch.setattr(smoke, "recognize", fake_recognize)
     arguments = argparse.Namespace(
         model=MODEL,
-        single_image="single.png",
-        group_image=tuple(f"group-{index}.png" for index in range(8)),
+        image="single.png",
         timeout=9.0,
     )
 
@@ -76,10 +111,8 @@ def test_live_smoke_emits_only_safe_summary(monkeypatch, capsys):
         [
             "--model",
             arguments.model,
-            "--single-image",
-            arguments.single_image,
-            "--group-image",
-            *arguments.group_image,
+            "--image",
+            arguments.image,
             "--timeout",
             str(arguments.timeout),
         ]
@@ -89,18 +122,8 @@ def test_live_smoke_emits_only_safe_summary(monkeypatch, capsys):
     payload = json.loads(raw)
     assert payload == {
         "catalog_count": 2,
-        "group": {
-            "input_tokens": 11,
-            "model": MODEL,
-            "output_tokens": 7,
-            "provider_call_count": 1,
-        },
-        "invalid_credential": {
-            "code": "PROVIDER_AUTHENTICATION",
-            "scope": "credential",
-        },
         "model": MODEL,
-        "single": {
+        "recognition": {
             "input_tokens": 11,
             "model": MODEL,
             "output_tokens": 7,
@@ -108,12 +131,99 @@ def test_live_smoke_emits_only_safe_summary(monkeypatch, capsys):
         },
         "status": "passed",
     }
-    assert len(calls) == 2
-    assert len(calls[1]) == 8
+    assert [str(call) for call in calls] == ["single.png"]
     assert secret not in raw
     assert markdown not in raw
     assert "single.png" not in raw
-    assert "group-0.png" not in raw
+
+
+@pytest.mark.parametrize("failure_stage", ["catalog", "recognition"])
+def test_image_live_smoke_reports_sanitized_provider_failure_stage(
+    failure_stage, monkeypatch, capsys
+):
+    secret = "PRIVATE-GOOGLE-IMAGE-STAGE-FAILURE"
+    source = "private-stage-source.png"
+
+    def failure():
+        return ProviderError(
+            secret,
+            code="PROVIDER_UNAVAILABLE",
+            details={"failure_scope": "provider", "raw_response": secret},
+        )
+
+    def fake_list(settings, timeout_seconds):
+        if failure_stage == "catalog":
+            raise failure()
+        return (MODEL,)
+
+    def fake_recognize(actual_source, *, config):
+        raise failure()
+
+    monkeypatch.setattr(smoke, "list_google_genai_models", fake_list)
+    monkeypatch.setattr(smoke, "recognize", fake_recognize)
+
+    assert smoke.main(["--model", MODEL, "--image", source]) == 1
+    raw = capsys.readouterr().out.strip()
+    assert json.loads(raw) == {
+        "error": {
+            "code": "PROVIDER_UNAVAILABLE",
+            "scope": "provider",
+            "stage": failure_stage,
+        },
+        "status": "failed",
+    }
+    assert secret not in raw
+    assert source not in raw
+
+
+def test_image_live_smoke_reports_missing_model_selection_stage(monkeypatch, capsys):
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda settings, timeout_seconds: ("another-model",),
+    )
+
+    assert smoke.main(["--model", MODEL, "--image", "private-source.png"]) == 1
+    assert json.loads(capsys.readouterr().out) == {
+        "error": {
+            "code": "CONFIG_INVALID",
+            "scope": None,
+            "stage": "model_selection",
+        },
+        "status": "failed",
+    }
+
+
+@pytest.mark.parametrize("failure_stage", ["catalog", "recognition"])
+def test_image_live_smoke_reports_sanitized_unexpected_failure(
+    failure_stage, monkeypatch, capsys
+):
+    secret = "PRIVATE-UNEXPECTED-IMAGE-FAILURE"
+    source = "private-unexpected-source.png"
+
+    def fake_list(settings, timeout_seconds):
+        if failure_stage == "catalog":
+            raise RuntimeError(secret)
+        return (MODEL,)
+
+    def raise_unexpected_failure(actual_source, *, config):
+        raise RuntimeError(secret)
+
+    monkeypatch.setattr(smoke, "list_google_genai_models", fake_list)
+    monkeypatch.setattr(smoke, "recognize", raise_unexpected_failure)
+
+    assert smoke.main(["--model", MODEL, "--image", source]) == 1
+    raw = capsys.readouterr().out.strip()
+    assert json.loads(raw) == {
+        "error": {
+            "code": "UNEXPECTED_SAFE_FAILURE",
+            "scope": None,
+            "stage": failure_stage,
+        },
+        "status": "failed",
+    }
+    assert secret not in raw
+    assert source not in raw
 
 
 @pytest.mark.parametrize(

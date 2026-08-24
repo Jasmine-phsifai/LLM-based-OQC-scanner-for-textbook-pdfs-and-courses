@@ -1,4 +1,4 @@
-"""Run the bounded, credential-safe Google GenAI image live gate."""
+"""Run one bounded, credential-safe Google GenAI image live smoke."""
 
 from __future__ import annotations
 
@@ -16,79 +16,64 @@ from ocrllm import (
     list_google_genai_models,
     recognize,
 )
-from ocrllm.errors import ConfigError, OCRLLMError, ProviderError
+from ocrllm.errors import ConfigError, OCRLLMError
 
 
-_INVALID_LIVE_GATE_KEY = "ocrllm-intentionally-invalid-live-smoke-key"
-_CREDENTIAL_FAILURE_CODES = frozenset(
-    {"PROVIDER_AUTHENTICATION", "PROVIDER_PERMISSION_DENIED"}
-)
+class _LiveSmokeFailure(Exception):
+    """Keep a runner stage beside, not inside, a public product error."""
+
+    def __init__(self, stage: str, error: OCRLLMError | None) -> None:
+        self.stage = stage
+        self.error = error
+        super().__init__(stage)
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    """Parse one explicit one-image plus eight-image live request."""
+    """Parse one explicit model, image path, and timeout."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True)
-    parser.add_argument("--single-image", required=True, type=Path)
-    parser.add_argument(
-        "--group-image",
-        required=True,
-        type=Path,
-        nargs=8,
-        metavar="IMAGE",
-        help="exactly eight explicit image paths",
-    )
+    parser.add_argument("--image", required=True, type=Path)
     parser.add_argument("--timeout", type=float, default=120.0)
     return parser.parse_args(argv)
 
 
 def run_google_genai_image_smoke(arguments: argparse.Namespace) -> dict[str, object]:
-    """Run catalog, one-image, eight-image, and bad-credential checks once."""
+    """Run current catalog discovery and one image recognition call."""
     settings = GoogleGenAISettings()
-    models = list_google_genai_models(settings, arguments.timeout)
+    try:
+        models = list_google_genai_models(settings, arguments.timeout)
+    except OCRLLMError as error:
+        raise _LiveSmokeFailure("catalog", error) from None
+    except Exception:
+        raise _LiveSmokeFailure("catalog", None) from None
     if arguments.model not in models:
-        raise ConfigError(
-            "The requested Google model is absent from the current catalog.",
-            code="CONFIG_INVALID",
+        raise _LiveSmokeFailure(
+            "model_selection",
+            ConfigError(
+                "The requested Google model is absent from the current catalog.",
+                code="CONFIG_INVALID",
+            ),
         ) from None
-
-    config = Config(
-        provider=settings,
-        vision_model=VisionModelSettings(name=arguments.model),
-        timeout_seconds=arguments.timeout,
-    )
-    single_result = recognize(arguments.single_image, config=config)
-    group_result = recognize(tuple(arguments.group_image), config=config)
-
-    invalid_error = _require_invalid_credential_failure(arguments.timeout)
+    try:
+        result = recognize(
+            arguments.image,
+            config=Config(
+                provider=settings,
+                vision_model=VisionModelSettings(name=arguments.model),
+                timeout_seconds=arguments.timeout,
+            ),
+        )
+        recognition = _safe_recognition_summary(result, arguments.model)
+    except OCRLLMError as error:
+        raise _LiveSmokeFailure("recognition", error) from None
+    except Exception:
+        raise _LiveSmokeFailure("recognition", None) from None
     return {
         "status": "passed",
         "catalog_count": len(models),
         "model": arguments.model,
-        "single": _safe_recognition_summary(single_result, arguments.model),
-        "group": _safe_recognition_summary(group_result, arguments.model),
-        "invalid_credential": invalid_error,
+        "recognition": recognition,
     }
-
-
-def _require_invalid_credential_failure(timeout_seconds: float) -> dict[str, str]:
-    try:
-        list_google_genai_models(
-            GoogleGenAISettings(api_key=_INVALID_LIVE_GATE_KEY),
-            timeout_seconds,
-        )
-    except ProviderError as error:
-        scope = error.details.get("failure_scope")
-        if error.code not in _CREDENTIAL_FAILURE_CODES or scope != "credential":
-            raise ConfigError(
-                "The invalid-credential probe did not return a credential failure.",
-                code="CONFIG_INVALID",
-            ) from None
-        return {"code": error.code, "scope": scope}
-    raise ConfigError(
-        "The invalid-credential probe unexpectedly succeeded.",
-        code="CONFIG_INVALID",
-    ) from None
 
 
 def _safe_recognition_summary(result: Any, model: str) -> dict[str, object]:
@@ -136,35 +121,54 @@ def _is_optional_token_count(value: object) -> bool:
     return value is None or (type(value) is int and value >= 0)
 
 
-def _safe_failure_summary(error: OCRLLMError) -> dict[str, object]:
-    return {
-        "status": "failed",
-        "error": {
-            "code": error.code,
-            "scope": error.details.get("failure_scope"),
-        },
-    }
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     try:
         summary = run_google_genai_image_smoke(arguments)
+    except _LiveSmokeFailure as failure:
+        if failure.error is None:
+            return _report_unexpected_failure(failure.stage)
+        return _report_typed_failure(failure.error, failure.stage)
     except OCRLLMError as error:
-        summary = _safe_failure_summary(error)
-        print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
-        return 1
+        return _report_typed_failure(error, None)
     except Exception:
-        print(
-            json.dumps(
-                {"status": "failed", "error": {"code": "UNEXPECTED_SAFE_FAILURE"}},
-                sort_keys=True,
-                separators=(",", ":"),
-            )
-        )
-        return 1
+        return _report_unexpected_failure(None)
     print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
     return 0
+
+
+def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
+    return _report_failure(
+        code=error.code,
+        scope=error.details.get("failure_scope"),
+        stage=stage,
+    )
+
+
+def _report_unexpected_failure(stage: str | None) -> int:
+    return _report_failure(
+        code="UNEXPECTED_SAFE_FAILURE",
+        scope=None,
+        stage=stage,
+    )
+
+
+def _report_failure(*, code: str, scope: object, stage: str | None) -> int:
+    print(
+        json.dumps(
+            {
+                "status": "failed",
+                "error": {
+                    "code": code,
+                    "scope": scope,
+                    "stage": stage,
+                },
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
+    return 1
 
 
 if __name__ == "__main__":

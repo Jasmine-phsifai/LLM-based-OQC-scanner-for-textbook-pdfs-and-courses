@@ -261,6 +261,19 @@ The direct Python API is proven. The shared capability and worker registry stays
 frozen at 20 entries; #067 did not modify `contracts/` or `worker/`, and this
 record does not claim Google is available through the development worker.
 
+#113 changed only the maintained routine image smoke, not the historical #067
+gate or product adapter. Routine execution now discovers the current catalog
+and performs one single-image public recognition; it no longer repeats the
+already-proven eight-image group or invalid-credential probe. Typed and ordinary
+failures report only the safe runner stage (`catalog`, `model_selection`, or
+`recognition`) with no provider text. A single foreground run on the committed
+`bilingual_printed_slide.png` found 37 models and completed
+`gemini-2.5-flash` in exactly one recognition call with input/output usage
+595/443. Exit was 0 after 14,627.478 ms, stderr was empty, no credential pattern
+or OCR body was published, the child credential environment was removed, and
+no owned temporary residue remained. There was no retry, model switch, second
+invocation, dependency change, or product-code change.
+
 ### P0-c — Native Google short-audio vertical slice (completed by #069)
 
 The bounded direct slice is implemented and live-proven. The
@@ -317,11 +330,11 @@ regression claim and not a replacement for #069/#082's successful live proof.
 #099 simplified the maintained routine audio smoke based on that evidence. It
 still discovers the current catalog and makes at most one public recognition
 call, but no longer sends a second, deliberately invalid credential request on
-every run. The image smoke and #069/#082 retain independent credential-error
-evidence. Typed failures now report only a safe runner stage (`catalog`,
-`model_selection`, or `recognition`) alongside code/scope, so a future outage
-is not flattened across those boundaries. No provider text or product error
-contract is exposed or changed.
+every run. Historical image gates and #069/#082 retain independent
+credential-error evidence. Typed failures now report only a safe runner stage
+(`catalog`, `model_selection`, or `recognition`) alongside code/scope, so a
+future outage is not flattened across those boundaries. No provider text or
+product error contract is exposed or changed.
 
 #100 added a process-level regression for that maintained runner. With both
 supported credential environment variables absent, the real CLI loads the

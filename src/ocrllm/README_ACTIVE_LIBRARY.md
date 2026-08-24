@@ -220,23 +220,16 @@ repository root with authorized images:
 # GOOGLE_API_KEY is already present in this process; do not echo it.
 python tools/run_google_genai_image_smoke.py `
   --model gemini-2.5-flash `
-  --single-image tests/fixtures/phase1/images/bilingual_printed_slide.png `
-  --group-image `
-    tests/fixtures/phase1/images/bilingual_printed_slide.png `
-    tests/fixtures/phase1/images/bilingual_printed_slide_projected.jpg `
-    tests/fixtures/phase1/images/formula_board.png `
-    tests/fixtures/phase1/images/calibration_table.png `
-    tests/fixtures/phase1/images/handwritten_whiteboard.jpg `
-    tests/fixtures/phase1/images/bilingual_printed_slide.png `
-    tests/fixtures/phase1/images/bilingual_printed_slide_projected.jpg `
-    tests/fixtures/phase1/images/formula_board.png `
+  --image tests/fixtures/phase1/images/bilingual_printed_slide.png `
   --timeout 120
 ```
 
-The script performs current catalog discovery, one single-image call, one
-explicit eight-image call, and one invalid-credential failure probe. It prints
-only a bounded JSON summary, never recognized Markdown or paths, and does not
-retry, cache, choose another model, or fall back to another transport.
+The routine script performs current catalog discovery and one single-image
+public recognition. It prints only a bounded JSON summary with a safe
+catalog/model-selection/recognition failure stage, never recognized Markdown,
+paths, credentials, or provider text. It does not retry, cache, choose another
+model, send an extra invalid-key probe, or fall back to another transport. The
+historical one-image, eight-image, and credential gates remain recorded.
 
 ## Bounded Google Short-Audio Live Smoke
 
@@ -259,8 +252,8 @@ and typed error code/scope; a failure also identifies `catalog`,
 the transcript, source path, credential, or raw provider response and does not
 retry, choose another model, upload through the Files API, or fall back to
 another transport. Credential-error behavior remains independently covered by
-the image smoke and the historical audio gates; routine audio runs do not send
-an extra invalid-key request. The #068 gate returned
+historical image and audio gates; routine image and audio runs do not send an
+extra invalid-key request. The #068 gate returned
 `PROVIDER_QUOTA_EXHAUSTED` / `model` on `gemini-3.1-pro-preview`. The #069 gate
 then used `gemini-2.5-flash` and completed one real public result with exactly
 one provider call, input/output usage 150/10, and a credential-scoped invalid-key
