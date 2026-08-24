@@ -2508,3 +2508,19 @@ Atomic task — Iteration #093: audit the installed library’s version identity
 **真实 artifact 证明。** 轻量代理按固定构建流程在精确 `%TEMP%` 目录只构建一次；exit **0**，wheel 仍名为 `ocrllm-0.1.0-py3-none-any.whl`，大小 **203,132 bytes**，SHA-256 为 `fc848f9a4580502d2d336c4f65d906b377493f23b6176b657ae43293713c4cac`。仓库外直接导入后，wheel METADATA Version、`ocrllm.__version__`、`importlib.metadata.version("ocrllm")` 均精确为 **0.1.0**。构建后的 core metadata 已解析具体版本，因此没有保留 Dynamic 字段；这不是缺失。base import 未加载 Pillow、OpenAI、HTTPX、Google、PDFium、ONNX Runtime、RapidOCR 或 miniaudio。
 
 **验证、工具诚实与过度设计复盘。** lightweight import、public import contract 和 `py.typed` marker 合计 **10 passed in 0.36s**，`compileall` 与 `git diff --check` 通过。最初版本搜索中的一个复合 `rg` 因 PowerShell 引号形成未闭合正则，在扫描前退出；随后拆成多个固定字符串查询，才作为证据。临时 wheel 目录由执行代理在主代理复核后精确删除。没有改测试、runtime、public API、provider、checkpoint identity、worker protocol、repair、`contracts/` 或 `worker/`，没有 API/凭据调用。没有新增一个只证明双源一致的测试，因为双源本身已经删除；真实 wheel 构建就是该配置的直接消费者。
+
+## #094 — 2026-08-24：预置音频取消不再先复制并解码整个 MP3
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #094: audit the already-shipped short-audio facade’s cancellation contract at the provider-dispatch boundary, using current tests and the live-proven A1 path rather than expanding audio scope. Success means reconciling authority and diary, tracing cancellation before snapshot, before provider entry, and during provider execution, proving whether the public call remains bounded and reports honest attempted-call counts, then fixing only an analogous gap that the current API can reproduce. This matters because cancellation is an existing Config option and audio has already made real provider calls; it must not silently behave differently from image recognition.
+```
+
+**假设、两条路线与父级边界。** artifact 整理已到收益递减点，因此回到 live-proven A1 的现有运行合同。路线①把 cancellation 线程化进 miniaudio decoder、Google SDK、未来 Files/long-audio 和统一计数；路线②只追踪当前 <=25 MiB、<=300 秒 inline MP3 从 public facade 到一次同步 SDK 调用的真实检查点。选择②。legacy 的真实教训是取消/删除不能丢掉已付费输出；它不证明 active memory-only A1 可以中断 native SDK，也不授权新的后台线程。
+
+**失败优先证明的缺口。** active facade 完成 config/source/media 和 audio-option 校验后直接进入 `recognize_validated_short_mp3()`；该函数以前立即执行 snapshot、最多复制 25 MiB 并完整解码 MP3。Google request builder 在读取 owned snapshot 前才首次检查 cancellation，因此预先已经置位的 Event 虽然不会加载 SDK 或发 recognition 请求，仍会做全部本地 snapshot/probe 工作。新增回归把 processor 的 `snapshot_short_mp3` 替换成一调用即失败的探针；修复前稳定为 **1 failed in 0.11s**，明确看到 snapshot 已启动，而不是从代码推测。
+
+**最小修复与明确不扩展的语义。** `recognize_validated_short_mp3()` 只增加一行 `raise_if_cancelled(config.cancellation)`，位于 snapshot context 之前。回归随后为 **1 passed in 0.05s**，证明公共错误为 typed `CANCELLED` 且 snapshot 未启动。adapter 原有两处检查继续覆盖 request bytes 构建前和 recognition dispatch 前。同步 `generate_content()` 已经进入后无法被 Event 打断；如果调用期间信号才置位而 provider 正常返回，当前保留已经付费且 A1 无 checkpoint 可恢复的 transcript。本轮没有加 post-return cancellation 让结果丢失，也没有声称强制中断。
+
+**调用计数、验证与过度设计复盘。** audio 成功仍报告 `provider_call_count=1`；失败错误尚未承诺 image Stage M 那套完整 `provider_calls_attempted` ledger。预置取消的零调用由 SDK/snapshot 未进入的直接测试事实证明，没有为一个分支先造半套错误计数。音频 snapshot、adapter、cancellation helper、config 和 facade 相关集最终为 **165 passed in 0.60s**，changed files compileall 与 `git diff --check` 通过。一次中间组合命令引用不存在的 `tests/test_raise_if_cancelled.py`，pytest 在收集前退出且没有执行；改用实际承载 helper 测试的 `test_dashscope_provider_boundaries.py` 后才记录 165 项结果。没有 live API、凭据、下载、provider 改动、长音频、Files、retry、fallback、worker、`contracts/` 或 `worker/` 变更。

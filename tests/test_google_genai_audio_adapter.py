@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 from pathlib import Path
+from threading import Event
 from types import SimpleNamespace
 
 import pytest
@@ -11,6 +12,7 @@ import pytest
 import ocrllm
 from ocrllm import AudioModelSettings, Config, GoogleGenAISettings, recognize
 from ocrllm.errors import (
+    Cancelled,
     ConfigError,
     InvalidSource,
     NoSpeechDetected,
@@ -183,6 +185,26 @@ def test_invalid_mp3_fails_before_sdk_load(monkeypatch) -> None:
 
     assert caught.value.code == "SOURCE_INVALID"
     assert loaded is False
+
+
+def test_pre_set_google_audio_cancellation_stops_before_snapshot(monkeypatch) -> None:
+    processor = importlib.import_module("ocrllm.processors.recognize_short_mp3")
+    cancellation = Event()
+    cancellation.set()
+    snapshot_started = False
+
+    def fail_snapshot(*_args, **_kwargs):
+        nonlocal snapshot_started
+        snapshot_started = True
+        raise AssertionError("cancelled audio must not be snapshotted")
+
+    monkeypatch.setattr(processor, "snapshot_short_mp3", fail_snapshot)
+
+    with pytest.raises(Cancelled) as caught:
+        recognize(FIXTURE, config=_config(cancellation=cancellation))
+
+    assert caught.value.code == "CANCELLED"
+    assert snapshot_started is False
 
 
 def test_google_audio_adapter_checks_catalog_before_generate(monkeypatch) -> None:

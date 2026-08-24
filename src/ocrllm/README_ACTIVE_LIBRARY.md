@@ -137,6 +137,9 @@ The experimental direct Google short-audio facade:
 - requires `ocrllm[audio,google]`, exact `GoogleGenAISettings`, and exact
   `AudioModelSettings(name=...)`;
 - accepts exactly one `.mp3` of at most 300 decoded seconds;
+- honors an already-set cancellation signal before snapshot/copy/decode and
+  checks again before provider dispatch; a synchronous SDK call already in
+  progress is not interruptible;
 - snapshots and fully decodes the source, then preflights a conservative native
   inline Base64/JSON envelope below 20,000,000 bytes;
 - sends the prompt first and one `audio/mpeg` Part second;

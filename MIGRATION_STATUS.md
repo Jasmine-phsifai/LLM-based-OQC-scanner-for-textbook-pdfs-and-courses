@@ -73,8 +73,10 @@ Phase 1 maturation is offline implementation-complete:
   FFmpeg/PyAV/Mutagen remain outside the A1 runtime. Exact public audio
   configuration, facade dispatch, and in-memory result construction are now
   implemented for one native Google inline MP3 of at most 300 seconds, with a
-  conservative provider envelope below 20,000,000 bytes. Persistence, resume,
-  groups, long audio, Files upload, retries, and fallback are not implemented;
+  conservative provider envelope below 20,000,000 bytes. Pre-set cancellation
+  stops before snapshot/copy/decode and is checked again before dispatch; the
+  synchronous SDK call itself is not interruptible. Persistence, resume, groups,
+  long audio, Files upload, retries, and fallback are not implemented;
 - not started: Stage A2 long-audio recognition;
 - implemented and live-proven: the first PDFium vision slice. One PDF
   becomes serial eight-page image groups, ordinary image sidecars preserve

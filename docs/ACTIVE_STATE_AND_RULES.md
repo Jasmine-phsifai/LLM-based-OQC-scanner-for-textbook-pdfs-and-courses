@@ -85,6 +85,9 @@ ceiling, closes the caller's handle, then probes those owned bytes before
 yielding. Short destination writes fail as output errors instead of being
 misreported by the decoder. Source and destination close-only failures are
 typed and redacted; an earlier typed or process-control failure remains primary.
+An already-set cancellation signal stops before this snapshot work. The native
+adapter checks again before request construction and recognition dispatch; it
+does not claim to interrupt the synchronous SDK call after dispatch.
 This ceiling is not a provider request limit; the selected adapter must
 separately preflight a conservative provider-specific bound for its Base64/JSON
 envelope.

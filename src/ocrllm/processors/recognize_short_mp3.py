@@ -9,6 +9,7 @@ from ..config import Config
 from ..processor_output import ProcessorOutput
 from ..providers.google_genai.parse_google_genai_audio_response import NO_SPEECH_SENTINEL
 from ..providers.google_genai.recognize_short_mp3 import recognize_short_mp3
+from ..raise_if_cancelled import raise_if_cancelled
 
 
 _PROMPT = (
@@ -20,6 +21,7 @@ _PROMPT = (
 
 def recognize_validated_short_mp3(source_path: Path, *, config: Config) -> ProcessorOutput:
     """Snapshot one MP3, call Google once, and return an in-memory result."""
+    raise_if_cancelled(config.cancellation)
     with snapshot_short_mp3(source_path, temp_dir=config.temp_dir) as snapshot:
         response = recognize_short_mp3(snapshot, prompt=_PROMPT, config=config)
         model = config.audio_model.name
