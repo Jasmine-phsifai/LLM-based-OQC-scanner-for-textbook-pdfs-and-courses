@@ -33,9 +33,12 @@ run returned honest partial output but its ephemeral controller lost the audio
 error code/call evidence. #135 adds a maintained, redacted combined-video smoke
 runner with independent image/audio configs and exact-or-null call evidence.
 The next controlled one-group live fixture must use it. Final publication and
-recovery come later and
-must be derived from these real outcomes rather than copied from legacy. Keep
-the result a lightweight Python
+recovery come later and must be derived from real outcomes rather than copied
+from legacy. #136's first post-runner attempt lost the external exec
+session identifier after completion, so no provider result may be inferred; a
+future delegated run must poll the exact yielded session and validate captured
+safe JSON before cleanup. These are controller rules, not product features.
+Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
 

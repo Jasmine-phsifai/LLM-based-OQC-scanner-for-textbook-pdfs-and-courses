@@ -3189,3 +3189,19 @@ Atomic task — Iteration #135: add a maintained, bounded Google combined-video 
 **测试和主审。** 13 个定向离线回归覆盖：完整双分支、音频 provider 失败及次数 1、音频次数缺失为 null、图片分支已知/未知次数、音频提取失败、无音轨、双分支失败、组合异常、没有音频工件却声称 provider 失败、带持久化路径的图片/音频结果拒绝、顶层意外异常脱敏，以及各类临时目录清理。定向结果为 **13 passed in 0.09s**。最终完整离线测试为 **1,409 passed in 56.13s**；`compileall -q src tests tools`、`git diff --check` 和冻结 `contracts/` / `worker/` 检查通过。独立审查提出的两个实质问题——内存结果不应带 `output_path`、图片失败次数也要做对称证明——均已收紧；没有安装缺失的 Ruff，也没有下载依赖或调用 provider。
 
 **过度设计复查和下一步。** 没有增加通用 telemetry、重试、fallback、模型池、provider 基类、第二套视频 outcome、重复预抽帧、持久化 schema 或 legacy 格式兼容。为了让任意长视频在调用前保证恰好一组而重复解析/抽帧，会把一个冒烟脚本变成第二套编排，故明确限定受控样本，而不是扩张工具。#135 完成的是“下一次真实测试不会再丢失败证据”；下一原子迭代应使用该工具做一次受控 Google 双分支调用，并根据实际稳定 code 决定是否存在产品缺陷，不应先写假想的错误策略。
+
+## #136 — 2026-08-25：真实门禁进程完成，但外层会话证据再次丢失
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #136: use the maintained combined-video smoke runner to re-prove one controlled Google image-plus-audio video path and preserve the exact safe failure evidence if either branch fails. Success means current model discovery, one bounded image-group call and one bounded audio call through separate configs, honest complete/partial/failed JSON, no retry or fallback, no credential/content/path disclosure, complete cleanup, and a documented decision based on the observed stable code rather than speculation. This matters because #135 fixed the verifier, and the product can only mature if real provider behavior now exercises it.
+```
+
+**假设、路线与分工。** 本轮假设继续使用已授权的免费 Google 凭据、`gemini-2.5-flash`、仓库自有文字图片和 Windows `System.Speech` 合成短语；不先改产品代码。路线一是恢复 #134 的一次性控制器，路线二是只调用 #135 提交的维护脚本；选择路线二。按维护者要求，生成临时媒体、读取已有凭据和主动等待交给熟悉 #126 真实流程的轻量任务，主代理同时复核适配器：音频调用在进入 `generate_content()` 前明确记为 1，目录或请求构造失败保持 0，因此维护脚本只要拿到 JSON 就能诚实解释。
+
+**唯一一次执行及证据失败。** 轻量任务生成受控短视频并启动了唯一一次 `tools/run_google_genai_video_smoke.py`；相关 Python 进程随后结束，没有 retry、fallback、第二模型或第二次 runner。但第一次执行返回异步 session 后，任务没有保留 session ID，也就无法继续读取最终安全 JSON、exit 和 timing。虽然工作说明要求先把 stdout/stderr/exit 写入临时捕获再离线解析，捕获仍位于同一个受控临时根，外层 cleanup 已在任务恢复前删除该根。因此不能从“进程结束”猜测 Google 成功、失败、catalog 数、图片/音频调用次数、错误码或 runner exit；这些全部保持 unknown。
+
+**零 provider 收尾核查。** 主代理没有自行补跑，而是让同一轻量任务只做只读/清理审计。精确 `ocrllm-video-runner-*` 临时根和其中捕获均不存在；没有任务相关 Python/FFmpeg 进程；当前任务环境没有 Google/Gemini 凭据变量；仓库无修改。这个结论只证明生命周期清理，没有证明产品结果。它与 #134 的区别是：#134 至少保留了 partial outcome，只丢音频失败细节；#136 连安全顶层 JSON 都没有，因此更不能归因于 provider 或 library。
+
+**决定、过度设计复查与下一步。** 本轮不改产品代码、不改维护 runner，也不为了外层工具失误添加 telemetry、第二个捕获系统、自动 retry 或 API pool。问题发生在协作任务没有对返回的 exec session 做后续 poll，不是当前 Python runner 的可复现缺陷。下一次独立、受控尝试必须把 session ID 作为唯一状态保存，并用同一 ID 等待到进程退出；安全 JSON 验证完成后才能删捕获根。若下次仍出现同一外层阻塞，才重新评估是否需要仓库内持久捕获入口。本轮只更新当前状态和日记，不把一次无证据执行写成绿色或红色产品结果。

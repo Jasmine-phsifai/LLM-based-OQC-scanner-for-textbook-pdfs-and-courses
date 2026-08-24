@@ -147,7 +147,10 @@ into too few retained intervals. #134's post-change Google video run proved the
 image and partial-composition paths but lost the failed audio branch's safe error
 evidence. #135 adds the maintained, redacted combined-video smoke runner with
 separate image/audio configs and exact-or-unknown branch call evidence; the next
-bounded live run must use it with a controlled one-image-group fixture.
+bounded live run must use it with a controlled one-image-group fixture. #136's
+first such attempt lost its external asynchronous session identifier after the
+runner completed, so it proves no provider outcome; the next controller must
+poll that exact session and preserve safe JSON before cleanup.
 Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

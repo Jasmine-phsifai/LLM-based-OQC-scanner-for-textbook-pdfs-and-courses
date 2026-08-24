@@ -1065,6 +1065,21 @@ ordinary multi-group videos remain valid library inputs but are not this one-cal
 smoke gate. The full offline source suite passes 1,409 tests; compileall,
 diff hygiene, and frozen-boundary checks pass.
 
+#136 made the first post-runner live attempt, but it produced no admissible
+provider evidence. The delegated controller started exactly one maintained
+runner process and did not retry, yet failed to retain the asynchronous exec
+session identifier. The runner completed, but its safe JSON/exit status could
+not be retrieved; the capture files had already been removed with the exact
+owned temporary root. A zero-provider cleanup audit found no task Python/FFmpeg
+process, Google/Gemini credential environment, capture, or temporary residue.
+This is a controller evidence failure, not a Google or product result: catalog,
+branch status, stable error code, and attempted-call counts all remain unknown.
+Do not infer success or failure and do not change product code from this run.
+The next bounded attempt must keep and poll any returned exec session ID until
+completion, then validate the persisted safe JSON before deleting its owned
+capture root. This operational correction does not justify another runner,
+retry layer, telemetry system, or product API.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,
