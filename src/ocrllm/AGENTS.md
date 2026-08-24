@@ -26,9 +26,9 @@ keeps frames and audio separate and does not publish Markdown, infer time
 alignment, or copy legacy formats. #130 proves that exact facade from a clean,
 freshly installed wheel through a real local MP4 without loading heavy video
 dependencies during plain import. #131 keeps the final candidate when excessive
-frame density is capped; supplementary-plane output stems still exceed the
-Windows UTF-16-unit budget and are the next active defect. Final publication
-and recovery come later and
+frame density is capped; #132 makes the shared 96-unit output-stem budget use
+Windows UTF-16 units without splitting supplementary characters. Final
+publication and recovery come later and
 must be derived from these real outcomes rather than copied from legacy. Keep
 the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,

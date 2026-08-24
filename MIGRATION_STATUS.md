@@ -406,8 +406,10 @@ The following directions remain traceable but are not current work:
   frame and audio sections; it does not publish Markdown, resume video work,
   route long audio, or expose a worker command. Safety-cap frame selection now
   preserves both video endpoints, so density limiting cannot silently discard
-  the last retained candidate. The next active defect is Windows UTF-16-unit
-  stem truncation; cancellation, publication, and resume remain separate.
+  the last retained candidate. Shared output-stem truncation now measures its
+  existing 96-unit budget in Windows UTF-16 units, so supplementary characters
+  do not overflow retained-frame paths. Cancellation, publication, and resume
+  remain separate.
 
 ## Obsolete Prose Kept For Trace
 

@@ -350,10 +350,11 @@ is often accepted.
   candidates. Losing the last candidate can lose content written only at the
   end of a lecture; preserve exact cap and order without adding a second scene
   detector or changing the 28--40 frames/hour calibration policy.
-- **Open after #131:** the 96-unit output-stem budget must be measured in Windows
-  UTF-16 units, not Python code points. Preserve whole Unicode characters and
-  the existing 259-unit path boundary. Do not use this concrete supplementary-
-  character failure to introduce extended-path support or a path framework.
+- #132 measures the existing 96-unit output-stem budget in Windows UTF-16 units,
+  not Python code points. Truncation preserves complete characters and the
+  existing 259-unit controlled path boundary. This concrete supplementary-
+  character fix does not authorize extended-path support, reserved-name work,
+  or a general path framework.
 
 ## Resolved confirmation and next authority
 

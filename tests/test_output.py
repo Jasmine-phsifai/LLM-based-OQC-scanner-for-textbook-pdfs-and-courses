@@ -21,6 +21,15 @@ def test_output_stem_normalization_replaces_ascii_delete_control():
     assert normalize_module.normalize_output_stem("before\x7fafter") == "before_after"
 
 
+def test_output_stem_normalization_caps_complete_windows_utf16_characters():
+    normalize_module = importlib.import_module("ocrllm.output.normalize_output_stem")
+
+    normalized = normalize_module.normalize_output_stem("a" * 95 + "😀tail")
+
+    assert normalized == "a" * 95
+    assert len(normalized.encode("utf-16-le")) // 2 == 95
+
+
 class CountingProvider:
     """Return fixed Markdown while exposing the invocation count."""
 

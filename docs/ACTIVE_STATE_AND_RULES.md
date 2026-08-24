@@ -999,14 +999,18 @@ scanning, provider grouping, or artifact lifecycle. The full source suite passes
 1,393 tests, including real local MP4 neighbors, and exhaustive arithmetic review
 proved unique ordered endpoints for all supported candidate/cap sizes.
 
-The next active video defect is already reproduced on Windows: output-stem
-normalization caps 96 Python code points rather than 96 UTF-16 path units. A
-96-emoji stem therefore occupies 192 Windows units and can push a retained-frame
-path past the maintained 259-unit boundary, ending in `OUTPUT_WRITE_FAILED` even
-though the equivalent ASCII stem succeeds. Fix this as the next atomic defect by
-truncating the normalized stem on complete-character UTF-16-unit boundaries;
-do not add extended-path support or a general path framework. #127 cancellation
-and final publication/resume remain separate open product decisions.
+#132 closes the adjacent Windows supplementary-Unicode defect in the shared
+output-stem normalizer. The 96-unit budget is now measured as Windows UTF-16
+units after NFC normalization, forbidden-character replacement, and trailing
+dot/space removal. Truncation preserves complete Python characters: ASCII keeps
+the prior 96-character behavior, while 48 supplementary characters exactly fill
+the budget and a 49th is omitted rather than split. A real MP4 with a 60-emoji
+stem now publishes retained JPEGs under a controlled 130-unit parent with every
+path at or below the established 259-unit boundary; the ordinary image-output
+caller also publishes successfully. This remains a bounded-stem correction, not
+extended-path support, reserved-name handling, or a general path framework.
+The full source suite passes 1,395 tests. #127 cancellation and final
+publication/resume remain separate open product decisions.
 
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide

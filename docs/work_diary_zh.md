@@ -3121,3 +3121,21 @@ Atomic task — Iteration #131: identify and close the next proven usability def
 **验证和主审。** 首次测试命令误用了没有 OpenCV 的 STA Python，只得到依赖缺失，未被当作产品红灯；检查已有 Conda 环境后改用现成 OCRLLM 环境，得到预期 `97 != 99`。修复后的抽帧、帧识别、视频编排与组合定向集为 **34 passed in 1.61s**，其中原有测试会生成并解析真实本地 MP4。主代理逐行复核公式，并穷举候选数 11—500、上限 10—候选数减一，确认数量、首尾和严格递增。独立 review 扩到候选数 1,000、上限 10—100，结论相同且认为测试没有锁死内部间距。最终全量为 **1,393 passed in 52.23s**；`compileall -q src tests tools`、`git diff --check` 通过，冻结 `contracts/` 与 `worker/` 没有变化。没有依赖安装、provider/API 调用或凭据使用。
 
 **新发现与过度设计复查。** 独立审计另复现了 Windows 输出名缺陷：`normalize_output_stem()` 当前截取 96 个 Python code point；96 个 emoji 实际是 192 个 UTF-16 units，会把已有受控父目录下的 frame path 推到 349 units并触发 `OUTPUT_WRITE_FAILED`，而同条件 ASCII stem 成功。主代理复核函数并确认 `len(value)==96`、UTF-16 units 为 192。该缺陷优先级高，但不与本轮选帧公式混改；已经进入下一原子任务。下一轮只应按完整 Unicode 字符的 UTF-16 unit 预算截断，不做 extended-path、通用 path framework 或 hash manifest。本轮同样没有碰 #127 取消、最终发布、resume、provider 泛化、legacy 格式或 social 功能。
+
+## #132 — 2026-08-25：按 Windows UTF-16 单位限制共享输出名
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #132: repair the reproduced Windows supplementary-Unicode output-stem defect without adding extended-path support or a general path abstraction. Success means proving the current code-point cap can push a real retained-frame path beyond the maintained 259 UTF-16-unit boundary, changing normalization to preserve complete Unicode characters within the existing 96-unit budget, keeping ASCII and filename sanitization behavior unchanged, exercising real local MP4 extraction on Windows, and recording the result. This matters because a valid source filename must not make an otherwise supported video fail during artifact publication.
+```
+
+**调用面、两条路线与决定。** 初始路线一是在视频留帧处再截断一次，改动表面更局部但会复制文件名规则；路线二是修正共享 `normalize_output_stem()`。代码核对确认它只有普通 Markdown 输出解析和视频留帧根两个产品调用者，而且函数本来就承诺 Windows-safe 的 96 单位预算，因此选择共享修复。保持 NFC、控制字符/Windows 非法字符替换、尾部点和空格删除、空结果回退 `source` 全部不变；不增加平台分支，也不让视频和普通输出产生两套命名。
+
+**失败优先和真实 Windows 路径。** 跨平台纯函数回归输入 `95 ASCII + emoji + tail`，旧实现保留 emoji，结果是 96 个 Python code points、实际 **97 UTF-16 units**。Windows 集成回归生成一个真实、可解码的 60-emoji 文件名 MP4，把输出父目录控制为 130 UTF-16 units；旧代码虽然在当前启用长路径的机器上能够写出文件，但最终 frame path 达到 **277 units**，违反库自己维护的 259-unit 兼容边界。两项都先失败，分别是错误保留补充字符和 `277 <= 259` 不成立，证明不是只看代码推测。
+
+**最小实现。** 共享 normalizer 在既有清洗后逐个 Python 字符累计 Windows 单位：BMP 字符为 1，补充平面字符为 2；加入下一个字符会超过 96 时立即停止。它不通过 UTF-16 编码切字节，因此不会切断 surrogate pair，也不会跳过一个超预算字符后再拼后缀。ASCII 仍最多 96 字符；48 个 emoji 恰好占 96 units，第 49 个完整省略。没有新增 helper 文件、路径对象、hash、reserved-name 表、`\\?\` 前缀或通用路径层。
+
+**验证、主审和边界。** 修复后的四项核心回归（ASCII 控制字符、纯函数补充字符、真实 ASCII 长 stem MP4、真实 emoji stem MP4）全部通过；普通输出、视频、PDF 和 image resume 邻居为 **61 passed in 2.96s**。独立 review 的 `test_output.py + test_extract_video_frames.py` 为 **22 passed in 0.49s**，并额外确认 NFC/清洗发生在截断前、截断前后尾部点/空格语义不变、普通图片输出也能用修正后的 Unicode stem 发布。最终 root 全量为 **1,395 passed in 55.45s**；`compileall -q src tests tools`、`git diff --check` 通过，冻结 `contracts/`/`worker/` 无变化。没有安装/下载、provider/API 调用、凭据、legacy 或用户未跟踪文件改动。
+
+**过度设计复查与下一边界。** 这次只纠正已经存在且被真实路径复现的 96-unit 预算，没有顺便解决任意深父目录、Windows 保留名、文件系统 normalization 差异、extended-length path 或全库路径策略。#127 的取消语义仍需维护者选择，最终 Markdown 发布与自己的 video resume 也继续等待该生命周期决定；没有以路径修复为理由推进这些功能、provider 泛化或 social 工作。

@@ -206,3 +206,25 @@ def test_extract_video_frames_does_not_amplify_near_limit_paths(
     )
     assert max(_windows_path_units(path) for path in created_paths) <= 259
     assert all(path.exists() for path in created_paths)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows legacy path-limit regression")
+def test_extract_video_frames_caps_supplementary_unicode_stem_units(
+    tmp_path: Path,
+) -> None:
+    if _windows_path_units(tmp_path) >= 130:
+        pytest.skip("pytest temporary root is already beyond the controlled path range")
+    unicode_stem = "😀" * 60
+    source = _write_sectioned_mp4(tmp_path / f"{unicode_stem}.mp4")
+    output_parent = _make_directory_with_windows_path_units(tmp_path / "out", 130)
+
+    frames = extract_video_frames(source, output_dir=output_parent)
+
+    expected_stem = "😀" * 48
+    created_paths = (
+        output_parent / expected_stem,
+        output_parent / expected_stem / "frames",
+        *(frame.path for frame in frames),
+    )
+    assert max(_windows_path_units(path) for path in created_paths) <= 259
+    assert all(path.exists() for path in created_paths)

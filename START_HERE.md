@@ -140,8 +140,9 @@ inventing time alignment. #130 then built the exact current clean archive,
 installed its wheel outside the repository, and re-proved that complete local
 video path while keeping plain package import lightweight. #131 fixes the
 density safety cap so it retains the final video candidate instead of possibly
-ending early. The next defect is UTF-16-unit stem truncation on Windows. Final publication,
-cancellation refinement, and
+ending early. #132 fixes shared output-stem truncation to use the existing
+Windows UTF-16-unit budget while preserving complete Unicode characters. Final
+publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. The queue explicitly stops further proactive filesystem/accounting edge
