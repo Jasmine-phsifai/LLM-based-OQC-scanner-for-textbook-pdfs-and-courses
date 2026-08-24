@@ -46,6 +46,10 @@ do not add adapter retry, automatic model switching, or provider pooling.
 frames use `output_root/frames/*` and optional audio uses
 `output_root/audio.mp3`. Reject mismatches at construction, but do not turn
 this into path resolution, symlink policy, hashes, manifests, or a sandbox.
+#139 requires exact-or-unknown provider-call totals in composed video results.
+Missing evidence from any settled provider branch makes
+`current_run_provider_call_count` null; only a proven pre-dispatch video/audio
+parsing outcome is zero. Do not add a ledger, telemetry layer, or billing API.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

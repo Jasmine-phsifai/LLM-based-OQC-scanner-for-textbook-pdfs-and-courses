@@ -3237,3 +3237,17 @@ Atomic task — Iteration #138: make the public video outcome reject media artif
 **主审修正：精确布局，不是假称物理 containment。** 独立 review 指出直接 `Path` 相等会拒绝语义上可能相同的 `..`、绝对/相对或 symlink alias，并且不能阻止根内 symlink 指向外部。这个判断正确，但本轮不通过 `resolve()` 扩张兼容或安全范围。维护者偏好对不确定输入直接拒绝，因此合同明确为**精确词法布局**：手工构造者必须复用相同 Path；不解析 alias，不跟随 symlink，也不宣称物理所有权。错误文本和 README/MIGRATION_STATUS 均改成 exact lexical layout，并补一项 `..` alias 必须拒绝的回归。没有顺便添加 duplicate-frame、canonicalization、symlink walk、hash 或 sandbox。
 
 **验证、library 边界和过度设计复查。** outcome、真实本地 `recognize_video()`、composition 与 Google runner 邻居最终为 **31 passed in 0.95s**；其中公开视频测试会实际生成并解析本地 MP4，证明产品返回布局没有被破坏。完整离线测试为 **1,413 passed in 51.96s**；`compileall -q src tests tools`、`git diff --check` 和冻结 `contracts/` / `worker/` 检查通过。没有安装、下载或 provider 调用。修改只有构造不变量、四项回归、一个旧测试责任修正和公开文档；没有新路径 helper、provider 逻辑、resume、最终 Markdown、#127 取消、legacy 格式或 social 功能。
+
+## #139 — 2026-08-25：视频组合调用次数不再把未知伪装成零
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #139: stop provider-free video composition from converting missing branch call evidence into a false zero. Success means reproducing the current lie with a partial public outcome, defining one simple exact-or-unknown aggregate, preserving known zero for pre-dispatch audio absence/extraction, keeping per-model token aggregation unchanged, proving existing complete/live-shaped outcomes, and documenting the contract without adding billing, telemetry, retry, or provider-routing machinery. This matters because #134 already showed that “no successful result metadata” does not mean “no provider call,” and a mature library must not repeat that mistake in its standard composed result.
+```
+
+**假设、两条路线与选择。** 当前 `current_run_provider_call_count` 表示一次组合所覆盖的 provider 调用总数，只有全部分支证据齐全时才能是精确整数。路线一是在证据缺失时删掉字段；路线二是保留字段并写 `None`。选择路线二，因为 JSON metadata 已支持 null，调用者可以直接区分“未知”和“明确为零”，不必再猜字段缺失是旧版本还是某种分支。没有增加第二个计数字段或计数对象。
+
+**失败优先证据和最小实现。** 新回归先证明三种旧谎报：音频已有 MP3、provider 错误却缺少 `provider_calls_attempted` 时，组合只报告已知图片调用；成功图片结果缺少次数时报告 0；整条图片 provider 分支失败但缺少次数时，只报告已知音频调用。旧实现对应得到 1、0、1，而不是未知。实现仅把两个读取 helper 的缺失返回从 0 改为 `None`，逐分支收集后执行“全部已知才求和”。若 `current_run_provider_call_count` 明确存在但为 null，它优先表示本轮未知，不能再退回读取旧口径 `provider_call_count`；只有新字段完全不存在时才兼容旧字段。静音 `VIDEO_NO_AUDIO_STREAM` 和没有 MP3 的 `VideoError` 是解析阶段已结束、未进入 provider 的已知零；没有 MP3 的任意其他错误仍不能猜成零。按模型 input/output token 汇总完全不变。
+
+**独立审查、验证与过度设计复查。** 第一份只读审查确认保留字段并传播 `None` 与维护 Google 视频 runner 的 exact-or-null 规则一致，并纠正了初稿中过宽的“只要没有 MP3 就算零”：实现还要求错误属于 `VideoError`。最终 code review 又发现显式 `provider_calls_attempted=1` 会被这个推断覆盖；最终顺序改为先保留合法显式次数，只有证据缺失、没有 MP3 且属于 `VideoError` 时才推断零，并以 `VIDEO_INVALID` 和 `VIDEO_NO_AUDIO_STREAM` 两种回归固定。没有为手工矛盾 outcome 新建一致性验证器。视频组合、公开视频编排、Google runner 和 outcome 定向集合为 **37 passed in 1.00s**；最后一次完整离线测试为 **1,419 passed in 55.79s**，`compileall -q src tests tools`、`git diff --check`、轻量 import 和冻结目录检查通过。没有网络、provider、凭据、安装或下载。本轮没有账本、telemetry、计费、阶段枚举、强制所有错误携带次数、retry、fallback、provider class、持久化、legacy 格式、GUI 或 social 功能；只修复标准组合结果的诚实性。

@@ -155,7 +155,10 @@ image call succeeded, one audio call returned `PROVIDER_QUOTA_EXHAUSTED`, and
 the public outcome/composition honestly preserved a two-asset partial result
 without retry or model switching. #138 then makes the public outcome reject
 frame/audio paths outside its exact lexical `output_root/frames/*` and optional
-`output_root/audio.mp3` layout before composition.
+`output_root/audio.mp3` layout before composition. #139 makes composed
+current-run provider calls exact-or-unknown: any settled provider branch that
+lacks reliable call evidence makes the total `None`; only a proven
+pre-dispatch video/audio parsing branch contributes zero.
 Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

@@ -40,8 +40,10 @@ As of 2026-08-25:
   settles both branches into a typed `VideoRecognitionOutcome`.
   `compose_video_result()` can explicitly turn a returned complete or partial
   outcome into a standard memory-only video `RecognitionResult` with separate
-  frame and audio sections. Long-audio recognition, final Markdown publication,
-  resume, and worker routing are not implemented yet.
+  frame and audio sections. Its current-run provider-call total is an integer
+  only when every settled branch supplies exact evidence; otherwise it is
+  `None`, never a guessed zero. Long-audio recognition, final Markdown
+  publication, resume, and worker routing are not implemented yet.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.

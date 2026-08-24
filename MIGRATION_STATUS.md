@@ -407,9 +407,11 @@ The following directions remain traceable but are not current work:
   converts a returned complete
   or partial outcome into a memory-only standard video result with ordered
   frame and audio sections; it does not publish Markdown, resume video work,
-  route long audio, or expose a worker command. Safety-cap frame selection now
-  preserves both video endpoints, so density limiting cannot silently discard
-  the last retained candidate. Shared output-stem truncation now measures its
+  route long audio, or expose a worker command. Its composed current-run
+  provider-call total is exact when every settled branch supplies evidence and
+  otherwise `None`; missing evidence is never converted to zero. Safety-cap
+  frame selection now preserves both video endpoints, so density limiting
+  cannot silently discard the last retained candidate. Shared output-stem truncation now measures its
   existing 96-unit budget in Windows UTF-16 units, so supplementary characters
   do not overflow retained-frame paths. Maximum-length stable segments now use
   ceiling partition counts instead of rounding down and exceeding the selected

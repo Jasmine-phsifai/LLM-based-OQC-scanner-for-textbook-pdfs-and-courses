@@ -382,6 +382,12 @@ is often accepted.
   child and optional audio must use its `audio.mp3`; construction rejects
   mismatches before composition. Do not infer physical containment or add
   `resolve()`, symlink traversal, hashes, manifests, or filesystem sandboxing.
+- #139 applies the combined-video runner's exact-or-null evidence rule to the
+  standard provider-free composition result. Sum branch call counts only when
+  every settled provider branch supplies a valid nonnegative integer; otherwise
+  keep `current_run_provider_call_count` present with value `null`. A silent
+  stream or typed video/audio parsing failure before provider dispatch is known
+  zero. Do not add billing, telemetry, a call ledger, or provider routing.
 
 ## Resolved confirmation and next authority
 

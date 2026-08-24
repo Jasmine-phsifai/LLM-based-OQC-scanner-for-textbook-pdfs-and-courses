@@ -10,7 +10,7 @@ from .aggregate_current_model_token_usage import (
 )
 from .batch_item_outcome import BatchItemOutcome
 from .build_recognition_result import build_recognition_result
-from .errors import OCRLLMError
+from .errors import OCRLLMError, VideoError
 from .processor_output import ProcessorOutput
 from .result import RecognitionResult
 from .video_recognition_outcome import VideoRecognitionOutcome
@@ -29,7 +29,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     successful_results: list[RecognitionResult] = []
     settled_errors: list[OCRLLMError] = []
     frame_failures: list[dict[str, object]] = []
-    provider_calls = 0
+    provider_call_counts: list[int | None] = []
     warnings: list[str] = []
     hotwords: list[str] = []
     composed_indices: list[int] = []
@@ -56,14 +56,14 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         if item.result is not None:
             body.append(item.result.markdown.strip())
             successful_results.append(item.result)
-            provider_calls += _result_provider_calls(item.result)
+            provider_call_counts.append(_result_provider_calls(item.result))
             warnings.extend(item.result.warnings)
             hotwords.extend(item.result.hotwords)
         else:
             assert item.error is not None
             settled_errors.append(item.error)
             body.append(f"Recognition error: `{item.error.code}`")
-            provider_calls += _error_provider_calls(item.error)
+            provider_call_counts.append(_error_provider_calls(item.error))
             warnings.append(
                 f"Video frame group {item.index + 1} failed with {item.error.code}."
             )
@@ -110,7 +110,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
             f"Recognition error: `{outcome.frame_error.code}`"
         )
         metadata["video_frame_error_code"] = outcome.frame_error.code
-        provider_calls += _error_provider_calls(outcome.frame_error)
+        provider_call_counts.append(_error_provider_calls(outcome.frame_error))
         warnings.append(
             f"Video frame recognition failed with {outcome.frame_error.code}."
         )
@@ -119,23 +119,37 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     if outcome.audio_result is not None:
         sections.append(outcome.audio_result.markdown.strip())
         successful_results.append(outcome.audio_result)
-        provider_calls += _result_provider_calls(outcome.audio_result)
+        provider_call_counts.append(_result_provider_calls(outcome.audio_result))
         warnings.extend(outcome.audio_result.warnings)
         hotwords.extend(outcome.audio_result.hotwords)
     else:
         assert outcome.audio_error is not None
+        audio_provider_calls = _error_provider_calls(outcome.audio_error)
+        if (
+            audio_provider_calls is None
+            and outcome.audio_artifact is None
+            and isinstance(outcome.audio_error, VideoError)
+        ):
+            audio_provider_calls = 0
+        provider_call_counts.append(audio_provider_calls)
         if outcome.audio_state == "absent":
             sections.append("No audio stream was present.")
         else:
             settled_errors.append(outcome.audio_error)
             sections.append(f"Recognition error: `{outcome.audio_error.code}`")
             metadata["audio_error_code"] = outcome.audio_error.code
-            provider_calls += _error_provider_calls(outcome.audio_error)
             warnings.append(
                 f"Video audio recognition failed with {outcome.audio_error.code}."
             )
 
-    metadata["current_run_provider_call_count"] = provider_calls
+    known_provider_call_counts = [
+        count for count in provider_call_counts if count is not None
+    ]
+    metadata["current_run_provider_call_count"] = (
+        sum(known_provider_call_counts)
+        if len(known_provider_call_counts) == len(provider_call_counts)
+        else None
+    )
     token_usage = aggregate_current_model_token_usage(
         successful_results,
         settled_errors,
@@ -193,16 +207,20 @@ def _format_values(values: tuple[int, ...] | tuple[float, ...]) -> str:
     return ", ".join(str(value) for value in values)
 
 
-def _result_provider_calls(result: RecognitionResult) -> int:
-    for key in ("current_run_provider_call_count", "provider_call_count"):
-        count = result.metadata.get(key)
+def _result_provider_calls(result: RecognitionResult) -> int | None:
+    if "current_run_provider_call_count" in result.metadata:
+        count = result.metadata["current_run_provider_call_count"]
         if type(count) is int and count >= 0:
             return count
-    return 0
+        return None
+    count = result.metadata.get("provider_call_count")
+    if type(count) is int and count >= 0:
+        return count
+    return None
 
 
-def _error_provider_calls(error: OCRLLMError) -> int:
+def _error_provider_calls(error: OCRLLMError) -> int | None:
     count = error.details.get("provider_calls_attempted")
     if type(count) is int and count >= 0:
         return count
-    return 0
+    return None

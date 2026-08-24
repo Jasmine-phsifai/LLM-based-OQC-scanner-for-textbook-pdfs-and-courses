@@ -251,6 +251,149 @@ def test_compose_video_result_keeps_whole_frame_branch_failure(
     assert result.metadata["current_run_provider_call_count"] == 2
 
 
+def test_compose_video_result_marks_missing_audio_provider_call_count_unknown(
+    tmp_path: Path,
+) -> None:
+    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(frame,),
+        frame_outcomes=(
+            BatchItemOutcome(
+                index=0,
+                result=_frame_result(
+                    markdown="Board content.",
+                    indices=(0,),
+                    timestamps=(0.0,),
+                ),
+            ),
+        ),
+        audio_error=ProviderError(
+            "Audio provider failed without call evidence.",
+            code="PROVIDER_UNAVAILABLE",
+        ),
+    )
+
+    result = compose_video_result(outcome)
+
+    assert result.status == "partial"
+    assert result.metadata["current_run_provider_call_count"] is None
+
+
+def test_compose_video_result_marks_missing_success_call_count_unknown(
+    tmp_path: Path,
+) -> None:
+    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(frame,),
+        frame_outcomes=(
+            BatchItemOutcome(
+                index=0,
+                result=RecognitionResult(
+                    markdown="Board content.",
+                    source_type="image",
+                    metadata={
+                        "video_frame_indices": (0,),
+                        "video_frame_timestamps_seconds": (0.0,),
+                        "current_run_provider_call_count": None,
+                        "provider_call_count": 1,
+                    },
+                ),
+            ),
+        ),
+        audio_error=VideoError("No stream.", code="VIDEO_NO_AUDIO_STREAM"),
+    )
+
+    result = compose_video_result(outcome)
+
+    assert result.status == "complete"
+    assert result.metadata["current_run_provider_call_count"] is None
+
+
+def test_compose_video_result_marks_missing_frame_error_call_count_unknown(
+    tmp_path: Path,
+) -> None:
+    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    audio = tmp_path / "video" / "audio.mp3"
+    audio.write_bytes(b"mp3-placeholder")
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(frame,),
+        frame_error=ProviderError(
+            "Frame provider failed without call evidence.",
+            code="PROVIDER_UNAVAILABLE",
+        ),
+        audio_artifact=audio,
+        audio_result=_audio_result(),
+    )
+
+    result = compose_video_result(outcome)
+
+    assert result.status == "partial"
+    assert result.metadata["current_run_provider_call_count"] is None
+
+
+def test_compose_video_result_counts_pre_dispatch_audio_failure_as_zero(
+    tmp_path: Path,
+) -> None:
+    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(frame,),
+        frame_outcomes=(
+            BatchItemOutcome(
+                index=0,
+                result=_frame_result(
+                    markdown="Board content.",
+                    indices=(0,),
+                    timestamps=(0.0,),
+                ),
+            ),
+        ),
+        audio_error=VideoError(
+            "Audio extraction failed before provider dispatch.",
+            code="VIDEO_INVALID",
+        ),
+    )
+
+    result = compose_video_result(outcome)
+
+    assert result.status == "partial"
+    assert result.metadata["current_run_provider_call_count"] == 1
+
+
+@pytest.mark.parametrize("code", ["VIDEO_INVALID", "VIDEO_NO_AUDIO_STREAM"])
+def test_compose_video_result_preserves_explicit_video_error_call_count(
+    tmp_path: Path,
+    code: str,
+) -> None:
+    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(frame,),
+        frame_outcomes=(
+            BatchItemOutcome(
+                index=0,
+                result=_frame_result(
+                    markdown="Board content.",
+                    indices=(0,),
+                    timestamps=(0.0,),
+                ),
+            ),
+        ),
+        audio_error=VideoError(
+            "Video audio failed with explicit call evidence.",
+            code=code,
+            details={"provider_calls_attempted": 1},
+        ),
+    )
+
+    result = compose_video_result(outcome)
+
+    assert result.metadata["current_run_provider_call_count"] == 2
+
+
 def test_compose_video_result_rejects_fully_failed_outcome(tmp_path: Path) -> None:
     frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
     outcome = VideoRecognitionOutcome(

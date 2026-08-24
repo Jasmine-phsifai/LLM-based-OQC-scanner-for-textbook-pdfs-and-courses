@@ -315,8 +315,11 @@ already returned complete or partial outcome. It creates one memory-only
 Video audio sections, exact retained-frame identities, honest stable error codes,
 all retained media in `assets`, current-run provider-call totals, and
 provider-reported input/output tokens accumulated separately by model. It does
-not align audio text to frame timestamps, publish a file, parse legacy output,
-or accept a fully failed outcome.
+not infer a zero from missing branch call evidence: the total is `None` unless
+every settled provider branch supplies an exact nonnegative count. A silent
+video or video/audio parsing failure before provider dispatch contributes a
+known zero. Composition does not align audio text to frame timestamps, publish
+a file, parse legacy output, or accept a fully failed outcome.
 Automatic fallback, resume, final Markdown publication, and worker routing
 remain unavailable. Plain
 `import ocrllm` does not import OpenCV, NumPy, or imageio-ffmpeg.

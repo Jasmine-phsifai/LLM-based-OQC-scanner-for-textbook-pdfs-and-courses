@@ -1122,6 +1122,22 @@ sandbox was added. Four constructor regressions plus real local video,
 composition, and Google-runner neighbors pass; the full offline suite passes
 1,413 tests, with compileall, diff hygiene, and frozen-boundary checks clean.
 
+#139 stops provider-free composition from presenting incomplete provider-call
+evidence as an exact total. `compose_video_result()` now keeps
+`current_run_provider_call_count` present but sets it to `None` whenever any
+settled provider success or failure lacks a valid nonnegative call count. It
+sums only complete branch evidence. A silent video, or a typed video/audio
+parsing failure before an audio artifact exists, contributes a proven zero
+because provider dispatch did not occur. Provider-reported token usage remains
+aggregated separately by model and is unchanged.
+
+This is unknown propagation in one existing metadata field, not a new
+accounting system. No billing model, telemetry object, branch-stage enum,
+provider retry/fallback, routing policy, persistence format, or legacy
+compatibility was added. Focused video/composition regressions pass; final full
+suite evidence is 1,419 passed in 55.79 seconds, with `compileall -q src tests
+tools`, diff hygiene, and frozen-boundary checks clean.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,
