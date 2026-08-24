@@ -26,7 +26,12 @@ As of 2026-08-24:
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. Its bounded Google exit gate completed 16 pages in two
   calls with two complete checkpoints and no retained rendered pages; PDF
-  repair has not started.
+  repair will not consume legacy application's Markdown format; ordinary
+  image-sidecar resume remains the library recovery path.
+- The first video slice is provider-free `inspect_video(one.mp4)`. It lazily
+  loads the optional OpenCV backend, validates metadata plus one decoded frame,
+  and writes nothing. Frame selection, recognition, and audio extraction are
+  not implemented yet.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
@@ -52,7 +57,8 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - returns `source_type="image"` and `profile="board"`;
 - keeps output in memory unless `output_dir` is supplied;
 - publishes Markdown and resume state atomically;
-- keeps Pillow, OpenAI, HTTPX, and other heavy dependencies lazy at base import.
+- keeps Pillow, OpenAI, HTTPX, OpenCV, NumPy, and other heavy dependencies lazy
+  at base import;
 - accepts exactly one PDF through the direct facade, snapshots at most 100 MiB,
   and lazily loads `pypdfium2` only when PDF recognition is requested;
 - renders at most eight ordered pages per image request and removes rendered
@@ -61,6 +67,8 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   child image outputs/checkpoints in the same-named `<stem>_board/` directory;
 - rejects PDF in `recognize_batch()` in this first slice and exposes no page,
   password, partial-result, or text-mode settings.
+- exposes `inspect_video()` separately for one local MP4 when the `video` extra
+  is installed; this inspection API performs no recognition or output writes.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The
@@ -70,7 +78,7 @@ packaged Electron compatibility is not claimed.
 ### Install from this checkout
 
 ```powershell
-pip install ".[image,dashscope,pdf-vision]"
+pip install ".[image,dashscope,pdf-vision,video]"
 ```
 
 ### Built-in DashScope example
@@ -147,8 +155,8 @@ Do not:
   through `pypdfium2`;
 - treat `output/`, `temp/`, `ocrllm_social_e2e/`, caches, or screenshots as
   source-of-truth evidence;
-- start HarmonyOS/ArkTS, Rust/PyO3, long audio, video, or PDF repair outside the
-  approved phase gate.
+- start HarmonyOS/ArkTS, Rust/PyO3, long audio, video recognition beyond the
+  ordered P1-e slice, or PDF repair outside the approved phase gate.
 
 ## History Trace
 

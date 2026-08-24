@@ -11,14 +11,15 @@ The approved current work is the `#065 Unified Execution Queue` in
 `../../docs/ACTIVE_STATE_AND_RULES.md`; the older Stage M/A plan supplies detail
 only where that queue has not superseded it. #078 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
-existing offline resume and installed-wheel proofs. P1-d is now the immediate
-product decision, not authorized implementation: #080 proved that a single
-failed-range marker cannot recover an unattempted suffix under the current
-serial fail-fast loop. #102 narrowed the remaining choice to whether explicitly
-marked historical legacy Markdown is an intentional compatibility input; until
-the maintainer confirms it, repair remains frozen behind ordinary resume.
-Do not broaden repair into a second resume framework or start provider
-generalization in its place.
+existing offline resume and installed-wheel proofs. #120 answered P1-d no: the
+new library does not consume legacy localized repair Markdown, and ordinary
+resume remains its PDF recovery path. P1-e video is now active in ordered
+slices: lazy local MP4 inspection, negative-feedback frame selection and
+retention, existing image-path recognition, separately configurable audio
+recognition, then lifecycle/resume. Keep the result a lightweight Python
+package; do not copy the legacy five-phase controller, GUI, social downloader,
+second scene detector, or build provider generalization before the two real
+video media consumers exist.
 
 `contracts/` and `worker/` are frozen. Do not change them.
 

@@ -192,7 +192,7 @@ declared_extras = set(distribution.metadata.get_all('Provides-Extra') or [])
 assert not base_requirements, base_requirements
 assert not native_payloads, native_payloads
 assert declared_extras == {
-    'audio', 'dashscope', 'dev', 'google', 'image', 'ocr', 'pdf-vision'
+    'audio', 'dashscope', 'dev', 'google', 'image', 'ocr', 'pdf-vision', 'video'
 }, declared_extras
 print(sorted(declared_extras))
 '@
@@ -216,6 +216,7 @@ print(sorted(declared_extras))
             'google' = 67108864
             'audio,google' = 67108864
             'pdf-vision' = 36700160
+            'video' = 230686720
         }
         $expectedDistributions = @{
             'audio' = @('miniaudio')
@@ -224,6 +225,7 @@ print(sorted(declared_extras))
             'google' = @('google-genai')
             'audio,google' = @('miniaudio', 'google-genai')
             'pdf-vision' = @('pypdfium2', 'Pillow')
+            'video' = @('opencv-python', 'numpy')
         }
         foreach ($profile in @(
             'audio',
@@ -231,7 +233,8 @@ print(sorted(declared_extras))
             'image,dashscope',
             'google',
             'audio,google',
-            'pdf-vision'
+            'pdf-vision',
+            'video'
         )) {
             $safeProfile = $profile.Replace(',', '-')
             $profileVenv = Join-Path $proofRoot "venv-$safeProfile"
@@ -262,7 +265,7 @@ import ocrllm
 loaded = {name.split('.')[0] for name in sys.modules}
 assert not loaded & {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime', 'miniaudio',
-    '_miniaudio', 'google'
+    '_miniaudio', 'google', 'cv2', 'numpy'
 }, loaded
 origin = pathlib.Path(ocrllm.__file__).resolve()
 assert pathlib.Path(sys.prefix).resolve() in origin.parents, origin
@@ -551,6 +554,42 @@ print(
 '@
                 $pdfiumSmoke | & $profilePython -I - $profileVenv
                 Assert-LastExitCode 'installed public PDF recognition smoke failed'
+            }
+
+            if ($profile -eq 'video') {
+                $videoSmoke = @'
+from pathlib import Path
+import sys
+
+import cv2
+import numpy as np
+from ocrllm import VideoInfo, inspect_video
+
+path = Path(sys.argv[1]) / 'generated-valid.mp4'
+writer = cv2.VideoWriter(
+    str(path),
+    cv2.VideoWriter_fourcc(*'mp4v'),
+    5.0,
+    (32, 24),
+)
+assert writer.isOpened()
+try:
+    for index in range(10):
+        writer.write(np.full((24, 32, 3), index * 20, dtype=np.uint8))
+finally:
+    writer.release()
+
+info = inspect_video(path)
+assert type(info) is VideoInfo
+assert info.frame_count == 10
+assert info.frames_per_second == 5.0
+assert info.duration_seconds == 2.0
+assert info.width_pixels == 32
+assert info.height_pixels == 24
+print(info)
+'@
+                $videoSmoke | & $profilePython -I - $profileVenv
+                Assert-LastExitCode 'installed public video inspection smoke failed'
             }
 
             $afterBytes = Get-DirectoryByteCount $sitePackages

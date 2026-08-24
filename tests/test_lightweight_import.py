@@ -57,6 +57,31 @@ def test_plain_import_defers_public_implementation_modules_until_accessed():
     assert completed.returncode == 0, completed.stderr
 
 
+def test_public_video_symbols_do_not_load_the_optional_backend():
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = (
+        "import sys; "
+        "sys.path.insert(0, sys.argv[1]); "
+        "import ocrllm; "
+        "inspect_video=ocrllm.inspect_video; "
+        "VideoInfo=ocrllm.VideoInfo; "
+        "assert callable(inspect_video); "
+        "assert VideoInfo.__module__ == 'ocrllm.video_info'; "
+        "loaded={name.split('.')[0] for name in sys.modules}; "
+        "assert not loaded & {'cv2','numpy'}, loaded & {'cv2','numpy'}"
+    )
+
+    completed = subprocess.run(
+        [sys.executable, "-I", "-c", probe, str(source_root)],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
 @pytest.mark.parametrize(
     "first_name,second_name",
     (

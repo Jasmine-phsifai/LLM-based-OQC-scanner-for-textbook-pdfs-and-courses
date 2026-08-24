@@ -255,7 +255,24 @@ is often accepted.
 - #106 clarified the apparent tension inside this section: the general repair
   bullets above describe the desired behavior *if* historical compatibility is
   approved; they do not themselves answer the later, more specific scope gate.
-  One explicit maintainer yes/no remains required.
+  #120 supplied that answer: no. The new library does not accept legacy
+  application's localized repair Markdown as a public input. P1-d is frozen
+  behind ordinary resume and no `repair_pdf` compatibility parser is built.
+
+## Video recognition direction
+
+- Video is the next active library line. Start with local parsing, then migrate
+  the main legacy negative-feedback frame comparison and retained-image
+  behavior before provider recognition.
+- Frames and audio are independent pipelines. Retained frames reuse the image
+  recognition provider; extracted audio must be able to use a different audio
+  provider. Optional hotwords may flow from frames to audio, but must not make
+  either pipeline depend on the other.
+- Keep this a Python import package: video dependencies are optional and lazy;
+  no GUI/PyQt, social downloader, mandatory executable, or heavy import belongs
+  in base `import ocrllm`.
+- Do not begin with a provider base class, fallback pool, or compatibility
+  framework. Add the provider split when both real video media consumers exist.
 
 ## Resolved confirmation and next authority
 
@@ -272,10 +289,10 @@ is often accepted.
   one foreground `gemini-2.5-flash` run processed 16 pages as exactly two
   serial requests, published two complete child states plus ordered final
   output, reported current-model usage, and retained no rendered pages. The
-  next authority item is the P1-d manual-repair product decision in
+  former next item was the P1-d manual-repair product decision in
   [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-d--minimal-pdf-repair-after-stable-markers).
   #080 proved that one failed-range marker cannot recover an unattempted suffix
   under the current serial fail-fast loop; #102 narrowed the remaining decision
-  to historical explicitly marked Markdown compatibility. Do not implement
-  repair until that input scope is confirmed, create a parallel queue, or start
-  provider generalization here.
+  to historical explicitly marked Markdown compatibility. #120 answered no;
+  the next authority is the ordered P1-e video slice, not repair or provider
+  generalization.

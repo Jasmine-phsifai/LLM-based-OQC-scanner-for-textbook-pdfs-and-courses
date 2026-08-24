@@ -120,17 +120,13 @@ same-stem collision, and later-corrupt-source behavior through public imports
 from a freshly installed wheel; every invalid case made zero provider calls and
 left no output/temp residue. #109 also proves an exact serial MP3 tuple keeps an
 ordered success, a one-call provider failure, and an undispatched cancellation
-as three honest item outcomes. #078 completed P1-c PDF-through-image/resume. Bounded P1-d
-manual PDF repair is the immediate decision point, but #080 proved that a
-single failed-range marker cannot recover an unattempted suffix under the
-current serial fail-fast loop. #102 reduced the product choice to whether
-historical legacy Markdown with an explicit `第 N` / `第 N-M 页识别失败` marker
-is an intentional new-library compatibility input; implementation remains
-paused for that confirmation. #106 confirmed that the general repair wording in
-the maintainer-decision file is conditional, then fixed the recommended yes-path:
-a separate `repair_pdf` facade, strict pre-dispatch marker/page validation, one
-bounded request per original marker, span-based atomic replacement after every
-success, and no active-producer/checkpoint change. The audio slice has no hidden
+as three honest item outcomes. #078 completed P1-c PDF-through-image/resume.
+#120 answered P1-d no: the library does not consume legacy localized repair
+Markdown, so ordinary resume remains its PDF recovery path and no `repair_pdf`
+compatibility parser is built. P1-e video is now active. Its first public slice
+is provider-free `inspect_video()` for one MP4 through a lazy OpenCV extra;
+negative-feedback frame comparison/retention, frame recognition, separately
+configured audio recognition, and composition follow in that order. The audio slice has no hidden
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 
@@ -165,10 +161,10 @@ eight-page image requests. It reported aggregate usage of 4,802 input and 117
 output tokens, published ordered output with two complete child checkpoints,
 retained no rendered pages, cleaned both temporary roots, and exposed no key or
 OCR body. Combined with the earlier offline resume and installed-wheel proofs,
-the immediate queue is the P1-d compatibility-scope choice: support only
-explicitly marked historical legacy failures, or freeze repair behind ordinary
-resume. Widening active partial-state semantics is not recommended.
-Provider generalization remains deferred.
+P1-d is closed without legacy compatibility. The immediate queue is P1-e video,
+starting from local parsing and then retained-frame selection. Provider
+generalization remains deferred; video will first expose a concrete image/audio
+provider split at the real consumer boundary.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203
@@ -206,8 +202,9 @@ The active library has a region-bound in-memory credential scheduler and
 request/batch image resume. Candidate switching is opt-in, bounded,
 disposition-gated, and fully disclosed offline. Experimental direct Google
 short-audio recognition is live-proven but remains memory-only; its published
-gate is not a transcription-quality evaluation. PDF repair, long audio,
-persisted/resumable audio, and video remain unavailable. Local user
+gate is not a transcription-quality evaluation. PDF repair, long audio, and
+persisted/resumable audio remain unavailable. Video recognition is not yet
+available, but provider-free MP4 inspection is the first active P1-e slice. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 

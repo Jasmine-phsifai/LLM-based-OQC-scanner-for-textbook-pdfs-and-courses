@@ -42,6 +42,8 @@ STABLE_ERROR_CODES = frozenset(
         "PDF_PASSWORD_INVALID",
         "PDF_INVALID",
         "PDF_PAGE_RANGE_INVALID",
+        "VIDEO_BACKEND_UNAVAILABLE",
+        "VIDEO_INVALID",
         "NO_SPEECH_DETECTED",
         "OUTPUT_EXISTS",
         "OUTPUT_PATH_INVALID",
@@ -162,6 +164,14 @@ class PDFError(OCRLLMError):
             "PDF_PAGE_RANGE_INVALID",
         }
     )
+
+
+class VideoError(OCRLLMError):
+    """A video could not be opened or inspected by the approved backend."""
+
+    default_code = "VIDEO_INVALID"
+    default_message = "The video could not be processed."
+    allowed_codes = frozenset({"VIDEO_BACKEND_UNAVAILABLE", "VIDEO_INVALID"})
 
 
 class InvalidSource(OCRLLMError):

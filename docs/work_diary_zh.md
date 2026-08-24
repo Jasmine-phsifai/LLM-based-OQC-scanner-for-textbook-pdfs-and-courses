@@ -2894,3 +2894,21 @@ Atomic task — Iteration #119: perform the third consecutive P1-d blocker audit
 ```
 
 **阻塞审计。** 开工时 `HEAD` 与 `origin/master` 均为 `bc4a332`，只保留两个用户未跟踪文件。authority 仍规定 P1-d 是唯一立即队列，历史 legacy Markdown 是否成为新 library 的公开输入必须明确回答；维护者决定仍写着 “One explicit maintainer yes/no remains required”。#117、#118 及本轮之间没有收到 yes/no，自动目标 continuation 不改变 scope。已知 worker import-order 缺陷受 frozen 边界约束，authority 又禁止并行 provider/generalization 或 proactive edge-scan 队列，因此当前不能在不新增权限或违背优先级的情况下做有意义的产品推进。同一条件已经连续三轮成立，本轮不再重复测试或另造任务；日记 diff、冻结目录和工作树核验后提交，并把 heartbeat 标记为 blocked。恢复只需维护者回答：yes 表示实现 #106 已固定的窄 `repair_pdf`；no 表示冻结 P1-d 并授权选择下一队列。
+
+## #120 — 2026-08-24：关闭 legacy repair 兼容，视频从可导入的 MP4 解析底座开始
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #120: turn the maintainer’s explicit “no legacy-Markdown compatibility” decision into the new authoritative queue, then define and implement only the first executable video-library slice: bounded local video inspection/parsing with no recognition dispatch yet. Success means closing P1-d without repair code, recovering the legacy meaning of negative-feedback frame comparison and retained images from code/tests, fixing the order among video parsing, frame selection, image/audio provider separation, and recognition, and landing a lightweight importable Python API only if its dependency and lifecycle contract can be proved cleanly. This matters because video must advance as a real library capability rather than a copied GUI workflow, while provider separation must be designed from actual media calls rather than a premature generalized provider framework.
+```
+
+**新授权、假设和两条路线。** 维护者明确回答：new library 不兼容 legacy app 留下的格式，只管自己的状态，因此 P1-d 选择 C，关闭而不实现 `repair_pdf`。下一主线是视频：先解析，再做负反馈比较与留图，并让图片和音频 provider 可分离，同时保持普通 Python import package。路线 A 先交付 provider-free `inspect_video()`，证明 MP4、backend、真实 decode、释放和 package extra；路线 B 立即移植抽帧，会在一个 iteration 同时决定候选、阈值、留图、清理和 provider 配置。选择 A；下一轮才以已证明的解析底座实现抽帧，不把“先解析”偷换成一次移植五阶段流程。
+
+**legacy 与依赖调查。** 三名轻量代理分别核对 legacy 视频、依赖和 active provider seam，主代理逐段复核。主 `VideoProcessor` 的实际链路是：约五秒粗扫，缩略图变化 gap 约两秒细扫，相邻变化和段首漂移分段，pHash 去重，再用最多十轮二分反馈把数量校准到每小时 28—40 帧，最后只保留选中 JPG；另一个 PySceneDetect/TransNetV2 路径没有进入主板书流程，不应一起迁移。legacy frames/audio 是两条独立管线，只有可选 hotwords 联系。当前 active `Config.provider` 同时被 image 和 short-MP3 使用，真正视频识别时需要明确 audio binding，但本轮没有提前添加 `audio_provider`、兼容字段、基类或 fallback。依赖路线比较后选择 legacy 已真实运行的 OpenCV：当前 OCRLLM 环境是 4.13.0、内建 FFmpeg，PATH 没有 ffmpeg/ffprobe；`imageio-ffmpeg` 会新增子进程协议和清理边界。OpenCV 仅进入 `video` extra，普通 import 不加载它或 NumPy。
+
+**失败优先与实现。** 新公开回归先在 collection 稳定失败：`VideoError` 尚未从 `ocrllm` 导出。实现新增职责单一的 lazy loader、`inspect_video.py` 和 immutable `VideoInfo`；只接受一个本地 `.mp4`，不套用图片/音频的 25 MiB 上限，不整文件读入 Python。函数要求普通非空文件、有限正 FPS/帧数/尺寸，并实际 decode 第一帧；每条退出都 release capture，OpenCV 普通异常映射为 redacted `VIDEO_INVALID`，process-control 原样传播。没有把 `.mp4` 塞进尚不能识别视频的 `recognize()`，也不写图片、音频或 Markdown。相邻回归覆盖真实 8 帧 MP4、损坏文件、无效 metadata 释放、decode 异常映射/释放、缺失 extra、公开错误和惰性导入；当前定向结果为 **35 passed in 0.46s**。
+
+**真实 package 证明和下一边界。** 固定 artifact workflow 由轻量代理用现有工具、零下载构建 wheel：`ocrllm-0.1.0-py3-none-any.whl`，**208,208 bytes**，SHA-256 `a93033ac9d47a9a12176cf2393a14d624a61a95882c1792937d628b20afbd940`。精确 wheel `--no-deps` 安装到已验证的 TEMP 子目录后，从仓库外确认 package/distribution origin 均指向临时安装；裸 import 及公开 `VideoInfo`/`inspect_video` 解析都不加载 cv2/NumPy。随后生成 10 帧 MP4，得到 `10 frames / 5 FPS / 2 seconds / 32×24`，proof root 删除并确认不存在。release gate 同步加入第八个 `video` extra/profile 与 installed public smoke。另一轮 fresh wheel 为 **208,416 bytes**、SHA-256 `763eba445a08e224984d91b68991409b889380bbe24c0282e8314736ee85340`；隔离 venv 的普通 `wheel[video]` 安装三次都在下载 41.2 MB `opencv-python` 时停滞/失败，因此不能声称 installed-extra gate 已通过，也不再重复下载。代理只终止该 proof root 内遗留的两个 pip Python 进程，已删除 `C:\Users\13301\AppData\Local\Temp\ocrllm-video-extra-proof-20260824T135040319Z` 并确认不存在。
+
+**最终核验。** 第一次全套复跑因主代理误加了不存在的 Node 目录，只有两个 Node harness 报“找不到 Node”，其余 1343 项通过；定位到既有 `D:\Anaconda\envs\STA\node.exe` 后未改代码重跑，结果为 **1345 passed in 49.76s**。独立安装尝试还发现 unconstrained `<5` 会选择本轮未验证的 4.14，因此按项目其他重依赖的做法收紧为已实测的 `opencv-python>=4.13,<4.14`，不是为未来 backend 建兼容层。`compileall -q src tests tools`、PowerShell release-gate AST parse、`git diff --check` 均通过，`contracts/` 与 `worker/` 无修改。完整全 profile artifact gate 本轮没有重跑；已通过的精确 wheel/no-deps/真实 MP4 证明与失败的联网 extra 安装分别如实保留。下一轮只做负反馈帧比较和留图，不开始 provider dispatch。

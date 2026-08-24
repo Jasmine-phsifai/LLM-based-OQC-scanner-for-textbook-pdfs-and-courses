@@ -94,8 +94,10 @@ still in the future. No registry name, worker route, or provider behavior change
 `pdf.vision` now names the implemented, live-proven direct facade, while
 `pdf.vision.resume` names its offline-proven reuse of ordinary image sidecars.
 Both remain `deferred` in the shared registry because PDF worker registration
-does not exist. `pdf.text` and `pdf.text.resume` remain genuinely deferred;
-manual repair is a separate unresolved P1-d choice and is not advertised.
+does not exist. `pdf.text` and `pdf.text.resume` remain genuinely deferred.
+#120 resolved P1-d as no: the new library will not accept legacy application's
+localized repair Markdown, so manual PDF repair remains unavailable rather than
+growing a compatibility parser.
 One adjacent pre-existing defect is now proven but intentionally not hidden:
 if a process imports `ocrllm.worker.run_worker_control_loop` before resolving
 the lazy package attribute `ocrllm.get_capabilities`, Python installs the
@@ -188,9 +190,9 @@ existing atomic path or grouped `Sequence` source contract. It also has an exper
 Google short-audio path for one MP3 of at most 300 seconds. Its PDF vision slice
 is proven offline, in an installed wheel, and live through Google; it renders all
 pages through PDFium and reuses the image/resume path in serial groups of eight.
-Content repair is not implemented; P1-d is paused at the explicit product
-choice recorded below because one failed marker cannot recover an unattempted
-suffix under the current fail-fast loop. The Google adapters report per-model
+Content repair is not implemented; #120 selected ordinary resume and explicitly
+rejected legacy-Markdown compatibility. The queue now advances to the bounded
+video-library slice recorded below. The Google adapters report per-model
 input/output token usage when the endpoint supplies it. Public injected providers
 return Markdown strings and make no token-usage claim. Existing attempt disclosure
 counts provider
@@ -680,8 +682,8 @@ ordinary failure changes the proven fail-fast behavior and can waste calls
 during an outage. Legacy avoided this exact gap by submitting all known batches
 and writing placeholders, a materially different execution model.
 
-P1-d remains the immediate queue but no implementation is authorized until the
-maintainer selects its actual product meaning: either (A) change the producer to
+At the #080 decision checkpoint, P1-d had no implementation authority until the
+maintainer selected its actual product meaning: either (A) change the producer to
 persist an honest, complete all-range partial status model, accepting the wider
 failure-semantics and recovery design; (B) narrow repair to a caller-identified
 or previously persisted exact failed range, accepting that it repairs known bad
@@ -744,6 +746,43 @@ files are removed. The next lifecycle regression should make marker one succeed
 and marker two fail, prove marker one was atomically retained before the second
 call, then rerun and dispatch only marker two. This is a conditional execution
 contract, not implementation authority.
+
+#120 supplied the explicit answer: **no**. The new library owns only its own
+state and output formats and will not accept legacy application's localized
+failed-page Markdown as a public input. P1-d therefore selects option C and is
+closed without `repair_pdf`, a marker parser, or producer changes. Ordinary
+typed image sidecar resume remains the recovery path for active PDF runs.
+
+### P1-e — Provider-free video parsing, then independent media recognition
+
+Video is the next authorized product line. Keep it an importable Python-library
+surface and migrate it in executable slices rather than copying legacy's GUI,
+five-phase controller, social downloaders, or both scene-detection systems.
+
+Ordered slices:
+
+1. inspect one local MP4 through a lazy optional video backend, validate finite
+   positive metadata plus one decodable frame, release the capture on every
+   exit, and keep bare `import ocrllm` dependency-light;
+2. add bounded coarse comparison, negative-feedback refinement/calibration, and
+   retained frame artifacts with timestamps and frame indices. Use the main
+   legacy `VideoProcessor` behavior as evidence; do not also migrate the unused
+   PySceneDetect/TransNetV2 route;
+3. feed retained frames through the existing image-recognition path without a
+   video-specific vision protocol;
+4. extract the audio track and bind its recognition to an audio provider that
+   can differ from the frame/image provider. The two pipelines may share
+   optional hotwords but neither is an execution dependency of the other;
+5. only after those calls work, define composition, cancellation, retained
+   artifacts, and resume from their observed lifecycle.
+
+#120 implements slice 1 as public `inspect_video(source) -> VideoInfo`. It
+accepts one `.mp4`, uses the lazy `video` extra (`opencv-python>=4.13,<4.14`),
+checks a real first-frame decode, returns frame count/FPS/duration/dimensions,
+and makes no provider call or output file. OpenCV remains absent from plain
+package import. Frame selection, audio extraction, video recognition, provider
+separation, output, resume, and worker support remain unavailable until their
+ordered slices land.
 
 ### P2 — Explicitly deferred work
 

@@ -22,6 +22,7 @@ from ocrllm.errors import (
     QuotaExhausted,
     RateLimited,
     UnsupportedFormat,
+    VideoError,
 )
 
 
@@ -34,6 +35,7 @@ from ocrllm.errors import (
         (OutputError(), "OUTPUT_WRITE_FAILED"),
         (OutputExists(), "OUTPUT_EXISTS"),
         (PDFError(), "PDF_INVALID"),
+        (VideoError(), "VIDEO_INVALID"),
         (ProviderError(), "PROVIDER_RESPONSE_INVALID"),
         (QuotaExhausted(), "PROVIDER_QUOTA_EXHAUSTED"),
         (ProviderPermissionDenied(), "PROVIDER_PERMISSION_DENIED"),

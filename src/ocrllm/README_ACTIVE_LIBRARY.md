@@ -206,10 +206,24 @@ there is no cross-process pool state. File-producing calls claim one output targ
 for the duration of a recognition, so direct threads and `recognize_batch()` cannot
 split final Markdown from its resume sidecar. The claim is process-local: separate
 processes must not target the same output path concurrently. PDF repair, long
-audio, persisted/resumable audio, and video remain unavailable. PDF recognition
-is offline- and Google-live-proven; the P1-d repair contract is paused at the
-choice of whether explicitly marked historical legacy Markdown is an intentional
-compatibility input, as recorded in `docs/ACTIVE_STATE_AND_RULES.md`.
+audio, and persisted/resumable audio remain unavailable. #120 explicitly rejects
+legacy repair-Markdown compatibility. PDF recognition is offline- and
+Google-live-proven.
+
+The first provider-free video slice is available:
+
+```python
+from ocrllm import inspect_video
+
+info = inspect_video("lecture.mp4")
+```
+
+Install `ocrllm[video]` for lazy `opencv-python>=4.13,<4.14` support. The function
+accepts one local MP4, validates metadata and a real first-frame decode, returns
+immutable `VideoInfo`, writes nothing, and makes no provider call. Frame
+selection/retention, video recognition, audio extraction, independent image and
+audio provider bindings, output, resume, and worker routing are not implemented
+yet. Plain `import ocrllm` does not import OpenCV or NumPy.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.
