@@ -63,15 +63,17 @@ Phase 1 maturation is offline implementation-complete:
   passes, preserving missing values as unknown; all no-cost exit criteria pass at product checkpoint
   `700cc05` through the clean-archive evidence recorded by `5d966e1` (root 1203
   passed; exact archive 1193 passed and 10 expected skips);
-- open: the Stage M paid live exit smoke and live re-verification of provider
-  account/model quota semantics;
+- open: the Stage M DashScope live exit smoke and live re-verification of
+  provider account/model quota semantics. #104 confirmed the canonical Beijing
+  endpoint but found no nonempty built-in DashScope credential in the current
+  Process/User/Machine environment or legacy QSettings, so no request was made;
 - replanned, in progress: the standalone Stage 2 vision/audio scaffold was
   removed; its audio-specific configuration boundary now lands with executable
   Stage A1 short-MP3 recognition, followed by Stage A2 FileTrans. The A1
   offline slice may proceed independently of the open Stage M paid image smoke;
   bounded Google image/audio live work is already authorized without a separate
-  budget request, while paid DashScope live work still requires explicit
-  maintainer budget. The provider-independent MP3
+  budget request, while DashScope live work still requires a recognized
+  credential and explicit maintainer budget. The provider-independent MP3
   probe now uses lazy `miniaudio>=1.71,<2`, fully decodes bounded five-minute
   snapshots, and rejects the fixture-proven malformed cases before dispatch.
   The user-facing `audio` extra remains independent, while `dev` also carries
@@ -222,10 +224,11 @@ Run from the repository root with the maintained environment:
 
 The clean Git-archive wheel, isolated install, outside-repository import, and
 heavy-module guard are defined in
-[`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md). A paid
-DashScope live gate requires an explicit maintainer budget and confirmed
-region/endpoint. Bounded Google image/audio robustness tests are already
-authorized without a separate budget request.
+[`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md). A
+DashScope live gate requires a nonempty recognized credential and explicit
+maintainer budget; the Beijing region/endpoint is already confirmed. Bounded
+Google image/audio robustness tests are already authorized without a separate
+budget request.
 
 ## History Trace
 

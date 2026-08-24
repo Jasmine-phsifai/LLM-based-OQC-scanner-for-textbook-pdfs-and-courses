@@ -62,7 +62,8 @@ finished. Stage M is **offline implementation-complete**: model catalog
 discovery, file-backed state sidecars, opt-in disposition-gated candidate
 queues, slot-indexed intra-request checkpoints, spend disclosure, and
 model-aware credential blocking have shipped. Its exit gate remains open until
-the authorized paid live smoke verifies current provider behavior. The former
+an explicitly authorized DashScope live smoke with a nonempty DashScope
+credential verifies current provider behavior. The former
 standalone Stage 2 vision/audio scaffold was replanned on 2026-08-23: the
 working image configuration stayed unchanged and the audio-specific boundary
 landed with the bounded Stage A1 short-MP3 recognition slice. That direct,
@@ -70,9 +71,9 @@ experimental slice is implemented and live-proven through native Google GenAI;
 it remains memory-only and does not provide persistence, resume, groups,
 upload, long-audio routing, or worker support. Stage A2 has not started. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
-audio live tests are already authorized without
-a separate budget request; paid DashScope live work still requires explicit
-maintainer budget and endpoint confirmation.
+audio live tests are already authorized without a separate budget request.
+DashScope live work still requires a nonempty recognized credential and an
+explicit maintainer budget; its canonical Beijing endpoint is already confirmed.
 The A1 probe uses lazy `miniaudio>=1.71,<2` for MP3-specific metadata plus
 bounded-memory full decode. FFmpeg, PyAV, Mutagen, and external executable
 requirements remain outside the A1 runtime. The probe rejects malformed or
@@ -608,14 +609,22 @@ any of these contract audits.
 
 ### P2 — Explicitly deferred work
 
-Paid DashScope live re-verification, the future local-model OpenAI-compatible
+Credential- and budget-gated DashScope live re-verification, the future
+local-model OpenAI-compatible
 path, a possible secondary Google compatibility transport, and long audio are
 P2. A second Google transport starts only after a proven need and maintainer
 confirmation; wire-shape similarity is not evidence of equivalent behavior.
 
-The maintainer has configured multiple free provider test sources, including an
-additional OpenAI-compatible Volcengine endpoint, for later robustness work.
-They are test assets, not authorization to begin provider generalization now.
+The maintainer has configured free provider test sources, including an
+OpenAI-compatible Volcengine endpoint, for later robustness work. #104 verified
+that this workspace currently has nonempty Google and independent generic-vision
+credentials, but no nonempty built-in DashScope credential in QSettings,
+`DASHSCOPE_API_KEY`, or the legacy extra-key field. The stored DashScope endpoint
+is the canonical Beijing endpoint and legacy paid mode is disabled. The generic
+vision credential is not a DashScope credential and the active library does not
+read QSettings, so no DashScope request was technically dispatchable and none was
+attempted. These configured sources are test assets, not authorization to begin
+provider generalization now.
 After OCRLLM itself is stable, the intended direction is one independently
 configurable provider class per provider, with provider-specific defaults for
 parallelism, effort, and observed error handling; later fallback or API-pool
@@ -873,8 +882,9 @@ snapshot isolation are the two strongest parts of this codebase; build on them.
 Severity is impact on a real user, not implementation effort. D1-D7 are closed,
 including the residual D4 limitation (closed 2026-08-22 by `cd7429c`). Of the
 Stage M findings G1-G10 are closed in offline code and tests. The Stage M exit
-gate is still open because its paid live smoke has not run; closing a code
-finding does not imply that current provider-account behavior was live-proven.
+gate is still open because its paid live smoke has not run and the current
+workspace has no recognized DashScope credential; closing a code finding does
+not imply that current provider-account behavior was live-proven.
 Do not close an entry without a test that fails before the fix.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
@@ -1242,11 +1252,16 @@ generated-image smoke, and offline DashScope construction passed. No provider
 request ran. Earlier `271d96d` evidence remains historical. `worker/` and
 `contracts/` are unchanged and frozen.
 
-The Stage M exit gate has **not** passed because its paid DashScope live catalog
-and end-to-end smoke still require an explicit maintainer budget. Bounded Google
-image/audio robustness calls are separately pre-authorized. No provider request
-occurred in the offline gate. Do not convert this no-cost proof into a claim
-about current provider-account or model-quota semantics.
+The Stage M exit gate has **not** passed because its DashScope live catalog and
+end-to-end smoke still require both a nonempty recognized credential and an
+explicit maintainer budget. #104 safely checked the current Process/User/Machine
+environment plus legacy QSettings: the canonical Beijing endpoint is present,
+but every built-in DashScope credential source is empty. The populated generic
+vision credential belongs to a separate OpenAI-compatible path and cannot be
+silently reused. Bounded Google image/audio robustness calls are separately
+pre-authorized. No DashScope provider request occurred in either the offline gate
+or #104. Do not convert this no-cost proof into a claim about current
+provider-account or model-quota semantics.
 
 ### Stage M Findings
 

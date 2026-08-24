@@ -62,9 +62,11 @@ catalog checks, atomic file-backed image state, an opt-in candidate queue, and
 slot-indexed intra-request checkpoints with an explicit v1-to-v2 resume
 identity migration, complete attempt-spend disclosure, disposition-gated
 recovery, model-aware pool behavior, and correct scout-failure attribution.
-Its paid live exit smoke remains open. The former standalone Stage 2 scaffold
-was removed from the queue. The bounded Stage A1 direct slice is implemented
-and live-proven: the lazy
+Its DashScope live exit smoke remains open because the current workspace has no
+nonempty recognized DashScope credential and no explicit paid-call budget. The
+canonical Beijing endpoint is already confirmed. The former standalone Stage 2
+scaffold was removed from the queue. The bounded Stage A1 direct slice is
+implemented and live-proven: the lazy
 `miniaudio>=1.71,<2` local MP3 probe, deterministic validation corpus, bounded
 compact-name snapshot, exact audio-model configuration, native Google inline
 request, public facade, and in-memory result are implemented for one MP3 of at
@@ -179,8 +181,8 @@ supplemental material, not redistributable gate evidence.
 
 The defect register is only in `docs/ACTIVE_STATE_AND_RULES.md`. D1-D7,
 F1-F4, and G1-G10 are closed in offline code and tests. Stage M itself remains
-open only at the paid live exit gate; provider-account semantics are not
-claimed live-proven by the offline closure.
+open only at that credential- and budget-gated live exit; provider-account
+semantics are not claimed live-proven by the offline closure.
 
 ## Legacy Application
 
@@ -282,9 +284,10 @@ Before reporting completion, run the maintained clean-archive gate:
 ```
 
 Its implementation and budgets are defined in
-`docs/ocrllm_library_go_no_go.md`. Do not run the paid live gate until the
-exact region/`base_url` is confirmed by the caller and the runner's Git/import,
-manifest, artifact, and credential preflight passes.
+`docs/ocrllm_library_go_no_go.md`. Do not run the DashScope live gate until a
+recognized credential and explicit paid-call budget exist, the exact
+region/`base_url` is confirmed, and the runner's Git/import, manifest, artifact,
+and credential preflight passes.
 
 Active-library migration tests must not modify or run the legacy suite as a
 phase gate. Create fixtures and tests under root `tests/`. Legacy commands and
