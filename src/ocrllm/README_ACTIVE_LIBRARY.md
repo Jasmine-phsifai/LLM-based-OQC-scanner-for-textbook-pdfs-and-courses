@@ -31,6 +31,7 @@ from ocrllm import (
     OCRLLMError,
     OutputError,
     OutputExists,
+    PDFError,
     ProviderError,
     ProviderAccountSuspended,
     ProviderContentBlocked,

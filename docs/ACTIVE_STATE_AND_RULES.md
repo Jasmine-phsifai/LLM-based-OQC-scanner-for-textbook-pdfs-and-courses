@@ -372,6 +372,12 @@ is narrowed to `str`, while internal built-in adapters retain their existing
 structured response. A future second real adapter may generalize usage on its
 own evidence; this iteration does not pre-build that contract.
 
+#087 corrected two cold-start documentation contradictions without changing the
+PDF product. `START_HERE.md` now says PDF *repair* is unavailable rather than
+claiming the live-proven PDF facade itself is absent, and the package public
+contract includes the already-exported `PDFError`. The documented import set now
+matches `ocrllm.__all__`; batch PDF, repair, and PDF worker support remain absent.
+
 #073 strengthens the existing `pdf-vision` release profile without changing
 the product contract. The isolated installed wheel must build a real 16-page
 PDF with PDFium, call public `recognize()` through an injected no-network

@@ -169,7 +169,7 @@ The active library has a region-bound in-memory credential scheduler and
 request/batch image resume. Candidate switching is opt-in, bounded,
 disposition-gated, and fully disclosed offline. Experimental direct Google
 short-audio recognition is live-proven but remains memory-only; its published
-gate is not a transcription-quality evaluation. PDF, long audio,
+gate is not a transcription-quality evaluation. PDF repair, long audio,
 persisted/resumable audio, and video remain unavailable. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.

@@ -2400,3 +2400,17 @@ Atomic task — Iteration #086: audit whether #085’s “structured usage from 
 **为何中途撤回 #085。** 继续复核消费者后发现，仅收紧注解却保留 #085 的泛化条件仍不诚实：当前只有内建 Google 返回结构化 usage，而旧的 `provider.name == "google"` 已经正确服务它；#085 的红灯完全来自违反公开 `str` 合同的 injected 测试夹具。它证明代码可以被内部类型驱动，却没有证明产品存在第二个消费者。按“新证据触发重审”和“没有消费者不扩展”的规则，本轮撤回 #085 对 `recognize_images.py` 的一行泛化、结构化测试夹具和 usage 断言，恢复 #084 的真实 PDF outage/resume 测试。Google 行为没有改变。
 
 **文档边界、验证与过度设计复盘。** 根 README、active package README、authority 和 migration status 现在一致说明：公开 injected provider 同步返回 Markdown 字符串；内部 built-in adapter 可用既有结构化响应携带 endpoint 实报 usage；该类型没有顶层导出。修正后的直接 probe 证明返回注解为 `str` 且顶层不可访问；第一次收紧阶段的定向集为 **40 passed in 0.88s**、相关集为 **153 passed in 4.03s**、root 为 **1311 passed in 42.42s**。完整撤回 #085 隐藏扩展后，#084、Google adapter、import/config 定向集为 **69 passed in 1.07s**，最终相关集为 **153 passed in 4.06s**，临时补入既有 Node 路径后的 root 全量为 **1311 passed in 41.86s**。本轮承认并撤回前一轮的轻微过度设计，没有 live 调用、凭据、provider class、公共响应类、fallback、billing、repair、`contracts/` 或 `worker/` 修改。未来出现第二个真实 adapter 时，再根据其返回与 usage 证据扩展共享逻辑。
+
+## #087 — 2026-08-24：修正冷启动文档把已交付 PDF 写成不可用
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #087: repair the cold-start documentation for the already-shipped PDF slice, without broadening the product or rewriting historical evidence. Success means reconciling the current authority and diary against START_HERE.md, the package public-contract list, actual top-level exports, and the PDF facade/tests; correcting only proven contradictions such as “PDF unavailable” or a missing public PDF error type; and verifying that every changed claim is import- and test-backed. This matters because a mature package must not tell a new maintainer that a live-proven capability is absent.
+```
+
+**假设、两条路线与证据。** 初始假设是 P1-c 产品代码和 live gate 都没有回退，只有入口文档漂移。路线①重写 `START_HERE.md` 并刷新其中全部历史阶段和测试数字；路线②只修复能由 current authority、顶层导出和 PDF 回归直接证明的矛盾。选择②。复核发现 `START_HERE.md` 前文已经明确 #072 offline、#073 installed wheel 和 #078 Google live 三层 PDF 证据，后文却仍写“PDF unavailable”；真正未实现的是 PDF repair。独立集合比较还证明 package README 的 Public Contract 只漏了一个实际 `ocrllm.__all__` 成员：`PDFError`，没有多列其他内部类型。
+
+**最小修正。** `START_HERE.md` 的一句话从“PDF、long audio、persisted/resumable audio、video unavailable”改为“PDF repair、long audio、persisted/resumable audio、video unavailable”。它没有把 PDF batch、repair、worker 支持或 page selector 写成已交付。`src/ocrllm/README_ACTIVE_LIBRARY.md` 的顶层 import 清单只加入已经存在的 `PDFError`；没有新增导出或错误类。authority 记录这次入口修正，`MIGRATION_STATUS.md` 本来已经正确说明 PDF 已交付，因此不制造无意义变更。
+
+**验证与过度设计复盘。** 直接 import 证明 `PDFError` 是 `ocrllm.errors.PDFError`；程序化集合比较得到 package README import 名称与 `ocrllm.__all__` **完全相等**。PDF 识别与 lightweight import 定向集为 **14 passed in 1.85s**。最终还检查 Markdown diff、`git diff --check`、敏感模式和用户未跟踪文件。本轮没有产品代码、测试、provider call、凭据、历史 gate 数字、repair 设计、`contracts/` 或 `worker/` 修改；没有因为发现一处过时句子而建设文档同步器或重写导航层级。
