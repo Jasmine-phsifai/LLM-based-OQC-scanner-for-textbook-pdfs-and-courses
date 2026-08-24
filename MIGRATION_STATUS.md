@@ -487,6 +487,11 @@ The following directions remain traceable but are not current work:
   when the sampled first/grid/final frames remain unchanged. Caller-facing
   documentation now states this limitation; no fine-gap scan or second scene
   detector was added.
+  #171 re-proves the post-#168 video runtime from exact commit `1c0362e` as a
+  clean externally installed wheel. The new internal identity reader and
+  `py.typed` are packaged; a real local MP4 completes with separate injected
+  image/audio calls and composition, while fresh plain import remains free of
+  optional media modules.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

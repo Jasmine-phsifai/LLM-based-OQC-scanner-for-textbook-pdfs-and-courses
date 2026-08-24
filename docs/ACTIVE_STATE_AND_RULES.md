@@ -1644,6 +1644,31 @@ negative-feedback rule, detector, provider behavior, API, dependency, frozen
 boundary, or open decision changed. Forty focused frame/video/import tests and
 the complete 1,456-test offline suite pass.
 
+#171 closes the clean-wheel evidence gap created when #168 added the internal
+runtime module consumed by public video outcome construction and composition.
+Exact tracked commit `1c0362eff5041420d5ad7f94981c2d60865ca836` built offline
+with cached Hatchling into a 237,884-byte
+`ocrllm-0.1.0-py3-none-any.whl`, SHA-256
+`14E4075B3C5FA2036CF0D497170EBEEB7ABFDBCD3FED239E24794D50F2601789`.
+The wheel contains `ocrllm/read_video_frame_group_identity.py` and `py.typed`,
+and installed with `--no-deps --no-index` outside the repository. Package and
+distribution origins resolved inside that target and version remained 0.1.0.
+
+A fresh outside-repository process proved plain `import ocrllm`, followed by
+resolving the top-level recognition, frame-recognition, composition, and
+publication callables, did not load OpenCV, NumPy, imageio-ffmpeg, or miniaudio.
+An earlier probe reported OpenCV/NumPy as true because it used `find_spec()` to
+measure availability, not `sys.modules` to measure loading; the corrected fresh
+process removed that ambiguity. An installed-wheel consumer generated one real
+audible MP4, completed public `recognize_video()` and
+`compose_video_result()` with distinct injected image and fake-audio paths,
+made one call per branch, returned one frame group and both sections, kept both
+assets, reported two current-run calls, and kept `output_path=None`. The
+identity-reader origin was inside the external target. Forty-four focused
+source video/import/type-marker tests pass. Both disposable proof roots were
+removed. No network, provider, credential, dependency download, repository
+runtime change, new build harness, frozen boundary, or open decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
