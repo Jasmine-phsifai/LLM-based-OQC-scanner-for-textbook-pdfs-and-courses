@@ -332,6 +332,14 @@ is often accepted.
   losing them. Keeping the current asymmetry is not an option. Do not add a new
   status, branch hierarchy, checkpoint, or extractor cancellation framework as
   part of this choice.
+  #145 executed the exact public matrix without provider calls: image-only
+  cancellation returns a partial outcome and lets audio run; audio-only
+  cancellation hides one completed image branch by raising; both signals still
+  perform media extraction before raising; silent video ignores audio-only
+  cancellation and returns complete/absent. Legacy production evidence requires
+  settled paid work to survive cancellation but cannot choose return-versus-
+  raise for this non-persistent API. Maintainer selection of A or B is still
+  required before implementation.
 - #129 keeps video composition explicit and memory-only. A caller may turn an
   already returned complete or partial `VideoRecognitionOutcome` into one
   standard video `RecognitionResult`; frame groups and audio remain separate

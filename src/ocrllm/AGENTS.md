@@ -67,6 +67,10 @@ not converted to a standard video result.
 The caller supplies the path; do not derive legacy names or add resume,
 manifest, cancellation, or provider behavior to the publication step. Never
 allow its Markdown target to replace a retained frame or audio asset.
+#145 proves the current video cancellation paths are asymmetric. Do not add
+tests that freeze that behavior or implement #127 until the maintainer chooses
+returned branch cancellation versus propagated cancellation with recoverable
+settled work.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

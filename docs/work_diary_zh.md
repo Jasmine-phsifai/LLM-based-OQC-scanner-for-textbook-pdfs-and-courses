@@ -3321,3 +3321,19 @@ Atomic task — Iteration #144: identify and close the next evidence-backed gap 
 **主审追加的资产冲突修复。** 个人复查发现：若调用者把 `output_path` 精确指定为 outcome 的 retained JPEG/MP3，并设置 `overwrite=True`，初稿会把媒体替换成 Markdown；最终检查只看到路径仍是文件，可能假成功。代表性 retained-frame 回归先稳定得到 **DID NOT RAISE**。实现随后只增加 exact `Path` 冲突拒绝，返回 `OUTPUT_PATH_INVALID` 并保留原字节；没有路径解析、alias 兼容、symlink sandbox 或广义 ownership graph。定向集合最终为 **51 passed in 1.44s**。
 
 **完整验证、环境事实与过度设计复查。** 第一次全量为 **1,427 passed, 2 failed**，两项 frozen worker Node harness 只因当前 shell PATH 找不到 Node。按固定检查规则交给轻量任务后，在 `D:\Anaconda\envs\STA\node.exe` 找到已有 Node v22.23.2；只给子进程临时 PATH，单独两项 **2 passed in 0.83s**。主线用同样临时 PATH 的中间完整套件为 **1,429 passed in 53.00s**；资产冲突修复后再次亲自完整重跑，最终 **1,430 passed in 54.41s**。compileall、diff、敏感信息与冻结目录检查随后完成；没有安装、下载、持久 PATH 修改、网络、provider 或凭据调用。过度设计复查明确拒绝：把 I/O 塞回 composer、自动推导 legacy 同名输出、统一 publication framework、跨进程锁、serializer、manifest、resume、#127 取消策略、provider class/fallback 和 callable-module。新增能力只负责一个已结算视频结果的最终原子 Markdown 文件。
+
+## #145 — 2026-08-25：用真实执行固定视频取消分歧，而不是擅自选策略
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #145: resolve the next video-maturity decision with executable evidence by auditing cancellation at the public recognize_video() boundary after final publication shipped. Success means reconciling current authority and diary, reproducing the exact image-signal, audio-signal, dual-signal, and silent-video behaviors without provider or paid calls, distinguishing observed facts from the open product choice, and either implementing the already-authorized smallest consistent contract or stopping with one precise maintainer question if the choice remains materially ambiguous. This matters because video resume must not be built on an asymmetric cancellation contract that can hide already-paid branch results or perform work after cancellation.
+```
+
+**权威重读与两条路线。** #127 仍明确要求维护者在两种 public contract 中选择。A（文档推荐）把各分支取消放进现有 outcome，保留另一分支；音频预取消跳过 audio extraction，双信号已预置则在输出前停止。B 让取消作为 terminal exception 传播，但必须新增一个有限办法，让调用者取回已结算、可能已付费的另一个分支。保持当前不对称不是选项。虽然 A 更小，也不能把“recommended”偷换成“maintainer accepted”，因此本轮先做运行证据，不写产品代码。
+
+**无 provider 的公开视频矩阵。** 主线用 imageio-ffmpeg 生成一个 1 秒有声 MP4 和一个静音 MP4，图片走 injected provider，音频 processor 在本地 patch，四组 Event 在调用前置位。仅 image 取消：返回 partial，frame error 为 `CANCELLED`，image 0 call，audio 1 call；仅 audio 取消：image 已调用 1 次，audio 0 call，随后顶层抛 `CANCELLED`，没有 outcome；双信号：provider 都是 0 call，但帧与音频文件仍先完成提取，然后音频取消冒泡；静音 + audio 取消：信号完全没被观察，image 1 call，返回 complete/absent。临时根随后精确删除。事实说明当前既不是 branch-settled，也不是 whole-call abort，而且预取消不能阻止媒体解析。
+
+**对子任务错误结论的纠正。** 当前代码矩阵的第一份只读报告错误声称 audio-only/both 会返回 outcome。主线用执行结果和 `recognize_video.py` 的 `except Cancelled: raise` 反问后，任务重新打开 exact HEAD `4845d69`，确认自己跳过了优先 exception 分支；现有测试也没有支持其旧结论。修正矩阵与主线执行一致。这一过程再次证明代码路径推断不能覆盖真实运行证据，尤其不能因为 `Cancelled` 也是 `OCRLLMError` 就忽略更早的专门 except。
+
+**Legacy parent 证据与未决问题。** legacy 的真实事故曾因 cancellation 跳过最终写入而丢掉已经付费成功的 audio 段；之后 board、short-ASR、audio repair、video repair 的代码和离线回归统一为：停止新提交、取消未运行任务、排空已运行调用、逐项原子保存成功结果，再传播 terminal cancellation。它强力支持“已结算付费工作不能丢”，但 legacy 有持久 checkpoint，新 library 当前 video facade 没有，因此它不能替我们决定 return 或 raise。为避免过度设计，本轮没有加入冻结错误行为的 characterization tests、取消状态、exception payload、sidecar、extractor cancellation framework 或 resume。需要维护者只回答一个问题：选择 A（返回现有 complete/partial/failed outcome，推荐且最小）还是 B（继续抛 `Cancelled`，同时授权一个新机制承载已结算 outcome）？

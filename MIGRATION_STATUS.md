@@ -426,7 +426,13 @@ The following directions remain traceable but are not current work:
   standard result with a verified output path; that path cannot replace one of
   the retained media assets, even with overwrite enabled. It does not derive
   legacy names, recognize again, or add recovery state. Cancellation refinement
-  and resume remain separate.
+  and resume remain separate. #145 executes the cancellation matrix and confirms
+  the current facade is asymmetric: image cancellation returns branch evidence,
+  audio cancellation can raise after a completed image branch, both signals do
+  media extraction before raising, and silent video ignores audio-only
+  cancellation. Legacy requires preservation of settled paid work but does not
+  determine return-versus-raise for this non-persistent API, so #127 remains a
+  maintainer choice before implementation.
   A clean archive of commit `c7f30f0` built and installed outside the
   repository without network, kept plain import free of heavy media modules,
   and completed one local video through separate injected image and fake-audio

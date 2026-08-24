@@ -1245,6 +1245,33 @@ used through a process-local PATH only, and the complete rerun passed. No
 dependency was installed or downloaded, no persistent environment changed, and
 no provider or credential was used.
 
+#145 turns the open #127 cancellation choice into executable public evidence
+without freezing the current asymmetry as a regression contract. A generated
+one-second audible MP4 and silent MP4 were run through public
+`recognize_video()` with injected image recognition, a patched local audio
+processor, and pre-set Event signals; no external provider was called. Image
+only returned a partial outcome with cancelled frame outcomes, zero image
+calls, and one completed audio call. Audio only first completed one image call,
+then raised `CANCELLED` with no outcome and zero audio calls. Both signals made
+zero provider calls but still extracted frames and audio before the audio
+cancel propagated. On silent video an audio-only cancellation was never
+observed: image recognition ran once and the call returned complete with audio
+absent. The exact temporary experiment root was removed.
+
+Legacy production incidents and their repaired offline regressions establish a
+narrower parent rule: cancellation must stop new dispatch while preserving
+already settled paid work. Legacy board, short-ASR, audio repair, and video
+repair publish completed units before propagating terminal cancellation. This
+does not decide the new direct-Python surface because legacy has durable
+checkpoints and the current video facade does not. Two viable contracts remain:
+(A, still recommended) represent each branch cancellation in the existing
+returned outcome, preserve the other branch, skip pre-cancelled audio
+extraction, and stop before all output when both signals are already set; or
+(B) propagate terminal `Cancelled` only after introducing a bounded way for the
+caller to recover the already-settled outcome. B cannot continue hiding paid
+work as the current implementation does. No product code or characterization
+test changes until the maintainer chooses A or B.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

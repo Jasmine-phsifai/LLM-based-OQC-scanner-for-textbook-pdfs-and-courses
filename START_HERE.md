@@ -173,7 +173,12 @@ instead of being passed to `compose_video_result()`.
 already-settled complete or partial outcome and an explicit caller path. It
 reuses atomic output without changing memory-only composition or provider
 dispatch. Cancellation refinement and resume follow from these observed
-outcomes. The audio slice
+outcomes. #145 proves the current cancellation asymmetry with no provider calls:
+image cancellation returns branch evidence, audio cancellation can hide an
+already completed image branch, dual cancellation still parses media, and
+silent video ignores an audio-only signal. The maintainer must choose returned
+branch cancellation (recommended) or propagated cancellation with a new bounded
+way to recover settled work before implementation. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. The queue explicitly stops further proactive filesystem/accounting edge
 scans.
