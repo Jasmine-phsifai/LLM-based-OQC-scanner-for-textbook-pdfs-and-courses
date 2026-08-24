@@ -355,17 +355,17 @@ def test_extract_video_frames_write_failure_publishes_no_partial_directory(
 
     source = _write_sectioned_mp4(tmp_path / "lecture.mp4")
     output_parent = tmp_path / "output"
-    real_imwrite = cv2.imwrite
-    write_count = 0
+    real_imencode = cv2.imencode
+    encode_count = 0
 
-    def fail_second_write(path, frame):
-        nonlocal write_count
-        write_count += 1
-        if write_count == 2:
-            return False
-        return real_imwrite(path, frame)
+    def fail_second_encode(extension, frame):
+        nonlocal encode_count
+        encode_count += 1
+        if encode_count == 2:
+            return False, None
+        return real_imencode(extension, frame)
 
-    monkeypatch.setattr(cv2, "imwrite", fail_second_write)
+    monkeypatch.setattr(cv2, "imencode", fail_second_encode)
 
     with pytest.raises(OutputError) as captured:
         extract_video_frames(source, output_dir=output_parent)
@@ -373,6 +373,47 @@ def test_extract_video_frames_write_failure_publishes_no_partial_directory(
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
     assert not (output_parent / "lecture").exists()
     assert not list(output_parent.glob(".ocrllm-video-*"))
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows Unicode path regression")
+def test_extract_video_frames_supports_unicode_source_and_output_paths(
+    tmp_path: Path,
+) -> None:
+    import cv2
+    import numpy as np
+
+    ascii_source = _write_sectioned_mp4(tmp_path / "source.mp4")
+    source_parent = tmp_path / "\u8bfe\u7a0b\u8d44\u6599"
+    source_parent.mkdir()
+    source = ascii_source.replace(source_parent / "\u8bb2\u5ea7\u89c6\u9891.mp4")
+    output_parent = tmp_path / "\u8bc6\u522b\u8f93\u51fa"
+
+    info = inspect_video(source)
+    frames = extract_video_frames(source, output_dir=output_parent)
+
+    assert info.frame_count == 30
+    assert [frame.frame_index for frame in frames] == [0, 10, 29]
+    assert [frame.path.name for frame in frames] == [
+        "frame-00000000.jpg",
+        "frame-00000010.jpg",
+        "frame-00000029.jpg",
+    ]
+    assert all(
+        frame.path.parent == output_parent / "\u8bb2\u5ea7\u89c6\u9891" / "frames"
+        for frame in frames
+    )
+    retained = [
+        cv2.imdecode(
+            np.frombuffer(frame.path.read_bytes(), dtype=np.uint8),
+            cv2.IMREAD_COLOR,
+        )
+        for frame in frames
+    ]
+    assert all(frame is not None for frame in retained)
+    assert [float(frame.mean()) for frame in retained] == pytest.approx(
+        [20.0, 230.0, 70.0],
+        abs=10.0,
+    )
 
 
 def test_extract_video_frames_negative_feedback_adjusts_selection_density() -> None:

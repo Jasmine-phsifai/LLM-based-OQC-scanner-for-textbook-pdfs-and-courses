@@ -333,9 +333,11 @@ existing 128x128 luminance detail plus a 32x32 color thumbnail, so sampled
 color-only scene changes are not erased merely because their grayscale
 luminance matches. It publishes validated JPEGs together under
 `output/lecture/frames/` and rejects an existing `output/lecture` instead of
-overwriting or resuming it. This is not a fine-gap scene detector: content that
-appears entirely between two coarse samples can be absent from the retained
-tuple. `recognize_video_frames()` accepts only the exact
+overwriting or resuming it. On Windows, retained JPEG bytes are written through
+Python's file API after OpenCV encoding, so non-ASCII source and output parents
+do not depend on OpenCV's filename encoding. This is not a fine-gap scene
+detector: content that appears entirely between two coarse samples can be
+absent from the retained tuple. `recognize_video_frames()` accepts only the exact
 ordered tuple returned by this library and reuses ordinary image recognition
 in groups of at most eight. It is memory-only and returns one existing
 `BatchItemOutcome` per group. Every successful result carries exact

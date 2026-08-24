@@ -3995,3 +3995,17 @@ Atomic task — Iteration #192: audit whether the negative-feedback selector’s
 **最小补证。** 路线 A 复用同一 VFR fixture 的四个灰度场景 20/90/160/230，只读取已经发布的两个 JPEG，并要求均值约为 20/230、容差 10；路线 B 增加运行时 seek 后位置检查、hash、另一 fixture 或身份子系统。选择 A。四个场景间隔 70，远大于容差，所以能区分任何错误场景，同时容忍 H.264 与 JPEG 压缩。精确测试为 **1 passed in 0.29s**；轻量只读审计独立确认这个断言足够且不重复现有 CFR 证据。
 
 **验证与过度设计复查。** inspection、frame extraction、frame facade 和 combined orchestration 聚焦集合为 **45 passed in 6.64s**；`compileall -q src tests tools`、`git diff --check` 通过。#190 刚以同一产品树完成 **1,467 passed**，本轮只有测试断言、没有 runtime，因此不机械重跑全量并把它误称为更强的 VFR 像素证据。无网络、provider、凭据、依赖、API、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择变化；没有增加 hash、第二 fixture、provider live call、seek wrapper 或 source-stability 设计。
+
+## #193 — 2026-08-25：Windows 中文视频路径不再卡在留取 JPEG 写出阶段
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #193: verify the provider-free video slice on real Windows Unicode source and output paths, using the current OpenCV/FFmpeg backends and no provider. Success means reconciling authority and diary, checking existing path coverage, generating one bounded MP4 whose directory and filename contain non-ASCII characters, running public inspection and negative-feedback frame extraction into a non-ASCII output directory, verifying retained JPEG existence/content and controlled names, and making only a reproduced backend/path correction if it fails. This matters because a Python library on Windows must not be source-tree-only in practice: path handling can break before provider work even when ordinary ASCII media tests pass.
+```
+
+**真实失败与边界。** 已有测试覆盖了接近 260 个 UTF-16 单元的输出路径以及补充平面字符文件名，但没有单独证明中文源父目录和中文输出父目录。第一次临时探针因 PowerShell 把标准输入里的中文变成 `????`，尚未进入 library；改用 Unicode 转义后，真实公开链路成功检查并扫描 `课程资料/讲座视频.mp4`，却在 `识别输出/.ocrllm-video-*.tmp/frames/frame-00000000.jpg` 写出失败。`cv2.imwrite()` 没有创建文件，library 随后诚实返回 `OUTPUT_WRITE_FAILED` 并清理 staging。证据把问题收窄到 OpenCV 的 Windows 文件名 I/O，不是源视频解析、负反馈比较、provider 或输出命名。
+
+**两条路线与最小修复。** 路线 A 让 OpenCV 继续把帧编码成 JPEG 并从编码缓冲解码校验，Python `Path.open("xb")` 只负责把压缩字节写到 Unicode 路径；路线 B 把帧先写进纯 ASCII 临时目录再移动，会增加第二临时目录、跨卷行为和清理分支。选择 A。保留了精确写入字节数、普通文件、磁盘大小、可解码、shape 一致、完整目录一次发布及失败不留半成品等现有检查。原来的第二帧写失败测试改为第二次 JPEG 编码失败，继续证明零部分发布；没有引入通用 path abstraction、外部 temp 参数、整视频内存读取或 legacy 格式兼容。
+
+**真实回归、子代理复核与验证。** 新增 Windows-only 真实 MP4 回归：先以 ASCII 名生成 30 帧三场景 MP4，再移动到中文源目录，调用公开 `inspect_video()` 和 `extract_video_frames()` 输出到中文目录；结果为 30 帧，留取索引 `[0,10,29]`，文件名严格为三个 `frame-XXXXXXXX.jpg`，从磁盘读回的像素均值约为 20/230/70。测试不能再用 `cv2.imread(中文路径)`，否则会在断言侧重复同一个后端限制，因此由 Python 读字节、OpenCV 解码。轻量只读审计确认普通 Unicode stem 长度已有覆盖，缺口正是非 ASCII 父目录。当前文件 **14 passed in 1.01s**；inspection、frame extraction、frame/video recognition 和 retained-frame 聚焦集合 **47 passed in 5.86s**；`compileall -q src tests tools` 与 `git diff --check` 通过。只给测试进程临时加入已有 `D:\Anaconda\envs\STA\node.exe` 路径后，完整离线套件为 **1,468 passed in 61.63s**，没有下载或安装。无网络、provider、凭据、依赖安装、public API、输出布局、provider 分离、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策变化。

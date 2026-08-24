@@ -548,6 +548,11 @@ The following directions remain traceable but are not current work:
   image recognition completes once, audio dispatch remains zero, no MP3/staging
   survives, and composition reports partial with one exact current-run call.
   No cross-branch preflight transaction was added.
+  #193 fixes the retained-JPEG writer's concrete Windows non-ASCII path failure:
+  OpenCV still owns JPEG encoding and validation, while Python owns compressed-
+  byte file I/O. A real MP4 now completes inspection, negative-feedback
+  selection, and retained-pixel verification through Chinese source and output
+  parent paths without adding a generic path layer or changing the output layout.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

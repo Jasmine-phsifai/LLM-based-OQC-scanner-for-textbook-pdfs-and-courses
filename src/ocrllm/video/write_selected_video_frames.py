@@ -129,13 +129,23 @@ def _write_one_selected_frame(
 
     output_path = staging_frames / _frame_filename(candidate.frame_index)
     try:
-        written = cv2.imwrite(os.fspath(output_path), frame)
+        # OpenCV filename I/O can reject non-ASCII paths on Windows. Keep
+        # OpenCV responsible for JPEG bytes and let Python own path handling.
+        encoded, jpeg = cv2.imencode(".jpg", frame)
+        if not encoded:
+            raise OutputError(
+                "A retained video frame was not written completely.",
+                code="OUTPUT_WRITE_FAILED",
+                details={"frame_index": candidate.frame_index},
+            ) from None
+        with output_path.open("xb") as output_file:
+            written_bytes = output_file.write(memoryview(jpeg))
         output_stat = output_path.stat()
-        verified = cv2.imread(os.fspath(output_path))
+        verified = cv2.imdecode(jpeg, cv2.IMREAD_COLOR)
         if (
-            not written
+            written_bytes != jpeg.nbytes
             or not stat.S_ISREG(output_stat.st_mode)
-            or output_stat.st_size <= 0
+            or output_stat.st_size != jpeg.nbytes
             or verified is None
             or getattr(verified, "shape", None) != getattr(frame, "shape", None)
         ):
@@ -158,4 +168,3 @@ def _write_one_selected_frame(
 
 def _frame_filename(frame_index: int) -> str:
     return f"frame-{frame_index:08d}.jpg"
-

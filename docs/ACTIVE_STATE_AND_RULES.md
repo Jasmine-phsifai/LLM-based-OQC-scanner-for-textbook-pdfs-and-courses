@@ -1927,6 +1927,23 @@ second seek/identity subsystem without a reproduced runtime mismatch. No
 runtime, API, dependency, output, frozen boundary, or open #127/#149/#152
 choice changed.
 
+#193 fixes a real Windows non-ASCII output-path failure in provider-free video
+frame extraction. Public `inspect_video()` and candidate scanning could read a
+real MP4 at `课程资料/讲座视频.mp4`, but OpenCV's filename-based JPEG writer did
+not create retained frames below `识别输出`; the library then honestly raised
+`OUTPUT_WRITE_FAILED`. Retained frames are now encoded and decoded through
+OpenCV in memory while Python's Unicode-aware file API writes the compressed
+bytes. The existing ordinary-file, exact-byte-count, nonempty-decode, matching-
+shape, all-or-nothing staging, and controlled-name checks remain. One Windows
+real-media regression proves inspection plus negative-feedback retention at
+indices `[0, 10, 29]`, exact JPEG names, target placement, and decoded scene
+pixels through non-ASCII source and output parents. This is one backend seam,
+not a generic path layer, alternate temporary directory, legacy-format bridge,
+or extended-length-path claim. The 14 frame-extraction tests and 47 focused
+video tests pass; full-suite evidence is recorded in the diary. No API,
+dependency, provider behavior, output layout, frozen boundary, or open
+#127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
