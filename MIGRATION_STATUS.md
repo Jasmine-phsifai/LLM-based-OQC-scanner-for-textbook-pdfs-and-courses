@@ -39,7 +39,10 @@ Phase 1 maturation is offline implementation-complete:
   `Config.progress`,
   generic `Config.cache_dir`, and four dormant PDF-only placeholders are
   removed rather than promoted into unproven callback, persistence, or PDF
-  APIs; frozen worker progress remains separate, while local OCR retains its
+  APIs; Google `RESOURCE_EXHAUSTED` classification gives explicit RPM/TPM/RPD
+  or rate-window markers priority over quota-advisory prose, preserving
+  provider-scoped rate limiting versus model-scoped spent quota; frozen worker
+  progress remains separate, while local OCR retains its
   zero-network model-loading contract; resume source hashing is bounded on
   actual snapshot reads, and fresh provider/local-OCR results are rejected
   before checkpoint or final publication if those owned bytes no longer match

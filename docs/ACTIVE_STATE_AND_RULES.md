@@ -193,6 +193,15 @@ provider and error scope, and identifies which rows are proven current versus
 historical warnings. Non-goals: implementation, a generic retry count, or an
 open-ended legacy survey.
 
+#098 corrected one analogous active classification gap from that evidence. A
+Google `429` / `RESOURCE_EXHAUSTED` message can contain both the quota-advisory
+sentence and an explicit `rate limit` / RPM / TPM / RPD window marker. Window
+markers now take priority: the result is provider-scoped `RateLimited`, not
+model-scoped `QuotaExhausted`. Spent quota remains limited to the independently
+proven `you exceeded your current quota` plus `check your plan and billing
+details` wording when no window marker is present. This changes only typed
+classification; adapters still do not retry or switch models internally.
+
 ### P0-b — Native Google image vertical slice (completed by #067)
 
 The smallest built-in image path now uses the actual legacy built-in transport,

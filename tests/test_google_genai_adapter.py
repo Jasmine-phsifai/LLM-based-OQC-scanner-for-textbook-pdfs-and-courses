@@ -416,6 +416,26 @@ def test_google_quota_advisory_is_model_scoped_quota_not_plain_429():
     assert mapped.details["failure_scope"] == "model"
 
 
+def test_google_rate_window_marker_outranks_quota_advisory():
+    mapper = importlib.import_module(
+        "ocrllm.providers.google_genai.map_google_genai_error"
+    )
+    raw = SimpleNamespace(
+        code=429,
+        status="RESOURCE_EXHAUSTED",
+        message=(
+            "You exceeded your current quota; check your plan and billing details. "
+            "Rate limit exceeded: RPM window."
+        ),
+        details={},
+    )
+
+    mapped = mapper.map_google_genai_error(raw, model=MODEL)
+
+    assert isinstance(mapped, RateLimited)
+    assert mapped.details["failure_scope"] == "provider"
+
+
 @pytest.mark.parametrize(
     ("raw", "code"),
     [

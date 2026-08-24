@@ -2574,3 +2574,19 @@ Atomic task — Iteration #097: re-prove the already-shipped short-audio path ag
 **一次前台 live 的真实结果。** 同一 Python 进程从 registry 读取 key，只临时放入自身 `GOOGLE_API_KEY`，用明确 `gemini-2.5-flash` 和 120 秒 caller bound 执行一次；命令行、父 PowerShell 环境和文件均没有 key。进程在 **6.253 秒**返回 typed `PROVIDER_UNAVAILABLE`、`failure_scope=provider`，安全 JSON 没有 transcript、provider 原文、source/temp path 或 credential pattern，snapshot residue 为 **0**，父环境两个 Google key 均保持空。没有 retry、fallback、自动换模或 invalid-key probe。
 
 **证据边界、验证与过度设计复盘。** 一次请求前后的安全 runner 没有保存阶段状态，因此这次不能诚实区分故障发生在显式 catalog、facade 内 catalog 还是 `generate_content`，也不能把 audio failure 缺失的 attempted-call 字段猜成 0 或 1；这属于本次 evidence 精度限制，不证明产品错误。既有 #069/#082 已成功证明能力，本次证明当前临时 provider outage 会 typed failure 而非假成功。Google image/audio adapter 和 live-runner 离线回归 **64 passed in 0.45s**。没有为了一个预期服务端错误加入 audio ledger、retry、provider class、fallback、第二 transport 或模型补丁；没有产品/test 代码、paid API、repair、`contracts/` 或 `worker/` 修改。临时合成音频根在主代理检查 0 snapshot residue 后由轻量代理精确删除。
+
+## #098 — 2026-08-24：Google 限流窗口不再被 quota 提示抢成换模型错误
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #098: compare the active native-Google error classifier with the production-proven legacy Google error handling, and repair one analogous classification gap only if the same response path can reach the shipped image or short-audio adapters. Success means reconciling authority and diary, tracing legacy incidents and current mapping branches, proving a concrete provider status/message that the active library currently misclassifies, adding the smallest failing regression and mapping correction, and leaving already-correct scopes unchanged. This matters because real provider errors—not hypothetical protocol abstractions—determine whether callers retry, change model, wait for quota refresh, or stop.
+```
+
+**假设、两条路线与 legacy 证据。** #097 的 `PROVIDER_UNAVAILABLE/provider` 本身诚实，本轮不把一次正常服务端故障当修复理由。路线①把 legacy 所有字符串扩成通用 taxonomy；路线②只核对 active image/audio 都会经过的 native mapper，找一条 legacy incident + regression 已证明而 active 缺失的组合。选择②。`legacy_app/AGENTS.md` 和 `test_google_provider_errors.py` 已证明：同一 429/`RESOURCE_EXHAUSTED` 文案即使含 “You exceeded your current quota; check your plan and billing details”，只要还含 `Rate limit exceeded: RPM window`，窗口限流必须优先，不能切模型。
+
+**对子审计主动追问与红灯。** 轻量代理第一次结论为“没有缺口”，因为分别核对了普通 429 和纯 quota，却漏掉二者同时出现。主代理指出 legacy exact combined regression 并要求只用该句重新跑 active mapper；代理与主代理独立 probe 都得到 **`QuotaExhausted / PROVIDER_QUOTA_EXHAUSTED / model`**，预期是 **`RateLimited / PROVIDER_RATE_LIMITED / provider`**。新增 exact regression 后先稳定为 **1 failed in 0.10s**，失败类型正是 QuotaExhausted，不是推测。
+
+**最小修复与行为边界。** `_looks_like_spent_quota()` 现在先检查既有且已证明的 `rate limit`、RPM、TPM、RPD；任何窗口标记都否决 spent quota。没有窗口时，quota exhaustion 又收紧为 legacy 已证明的两段精确短语，而不是原来宽泛的 `quota` + 任一 `exceed/exhaust/billing/plan`。修复后单回归 **1 passed in 0.05s**；纯 quota 仍是 model scope，普通/组合窗口仍是 provider scope。mapper 只返回 typed disposition，adapter 没有新增 retry、sleep、候选切换或 provider call。
+
+**验证与过度设计复盘。** Google image/audio mapper、provider detail 和 disposition 第一层相关集为 **77 passed in 0.46s**；再加入 Stage maturation、image processor 和 slot-resume 消费者后的最终相关集为 **138 passed in 1.47s**，changed source/test compile 与 `git diff --check` 通过。authority、migration 和 bounded evidence row 只同步这条优先级，不把 legacy 所有 marker 升格为 current-live truth。没有 live/API 调用、模型补丁、错误文本保留、通用 classifier、provider class、fallback、repair、`contracts/` 或 `worker/` 修改；两个用户未跟踪文件保持未动。

@@ -124,8 +124,14 @@ def _private_message(error: object) -> str:
 
 
 def _looks_like_spent_quota(message: str) -> bool:
-    return "quota" in message and any(
-        marker in message for marker in ("exceed", "exhaust", "billing", "plan")
+    if any(
+        marker in message
+        for marker in ("rate limit", "rpm", "tpm", "rpd")
+    ):
+        return False
+    return (
+        "you exceeded your current quota" in message
+        and "check your plan and billing details" in message
     )
 
 
