@@ -1534,6 +1534,23 @@ documentation execution framework, frozen boundary, or open decision changed.
 Do not add a general doctest harness for this media/provider example merely to
 guard the repaired one-line import.
 
+#164 removes one remaining false-future implication from the same maintained
+video walkthrough. The `recognize_video_frames()` paragraph said it did not
+“yet” compose a video document, even though the page now documents and uses the
+separate shipped `compose_video_result()` and `publish_video_result()` steps.
+The sentence now states the actual responsibility boundary: the frame-only
+function itself does not compose or persist/resume recognition, because those
+are separate library responsibilities. It no longer implies that composition
+is unavailable across the package.
+
+The complete documented public import list and both Google image/audio `Config`
+constructions execute without media or provider calls, resolve
+`publish_video_result` as callable, and leave OpenCV, NumPy, and
+imageio-ffmpeg unloaded. Import, lightweight-import, frame-recognition,
+composition, and publication tests pass 48 tests in 1.10 seconds; compilation
+passes. No runtime code, API, test framework, provider, credential, dependency,
+live call, frozen boundary, or open decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

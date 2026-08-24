@@ -3603,3 +3603,17 @@ Atomic task — Iteration #163: identify and close one concrete defect in the sh
 **红灯证据与最小修复。** `README_ACTIVE_LIBRARY.md` 的完整视频示例最后调用 `publish_video_result()`，但 `from ocrllm import (...)` 中没有导入它。对该精确 Python fenced block 做 AST 检查，修复前唯一 `called-but-unimported` 名称就是 `publish_video_result`；用户照抄会在发布步骤得到 `NameError`。可选修复是建立会执行媒体/provider 示例的通用 doctest 框架，或只补这一行已经发布的公共导入并用同一静态检查复验。选择后者。改动只有 import 列表新增 `publish_video_result`；复验结果为缺失名称空列表。没有改写示例流程，也没有声称 provider 调用成功。
 
 **验证、命令失误与过度设计复查。** 第一次 pytest 命令误写不存在的 `tests/test_lazy_imports.py`，在收集前退出并执行 **0** 项；确认真实文件为 `tests/test_lightweight_import.py` 后重新运行。视频 inspection、frame/audio extraction、frame recognition、orchestration、outcome、composition、publication、import contract 与 lightweight import 合集为 **87 passed in 2.81s**，`compileall -q src tests` 通过。无网络、provider、凭据、依赖安装、运行时代码、API、frozen `contracts/worker` 或开放决定变化。没有为了一个漏导入增加 Markdown parser、doctest runner、可执行文档 fixture 或新的测试文件；静态复验只用于本轮证明，不成为第二套维护框架。
+
+## #164 — 2026-08-25：视频说明不再把已发布的组合能力写成未来功能
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #164: determine whether the maintained package video walkthrough is actually copy-paste coherent beyond the import fixed in #163, and correct only one reproducible public-library usage failure without invoking providers or changing runtime behavior. Success means synchronizing and rereading authority/diary, executing the documented configuration and control-flow boundary with local stubs or static evidence, distinguishing intentional placeholders from broken Python, applying the smallest documentation correction, verifying public imports and lightweight packaging, and committing/pushing one coherent record. This matters because an importable library is not mature if its primary video walkthrough names shipped functions correctly but still fails before reaching user-supplied media or credentials.
+```
+
+**执行复核与假设改判。** 同步 origin 并重读 authority、日记、包规则和完整示例后，先执行示例的全部公开导入以及 Google 图片/音频 `Config` 构造，不读取媒体、不取凭据、不调用 provider。两个配置都正常构造，`publish_video_result` 为 callable，`cv2`、`numpy`、`imageio_ffmpeg` 均未加载；#163 补齐导入后没有第二个 Python 名称或配置错误。因此原假设“示例仍可能执行失败”不成立，不能硬造代码修复。
+
+**实际文档漂移、两条路线与最小修正。** 同一说明中，`recognize_video_frames()` 段落仍写它“不 yet compose a video document”，后文却已经正确说明并示范独立的 `compose_video_result()` 和 `publish_video_result()`。句法上的 `It` 虽指 frame-only 函数，但 `yet` 会把已发布的 package composition 误写成未来能力，也模糊了文件单一职责。路线 A 是加入执行 Markdown 示例的 parser/doctest 框架；路线 B 是只把句子改为“这个 frame-only function 本身不组合或持久化/resume；这些是独立 library responsibilities”。选择 B。既不把 composition 塞进帧识别函数，也不改示例流程、API 或能力范围。
+
+**验证与过度设计复查。** 搜索确认陈旧的 `does not yet compose` 已消失，当前 frame-only 责任句与后面的显式 composition 入口同时存在。import contract、lightweight import、frame recognition、composition 与 publication 合集为 **48 passed in 1.10s**，`compileall -q src tests` 通过。没有网络、provider、凭据、依赖安装、运行时代码、测试框架、frozen `contracts/worker` 或 #127/#149/#152 变化。没有为了一句维护文案增加文档执行器、AST guard 测试、职责抽象或新的状态文件。

@@ -324,8 +324,9 @@ in groups of at most eight. It is memory-only and returns one existing
 `BatchItemOutcome` per group. Every successful result carries exact
 `video_frame_indices` and `video_frame_timestamps_seconds` metadata; the same
 identity is attached to typed failure details, including an undispatched
-cancelled suffix. It does not yet compose a video document or persist/resume
-recognition. `extract_video_audio()` requires the output parent
+cancelled suffix. This frame-only function does not compose a video document
+or persist/resume recognition; those are separate library responsibilities.
+`extract_video_audio()` requires the output parent
 to exist, rejects an existing target, and atomically publishes a fully decoded
 mono 16 kHz / 32 kbps MP3. Extraction itself has no duration ceiling. The
 function raises `VideoError(code="VIDEO_NO_AUDIO_STREAM")` when the MP4 is
