@@ -2414,3 +2414,19 @@ Atomic task — Iteration #087: repair the cold-start documentation for the alre
 **最小修正。** `START_HERE.md` 的一句话从“PDF、long audio、persisted/resumable audio、video unavailable”改为“PDF repair、long audio、persisted/resumable audio、video unavailable”。它没有把 PDF batch、repair、worker 支持或 page selector 写成已交付。`src/ocrllm/README_ACTIVE_LIBRARY.md` 的顶层 import 清单只加入已经存在的 `PDFError`；没有新增导出或错误类。authority 记录这次入口修正，`MIGRATION_STATUS.md` 本来已经正确说明 PDF 已交付，因此不制造无意义变更。
 
 **验证与过度设计复盘。** 直接 import 证明 `PDFError` 是 `ocrllm.errors.PDFError`；程序化集合比较得到 package README import 名称与 `ocrllm.__all__` **完全相等**。PDF 识别与 lightweight import 定向集为 **14 passed in 1.85s**。最终还检查 Markdown diff、`git diff --check`、敏感模式和用户未跟踪文件。本轮没有产品代码、测试、provider call、凭据、历史 gate 数字、repair 设计、`contracts/` 或 `worker/` 修改；没有因为发现一处过时句子而建设文档同步器或重写导航层级。
+
+## #088 — 2026-08-24：生成 PDF 页图解码失败不再被误报为输入错误
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #088: find one evidence-backed defect in the shipped PDF facade’s local failure boundary, starting from existing tests and legacy incidents rather than hypothetical edge enumeration. Success means reconciling authority and diary, tracing one concrete malformed/dependency/render/output failure from public recognize() to its typed error and side effects, adding a failing regression only if a real gap exists, and otherwise recording a bounded no-change conclusion and selecting no substitute feature. This matters because PDF is now public and live-proven, so honest local failures are more valuable than another architecture proposal.
+```
+
+**父级证据、假设和两条路线。** legacy 的 581 页真实事故是在八线程首次加载 Pillow codec 时出现 `broken data stream`，修复包含主线程初始化和重新编码 fallback。初始假设是 active 也可能需要 fallback；两条路线是①直接移植初始化、重编码或 per-page retry，②先证明 active 是否存在同样并行触发条件，并只测试 analogous 本地解码边界。选择②。主代理与轻量只读审查都确认 active 每次只处理最多八页，PDFium 操作受同一进程锁保护，页面仍逐个渲染；legacy 的多线程首次初始化竞态没有同构路径，因此不得移植 fallback。
+
+**失败优先证明的真实缺陷。** analogous seam 仍有一个明确错误：`_render_one_page()` 把库自己刚写入、fsync 的临时 PNG 交给通用 `decode_image()` 验证；验证失败产生 `InvalidSource`，外层因它是 `OCRLLMError` 而原样传播。新增 16 页回归先让第 1—8 页完成 provider 调用和 sidecar，再让第九次生成页图验证抛测试 `InvalidSource`。修复前稳定为 **1 failed in 0.32s**，公共 `recognize()` 直接抛出该 `InvalidSource`；这把内部渲染产物错误归咎于 caller PDF。测试还证明 lower-level 文案会从该 seam 原样通过；真实 decoder 当前使用固定文案，因此这里不夸大为凭据泄漏。
+
+**最小修复与生命周期。** 只在 `decode_image(temporary_path)` 周围捕获 `InvalidSource`，映射成固定文案的 `OutputError(code="OUTPUT_WRITE_FAILED", page_number=9)`；`DependencyMissing`、PDF backend error、取消和其他 typed failure 不被吞掉。回归同时要求 attempted provider calls 为 1、settled group 为 1、provider 只收到第一组、第一组 complete sidecar 保留、final Markdown 不存在、正式页图与 `.tmp.png` 均为零。修复后单测 **1 passed in 0.25s**，PDF/render/source/image/defect 相关集合 **119 passed in 4.22s**。
+
+**过度设计复盘与边界。** 本轮没有把 legacy 的并行重编码 fallback 当成 active 必需品，也没有加入 retry、第二编码器、Pillow 初始化管理器、新错误码、repair 或 partial Markdown。`OUTPUT_WRITE_FAILED` 已经是同一函数对临时页图保存、durability 和替换失败的现有分类，这次只让解码验证保持同一责任。最终 root 为 **1312 passed in 42.75s**，compile、diff、敏感模式与用户文件保护通过；无 live provider、凭据、`contracts/` 或 `worker/` 修改。

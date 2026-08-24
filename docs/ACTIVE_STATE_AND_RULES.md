@@ -378,6 +378,17 @@ claiming the live-proven PDF facade itself is absent, and the package public
 contract includes the already-exported `PDFError`. The documented import set now
 matches `ocrllm.__all__`; batch PDF, repair, and PDF worker support remain absent.
 
+#088 closed a local PDF error-classification gap corresponding to the legacy
+render/decode incident without copying its parallel fallback. A 16-page regression
+settles group one, then makes verification of the library-generated page-nine PNG
+fail before group-two dispatch. That failure is now a fixed-message
+`OUTPUT_WRITE_FAILED` with page nine, one attempted provider call, and one settled
+group; the completed sidecar remains, while final Markdown and every rendered or
+temporary PNG remain absent. The old behavior leaked the generated-image
+`InvalidSource`, incorrectly blaming caller input. The active renderer is serial
+under `PDFIUM_LOCK`, so no retry, re-encoder, or Pillow initialization framework
+was added for the legacy-only parallel race.
+
 #073 strengthens the existing `pdf-vision` release profile without changing
 the product contract. The isolated installed wheel must build a real 16-page
 PDF with PDFium, call public `recognize()` through an injected no-network

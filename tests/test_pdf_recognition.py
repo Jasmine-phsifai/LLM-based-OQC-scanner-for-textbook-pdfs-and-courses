@@ -468,3 +468,48 @@ def test_pre_provider_render_failure_removes_new_empty_pdf_state_directory(
     assert captured.value.details["provider_calls_attempted"] == 0
     assert provider.calls == []
     assert not state_directory.exists()
+
+
+def test_generated_pdf_png_decode_failure_is_local_after_settled_group(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=16)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    state_directory = output_dir / "book_board"
+    provider = _RecordingProvider()
+    rendering = importlib.import_module("ocrllm.pdf.render_pdf_page_group")
+    decode_image = rendering.decode_image
+    decode_calls = 0
+
+    def fail_ninth_generated_png(path):
+        nonlocal decode_calls
+        decode_calls += 1
+        if decode_calls == 9:
+            raise InvalidSource(
+                "test-only generated PNG decode failure",
+                code="SOURCE_INVALID",
+            )
+        return decode_image(path)
+
+    monkeypatch.setattr(rendering, "decode_image", fail_ninth_generated_png)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=_pdf_config(provider, output_dir=output_dir),
+        )
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["page_number"] == 9
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["settled_pdf_group_count"] == 1
+    assert "test-only" not in str(captured.value)
+    assert provider.calls == [
+        tuple(f"page-{page_number:06d}.png" for page_number in range(1, 9))
+    ]
+    assert not (output_dir / "book_board.md").exists()
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 1
+    assert not tuple(state_directory.glob("page-*.png"))
+    assert not tuple(state_directory.glob(".p-*.tmp.png"))

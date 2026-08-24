@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
-from ..errors import OCRLLMError, OutputError, PDFError
+from ..errors import InvalidSource, OCRLLMError, OutputError, PDFError
 from ..image_group_limits import MAX_AGGREGATE_PIXELS
 from ..imaging.decode_image import decode_image
 from ..raise_if_cancelled import raise_if_cancelled
@@ -115,7 +115,14 @@ def _render_one_page(
             image.close()
             image = None
             _make_file_durable(temporary_path)
-            decode_image(temporary_path)
+            try:
+                decode_image(temporary_path)
+            except InvalidSource as error:
+                raise OutputError(
+                    "A rendered PDF page could not be decoded safely.",
+                    code="OUTPUT_WRITE_FAILED",
+                    details={"page_number": page_index + 1},
+                ) from error
             os.replace(temporary_path, target_path)
         except OCRLLMError:
             raise

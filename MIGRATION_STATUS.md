@@ -134,6 +134,9 @@ injected test double. #086 found no valid public consumer for that behavior and
 reverted it: injected providers return Markdown strings, Google retains its exact
 built-in usage path, and the internal response type is not a public contract. The
 protocol annotation and public README now state that boundary directly.
+#088 maps decode failure of a library-generated PDF page PNG to local
+`OUTPUT_WRITE_FAILED` instead of caller `InvalidSource`, preserving settled PDF
+state and making no request for the failed group.
 #073 strengthens the isolated installed-wheel proof for that same slice: a
 real 16-page PDF must traverse public `recognize()` as two serial groups of
 eight, publish two child states plus the final range-marked output, and leave
