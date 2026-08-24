@@ -2492,3 +2492,19 @@ Atomic task — Iteration #092: verify that the newly declared typed-package con
 **证据改变后的决定。** 没有真实 checker 输出，就不能选择 `TYPE_CHECKING` 下约 45 个 re-export、增加 `__init__.pyi` 或给动态 `__getattr__` 建立一组 overload。三条方式都会复制公共出口并引入同步成本；当前只能说明它们是候选，不能称为修复。authority 因此把 #091 的强表述从“checker 可以消费”收窄为已证明的“标准 marker 可发现”，并明确 resolution/diagnostic probe 尚未完成。README 和 migration 原本只声明 discovery，没有回退 marker 或 artifact test。
 
 **验证、清理与过度设计复盘。** 本轮只有证据边界文档变更；`git diff --check` 和敏感模式检查通过后提交。临时 venv 由负责固定流程的轻量代理删除并确认不存在。没有修改 `src/ocrllm/__init__.py`、测试、依赖、provider、repair、`contracts/` 或 `worker/`，没有 API/凭据访问。下一次只有在已有 checker 可运行或一次受控下载真正成功后，才执行上述 good/bad consumer probe；若正确代码精确、错误代码被拒绝，则不改 facade，若错误仍作为 `Any` 通过，再用失败输出选择最小静态出口方案。
+
+## #093 — 2026-08-24：发行版与运行时版本改为一个来源
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #093: audit the installed library’s version identity across runtime, project metadata, and wheel metadata, and eliminate only a reproducible drift path. Success means reconciling authority and diary, proving whether ocrllm.__version__, pyproject.toml, and installed distribution metadata agree, checking whether an existing test already protects that invariant, then adding the smallest maintainable guard or recording that no gap exists. This matters because checkpoints, diagnostics, and downstream bug reports become difficult to interpret when one artifact reports multiple versions.
+```
+
+**证据、历史决定与两条路线。** active library 有两个手写来源：`pyproject.toml [project].version = "0.1.0"` 决定 wheel METADATA，`src/ocrllm/__init__.py __version__ = "0.1.0"` 决定 runtime。现有 clean-wheel gate 分别打印 runtime version 和检查 metadata/extras，却不比较二者；quality runner 读取发行 metadata，未安装时又回退 runtime 常量，也可能掩盖漂移。#061 曾因当时默认分支风险更直接而明确暂缓同步测试；产品姿态和本轮目标已经变化，因此重新审议。路线①增加比较测试、继续让发布者改两处；路线②让 Hatch 从 runtime assignment 提取 version，物理删除第二来源。选择②，因为它是结构减法，不是版本同步框架。
+
+**最小配置修改。** 官方 Hatch 文档规定动态项目版本使用 `dynamic = ["version"]`，默认 regex source 可从配置 path 中寻找字符串 `__version__`。`pyproject.toml` 因此只做两处对应变更：静态 `version` 改成动态声明，并增加 `[tool.hatch.version] path = "src/ocrllm/__init__.py"`。没有导入 package 执行 build hook、生成 `_version.py`、引入 setuptools-scm、Git tag 推导、写版本脚本或改变公开版本值。
+
+**真实 artifact 证明。** 轻量代理按固定构建流程在精确 `%TEMP%` 目录只构建一次；exit **0**，wheel 仍名为 `ocrllm-0.1.0-py3-none-any.whl`，大小 **203,132 bytes**，SHA-256 为 `fc848f9a4580502d2d336c4f65d906b377493f23b6176b657ae43293713c4cac`。仓库外直接导入后，wheel METADATA Version、`ocrllm.__version__`、`importlib.metadata.version("ocrllm")` 均精确为 **0.1.0**。构建后的 core metadata 已解析具体版本，因此没有保留 Dynamic 字段；这不是缺失。base import 未加载 Pillow、OpenAI、HTTPX、Google、PDFium、ONNX Runtime、RapidOCR 或 miniaudio。
+
+**验证、工具诚实与过度设计复盘。** lightweight import、public import contract 和 `py.typed` marker 合计 **10 passed in 0.36s**，`compileall` 与 `git diff --check` 通过。最初版本搜索中的一个复合 `rg` 因 PowerShell 引号形成未闭合正则，在扫描前退出；随后拆成多个固定字符串查询，才作为证据。临时 wheel 目录由执行代理在主代理复核后精确删除。没有改测试、runtime、public API、provider、checkpoint identity、worker protocol、repair、`contracts/` 或 `worker/`，没有 API/凭据调用。没有新增一个只证明双源一致的测试，因为双源本身已经删除；真实 wheel 构建就是该配置的直接消费者。

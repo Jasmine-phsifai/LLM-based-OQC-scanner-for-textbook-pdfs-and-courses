@@ -163,6 +163,9 @@ recovery mechanism. The installed package carries the standard `py.typed`
 marker, so standards-compliant downstream type checkers can discover its shipped
 inline annotations. The marker and installed-wheel resource are proven; a real
 downstream checker resolution/diagnostic probe has not yet completed.
+Hatch derives distribution version metadata from the public
+`ocrllm.__version__` assignment; `pyproject.toml` no longer carries a second
+hand-maintained version string.
 
 ### P0-a — Bounded legacy provider-error evidence audit (completed by #066)
 
