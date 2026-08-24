@@ -120,6 +120,42 @@ def test_compose_video_result_keeps_frames_and_audio_separate(tmp_path: Path) ->
     )
 
 
+@pytest.mark.parametrize("partial_branch", ["frame", "audio"])
+def test_compose_video_result_preserves_partial_child_status(
+    tmp_path: Path,
+    partial_branch: str,
+) -> None:
+    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    audio = tmp_path / "video" / "audio.mp3"
+    audio.write_bytes(b"mp3-placeholder")
+    frame_result = RecognitionResult(
+        markdown="Board content.",
+        source_type="image",
+        status="partial" if partial_branch == "frame" else "complete",
+        metadata={
+            "video_frame_indices": (0,),
+            "video_frame_timestamps_seconds": (0.0,),
+            "current_run_provider_call_count": 1,
+        },
+    )
+    audio_result = RecognitionResult(
+        markdown="Audio transcript.",
+        source_type="audio",
+        status="partial" if partial_branch == "audio" else "complete",
+        metadata={"provider_call_count": 1},
+    )
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(frame,),
+        frame_outcomes=(BatchItemOutcome(index=0, result=frame_result),),
+        audio_artifact=audio,
+        audio_result=audio_result,
+    )
+
+    assert outcome.status == "partial"
+    assert compose_video_result(outcome).status == "partial"
+
+
 def test_compose_video_result_marks_partial_failures_without_hiding_success(
     tmp_path: Path,
 ) -> None:

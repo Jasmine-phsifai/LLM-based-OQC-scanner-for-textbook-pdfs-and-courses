@@ -53,6 +53,9 @@ parsing outcome is zero. Do not add a ledger, telemetry layer, or billing API.
 #140 makes audio absence and an audio artifact mutually exclusive in a public
 video outcome. Reject the contradiction at construction; do not hide it by
 dropping the artifact during composition or adding another audio state.
+#141 requires child result status to propagate: the video is complete only
+when every frame result and the audio result, when present, are complete.
+Partial children remain usable but keep both outcome and composition partial.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

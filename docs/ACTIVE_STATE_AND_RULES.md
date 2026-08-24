@@ -1156,13 +1156,22 @@ The final offline suite passes 1,420 tests in 55.08 seconds; focused video
 neighbors, `compileall -q src tests tools`, lightweight import, diff hygiene,
 and frozen-boundary checks are clean.
 
-An independent public-object audit during #140 proved a separate open defect
-for the next iteration: a frame or audio `RecognitionResult(status="partial")`
-is currently counted as a fully successful branch, so both
-`VideoRecognitionOutcome.status` and the composed result can incorrectly become
-`complete`. Do not mix that correction into #140; fix status propagation next
-without adding a new state model. Cancellation remains the independent #127
-maintainer choice.
+#141 closes the separate status-propagation defect proved during #140. A frame
+or audio `RecognitionResult(status="partial")` was previously counted as a
+fully successful branch, so `VideoRecognitionOutcome.status` and the composed
+result could incorrectly become `complete`. Video completion now requires
+every frame-group result and the audio result, when present, to be explicitly
+complete. A partial child remains a usable result and therefore makes the video
+partial rather than failed. `VIDEO_NO_AUDIO_STREAM` remains a completely
+settled optional absence.
+
+The correction changes only the existing computed property; composition
+already consumes that one status source. No new state value, coordinator,
+constructor restriction, provider behavior, cancellation policy, publication,
+resume, or legacy format was added. Forty focused video neighbors and the full
+1,422-test offline suite pass; compileall, lightweight import, diff hygiene, and
+frozen-boundary checks are clean.
+Cancellation remains the independent #127 maintainer choice.
 
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide

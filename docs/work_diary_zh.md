@@ -3265,3 +3265,15 @@ Atomic task — Iteration #140: audit the public video composition boundary for 
 **失败优先和最小实现。** 新回归在修改前稳定得到 **DID NOT RAISE**。实现只在既有 `VideoRecognitionOutcome.__post_init__()` 增加一个不变量：存在 audio artifact 时，audio error 不得是 `VIDEO_NO_AUDIO_STREAM`。其他 audio provider 失败仍保留已经抽取的 MP3；成功音频结果、真实静音和精确词法路径规则都不变。没有新 helper、状态枚举、serializer 或兼容层。
 
 **独立发现、验证与下一轮边界。** 另一只读审计用公共对象证明：图片或音频子结果若明确为 `status="partial"`，当前 outcome 仍只看“存在 result”，从而把整体和 composed result 错升为 `complete`。这是独立的状态传播缺陷，应作为 #141 首要任务；本轮不把第二项修复混进构造不变量，也不借机加入状态协调器。它同时观察到手工 frame result 可声明错误媒体类型等次要构造缺口，但没有足够理由在本轮继续扫并扩大验证器。独立 code review 确认本轮不变量位于类型检查之后，只拒绝 no-stream + artifact，`VIDEO_INVALID` 和 `PROVIDER_*` 失败仍能保留 MP3。视频 outcome、composition、公开视频编排和 Google runner 定向集合为 **38 passed in 1.01s**；完整离线测试为 **1,420 passed in 55.08s**，`compileall -q src tests tools`、`git diff --check`、轻量 import 和冻结目录检查通过。没有网络、provider、凭据、安装或下载。
+
+## #141 — 2026-08-25：partial 子结果不再被视频顶层升格为 complete
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #141: stop video outcome and composition status from upgrading an explicitly partial image or audio branch to complete. Success means reproducing both branch cases through public objects, defining complete as “every usable branch result is itself complete” while preserving existing complete/partial/failed and silent-video behavior, and fixing only the computed status without adding a state coordinator, serializer, cancellation policy, publication, or resume. This matters because callers use the top-level status to decide whether a video needs attention; silently promoting partial provider output is a false success.
+```
+
+**证据、两条路线和选择。** authority 已把 #140 的独立发现列为下一项。参数化 public 回归分别构造 partial 图片 group + complete 音频、complete 图片 group + partial 音频；旧实现两例都明确得到 `complete != partial`，并且 composer 直接复用同一个错误顶层状态。路线一是在 composer 额外降级；路线二是修正 `VideoRecognitionOutcome.status` 这一唯一状态来源。选择路线二，避免 outcome 和组合维护两套判定。
+
+**最小实现、审查与验证。** computed property 仍用“存在 result”判断是否有可用成果和是否为 failed，但 complete 条件收紧为：非空 frame outcomes 中每个都必须有 `result.status == "complete"`，audio 要么明确 absent，要么 `audio_result.status == "complete"`。partial 子结果仍是可用结果，因此顶层为 partial，不被降成 failed。两份独立只读审查逐项核对 complete frame + complete/absent audio、partial frame、partial audio、混合成功/失败、整条 frame 失败与可用音频等矩阵，未发现回归；composer 已复用 outcome 状态，不需要第二层判断。定向视频集合为 **40 passed in 0.99s**；完整离线测试为 **1,422 passed in 53.12s**，`compileall -q src tests tools`、`git diff --check`、轻量 import 和冻结目录检查通过。没有网络、provider、凭据、安装或下载。没有新 helper、状态枚举、协调器、构造验证、serializer、#127 取消、发布或 resume；也没有机械增加所有混合矩阵测试，参数化回归已直接固定本轮两条 false-complete 路径。

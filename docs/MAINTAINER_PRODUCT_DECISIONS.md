@@ -392,6 +392,11 @@ is often accepted.
   `VideoRecognitionOutcome` construction. Absence and a retained MP3 cannot
   both be true; do not let composition silently discard the file or invent a
   fourth audio state.
+- #141 defines video completion by child status, not merely by the presence of
+  child results. Every frame result and a present audio result must be
+  `complete`; a `partial` child remains usable but keeps the outcome and its
+  provider-free composition `partial`. Do not add a status coordinator or new
+  status value.
 
 ## Resolved confirmation and next authority
 

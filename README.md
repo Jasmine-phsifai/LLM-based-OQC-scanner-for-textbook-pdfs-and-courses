@@ -38,7 +38,8 @@ As of 2026-08-25:
   through the lazy video extra. Frame and audio recognition use separate
   `Config` objects, so their providers can differ. `recognize_video()` now
   settles both branches into a typed `VideoRecognitionOutcome`; an outcome
-  cannot claim that the audio stream is absent while retaining an MP3 artifact.
+  cannot claim that the audio stream is absent while retaining an MP3 artifact,
+  and an explicitly partial child result keeps the video partial.
   `compose_video_result()` can explicitly turn a returned complete or partial
   outcome into a standard memory-only video `RecognitionResult` with separate
   frame and audio sections. Its current-run provider-call total is an integer

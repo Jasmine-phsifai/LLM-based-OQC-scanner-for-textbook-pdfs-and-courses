@@ -113,11 +113,15 @@ class VideoRecognitionOutcome:
         successful_frames = sum(
             outcome.succeeded for outcome in self.frame_outcomes
         )
-        all_frames_succeeded = bool(self.frame_outcomes) and successful_frames == len(
-            self.frame_outcomes
+        all_frames_complete = bool(self.frame_outcomes) and all(
+            outcome.result is not None and outcome.result.status == "complete"
+            for outcome in self.frame_outcomes
         )
-        audio_is_complete = self.audio_state in {"recognized", "absent"}
-        if all_frames_succeeded and audio_is_complete:
+        audio_is_complete = self.audio_state == "absent" or (
+            self.audio_result is not None
+            and self.audio_result.status == "complete"
+        )
+        if all_frames_complete and audio_is_complete:
             return "complete"
         if successful_frames or self.audio_result is not None:
             return "partial"
