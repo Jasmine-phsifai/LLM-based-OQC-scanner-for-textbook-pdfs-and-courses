@@ -1517,6 +1517,23 @@ changed. This is a valid robustness result, not a successful recognition gate:
 the next bounded live run may recheck service recovery after a relevant product
 change, but must not be repeated merely to turn these typed failures green.
 
+#163 fixes one caller-visible package example after a bounded runtime audit
+found no new video defect independent of the three open product decisions. The
+maintained video example called public `publish_video_result()` but omitted it
+from the preceding `from ocrllm import (...)` block, so a copied example reached
+publication with an unbound name. An AST check of that exact fenced block first
+reported `publish_video_result` as its only called-but-unimported name and now
+reports none after adding the missing public import.
+
+The public video inspection, frame/audio extraction, frame recognition,
+orchestration, outcome, composition, publication, import-contract, and
+lightweight-import set passes 87 tests in 2.81 seconds; compilation passes. An
+independent read-only audit passed 69 video-neighbor tests and found no separate
+runtime defect. No runtime code, API, provider behavior, dependency, live call,
+documentation execution framework, frozen boundary, or open decision changed.
+Do not add a general doctest harness for this media/provider example merely to
+guard the repaired one-line import.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

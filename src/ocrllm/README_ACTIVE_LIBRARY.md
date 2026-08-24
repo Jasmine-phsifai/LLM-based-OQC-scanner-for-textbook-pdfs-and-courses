@@ -264,6 +264,7 @@ from ocrllm import (
     extract_video_audio,
     extract_video_frames,
     inspect_video,
+    publish_video_result,
     recognize,
     recognize_video,
     recognize_video_frames,

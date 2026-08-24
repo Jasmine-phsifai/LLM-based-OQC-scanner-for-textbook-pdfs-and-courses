@@ -3589,3 +3589,17 @@ Atomic task — Iteration #162: re-prove the current short-video library path wi
 **唯一一次真实执行。** 固定流程交给轻量任务：在系统 TEMP 中生成 **3.5 秒 / 34,905 bytes** 的非隐私有声 MP4，只在 controller 进程中从 `OCRLLM/QCR` 读取非空凭据并短暂传给子进程，显式选择 `gemini-2.5-flash`、timeout 120。当前 catalog 返回 **37** 个模型。runner 恰好启动一次，耗时 **4,727.402 ms**、exit **1**、stderr 为空，安全 JSON 可解析。图片分支保留 **1** 张 JPEG、组成 **1** 组并恰好调用 **1** 次，返回 `PROVIDER_RESPONSE_INVALID`；音频分支已产生 MP3 并恰好调用 **1** 次，返回 `PROVIDER_QUOTA_EXHAUSTED`。顶层如实为 `failed`，composition 为 `not_started`、资产数 0，没有把任一失败写成完成，也没有 retry、fallback 或模型切换。
 
 **清理、结论与过度设计复查。** 捕获内容的 credential pattern 检查为 false，输出不含转录正文、源/输出路径或原始响应；精确 TEMP 根删除后 residue 为 false。controller 最初尝试导入当前环境没有安装的 PySide6，因此在 runner/provider 调用前停止；随后只把 controller 的 QSettings 读取改用已有 PyQt5，产品代码、依赖和仓库均未修改，真实 runner 仍只执行一次。这次结果证明分离的图片/音频配置都真实到达各自 provider，并证明失败结算诚实，但不是成功识别 gate。没有为了追求绿灯增加错误码映射猜测、六次重试、自动换模、provider class、API pool、长期日志或第二个 live runner；也没有修改 frozen `contracts/worker` 和三个开放决定。只有未来相关产品改动后才值得再做一次有界恢复检查，不能为了把本轮失败刷绿而立刻重复调用。
+
+## #163 — 2026-08-25：包内视频示例补齐实际使用的发布函数导入
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #163: identify and close one concrete defect in the shipped video recognition/composition path that does not choose the open cancellation, source-snapshot-location, or long-audio chunking decisions. Success means synchronizing the repository, rereading the authoritative state and Chinese diary, exercising the public Python-package surface, proving a caller-visible defect before changing runtime code, applying only the smallest maintainable correction, running proportional offline tests, updating the authoritative record and diary, and committing/pushing one coherent change. This matters because video maturity should advance through observed library failures, not speculative compatibility or a broader provider framework.
+```
+
+**假设、两条路线与运行时停止判断。** 同步 origin、重读 authority、`START_HERE`、包规则和最近日记后，假设应在公开视频结果或发布边界寻找独立缺陷，不碰 #127 取消、#149 源快照位置和 #152 长音频切片。主代理逐文件审查 outcome、composition、publication、frame/audio extraction 与 orchestration；轻量只读代理独立跑 **69 passed in 2.67s**，也未找到新的确定性运行时缺陷。当前视频音频只接受 Google 配置、配置占位 MP3 路径不读取文件，均是已有明确边界。路线 A 是继续扩展通用音频 provider 或人工构造更多防御矩阵；路线 B 是停止制造运行时问题，转而修复审查中已经能复现的包使用错误。选择路线 B。
+
+**红灯证据与最小修复。** `README_ACTIVE_LIBRARY.md` 的完整视频示例最后调用 `publish_video_result()`，但 `from ocrllm import (...)` 中没有导入它。对该精确 Python fenced block 做 AST 检查，修复前唯一 `called-but-unimported` 名称就是 `publish_video_result`；用户照抄会在发布步骤得到 `NameError`。可选修复是建立会执行媒体/provider 示例的通用 doctest 框架，或只补这一行已经发布的公共导入并用同一静态检查复验。选择后者。改动只有 import 列表新增 `publish_video_result`；复验结果为缺失名称空列表。没有改写示例流程，也没有声称 provider 调用成功。
+
+**验证、命令失误与过度设计复查。** 第一次 pytest 命令误写不存在的 `tests/test_lazy_imports.py`，在收集前退出并执行 **0** 项；确认真实文件为 `tests/test_lightweight_import.py` 后重新运行。视频 inspection、frame/audio extraction、frame recognition、orchestration、outcome、composition、publication、import contract 与 lightweight import 合集为 **87 passed in 2.81s**，`compileall -q src tests` 通过。无网络、provider、凭据、依赖安装、运行时代码、API、frozen `contracts/worker` 或开放决定变化。没有为了一个漏导入增加 Markdown parser、doctest runner、可执行文档 fixture 或新的测试文件；静态复验只用于本轮证明，不成为第二套维护框架。
