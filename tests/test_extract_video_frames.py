@@ -272,6 +272,8 @@ def test_extract_video_frames_retains_equal_luma_color_changes(
 def test_extract_video_frames_uses_vfr_container_time_and_frame_pts(
     tmp_path: Path,
 ) -> None:
+    import cv2
+
     source = _write_variable_frame_rate_mp4(tmp_path / "variable.mp4")
 
     info = inspect_video(source)
@@ -283,6 +285,12 @@ def test_extract_video_frames_uses_vfr_container_time_and_frame_pts(
     assert [frame.timestamp_seconds for frame in frames] == pytest.approx(
         [0.0, 4.52],
         abs=0.02,
+    )
+    retained = [cv2.imread(str(frame.path)) for frame in frames]
+    assert all(frame is not None for frame in retained)
+    assert [float(frame.mean()) for frame in retained] == pytest.approx(
+        [20.0, 230.0],
+        abs=10.0,
     )
 
 

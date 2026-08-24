@@ -1913,6 +1913,20 @@ manifest, dependency, environment, provider, credential, frozen boundary, or
 open #127/#149/#152 choice changed; do not add another build harness for this
 already-proven value contract.
 
+#192 closes a test-evidence gap between VFR candidate identity and the published
+JPEG pixels without changing the selector or writer. The existing real VFR
+fixture contains distinguishable grayscale scenes 20/90/160/230 and already
+proved container duration 4.56 seconds plus retained identities `(0, 0.0)` and
+`(4, 4.52)`, but it did not inspect the JPEGs produced by the writer's separate
+random-access open. The regression now decodes those two retained assets and
+requires mean intensities approximately 20 and 230 with tolerance 10; the 70-unit
+scene spacing distinguishes every fixture scene despite H.264/JPEG loss. The
+exact test and 45 inspection/extraction/orchestration neighbors pass. This is a
+test-only proof; do not add frame hashes, another fixture, provider work, or a
+second seek/identity subsystem without a reproduced runtime mismatch. No
+runtime, API, dependency, output, frozen boundary, or open #127/#149/#152
+choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

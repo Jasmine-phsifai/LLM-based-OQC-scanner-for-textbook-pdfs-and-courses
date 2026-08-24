@@ -3981,3 +3981,17 @@ Atomic task — Iteration #191: prove the new retained-JPEG invariant from a cle
 **固定工作流与主代理复核。** 按用户“下载/安装/主动检查交给轻量任务”的规则，轻量任务只执行一次 archive/build/install/probe/cleanup；主代理同时核对 `pyproject.toml` 的 wheel 包仍只有 `src/ocrllm`、base dependencies 仍为空，精确提交中确有 `retained_video_frame.py`、README 和 `py.typed`，没有新建第二套 build harness。工作流用 `git archive` 取精确提交 `ed5569e835d3b84c42f7055ebbebef759bb3174c`，利用已有 Hatchling 离线构建，并以 `--no-deps` 安装到唯一临时根下的外部 target；没有联网、下载或更改环境。
 
 **结果、清理与过度设计复查。** wheel 为 **241,014 bytes**，SHA-256 `88becffa6d19acc41282e6c03d5649051cc08a62edbc899ae44064bbb7f7f2fc`；包路径和 distribution metadata 路径都落在外部 target。新鲜进程中 `.JPG` 构造成功，`.png` 得到 #190 的预期 `ValueError`；wheel 同时包含 `ocrllm/retained_video_frame.py` 和 `ocrllm/py.typed`。普通导入没有加载 `cv2`、`numpy`、`imageio_ffmpeg`、`PIL`、`miniaudio`、`google/genai`、`openai`、`httpx` 或 `legacy_app`。唯一临时根已删除并确认不存在。无 repo runtime/test/API/manifest/dependency、provider、credential、frozen `contracts/worker` 或 #127/#149/#152 选择变化；不把一次公开值变化扩成全 profile release gate、第二构建脚本或重复真实视频测试。
+
+## #192 — 2026-08-25：VFR 留取帧不再只有索引正确，测试也核对最终 JPEG 场景
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #192: audit whether the negative-feedback selector’s retained JPEGs preserve the selected candidates’ actual visual identity, not merely their indices and dimensions, using one bounded real MP4 and no provider. Success means reconciling authority and diary, tracing candidate sampling through final random-access JPEG decode, constructing a deterministic scene fixture that can distinguish every selected source frame, comparing published JPEG pixels against the intended decoded candidates, and making only a reproduced correction if the current implementation writes a different frame while reporting success. This matters because frame indices, timestamps, and provider grouping are trustworthy only if each retained asset actually contains the scene the selector chose.
+```
+
+**已有证据与真正缺口。** 恒定帧率 sectioned fixture 已经读取最终 JPEG，并用亮度证明索引 0/10/29 分别对应暗/亮/中灰场景，所以通用 writer 不是完全没测。VFR fixture 则只断言容器时长 4.56 秒、索引 `[0, 4]` 和 PTS `[0.0, 4.52]`；writer 会另开一次 MP4、按 `CAP_PROP_POS_FRAMES` 随机 seek、解码并写 JPEG，而现有完成检查只验证写入、普通文件、非空、能读和 shape。若 VFR 后端在这一步返回错误场景，旧测试仍会绿色。
+
+**最小补证。** 路线 A 复用同一 VFR fixture 的四个灰度场景 20/90/160/230，只读取已经发布的两个 JPEG，并要求均值约为 20/230、容差 10；路线 B 增加运行时 seek 后位置检查、hash、另一 fixture 或身份子系统。选择 A。四个场景间隔 70，远大于容差，所以能区分任何错误场景，同时容忍 H.264 与 JPEG 压缩。精确测试为 **1 passed in 0.29s**；轻量只读审计独立确认这个断言足够且不重复现有 CFR 证据。
+
+**验证与过度设计复查。** inspection、frame extraction、frame facade 和 combined orchestration 聚焦集合为 **45 passed in 6.64s**；`compileall -q src tests tools`、`git diff --check` 通过。#190 刚以同一产品树完成 **1,467 passed**，本轮只有测试断言、没有 runtime，因此不机械重跑全量并把它误称为更强的 VFR 像素证据。无网络、provider、凭据、依赖、API、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择变化；没有增加 hash、第二 fixture、provider live call、seek wrapper 或 source-stability 设计。
