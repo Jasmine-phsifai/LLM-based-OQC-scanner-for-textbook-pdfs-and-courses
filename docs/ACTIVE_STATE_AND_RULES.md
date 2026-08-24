@@ -355,6 +355,18 @@ queue until one bounded 16-page Google run proves exactly two image requests,
 current per-model usage, complete child checkpoints, ordered range markers, and
 no retained page PNGs. Do not advance to P1-d on offline evidence alone.
 
+#075 re-audited the unblock condition after the offline and installed-wheel
+proofs were complete. The active resolver has exactly three credential inputs:
+explicit `GoogleGenAISettings.api_key`, then `GOOGLE_API_KEY`, then
+`GEMINI_API_KEY`. The legacy GUI stores its explicit value under QSettings
+`OCRLLM/QCR`, key `ui/google_api_key`; the library does not read that store
+implicitly. The current process has neither environment value, and the current
+Windows account has no nonempty value at that QSettings key. The probe itself
+succeeded and made zero provider calls. Heartbeat work is therefore paused at
+P1-c until an authorized key is made available to this process or that current
+QSettings location. Do not select unrelated hardening or P1-d merely to avoid
+the external gate.
+
 ### P1-d — Minimal PDF repair after stable markers
 
 Only after PDF checkpoint and Markdown markers are stable, migrate the smallest

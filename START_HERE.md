@@ -115,6 +115,13 @@ sidecars, ordered range-marked final output, and no snapshot or rendered-PNG
 residue. This is packaging/runtime evidence only; the Google P1-c gate remains
 open.
 
+#075 rechecked all implemented credential sources without reading or printing
+a secret. Neither `GOOGLE_API_KEY`, `GEMINI_API_KEY`, nor the current account's
+legacy `OCRLLM/QCR` QSettings key `ui/google_api_key` is available; the probe
+succeeded and made zero provider calls. The queue is paused at P1-c until one
+of those authorized sources is populated for the current process/account. Do
+not begin repair or invent another credential store while blocked.
+
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203
 passed; the exact archive suite reported 1193 passed and 10 expected skips.

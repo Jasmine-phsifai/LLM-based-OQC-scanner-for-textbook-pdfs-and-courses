@@ -2204,3 +2204,21 @@ Atomic task — Iteration #074: repair the repository’s proven push workflow m
 **最小修正与安全边界。** 仓库本地 `origin` 从 SSH URL 改为同一个 `Jasmine-phsifai/LLM-based-OQC-scanner-for-textbook-pdfs-and-courses` 的 HTTPS URL，删除失效的 repo-local `core.sshCommand`；没有改变 owner、repo、branch 或账号，没有改 global Git/credential 配置。`upstream` 的 fetch/push URL 都保持原始 `honggoldgoldgold` HTTPS 地址，仍禁止 push。tracked `AGENTS.md` 同步当前事实：普通 Git 使用已登录 GitHub CLI 的 HTTPS credential helper，禁止打印、导出或写入 token；删除已经错误的旧用户私钥说明。没有读取私钥、输出完整 token、创建 credential wrapper 或复制 key。
 
 **验证、过度设计复盘与发布计划。** 修正后普通 `git push --dry-run origin master` 直接返回 `Everything up-to-date`；origin fetch/push 精确为批准的 HTTPS fork，upstream 两个 URL 未变，local SSH override 为空，`HEAD == origin/master`。这轮不涉及产品代码、依赖、测试或 provider，因而不运行与变更无关的 1309 项 release suite；Git transport 的真实 dry-run 和随后普通 push 是比例正确的门禁。没有为多账号建 credential router、自动 fallback、SSH key discovery 或跨仓库配置器。本轮提交后必须用不带 `-c credential.helper` 的普通 `git push origin master` 成功发布，才算关闭缺陷。
+
+**提交后真实发布。** 最终提交 `d774a9f50325caf5e2dda2704371894b37f26a79` 使用普通 `git push origin master` 直接成功，没有 `-c credential.helper`、SSH override 或 URL override；远端从 `586bb94` 前进到 `d774a9f`。随后 `HEAD == origin/master`，origin 为批准的 HTTPS fork，upstream 未变，local SSH override 仍为空，两个用户未跟踪文件保持未动。该 Git transport 缺陷关闭。
+
+## #075 — 2026-08-24：确认 P1-c 只剩外部 Google 凭据并停止防御漂移
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #075: re-audit the only remaining P1-c unblock condition without reading or exposing credentials, and either run the already-defined 16-page Google PDF gate once if an authorized credential is now available or record a precise external blocker if it is not. Success means credential availability is checked only through the library’s documented environment and QSettings sources, zero provider calls occur when absent, no new PDF feature or defensive machinery is added, and the repository states exactly what external change resumes the queue. This matters because P1-c is now offline- and package-proven; continuing unrelated refinements would violate the authority’s stop condition and drift into overdesign.
+```
+
+**authority 复核、假设与两条路线。** 重读当前 authority、#072—#074 日记、credential resolver、legacy GUI settings 和 PDF live tool。初始假设是账户或进程环境可能在前三轮后已经变化；若 key 可用，就只运行既定 16 页/两批 gate；若仍不可用，就不得用另一个离线优化冒充 P1-c 进展。两条路线不是两种实现，而是由外部状态决定的两个诚实终点。P1-c 已有 source-level、真实本机 PDFium、installed-wheel public facade、resume 和 package gate 证据；P1-d 被 authority 明确禁止提前开始。
+
+**轻量只读审查与精确凭据来源。** 轻量代理只读检查 active resolver、legacy GUI/QSettings 与 `run_google_genai_pdf_smoke.py`，不读 registry/value、不安装、不联网、不调用 provider。主代理本人复核代码后确认 active resolver 只有三个来源，优先级为：显式 `GoogleGenAISettings.api_key`，然后 `GOOGLE_API_KEY`，再 `GEMINI_API_KEY`。legacy GUI 使用 QSettings organization/application `OCRLLM/QCR`、键 `ui/google_api_key`，但 active library 不隐式桥接它；历史 live wrapper 只能在同一进程临时转入环境。PDF tool 只接受 exact model、恰好 16 个 `--page-image` 和 timeout，成功门禁仍是两次 8 页请求、两个 complete sidecar、顺序 marker、exact-model usage、最终输出与 0 PNG 残留。
+
+**安全探测与结果。** 主线程只输出 availability boolean，不输出 value、长度、前后缀、路径或 raw settings。当前 `GOOGLE_API_KEY=False`、`GEMINI_API_KEY=False`、legacy QSettings value `False`；QSettings probe error `False`，所以这是成功读取后的确切缺失，不是 PyQt/registry 探测失败。`AnyAuthorizedCredentialAvailable=False`，因此没有构造 16 页 fixture、没有加载 Google SDK/catalog、没有 provider/API 调用，也没有 retry 或第二来源搜索。没有遍历用户目录、Windows Credential Manager、浏览器、shell history、旧账号 registry 或其他可能含秘密的位置。
+
+**重复阻塞审计、过度设计边界与解锁条件。** 同一 credential blocker 从 #072 首次出现，经过 #073 installed-wheel 证明和 #074 发布工作流修复后，在 #075 仍原样存在，已经满足连续多轮审计；safe in-scope 替代工作已完成。继续增加 PDF 配置、cleanup/race 回归、第二 credential store、自动 key discovery、Google transport、repair 或 P2 会违反 unified queue，而不是成熟度进展。本轮无产品/测试代码可诚实修改，文档只把当前外部状态和停止条件提升为 authority。解锁方式只有：让当前 agent 进程获得非空 `GOOGLE_API_KEY` 或 `GEMINI_API_KEY`，或在当前 Windows 账户的 `OCRLLM/QCR`、`ui/google_api_key` 保存授权 key；不要把 key 发到聊天、命令行、tracked 文件或日记。恢复后只执行一次既定 16 页 gate，通过才关闭 P1-c 并重新评估 P1-d。
