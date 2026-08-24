@@ -2884,3 +2884,13 @@ Atomic task — Iteration #118: verify whether any new repository or user eviden
 ```
 
 **结果与边界。** 当前 `HEAD` 与 `origin/master` 都是 `80bd4f7`，工作树仍只有两个用户保留的未跟踪文件。authority、START_HERE、package AGENTS 和维护者决定仍一致写明：历史 legacy Markdown 是否成为新 library 的公开兼容输入必须由维护者明确回答；在答案前 P1-d 不获实现授权，也不得建立平行队列。#117 后没有新的用户 yes/no 或仓库决定；自动继续 heartbeat 不是 scope 授权。本轮因此是同一阻塞条件的第二次连续核对，不写产品代码、不复制测试、不再次扫描别的边缘问题，也不重复运行同一源码 HEAD 已通过的全量。只验证日记 diff、冻结目录和工作树后提交。下一步仍需维护者明确回答 yes 或 no。
+
+## #119 — 2026-08-24：P1-d 决策门达到三次连续阻塞阈值
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #119: perform the third consecutive P1-d blocker audit and stop the heartbeat cleanly if no explicit historical-Markdown compatibility decision has arrived. Success means verifying the current authority, decision record, latest diary, Git state, and user-visible input; making no unauthorized product or parallel-queue change; recording the exact impasse once; committing and pushing that record; and marking the persistent goal blocked rather than continuing repetitive no-op iterations. This matters because the queue cannot advance without changing public scope, and repeatedly committing the same unanswered question would itself become documentation churn.
+```
+
+**阻塞审计。** 开工时 `HEAD` 与 `origin/master` 均为 `bc4a332`，只保留两个用户未跟踪文件。authority 仍规定 P1-d 是唯一立即队列，历史 legacy Markdown 是否成为新 library 的公开输入必须明确回答；维护者决定仍写着 “One explicit maintainer yes/no remains required”。#117、#118 及本轮之间没有收到 yes/no，自动目标 continuation 不改变 scope。已知 worker import-order 缺陷受 frozen 边界约束，authority 又禁止并行 provider/generalization 或 proactive edge-scan 队列，因此当前不能在不新增权限或违背优先级的情况下做有意义的产品推进。同一条件已经连续三轮成立，本轮不再重复测试或另造任务；日记 diff、冻结目录和工作树核验后提交，并把 heartbeat 标记为 blocked。恢复只需维护者回答：yes 表示实现 #106 已固定的窄 `repair_pdf`；no 表示冻结 P1-d 并授权选择下一队列。
