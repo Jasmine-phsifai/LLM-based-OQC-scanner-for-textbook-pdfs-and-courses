@@ -450,6 +450,13 @@ The following directions remain traceable but are not current work:
   negative-feedback selection. A real three-second MP4 with a final-frame scene
   change now retains both the opening and final frames; the complete offline
   suite passes 1,432 tests.
+  #149 finds no further ordinary-content selector defect, then proves the next
+  parsing-lifecycle gap with two real same-shape MP4s: replacing the source
+  after coarse scan makes retained JPEGs come from new bytes while candidate
+  thumbnails and indices came from old bytes, and the call reports success.
+  A request-owned streamed disk snapshot is the recommended correction, but
+  its output-sibling versus explicit public temp-directory contract remains an
+  open maintainer choice; no partial snapshot implementation is shipped.
   A clean archive of commit `c7f30f0` built and installed outside the
   repository without network, kept plain import free of heavy media modules,
   and completed one local video through separate injected image and fake-audio

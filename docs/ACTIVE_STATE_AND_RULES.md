@@ -1339,6 +1339,39 @@ config, cancellation, legacy format, frozen boundary, or final-output behavior
 changed. This is one extra bounded local decode, not a tunable sampler, second
 scene detector, or generalized video-analysis framework.
 
+#149 stops further selector tuning after bounded evidence found no new
+ordinary-content correctness defect. A read-only audit exercised stable,
+alternating, and maximum-segment candidate sequences; ordering, final-candidate
+retention, ceiling-based splitting, and the density cap held. A separate large
+random property command exceeded its first controller window and its wrapper
+did not retain a session identifier or stdout, so it supplies no claimed
+evidence and was not repeated. No threshold, density, segment, or sampling
+policy changes are authorized from this audit.
+
+The same iteration proves a different provider-free video parsing defect.
+`extract_video_frames()` inspects, scans, and writes selected JPEGs through
+separate opens of the caller-owned path. In a real local experiment, a 2-fps
+six-frame dark MP4 was scanned, then atomically replaced at the same path by a
+same-shape bright MP4 before selected-frame decode. Every recorded comparison
+thumbnail remained below mean intensity 50, while the successfully published
+JPEG was above 200 and retained index 5. The function therefore combined a
+selection decision from old bytes with an artifact from new bytes without an
+error. `recognize_video()` can extend the same mismatch to separately extracted
+audio because it opens the original path again after frame publication.
+
+This is a proven lifecycle defect, not another hypothetical snapshot adversary.
+Two bounded fixes remain: (A, recommended) make one request-owned MP4 copy by
+streaming fixed-size chunks to a hidden disk snapshot and use that same path for
+inspection, scan, selected-frame decode, and both branches of
+`recognize_video()`; or (B) add an explicit public video-temp-directory option
+and place the same snapshot there. A metadata/hash recheck is insufficient: it
+detects ordinary mutation only after work and does not make all decoders consume
+the same bytes. Do not load a video into memory, build a generic media snapshot
+framework, add content-addressed storage, or implement only the frame half of
+combined-video stability. The maintainer must choose a hidden snapshot inside
+`output_dir` beside the final same-stem root, without a new API, versus an
+explicit temp-directory parameter before implementation.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

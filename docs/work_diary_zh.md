@@ -3383,3 +3383,17 @@ Investigate and close one concrete gap in the current video-recognition vertical
 **先失败、再修复的真实 MP4 证据。** 新回归生成 2 fps、共 6 帧的三秒 MP4：前五帧是暗画面，最后一帧突然变亮。旧实现只比较索引 0，公开 `extract_video_frames()` 实际返回 `[0]`；要求 `[0, 5]` 的回归明确失败。修复仅先构造现有粗采样索引；如果最后一帧不在网格上，就追加 `frame_count - 1`，随后才检查原有 10,000 候选上限。修复后返回 `[0, 5]`，时间戳为 `[0.0, 2.5]`，两张 JPEG 都真实存在。原三段视频的最后代表图从索引 20 变为同一稳定段的真实末帧 29，覆盖到 14.5 秒。
 
 **验证与过度设计复查。** 帧提取、视频编排、帧识别、视频检查和轻量导入共 **41 passed in 2.03s**；额外的上限回归证明追加末帧后的 10,001 个候选仍在打开视频前拒绝。只给测试进程临时加入现有 `D:\Anaconda\envs\STA\node.exe` 所在目录后，完整离线套件为 **1,432 passed in 53.52s**；没有下载、安装或持久环境修改。产品修改没有改变五秒间隔、差异阈值、反馈次数、密度目标、JPEG 发布、provider、配置或公开 API，只多解码至多一个末帧；候选数量仍以常量内存计算并在任何候选解码前拒绝。没有加入可调采样器、第二场景检测器、逐帧扫描、音画对齐、provider 类、fallback、legacy 格式、取消策略或 frozen `contracts/worker` 变化。这一轮修的是实际尾部盲区，不是为假想输入增加防御层。
+
+## #149 — 2026-08-25：停止继续调选帧参数，确认视频源跨阶段混用缺陷
+
+**本轮英文自我任务。**
+
+```text
+Audit and improve one remaining correctness property in provider-free video parsing or negative-feedback frame selection after the final-frame fix. Success means reconciling the updated authority and diary, finding a reproducible failure in ordinary video content or proving no such defect and producing a bounded next-step decision, fixing only one established issue without changing provider abstractions or unresolved cancellation semantics, validating through real MP4/public-library tests, and committing/pushing a coherent record. This matters because representative-frame quality determines every downstream image-provider result; missed or misleading frames cannot be repaired by better API handling later.
+```
+
+**选帧审计的停止结论。** 路线 A 继续找普通内容下的选帧错误，路线 B 在没有错误时转向视频恢复前的生命周期证据。轻量只读任务用稳定、交替和长稳定段检查了顺序、末候选、密度上限与向上取整分段，没有证明新缺陷；稳定段不保留索引 0 时，其末端画面仍代表同一段，不能擅自当成错误。主线另启动 2,000 组随机性质检查，但命令超过第一次 30 秒窗口，调用包装只输出 stdout、没有保留 session id；之后未发现新启动的目标进程，因此这次结果不可取回，不把它写成通过，也没有重复运行。继续调整阈值、密度或加入 fine scan 已经会越过当前授权，所以路线 A 到此停止。
+
+**真实 MP4 暴露的源生命周期缺陷。** 主审注意到 `extract_video_frames()` 依次通过不同 capture 打开同一个调用者路径：检查、粗扫、最终 JPEG 解码。实验建立两个同为 2 fps、6 帧、64×48 的 MP4，第一个全暗、第二个全亮；粗扫第一个后用 `os.replace()` 把同一路径换成第二个，再让公开函数继续。候选缩略图平均值全部小于 50，但最终成功发布 JPEG 的平均值大于 200，返回索引 `[5]`。也就是说选帧决定来自旧字节，保留图来自新字节，却没有错误。组合 `recognize_video()` 随后还会再次从原路径抽音频，因此图片与音频也可能来自不同版本。这比代码层猜测更强，是可执行的假成功证据；实验只使用自动清理的专属临时目录，没有仓库写入、provider 或网络。
+
+**两条修复路线与暂缓原因。** A（推荐）把 MP4 用固定块流式复制到 `output_dir` 下的隐藏兄弟快照，检查、比较、最终 JPEG、音频提取和两个识别分支共享同一快照，不新增公共参数。B 新增明确的 `video_temp_dir` 参数，让调用者选择大文件临时盘，但会扩大公共 API。只做前后 stat/hash 无法让多个 decoder 真正读取同一份字节，而且往往在产物产生后才发现；只修 `extract_video_frames()` 又会留下组合入口的音画版本混用。由于视频可能很大，临时盘位置是产品选择，本轮没有擅自提交半套 snapshot。后续无论选 A/B，都必须按块复制，不能整文件读入内存；也不应顺手抽象通用媒体缓存、内容寻址存储、恢复 manifest 或触碰 #127。

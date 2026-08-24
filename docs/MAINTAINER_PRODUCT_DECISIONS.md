@@ -423,6 +423,21 @@ is often accepted.
   #127 cancellation choice. Do not add callable-module or custom package-module
   machinery to hide direct same-named submodule imports; the documented public
   boundary is the lazy top-level facade.
+- #148 requires the exact final source frame to participate in the bounded
+  comparison scan when it is not already on the five-second grid. Keep the
+  unchanged density and negative-feedback policy; do not use endpoint coverage
+  as authority for a configurable sampler or second scene detector.
+- **Open #149 video snapshot placement.** Real execution proves that replacing
+  the caller-owned MP4 between the current scan and selected-frame decode can
+  publish JPEGs from different bytes while returning success; the combined
+  facade may then extract still another version's audio. The correction must
+  stream one request-owned disk snapshot and make inspection, scan, retained
+  decode, and both recognition branches consume it. Choose either (A,
+  recommended) a hidden snapshot inside `output_dir`, beside the final
+  same-stem output root, with no public API expansion, or (B) a new explicit
+  video temporary-directory parameter. Do not use whole-file memory, a
+  hash-only after-the-fact check, a generic media cache, or separate frame/audio
+  snapshots.
 
 ## Resolved confirmation and next authority
 

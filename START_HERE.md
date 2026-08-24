@@ -188,7 +188,12 @@ image, PDF, short-audio, and video surfaces; dual-wheel comparison proves extras
 dependencies, members, and runtime payloads did not change. The queue explicitly
 records #148's frame-scan correction: the actual source final frame now always
 participates in bounded comparison, so a scene change after the last five-second
-grid position cannot disappear before negative-feedback selection. It still
+grid position cannot disappear before negative-feedback selection. #149 then
+proves an open source-lifecycle defect: replacing the MP4 between coarse scan
+and retained-JPEG decode can mix selection metadata from the old bytes with
+frames from the new bytes while returning success. The temporary-storage
+contract for one request-owned streamed video snapshot requires maintainer
+selection before implementation. The queue still
 stops further proactive
 filesystem/accounting edge scans.
 
