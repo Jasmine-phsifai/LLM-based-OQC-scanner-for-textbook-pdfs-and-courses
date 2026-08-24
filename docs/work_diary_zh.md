@@ -2444,3 +2444,19 @@ Atomic task — Iteration #089: verify #088 against a real local PDFium end-to-e
 **执行分工与真实结果。** 按维护者规则，固定执行、等待和清理由轻量代理负责；主线同时运行 PDF 定向测试 **20 passed in 1.87s**。代理只执行一次，exit **0**：`pypdfium2 5.11.0`、PDFium **151.0.7920.0**、Pillow **12.3.0**；公共 `recognize()` 得到 provider calls **2**、最大 active calls **1**、真实加载 PNG **16**、page/group/pages-per-group **16/2/8**、range markers **2**、complete v2 state **2**、child Markdown **2**。provider 只处理本地文件，不访问任何云端。
 
 **生命周期、证据边界与过度设计复盘。** page PNG、`.tmp.png`、snapshot 和 unexpected output residue 全部为 **0**，临时根目录确认删除。该次运行使用现有环境从当前 source tree 调公共 facade；它刷新 #088 后的真实本地 renderer/decode/lifecycle 证据，但不冒充 #073 的 isolated installed-wheel gate，也不替代 #078 Google live。没有失败，因此没有为了制造代码变化而增加 retry、fallback、runner、长期 evidence JSON 或产品代码；没有安装、下载、凭据、网络/provider service、`contracts/`、`worker/` 或用户未跟踪文件修改。
+
+## #090 — 2026-08-24：在明确门槛前停止制造替代开发目标
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #090: select the next maturity target from the authoritative open-debt register instead of continuing adjacent PDF edge work. Success means reconciling the current authority and diary, enumerating only genuinely open shipped-surface defects or gates, verifying each against current code/tests, choosing one atomic target with a real consumer and no unresolved product choice, and either fixing it or recording a precise external blocker; P1-d repair, provider generalization, and deferred long media remain untouched. This matters because heartbeat work should follow product priority, not momentum from the previous file.
+```
+
+**假设、路线与复核结论。** 初始假设是 #088/#089 已经充分封闭当前 PDF renderer seam，继续枚举同文件的异常会变成过度防御。路线①从当前 authority 的 defect register、统一执行队列和 Known Debt 中选一个有真实消费者的开放缺陷；路线②因为上一轮修改过 PDF 就继续寻找相邻边角。选择①。主代理逐段核对 `ACTIVE_STATE_AND_RULES.md`、`START_HERE.md`、`MIGRATION_STATUS.md`、维护者决策、近十轮日记和当前源码/测试；轻量代理独立完成同一只读门槛审计。双方结论一致：D1—D7、F1—F4、G1—G10 都已离线关闭，已交付 PDF seam 没有登记中的未修缺陷，当前没有一个同时满足“已交付表面、无需新产品决定、无需付费预算”的原子代码目标。
+
+**仍开放但不能代替维护者决定的两项。** 统一队列的立即项是 P1-d，但 #079/#080 已证明现行串行 fail-fast PDF 在失败时不发布最终 Markdown，且 sidecar 丢失后无法诚实区分当前失败组与未尝试后缀；authority 明确要求先由维护者在 A（完整 partial 状态）、B（只修已知 exact range）、C（冻结 repair，依赖 resume）中选择，并写明 `no implementation is authorized`。另一项是 Stage M DashScope live catalog/end-to-end gate；其离线实现已完成，但真实 gate 仍需要维护者明确付费预算以及 region/endpoint。Google 的免费授权不能替代 DashScope 账户语义验证。长音频、第二 Google transport、local/OpenAI-compatible path 和 Volcengine robustness test 都是 P2 或未来方向，不因测试源已经配置就自动获得实现权限。
+
+**供应商未来约束已存在，无需重复写。** `MAINTAINER_PRODUCT_DECISIONS.md` 已经记录：核心产品路径稳定后，新 provider 应主要通过独立可读的 provider class 增加，由每个 class 保有经过真实证据支持的并发、effort、模型选择和错误处理默认值；跨 provider pool/fallback 是另外的协调层。额外免费 Volcengine OpenAI-compatible 来源只在相关功能真正排期后用于有界 robustness test，不建立逐模型永久修补。本轮确认该记录已在 Git 历史中且与 authority 一致，没有复制成第二份决策文档，也没有提前重构现有 Google/DashScope 路径。
+
+**暂停点、验证与过度设计复盘。** 本轮不把“必须产生代码 diff”当作成熟度指标：在队列受产品选择和外部门槛约束时，制造空 tuple、新 iterable 兼容、更多文件异常、provider 基类、第二 resume 或通用 repair 都会违背已确认优先级。只读源码搜索没有发现当前 defect register 之外的明确 `TODO`/`NotImplementedError` 产品缺口；出现的 `pass` 都位于异常清理或测试夹具，不据此机械造任务。没有 provider call、凭据读取、下载、安装、产品代码或测试修改；`contracts/`、`worker/` 和两个用户未跟踪文件保持未动。下一次实现前必须先获得 P1-d A/B/C 决定，或取得 DashScope live gate 的预算与 endpoint；否则应继续暂停 heartbeat，而不是从邻近代码扩张范围。
