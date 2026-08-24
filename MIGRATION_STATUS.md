@@ -108,9 +108,10 @@ failed Markdown has no defined marker yet: the producer publishes only complete
 range sections and raises without final Markdown on a failed group. #080 then
 proved that one failed-range marker plus the settled prefix cannot recover a
 later unattempted suffix without becoming a second resume path. The maintainer
-must choose whether to widen partial-state semantics, narrow repair to known bad
-content, or freeze it behind ordinary resume; localized legacy regex is not
-silently promoted into active identity.
+must now confirm whether historical Markdown with an explicit legacy failed-page
+marker is an intentional compatibility input; until then repair stays frozen
+behind ordinary resume. Active partial-state semantics will not be widened, and
+localized legacy regex is not silently promoted into active identity.
 Native Google direct-Python image
 recognition and experimental memory-only short-audio recognition are now
 implemented, with per-model usage reporting when Google supplies it; no general
@@ -146,7 +147,10 @@ the existing image/resume path now passes focused tests and a real local
 zero retained rendered PNGs, and a one-call resume after the second group is
 interrupted. #078 closed its Google gate with the same two-group shape and no
 retry, fallback, or Files lifecycle; the bounded manual repair product choice
-is now the immediate queue and implementation remains paused.
+is now the immediate queue. #102 narrowed it to one confirmation: whether
+explicitly failed ranges in historical legacy Markdown are an intentional
+compatibility input. Active missing-state suffix recovery remains ordinary
+resume; implementation is paused pending that answer.
 #085 briefly generalized settled usage around an internal response returned by an
 injected test double. #086 found no valid public consumer for that behavior and
 reverted it: injected providers return Markdown strings, Google retains its exact

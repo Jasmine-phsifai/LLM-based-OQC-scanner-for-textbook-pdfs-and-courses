@@ -14,7 +14,9 @@ only where that queue has not superseded it. #078 closed P1-c with one bounded
 existing offline resume and installed-wheel proofs. P1-d is now the immediate
 product decision, not authorized implementation: #080 proved that a single
 failed-range marker cannot recover an unattempted suffix under the current
-serial fail-fast loop. Follow the three explicit choices in the authority file.
+serial fail-fast loop. #102 narrowed the remaining choice to whether explicitly
+marked historical legacy Markdown is an intentional compatibility input; until
+the maintainer confirms it, repair remains frozen behind ordinary resume.
 Do not broaden repair into a second resume framework or start provider
 generalization in its place.
 

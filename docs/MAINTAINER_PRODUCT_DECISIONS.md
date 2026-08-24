@@ -239,6 +239,12 @@ is often accepted.
 - Do not build a generic repair workflow or speculative defensive framework.
   Migrate the smallest legacy-proven markers and behavior, and preserve existing
   successful content atomically while applying the repaired range.
+- #102 proved that active fail-fast sidecar loss produces no repairable Markdown
+  or honest unattempted-suffix identity. The earlier repair intent therefore
+  maps only to historical legacy Markdown that already contains an explicit
+  one-based failed-page marker. Confirm whether that historical compatibility
+  input is intentionally in new-library scope before implementation; do not
+  widen the active producer merely to manufacture repair markers.
 
 ## Resolved confirmation and next authority
 
@@ -258,6 +264,7 @@ is often accepted.
   next authority item is the P1-d manual-repair product decision in
   [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-d--minimal-pdf-repair-after-stable-markers).
   #080 proved that one failed-range marker cannot recover an unattempted suffix
-  under the current serial fail-fast loop. Do not implement repair until the
-  authority's wider/narrower/freeze choice is made, create a parallel queue, or
-  start provider generalization here.
+  under the current serial fail-fast loop; #102 narrowed the remaining decision
+  to historical explicitly marked Markdown compatibility. Do not implement
+  repair until that input scope is confirmed, create a parallel queue, or start
+  provider generalization here.

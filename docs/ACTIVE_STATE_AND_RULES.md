@@ -574,9 +574,25 @@ failure-semantics and recovery design; (B) narrow repair to a caller-identified
 or previously persisted exact failed range, accepting that it repairs known bad
 content but does not recover an interrupted missing-state suffix; or (C) freeze
 P1-d because ordinary resume already covers the current fail-fast outage path.
-Option C is the smallest honest default. A localized legacy-comment parser is no
-longer recommended. No provider call or product-code edit was made by either
-contract audit.
+
+#102 reconciled those choices with the later maintainer direction and both code
+paths. Active sidecar loss leaves no final Markdown or failed/unattempted range
+identity, so ordinary resume remains the only honest recovery for an interrupted
+active run. Legacy repair, however, consumes only explicit one-based
+`第 N` / `第 N-M 页识别失败` Markdown markers and never infers an absent suffix.
+It has no source identity/version and uses non-atomic replacement, so its regex
+and writer are not themselves a library state contract. Option A is not
+recommended: it widens the proven fail-fast producer solely to support a small
+compatibility patch. The decision is now one narrow confirmation: should
+historical legacy Markdown with those explicit markers be an intentional input
+to the new library? If yes, proceed with B as a separate bounded compatibility
+slice; if no, choose C. No repair implementation is authorized until that
+single compatibility-scope choice is answered.
+Until that answer, C remains the operative default. A raw localized-comment
+parser is not recommended; if historical compatibility is approved, the B
+slice may consume only the exact legacy syntax at its input boundary without
+promoting it to active state. No provider call or product-code edit was made by
+any of these contract audits.
 
 ### P2 — Explicitly deferred work
 

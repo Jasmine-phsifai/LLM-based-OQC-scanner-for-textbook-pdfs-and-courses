@@ -97,8 +97,10 @@ eight images completed in order with exactly two total Google calls and complete
 published state. #078 completed P1-c PDF-through-image/resume. Bounded P1-d
 manual PDF repair is the immediate decision point, but #080 proved that a
 single failed-range marker cannot recover an unattempted suffix under the
-current serial fail-fast loop; implementation is paused for the explicit
-product choice in the authority file. The audio slice has no hidden
+current serial fail-fast loop. #102 reduced the product choice to whether
+historical legacy Markdown with an explicit `第 N` / `第 N-M 页识别失败` marker
+is an intentional new-library compatibility input; implementation remains
+paused for that confirmation. The audio slice has no hidden
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 
@@ -129,8 +131,9 @@ eight-page image requests. It reported aggregate usage of 4,802 input and 117
 output tokens, published ordered output with two complete child checkpoints,
 retained no rendered pages, cleaned both temporary roots, and exposed no key or
 OCR body. Combined with the earlier offline resume and installed-wheel proofs,
-the immediate queue is the P1-d product choice: widen partial-state semantics,
-narrow repair to known bad content, or freeze it behind ordinary resume.
+the immediate queue is the P1-d compatibility-scope choice: support only
+explicitly marked historical legacy failures, or freeze repair behind ordinary
+resume. Widening active partial-state semantics is not recommended.
 Provider generalization remains deferred.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with

@@ -2632,3 +2632,19 @@ Atomic task — Iteration #101: close or precisely narrow the shipped py.typed d
 **最小结构修复与同步门禁。** 选择 `if TYPE_CHECKING` 下显式同名重导出当前 `__all__` 的公开类和函数：checker 能看到真实对象，Python 运行时仍只执行原 `_PUBLIC_IMPORTS` + `__getattr__` 延迟加载。没有选择几十个 `__getattr__` overload，也没有另建会复制整个公共 API 的 `__init__.pyi`。新增 AST 回归要求唯一 `TYPE_CHECKING` block 的每个导入都使用显式同名 alias，且导入集合与 `ocrllm.__all__` 完全相等；修改前稳定为 **1 failed / 1 passed in 0.05s**，修复后 marker、静态集合、轻量 import 和公共运行时调用最终为 **11 passed in 0.34s**。
 
 **修复后 installed-wheel 证据与过度设计复盘。** 新 wheel 为 **203,914 bytes**，SHA-256 `30D4B042B58522032C9F404A32411927F6C5B259B1DED7BF8159BCDE36AD303B`。同一 Pyright 1.1.408 对正确消费者精确显示 `Config`、`RecognitionResult`，**0 errors / exit 0**；错误 timeout 得到 `reportArgumentType`，**1 error / exit 1**。隔离 wheel 的普通 import 仍未加载 Pillow、OpenAI、HTTPX、Google、miniaudio、PDFium 或 ONNX Runtime。最终 root 全量为 **1323 passed in 41.83s**，changed compileall、`git diff --check` 和只计数的敏感扫描通过；冻结目录未动。所有 40 MB 临时 npm/venv/wheel/consumer 文件由轻量代理按精确路径删除并确认不存在。没有把 checker 加入 dev/runtime dependencies，没有 stub generator、全库 strict lint、provider/API/凭据、repair、`contracts/` 或 `worker/` 修改；两个用户未跟踪文件保持未动。
+
+## #102 — 2026-08-24：P1-d 从三种执行模型收紧为一个历史兼容范围问题
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #102: re-evaluate the paused P1-d manual PDF repair decision against the maintainer’s later clarification and the current serial fail-fast PDF implementation, without writing repair code. Success means reconciling the authoritative A/B/C choices, current checkpoint/marker behavior, and the stated product intent (“small manual patch when resume state is missing”); determining whether the existing ambiguity can now be reduced to one implementable contract; and either updating the authority with a justified recommendation plus one precise remaining question, or leaving it paused with concrete contradictory evidence. This matters because P1-d is the immediate queue item, and repeatedly polishing adjacent tooling while a possibly-resolved product decision remains stale would be the wrong priority.
+```
+
+**active 失败事实。** 主代理与轻量只读审查逐行确认：三组 PDF 在第一组成功、第二组 provider 失败时，串行 loop 立即退出；第一组 child Markdown/state 留在同名状态目录，第二组没有 child 产物，第三组从未 render/dispatch，PDF final Markdown 不发布。error 只有 settled group/call 数，没有失败范围或未尝试后缀 identity；`Config` 也没有 repair range，旧的 `pdf_pages`/`pdf_allow_partial` 已被明确删除。状态还在时普通 `resume=True` 会零调用复用第一组并从第二组继续；状态丢失后 active 文件本身没有可供 repair 扫描的事实。第一次组合搜索误写了不存在的 `tests/test_pdf_processor.py`，该 path error 不作为证据，随后使用实际 `test_pdf_recognition.py` 与实现复核。
+
+**legacy marker 与能力边界。** legacy `_FAILED_PAGE_RE` 只识别一基十进制 `<!-- 第 N 页识别失败 ... -->` 或 `<!-- 第 N-M 页识别失败 ... -->`（也兼容旧“逐页识别失败”措辞），`find_failed_pages()` 展开、去重、排序后只 render/识别这些明确页；没有 marker 就零 provider work，也不从成功页连续性或 PDF 总页数猜后缀。生产 failure regression 已证明成功第 1/3 页与 `第 2-2 页识别失败` 同时保存在 Markdown，单例为 **1 passed in 12.56s**；直接 parser probe 输入单页 2、范围 4—5、旧措辞 7 和未标记页 8，只返回 **`[2, 4, 5, 7]`**。但没有专门 PDF repair replacement 测试。marker 没有 source hash、schema/version、模型或 attempted/unattempted 身份，repair 最后还直接 `write_text()`；因此可作为人工选择的历史兼容输入证据，不能复制成 active resume state。
+
+**三选一收紧与建议。** A 要把当前 fail-fast producer 改成完整 all-range partial 模型，仅为小 patch 制造 marker，明显超过 legacy feature，也违背“不要沿 60—64 的防御方向继续”。C 对 active outage 路径是事实：只有 resume 能恢复未尝试后缀；但维护者已明确希望 sidecar 丢失时仍能修已经产出的 Markdown。故唯一忠实候选是收紧后的 B：只处理调用者明确提供、且 Markdown 已有 exact legacy failed marker 的历史文件，明确不恢复任何未标记后缀。当前只剩一个必须由维护者确认的范围问题：这些 historical legacy Markdown 是否正式成为新 library 的兼容输入；确认“是”才设计独立窄 repair slice，确认“否”则冻结 P1-d。
+
+**验证、过度设计复盘与边界。** active PDF 单文件为 **11 passed in 1.73s**，legacy partial marker 单例和 parser probe 如上，`git diff --check` 通过。本轮没有写 parser、marker schema、partial state、第二 resume、caller range 字段、通用 repair framework 或 provider 代码；也没有把 legacy 的中文 regex、逐页调用、非原子 writer、GUI 和错误吞并复制进 active。`contracts/`、`worker/`、social、provider generalization 与两个用户未跟踪文件均未动，没有 API/凭据/下载。authority、maintainer decision、START_HERE、migration、package AGENTS/README 只把过时的宽泛三选一压缩成一条可回答的 compatibility-scope gate。
