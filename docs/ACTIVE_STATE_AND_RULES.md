@@ -97,6 +97,11 @@ still in the future. No registry name, worker route, or provider behavior change
 `pdf.vision.resume` names its offline-proven reuse of ordinary image sidecars.
 Both remain `deferred` in the shared registry because PDF worker registration
 does not exist. `pdf.text` and `pdf.text.resume` remain genuinely deferred.
+#153 applies the same distinction to the shipped standalone long-MP3 facade.
+`audio.long.mp3-mpeg-layer3` remains `deferred` because the frozen shared
+registry has no audio worker route, but its reason now names the live-proven
+direct Google Files API instead of claiming all Stage A2 work is still future.
+No registry name, status, worker contract, provider behavior, or import changed.
 #120 resolved P1-d as no: the new library will not accept legacy application's
 localized repair Markdown, so manual PDF repair remains unavailable rather than
 growing a compatibility parser.

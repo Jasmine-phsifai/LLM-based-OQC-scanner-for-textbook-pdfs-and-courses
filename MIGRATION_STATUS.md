@@ -116,7 +116,9 @@ Phase 1 maturation is offline implementation-complete:
   confirms A2b needs an audio-specific versioned sidecar rather than generalized
   image state, but leaves one maintainer choice: chunk only above 9.5 hours, or
   use fixed chunks for every persisted long-MP3 run so ordinary lectures can
-  resume without replay;
+  resume without replay. #153 corrects the frozen capability registry's stale
+  long-MP3 reason to name this direct live-proven API while preserving its
+  `deferred` worker-registration status;
 - implemented and live-proven: the first PDFium vision slice. One PDF
   becomes serial eight-page image groups, ordinary image sidecars preserve
   settled work, range markers preserve group order, and rendered pages have a

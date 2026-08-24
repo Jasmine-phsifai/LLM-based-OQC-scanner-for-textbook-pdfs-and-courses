@@ -62,7 +62,10 @@ _DEFERRED_REASON_BY_CAPABILITY = {
     "audio.long.wav-pcm-s16": (
         "Intentionally deferred to a later audio-format gate."
     ),
-    "audio.long.mp3-mpeg-layer3": "Intentionally deferred to Stage A2.",
+    "audio.long.mp3-mpeg-layer3": (
+        "The standalone direct Google Files long-MP3 API is live-proven; "
+        "shared capability/worker registration remains deferred."
+    ),
     "audio.long.m4a-aac-lc": (
         "Intentionally deferred to a later audio-format gate."
     ),

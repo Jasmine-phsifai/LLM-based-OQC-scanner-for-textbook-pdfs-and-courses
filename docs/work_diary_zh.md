@@ -3453,3 +3453,17 @@ Atomic task — Iteration #152: determine and close the smallest evidence-backed
 **状态结构审计与精简边界。** 第二个轻量只读任务核对新库 checkpoint：`ImageResumeState`、`ImageSlotState` 和 `ImageSlotCheckpoint` 明确携带 image media、workflow pass 与 image snapshot 语义，把它们改成跨媒体大 schema 会让后续维护更困难。A2b 应有自己的 versioned audio sidecar，只复用既有强 source fingerprint 的形状和通用原子 Markdown writer。最小状态保存 source/request identity、不可变的有序 segment plan、每段 exact actual/logical 范围、已验证 Markdown 及哈希、实际模型和 generation 调用数；每段各自完成 upload/generate/delete 时不保存 remote ID。首版严格串行，不加入并行识别、自动 retry/换模、fallback、DashScope 抽象、通用 checkpoint 框架、legacy Markdown repair 或视频接线。
 
 **本轮完成和过度设计复查。** 本轮没有产品代码、公开 API、依赖、测试文件、provider 调用或 live quota 消耗；也没有修改 frozen `contracts/worker`。这不是因为 workload，而是两条路线会真实改变常规课程的请求数量，必须由维护者明确选择。已把证据、推荐路线、最小状态和禁区同步到 authority、A2 计划、维护者决定、迁移状态和入口导航，避免下一轮从散落 legacy 细节重新推理。继续在选择前增加 segment planner、音频 sidecar 类或 30 分钟常量都会产生无消费者代码，属于本轮明确拒绝的过度设计。
+
+## #153 — 2026-08-25：长 MP3 已经能调用，能力查询不再说它尚未开始
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #153: audit and correct one caller-visible capability/documentation contradiction introduced by the shipped standalone long-MP3 facade, while the A2b chunk-scope decision remains with the maintainer. Success means reconciling authority and diary, comparing get_capabilities() and current public docs against executable recognize_long_mp3(), proving any mismatch before editing, making the smallest correction without touching frozen contracts/worker or implying video integration/resume, running focused and full verification as needed, updating the Chinese diary, and committing/pushing. This matters because an installable library is not mature if callers cannot accurately discover what it already supports.
+```
+
+**事实、两条路线与红灯。** 同步 origin 并重读 authority、#151—#152 日记后，直接检查 `get_capabilities()` 的固定 20 项输出。`audio.long.mp3-mpeg-layer3` 仍返回 `Intentionally deferred to Stage A2.`，与已经 live-proven、可从 wheel 导入的 `recognize_long_mp3()` 冲突。路线一把状态改成 `available` 或增加一个新的 direct capability；这会让共享 worker registry 暗示并不存在的 worker 支持，并修改冻结边界。路线二沿用 #111 short MP3 和 #112 PDF 已经确定的表达：状态继续 `deferred`，只让 reason 区分“direct API 已发布”和“shared worker 未注册”。选择路线二。先把现有精确断言改为目标文字，单测稳定得到 **1 failed**，旧值正是 `Intentionally deferred to Stage A2.`，证明不是文档猜测。
+
+**最小修复、独立审查与验证。** 产品改动只有 `_DEFERRED_REASON_BY_CAPABILITY` 中一个字符串：`The standalone direct Google Files long-MP3 API is live-proven; shared capability/worker registration remains deferred.`；现有测试同步固定完整文字，没有新增重复测试。轻量只读审查确认 status、20 项顺序和 worker 合同都不应变化，也不应增加 `surface` 字段。capability、lazy import 和公开类型定向集合为 **20 passed in 0.37s**；完整离线套件在只对子进程补入已有 Node PATH 后为 **1,451 passed in 55.61s**。没有网络、provider、凭据、安装或下载；普通 import 行为不变。
+
+**过度设计复查。** 本轮没有解冻或修改 `contracts/worker`，没有新增 capability name、状态、字段、direct registry、provider 探测或 Google catalog 调用，也没有借能力文案声称 A2b resume、视频长音频接线或 DashScope FileTrans 已完成。只修一个已经被真实公开 facade 推翻的陈旧 reason；把 direct API 和 worker registry 合并才是本轮明确拒绝的结构扩大。#152 的 A/B 选择仍原样等待维护者，当前修复不依赖它。

@@ -163,7 +163,8 @@ def test_deferred_audio_capabilities_distinguish_the_direct_google_api() -> None
         "Intentionally deferred to Stage A2."
     )
     assert reports["audio.long.mp3-mpeg-layer3"].reason == (
-        "Intentionally deferred to Stage A2."
+        "The standalone direct Google Files long-MP3 API is live-proven; "
+        "shared capability/worker registration remains deferred."
     )
     for name in (
         "audio.short.wav-pcm-s16",

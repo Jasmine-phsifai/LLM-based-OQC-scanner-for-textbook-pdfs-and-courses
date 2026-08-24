@@ -81,6 +81,9 @@ support, and video integration remain later gates. #152 narrows A2b to one open
 choice: chunk only the 9.5-to-10-hour overflow, or use fixed ordered chunks for
 every persisted long-MP3 run so ordinary lectures can resume without replay.
 No chunk/checkpoint implementation is authorized until that choice is made.
+#153 also corrects the frozen capability registry's long-MP3 reason: it now
+names the direct live-proven Files facade but remains `deferred` because no
+shared worker route was added.
 
 #110 re-proved the distributable boundary after the recent audio changes. A
 clean archive ran 1325 tests with one expected skip, built a 202,692-byte wheel,
