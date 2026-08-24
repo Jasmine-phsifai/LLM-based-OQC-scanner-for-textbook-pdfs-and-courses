@@ -350,6 +350,15 @@ and only group two dispatched. `recognize_batch()` deliberately rejects PDF in
 this first slice. The old planned 500-page cap, arbitrary page/password/partial
 options, and per-page attribution are not part of this contract.
 
+#084 added direct regression coverage for the legacy-observed provider-outage
+shape rather than inferring it from cancellation. In a 16-page run, group one
+settles, group two dispatches and raises a retryable `PROVIDER_NETWORK` failure,
+the error reports two attempted calls and one settled PDF group, no final
+Markdown is published, and exactly one completed child sidecar remains. A later
+`resume=True` call reuses group one and dispatches only group two. The regression
+passed without a product-code change; it does not introduce retry, partial
+Markdown, failed-range markers, or P1-d repair semantics.
+
 #073 strengthens the existing `pdf-vision` release profile without changing
 the product contract. The isolated installed wheel must build a real 16-page
 PDF with PDFium, call public `recognize()` through an injected no-network

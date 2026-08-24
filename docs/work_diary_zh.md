@@ -2352,3 +2352,19 @@ Atomic task — Iteration #083: reconcile the current legacy-provider evidence t
 **没有被夸大的部分。** active provider/group 失败不会生成 legacy 所说的 typed failed Markdown unit，因此只写“settled sidecar 和 error evidence”，没有写“成功输出已发布”。legacy fallback encoder 没有移植，不能从父级 `broken data stream` 事件推断 child 也有相同 bug；active 只声明 PDFium render/decode 失败保持本地和诚实。P1-d 的 A/B/C 未获维护者选择，本轮没有把任何路线写成已授权实现。
 
 **验证、减法与过度设计复盘。** `tests/test_pdf_recognition.py` 为 **9 passed in 1.11s**，覆盖 sidecar/resume/fail-fast/renderer 当前事实；三条旧短语搜索、Markdown diff、敏感模式和 `git diff --check` 通过。本轮不调用 provider、不读凭据、不改产品代码、tests、legacy、`contracts/` 或 `worker/`，也不新建 error taxonomy、repair schema 或平行证据文档。变更只是让现有证据表停止把已经交付的 PDF 写成未来功能。
+
+## #084 — 2026-08-24：用直接回归证明 PDF 第二批 provider outage 不会重付第一批
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #084: prove the active PDF path handles the legacy-observed "later provider group fails after earlier paid work settled" case honestly, using a focused offline regression before changing code. Success means a two-group PDF makes one successful group and one typed provider failure, preserves the first child checkpoint, reports exact settled-group and attempted-call evidence, publishes no false final Markdown, and resumes without replaying the first group; any fix must stay inside this proven seam. This matters because cancellation coverage is not automatically provider-failure coverage, and real legacy outages are stronger evidence than hypothetical edge cases.
+```
+
+**假设、两条路线与失败优先。** 初始假设是 cancellation 与 provider failure 都从 PDF 外层 typed-error 分支退出，但 child image 层的 dispatch 计数、error mapping 和 checkpoint 时机不同，不能用 cancellation 测试替代。路线①继续依赖间接覆盖；路线②增加一条 16 页、第一批成功、第二批真实进入 injected provider 后抛普通 `ConnectionError`、随后 resume 的直接回归，只在红灯时修改产品代码。选择②。轻量代理只读设计期望字段和最小测试轮廓，主代理逐行复核 `call_vision_provider()`、image attempt ledger、`attach_pdf_settled_work()`、PDF loop 和 state publication，再亲自写和审测试。
+
+**直接轨迹与首次结果。** 测试 provider 在第 1—8 页返回成功，在第 9—16 页第二次实际 dispatch 时只失败一次；普通 `ConnectionError` 经过公共 injected-provider mapping 成为 retryable **`PROVIDER_NETWORK`**，没有直接构造内部错误来作弊。失败结果必须同时满足：`provider_calls_attempted=2`、`settled_pdf_group_count=1`、调用顺序为第一组后第二组、final `book_board.md` 不存在、state directory 只有第一组一个完整 child sidecar。该新测试第一次运行即 **1 passed in 0.68s**，因此现有生产代码没有暴露缺陷。
+
+**resume 证明。** 同一 provider 随后恢复正常，`resume=True` 的第三次实际 provider 调用仍是第 9—16 页；第 1—8 页没有再次 dispatch。最终结果 complete、`pdf_group_count=2`、本轮 `current_run_provider_call_count=1`、final Markdown 存在、child sidecar 变为两个。这里总失败调用数 2 与恢复轮当前调用数 1 是两个不同时间范围，没有新造 accounting 字段。
+
+**验证、父级证据与过度设计复盘。** 新测试连同 PDF、batch execution 和 defect-register 相关集合为 **54 passed in 3.54s**，该测试文件 compileall 通过；补充 final Markdown 实际存在断言后单测复跑为 **1 passed in 0.67s**；`git diff --check`、敏感模式和用户文件保护随后复核。authority 与 legacy provider evidence 的 active 栏现在指向这条直接回归，而不是只凭 cancellation 推断。没有 provider live call、凭据、retry loop、自动 resume、partial Markdown、failed marker、repair、产品代码、`contracts/` 或 `worker/` 修改；测试通过后没有为了制造修复而继续扩大异常类型矩阵。

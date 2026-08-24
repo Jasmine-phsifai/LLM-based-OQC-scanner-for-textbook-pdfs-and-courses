@@ -23,6 +23,7 @@ from ocrllm import (
     recognize,
     recognize_batch,
 )
+from ocrllm.errors import ProviderError
 from ocrllm.pdf.snapshot_pdf import MAX_PDF_SOURCE_BYTES
 
 from write_test_image import write_test_image
@@ -84,12 +85,14 @@ class _RecordingProvider:
         *,
         state_directory: Path | None = None,
         cancel_after_first_call: threading.Event | None = None,
+        fail_once_on_call: int | None = None,
     ) -> None:
         self.calls: list[tuple[str, ...]] = []
         self.call_paths: list[tuple[Path, ...]] = []
         self.rendered_counts_during_calls: list[int] = []
         self._state_directory = state_directory
         self._cancel_after_first_call = cancel_after_first_call
+        self._fail_once_on_call = fail_once_on_call
         self._call_lock = threading.Lock()
         self._active_calls = 0
         self.maximum_active_calls = 0
@@ -113,6 +116,9 @@ class _RecordingProvider:
                 )
             if self._cancel_after_first_call is not None and len(self.calls) == 1:
                 self._cancel_after_first_call.set()
+            if self._fail_once_on_call == len(self.calls):
+                self._fail_once_on_call = None
+                raise ConnectionError("test-only provider outage")
             # A small overlap window makes an accidental parallel PDF loop observable.
             time.sleep(0.01)
             return f"Recognized {names[0]} through {names[-1]}."
@@ -269,6 +275,51 @@ def test_cancel_after_first_pdf_group_resumes_without_replaying_it(
     assert resumed.output_path == output_dir / "book_board.md"
     assert provider.maximum_active_calls == 1
     assert len(tuple((output_dir / "book_board").glob("*.ocrllm-state.json"))) == 2
+
+
+def test_second_pdf_group_provider_failure_keeps_first_state_and_resumes(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=16)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    state_directory = output_dir / "book_board"
+    provider = _RecordingProvider(fail_once_on_call=2)
+
+    with pytest.raises(ProviderError) as interrupted:
+        recognize(
+            source,
+            config=_pdf_config(provider, output_dir=output_dir),
+        )
+
+    assert interrupted.value.code == "PROVIDER_NETWORK"
+    assert interrupted.value.retryable is True
+    assert interrupted.value.details["provider_calls_attempted"] == 2
+    assert interrupted.value.details["settled_pdf_group_count"] == 1
+    assert provider.calls == [
+        tuple(f"page-{page_number:06d}.png" for page_number in range(1, 9)),
+        tuple(f"page-{page_number:06d}.png" for page_number in range(9, 17)),
+    ]
+    assert not (output_dir / "book_board.md").exists()
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 1
+
+    resumed = recognize(
+        source,
+        config=_pdf_config(provider, output_dir=output_dir, resume=True),
+    )
+
+    assert provider.calls == [
+        tuple(f"page-{page_number:06d}.png" for page_number in range(1, 9)),
+        tuple(f"page-{page_number:06d}.png" for page_number in range(9, 17)),
+        tuple(f"page-{page_number:06d}.png" for page_number in range(9, 17)),
+    ]
+    assert resumed.status == "complete"
+    assert resumed.metadata["pdf_group_count"] == 2
+    assert resumed.metadata["current_run_provider_call_count"] == 1
+    assert resumed.output_path == output_dir / "book_board.md"
+    assert (output_dir / "book_board.md").is_file()
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 2
 
 
 @pytest.mark.parametrize(
