@@ -2604,3 +2604,15 @@ Atomic task — Iteration #099: simplify the maintained Google short-audio live 
 **红灯与最小实现。** 测试先同时要求默认成功 JSON 不再有 `invalid_credential`、catalog/recognition provider error 必须带安全 stage、catalog 成功但目标模型缺失必须为 `model_selection`。修改 runner 前为 **4 failed / 1 passed in 0.10s**：默认仍多一个字段/请求，其余三个错误都没有 stage。产品 error 和 metadata 均未改变；runner 用一个局部 `_LiveSmokeFailure` 把原 typed error 与白名单阶段并排带到 `main`，没有调用产品异常的私有方法，也没有把 runner stage 写进公共 error details。删除固定假 key、credential code set、helper 和无条件调用，不保留 provider 原文。
 
 **验证与过度设计复盘。** runner 定向为 **5 passed in 0.04s**；最终 Google audio/image adapter 与两个 live-smoke 离线集合为 **68 passed in 0.42s**，changed files compileall 与 `git diff --check` 通过。敏感模式只命中测试中故意设置的假 key/隐私哨兵，不是凭据。默认成功继续证明一个 catalog 结果、一个 public recognition result、exact model、provider call count 和 nullable usage；失败仍 exit 1 且只输出 code/scope/stage。active README、authority 和 migration 说明日常请求减法，同时保留 #069/#082 以及 image runner 的 credential evidence。没有 live/API 调用、CLI mode/state machine、通用 telemetry、product API、provider retry/fallback、repair、`contracts/` 或 `worker/` 修改；两个用户文件保持未动。
+
+## #100 — 2026-08-24：用真实子进程锁定 Google 音频 smoke 的离线失败边界
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #100: audit the maintained short-audio smoke runner’s CLI boundary after #099 changed its failure contract, and fix only a user-visible defect that can be reproduced without a provider call. Success means reconciling current authority and diary, testing the executable as an actual subprocess rather than only calling main(), proving that configuration/source failures and unexpected failures produce one sanitized JSON record with a truthful exit code, and making the smallest correction if the real CLI violates that contract. This matters because robustness tooling is useful only when automation can trust its process-level output; unit-level success must not hide traceback leakage or an inconsistent schema.
+```
+
+**假设复核、两条路线与实测。** P1-d 仍等待产品选择，provider 泛化仍延期；本轮不调用 API 或改公共库。路线①只保留 `main()` monkeypatch 测试；路线②先直接启动一次无凭据子进程，再核对 source 与普通异常分支，只修能复现的 process contract 缺口。选择②。子进程显式删除 `GOOGLE_API_KEY`、`GEMINI_API_KEY`，并固定 `PYTHONPATH` 指向当前 `src`；实际加载路径确认为当前工作树。它在 source 打开和网络请求之前返回单行 `CONFIG_MISSING / catalog` JSON，exit 1、stderr 空，说明真实 CLI 配置失败边界原本正确。继续核对普通异常时发现其虽已脱敏，却只输出 code，没有与 typed failure 一致的 scope/stage，自动化无法区分 catalog 与 recognition。
+
+**红灯、最小修复与过度设计复盘。** 新回归使用真实 Python 子进程、当前脚本和不存在的 pytest 临时音频路径，同时断言 exit code、stderr、完整 JSON 以及 source 仍不存在；直接 runner 回归让 recognition 抛本地 `SOURCE_NOT_FOUND`，再让 catalog/recognition 各抛带隐私哨兵的普通异常。要求普通异常也输出 null scope 与已知 stage 后，先得到 **1 failed / 7 passed in 1.14s**。最小修复只让现有 `_LiveSmokeFailure` 可携带“无公共 error”状态，在 catalog/recognition 的 `Exception` 边界转换为固定通用 code；`BaseException` 不捕获，provider/error 原文不保存，最外层未知 pre-stage 异常仍可安全返回 null stage。最终单文件为 **9 passed in 1.00s**，Google audio/image adapter 与两个 smoke 的组合为 **72 passed in 1.42s**；tool/test compileall、`git diff --check` 与只计数的敏感扫描通过，两个命中均为低熵测试哨兵。它只覆盖 #099 真正改变且自动化会消费的 audio runner，不复制到其他四个 smoke、不造通用 subprocess harness、CLI framework、公共错误 schema 或 provider mock server。没有 live/API、凭据读取、下载、公共 library API、provider fallback、repair、`contracts/` 或 `worker/` 修改；两个用户未跟踪文件保持未动。

@@ -23,7 +23,7 @@ from ocrllm.errors import ConfigError, OCRLLMError
 class _LiveSmokeFailure(Exception):
     """Keep a runner stage beside, not inside, a public product error."""
 
-    def __init__(self, stage: str, error: OCRLLMError) -> None:
+    def __init__(self, stage: str, error: OCRLLMError | None) -> None:
         self.stage = stage
         self.error = error
         super().__init__(stage)
@@ -45,6 +45,8 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
         models = list_google_genai_models(settings, arguments.timeout)
     except OCRLLMError as error:
         raise _LiveSmokeFailure("catalog", error) from None
+    except Exception:
+        raise _LiveSmokeFailure("catalog", None) from None
     if arguments.model not in models:
         raise _LiveSmokeFailure(
             "model_selection",
@@ -65,6 +67,8 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
         recognition = _safe_recognition_summary(result, arguments.model)
     except OCRLLMError as error:
         raise _LiveSmokeFailure("recognition", error) from None
+    except Exception:
+        raise _LiveSmokeFailure("recognition", None) from None
     return {
         "status": "passed",
         "catalog_count": len(models),
@@ -142,30 +146,41 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         summary = run_google_genai_audio_smoke(arguments)
     except _LiveSmokeFailure as failure:
+        if failure.error is None:
+            return _report_unexpected_failure(failure.stage)
         return _report_typed_failure(failure.error, failure.stage)
     except OCRLLMError as error:
         return _report_typed_failure(error, None)
     except Exception:
-        print(
-            json.dumps(
-                {"status": "failed", "error": {"code": "UNEXPECTED_SAFE_FAILURE"}},
-                sort_keys=True,
-                separators=(",", ":"),
-            )
-        )
-        return 1
+        return _report_unexpected_failure(None)
     print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
     return 0
 
 
 def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
+    return _report_failure(
+        code=error.code,
+        scope=error.details.get("failure_scope"),
+        stage=stage,
+    )
+
+
+def _report_unexpected_failure(stage: str | None) -> int:
+    return _report_failure(
+        code="UNEXPECTED_SAFE_FAILURE",
+        scope=None,
+        stage=stage,
+    )
+
+
+def _report_failure(*, code: str, scope: object, stage: str | None) -> int:
     print(
         json.dumps(
             {
                 "status": "failed",
                 "error": {
-                    "code": error.code,
-                    "scope": error.details.get("failure_scope"),
+                    "code": code,
+                    "scope": scope,
                     "stage": stage,
                 },
             },

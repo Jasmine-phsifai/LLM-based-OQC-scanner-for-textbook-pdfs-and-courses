@@ -290,6 +290,16 @@ evidence. Typed failures now report only a safe runner stage (`catalog`,
 is not flattened across those boundaries. No provider text or product error
 contract is exposed or changed.
 
+#100 added a process-level regression for that maintained runner. With both
+supported credential environment variables absent, the real CLI loads the
+current source tree, exits 1 before any network request or source access, emits
+one `CONFIG_MISSING` / `catalog` JSON record, and leaves stderr empty. This
+locks the automation boundary without changing the public library or adding a
+general CLI framework. Ordinary exceptions inside catalog or recognition are
+also reduced to `UNEXPECTED_SAFE_FAILURE` with null scope and the known runner
+stage; their text is never published and process-control exceptions remain
+outside the `Exception` catch.
+
 Exit gate met: one public real-MP3 result completed with catalog/model selection,
 provider limits, exact call/usage evidence, and no false success. The earlier
 model-scoped quota failure remains recorded rather than hidden by retry or
