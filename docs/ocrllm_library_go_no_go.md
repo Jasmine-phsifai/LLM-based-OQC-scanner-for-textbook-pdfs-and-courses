@@ -2034,10 +2034,11 @@ ocrllm[all]            Only after every included extra is individually GO.
 ocrllm[dev]            Tests, build, lint, and fixture tools.
 ```
 
-The current metadata declares exactly `audio`, `dashscope`, `dev`, `image`, and
-`ocr`. The base distribution has no runtime requirements. The audio extra is
-consumed only by the internal Stage A1 probe; it does not imply that public
-audio recognition is available.
+The current metadata declares exactly `audio`, `dashscope`, `dev`, `google`,
+`image`, `ocr`, and `pdf-vision`. The base distribution has no runtime
+requirements. The audio extra carries the lazy A1 runtime dependency;
+`dev` also includes that small dependency because the public short-audio
+adapter tests execute the real MP3 probe rather than skipping the shipped path.
 
 The base target uses fresh-process imports after two discarded warm-ups, not an
 unmeasured cold-cache claim. The actual hard budgets are:

@@ -315,7 +315,7 @@ Use the root test suite for this package:
 ```powershell
 uv run --no-project --isolated --with 'Pillow==12.3.0' `
   --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
-  --with 'pypdfium2==5.11.0' `
+  --with 'pypdfium2==5.11.0' --with 'miniaudio>=1.71,<2' `
   --python 'D:\Anaconda\envs\OCRLLM\python.exe' `
   python -m pytest -q -p no:cacheprovider
 ```

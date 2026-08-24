@@ -20,6 +20,7 @@ dev = [
     "google-genai>=2.9,<3",
     "Pillow>=10.4,<13",
     "pypdfium2>=5.11.0,<5.12",
+    "miniaudio>=1.71,<2",
     "pytest>=8.0",
 ]
 image = ["Pillow>=10.4,<13"]

@@ -2524,3 +2524,19 @@ Atomic task — Iteration #094: audit the already-shipped short-audio facade’s
 **最小修复与明确不扩展的语义。** `recognize_validated_short_mp3()` 只增加一行 `raise_if_cancelled(config.cancellation)`，位于 snapshot context 之前。回归随后为 **1 passed in 0.05s**，证明公共错误为 typed `CANCELLED` 且 snapshot 未启动。adapter 原有两处检查继续覆盖 request bytes 构建前和 recognition dispatch 前。同步 `generate_content()` 已经进入后无法被 Event 打断；如果调用期间信号才置位而 provider 正常返回，当前保留已经付费且 A1 无 checkpoint 可恢复的 transcript。本轮没有加 post-return cancellation 让结果丢失，也没有声称强制中断。
 
 **调用计数、验证与过度设计复盘。** audio 成功仍报告 `provider_call_count=1`；失败错误尚未承诺 image Stage M 那套完整 `provider_calls_attempted` ledger。预置取消的零调用由 SDK/snapshot 未进入的直接测试事实证明，没有为一个分支先造半套错误计数。音频 snapshot、adapter、cancellation helper、config 和 facade 相关集最终为 **165 passed in 0.60s**，changed files compileall 与 `git diff --check` 通过。一次中间组合命令引用不存在的 `tests/test_raise_if_cancelled.py`，pytest 在收集前退出且没有执行；改用实际承载 helper 测试的 `test_dashscope_provider_boundaries.py` 后才记录 165 项结果。没有 live API、凭据、下载、provider 改动、长音频、Files、retry、fallback、worker、`contracts/` 或 `worker/` 变更。
+
+## #095 — 2026-08-24：开发依赖可以真实运行已交付的短音频测试
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #095: verify whether the documented development extra can run the already-shipped short-audio tests, and repair only a proven dependency-profile drift. Success means reconciling authority and diary, comparing `[project.optional-dependencies].dev` with the active no-live test imports and clean-profile gates, reproducing any missing dependency in an isolated install, then adding only the dependency required by an existing shipped slice. This matters because a mature package’s development profile must exercise its own supported code instead of passing by accident in a long-lived environment.
+```
+
+**假设、两条路线与真实缺口。** 初始假设是 A1 后来把 `miniaudio` 作为 lazy runtime dependency 加入独立 `audio` extra，却没有同步原先定义的 `dev` profile。路线①建立 `all` extra，把 OCR 等所有重型可选后端都聚合进去；路线②只修已经不跳过、会执行真实 MP3 probe 的短音频测试。选择②。历史 clean archive gate 已经给出实际复现：缺少 miniaudio 时，12 项 Google audio adapter 测试在到达目标行为前失败；门禁临时补入 miniaudio 后才通过。`docs/ocrllm_library_go_no_go.md` 又明确把 `dev` 定义为测试、构建、lint 和 fixture 工具，因此这不是从代码猜出的假想缺口。
+
+**替代意见与主审决定。** 轻量代理只读审计认为 `audio` 曾被有意做成独立 extra，建议只改文档。主代理复核后没有把“独立用户运行时 profile”误解为“开发测试 profile 必须排除它”：当前 `dev` 本来就聚合 image、Google、DashScope 和 PDF 的测试依赖，而公开 A1 adapter 测试不会在 miniaudio 缺失时 skip。OCR 仍不加入，因为它重、其真实后端测试允许按可选依赖跳过。最终只在 `dev` 中增加与 `audio` 完全相同的 `miniaudio>=1.71,<2`；base requirement 仍为空，`audio` extra 仍独立可安装。
+
+**文档、artifact 与验证。** active README 的完整测试命令补入同一精确范围；go/no-go 的过时 extras 清单修正为 `audio,dashscope,dev,google,image,ocr,pdf-vision`，并说明 dev 为何执行真实 probe。定向执行 Google audio adapter、MP3 probe、snapshot 和 miniaudio loader 得到 **71 passed in 0.35s**。轻量代理只构建一次真实 wheel：`ocrllm-0.1.0-py3-none-any.whl`，**203,259 bytes**，SHA-256 `d8e0932f2f2eb418005edb239f7143f9dda935c1b2b29b76d1108157dd9e87d8`；METADATA 的 dev marker 精确包含 `miniaudio<2,>=1.71`，audio marker 保持相同，base 未出现无 marker 的依赖。主代理复核后，代理精确删除临时构建目录并确认不存在。
+
+**工具诚实、既有决策与过度设计复盘。** 第一次组合 PowerShell 查询有未闭合引号，在读取前退出；随后改用固定字符串查询。英文任务原计划在 isolated install 中复现缺依赖，但本轮没有重新下载整个 dev graph：已有 clean archive 的 12 项真实失败就是隔离复现，当前 wheel METADATA 是修复后的直接合同证据。维护者最新重申的未来 provider class、各自并发/effort/错误处理、以后另设 fallback/pool、免费 Volcengine OpenAI-compatible 有界测试和不逐模型永久修补等约束，已完整存在于 `MAINTAINER_PRODUCT_DECISIONS.md` 并由 authority 引用，本轮不复制文档也不提前实现。没有新增 `all` extra、重型 OCR 依赖、provider 抽象、API 调用、凭据读取、repair、`contracts/` 或 `worker/` 修改；两个用户未跟踪文件保持未动。

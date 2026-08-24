@@ -79,6 +79,10 @@ requirements remain outside the A1 runtime. The probe rejects malformed or
 undecodable audio, zero decoded frames, and declared/decoded frame mismatch; it
 does not claim that every frame-aligned MP3 truncation can be distinguished
 from an intentionally shorter valid file.
+The independent `audio` extra remains the user-facing A1 runtime profile. The
+`dev` extra also includes `miniaudio` because the shipped short-audio adapter
+tests execute that real probe rather than treating its dependency as an
+expected skip; this does not make audio a base requirement.
 The snapshot copies one regular local `.mp3` through an open file handle into a
 fixed `source.mp3` name, rejects growth/shrink and a 25 MiB local resource
 ceiling, closes the caller's handle, then probes those owned bytes before

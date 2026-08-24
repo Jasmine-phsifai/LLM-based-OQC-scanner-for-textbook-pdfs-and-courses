@@ -68,6 +68,9 @@ Phase 1 maturation is offline implementation-complete:
   maintainer budget. The provider-independent MP3
   probe now uses lazy `miniaudio>=1.71,<2`, fully decodes bounded five-minute
   snapshots, and rejects the fixture-proven malformed cases before dispatch.
+  The user-facing `audio` extra remains independent, while `dev` also carries
+  miniaudio so the shipped short-audio tests run the real probe in a clean
+  development profile; the base distribution remains dependency-empty.
   One local `.mp3` is copied through an open handle to fixed `source.mp3`, with
   a separate 25 MiB local safety ceiling and cleanup ownership;
   FFmpeg/PyAV/Mutagen remain outside the A1 runtime. Exact public audio
