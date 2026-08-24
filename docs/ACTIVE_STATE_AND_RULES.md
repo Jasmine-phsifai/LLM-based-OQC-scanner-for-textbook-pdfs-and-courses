@@ -1775,6 +1775,33 @@ provider framework, billing ledger, dependency, output, frozen boundary, or
 open #127/#149/#152 decision changed. One hundred six focused tests and the
 complete 1,460-test offline suite pass.
 
+#183 fixes a reproduced variable-frame-rate parsing error instead of extending
+the scene detector. A deterministic five-frame MP4 has real frame PTS values
+0.00, 1.00, 3.00, 3.52, and 4.52 seconds and a 4.56-second container duration.
+The prior constant-rate arithmetic reported the final frame at 4.832 seconds
+and the video duration as 6.04 seconds. `inspect_video()` now reads the bounded
+FFmpeg wrapper's container metadata, while the coarse scanner seeks the actual
+five-second presentation timeline and reads the decoded frame index and PTS
+from OpenCV. It still appends the exact final frame, removes duplicate seeks,
+requires source order, and rejects more than 10,000 planned samples. The
+existing `video` extra already contains both lazy dependencies; plain package
+import remains unchanged, and a missing metadata backend is a typed
+`DEPENDENCY_MISSING` for that same extra. The real VFR regression now returns
+duration 4.56 seconds and final retained identity `(4, 4.52)`; constant-rate
+selection remains unchanged. This does not add a fine-gap detector, ffprobe,
+public timestamp abstraction, provider behavior, legacy format, or resolve the
+separate #149 cross-open source-mutation defect. Ninety-six focused tests and
+the complete 1,462-test offline suite pass. A clean `git archive HEAD` with the
+current tracked overlay built offline into a 239,998-byte wheel (SHA-256
+`d7f3a255499f7a3052852b4370d56ab242321e38af84dea4471fc236a193dc9f`).
+Installed outside the repository, it contains `read_video_duration.py` and
+`py.typed`, keeps OpenCV/NumPy/imageio-ffmpeg/miniaudio unloaded after plain
+import, and returns the same 4.56-second duration plus retained identities
+`(0, 0.0)/(4, 4.52)` with both JPEGs present. A separate generated MP4 whose
+metadata declared four frames but whose decoder yielded only three remains an
+honest `VIDEO_INVALID` at the exact-final-frame gate; the library does not hide
+that corrupt/decode-inconsistent tail by silently accepting the preceding frame.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

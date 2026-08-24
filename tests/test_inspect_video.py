@@ -159,6 +159,20 @@ def test_load_opencv_maps_missing_video_extra(monkeypatch: pytest.MonkeyPatch) -
     assert captured.value.details["extra"] == "video"
 
 
+def test_inspect_video_maps_missing_ffmpeg_metadata_dependency(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_short_mp4(tmp_path / "lecture.mp4")
+    monkeypatch.setitem(sys.modules, "imageio_ffmpeg", None)
+
+    with pytest.raises(DependencyMissing) as captured:
+        inspect_video(source)
+
+    assert captured.value.code == "DEPENDENCY_MISSING"
+    assert captured.value.details["extra"] == "video"
+
+
 def test_inspect_video_maps_open_check_failure_and_releases_capture(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

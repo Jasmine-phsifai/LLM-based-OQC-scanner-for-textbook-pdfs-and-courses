@@ -22,6 +22,8 @@ def load_opencv() -> Any:
         "CAP_PROP_FRAME_COUNT",
         "CAP_PROP_FRAME_WIDTH",
         "CAP_PROP_FRAME_HEIGHT",
+        "CAP_PROP_POS_FRAMES",
+        "CAP_PROP_POS_MSEC",
         "VideoCapture",
     )
     if any(not hasattr(cv2, name) for name in required_names):

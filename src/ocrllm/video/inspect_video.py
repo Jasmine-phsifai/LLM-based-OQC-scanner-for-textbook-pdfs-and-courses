@@ -6,10 +6,16 @@ import math
 import stat
 from pathlib import Path
 
-from ..errors import InvalidSource, UnsupportedFormat, VideoError
+from ..errors import (
+    DependencyMissing,
+    InvalidSource,
+    UnsupportedFormat,
+    VideoError,
+)
 from ..video_info import VideoInfo
 from .load_opencv import load_opencv
 from .open_video_capture import open_video_capture
+from .read_video_duration import read_video_duration
 
 
 def inspect_video(source: str | Path) -> VideoInfo:
@@ -70,11 +76,11 @@ def inspect_video(source: str | Path) -> VideoInfo:
             return VideoInfo(
                 frame_count=frame_count,
                 frames_per_second=float(frames_per_second),
-                duration_seconds=float(frame_count / frames_per_second),
+                duration_seconds=read_video_duration(source_path),
                 width_pixels=width_pixels,
                 height_pixels=height_pixels,
             )
-        except VideoError:
+        except (DependencyMissing, VideoError):
             raise
         except (KeyboardInterrupt, SystemExit):
             raise

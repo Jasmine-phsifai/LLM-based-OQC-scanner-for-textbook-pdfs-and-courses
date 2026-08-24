@@ -521,6 +521,12 @@ The following directions remain traceable but are not current work:
   exact 11/3 and 7/2 model usage after the second image call fails; cancelled
   suffix groups keep the overall call total unknown. Request snapshots are
   cleaned and retained assets remain. No runtime contract changed.
+  #183 corrects VFR parsing at the provider-free boundary: container duration
+  now comes from existing FFmpeg metadata, coarse candidates are sought by
+  presentation time, and retained identities use decoded frame PTS instead of
+  `frame_index / FPS`. Exact-final-frame and bounded-candidate rules remain;
+  #149 source snapshot placement is still open. An externally installed clean
+  wheel reproduces the corrected 4.56-second VFR path without eager media imports.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

@@ -88,12 +88,14 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - rejects PDF in `recognize_batch()` in this first slice and exposes no page,
   password, partial-result, or text-mode settings.
 - exposes `inspect_video()` separately for one local MP4 when the `video` extra
-  is installed; this inspection API performs no recognition or output writes.
+  is installed; it reads container duration instead of deriving duration from
+  a constant frame rate and performs no recognition or output writes.
 - exposes `extract_video_frames()` for an explicit output parent; it creates a
   same-stem directory containing ordered `frames/frame-<index>.jpg` files and
   rejects an existing target instead of overwriting or resuming it. Selection
-  compares a five-second coarse grid plus the exact final frame; a scene that
-  appears entirely between those samples can be missed.
+  seeks a five-second presentation-time grid plus the exact final frame and
+  records decoded presentation timestamps, including for variable-frame-rate
+  MP4s; a scene that appears entirely between those samples can be missed.
 - exposes memory-only `recognize_video_frames()` for a nonempty exact tuple of
   library `RetainedVideoFrame` values; it reuses image preflight and recognition
   in ordered groups of at most eight and creates no video-specific provider.

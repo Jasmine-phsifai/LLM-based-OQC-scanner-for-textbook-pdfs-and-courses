@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import FrozenInstanceError
 import os
 from pathlib import Path
+import subprocess
 
 import pytest
 
@@ -15,6 +16,7 @@ from ocrllm import (
     VideoError,
     VideoInfo,
     extract_video_frames,
+    inspect_video,
 )
 
 
@@ -55,6 +57,68 @@ def _write_final_frame_change_mp4(path: Path) -> Path:
             writer.write(np.full((48, 64, 3), value, dtype=np.uint8))
     finally:
         writer.release()
+    return path
+
+
+def _write_variable_frame_rate_mp4(path: Path) -> Path:
+    import cv2
+    import imageio_ffmpeg
+    import numpy as np
+
+    frame_paths = tuple(path.with_name(f"vfr-{index}.png") for index in range(4))
+    for frame_path, value in zip(frame_paths, (20, 90, 160, 230)):
+        assert cv2.imwrite(
+            str(frame_path),
+            np.full((48, 64, 3), value, dtype=np.uint8),
+        )
+    concat_path = path.with_suffix(".txt")
+    concat_path.write_text(
+        "\n".join(
+            (
+                f"file '{frame_paths[0].as_posix()}'",
+                "duration 1.0",
+                f"file '{frame_paths[1].as_posix()}'",
+                "duration 2.0",
+                f"file '{frame_paths[2].as_posix()}'",
+                "duration 0.5",
+                f"file '{frame_paths[3].as_posix()}'",
+                "duration 1.0",
+                f"file '{frame_paths[3].as_posix()}'",
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    completed = subprocess.run(
+        (
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            str(concat_path),
+            "-fps_mode",
+            "vfr",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            str(path),
+        ),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=30,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    assert completed.returncode == 0
     return path
 
 
@@ -120,6 +184,23 @@ def test_extract_video_frames_compares_and_retains_a_changed_final_frame(
         [0.0, 2.5]
     )
     assert all(frame.path.is_file() for frame in frames)
+
+
+def test_extract_video_frames_uses_vfr_container_time_and_frame_pts(
+    tmp_path: Path,
+) -> None:
+    source = _write_variable_frame_rate_mp4(tmp_path / "variable.mp4")
+
+    info = inspect_video(source)
+    frames = extract_video_frames(source, output_dir=tmp_path / "output")
+
+    assert info.frame_count == 5
+    assert info.duration_seconds == pytest.approx(4.56, abs=0.08)
+    assert [frame.frame_index for frame in frames] == [0, 4]
+    assert [frame.timestamp_seconds for frame in frames] == pytest.approx(
+        [0.0, 4.52],
+        abs=0.02,
+    )
 
 
 def test_video_frame_scan_counts_the_final_frame_before_decoding() -> None:

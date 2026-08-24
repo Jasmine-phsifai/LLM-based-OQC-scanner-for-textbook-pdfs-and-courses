@@ -119,6 +119,9 @@ return Markdown strings and do not gain the internal structured response type.
 #182 proves a later native image-group failure preserves already-settled image
 and audio model usage, cleans request snapshots, and leaves cancelled suffix
 call evidence unknown. Do not replace that unknown with inferred zero calls.
+#183 requires VFR-safe parsing: use container duration, seek the five-second
+presentation timeline, and retain decoded frame PTS. Preserve the exact final
+frame and candidate cap; do not add ffprobe or claim #149 source stability.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -318,10 +318,15 @@ Install `ocrllm[video]` for provider-free inspection and frame/audio extraction.
 The complete native-Google recognition example above requires
 `ocrllm[video,image,audio,google]`. `inspect_video()` accepts one local MP4,
 validates metadata and a real first-frame decode, returns immutable `VideoInfo`,
-writes nothing, and makes no provider call.
+writes nothing, and makes no provider call. Its duration comes from the MP4
+container rather than `frame_count / FPS`, so variable-frame-rate input does
+not receive a fabricated constant-rate duration.
 `extract_video_frames()` adds five-second coarse thumbnails, bounded
 count-driven negative-feedback selection, and ordered immutable
-`RetainedVideoFrame` records. It publishes validated JPEGs together under
+`RetainedVideoFrame` records. Coarse seeks use presentation time and each
+retained timestamp is the decoded frame's actual presentation timestamp; FPS
+remains informational rather than the timestamp clock. It publishes validated
+JPEGs together under
 `output/lecture/frames/` and rejects an existing `output/lecture` instead of
 overwriting or resuming it. This is not a fine-gap scene detector: content that
 appears entirely between two coarse samples can be absent from the retained
