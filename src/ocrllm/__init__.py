@@ -68,6 +68,9 @@ if TYPE_CHECKING:
     )
     from .recognize import recognize as recognize
     from .recognize_batch import recognize_batch as recognize_batch
+    from .recognize_video_frames import (
+        recognize_video_frames as recognize_video_frames,
+    )
     from .retained_video_frame import RetainedVideoFrame as RetainedVideoFrame
     from .result import RecognitionResult as RecognitionResult
     from .video.extract_video_frames import extract_video_frames as extract_video_frames
@@ -159,6 +162,10 @@ _PUBLIC_IMPORTS = {
     ),
     "recognize": (".recognize", "recognize"),
     "recognize_batch": (".recognize_batch", "recognize_batch"),
+    "recognize_video_frames": (
+        ".recognize_video_frames",
+        "recognize_video_frames",
+    ),
     "inspect_video": (".video.inspect_video", "inspect_video"),
 }
 
@@ -208,6 +215,7 @@ __all__ = [
     "VisionModelSettings",
     "recognize",
     "recognize_batch",
+    "recognize_video_frames",
     "extract_video_frames",
     "inspect_video",
     "get_capabilities",
@@ -225,6 +233,23 @@ def __getattr__(name: str):
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
 
     from importlib import import_module
+
+    if name == "recognize_video_frames":
+        video_frames_value = getattr(
+            import_module(".recognize_video_frames", __name__),
+            "recognize_video_frames",
+        )
+        # Importing the adapter loads these sibling modules and would otherwise
+        # leave module objects on the public package under the function names.
+        recognize_value = getattr(import_module(".recognize", __name__), "recognize")
+        batch_value = getattr(
+            import_module(".recognize_batch", __name__),
+            "recognize_batch",
+        )
+        globals()["recognize"] = recognize_value
+        globals()["recognize_batch"] = batch_value
+        globals()["recognize_video_frames"] = video_frames_value
+        return video_frames_value
 
     if name in {"recognize", "recognize_batch"}:
         recognize_value = getattr(import_module(".recognize", __name__), "recognize")

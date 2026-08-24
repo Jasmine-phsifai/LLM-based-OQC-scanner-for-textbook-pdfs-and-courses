@@ -44,13 +44,19 @@ from ocrllm import (
     RecognitionExecutionPolicy,
     RecognitionPreferences,
     RecognitionResult,
+    RetainedVideoFrame,
     ResumeStateError,
     UnsupportedFormat,
+    VideoError,
+    VideoInfo,
     VisionModelSettings,
+    extract_video_frames,
     recognize,
     recognize_batch,
+    recognize_video_frames,
     get_capabilities,
     get_provider_error_disposition,
+    inspect_video,
     list_google_genai_models,
 )
 ```
@@ -213,10 +219,20 @@ Google-live-proven.
 The provider-free video inspection and retained-frame slices are available:
 
 ```python
-from ocrllm import extract_video_frames, inspect_video
+from ocrllm import (
+    Config,
+    GoogleGenAISettings,
+    extract_video_frames,
+    inspect_video,
+    recognize_video_frames,
+)
 
 info = inspect_video("lecture.mp4")
 frames = extract_video_frames("lecture.mp4", output_dir="output")
+outcomes = recognize_video_frames(
+    frames,
+    config=Config(provider=GoogleGenAISettings()),
+)
 ```
 
 Install `ocrllm[video]` for lazy `opencv-python>=4.13,<4.14` support. The function
@@ -226,9 +242,13 @@ immutable `VideoInfo`, writes nothing, and makes no provider call.
 count-driven negative-feedback selection, and ordered immutable
 `RetainedVideoFrame` records. It publishes validated JPEGs together under
 `output/lecture/frames/` and rejects an existing `output/lecture` instead of
-overwriting or resuming it. Video recognition, audio extraction, independent
-image and audio provider bindings, resume, and worker routing are not
-implemented yet. Plain `import ocrllm` does not import OpenCV or NumPy.
+overwriting or resuming it. `recognize_video_frames()` accepts only the exact
+ordered tuple returned by this library and reuses ordinary image recognition
+in groups of at most eight. It is memory-only and returns one existing
+`BatchItemOutcome` per group; it does not yet compose a video document or
+persist/resume recognition. Audio extraction, an independently configurable
+audio provider, composition, and worker routing are not implemented yet.
+Plain `import ocrllm` does not import OpenCV or NumPy.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.

@@ -277,6 +277,14 @@ is often accepted.
   supplies an output parent, the library publishes one same-stem directory, and
   any existing target is rejected. There is no overwrite, resume, manifest,
   ROI, pHash, fine scan, or threading claim in this slice.
+- #122 keeps retained-frame recognition as a thin memory-only adapter. It
+  accepts only the library's exact ordered `RetainedVideoFrame` tuple, groups
+  paths at eight or the caller's lower image limit, and reuses
+  `recognize_batch()`. Per-group Markdown persistence is rejected because it is
+  not a video result or resume contract. This is not legacy-format support and
+  does not authorize a provider hierarchy, fallback pool, or video-specific
+  vision protocol. The next slice is audio extraction with a genuinely
+  independent audio provider binding.
 
 ## Resolved confirmation and next authority
 

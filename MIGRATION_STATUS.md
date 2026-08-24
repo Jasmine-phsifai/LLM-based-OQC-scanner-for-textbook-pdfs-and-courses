@@ -385,9 +385,11 @@ The following directions remain traceable but are not current work:
 - Social downloading in `src/ocrllm`: rejected as a new-library boundary;
   retained only in `legacy_app/`.
 - PDF text mode and repair plus long or persisted/resumable audio remain
-  phase-gated and unavailable. Video recognition is not implemented; #120 adds
-  lazy MP4 inspection and #121 adds provider-free negative-feedback frame
-  selection plus retained JPEGs. The direct PDF vision
+  phase-gated and unavailable. #120 adds lazy MP4 inspection, #121 adds
+  provider-free negative-feedback frame selection plus retained JPEGs, and
+  #122 feeds the exact ordered retained-frame tuple through ordinary image
+  recognition in groups of at most eight. Video composition and audio
+  extraction remain unavailable. The direct PDF vision
   facade and its ordinary image-sidecar resume are implemented; the
   experimental direct short-audio API is implemented and live-proven only for
   one in-memory MP3 of at most 300 seconds.

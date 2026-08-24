@@ -797,9 +797,32 @@ fine-gap scan, or threading behavior. Plain package import remains free of
 OpenCV and NumPy. A Windows regression proves the 96-character normalized
 source stem plus a controlled 130-unit output parent keeps every published
 path at or below 259 UTF-16 units; this is not arbitrary extended-path support.
-The next slice feeds these retained frames through the
+The following slice feeds these retained frames through the
 existing image-recognition path; audio extraction, independent audio binding,
 composition, resume, and worker support remain unavailable.
+
+#122 completes slice 3 as public
+`recognize_video_frames(frames, config=...) -> list[BatchItemOutcome]`. The
+input must be a nonempty exact tuple of exact `RetainedVideoFrame` values in
+source order. The adapter feeds their JPEG paths to the ordinary image batch
+preflight and recognition path in ordered groups of at most eight, or the
+caller's lower configured image limit. It preserves the existing serial or
+bounded-parallel execution policy and honest settled outcomes. The complete
+frame tuple and every grouped image are validated before provider dispatch.
+This intermediate boundary is memory-only: `output_dir`, `resume`, and
+`overwrite` are rejected because per-image-group Markdown is not a video
+composition or recovery format. It adds no video provider protocol, provider
+class, fallback, retry, checkpoint, or legacy-format compatibility. Audio
+extraction and an independently configurable audio provider are the next
+ordered slice.
+
+The #122 source suite passes 1,365 tests. A fresh 217,405-byte wheel installed
+outside the repository kept `recognize_video_frames` callable and base video
+symbols free of OpenCV/NumPy, then grouped nine valid retained JPEGs as 8+1
+through an injected provider. The bounded Google gate discovered 37 current
+models, retained eight frames from a generated MP4, and sent them through the
+public adapter as one `gemini-2.5-flash` call with reported usage of 2401 input
+and 15 output tokens. It remained memory-only and published no Markdown.
 
 The #121 source suite passes 1,351 tests, and a fresh 215,956-byte wheel installed
 outside the repository retained three ordered, decodable JPEGs from a generated

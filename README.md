@@ -31,8 +31,10 @@ As of 2026-08-24:
 - Provider-free video inspection and retained-frame extraction are available.
   `inspect_video(one.mp4)` writes nothing; `extract_video_frames()` performs a
   bounded five-second coarse scan, count-driven negative-feedback selection,
-  and complete-directory JPEG publication. Recognition and audio extraction
-  are not implemented yet.
+  and complete-directory JPEG publication. `recognize_video_frames()` feeds
+  the exact ordered retained-frame tuple through the existing image path in
+  groups of at most eight and returns honest batch outcomes. It is memory-only;
+  audio extraction and final video composition are not implemented yet.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
@@ -73,6 +75,9 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - exposes `extract_video_frames()` for an explicit output parent; it creates a
   same-stem directory containing ordered `frames/frame-<index>.jpg` files and
   rejects an existing target instead of overwriting or resuming it.
+- exposes memory-only `recognize_video_frames()` for a nonempty exact tuple of
+  library `RetainedVideoFrame` values; it reuses image preflight and recognition
+  in ordered groups of at most eight and creates no video-specific provider.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The
