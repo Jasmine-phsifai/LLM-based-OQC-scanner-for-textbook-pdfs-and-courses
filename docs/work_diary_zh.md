@@ -3537,3 +3537,15 @@ Atomic task — Iteration #158: harden one truthful-state invariant in the publi
 **两条路线与失败先行。** 路线 A 在 `audio_state` 读取时把错误类型不匹配悄悄归为 `failed`，保留一个 code 与 error family 自相矛盾的对象。路线 B 在不可变 outcome 构造时直接拒绝：只有 `VideoError` 才能声明 `VIDEO_NO_AUDIO_STREAM`。选择路线 B，沿用 #140/#142 已有的 fail-fast constructor 规则，不增加状态或错误类。新增回归在修复前稳定得到 **1 failed**；最小实现只多导入现有 `VideoError`，并在已有 `audio_error` 类型验证之后加一个类型/code 组合检查。真实 silent MP4 仍使用原有 `VideoError`，不受影响。
 
 **独立核查、验证与过度设计复查。** 轻量只读核查确认唯一生产者、provider error 不可能携带该 code、普通 `OCRLLMError` 可复现错误完成态，也确认 composition 会消费这个错误的 `audio_state`。修复后 outcome 集合为 **7 passed**；video recognition、outcome、composition、publication、audio extraction 与受控 smoke-runner contract 合集为 **60 passed in 1.66s**；`compileall -q src tests tools` 与 `git diff --check` 通过。一次 Windows `rg tests/test_*.py` 因 PowerShell 不展开该 glob 报路径语法错误，改用 `rg -g 'test_*.py'` 后完整核对，所有正常 no-stream 构造都使用 `VideoError`。无网络、provider、凭据、安装、下载、API、依赖、frozen `contracts/worker` 或 #127/#149/#152 变化。没有把所有 error family/code 组合做成注册表，也没有深冻结错误对象或增加 serializer；这些都超过本轮已经复现的 false-complete 问题。
+
+## #159 — 2026-08-25：删除视频资产不会产生最终结果假成功，不重复加校验层
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #159: verify that final video composition/publication cannot claim retained media that no longer exists, and fix only a reproducible false-success path. Success means reconciling authority and diary, exercising a real outcome after one retained asset is removed, choosing between constructor-time and consumption-time validation based on lifecycle evidence, preserving memory-only composition and atomic publication semantics, running focused offline tests, and committing/pushing a Chinese diary record. This matters because a Python library must not publish a successful final result whose advertised JPEG or MP3 assets are already missing.
+```
+
+**代码追踪、两条路线与已有正确边界。** 同步 origin、重读 authority、日记和 package 规则后，追踪 `VideoRecognitionOutcome -> compose_video_result -> build_recognition_result`。候选路线 A 是在 outcome 构造时逐个检查 retained files；它只能证明构造那一刻存在，调用者随后仍可移动或删除文件，并且会把 filesystem I/O 塞进目前只验证结构的值对象。路线 B 是在 composition/publication 真正承诺 `RecognitionResult.assets` 时检查；共享 `build_recognition_result()` 已经执行这条规则：任何 `ProcessorOutput.assets` 不是现存文件都会得到 `OUTPUT_WRITE_FAILED`。`tests/test_compose_video_result.py` 也已有一个缺失 retained JPEG 的精确定向回归，因此候选缺陷不是未覆盖的新问题。选择保留路线 B，不增加视频专用 validator 或重复测试。
+
+**真实生命周期证明与停止判断。** 使用公开类型先创建一个有真实 JPEG、完整 frame result 和无音轨 `VideoError` 的有效 outcome，随后删除 JPEG，再分别调用 `compose_video_result()` 与 `publish_video_result()`。两者都诚实返回 `OUTPUT_WRITE_FAILED`；最终 Markdown 不存在。已有 missing-artifact 回归为 **1 passed**，composition、publication、outcome 合集为 **31 passed in 0.13s**；`compileall -q src tests tools` 与 `git diff --check` 通过。无网络、provider、凭据、安装或下载。本轮没有运行时代码、测试、authority、API、依赖、输出格式、frozen `contracts/worker` 或 #127/#149/#152 改动；authority 已在 #138 准确记录 existing missing-artifact validation，无需重复追加状态。再增加构造期检查、文件 watcher、资产哈希/manifest 或生命周期 manager 都不会加强“最终消费时资产必须存在”的当前保证，反而增加未来维护者需要理解的重复路径，因此明确停止。
