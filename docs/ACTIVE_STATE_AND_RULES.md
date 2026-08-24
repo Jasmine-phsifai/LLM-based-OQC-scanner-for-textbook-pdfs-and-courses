@@ -1440,6 +1440,25 @@ provider, dependency, capability, frozen contract, worker route, or A2b decision
 changed. Do not split long/short model-setting classes or response parsers from
 this wording correction.
 
+#157 closes a concrete retained-asset overwrite path in final video publication.
+`publish_video_result(..., overwrite=True)` previously rejected only a Markdown
+target whose `Path` value exactly equalled a retained JPEG or MP3. A target such
+as `frames/../frames/frame-00000000.jpg` was lexically different but referred to
+the same existing file, so the atomic Markdown writer replaced the retained JPEG
+and returned success. The public regression first reproduced that replacement.
+
+Publication now preserves the exact fast check and, only when the requested
+target already exists, asks the operating system whether it is the same file as
+any existing retained asset. An alias is rejected with `OUTPUT_PATH_INVALID`
+before the output claim or write, and the asset bytes remain unchanged. This is
+one promised no-overwrite invariant, not a general path sandbox, recursive
+asset graph, manifest, hash layer, or cross-process transaction. Eight focused
+publication tests and 56 video extraction, orchestration, outcome, composition,
+and publication tests pass in 1.73 seconds; compilation and diff checks pass.
+No provider, network, credential, dependency, public API, output layout,
+frozen contract/worker boundary, cancellation choice, source-snapshot choice,
+or long-audio chunking choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

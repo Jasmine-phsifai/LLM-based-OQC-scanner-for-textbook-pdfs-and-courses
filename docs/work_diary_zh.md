@@ -3509,3 +3509,17 @@ Atomic task — Iteration #156: remove stale short-audio-only semantics from the
 **明确保持短音频的文件。** 主代理同时确认 `recognize()`、`detect_source_type()`、`probe_short_mp3`、`snapshot_short_mp3`、short processor、inline request builder/request value 与 `recognize_short_mp3` 仍只实现 A1，所有短音频命名和错误文案原样保留。轻量只读审查复核相同边界，并额外发现两处当前文档精度：根 README 现在明确写成 inline short-MP3 与 Google Files long-MP3 adapter；`MIGRATION_STATUS` 一句漏掉谓语的 A1 边界补回 `are not implemented in A1`，避免误读为全局没有 long audio。
 
 **验证、主审和过度设计复查。** short/long Google adapter、audio runner contract、Config、lightweight import 和 static export 定向集合为 **89 passed in 1.59s**；post-change introspection 确认公共 model settings 与共享 parser/response 不再含 short-only 描述。没有网络、provider、凭据、安装或下载。改动只有三处 docstring 和两处 maintained wording；没有运行时分支、类型、函数/模块名、request/response schema、provider、依赖、capability、frozen `contracts/worker` 或 #152 A2b 选择变化。把短长模型设置、parser 或 response 拆成两套才是本轮明确拒绝的过度设计。
+
+## #157 — 2026-08-25：视频 Markdown 不再通过别名路径覆盖保留图片
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #157: identify and close one concrete usability or correctness gap in the already-built video recognition slice without choosing any unresolved product decision. Success means reconciling the authoritative state and diary with the current code, proving the gap through the public Python-package surface, applying the smallest maintainable fix, running proportionate offline tests, and committing/pushing one coherent change with a Chinese diary entry. This matters because video recognition must behave as an importable library in real caller workflows, while unresolved cancellation, snapshot-location, and long-audio chunking choices remain reserved for the user.
+```
+
+**边界重核、候选否定与真实复现。** 同步 origin、重读 authority、入口文档和 #154—#156 日记后，先审查“画面解析失败时是否仍应运行音频”。authority 明确规定 frame extraction 先建立唯一输出根，只有该门槛之后的 audio extraction、frame recognition 和 audio recognition 承诺独立结算，因此没有擅自扩大合同。随后通过公开 `publish_video_result()` 在临时目录稳定复现另一处真实缺陷：保留 JPEG 是 `frames/frame-00000000.jpg`，发布目标写成字面不同但指向同一文件的 `frames/../frames/frame-00000000.jpg`，并传入 `overwrite=True`；函数返回成功，同时 JPEG 内容被 `# Video frames` Markdown 替换。这推翻了 maintained 文档中“Markdown target cannot replace a retained asset”的现有承诺。
+
+**两条路线、红灯回归与最小修复。** 路线 A 只对路径字符串做 `normpath/abspath` 比较，能挡本次 `..`，却仍把“是否为同一文件”错误地近似成字符串问题。路线 B 保留原有精确 `Path` 快速判断，并只在目标已经存在时用操作系统文件身份与现有 retained assets 比较。选择路线 B；它也自然拒绝同一文件的链接别名，却没有扫描目录或定义 sandbox。新增公开回归在修复前稳定为 **1 failed**，并确实观察到没有抛出 `OutputError`。修复集中在 `publish_video_result.py` 的一个私有发布前检查：相同文件返回 `OUTPUT_PATH_INVALID`，不进入 claim/write，原资产字节不变；无法完成身份比较也诚实拒绝，而不是冒险覆盖。
+
+**独立审查、验证与过度设计复查。** 轻量只读审查先跑了 **49 passed**，未发现除已知 #149 外的缺陷；主代理没有把“测试没发现”当成无缺陷证明，继续通过真实别名路径找到了本轮问题。修复后 publication 集合为 **8 passed**，frame/audio extraction、video orchestration、outcome、composition、publication 合集为 **56 passed in 1.73s**，`compileall` 与 `git diff --check` 通过。无网络、provider、凭据、安装或下载；没有 API、输出布局、依赖、frozen `contracts/worker`、#127、#149 或 #152 改动。没有加入通用路径规范化框架、symlink sandbox、asset manifest/hash、递归资源图或跨进程 transaction；这些都超过“最终 Markdown 不得替换自己返回的 retained asset”这一条已经存在的产品约束。

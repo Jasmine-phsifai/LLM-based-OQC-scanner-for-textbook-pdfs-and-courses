@@ -137,6 +137,21 @@ def test_publish_video_result_rejects_overwriting_a_retained_asset(
     assert target.read_bytes() == original_bytes
 
 
+def test_publish_video_result_rejects_alias_of_retained_asset(
+    tmp_path: Path,
+) -> None:
+    outcome = _outcome(tmp_path)
+    retained_frame = outcome.retained_frames[0].path
+    original_bytes = retained_frame.read_bytes()
+    target = retained_frame.parent / ".." / "frames" / retained_frame.name
+
+    with pytest.raises(OutputError) as captured:
+        publish_video_result(outcome, target, overwrite=True)
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert retained_frame.read_bytes() == original_bytes
+
+
 def test_publish_video_result_write_failure_preserves_existing_target(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
