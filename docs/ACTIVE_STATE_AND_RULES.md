@@ -173,6 +173,11 @@ downstream checker resolution/diagnostic probe has not yet completed.
 Hatch derives distribution version metadata from the public
 `ocrllm.__version__` assignment; `pyproject.toml` no longer carries a second
 hand-maintained version string.
+The source-distribution target explicitly publishes only `pyproject.toml`, the
+root package README, and `src/ocrllm/` (plus Hatch's benign `.gitignore` and
+generated `PKG-INFO`). It does not use the repository worktree as an implicit
+release manifest, so legacy/application code, tests, evidence, runtime output,
+local settings, and untracked files cannot enter the sdist by default.
 
 ### P0-a — Bounded legacy provider-error evidence audit (completed by #066)
 

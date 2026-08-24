@@ -43,6 +43,13 @@ path = "src/ocrllm/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ocrllm"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "/pyproject.toml",
+    "/README.md",
+    "/src/ocrllm",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]

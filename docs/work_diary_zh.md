@@ -2540,3 +2540,21 @@ Atomic task — Iteration #095: verify whether the documented development extra 
 **文档、artifact 与验证。** active README 的完整测试命令补入同一精确范围；go/no-go 的过时 extras 清单修正为 `audio,dashscope,dev,google,image,ocr,pdf-vision`，并说明 dev 为何执行真实 probe。定向执行 Google audio adapter、MP3 probe、snapshot 和 miniaudio loader 得到 **71 passed in 0.35s**。轻量代理只构建一次真实 wheel：`ocrllm-0.1.0-py3-none-any.whl`，**203,259 bytes**，SHA-256 `d8e0932f2f2eb418005edb239f7143f9dda935c1b2b29b76d1108157dd9e87d8`；METADATA 的 dev marker 精确包含 `miniaudio<2,>=1.71`，audio marker 保持相同，base 未出现无 marker 的依赖。主代理复核后，代理精确删除临时构建目录并确认不存在。
 
 **工具诚实、既有决策与过度设计复盘。** 第一次组合 PowerShell 查询有未闭合引号，在读取前退出；随后改用固定字符串查询。英文任务原计划在 isolated install 中复现缺依赖，但本轮没有重新下载整个 dev graph：已有 clean archive 的 12 项真实失败就是隔离复现，当前 wheel METADATA 是修复后的直接合同证据。维护者最新重申的未来 provider class、各自并发/effort/错误处理、以后另设 fallback/pool、免费 Volcengine OpenAI-compatible 有界测试和不逐模型永久修补等约束，已完整存在于 `MAINTAINER_PRODUCT_DECISIONS.md` 并由 authority 引用，本轮不复制文档也不提前实现。没有新增 `all` extra、重型 OCR 依赖、provider 抽象、API 调用、凭据读取、repair、`contracts/` 或 `worker/` 修改；两个用户未跟踪文件保持未动。
+
+## #096 — 2026-08-24：source distribution 不再打包整个工作目录
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #096: audit the source distribution as a real consumer artifact, because #091–#095 proved the wheel and development metadata but not what the sdist publishes. Success means reconciling the authoritative state and diary, building one clean sdist through the fixed lightweight workflow, inventorying its tracked contents and metadata, proving that it can produce/install the same lightweight package, and changing configuration only if the artifact exposes a reproducible packaging defect. This matters because an sdist that leaks legacy/application material or cannot reproduce the wheel is not a mature library release even when source-tree tests pass.
+```
+
+**假设、两条路线与缺陷阈值。** 初始假设是 Hatch 的 sdist 默认选择可能比 wheel 广。路线①没有 artifact 就先写一组 release exclude；路线②先构建、只在 archive 确实带入 legacy/application/private 或 runtime material、缺少 build input、或者不能重建时收紧。选择②。复核 authority、`START_HERE.md`、package `AGENTS.md` 和 `pyproject.toml` 后确认：wheel 已明确限制为 `src/ocrllm`，sdist 没有边界；仓库 tracked 数据本身约含 19.0 MiB tests（其中字体 16.4 MiB）、2.9 MiB legacy、1.24 MiB evidence 和 1.10 MiB docs。一次辅助 PowerShell 大小统计遇到 Git 引号路径令 `Test-Path` 报错，因此它只用于定位风险，不冒充 archive 清单。
+
+**真实红灯：5.55 GB 工作目录泄漏。** 轻量代理只构建一次原配置 sdist，exit **0**，却得到 **5,554,374,043 bytes**、SHA-256 `EEE7DE381CAEE659AC7556BB49470EC4C2B6D2CA23A4659EF247F4848F250164` 的 `ocrllm-0.1.0.tar.gz`；归档有 **5,818** 个普通文件、未压缩 **5,808,391,844 bytes**。它包含 853 个 legacy 文件、17 个 evidence、根 tests/tools/docs、约 789 MiB output、约 4.73 GiB temp、两个明确保护的用户未跟踪文件，以及非空的本地令牌/设置候选文件。没有候选内容或凭据值被打印。主代理亲自核对 archive 大小、hash、总成员数和这些路径；第一次复核命令因 `foreach` 后直接接管道而在解析前退出，拆开后才得到有效证据。
+
+**最小配置修复。** `pyproject.toml` 只增加 `[tool.hatch.build.targets.sdist] include`，允许 `/pyproject.toml`、`/README.md` 和 `/src/ocrllm`。没有写通用发布脚本、全仓 exclude 清单、manifest 生成器、CI 服务或 release automation。旧 5.55 GB archive 和解压目录在主代理复核后，由轻量代理验证精确路径严格位于用户 Temp 且只删除这两个目录，随后确认不存在。
+
+**修复后的 artifact 与独立重建。** 新 sdist 为 **116,917 bytes**，SHA-256 `476E3D24D752AEE479658507B1E38BDEBC49041DC44D156BB5BEC034C23190C6`；共 **202** 个文件、未压缩 **534,238 bytes**。顶层只有 `pyproject.toml`、`README.md`、generated `PKG-INFO`、`src`，以及 Hatch 自动保留的 1,209-byte `.gitignore`；legacy、evidence、tools、根 tests、docs、runtime output/temp、本地设置、两个用户文件和 sync conflict 均为零。解压 sdist 后，当前环境因没有 Hatchling 而诚实地不能 `--no-isolation` 构建；一次隔离构建 exit **0**，生成 **201,665-byte** wheel，SHA-256 `F787ADDE96A00F0B62CE821310F7F6375FF75FD3CAB46450FAADFC6D020D3B5F`。安装到独立 venv 后，从仓库外精确验证 package 与 distribution origin、版本 **0.1.0**、`py.typed`、七个 extras，以及 base import 未加载 Pillow/PDFium/OpenAI/HTTPX/Google/miniaudio。
+
+**主审纠错与过度设计复盘。** 代理首次报告的新 sdist 路径少写了末尾一个 `0`，导致主代理的第一次 archive 复核实际没有找到文件；同一组合命令又从全局旧 distribution 读到错误 extras，因此该空清单和旧 metadata 全部作废。列出精确 Temp 根后，主代理使用真实路径重新核对 archive/hash/成员，并直接用新 venv Python 限定 distribution origin，得到上述有效结果。一次字符串扫描把合法的 `src/ocrllm/output/` 计为 `/output/` 命中；顶层清单证明不存在 runtime `output`。`.gitignore` 不含本地状态或密钥，为了删除这一份 benign 1.2 KiB 文件再增加 exclude 和第三次构建属于低收益雕琢，因此明确保留。没有 provider/API、凭据读取、runtime、tests、public API、repair、`contracts/` 或 `worker/` 修改。
