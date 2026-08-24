@@ -2590,3 +2590,17 @@ Atomic task — Iteration #098: compare the active native-Google error classifie
 **最小修复与行为边界。** `_looks_like_spent_quota()` 现在先检查既有且已证明的 `rate limit`、RPM、TPM、RPD；任何窗口标记都否决 spent quota。没有窗口时，quota exhaustion 又收紧为 legacy 已证明的两段精确短语，而不是原来宽泛的 `quota` + 任一 `exceed/exhaust/billing/plan`。修复后单回归 **1 passed in 0.05s**；纯 quota 仍是 model scope，普通/组合窗口仍是 provider scope。mapper 只返回 typed disposition，adapter 没有新增 retry、sleep、候选切换或 provider call。
 
 **验证与过度设计复盘。** Google image/audio mapper、provider detail 和 disposition 第一层相关集为 **77 passed in 0.46s**；再加入 Stage maturation、image processor 和 slot-resume 消费者后的最终相关集为 **138 passed in 1.47s**，changed source/test compile 与 `git diff --check` 通过。authority、migration 和 bounded evidence row 只同步这条优先级，不把 legacy 所有 marker 升格为 current-live truth。没有 live/API 调用、模型补丁、错误文本保留、通用 classifier、provider class、fallback、repair、`contracts/` 或 `worker/` 修改；两个用户未跟踪文件保持未动。
+
+## #099 — 2026-08-24：日常 Google 音频 smoke 少发一次无效 key 请求并保留失败阶段
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #099: simplify the maintained Google short-audio live runner after #097 proved that its routine path performs one unnecessary invalid-credential request and loses the stage of a real provider failure. Success means reconciling authority and diary, identifying every runner consumer, removing only the already-redundant invalid-key operation from the routine audio smoke, reporting whether failure occurred during explicit catalog discovery or public recognition without exposing provider text, and preserving one audio recognition, current model discovery, sanitized output, and nonzero exit on failure. This matters because frequent robustness testing must be cheap, understandable, and diagnostically honest; a test tool should not multiply API requests or erase the exact boundary it was meant to verify.
+```
+
+**消费者审计、两条路线与减法决定。** `invalid_credential` 只被 audio runner 本身和一个离线测试消费；active library、自动化 gate 和其他工具都不依赖它。#069/#082 是不可改写的历史 live 事实，不要求以后每次重放。路线①增加 `--probe-invalid-credential` mode 并保留整套 helper；路线②删除 audio 内重复能力，因为 image live runner 已独立保留同一 native credential mapping 的 invalid-key probe。轻量代理建议①，主代理选择②：日常 audio smoke 从三次 `models.list` + 一次 generate 减为显式 catalog、facade 自己的 catalog，以及最多一次 generate，不新增 flag 或第二种输出模式。
+
+**红灯与最小实现。** 测试先同时要求默认成功 JSON 不再有 `invalid_credential`、catalog/recognition provider error 必须带安全 stage、catalog 成功但目标模型缺失必须为 `model_selection`。修改 runner 前为 **4 failed / 1 passed in 0.10s**：默认仍多一个字段/请求，其余三个错误都没有 stage。产品 error 和 metadata 均未改变；runner 用一个局部 `_LiveSmokeFailure` 把原 typed error 与白名单阶段并排带到 `main`，没有调用产品异常的私有方法，也没有把 runner stage 写进公共 error details。删除固定假 key、credential code set、helper 和无条件调用，不保留 provider 原文。
+
+**验证与过度设计复盘。** runner 定向为 **5 passed in 0.04s**；最终 Google audio/image adapter 与两个 live-smoke 离线集合为 **68 passed in 0.42s**，changed files compileall 与 `git diff --check` 通过。敏感模式只命中测试中故意设置的假 key/隐私哨兵，不是凭据。默认成功继续证明一个 catalog 结果、一个 public recognition result、exact model、provider call count 和 nullable usage；失败仍 exit 1 且只输出 code/scope/stage。active README、authority 和 migration 说明日常请求减法，同时保留 #069/#082 以及 image runner 的 credential evidence。没有 live/API 调用、CLI mode/state machine、通用 telemetry、product API、provider retry/fallback、repair、`contracts/` 或 `worker/` 修改；两个用户文件保持未动。

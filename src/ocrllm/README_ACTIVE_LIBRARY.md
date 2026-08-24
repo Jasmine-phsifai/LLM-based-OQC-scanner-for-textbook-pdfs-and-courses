@@ -247,12 +247,15 @@ python tools/run_google_genai_audio_smoke.py `
   --timeout 120
 ```
 
-The script performs current catalog discovery, one recognition call, and one
-invalid-credential failure probe. It prints only a bounded JSON summary of
-status, call count, nullable token usage, and typed error code/scope. It never
-prints the transcript, source path, credential, or raw provider response and
-does not retry, choose another model, upload through the Files API, or fall back
-to another transport. The #068 gate returned
+The script performs current catalog discovery and one recognition call. It
+prints only a bounded JSON summary of status, call count, nullable token usage,
+and typed error code/scope; a failure also identifies `catalog`,
+`model_selection`, or `recognition` as the safe runner stage. It never prints
+the transcript, source path, credential, or raw provider response and does not
+retry, choose another model, upload through the Files API, or fall back to
+another transport. Credential-error behavior remains independently covered by
+the image smoke and the historical audio gates; routine audio runs do not send
+an extra invalid-key request. The #068 gate returned
 `PROVIDER_QUOTA_EXHAUSTED` / `model` on `gemini-3.1-pro-preview`. The #069 gate
 then used `gemini-2.5-flash` and completed one real public result with exactly
 one provider call, input/output usage 150/10, and a credential-scoped invalid-key

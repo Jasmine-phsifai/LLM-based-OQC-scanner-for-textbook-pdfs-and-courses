@@ -17,13 +17,16 @@ from ocrllm import (
     list_google_genai_models,
     recognize,
 )
-from ocrllm.errors import ConfigError, OCRLLMError, ProviderError
+from ocrllm.errors import ConfigError, OCRLLMError
 
 
-_INVALID_LIVE_GATE_KEY = "ocrllm-intentionally-invalid-audio-live-smoke-key"
-_CREDENTIAL_FAILURE_CODES = frozenset(
-    {"PROVIDER_AUTHENTICATION", "PROVIDER_PERMISSION_DENIED"}
-)
+class _LiveSmokeFailure(Exception):
+    """Keep a runner stage beside, not inside, a public product error."""
+
+    def __init__(self, stage: str, error: OCRLLMError) -> None:
+        self.stage = stage
+        self.error = error
+        super().__init__(stage)
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -36,49 +39,38 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, object]:
-    """Run catalog, one short-MP3 call, and bad-credential checks once."""
+    """Run current catalog discovery and one short-MP3 recognition call."""
     settings = GoogleGenAISettings()
-    models = list_google_genai_models(settings, arguments.timeout)
+    try:
+        models = list_google_genai_models(settings, arguments.timeout)
+    except OCRLLMError as error:
+        raise _LiveSmokeFailure("catalog", error) from None
     if arguments.model not in models:
-        raise ConfigError(
-            "The requested Google model is absent from the current catalog.",
-            code="CONFIG_INVALID",
+        raise _LiveSmokeFailure(
+            "model_selection",
+            ConfigError(
+                "The requested Google model is absent from the current catalog.",
+                code="CONFIG_INVALID",
+            ),
         ) from None
-    result = recognize(
-        arguments.audio,
-        config=Config(
-            provider=settings,
-            audio_model=AudioModelSettings(name=arguments.model),
-            timeout_seconds=arguments.timeout,
-        ),
-    )
+    try:
+        result = recognize(
+            arguments.audio,
+            config=Config(
+                provider=settings,
+                audio_model=AudioModelSettings(name=arguments.model),
+                timeout_seconds=arguments.timeout,
+            ),
+        )
+        recognition = _safe_recognition_summary(result, arguments.model)
+    except OCRLLMError as error:
+        raise _LiveSmokeFailure("recognition", error) from None
     return {
         "status": "passed",
         "catalog_count": len(models),
         "model": arguments.model,
-        "recognition": _safe_recognition_summary(result, arguments.model),
-        "invalid_credential": _require_invalid_credential_failure(arguments.timeout),
+        "recognition": recognition,
     }
-
-
-def _require_invalid_credential_failure(timeout_seconds: float) -> dict[str, str]:
-    try:
-        list_google_genai_models(
-            GoogleGenAISettings(api_key=_INVALID_LIVE_GATE_KEY),
-            timeout_seconds,
-        )
-    except ProviderError as error:
-        scope = error.details.get("failure_scope")
-        if error.code not in _CREDENTIAL_FAILURE_CODES or scope != "credential":
-            raise ConfigError(
-                "The invalid-credential probe did not return a credential failure.",
-                code="CONFIG_INVALID",
-            ) from None
-        return {"code": error.code, "scope": scope}
-    raise ConfigError(
-        "The invalid-credential probe unexpectedly succeeded.",
-        code="CONFIG_INVALID",
-    ) from None
 
 
 def _safe_recognition_summary(result: Any, model: str) -> dict[str, object]:
@@ -149,21 +141,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     try:
         summary = run_google_genai_audio_smoke(arguments)
+    except _LiveSmokeFailure as failure:
+        return _report_typed_failure(failure.error, failure.stage)
     except OCRLLMError as error:
-        print(
-            json.dumps(
-                {
-                    "status": "failed",
-                    "error": {
-                        "code": error.code,
-                        "scope": error.details.get("failure_scope"),
-                    },
-                },
-                sort_keys=True,
-                separators=(",", ":"),
-            )
-        )
-        return 1
+        return _report_typed_failure(error, None)
     except Exception:
         print(
             json.dumps(
@@ -175,6 +156,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
     return 0
+
+
+def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
+    print(
+        json.dumps(
+            {
+                "status": "failed",
+                "error": {
+                    "code": error.code,
+                    "scope": error.details.get("failure_scope"),
+                    "stage": stage,
+                },
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
+    return 1
 
 
 if __name__ == "__main__":

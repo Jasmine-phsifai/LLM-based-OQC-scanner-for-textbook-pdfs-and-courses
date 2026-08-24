@@ -281,6 +281,15 @@ invalid-key probe, transcript/provider-text publication, credential residue,
 or audio-snapshot residue. This is honest current outage evidence, not a
 regression claim and not a replacement for #069/#082's successful live proof.
 
+#099 simplified the maintained routine audio smoke based on that evidence. It
+still discovers the current catalog and makes at most one public recognition
+call, but no longer sends a second, deliberately invalid credential request on
+every run. The image smoke and #069/#082 retain independent credential-error
+evidence. Typed failures now report only a safe runner stage (`catalog`,
+`model_selection`, or `recognition`) alongside code/scope, so a future outage
+is not flattened across those boundaries. No provider text or product error
+contract is exposed or changed.
+
 Exit gate met: one public real-MP3 result completed with catalog/model selection,
 provider limits, exact call/usage evidence, and no false success. The earlier
 model-scoped quota failure remains recorded rather than hidden by retry or
