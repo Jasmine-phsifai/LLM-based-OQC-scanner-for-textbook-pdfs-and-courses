@@ -66,7 +66,7 @@ assert target in origin.parents, (target, origin)
 loaded = {name.split('.')[0] for name in sys.modules}
 forbidden = {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
-    'miniaudio', '_miniaudio', 'google', 'cv2', 'numpy', 'legacy_app',
+    'miniaudio', '_miniaudio', 'google', 'cv2', 'numpy', 'imageio_ffmpeg', 'legacy_app',
 }
 assert not loaded & forbidden, loaded & forbidden
 print(json.dumps({'wall': wall_ms, 'cpu': cpu_ms}))
@@ -156,6 +156,7 @@ try {
         --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
         --with 'google-genai>=2.9,<3' --with 'miniaudio>=1.71,<2' `
         --with 'pypdfium2==5.11.0' --with 'opencv-python>=4.13,<4.14' `
+        --with 'imageio-ffmpeg>=0.6,<0.7' `
         --python $python python -m pytest -q -p no:cacheprovider
     Assert-LastExitCode 'archived-source pytest failed'
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
@@ -199,7 +200,7 @@ assert target in origin.parents, (target, origin)
 loaded = {name.split('.')[0] for name in sys.modules}
 forbidden = {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
-    'miniaudio', '_miniaudio', 'google', 'cv2', 'numpy', 'legacy_app',
+    'miniaudio', '_miniaudio', 'google', 'cv2', 'numpy', 'imageio_ffmpeg', 'legacy_app',
 }
 assert not loaded & forbidden, loaded & forbidden
 print(ocrllm.__version__, origin)
@@ -262,7 +263,7 @@ print(sorted(declared_extras))
             'google' = @('google-genai')
             'audio,google' = @('miniaudio', 'google-genai')
             'pdf-vision' = @('pypdfium2', 'Pillow')
-            'video' = @('opencv-python', 'numpy')
+            'video' = @('opencv-python', 'numpy', 'imageio-ffmpeg')
         }
         foreach ($profile in @(
             'audio',
@@ -302,7 +303,7 @@ import ocrllm
 loaded = {name.split('.')[0] for name in sys.modules}
 assert not loaded & {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime', 'miniaudio',
-    '_miniaudio', 'google', 'cv2', 'numpy'
+    '_miniaudio', 'google', 'cv2', 'numpy', 'imageio_ffmpeg'
 }, loaded
 origin = pathlib.Path(ocrllm.__file__).resolve()
 assert pathlib.Path(sys.prefix).resolve() in origin.parents, origin
@@ -596,11 +597,19 @@ print(
             if ($profile -eq 'video') {
                 $videoSmoke = @'
 from pathlib import Path
+import subprocess
 import sys
 
 import cv2
+import imageio_ffmpeg
 import numpy as np
-from ocrllm import RetainedVideoFrame, VideoInfo, extract_video_frames, inspect_video
+from ocrllm import (
+    RetainedVideoFrame,
+    VideoInfo,
+    extract_video_audio,
+    extract_video_frames,
+    inspect_video,
+)
 
 path = Path(sys.argv[1]) / 'generated-valid.mp4'
 writer = cv2.VideoWriter(
@@ -632,7 +641,27 @@ assert [frame.frame_index for frame in frames] == sorted(
     frame.frame_index for frame in frames
 )
 assert not list((Path(sys.argv[1]) / 'video-output').glob('.ocrllm-video-*'))
-print(info, len(frames))
+audio_source = Path(sys.argv[1]) / 'generated-with-audio.mp4'
+completed = subprocess.run(
+    [
+        imageio_ffmpeg.get_ffmpeg_exe(),
+        '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+        '-i', str(path),
+        '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=16000:duration=2',
+        '-shortest', '-c:v', 'copy', '-c:a', 'aac', str(audio_source),
+    ],
+    check=False,
+    stdin=subprocess.DEVNULL,
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+    timeout=30,
+)
+assert completed.returncode == 0
+audio_output = Path(sys.argv[1]) / 'audio.mp3'
+assert extract_video_audio(audio_source, output_path=audio_output) == audio_output
+assert audio_output.is_file() and audio_output.stat().st_size > 0
+assert not list(Path(sys.argv[1]).glob('.ocrllm-audio-*'))
+print(info, len(frames), audio_output.stat().st_size)
 '@
                 $videoSmoke | & $profilePython -I - $profileVenv
                 Assert-LastExitCode 'installed public video inspection smoke failed'

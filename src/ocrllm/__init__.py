@@ -74,6 +74,7 @@ if TYPE_CHECKING:
     from .retained_video_frame import RetainedVideoFrame as RetainedVideoFrame
     from .result import RecognitionResult as RecognitionResult
     from .video.extract_video_frames import extract_video_frames as extract_video_frames
+    from .video.extract_video_audio import extract_video_audio as extract_video_audio
     from .video.inspect_video import inspect_video as inspect_video
     from .video_info import VideoInfo as VideoInfo
     from .vision_model_settings import VisionModelSettings as VisionModelSettings
@@ -152,6 +153,7 @@ _PUBLIC_IMPORTS = {
     "VideoInfo": (".video_info", "VideoInfo"),
     "get_capabilities": (".get_capabilities", "get_capabilities"),
     "extract_video_frames": (".video.extract_video_frames", "extract_video_frames"),
+    "extract_video_audio": (".video.extract_video_audio", "extract_video_audio"),
     "list_google_genai_models": (
         ".providers.google_genai.list_google_genai_models",
         "list_google_genai_models",
@@ -217,6 +219,7 @@ __all__ = [
     "recognize_batch",
     "recognize_video_frames",
     "extract_video_frames",
+    "extract_video_audio",
     "inspect_video",
     "get_capabilities",
     "list_google_genai_models",

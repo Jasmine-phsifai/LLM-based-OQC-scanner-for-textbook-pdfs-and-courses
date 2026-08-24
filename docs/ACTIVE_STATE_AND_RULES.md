@@ -824,6 +824,31 @@ models, retained eight frames from a generated MP4, and sent them through the
 public adapter as one `gemini-2.5-flash` call with reported usage of 2401 input
 and 15 output tokens. It remained memory-only and published no Markdown.
 
+#123 completes the extraction half of slice 4 as public
+`extract_video_audio(source, output_path=...) -> Path`. It accepts one validated
+local MP4 and an explicit `.mp3` target whose plain parent directory already
+exists. The lazy `video` extra now includes `imageio-ffmpeg>=0.6,<0.7`; its
+executable streams the first audio track to mono 16 kHz / 32 kbps MP3 in one
+exclusive same-directory staging file. A second bounded FFmpeg pass fully
+decodes that MP3 before `fsync` and atomic publication. Missing audio, backend
+failure, timeout, empty/invalid output, an existing target, and cleanup failure
+remain typed and cannot create false success or publish a partial target.
+Extraction has no media-duration policy; the independently existing short-MP3
+recognizer still rejects more than 300 decoded seconds or 25 MiB.
+
+Provider separation is deliberately expressed by two real calls rather than a
+new provider hierarchy: callers pass their image `Config` to
+`recognize_video_frames()` and a separate audio `Config` to `recognize()` for
+the extracted MP3. Either call can be made after the other fails. The current
+audio consumer remains native Google only; injected/general audio providers,
+long-audio routing, a combined video result, shared hotwords, composition,
+resume, and worker support remain unavailable. The bounded live gate first
+observed honest model-scoped quota exhaustion from the configured
+`gemini-3.1-pro-preview` with one attempted call and no fallback. A separate
+explicit `gemini-2.5-flash` run then discovered 37 models and successfully
+recognized a 4.783-second MP3 extracted from a generated speech MP4 in exactly
+one call, reporting 193 input and 12 output tokens and publishing no Markdown.
+
 The #121 source suite passes 1,351 tests, and a fresh 215,956-byte wheel installed
 outside the repository retained three ordered, decodable JPEGs from a generated
 72-frame MP4 with no staging residue. The all-profile clean-archive gate is not

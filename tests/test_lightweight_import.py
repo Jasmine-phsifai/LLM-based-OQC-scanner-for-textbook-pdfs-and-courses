@@ -65,6 +65,7 @@ def test_public_video_symbols_do_not_load_the_optional_backend():
         "import ocrllm; "
         "inspect_video=ocrllm.inspect_video; "
         "extract_video_frames=ocrllm.extract_video_frames; "
+        "extract_video_audio=ocrllm.extract_video_audio; "
         "recognize_video_frames=ocrllm.recognize_video_frames; "
         "recognize=ocrllm.recognize; "
         "recognize_batch=ocrllm.recognize_batch; "
@@ -72,13 +73,15 @@ def test_public_video_symbols_do_not_load_the_optional_backend():
         "VideoInfo=ocrllm.VideoInfo; "
         "assert callable(inspect_video); "
         "assert callable(extract_video_frames); "
+        "assert callable(extract_video_audio); "
         "assert callable(recognize_video_frames); "
         "assert callable(recognize); "
         "assert callable(recognize_batch); "
         "assert RetainedVideoFrame.__module__ == 'ocrllm.retained_video_frame'; "
         "assert VideoInfo.__module__ == 'ocrllm.video_info'; "
         "loaded={name.split('.')[0] for name in sys.modules}; "
-        "assert not loaded & {'cv2','numpy'}, loaded & {'cv2','numpy'}"
+        "assert not loaded & {'cv2','numpy','imageio_ffmpeg','miniaudio'}, "
+        "loaded & {'cv2','numpy','imageio_ffmpeg','miniaudio'}"
     )
 
     completed = subprocess.run(

@@ -50,6 +50,7 @@ from ocrllm import (
     VideoError,
     VideoInfo,
     VisionModelSettings,
+    extract_video_audio,
     extract_video_frames,
     recognize,
     recognize_batch,
@@ -216,26 +217,48 @@ audio, and persisted/resumable audio remain unavailable. #120 explicitly rejects
 legacy repair-Markdown compatibility. PDF recognition is offline- and
 Google-live-proven.
 
-The provider-free video inspection and retained-frame slices are available:
+The provider-free video parsing and separately configured recognition slices
+are available:
 
 ```python
+from pathlib import Path
+
 from ocrllm import (
+    AudioModelSettings,
     Config,
     GoogleGenAISettings,
+    VisionModelSettings,
+    extract_video_audio,
     extract_video_frames,
     inspect_video,
+    recognize,
     recognize_video_frames,
 )
 
 info = inspect_video("lecture.mp4")
 frames = extract_video_frames("lecture.mp4", output_dir="output")
-outcomes = recognize_video_frames(
+image_outcomes = recognize_video_frames(
     frames,
-    config=Config(provider=GoogleGenAISettings()),
+    config=Config(
+        provider=GoogleGenAISettings(),
+        vision_model=VisionModelSettings(name="gemini-2.5-flash"),
+    ),
+)
+video_root = Path("output") / "lecture"
+audio_path = extract_video_audio(
+    "lecture.mp4",
+    output_path=video_root / "audio.mp3",
+)
+audio_result = recognize(
+    audio_path,
+    config=Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="gemini-2.5-flash"),
+    ),
 )
 ```
 
-Install `ocrllm[video]` for lazy `opencv-python>=4.13,<4.14` support. The function
+Install `ocrllm[video]` for lazy OpenCV and `imageio-ffmpeg` support. The function
 accepts one local MP4, validates metadata and a real first-frame decode, returns
 immutable `VideoInfo`, writes nothing, and makes no provider call.
 `extract_video_frames()` adds five-second coarse thumbnails, bounded
@@ -246,9 +269,15 @@ overwriting or resuming it. `recognize_video_frames()` accepts only the exact
 ordered tuple returned by this library and reuses ordinary image recognition
 in groups of at most eight. It is memory-only and returns one existing
 `BatchItemOutcome` per group; it does not yet compose a video document or
-persist/resume recognition. Audio extraction, an independently configurable
-audio provider, composition, and worker routing are not implemented yet.
-Plain `import ocrllm` does not import OpenCV or NumPy.
+persist/resume recognition. `extract_video_audio()` requires the output parent
+to exist, rejects an existing target, and atomically publishes a fully decoded
+mono 16 kHz / 32 kbps MP3. Extraction itself has no duration ceiling. The
+current audio recognizer remains the separately installed `audio,google`
+short-MP3 slice (maximum 300 decoded seconds and 25 MiB), so longer extracted
+tracks fail honestly at recognition. Image and audio providers are selected by
+the two separate `Config` objects; there is no combined video result or
+automatic fallback. Composition and worker routing remain unavailable. Plain
+`import ocrllm` does not import OpenCV, NumPy, or imageio-ffmpeg.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.

@@ -34,7 +34,10 @@ As of 2026-08-24:
   and complete-directory JPEG publication. `recognize_video_frames()` feeds
   the exact ordered retained-frame tuple through the existing image path in
   groups of at most eight and returns honest batch outcomes. It is memory-only;
-  audio extraction and final video composition are not implemented yet.
+  `extract_video_audio()` now atomically publishes a fully decoded mono MP3
+  through the lazy video extra. Frame and audio recognition use separate
+  `Config` calls, so their providers can differ. Long-audio recognition and
+  final video composition are not implemented yet.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
@@ -78,6 +81,9 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - exposes memory-only `recognize_video_frames()` for a nonempty exact tuple of
   library `RetainedVideoFrame` values; it reuses image preflight and recognition
   in ordered groups of at most eight and creates no video-specific provider.
+- exposes `extract_video_audio()` for one explicit `.mp3` target under an
+  existing plain directory; it stages, fully decodes, and atomically publishes
+  the first audio track without imposing the short recognizer's duration limit.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The

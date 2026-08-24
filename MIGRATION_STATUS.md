@@ -388,8 +388,10 @@ The following directions remain traceable but are not current work:
   phase-gated and unavailable. #120 adds lazy MP4 inspection, #121 adds
   provider-free negative-feedback frame selection plus retained JPEGs, and
   #122 feeds the exact ordered retained-frame tuple through ordinary image
-  recognition in groups of at most eight. Video composition and audio
-  extraction remain unavailable. The direct PDF vision
+  recognition in groups of at most eight. #123 adds atomic, fully decoded MP3
+  extraction; callers use separate image and audio `Config` calls, allowing
+  different providers without a provider framework. Long-audio recognition
+  and video composition remain unavailable. The direct PDF vision
   facade and its ordinary image-sidecar resume are implemented; the
   experimental direct short-audio API is implemented and live-proven only for
   one in-memory MP3 of at most 300 seconds.

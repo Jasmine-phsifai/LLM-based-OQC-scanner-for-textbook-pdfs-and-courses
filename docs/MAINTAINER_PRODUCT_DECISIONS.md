@@ -285,6 +285,15 @@ is often accepted.
   does not authorize a provider hierarchy, fallback pool, or video-specific
   vision protocol. The next slice is audio extraction with a genuinely
   independent audio provider binding.
+- #123 makes the provider split concrete without changing `Config`: frame
+  recognition and extracted-MP3 recognition are two independent calls with two
+  independently supplied configs. Audio extraction uses the lazy `video` extra
+  and `imageio-ffmpeg`, writes only a same-directory staging file, fully decodes
+  it before atomic publication, and rejects existing targets. Extraction has no
+  duration ceiling; the current Google short-audio consumer keeps its separate
+  300-second/25-MiB limits. Do not add a combined video result, provider base
+  class, fallback pool, hotword coupling, long-audio route, or resume contract
+  before their observed consumers require them.
 
 ## Resolved confirmation and next authority
 
