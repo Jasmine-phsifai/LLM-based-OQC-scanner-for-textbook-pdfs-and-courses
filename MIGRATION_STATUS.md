@@ -394,11 +394,15 @@ The following directions remain traceable but are not current work:
   frame group self-identifying with exact frame indices and timestamps so later
   composition cannot infer membership from a changed group size. #125 gives a
   truly silent MP4 the distinct `VIDEO_NO_AUDIO_STREAM` code while corrupt
-  declared audio remains `VIDEO_INVALID`. Long-audio recognition and video
-  composition remain unavailable. The direct PDF vision
+  declared audio remains `VIDEO_INVALID`. Long-audio recognition and final
+  video-document composition remain unavailable. The direct PDF vision
   facade and its ordinary image-sidecar resume are implemented; the
   experimental direct short-audio API is implemented and live-proven only for
-  one in-memory MP3 of at most 300 seconds.
+  one in-memory MP3 of at most 300 seconds. Public `recognize_video()` now
+  orchestrates the retained-frame and extracted-audio branches with separate
+  configs and returns a typed complete/partial/failed outcome while retaining
+  owned media. It does not yet compose final Markdown, resume video work, route
+  long audio, or expose a worker command.
 
 ## Obsolete Prose Kept For Trace
 

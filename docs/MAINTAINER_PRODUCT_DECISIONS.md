@@ -306,6 +306,15 @@ is often accepted.
   and provider errors remain real failures. Keep this as a code on the existing
   error class—do not add a no-audio subclass, ffprobe/PyAV dependency, raw
   FFmpeg-log parser, or successful empty transcript.
+- #126 makes provider separation executable through one public
+  `recognize_video()` call. The caller supplies separate exact image and audio
+  `Config` objects; both are validated before media output or provider dispatch.
+  The immutable `VideoRecognitionOutcome` retains frames, any extracted MP3,
+  ordered frame outcomes or a typed frame error, and exactly one audio result
+  or typed audio error. Its complete/partial/failed status is computed; only
+  `VIDEO_NO_AUDIO_STREAM` is normal audio absence. Do not turn this into legacy
+  Markdown compatibility, a final document format, cleanup transaction, resume
+  manifest, provider hierarchy, retry, fallback, or API pool.
 
 ## Resolved confirmation and next authority
 

@@ -893,6 +893,64 @@ with no target or staging residue, while a real AAC MP4 published one
 nonempty 2,672-byte MP3. The disposable proof root was removed; no provider or
 credential was used.
 
+#126 completes the first narrow orchestration/lifecycle boundary as public
+`recognize_video(source, output_dir=..., image_config=..., audio_config=...)
+-> VideoRecognitionOutcome`. Both exact configs are fully validated before
+media output or provider dispatch. Frame extraction first establishes the one
+owned same-stem output root; after that gate, audio extraction, frame-group
+recognition, and short-audio recognition settle independently. A failure in one
+provider branch cannot discard the other branch's paid success. Retained JPEGs
+and a successfully extracted MP3 remain caller-visible even when later
+recognition fails.
+
+The immutable outcome carries the output root, exact retained-frame tuple,
+ordered `BatchItemOutcome` groups or one typed frame-branch error, and exactly
+one audio result or typed audio error plus the MP3 when it was published.
+`status` and `audio_state` are computed rather than independently stored. All
+frame groups plus recognized audio is complete; all frame groups plus
+`VIDEO_NO_AUDIO_STREAM` is also honestly complete as frame-only; any usable
+success plus another real failure is partial; no usable recognition is failed.
+Cancellation still propagates rather than becoming an ordinary branch error.
+
+This is a Python orchestration result, not final video content. It adds no
+combined Markdown, legacy format, cleanup transaction, resume/checkpoint,
+audio/frame alignment, shared hotwords, long-audio routing, retry, fallback,
+provider hierarchy, worker, GUI, or social workflow. The source suite passes
+1,382 tests. A fresh 224,623-byte wheel (SHA-256
+`105fa6cc56617bcc410173ed2d4cad2db456638bf8e82fd99f51830e6773da3b`)
+installed outside the repository kept
+the public facade and outcome importable without loading OpenCV, NumPy,
+imageio-ffmpeg, or miniaudio, then completed one local video with separate
+injected frame and fake-audio calls while retaining one JPEG and the extracted
+MP3; its disposable root was removed.
+
+The bounded live gate discovered 37 current models and used explicit
+`gemini-2.5-flash` image and audio configs for one generated speech-and-slide
+MP4. The public call retained one image group and a 14,480-byte,
+approximately 3.483-second MP3, made exactly one Google image generation and
+one Google audio generation, and returned `status="complete"` with
+`audio_state="recognized"`. Provider token usage was unavailable for both
+settled results and remains unknown rather than zero. There was no retry,
+fallback, model switch, final Markdown, credential/content disclosure, stderr,
+or temporary residue.
+
+Two earlier live fixture attempts remain useful negative evidence. A blank
+frame plus a sine tone produced two honest one-call
+`PROVIDER_RESPONSE_INVALID` failures; a committed text-bearing image plus the
+same decoder-valid 0.51-second tone produced a successful image branch and an
+honest partial outcome with audio `PROVIDER_RESPONSE_INVALID`. The final gate
+changed the fixture to the already-proven synthetic-speech recipe rather than
+weakening response validation or retrying the same invalid content.
+
+The maintained all-profile clean-archive gate was started against committed
+product tree `92cd179` but did not reach a stage verdict within a 30-minute
+bound. Its responsive PowerShell/uv/Python chain remained in archive/dependency
+setup, with no isolated wheel or target install, so the run was stopped rather
+than duplicated or called successful. The exact gate-owned temporary root was
+verified under the system temporary directory and removed. This is incomplete
+all-profile evidence, not a source, wheel, or provider failure; the separate
+fresh-wheel proof above remains the installed-package evidence for #126.
+
 The #121 source suite passes 1,351 tests, and a fresh 215,956-byte wheel installed
 outside the repository retained three ordered, decodable JPEGs from a generated
 72-frame MP4 with no staging residue. The all-profile clean-archive gate is not

@@ -71,12 +71,16 @@ if TYPE_CHECKING:
     from .recognize_video_frames import (
         recognize_video_frames as recognize_video_frames,
     )
+    from .recognize_video import recognize_video as recognize_video
     from .retained_video_frame import RetainedVideoFrame as RetainedVideoFrame
     from .result import RecognitionResult as RecognitionResult
     from .video.extract_video_frames import extract_video_frames as extract_video_frames
     from .video.extract_video_audio import extract_video_audio as extract_video_audio
     from .video.inspect_video import inspect_video as inspect_video
     from .video_info import VideoInfo as VideoInfo
+    from .video_recognition_outcome import (
+        VideoRecognitionOutcome as VideoRecognitionOutcome,
+    )
     from .vision_model_settings import VisionModelSettings as VisionModelSettings
 
 
@@ -151,6 +155,10 @@ _PUBLIC_IMPORTS = {
     "VideoError": (".errors", "VideoError"),
     "VisionModelSettings": (".vision_model_settings", "VisionModelSettings"),
     "VideoInfo": (".video_info", "VideoInfo"),
+    "VideoRecognitionOutcome": (
+        ".video_recognition_outcome",
+        "VideoRecognitionOutcome",
+    ),
     "get_capabilities": (".get_capabilities", "get_capabilities"),
     "extract_video_frames": (".video.extract_video_frames", "extract_video_frames"),
     "extract_video_audio": (".video.extract_video_audio", "extract_video_audio"),
@@ -168,6 +176,7 @@ _PUBLIC_IMPORTS = {
         ".recognize_video_frames",
         "recognize_video_frames",
     ),
+    "recognize_video": (".recognize_video", "recognize_video"),
     "inspect_video": (".video.inspect_video", "inspect_video"),
 }
 
@@ -214,10 +223,12 @@ __all__ = [
     "UnsupportedFormat",
     "VideoError",
     "VideoInfo",
+    "VideoRecognitionOutcome",
     "VisionModelSettings",
     "recognize",
     "recognize_batch",
     "recognize_video_frames",
+    "recognize_video",
     "extract_video_frames",
     "extract_video_audio",
     "inspect_video",
@@ -237,10 +248,14 @@ def __getattr__(name: str):
 
     from importlib import import_module
 
-    if name == "recognize_video_frames":
+    if name in {"recognize_video", "recognize_video_frames"}:
         video_frames_value = getattr(
             import_module(".recognize_video_frames", __name__),
             "recognize_video_frames",
+        )
+        video_value = getattr(
+            import_module(".recognize_video", __name__),
+            "recognize_video",
         )
         # Importing the adapter loads these sibling modules and would otherwise
         # leave module objects on the public package under the function names.
@@ -252,7 +267,8 @@ def __getattr__(name: str):
         globals()["recognize"] = recognize_value
         globals()["recognize_batch"] = batch_value
         globals()["recognize_video_frames"] = video_frames_value
-        return video_frames_value
+        globals()["recognize_video"] = video_value
+        return globals()[name]
 
     if name in {"recognize", "recognize_batch"}:
         recognize_value = getattr(import_module(".recognize", __name__), "recognize")

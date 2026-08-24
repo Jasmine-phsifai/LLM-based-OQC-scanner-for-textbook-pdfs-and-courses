@@ -36,8 +36,10 @@ As of 2026-08-24:
   groups of at most eight and returns honest batch outcomes. It is memory-only;
   `extract_video_audio()` now atomically publishes a fully decoded mono MP3
   through the lazy video extra. Frame and audio recognition use separate
-  `Config` calls, so their providers can differ. Long-audio recognition and
-  final video composition are not implemented yet.
+  `Config` objects, so their providers can differ. `recognize_video()` now
+  settles both branches into a typed `VideoRecognitionOutcome` without
+  inventing final Markdown. Long-audio recognition, final document composition,
+  resume, and worker routing are not implemented yet.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
@@ -89,6 +91,10 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   have to reconstruct group membership after recognition.
 - distinguishes a valid MP4 with no audio stream (`VIDEO_NO_AUDIO_STREAM`) from
   a declared audio stream that is corrupt or cannot be decoded (`VIDEO_INVALID`).
+- exposes `recognize_video()` as one Python-library orchestration call with
+  explicit image and audio configs; it retains frames and extracted MP3,
+  preserves each branch's result or typed error, and computes honest
+  `complete`, `partial`, or `failed` status without generating final Markdown.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The

@@ -49,11 +49,13 @@ from ocrllm import (
     UnsupportedFormat,
     VideoError,
     VideoInfo,
+    VideoRecognitionOutcome,
     VisionModelSettings,
     extract_video_audio,
     extract_video_frames,
     recognize,
     recognize_batch,
+    recognize_video,
     recognize_video_frames,
     get_capabilities,
     get_provider_error_disposition,
@@ -232,6 +234,7 @@ from ocrllm import (
     extract_video_frames,
     inspect_video,
     recognize,
+    recognize_video,
     recognize_video_frames,
 )
 
@@ -252,6 +255,19 @@ audio_path = extract_video_audio(
 audio_result = recognize(
     audio_path,
     config=Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="gemini-2.5-flash"),
+    ),
+)
+
+video_outcome = recognize_video(
+    "another-lecture.mp4",
+    output_dir="output",
+    image_config=Config(
+        provider=GoogleGenAISettings(),
+        vision_model=VisionModelSettings(name="gemini-2.5-flash"),
+    ),
+    audio_config=Config(
         provider=GoogleGenAISettings(),
         audio_model=AudioModelSettings(name="gemini-2.5-flash"),
     ),
@@ -281,8 +297,14 @@ valid but has no audio stream; present-but-corrupt or undecodable audio remains
 current audio recognizer remains the separately installed `audio,google`
 short-MP3 slice (maximum 300 decoded seconds and 25 MiB), so longer extracted
 tracks fail honestly at recognition. Image and audio providers are selected by
-the two separate `Config` objects; there is no combined video result or
-automatic fallback. Composition and worker routing remain unavailable. Plain
+the two separate `Config` objects. `recognize_video()` uses those same proven
+boundaries and returns a `VideoRecognitionOutcome`: retained media, ordered
+frame-group outcomes or a typed frame error, and an audio result or typed audio
+error. A silent MP4 can therefore complete as frame-only, while corrupt audio or
+a provider failure remains partial or failed. The call does not compose or
+publish final Markdown and does not delete its retained frames or MP3.
+Automatic fallback, resume, final document composition, and worker routing
+remain unavailable. Plain
 `import ocrllm` does not import OpenCV, NumPy, or imageio-ffmpeg.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail

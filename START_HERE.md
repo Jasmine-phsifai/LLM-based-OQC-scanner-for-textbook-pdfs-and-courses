@@ -131,8 +131,11 @@ and complete-directory retained JPEG publication through
 validated MP3 so a separate audio config/provider can recognize it, and #124
 keeps exact frame indices/timestamps on every settled frame-group outcome.
 #125 distinguishes a truly silent MP4 from corrupt declared audio without
-parsing FFmpeg logs. Composition and lifecycle follow from these observed
-outcomes. The audio slice
+parsing FFmpeg logs. #126 adds public `recognize_video()` with separate image
+and audio configs and a typed `VideoRecognitionOutcome` that retains honest
+branch results/errors and media artifacts without composing final Markdown.
+Final document composition, cancellation refinement, and resume follow from
+these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. The queue explicitly stops further proactive filesystem/accounting edge
 scans.
@@ -211,10 +214,10 @@ request/batch image resume. Candidate switching is opt-in, bounded,
 disposition-gated, and fully disclosed offline. Experimental direct Google
 short-audio recognition is live-proven but remains memory-only; its published
 gate is not a transcription-quality evaluation. PDF repair, long audio, and
-persisted/resumable audio remain unavailable. Video recognition is not yet
-available as one composed facade, but MP4 inspection, retained-frame extraction
-and recognition, plus independently configured extracted-audio recognition are
-active P1-e slices. Local user
+persisted/resumable audio remain unavailable. Video recognition is now
+available as one typed orchestration facade over retained-frame extraction and
+recognition plus independently configured extracted-audio recognition. It does
+not yet compose a final video document or resume those branches. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 
