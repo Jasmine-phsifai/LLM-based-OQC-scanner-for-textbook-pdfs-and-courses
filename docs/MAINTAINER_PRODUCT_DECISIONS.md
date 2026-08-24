@@ -28,6 +28,10 @@ or independently reorder it.
   to a lightweight subagent. While that workflow runs, the primary agent should
   advance an independent read-only audit, focused regression, or documentation
   task instead of polling or repeating the same procedure.
+- When a maintained release command has concrete evidence of hanging, give that
+  exact stage a visible start message and a hard failure bound. Do not turn one
+  stalled dependency preparation into a downloader, cache manager, retry
+  policy, or blanket timeout for stages that have not shown the same defect.
 
 ## Repository, publication, and UI boundary
 

@@ -1,6 +1,8 @@
 param(
     [string]$PythonPath = 'D:\Anaconda\envs\OCRLLM\python.exe',
-    [switch]$SkipOptionalProfiles
+    [switch]$SkipOptionalProfiles,
+    [ValidateRange(1, 3600)]
+    [int]$ArchivedSourceTestTimeoutSeconds = 1200
 )
 
 Set-StrictMode -Version Latest
@@ -11,6 +13,31 @@ function Assert-LastExitCode {
     if ($LASTEXITCODE -ne 0) {
         throw $Message
     }
+}
+
+function Invoke-BoundedProcess {
+    param(
+        [string]$StageName,
+        [string]$FilePath,
+        [string[]]$ArgumentList,
+        [int]$TimeoutSeconds
+    )
+
+    Write-Output "stage started: $StageName (timeout ${TimeoutSeconds}s)"
+    $process = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList `
+        -NoNewWindow -PassThru
+    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+        Write-Output "stage timeout: $StageName"
+        & taskkill.exe /PID $process.Id /T /F 2>$null | Out-Null
+        if (-not $process.WaitForExit(5000)) {
+            throw "stage process could not be stopped: $StageName"
+        }
+        throw "stage exceeded ${TimeoutSeconds}s: $StageName"
+    }
+    if ($process.ExitCode -ne 0) {
+        throw "stage failed with exit code $($process.ExitCode): $StageName"
+    }
+    Write-Output "stage completed: $StageName"
 }
 
 function Add-ExecutableDirectoryToPath {
@@ -152,13 +179,25 @@ try {
 
     Push-Location $sourceRoot
     $locationDepth += 1
-    & uv run --no-project --isolated --with 'Pillow==12.3.0' `
-        --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
-        --with 'google-genai>=2.9,<3' --with 'miniaudio>=1.71,<2' `
-        --with 'pypdfium2==5.11.0' --with 'opencv-python>=4.13,<4.14' `
-        --with 'imageio-ffmpeg>=0.6,<0.7' `
-        --python $python python -m pytest -q -p no:cacheprovider
-    Assert-LastExitCode 'archived-source pytest failed'
+    $uv = (Get-Command 'uv' -CommandType Application).Source
+    $archivedSourceTestArguments = @(
+        'run', '--no-project', '--isolated',
+        '--with', 'Pillow==12.3.0',
+        '--with', 'pytest>=8,<10',
+        '--with', 'openai>=2.30,<3',
+        '--with', 'google-genai>=2.9,<3',
+        '--with', 'miniaudio>=1.71,<2',
+        '--with', 'pypdfium2==5.11.0',
+        '--with', 'opencv-python>=4.13,<4.14',
+        '--with', 'imageio-ffmpeg>=0.6,<0.7',
+        '--python', ('"' + $python + '"'),
+        'python', '-m', 'pytest', '-q', '-p', 'no:cacheprovider'
+    )
+    Invoke-BoundedProcess `
+        -StageName 'archived-source dependency preparation and pytest' `
+        -FilePath $uv `
+        -ArgumentList $archivedSourceTestArguments `
+        -TimeoutSeconds $ArchivedSourceTestTimeoutSeconds
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
         --python $python `
         python -m tests.quality.generators.generate_phase1_fixtures --check

@@ -972,6 +972,17 @@ verified under the system temporary directory and removed. This is incomplete
 all-profile evidence, not a source, wheel, or provider failure; the separate
 fresh-wheel proof above remains the installed-package evidence for #126.
 
+#128 corrected the gate's silence without claiming the missing all-profile
+evidence. The exact first isolated `uv run` now announces archive dependency
+preparation plus pytest, has a configurable 1--3,600-second command bound with
+a 1,200-second default, terminates its Windows process tree on timeout, and
+returns failure before the unchanged `finally` cleanup runs. A no-network
+regression used a local sleeping process and proved the started/timeout output
+and nonzero exit in about one second. Only this twice-observed stalled stage is
+bounded; later hypothetical stalls were not used to create a general download,
+retry, or cache framework. A new clean-archive all-profile pass is still
+required before that gate can be called complete.
+
 The #121 source suite passes 1,351 tests, and a fresh 215,956-byte wheel installed
 outside the repository retained three ordered, decodable JPEGs from a generated
 72-frame MP4 with no staging residue. The all-profile clean-archive gate is not

@@ -3053,3 +3053,19 @@ Atomic task — Iteration #127: define and, if current evidence makes it unambig
 **两条可行路线与推荐。** 路线 A（推荐）把两份 Config 的取消解释为 branch-scoped：继续使用现有 `frame_error`/`audio_error` 承载 `Cancelled`，另一分支照常结算；audio 信号在开始时已 set 就不抽 MP3；两边开始时都 set 才在输出前直接停止。它不需要新字段、enum、异常类、checkpoint 或 provider 改动，而且与当前 frame batch 行为及 provider 分离一致。路线 B 把任一信号解释为 whole-call cancellation；但若取消发生在一个 paid result 之后，要诚实传播又不丢结果，就必须新增“异常携带 outcome”或 checkpoint/public recovery 合同，明显更大。维持当前图像分支化、音频全局化、静音时忽略的行为没有一致解释。
 
 **为何本轮不写代码。** #126 authority 写过“cancellation still propagates”，而 #123 日记又明确两份 Config 可以有不同 cancellation signals；active 实现实际上已经一半 branch-scoped。选择 A 或 B 会改变公开 lifecycle 语义，不能把主代理推荐悄悄当成维护者授权。本轮因此完成证据审计、把两个方案和推荐写入唯一 authority 与 maintainer decision record，并向维护者提出明确选择；没有增加会锁定错误方向的测试，没有改 source、provider、依赖、legacy、frozen `contracts/`/`worker/` 或两个用户未跟踪文件，也没有 API 调用。过度设计风险主要是为了 whole-call propagation 立刻创建 outcome-carrying exception、通用 cancellation coordinator、Popen 进程树取消或 resume manifest；在产品选择前全部不做。
+
+## #128 — 2026-08-25：让已复现的 clean gate 停滞可见且有界
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #128: make the maintained clean-archive gate fail or progress visibly within a declared bound when isolated dependency preparation stalls, without weakening any archive, wheel, import, or dependency-profile check. Success means locating the exact unbounded command behind both recorded OpenCV/NumPy transfer stalls, proving the behavior through a focused no-network regression or script-level harness, adding the smallest readable timeout/stage contract, preserving cleanup and exit failure, and avoiding a cache manager, downloader framework, or duplicate gate. This matters because a maturity gate that can remain silent indefinitely cannot reliably protect releases, even when the product and fresh-wheel proofs are green.
+```
+
+**假设、两条路线与证据修正。** 开始时假设问题属于隔离依赖准备，不是视频产品代码。路线 A 是给整套脚本套总超时；路线 B 是只限制已有两次真实停滞证据的命令。逐行复核确认第一个 `uv run` 同时解析/传输 Pillow、OpenAI、Google、miniaudio、PDFium、OpenCV、NumPy 和 imageio-ffmpeg，再运行归档源码全套测试；#121 卡在 38.3 MiB OpenCV 与 12.3 MiB NumPy 传输，#126 又在同一 archive/dependency setup 维持 30 分钟无阶段结论。后面的 fixture check、wheel build 和 profile pip 理论上也可能停，但没有同等事实。本轮因此选择 B；没有把假想风险扩大成全脚本策略。
+
+**失败优先与最小修复。** 原脚本只有外部命令退出后的 `$LASTEXITCODE`，运行中没有阶段文本或时限。新回归不运行 gate、不下载依赖，而是从脚本读取内部时限函数，用本机 PowerShell 启动确定休眠 30 秒的子进程：约 1 秒后得到非零退出，同时精确出现 `stage started` 与 `stage timeout`，且不出现 `stage completed`。实现只给第一次 archive dependency/pytest 命令增加一个内部进程包装：默认 1,200 秒，调用者可在 1—3,600 秒内收紧或放宽；超时用 Windows 进程树终止，终止后的等待再限制为 5 秒，避免清理动作本身二次挂死。原来的 archive、依赖集合、pytest 参数、wheel/profile 检查和 `finally` 临时目录清理没有降低或重写。
+
+**验证与诚实边界。** 新脚本回归为 **2 passed in 1.42s**，PowerShell AST、`compileall -q src tests tools` 和 `git diff --check` 通过。轻量任务首次跑 root 全套得到 **1,382 passed, 2 failed in 56.52s**；两项都是进程 PATH 没有 Node，和本轮改动无关。主代理随后用精确文件搜索找到已安装的 `D:\Anaconda\envs\STA\node.exe`，轻量任务只重跑两个失败项，得到 **2 passed in 0.79s**，没有安装或下载。因此当前改动的全部测试已通过，但不虚构为“一次 root 命令全绿”。没有运行新的 all-profile clean gate，所以 #126 的 incomplete 结论仍有效；本轮修的是下次运行可观测、有上限，而不是假称网络门禁已经通过。
+
+**过度设计复查。** 最可疑之处是内部 helper 看起来可能演化成通用 process runner。当前它留在单一 gate 脚本内，只有一个生产调用，静态回归也锁定调用数为一；没有第二脚本、下载器、缓存管理、包级重试、heartbeat daemon 或每个外部命令的统一策略。新增测试通过 AST 只抽取这个函数，是为了在零网络下执行真实时限逻辑，而不是建立另一套 gate。产品 `src/ocrllm`、provider、视频结果、legacy、冻结 `contracts/`/`worker/` 和两个用户未跟踪文件均未改动。#127 的取消语义仍等待维护者选择 A/B，本轮没有绕过该决定。
