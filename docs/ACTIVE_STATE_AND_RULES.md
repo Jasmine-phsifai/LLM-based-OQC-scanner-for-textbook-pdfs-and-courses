@@ -338,6 +338,16 @@ and only group two dispatched. `recognize_batch()` deliberately rejects PDF in
 this first slice. The old planned 500-page cap, arbitrary page/password/partial
 options, and per-page attribution are not part of this contract.
 
+#073 strengthens the existing `pdf-vision` release profile without changing
+the product contract. The isolated installed wheel must build a real 16-page
+PDF with PDFium, call public `recognize()` through an injected no-network
+provider while the execution policy permits four concurrent requests, and
+still observe exactly two serial groups of eight. The smoke also requires two
+ordinary complete image sidecars, ordered range markers, the final Markdown,
+an empty configured snapshot parent, and no retained rendered or temporary
+PNGs. This replaces the weaker one-page backend-only smoke; it does not replace
+the Google live exit gate.
+
 The authorized Google exit attempt stopped with zero provider calls because
 neither `GOOGLE_API_KEY`/`GEMINI_API_KEY` nor `OCRLLM/QCR` QSettings supplied a
 credential in the current `13301` profile. P1-c therefore remains the immediate

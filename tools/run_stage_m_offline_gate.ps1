@@ -428,49 +428,128 @@ print(snapshot.duration_seconds, request.wire_byte_upper_bound)
 
             if ($profile -eq 'pdf-vision') {
                 $pdfiumSmoke = @'
+import json
 from pathlib import Path
 import sys
 
 from PIL import Image
 import pypdfium2 as pdfium
+from ocrllm import (
+    Config,
+    RecognitionExecutionPolicy,
+    RecognitionPreferences,
+    recognize,
+)
 
 assert pdfium.PYPDFIUM_INFO.api_tag == (5, 11, 0)
 assert pdfium.PYPDFIUM_INFO.beta is None
 assert callable(pdfium.PdfDocument)
 
-pdf_path = Path(sys.argv[1]) / 'generated-valid.pdf'
-png_path = Path(sys.argv[1]) / 'generated-page.png'
+smoke_root = Path(sys.argv[1]) / 'pdf-public-smoke'
+smoke_root.mkdir()
+pdf_path = smoke_root / 'generated-valid.pdf'
+output_directory = smoke_root / 'output'
 with pdfium.PdfDocument.new() as created:
-    created_page = created.new_page(72, 72)
-    created_page.close()
+    for page_index in range(16):
+        created_page = created.new_page(72 + page_index * 2, 72)
+        created_page.close()
     created.save(pdf_path)
+assert created.raw is None
 
-with pdfium.PdfDocument(pdf_path) as document:
-    assert len(document) == 1
-    assert document.get_page_size(0) == (72.0, 72.0)
-    page = document.get_page(0)
-    bitmap = None
-    image = None
-    try:
-        bitmap = page.render(scale=1)
-        image = bitmap.to_pil()
-        image.save(png_path, format='PNG')
-    finally:
-        if image is not None:
-            image.close()
-        if bitmap is not None:
-            bitmap.close()
-        page.close()
+class Provider:
+    resume_identity = 'offline-installed-pdf-provider-v1'
 
-with Image.open(png_path) as rendered:
-    rendered.verify()
-assert document.raw is None
-assert page.raw is None
-assert bitmap.raw is None
-print(pdfium.PYPDFIUM_INFO.tag, pdfium.PDFIUM_INFO.tag)
+    def __init__(self):
+        self.calls = []
+        self.widths = []
+        self.active_calls = 0
+        self.maximum_active_calls = 0
+
+    def recognize_images(self, image_paths, *, prompt, config):
+        self.active_calls += 1
+        self.maximum_active_calls = max(
+            self.maximum_active_calls,
+            self.active_calls,
+        )
+        try:
+            paths = tuple(Path(path) for path in image_paths)
+            assert len(paths) == 8
+            assert 'input order' in prompt
+            self.calls.append(tuple(path.name for path in paths))
+            for path in paths:
+                with Image.open(path) as rendered:
+                    assert rendered.format == 'PNG'
+                    rendered.load()
+                    self.widths.append(rendered.width)
+            return f'Installed PDF group {len(self.calls)}.'
+        finally:
+            self.active_calls -= 1
+
+provider = Provider()
+result = recognize(
+    pdf_path,
+    config=Config(
+        provider=provider,
+        output_dir=output_directory,
+        temp_dir=smoke_root / 'snapshots',
+        execution=RecognitionExecutionPolicy(max_parallel_requests=4),
+        preferences=RecognitionPreferences(review_passes=0),
+    ),
+)
+
+expected_calls = [
+    tuple(f'page-{page_number:06d}.png' for page_number in range(1, 9)),
+    tuple(f'page-{page_number:06d}.png' for page_number in range(9, 17)),
+]
+assert provider.calls == expected_calls
+assert provider.widths == sorted(provider.widths)
+assert len(set(provider.widths)) == 16
+assert provider.maximum_active_calls == 1
+assert result.source_type == 'pdf'
+assert result.profile == 'board'
+assert result.status == 'complete'
+assert result.output_path == output_directory / 'generated-valid_board.md'
+assert result.output_path.read_text(encoding='utf-8') == result.markdown
+assert result.markdown.count('<!-- ocrllm:pdf-pages') == 2
+assert '<!-- ocrllm:pdf-pages start=1 end=8 -->' in result.markdown
+assert '<!-- ocrllm:pdf-pages start=9 end=16 -->' in result.markdown
+assert result.metadata['page_count'] == 16
+assert result.metadata['pdf_group_count'] == 2
+assert result.metadata['pages_per_group'] == 8
+assert result.metadata['provider_call_count'] == 2
+assert result.metadata['current_run_provider_call_count'] == 2
+
+state_directory = output_directory / 'generated-valid_board'
+state_paths = tuple(state_directory.glob('*.ocrllm-state.json'))
+assert len(state_paths) == 2
+for state_path in state_paths:
+    state = json.loads(state_path.read_text(encoding='utf-8'))
+    assert state['state_version'] == 'ocrllm.image-resume.v2'
+    assert state['result']['status'] == 'complete'
+assert len(tuple(state_directory.glob('*.md'))) == 2
+assert not tuple(state_directory.glob('page-*.png'))
+assert not tuple(state_directory.glob('.p-*.tmp.png'))
+assert not any(
+    path.exists()
+    for call in provider.calls
+    for path in (state_directory / name for name in call)
+)
+assert {path.name for path in output_directory.iterdir()} == {
+    'generated-valid_board',
+    'generated-valid_board.md',
+}
+snapshot_parent = smoke_root / 'snapshots'
+assert snapshot_parent.is_dir()
+assert not tuple(snapshot_parent.iterdir())
+assert pdf_path.is_file()
+print(
+    pdfium.PYPDFIUM_INFO.tag,
+    pdfium.PDFIUM_INFO.tag,
+    result.metadata['pdf_group_count'],
+)
 '@
                 $pdfiumSmoke | & $profilePython -I - $profileVenv
-                Assert-LastExitCode 'PDF vision package smoke failed'
+                Assert-LastExitCode 'installed public PDF recognition smoke failed'
             }
 
             $afterBytes = Get-DirectoryByteCount $sitePackages

@@ -108,13 +108,21 @@ first slice. The bounded Google exit run made zero provider calls because the
 current Windows profile has no Google credential, so P1-c remains the immediate
 queue and P1-d repair has not started.
 
+#073 upgrades the isolated `pdf-vision` package smoke from a one-page backend
+probe to a public 16-page installed-wheel run. It requires two serial groups of
+eight through an injected no-network provider, two complete ordinary image
+sidecars, ordered range-marked final output, and no snapshot or rendered-PNG
+residue. This is packaging/runtime evidence only; the Google P1-c gate remains
+open.
+
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203
 passed; the exact archive suite reported 1193 passed and 10 expected skips.
 `tools/run_stage_m_offline_gate.ps1` reruns the exact Git-archive suite,
 fixture/compile checks, clean wheel and outside-repository import guards,
 dependency profiles, generated-image smoke, and offline DashScope construction.
-It makes no provider request.
+It also runs installed public PDF recognition with an injected provider. It
+makes no external provider request.
 
 The public image facade decodes PNG/JPEG inputs before provider dispatch,
 passes request-scoped validated snapshots to an injected provider, rejects

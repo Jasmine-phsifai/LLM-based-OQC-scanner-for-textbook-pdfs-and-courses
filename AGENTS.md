@@ -105,6 +105,11 @@ the other's defects.
 
 ## Editing Rules
 
+- Keep each heartbeat iteration atomic with one independently verifiable goal.
+- Delegate dependency downloads, long installs, and repetitive active polling to
+  a lightweight subagent when available. While it waits, the primary agent
+  should continue independent review, documentation, or analysis rather than
+  repeatedly polling the same task.
 - Keep `import ocrllm` lightweight.
 - Keep new library code free of GUI, FastAPI, social downloader, and heavy media
   imports at module import time.

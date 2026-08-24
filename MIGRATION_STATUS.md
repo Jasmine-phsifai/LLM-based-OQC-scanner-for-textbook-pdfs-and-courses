@@ -119,6 +119,11 @@ the existing image/resume path now passes focused tests and a real local
 zero retained rendered PNGs, and a one-call resume after the second group is
 interrupted. Its Google gate remains the immediate queue; do not add hidden
 retry, fallback, or a Files lifecycle, and do not begin repair yet.
+#073 strengthens the isolated installed-wheel proof for that same slice: a
+real 16-page PDF must traverse public `recognize()` as two serial groups of
+eight, publish two child states plus the final range-marked output, and leave
+no rendered PNG or snapshot residue. It changes no public boundary and does
+not satisfy the still-open Google live gate.
 The shared 20-entry capability/worker registry remains unchanged and does not
 advertise this direct audio path.
 The generic compatibility endpoint and future local-model compatibility remain

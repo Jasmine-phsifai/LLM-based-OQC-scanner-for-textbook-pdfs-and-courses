@@ -2164,3 +2164,27 @@ Atomic task — Iteration #072 implementation: add the first public PDF vision s
 **成功的 clean archive 门禁。** 第三次只给该进程显式设置公开 `https://pypi.org/simple` 索引和 180 秒读取超时，完整重跑同一脚本，未修改或跳过门禁。初始提交 archive suite 为 **1309 passed, 1 skipped / 63.92 s**；fixture generator 为 pixel-equivalent，worst changed **4.31%**、mean channel delta **1.81%**。wheel **200,965 bytes**，base target **990,917 bytes**，extras 精确为 `audio,dashscope,dev,google,image,ocr,pdf-vision`；裸导入未加载重依赖。import wall median/p95/max：OCRLLM Python **0.5495/0.6717/0.6937 ms**，base Anaconda Python **0.52385/0.6297/0.66 ms**；CPU p95 均为 15.625 ms。
 
 六个隔离 profile 全部通过：audio 为 miniaudio **1.71**、0.5 秒 MP3 smoke、delta **3,172,802 bytes**；image 为 Pillow **12.3.0**、generated recognition `complete`、delta **16,682,487 bytes**；image+DashScope 为 OpenAI **2.54.0**、client construction/close、delta **41,257,443 bytes**；Google 为 google-genai **2.19.0**、fake-key client construction/close、delta **41,307,065 bytes**；audio+Google 的 MP3/request smoke 为 **0.5 / 3880**、delta **42,207,142 bytes**；新增 pdf-vision 为 pypdfium2 **5.11.0**、native PDFium **151.0.7920.0**、创建 PDF/打开/渲染 PNG/按顺序关闭 smoke、delta **24,871,442 bytes**。profile 下载中代理曾重置一次 PDFium 连接，pip 的依赖下载重试后完成；这不是库内/provider retry。整个成功门禁没有 list/generate/provider API 调用，临时目录由脚本清理。补记会 amend 提交并改变哈希，因此最终哈希仍需再跑一次已缓存的完整门禁，不能把本段初始哈希写成最终精确发布证据。
+
+## #073 — 2026-08-24：让安装后的 wheel 真正跑完 16 页 PDF 公共闭环
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #073: strengthen the installed-package PDF release proof by running a real 16-page PDF through the public `recognize()` facade inside the isolated `pdf-vision` profile, using an injected no-network provider. Success means the built wheel—not the source checkout—proves two ordered groups of eight, real PDFium rendering, ordinary image checkpoints, final range-marked Markdown, and zero retained page PNGs. This matters because #072 proved these layers separately, but a mature release gate should catch packaging or lazy-import seams that unit tests with fake PDFium cannot expose.
+```
+
+**维护者新增执行规则。** 用户要求后续任务保持原子；依赖下载、长安装和重复主动轮询交给轻量子代理执行固定流程，主线程等待时继续做不依赖下载结果的审查、文档或分析。该规则直接写入根 `AGENTS.md`，没有另建计划文档。它不会把设计责任外包：主代理仍亲自审代码和最终证据。第一次涉及真实下载/长门禁时按此规则执行并复核是否可行。
+
+**假设、两条路线与 authority 边界。** 重读 `ACTIVE_STATE_AND_RULES`、`START_HERE`、#072 日记和 clean Git 后，确认 P1-c 仍只差 Google 16 页 live，不能进入 repair。本轮识别到的离线缺口是：root public PDF 测试用 fake PDFium；隔离 `pdf-vision` profile 虽安装真实 5.11.0，但只做一页后端 create/open/render/close，没有调用安装后 wheel 的 public facade。两条路线是新增独立集成工具/测试框架，或原地升级现有 profile smoke。选择后者：不增加产品模块、测试抽象或第二 runner，只替换一段已经存在的嵌入式 package smoke。
+
+**轻量审查与主审选择。** 一个轻量子代理只读核对 gate、public PDF processor、输出和 sidecar seam，不编辑、不下载、不调用 provider；结论与主审一致：最小缺口是 16 页 installed-wheel public run。主审保留其有价值的串行、输出形状和清理断言，但没有机械照搬所有建议。fixture 用 PDFium 创建 16 个宽度递增的真实页面，使 provider 在打开临时 PNG 时能证明来源顺序，而不是只看文件名；没有加入内容 OCR、性能测试、600 页压力或 resume 第二轮，因为这些不属于本轮 package seam。
+
+**门禁改动。** `pdf-vision` smoke 现在从 installed wheel 导入 public `Config`、`RecognitionExecutionPolicy`、`RecognitionPreferences` 与 `recognize`。注入 provider 不联网，逐张用 Pillow 完整加载 PNG；即使 `max_parallel_requests=4`，仍必须只出现两个串行调用，每次恰好 `page-000001`—`000008` 与 `000009`—`000016`，最大同时调用为 1。结果必须是 PDF/board/complete、两条有序范围 marker、page/group/call metadata 均为 16/2/2；输出目录精确只有最终 Markdown 和同名状态目录，后者恰有两个 complete image v2 sidecar、两个子 Markdown、0 个 page PNG 和 0 个 `.p-*.tmp.png`。配置的 snapshot parent 最终存在但为空，原始 fixture PDF 保留。
+
+**失败与当前验证。** 第一次为直接提取 here-string 设计的复杂 PowerShell 外层命令被工具策略在 CreateProcess 前拒绝，Python/PDFium/provider 调用为 0；没有把它解释为产品失败。改用只读 Python runner 从门禁脚本提取现有 here-string，在系统临时目录执行并 finally 清理，不写仓库临时脚本。真实 `pypdfium2 5.11.0 / PDFium 151.0.7920.0` 输出 group count 2，focused public smoke 通过且临时目录不存在。相关 `test_pdf_backend_boundaries`、`test_pdf_recognition`、`test_import_contract` 与 Google PDF live-tool offline 合同为 **26 passed / 1.46 s**；`compileall -q tools` 与 EOL-aware diff check 通过。产品代码和 public API 均未修改。
+
+**过度设计复盘与下一步。** 本轮没有因 packaging 缺口新增工具文件、fixture 资产、PDF framework、provider adapter、设置、resume schema 或测试选择参数。16 页不是新产品上限，而是维护者既定的两批 live/regression 形状；递增页宽只让真实渲染顺序可观察。最接近过度验证的是检查输出目录和 snapshot parent 的精确残留，但它们正是本轮安装后生命周期闭环的成功条件，且只存在于 release smoke。提交后必须从 clean archive 再跑完整 gate，证明导入确实来自安装 wheel；Google credential 仍不可用时继续保持 P1-c open，不进入 P1-d。
+
+**轻量代理执行的首次 clean archive 门禁。** 按本轮新增工作规则，主代理提交 `bb166edfe7977d02a814c33ea5eec1af75cede60` 后，把依赖安装、长门禁和主动监视交给轻量代理；主线程并行完成提交 diff、authority/P1-c 边界和工作树审查，没有重复轮询下载。代理不编辑、不 push、不调用 provider，使用既定公开 PyPI 索引和缓存完整运行所有 profile，exit **0**。archive suite 为 **1309 passed, 1 skipped / 53.81 s**；fixture generator pixel-equivalent，worst changed **4.31%**、mean channel delta **1.81%**；wheel **200,965 bytes**，base target **990,917 bytes**。
+
+六个 profile 均通过：audio `miniaudio 1.71`、delta **3,172,802 bytes**；image `Pillow 12.3.0`、delta **16,682,487 bytes**；image+DashScope `openai 2.54.0`、delta **41,257,443 bytes**；Google `google-genai 2.19.0`、delta **41,307,065 bytes**；audio+Google `miniaudio 1.71` / `google-genai 2.19.0`、delta **42,207,142 bytes**；pdf-vision 输出 **`5.11.0 151.0.7920.0 2`**，即精确 binding/native PDFium/两组公共结果，delta **24,880,693 bytes**。import wall median/p95/max：OCRLLM Python **0.54685/0.619/0.6267 ms**，base Anaconda Python **0.54595/0.5916/1.09 ms**；两者 CPU median/p95/max 均为 **0/15.625/15.625 ms**。gate 临时目录残留 0，tracked tree clean，只有两个用户原有未跟踪文件。补记会 amend 提交，所以此哈希不是最终发布哈希；最终哈希必须由轻量代理再跑同一完整门禁，最终通知不得把本段哈希冒充最终精确证据。
