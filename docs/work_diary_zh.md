@@ -3755,3 +3755,17 @@ Atomic task — Iteration #175: verify that the public combined-video facade rej
 **真实媒体复核与最小文档修正。** 轻量只读任务在系统临时目录生成 1 秒可听 MP4，FFmpeg exit 0；图片使用记录调用的 injected provider，音频故意错误地复用该图片 provider。公共 `recognize_video()` 立即抛出 `ConfigError(code="CONFIG_INVALID")`，图片调用数 **0**，output directory 调用前后均不存在，无 frame/MP3 产物；临时目录成功删除。root README 和 active-library README 现在明确：两个 config 都在读取视频、创建媒体输出和 dispatch 任一 provider 前校验。authority #126 本来已准确记载同一事实，迁移边界也未变化，因此不追加一份重复状态条目。
 
 **验证与过度设计复查。** 主代理亲自运行非法配置回归、真实双分支成功回归和 lightweight/import 合集，得到 **12 passed in 0.84s**；只给测试子进程临时加入已有 Node 路径后的完整离线套件为 **1,458 passed in 53.90s**，`git diff --check` 通过。无网络、凭据、provider 请求、安装、依赖、运行时/API/测试改动、输出格式、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。明确拒绝重复 real-MP4 fixture、统一配置框架、provider hierarchy、fallback、retry 和 transaction 层；本轮的维护价值是让 Python package 用户在调用前就知道错误配置不会浪费另一分支工作。
+
+## #176 — 2026-08-25：视频结果构造器已拒绝空帧与矛盾分支，停止继续堆叠防御
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #176: verify that public `VideoRecognitionOutcome` cannot report a successful or partial video while carrying an impossible empty retained-frame set or frame branch. Success means rereading authority/diary and the constructor/status logic, reproducing any impossible public state through exported types, deciding whether the invariant belongs at construction rather than composition, adding only the smallest constructor regression/fix if real, preserving silent-video and typed frame-error behavior, running focused/full offline tests, and committing/pushing one coherent change. This matters because a Python library must reject contradictory public objects at creation; downstream callers should not need to discover them only while composing or publishing.
+```
+
+**假设被当前构造器直接否定。** 同步 origin、重读 authority、日记与 package 规则后，主代理逐行确认 `VideoRecognitionOutcome.__post_init__()` 已要求 nonempty exact retained tuple，并用一个 XOR 条件强制“非空 frame outcomes”与“整支 frame error”恰好存在一个。它还在 status 可读取之前检查 retained-frame source order、精确资产布局、连续 group index、image result 类型和完整 identity equality。路线 A 是继续检查 nested metadata 可变性、path alias、timestamp 唯一性等更深人工构造情况；authority #138/#166/#168 已明确排除其中多项，继续会把产品变成通用 media graph。路线 B 是只复现本轮四个公开状态，然后没有缺陷就停止。选择 B。
+
+**独立公开类型复核。** 轻量只读任务使用顶层导出的类型构造四种对象：空 `retained_frames` 立即得到 `ValueError`；有 retained frame 但既无 outcomes 也无 frame error 得到 `ValueError`；outcomes 与 frame error 同时存在也得到同一互斥错误；合法 silent-video 结构成功构造，`status="complete"`、`audio_state="absent"`。独立 outcome 套件为 **12 passed**，主代理亲自运行 outcome、composition、publication 与真实 video orchestration 邻接集合为 **41 passed in 1.30s**。无运行时代码、测试、API、文档合同、网络、provider、凭据、安装、依赖、输出格式、legacy compatibility 或 frozen `contracts/worker` 变化。
+
+**停止判断与下一项重大选择。** 本轮只记录调查证据，不给已经正确的 constructor 再加 helper、schema、validator 或重复断言；authority 与迁移状态本来已准确，无需追加重复条目。继续在这一区域寻找人工伪造对象的假想敌已经接近过度设计。当前阻碍视频真实生命周期继续成熟的高价值问题仍是 #149：同一个 caller MP4 在 scan、retained decode 与 audio extraction 之间可能被替换。推荐方案 A 是在 `output_dir` 内、最终同名目录旁建立隐藏的 request-owned 流式磁盘快照，整个调用只读该快照并在结束时删除，不新增公开参数；方案 B 是新增显式 `temp_dir`。在维护者选择前不实现半套快照或继续用边缘防御绕开它。
