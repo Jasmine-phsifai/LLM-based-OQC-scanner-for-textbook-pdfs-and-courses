@@ -315,6 +315,19 @@ is often accepted.
   `VIDEO_NO_AUDIO_STREAM` is normal audio absence. Do not turn this into legacy
   Markdown compatibility, a final document format, cleanup transaction, resume
   manifest, provider hierarchy, retry, fallback, or API pool.
+- **Open #127 cancellation choice.** `image_config` and `audio_config` may carry
+  different cancellation signals, but the current facade treats them
+  asymmetrically: image cancellation becomes settled frame outcomes and lets
+  audio continue, while audio cancellation propagates and hides an already
+  settled frame result; silent video can ignore that audio signal entirely.
+  Choose one public contract before implementation: (A, recommended) branch
+  cancellation settles in existing `frame_error`/`audio_error`, preserves the
+  other branch, and skips pre-cancelled audio extraction; if both signals are
+  already set, stop before output. (B) any branch cancellation aborts the whole
+  call, which requires a larger way to carry already-paid outcomes without
+  losing them. Keeping the current asymmetry is not an option. Do not add a new
+  status, branch hierarchy, checkpoint, or extractor cancellation framework as
+  part of this choice.
 
 ## Resolved confirmation and next authority
 

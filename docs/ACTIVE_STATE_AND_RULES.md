@@ -910,7 +910,28 @@ one audio result or typed audio error plus the MP3 when it was published.
 frame groups plus recognized audio is complete; all frame groups plus
 `VIDEO_NO_AUDIO_STREAM` is also honestly complete as frame-only; any usable
 success plus another real failure is partial; no usable recognition is failed.
-Cancellation still propagates rather than becoming an ordinary branch error.
+
+#127 proves that cancellation is currently inconsistent at this new boundary.
+The two configs can carry different cancellation signals. A cancelled image
+branch is normally settled by `recognize_batch()` as one or more
+`BatchItemOutcome(error=Cancelled)`, after which audio can still succeed and
+the video outcome is partial. A cancelled audio branch instead propagates from
+`recognize()` through `recognize_video()`, so the caller cannot receive an
+already-settled frame result; audio extraction has already published an MP3.
+On a silent video the same audio cancellation is never observed because no
+audio recognition call occurs. Both extractors currently run before either
+recognition boundary checks its signal.
+
+This is an open product decision, not an accepted cancellation contract. The
+recommended direction is branch-scoped cancellation after config validation:
+settle `Cancelled` in the existing frame/audio error fields, preserve the other
+branch and retained artifacts, skip audio extraction when its signal is already
+set, and stop before output when both signals are already set. The alternative
+is whole-call propagation, but preserving paid work would then require a larger
+exception/checkpoint contract that carries completed outcomes. Do not implement
+either direction, add extraction cancellation parameters, or document the
+current asymmetry as intended behavior until the maintainer selects the public
+semantics.
 
 This is a Python orchestration result, not final video content. It adds no
 combined Markdown, legacy format, cleanup transaction, resume/checkpoint,
