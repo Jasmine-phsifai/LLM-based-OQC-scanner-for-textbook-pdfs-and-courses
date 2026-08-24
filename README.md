@@ -45,8 +45,10 @@ As of 2026-08-25:
   outcome into a standard memory-only video `RecognitionResult` with separate
   frame and audio sections. Its current-run provider-call total is an integer
   only when every settled branch supplies exact evidence; otherwise it is
-  `None`, never a guessed zero. Long-audio recognition, final Markdown
-  publication, resume, and worker routing are not implemented yet.
+  `None`, never a guessed zero. `publish_video_result()` can instead atomically
+  publish the same complete or partial composition to an explicit caller-owned
+  path, with opt-in overwrite. Long-audio recognition, video resume, and worker
+  routing are not implemented yet.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
@@ -109,6 +111,12 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   audio sections separate, preserves stable failure codes, reports retained
   media as assets, and accumulates provider-reported tokens by model. It does
   not infer audio/frame alignment or accept a fully failed outcome.
+- exposes `publish_video_result()` as the separate final-output step. It accepts
+  the same settled outcome plus an explicit output path, atomically publishes
+  Markdown without overwriting by default, and returns the standard video
+  result with a verified `output_path`. The Markdown target cannot replace a
+  retained frame or audio asset. It adds no recognition, resume, or legacy-format
+  behavior.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The

@@ -62,6 +62,11 @@ do not relabel them during composition or build a generic media graph.
 #143 requires downstream examples to inspect `VideoRecognitionOutcome.status`
 before composition. Fully failed outcomes remain branch-level evidence and are
 not converted to a standard video result.
+#144 adds explicit atomic final Markdown publication through
+`publish_video_result()` while keeping `compose_video_result()` memory-only.
+The caller supplies the path; do not derive legacy names or add resume,
+manifest, cancellation, or provider behavior to the publication step. Never
+allow its Markdown target to replace a retained frame or audio asset.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

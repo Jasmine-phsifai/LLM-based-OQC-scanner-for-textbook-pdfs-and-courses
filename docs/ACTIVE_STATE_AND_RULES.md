@@ -1215,6 +1215,36 @@ outcomes remain structured evidence. This is documentation of the existing
 contract, not a serializer, failure wrapper, new result state, publication, or
 resume feature. Thirty-two focused composition/import regressions pass.
 
+#144 adds the first explicit final Markdown publication step without coupling
+file I/O back into memory-only composition. Public
+`publish_video_result(outcome, output_path, overwrite=False)` accepts the same
+already-settled complete or partial `VideoRecognitionOutcome`, reuses
+`compose_video_result()`, claims the explicit caller-owned target in-process,
+and uses the existing full-write/flush/fsync/close atomic writer. Existing
+targets are refused by default; explicit overwrite replaces only after the
+temporary Markdown is complete. A fully failed outcome reaches no output-path
+work, and a write or replace failure cannot change an existing document. The
+explicit Markdown target also cannot equal any retained frame or audio asset;
+even overwrite mode cannot turn owned media into Markdown and report success.
+
+The returned standard video `RecognitionResult` preserves status, Markdown,
+assets, warnings, hotwords, and metadata while adding a verified `output_path`.
+This entry does not derive a legacy filename, recognize again, add resume,
+manifest, cross-process transaction, cancellation policy, provider routing, or
+worker support. The lazy facade resolves the new publication function together
+with `compose_video_result()` so ordinary documented top-level import order
+does not leave either public name as a sibling module object. Directly importing
+a same-named implementation submodule can still expose Python's normal package
+attribute behavior; fixing every such private import order would require the
+callable-module/custom-module machinery already rejected as opaque overdesign.
+Seven direct publication regressions, fifty-one focused video/output/import
+tests, and the complete 1,430-test offline suite pass. The first full run truthfully
+reported 1,427 passed and two Node-harness failures because Node was absent from
+the shell PATH; an existing `D:/Anaconda/envs/STA/node.exe` v22.23.2 was then
+used through a process-local PATH only, and the complete rerun passed. No
+dependency was installed or downloaded, no persistent environment changed, and
+no provider or credential was used.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

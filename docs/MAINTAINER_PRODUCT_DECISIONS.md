@@ -405,6 +405,16 @@ is often accepted.
   examples must inspect `VideoRecognitionOutcome.status` and call
   `compose_video_result()` only for complete or partial outcomes; do not add a
   serializer or exception wrapper merely to make failed outcomes composable.
+- #144 keeps video composition and publication as two explicit responsibilities.
+  `publish_video_result()` accepts an already-settled complete or partial
+  outcome and an explicit caller-owned path, then reuses the existing composer
+  and atomic Markdown writer. It refuses overwrite by default and does not
+  allow that path to equal one of the outcome's retained media assets, even in
+  overwrite mode. It does not derive legacy names, recognize again, create
+  resume state, or settle the open
+  #127 cancellation choice. Do not add callable-module or custom package-module
+  machinery to hide direct same-named submodule imports; the documented public
+  boundary is the lazy top-level facade.
 
 ## Resolved confirmation and next authority
 

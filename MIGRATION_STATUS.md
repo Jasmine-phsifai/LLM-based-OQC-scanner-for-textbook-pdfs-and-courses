@@ -394,8 +394,9 @@ The following directions remain traceable but are not current work:
   frame group self-identifying with exact frame indices and timestamps so later
   composition cannot infer membership from a changed group size. #125 gives a
   truly silent MP4 the distinct `VIDEO_NO_AUDIO_STREAM` code while corrupt
-  declared audio remains `VIDEO_INVALID`. Long-audio recognition and final
-  video-document publication remain unavailable. The direct PDF vision
+  declared audio remains `VIDEO_INVALID`. Long-audio recognition remains
+  unavailable; final video-document publication is now the separate explicit
+  step described below. The direct PDF vision
   facade and its ordinary image-sidecar resume are implemented; the
   experimental direct short-audio API is implemented and live-proven only for
   one in-memory MP3 of at most 300 seconds. Public `recognize_video()` now
@@ -410,7 +411,7 @@ The following directions remain traceable but are not current work:
   it does not resolve aliases or symlinks. `compose_video_result()` explicitly
   converts a returned complete
   or partial outcome into a memory-only standard video result with ordered
-  frame and audio sections; it does not publish Markdown, resume video work,
+  frame and audio sections; it does not publish Markdown itself, resume video work,
   route long audio, or expose a worker command. Its composed current-run
   provider-call total is exact when every settled branch supplies evidence and
   otherwise `None`; missing evidence is never converted to zero. Safety-cap
@@ -419,7 +420,13 @@ The following directions remain traceable but are not current work:
   existing 96-unit budget in Windows UTF-16 units, so supplementary characters
   do not overflow retained-frame paths. Maximum-length stable segments now use
   ceiling partition counts instead of rounding down and exceeding the selected
-  attempt's bound. Cancellation, publication, and resume remain separate.
+  attempt's bound. `publish_video_result()` now provides a separate atomic
+  final-output step for an already-settled complete or partial outcome and one
+  explicit caller path. It refuses overwrite by default and returns the same
+  standard result with a verified output path; that path cannot replace one of
+  the retained media assets, even with overwrite enabled. It does not derive
+  legacy names, recognize again, or add recovery state. Cancellation refinement
+  and resume remain separate.
   A clean archive of commit `c7f30f0` built and installed outside the
   repository without network, kept plain import free of heavy media modules,
   and completed one local video through separate injected image and fake-audio

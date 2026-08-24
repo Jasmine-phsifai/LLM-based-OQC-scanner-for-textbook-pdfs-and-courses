@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from .providers.google_genai.provider_settings import (
         GoogleGenAISettings as GoogleGenAISettings,
     )
+    from .publish_video_result import publish_video_result as publish_video_result
     from .recognition_execution_policy import (
         RecognitionExecutionPolicy as RecognitionExecutionPolicy,
     )
@@ -140,6 +141,7 @@ _PUBLIC_IMPORTS = {
     "ProviderPermissionDenied": (".errors", "ProviderPermissionDenied"),
     "ProviderRequestInvalid": (".errors", "ProviderRequestInvalid"),
     "ProviderUnavailable": (".errors", "ProviderUnavailable"),
+    "publish_video_result": (".publish_video_result", "publish_video_result"),
     "QuotaExhausted": (".errors", "QuotaExhausted"),
     "RateLimited": (".errors", "RateLimited"),
     "RecognitionExecutionPolicy": (
@@ -228,6 +230,7 @@ __all__ = [
     "VideoRecognitionOutcome",
     "VisionModelSettings",
     "compose_video_result",
+    "publish_video_result",
     "recognize",
     "recognize_batch",
     "recognize_video_frames",
@@ -250,6 +253,19 @@ def __getattr__(name: str):
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
 
     from importlib import import_module
+
+    if name in {"compose_video_result", "publish_video_result"}:
+        compose_value = getattr(
+            import_module(".compose_video_result", __name__),
+            "compose_video_result",
+        )
+        publish_value = getattr(
+            import_module(".publish_video_result", __name__),
+            "publish_video_result",
+        )
+        globals()["compose_video_result"] = compose_value
+        globals()["publish_video_result"] = publish_value
+        return globals()[name]
 
     if name in {"recognize_video", "recognize_video_frames"}:
         video_frames_value = getattr(

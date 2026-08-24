@@ -62,6 +62,7 @@ from ocrllm import (
     get_provider_error_disposition,
     inspect_video,
     list_google_genai_models,
+    publish_video_result,
 )
 ```
 
@@ -274,7 +275,10 @@ video_outcome = recognize_video(
     ),
 )
 if video_outcome.status != "failed":
-    video_result = compose_video_result(video_outcome)
+    video_result = publish_video_result(
+        video_outcome,
+        "output/another-lecture.md",
+    )
 ```
 
 Install `ocrllm[video]` for lazy OpenCV and `imageio-ffmpeg` support. The function
@@ -330,8 +334,15 @@ every settled provider branch supplies an exact nonnegative count. A silent
 video or video/audio parsing failure before provider dispatch contributes a
 known zero. Composition does not align audio text to frame timestamps, publish
 a file, parse legacy output, or accept a fully failed outcome.
-Automatic fallback, resume, final Markdown publication, and worker routing
-remain unavailable. Plain
+`publish_video_result()` is the separate provider-free final-output step. It
+accepts the same complete or partial outcome and one explicit path, reuses the
+same composition, atomically writes Markdown, refuses an existing target by
+default, supports explicit `overwrite=True`, and rejects a target that equals
+one of the retained frame/audio assets. Its returned standard video result
+preserves the composition and has the verified output path. It does not
+recognize again, derive a legacy filename, create resume state, or publish a
+fully failed outcome. Automatic fallback, resume, and worker routing remain
+unavailable. Plain
 `import ocrllm` does not import OpenCV, NumPy, or imageio-ffmpeg.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
