@@ -26,9 +26,9 @@ def recognize_video_frames(
 ) -> list[BatchItemOutcome]:
     """Recognize ordered retained JPEGs in groups of at most eight.
 
-    This boundary is memory-only until the video composition and recovery
-    contract is defined. Each outcome corresponds to one image group, not one
-    individual frame.
+    This boundary is memory-only. Composition and publication are separate
+    public steps; video recovery remains unavailable. Each outcome corresponds
+    to one image group, not one individual frame.
     """
     cfg = validate_config(config)
     _reject_video_persistence(cfg)

@@ -1870,6 +1870,22 @@ must now choose A or B. Until then, do not implement a frame-only snapshot,
 generic media snapshot/cache, content addressing, in-memory video, or reinterpret
 provider temp settings.
 
+#189 verifies that the shipped image/audio provider split is real and needs no
+runtime abstraction. `recognize_video()` validates two independent `Config`
+objects before media output, passes only the image config through grouped frame
+recognition, and passes only the audio config through short-MP3 recognition.
+Real-media focused tests cover an injected image provider beside Google audio,
+native Google image groups of 8+2 beside one separate audio call, distinct model
+usage rows, and zero output/dispatch for either invalid config. The only defect
+found was the public `recognize_video_frames()` docstring still saying video
+composition was undefined. It now states the current boundary: frame recognition
+is memory-only, composition and publication are separate public steps, and video
+recovery remains unavailable. Do not add a generic audio provider seam or repeat
+the existing separation regressions merely to prepare the deferred provider
+framework. Five focused tests and public `help()`/import introspection pass; no
+runtime behavior, API signature, dependency, frozen boundary, or open
+#127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

@@ -3939,3 +3939,17 @@ Atomic task — Iteration #188: reduce the open #149 source-mutation defect to o
 **仅比较两条已授权路线。** A（继续推荐）在 caller `output_dir` 下建立短固定前缀加随机身份的隐藏 sibling MP4；先以固定块从已经打开的源流复制，然后 inspection、scan、selected decode、audio extraction 和未来长音频路由都只接这个 request-owned path，最外层 `finally` 删除。它不改公开签名，不借用两个可能互不相同的 image/audio `Config.temp_dir`，并把临时空间与 retained assets 放在调用者已经选择的同一卷。代价是 snapshot 前必须创建/验证 `output_dir`，且 caller 给出的过深路径仍可能得到 typed path/backend failure；本轮不增加 extended-path 层。B 新增独立 `video_temp_dir` 公共参数，允许短路径或大容量异卷，但 standalone/combined API、文档和第二目录 ownership 都要扩展；即使选 B，内部仍必须有一个共享 context，参数本身不能修复音画分叉。
 
 **推荐、停止点与过度设计复查。** 主代理与轻量只读审计独立推荐 A。它符合用户此前“同目录、暴力拒绝冲突、不为极端情况扩 API”的方向；大文件不会读入内存，而是固定块复制。现在缺的不是更多代码证据，而是维护者是否接受“原视频大小的隐藏临时副本与最终资产共用 output volume”。本轮只更新唯一 authority 与中文日记，`git diff --check` 通过；没有 runtime、测试、API、输出格式、provider、网络、凭据、依赖、legacy compatibility 或 frozen `contracts/worker` 改动。明确拒绝第三条路线：不建 generic media snapshot framework、content-addressed cache、global temp manager、内存整文件、hash-only recheck，也不只修 frame half。维护者确认 A 后才实现；若拒绝，则选择 B 并接受新公共参数。
+
+## #189 — 2026-08-25：确认音画 provider 没有串线，并修正一个公开函数的过时说明
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #189: while the #149 snapshot placement awaits the maintainer’s A/B choice, audit one independent, already-built video-library boundary for a concrete defect or an overdesigned surface, and make only the smallest evidence-backed correction. Success means reconciling the authoritative queue and diary, selecting work that does not prejudge snapshot ownership or long-audio policy, proving the issue through the public importable package, personally reviewing any change, running focused and full offline verification as warranted, documenting it in Chinese, and committing and pushing one coherent iteration. This matters because video recognition must mature as a standalone Python library even while a separate filesystem-policy decision remains open.
+```
+
+**先核实用户最关心的 provider 分离。** 主代理逐段检查 `recognize_video()`、`recognize_video_frames()`、普通 MP3 `recognize()` 路由及测试；轻量只读审计独立得到相同结论。两个 `Config` 在创建媒体前各自校验，图片配置只进入图片分组，音频配置只进入 MP3 快照和 Google 音频调用；provider、模型、临时目录、错误和 token 用量没有合并或串用。现有真实媒体测试已经覆盖注入图片 provider + Google 音频、原生 Google 图片 8+2 两组 + 独立一次音频、两个模型各自累计，以及任一配置无效时零输出、零调用。当前音频只支持 Google 短 MP3 是公开限制，不是 provider 串线；为了未来厂家现在加入通用音频 provider 层会提前扩大产品面。
+
+**实际修正。** 审计找到一个很小但确实会被 Python 用户通过源码和 `help()` 看到的错误：`recognize_video_frames()` docstring 仍说“直到视频 composition 和 recovery contract 被定义前”保持 memory-only，但 composition 和 publication 已经发布。只把它改成当前事实：本函数本身 memory-only；组合和发布是另外两个公开步骤；视频恢复仍不可用。没有新增测试，因为 README 和现有视频回归已经固定相同契约，重复一条 docstring 单测只会绑住措辞。
+
+**验证、失败记录与过度设计复查。** 第一次 introspection 断言错误地把换行后的句子当成连续字符串，且代理转述的一个测试节点名不存在；修正验证命令后，`STA` 环境又因没有 `cv2`/`imageio_ffmpeg` 在 fixture 生成前失败，纯配置测试为 1 passed。只读检查已有环境后改用项目 `OCRLLM` 环境，没有安装依赖；公开导入与 `inspect.getdoc()` 精确确认新事实且旧说法消失，五条 provider 分离/8+2/双配置 preflight 真实媒体聚焦测试为 **5 passed in 1.92s**。本轮是 docstring-only，不需要把完整 1,466 条离线套件当成更强证据。无 runtime、签名、输出、provider 调用、网络、凭据、依赖、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策改动；明确拒绝通用音频 adapter seam、provider base class 和重复分离测试。
