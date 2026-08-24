@@ -51,7 +51,8 @@ As of 2026-08-25:
   publish the same complete or partial composition to an explicit caller-owned
   path, with opt-in overwrite. Long-audio video routing, video resume, and
   worker routing are not implemented yet.
-- Native Google image, short-audio, and single-request long-audio adapters are implemented. Legacy
+- Native Google image, inline short-MP3, and single-request Google Files long-MP3
+  adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
 - Built wheels include the standard `py.typed` marker and static-only lazy-facade

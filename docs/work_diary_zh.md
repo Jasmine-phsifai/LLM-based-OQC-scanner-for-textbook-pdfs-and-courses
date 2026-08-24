@@ -3495,3 +3495,17 @@ Atomic task — Iteration #155: correct one stale public product-boundary claim 
 **修正范围与主审。** 根 README 现在明确是 `long-audio video routing` 未实现，而不是普通视频路由；`START_HERE` 明确列出 provider-free composition 与 atomic final Markdown publication 是独立 public steps；package README 把陈旧的 `long audio unavailable` 收紧为 `long audio chunking unavailable`。主代理逐段检查后保留两类正确语句：`recognize_video()` 自身只返回 outcome、不自动发布；更低层的 `recognize_video_frames()` 自身也不 compose。这些函数级限制没有与库级能力混淆。轻量只读审查独立得到相同边界，没有建议改 `MIGRATION_STATUS` 的准确 current/historical 表述。
 
 **验证与过度设计复查。** 公开 import 直接通过；视频 orchestration、composition、publication、lightweight import 和 static export 定向集合为 **36 passed in 1.24s**，无网络、provider、凭据、安装或下载。没有运行时代码、测试、API、capability、provider、依赖、frozen `contracts/worker`、resume 或长音频视频路由改动。没有为了三处文案增加“文档注册表”、自动文档测试或统一 capability schema；这些会比本轮陈旧句本身更难维护。#127、#149、#152 仍是明确待决项。
+
+## #156 — 2026-08-25：共享音频对象不再谎称自己只服务短音频
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #156: remove stale short-audio-only semantics from the shared public/internal audio types that now serve both short inline MP3 and standalone long Google Files recognition. Success means re-reading authority and diary, tracing actual consumers before editing, proving the wording mismatch in public introspection or cold-read documentation, correcting only genuinely shared names/docstrings without renaming stable modules or broadening behavior, running focused/full verification, and committing/pushing with a Chinese diary entry. This matters because code should remain understandable when opened cold; a shared type or parser that claims it is short-only now makes future fixes riskier.
+```
+
+**消费者追踪、两条路线与可执行证据。** 同步 origin、重读 authority 和 #154—#155 日记后，逐项追踪所有 `short-audio` 说明。公共 `AudioModelSettings` 同时进入 short inline 和 long Files config；`parse_google_genai_audio_response()` 同时被 `recognize_short_mp3` 与 `recognize_uploaded_mp3` 调用；它返回的 `GoogleGenAIAudioResponse` 也因此是两条路径共享的已验证 transcript/usage 值。Python introspection 实际打印出三处仍分别写着 `short-audio model`、`Google short-audio response` 和 `Google short-audio recognition`。路线 A 新增 LongAudioModelSettings、复制 parser/response 或重命名稳定模块；这会人为拆开相同的模型身份与响应验证。路线 B 只修三处 docstring。选择路线 B。
+
+**明确保持短音频的文件。** 主代理同时确认 `recognize()`、`detect_source_type()`、`probe_short_mp3`、`snapshot_short_mp3`、short processor、inline request builder/request value 与 `recognize_short_mp3` 仍只实现 A1，所有短音频命名和错误文案原样保留。轻量只读审查复核相同边界，并额外发现两处当前文档精度：根 README 现在明确写成 inline short-MP3 与 Google Files long-MP3 adapter；`MIGRATION_STATUS` 一句漏掉谓语的 A1 边界补回 `are not implemented in A1`，避免误读为全局没有 long audio。
+
+**验证、主审和过度设计复查。** short/long Google adapter、audio runner contract、Config、lightweight import 和 static export 定向集合为 **89 passed in 1.59s**；post-change introspection 确认公共 model settings 与共享 parser/response 不再含 short-only 描述。没有网络、provider、凭据、安装或下载。改动只有三处 docstring 和两处 maintained wording；没有运行时分支、类型、函数/模块名、request/response schema、provider、依赖、capability、frozen `contracts/worker` 或 #152 A2b 选择变化。把短长模型设置、parser 或 response 拆成两套才是本轮明确拒绝的过度设计。

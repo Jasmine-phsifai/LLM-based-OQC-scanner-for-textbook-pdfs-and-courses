@@ -1,4 +1,4 @@
-"""Immutable model identity for short-audio recognition."""
+"""Immutable model identity for audio recognition."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from .errors import ConfigError
 
 @dataclass(frozen=True, slots=True)
 class AudioModelSettings:
-    """Select one explicit short-audio model."""
+    """Select one explicit audio model."""
 
     name: str | None = None
 

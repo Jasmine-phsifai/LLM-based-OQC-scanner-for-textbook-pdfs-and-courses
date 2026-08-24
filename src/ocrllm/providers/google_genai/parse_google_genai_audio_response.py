@@ -1,4 +1,4 @@
-"""Validate one Google short-audio response without false success."""
+"""Validate one Google audio transcript response without false success."""
 
 from __future__ import annotations
 

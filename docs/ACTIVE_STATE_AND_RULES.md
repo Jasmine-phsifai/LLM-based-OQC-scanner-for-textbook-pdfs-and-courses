@@ -1421,6 +1421,25 @@ seconds without network or provider calls. No runtime code, API, capability,
 provider, dependency, frozen contract, worker route, resume behavior, or
 long-audio video integration changed.
 
+#156 removes short-only wording from three objects that became genuinely shared
+when A2a shipped. Public `AudioModelSettings` now describes one explicit audio
+model rather than a short-audio model. The Google audio response parser and its
+validated response value now describe audio transcripts generally because both
+the inline short-MP3 adapter and uploaded long-MP3 adapter call that same parser.
+The inline request builder, short probe/snapshot/processor, generic `recognize()`
+route, and their short-specific errors remain explicitly short-only.
+
+Public introspection first reproduced all three stale docstrings. Focused short
+and long Google adapter, live-runner contract, config, lightweight-import, and
+static-export tests then pass 89 tests in 1.59 seconds; post-change introspection
+confirms the shared wording. Root package wording now names inline short MP3 and
+Google Files long MP3 precisely, and a pre-existing incomplete A1 migration
+sentence now explicitly says long audio/Files/retry/fallback are not implemented
+**in A1**. No runtime behavior, type, function/module name, request transport,
+provider, dependency, capability, frozen contract, worker route, or A2b decision
+changed. Do not split long/short model-setting classes or response parsers from
+this wording correction.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

@@ -1,4 +1,4 @@
-"""Structured successful response from Google short-audio recognition."""
+"""Structured successful response from Google audio recognition."""
 
 from __future__ import annotations
 

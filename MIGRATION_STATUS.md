@@ -93,7 +93,7 @@ Phase 1 maturation is offline implementation-complete:
   conservative provider envelope below 20,000,000 bytes. Pre-set cancellation
   stops before snapshot/copy/decode and is checked again before dispatch; the
   synchronous SDK call itself is not interruptible. Persistence, resume, groups,
-  long audio, Files upload, retries, and fallback inside A1. The
+  long audio, Files upload, retries, and fallback are not implemented in A1. The
   #097 returned an honest provider-scoped `PROVIDER_UNAVAILABLE` with no false
   success or snapshot residue and was not retried. After the maintained runner
   was simplified and its process contract was tightened, #103 refreshed the
