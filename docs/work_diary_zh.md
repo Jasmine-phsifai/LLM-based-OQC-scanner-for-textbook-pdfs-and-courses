@@ -2734,3 +2734,17 @@ Atomic task — Iteration #108: audit the active library’s published short-aud
 **失败证据和实现。** 新公开回归使用现有 fake Google 完成一次正常 `generate_content`，确认 client 已关闭，再只让 owned snapshot 删除抛 redacted `OUTPUT_WRITE_FAILED`。旧实现稳定为 **1 failed in 0.32s**：实际 `generate_calls` 是 1，但错误详情没有 `provider_calls_attempted`。最小实现仅在 `processors/recognize_short_mp3.py` 增加一个 `provider_call_completed` 布尔值；adapter 成功返回后置真，只有随后捕获到 `OutputError` 且错误尚无该字段时才补 1。adapter 自身的 typed failure 继续带 #107 的 0/1 并由 snapshot context 保留为主错误；调用前的 snapshot/output failure 不被补 0；process-control 和普通异常没有新增 catch。
 
 **验证与过度设计复盘。** audio adapter 加 snapshot 生命周期为 **56 passed in 0.30s**；扩大到 audio live runner 的离线回归、MP3 probe、public validation、batch execution 和 Google image adapter 为 **147 passed in 2.33s**。这项修复没有引入 invocation ledger、跨媒体 helper、通用 context wrapper、retry、fallback 或 provider class。最接近过度设计的是路线①：它会把“没有字段但由本地错误类型可知未调用”改成所有媒体都必须显式报 0，增加未来理解成本，却没有解决新的真实模糊点，因此明确不做。没有 live API、凭据、下载或依赖改动；P1-d 决策仍开放，两个用户未跟踪文件和 frozen `contracts/`/`worker/` 未动。
+
+## #109 — 2026-08-24：exact-tuple batch 真实覆盖短音频的成功、失败与未尝试结果
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #109: verify that the shipped exact-tuple batch API preserves the newly corrected short-audio attempted-call evidence when one item succeeds and a later item fails, without changing batch ordering, settlement, or concurrency policy. Success means reconciling the current queue and diary, exercising the real public batch-to-audio path with deterministic provider outcomes, proving whether each BatchItemOutcome keeps the correct per-item 0/1 count, and applying only a batch-boundary fix if evidence shows loss. This matters because batch orchestration is the likely future caller of multiple provider implementations, and losing item-local spend evidence there would make later routing fragile; redesigning providers or fallback now would be out of scope.
+```
+
+**代码事实、两条路线和选择。** `preflight_recognition_batch()` 明确接受每项一个 MP3，先对整个 exact tuple 做 source 与完整 decode preflight；serial/parallel settlement 都把同一个 `OCRLLMError` 对象放进 `BatchItemOutcome`，`clear_public_error()` 只清 traceback/cause/context，不复制或改写 details。路线①凭这些通用代码直接声称 audio batch 已证明；路线②用 committed MP3 和 fake native Google 跑一次真正的 public `recognize_batch()`。选择②，因为此前没有任何 batch 测试实际执行 MP3；但只做默认 serial，不复制已经由 image/provider 测试覆盖的 parallel settlement 矩阵。
+
+**真实组合结果。** 新回归输入 exact 三项 tuple，三项都是同一份已授权 `valid_cbr.mp3`，无 output persistence。fake Google 第一项返回成功，第二项在真正进入 `generate_content` 后抛带隐私哨兵的 `ConnectionError`，第三项因 serial fail-fast 未进入 processor。测试第一次即 **1 passed in 0.13s**：outcome index 严格为 0/1/2；第一项 result 的 `provider_call_count=1`；第二项是 redacted `PROVIDER_NETWORK` 且 `provider_calls_attempted=1`；第三项是 exact `Cancelled` 且没有伪造调用字段。总 generate calls 为 2、两个 client 都关闭、audio snapshot 残留为 0。
+
+**决定、验证与过度设计复盘。** 证据说明 batch 没有丢失 #107/#108 的 item-local 信息，因此不修改 `recognize_batch.py`、不建立 audio outcome adapter，也不把各项调用数求和成 batch 总账。并行 audio 测试、provider fallback、API pool 和通用 provider class 都不是这个已通过的合同所需。扩大到 audio adapter、batch execution、public validation、source detection、MP3 probe/snapshot 和 import contract 为 **141 passed in 1.51s**；独立只读复核的完整 audio adapter 文件为 **25 passed in 0.20s**，compileall 与 EOL-aware diff check 通过。新增一条跨切片 public regression 是为了填补“代码看起来会工作但从未执行过 MP3 batch”的实际测试空洞，不是继续扩展 filesystem/accounting 边界。没有 live API、凭据、下载、依赖或产品代码改动；P1-d 仍等待明确的 historical Markdown compatibility yes/no，两个用户未跟踪文件和 frozen `contracts/`/`worker/` 保持未动。

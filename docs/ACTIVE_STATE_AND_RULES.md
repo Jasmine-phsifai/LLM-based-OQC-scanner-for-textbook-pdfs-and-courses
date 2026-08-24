@@ -422,6 +422,15 @@ output/temp directory; a later corrupt image returned `SOURCE_INVALID` with
 zero calls and no output/temp directory. This found no product drift and does
 not justify another batch abstraction or a wider live-runner protocol.
 
+#109 added the missing public short-audio batch characterization. With an exact
+three-MP3 tuple in serial mode, item zero completed with one call, item one
+entered Google generation and returned a redacted `PROVIDER_NETWORK` error with
+`provider_calls_attempted=1`, and fail-fast item two was an undispatched
+`CANCELLED` outcome with no synthetic call count. Caller order, two client
+closures, and removal of both audio snapshots were preserved. The test passed
+without a batch implementation change; generic parallel settlement remains
+covered by the existing batch tests and was not duplicated for audio.
+
 Exit gate met: invalid and colliding batches make zero calls, exact top-level
 tuple ordering and per-item grouped-source compatibility remain correct, and
 two live batches passed. Non-goals remain arbitrary top-level iterable

@@ -10,7 +10,13 @@ from types import SimpleNamespace
 import pytest
 
 import ocrllm
-from ocrllm import AudioModelSettings, Config, GoogleGenAISettings, recognize
+from ocrllm import (
+    AudioModelSettings,
+    Config,
+    GoogleGenAISettings,
+    recognize,
+    recognize_batch,
+)
 from ocrllm.errors import (
     Cancelled,
     ConfigError,
@@ -311,6 +317,45 @@ def test_google_audio_reports_completed_call_when_snapshot_cleanup_fails(
     assert caught.value.details["provider_calls_attempted"] == 1
     assert len(fake.models.generate_calls) == 1
     assert fake.clients[0].closed is True
+
+
+def test_serial_audio_batch_preserves_item_call_counts_and_order(
+    tmp_path, monkeypatch
+) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    fake = _FakeGoogleModule()
+    successful_generate = fake.models.generate_content
+
+    def succeed_then_fail(*, model, contents):
+        if fake.models.generate_calls:
+            fake.models.generate_calls.append({"model": model, "contents": contents})
+            raise ConnectionError("PRIVATE SECOND AUDIO FAILURE")
+        return successful_generate(model=model, contents=contents)
+
+    fake.models.generate_content = succeed_then_fail
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+    temp_dir = tmp_path / "snapshots"
+
+    outcomes = recognize_batch(
+        (FIXTURE, FIXTURE, FIXTURE),
+        config=_config(temp_dir=temp_dir),
+    )
+
+    assert [outcome.index for outcome in outcomes] == [0, 1, 2]
+    assert outcomes[0].result is not None
+    assert outcomes[0].result.metadata["provider_call_count"] == 1
+    assert outcomes[1].error is not None
+    assert outcomes[1].error.code == "PROVIDER_NETWORK"
+    assert outcomes[1].error.details["provider_calls_attempted"] == 1
+    assert "PRIVATE SECOND AUDIO FAILURE" not in str(outcomes[1].error)
+    assert type(outcomes[2].error) is Cancelled
+    assert "provider_calls_attempted" not in outcomes[2].error.details
+    assert len(fake.models.generate_calls) == 2
+    assert len(fake.clients) == 2
+    assert all(client.closed for client in fake.clients)
+    assert list(temp_dir.glob("ocrllm-audio-*")) == []
 
 
 def test_google_audio_response_keeps_missing_usage_unknown() -> None:

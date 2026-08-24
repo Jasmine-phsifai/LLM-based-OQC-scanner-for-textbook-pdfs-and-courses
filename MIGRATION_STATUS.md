@@ -153,7 +153,9 @@ state; reported input/output usage was 2401/1131 and 2401/988. #105 then
 re-proved the shipped wheel itself from outside the repository: valid tuple
 ordering, exact-container rejection, same-stem collision rejection, and a later
 corrupt source all matched the public contract, with zero calls and zero
-output/temp residue for every invalid case. P1-c PDF through
+output/temp residue for every invalid case. #109 added a public serial MP3 batch
+regression: success, one-call provider failure, and undispatched cancellation
+remain ordered item outcomes with honest local call evidence. P1-c PDF through
 the existing image/resume path now passes focused tests and a real local
 16-page PDFium probe: two ordered eight-page calls, two complete child states,
 zero retained rendered PNGs, and a one-call resume after the second group is
