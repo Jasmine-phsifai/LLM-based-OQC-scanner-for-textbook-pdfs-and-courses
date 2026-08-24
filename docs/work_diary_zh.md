@@ -3797,3 +3797,17 @@ Atomic task — Iteration #178: reconcile the maintained cold-start documentatio
 **两条路线与最小修正。** 路线 A 只删除错误短句，会留下短音频段直接跳到 PDF 的断裂上下文；路线 B 用短句准确写明 A2a standalone Google Files long-MP3 已实现/实测，A2b chunk-resume 与 long-audio video routing 仍不可用，同时把 PDF 段落改为 #120 已拒绝 legacy marker compatibility、ordinary image-sidecar resume 是恢复路径。选择 B。只改 active README、当前迁移导航、package 规则和唯一 authority；#079/#080 的调查结论仍保留，历史计划/日记不重写，没有把 repair 改成另一个未授权实现。
 
 **验证与过度设计复查。** 顶层 `recognize_long_mp3`、`compose_video_result`、`publish_video_result` 的导出和对应实现/测试已逐项核对；long-audio adapter、video composition/publication、import contract 与 lightweight import 聚焦集合为 **44 passed in 0.52s**，只给测试子进程临时加入已有 Node 路径后的完整离线套件为 **1,459 passed in 56.66s**。无网络、provider、凭据、安装、依赖、运行时代码、API、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有新增文档测试框架、能力表、第二份决策文档，或机械替换所有 `Stage A2` / `repair` 历史命中；只修两个会误导当前工作顺序的维护入口。
+
+## #179 — 2026-08-25：安装说明区分纯视频解析与完整 Google 双分支识别
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #179: verify that the maintained installation guidance can actually support the documented combined-video Python workflow with separate image and Google audio recognition, and correct only a reproducible extras/profile mismatch. Success means rereading authority/diary, tracing optional dependencies from `pyproject.toml` and lazy loaders, comparing root/package install commands with the video example, proving the smallest clean-environment import or resolution failure caused by the documented profile, choosing between one full-workflow command and clearly separated profiles, updating only current docs/tests if needed, and committing/pushing one coherent fix. This matters because a package is not mature when its documented code is valid but the adjacent installation command omits the dependencies required to run it.
+```
+
+**真实依赖闭包与文档缺口。** 同步 origin、重读 authority、日记和 package 规则后，逐项核对 `pyproject.toml` 与 lazy loader：`video` 只有 OpenCV 和 imageio-ffmpeg，足以运行 provider-free inspect/frame/audio extraction；Google 图片识别还需要 `image` 的 Pillow 与 `google` 的 SDK；短 MP3 还需要 `audio` 的 miniaudio 与 `google`。active README 的组合示例确实同时执行四条路径，却紧接着只写安装 `ocrllm[video]`。轻量只读审计独立得到同一闭包，并确认这是文档错误而非运行时依赖错误。
+
+**两条路线与最小修正。** 路线 A 把 Pillow、miniaudio 和 google-genai 全塞进 `video` extra，让一句旧命令变真，但会使 provider-free 视频解析失去轻量可选依赖边界。路线 B 明确分两个档位：`ocrllm[video]` 只负责无 provider 的解析/提取；完整 native-Google combined-video 示例安装 `ocrllm[video,image,audio,google]`。选择 B。package README 改正示例旁说明；root checkout 安装段保留原 DashScope image/PDF + provider-free video 命令，并增加完整 Google 视频命令。没有改变 extras、依赖版本、runtime 或 public API。
+
+**验证与过度设计复查。** 主代理核对三个 lazy dependency failure 的 `extra`/required distribution、公开示例用到的配置和四组 `pyproject` extras；video orchestration/extraction、Google image/audio adapter、import contract 与 lightweight import 聚焦集合为 **101 passed in 4.03s**，只给测试子进程临时加入已有 Node 路径后的完整离线套件为 **1,459 passed in 57.48s**。无网络、provider、凭据、安装、下载、运行时代码、测试框架、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有增加 meta-extra、dependency resolver、安装矩阵脚本或 clean-wheel 重跑；#146 明确要求依赖/manifest/public surface 未变化时不重复构建证明，本轮只修用户可执行命令。

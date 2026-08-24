@@ -314,9 +314,11 @@ if video_outcome.status != "failed":
     )
 ```
 
-Install `ocrllm[video]` for lazy OpenCV and `imageio-ffmpeg` support. The function
-accepts one local MP4, validates metadata and a real first-frame decode, returns
-immutable `VideoInfo`, writes nothing, and makes no provider call.
+Install `ocrllm[video]` for provider-free inspection and frame/audio extraction.
+The complete native-Google recognition example above requires
+`ocrllm[video,image,audio,google]`. `inspect_video()` accepts one local MP4,
+validates metadata and a real first-frame decode, returns immutable `VideoInfo`,
+writes nothing, and makes no provider call.
 `extract_video_frames()` adds five-second coarse thumbnails, bounded
 count-driven negative-feedback selection, and ordered immutable
 `RetainedVideoFrame` records. It publishes validated JPEGs together under

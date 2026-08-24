@@ -106,6 +106,9 @@ that integration without turning the fixture into a stress test or live gate.
 #178 keeps maintained cold-start docs aligned with shipped A2a long-MP3 support
 and the closed #120 no-repair decision. Do not reopen legacy Markdown repair or
 describe all Stage A2 work as unstarted.
+#179 distinguishes the provider-free `video` extra from the complete Google
+combined-video profile, which also needs `image`, `audio`, and `google`. Keep
+those dependencies optional instead of widening the `video` extra.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

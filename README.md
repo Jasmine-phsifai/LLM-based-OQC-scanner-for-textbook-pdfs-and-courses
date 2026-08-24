@@ -134,8 +134,16 @@ packaged Electron compatibility is not claimed.
 
 ### Install from this checkout
 
+For DashScope image/PDF recognition and provider-free video parsing:
+
 ```powershell
 pip install ".[image,dashscope,pdf-vision,video]"
+```
+
+For the complete native-Google combined-video workflow:
+
+```powershell
+pip install ".[video,image,audio,google]"
 ```
 
 ### Built-in DashScope example

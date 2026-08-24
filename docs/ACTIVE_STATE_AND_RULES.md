@@ -1723,6 +1723,16 @@ no legacy-marker compatibility and ordinary image-sidecar resume remains the
 recovery path. No historical plan or diary was rewritten, and no runtime, API,
 provider, dependency, frozen boundary, or open #127/#149/#152 decision changed.
 
+#179 fixes one installation-profile mismatch beside the maintained combined-
+video example. The `video` extra intentionally contains only lazy OpenCV and
+imageio-ffmpeg and is sufficient for provider-free inspection and frame/audio
+extraction. The documented native-Google combined path also validates JPEGs
+through Pillow, decodes MP3 through miniaudio, and uses google-genai, so its
+complete profile is `video,image,audio,google`. Root checkout instructions now
+name both profiles, and the package README no longer implies `video` alone can
+execute its Google example. No dependency set, runtime, API, provider, frozen
+boundary, or open #127/#149/#152 decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
