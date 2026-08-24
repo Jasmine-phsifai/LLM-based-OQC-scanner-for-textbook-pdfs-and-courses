@@ -780,9 +780,34 @@ Ordered slices:
 accepts one `.mp4`, uses the lazy `video` extra (`opencv-python>=4.13,<4.14`),
 checks a real first-frame decode, returns frame count/FPS/duration/dimensions,
 and makes no provider call or output file. OpenCV remains absent from plain
-package import. Frame selection, audio extraction, video recognition, provider
-separation, output, resume, and worker support remain unavailable until their
-ordered slices land.
+package import.
+
+#121 implements the bounded first half of slice 2 as public
+`extract_video_frames(source, output_dir=...) -> tuple[RetainedVideoFrame, ...]`.
+It samples one grayscale comparison thumbnail every five seconds, uses the main
+legacy adjacent-change, accumulated-drift, and maximum-segment formulas, and
+applies at most ten count-driven sensitivity adjustments toward 28–40 retained
+frames per hour. Comparison thumbnails are 128×128 and the operation rejects
+more than 10,000 candidates rather than retaining full video frames in memory.
+Only selected full-resolution JPEGs are decoded again, written and decoded for
+validation in a hidden sibling staging directory, then published together as
+`<output_dir>/<safe-source-stem>/frames/`. An existing same-stem target is
+rejected; there is no overwrite, resume, manifest, provider call, ROI, pHash,
+fine-gap scan, or threading behavior. Plain package import remains free of
+OpenCV and NumPy. A Windows regression proves the 96-character normalized
+source stem plus a controlled 130-unit output parent keeps every published
+path at or below 259 UTF-16 units; this is not arbitrary extended-path support.
+The next slice feeds these retained frames through the
+existing image-recognition path; audio extraction, independent audio binding,
+composition, resume, and worker support remain unavailable.
+
+The #121 source suite passes 1,351 tests, and a fresh 215,956-byte wheel installed
+outside the repository retained three ordered, decodable JPEGs from a generated
+72-frame MP4 with no staging residue. The all-profile clean-archive gate is not
+claimed complete: after its missing OpenCV test dependency and uv/Node discovery
+were corrected, the single clean run stalled while transferring the 38.3 MiB
+OpenCV and 12.3 MiB NumPy wheels and was stopped without retry. This is an
+external dependency-transfer blocker, not evidence that the video profile passed.
 
 ### P2 — Explicitly deferred work
 

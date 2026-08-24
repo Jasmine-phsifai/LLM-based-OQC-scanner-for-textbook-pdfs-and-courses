@@ -14,9 +14,10 @@ only where that queue has not superseded it. #078 closed P1-c with one bounded
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the
 new library does not consume legacy localized repair Markdown, and ordinary
 resume remains its PDF recovery path. P1-e video is now active in ordered
-slices: lazy local MP4 inspection, negative-feedback frame selection and
-retention, existing image-path recognition, separately configurable audio
-recognition, then lifecycle/resume. Keep the result a lightweight Python
+slices: #120 shipped lazy local MP4 inspection and #121 shipped bounded
+negative-feedback frame selection plus retained JPEGs. Next comes existing
+image-path recognition, separately configurable audio recognition, then
+lifecycle/resume. Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or build provider generalization before the two real
 video media consumers exist.

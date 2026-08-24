@@ -273,6 +273,10 @@ is often accepted.
   in base `import ocrllm`.
 - Do not begin with a provider base class, fallback pool, or compatibility
   framework. Add the provider split when both real video media consumers exist.
+- #121 keeps the first retained-frame contract deliberately strict: the caller
+  supplies an output parent, the library publishes one same-stem directory, and
+  any existing target is rejected. There is no overwrite, resume, manifest,
+  ROI, pHash, fine scan, or threading claim in this slice.
 
 ## Resolved confirmation and next authority
 

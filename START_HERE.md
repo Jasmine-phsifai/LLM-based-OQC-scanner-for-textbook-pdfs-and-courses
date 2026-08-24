@@ -123,10 +123,12 @@ ordered success, a one-call provider failure, and an undispatched cancellation
 as three honest item outcomes. #078 completed P1-c PDF-through-image/resume.
 #120 answered P1-d no: the library does not consume legacy localized repair
 Markdown, so ordinary resume remains its PDF recovery path and no `repair_pdf`
-compatibility parser is built. P1-e video is now active. Its first public slice
-is provider-free `inspect_video()` for one MP4 through a lazy OpenCV extra;
-negative-feedback frame comparison/retention, frame recognition, separately
-configured audio recognition, and composition follow in that order. The audio slice has no hidden
+compatibility parser is built. P1-e video is now active. #120 added
+provider-free `inspect_video()` for one MP4 through a lazy OpenCV extra; #121
+adds bounded coarse comparison, count-driven negative-feedback calibration,
+and complete-directory retained JPEG publication through
+`extract_video_frames()`. Frame recognition, separately configured audio
+recognition, and composition follow in that order. The audio slice has no hidden
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 
@@ -161,10 +163,11 @@ eight-page image requests. It reported aggregate usage of 4,802 input and 117
 output tokens, published ordered output with two complete child checkpoints,
 retained no rendered pages, cleaned both temporary roots, and exposed no key or
 OCR body. Combined with the earlier offline resume and installed-wheel proofs,
-P1-d is closed without legacy compatibility. The immediate queue is P1-e video,
-starting from local parsing and then retained-frame selection. Provider
-generalization remains deferred; video will first expose a concrete image/audio
-provider split at the real consumer boundary.
+P1-d is closed without legacy compatibility. P1-e local parsing and
+retained-frame selection are implemented; the immediate queue is feeding those
+frames through the existing image path, followed by a concrete image/audio
+provider split at the real consumer boundary. Provider generalization remains
+deferred.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203
@@ -204,7 +207,8 @@ disposition-gated, and fully disclosed offline. Experimental direct Google
 short-audio recognition is live-proven but remains memory-only; its published
 gate is not a transcription-quality evaluation. PDF repair, long audio, and
 persisted/resumable audio remain unavailable. Video recognition is not yet
-available, but provider-free MP4 inspection is the first active P1-e slice. Local user
+available, but provider-free MP4 inspection and retained-frame extraction are
+active P1-e slices. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 

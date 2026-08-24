@@ -68,7 +68,9 @@ if TYPE_CHECKING:
     )
     from .recognize import recognize as recognize
     from .recognize_batch import recognize_batch as recognize_batch
+    from .retained_video_frame import RetainedVideoFrame as RetainedVideoFrame
     from .result import RecognitionResult as RecognitionResult
+    from .video.extract_video_frames import extract_video_frames as extract_video_frames
     from .video.inspect_video import inspect_video as inspect_video
     from .video_info import VideoInfo as VideoInfo
     from .vision_model_settings import VisionModelSettings as VisionModelSettings
@@ -139,12 +141,14 @@ _PUBLIC_IMPORTS = {
         "RecognitionPreferences",
     ),
     "RecognitionResult": (".result", "RecognitionResult"),
+    "RetainedVideoFrame": (".retained_video_frame", "RetainedVideoFrame"),
     "ResumeStateError": (".errors", "ResumeStateError"),
     "UnsupportedFormat": (".errors", "UnsupportedFormat"),
     "VideoError": (".errors", "VideoError"),
     "VisionModelSettings": (".vision_model_settings", "VisionModelSettings"),
     "VideoInfo": (".video_info", "VideoInfo"),
     "get_capabilities": (".get_capabilities", "get_capabilities"),
+    "extract_video_frames": (".video.extract_video_frames", "extract_video_frames"),
     "list_google_genai_models": (
         ".providers.google_genai.list_google_genai_models",
         "list_google_genai_models",
@@ -195,6 +199,7 @@ __all__ = [
     "RateLimited",
     "ResumeStateError",
     "RecognitionResult",
+    "RetainedVideoFrame",
     "RecognitionExecutionPolicy",
     "RecognitionPreferences",
     "UnsupportedFormat",
@@ -203,6 +208,7 @@ __all__ = [
     "VisionModelSettings",
     "recognize",
     "recognize_batch",
+    "extract_video_frames",
     "inspect_video",
     "get_capabilities",
     "list_google_genai_models",

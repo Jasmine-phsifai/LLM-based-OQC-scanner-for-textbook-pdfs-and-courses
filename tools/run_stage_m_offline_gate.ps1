@@ -13,6 +13,26 @@ function Assert-LastExitCode {
     }
 }
 
+function Add-ExecutableDirectoryToPath {
+    param(
+        [string]$Name,
+        [string[]]$CandidatePaths
+    )
+    if ($null -ne (Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue)) {
+        return
+    }
+    foreach ($candidate in $CandidatePaths) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+            $directory = Split-Path -Parent (Resolve-Path -LiteralPath $candidate).Path
+            $env:PATH = $directory + [IO.Path]::PathSeparator + $env:PATH
+            if ($null -ne (Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue)) {
+                return
+            }
+        }
+    }
+    throw "required executable is unavailable: $Name"
+}
+
 function Get-DirectoryByteCount {
     param([string]$Path)
     $measurement = Get-ChildItem -LiteralPath $Path -Recurse -File |
@@ -46,7 +66,7 @@ assert target in origin.parents, (target, origin)
 loaded = {name.split('.')[0] for name in sys.modules}
 forbidden = {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
-    'miniaudio', '_miniaudio', 'google', 'legacy_app',
+    'miniaudio', '_miniaudio', 'google', 'cv2', 'numpy', 'legacy_app',
 }
 assert not loaded & forbidden, loaded & forbidden
 print(json.dumps({'wall': wall_ms, 'cpu': cpu_ms}))
@@ -83,6 +103,21 @@ print(json.dumps({'wall': wall_ms, 'cpu': cpu_ms}))
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $python = (Resolve-Path -LiteralPath $PythonPath).Path
+$originalPath = $env:PATH
+$pythonEnvironment = Split-Path -Parent $python
+$condaEnvironments = Split-Path -Parent $pythonEnvironment
+$condaRoot = Split-Path -Parent $condaEnvironments
+$uvCandidates = @(
+    (Join-Path $condaRoot 'Scripts\uv.exe'),
+    (Join-Path $pythonEnvironment 'Scripts\uv.exe')
+)
+$nodeCandidates = @((Join-Path $pythonEnvironment 'node.exe'))
+if (Test-Path -LiteralPath $condaEnvironments -PathType Container) {
+    $nodeCandidates += @(
+        Get-ChildItem -LiteralPath $condaEnvironments -Directory |
+            ForEach-Object { Join-Path $_.FullName 'node.exe' }
+    )
+}
 $temporaryBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
 $proofRoot = Join-Path $temporaryBase (
     'ocrllm-stage-m-offline-gate-' + [guid]::NewGuid().ToString('N')
@@ -94,6 +129,8 @@ $targetDir = Join-Path $proofRoot 'target'
 $locationDepth = 0
 
 try {
+    Add-ExecutableDirectoryToPath -Name 'uv' -CandidatePaths $uvCandidates
+    Add-ExecutableDirectoryToPath -Name 'node' -CandidatePaths $nodeCandidates
     Push-Location $repoRoot
     $locationDepth += 1
 
@@ -118,7 +155,7 @@ try {
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
         --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
         --with 'google-genai>=2.9,<3' --with 'miniaudio>=1.71,<2' `
-        --with 'pypdfium2==5.11.0' `
+        --with 'pypdfium2==5.11.0' --with 'opencv-python>=4.13,<4.14' `
         --python $python python -m pytest -q -p no:cacheprovider
     Assert-LastExitCode 'archived-source pytest failed'
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
@@ -162,7 +199,7 @@ assert target in origin.parents, (target, origin)
 loaded = {name.split('.')[0] for name in sys.modules}
 forbidden = {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
-    'miniaudio', '_miniaudio', 'google', 'legacy_app',
+    'miniaudio', '_miniaudio', 'google', 'cv2', 'numpy', 'legacy_app',
 }
 assert not loaded & forbidden, loaded & forbidden
 print(ocrllm.__version__, origin)
@@ -563,7 +600,7 @@ import sys
 
 import cv2
 import numpy as np
-from ocrllm import VideoInfo, inspect_video
+from ocrllm import RetainedVideoFrame, VideoInfo, extract_video_frames, inspect_video
 
 path = Path(sys.argv[1]) / 'generated-valid.mp4'
 writer = cv2.VideoWriter(
@@ -586,7 +623,16 @@ assert info.frames_per_second == 5.0
 assert info.duration_seconds == 2.0
 assert info.width_pixels == 32
 assert info.height_pixels == 24
-print(info)
+frames = extract_video_frames(path, output_dir=Path(sys.argv[1]) / 'video-output')
+assert type(frames) is tuple
+assert frames
+assert all(type(frame) is RetainedVideoFrame for frame in frames)
+assert all(frame.path.is_file() for frame in frames)
+assert [frame.frame_index for frame in frames] == sorted(
+    frame.frame_index for frame in frames
+)
+assert not list((Path(sys.argv[1]) / 'video-output').glob('.ocrllm-video-*'))
+print(info, len(frames))
 '@
                 $videoSmoke | & $profilePython -I - $profileVenv
                 Assert-LastExitCode 'installed public video inspection smoke failed'
@@ -609,6 +655,7 @@ print(info)
     Write-Output "Stage M offline gate passed for commit $commit"
     Write-Output "wheel bytes: $($wheel.Length); base target bytes: $installedBytes"
 } finally {
+    $env:PATH = $originalPath
     while ($locationDepth -gt 0) {
         Pop-Location
         $locationDepth -= 1

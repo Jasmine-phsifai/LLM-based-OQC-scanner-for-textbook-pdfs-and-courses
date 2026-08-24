@@ -157,3 +157,44 @@ def test_load_opencv_maps_missing_video_extra(monkeypatch: pytest.MonkeyPatch) -
 
     assert captured.value.code == "DEPENDENCY_MISSING"
     assert captured.value.details["extra"] == "video"
+
+
+def test_inspect_video_maps_open_check_failure_and_releases_capture(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "open-check-failure.mp4"
+    source.write_bytes(b"placeholder")
+
+    class FakeCapture:
+        released = False
+
+        def isOpened(self):
+            raise RuntimeError("private backend detail")
+
+        def release(self):
+            self.released = True
+
+    capture = FakeCapture()
+
+    class FakeOpenCV:
+        CAP_PROP_FPS = 1
+        CAP_PROP_FRAME_COUNT = 2
+        CAP_PROP_FRAME_WIDTH = 3
+        CAP_PROP_FRAME_HEIGHT = 4
+
+        @staticmethod
+        def VideoCapture(path):
+            return capture
+
+    monkeypatch.setattr(
+        "ocrllm.video.inspect_video.load_opencv",
+        lambda: FakeOpenCV,
+    )
+
+    with pytest.raises(VideoError) as captured:
+        inspect_video(source)
+
+    assert str(captured.value) == "The video backend could not open the source."
+    assert "private backend detail" not in str(captured.value)
+    assert capture.released is True

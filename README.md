@@ -28,10 +28,11 @@ As of 2026-08-24:
   calls with two complete checkpoints and no retained rendered pages; PDF
   repair will not consume legacy application's Markdown format; ordinary
   image-sidecar resume remains the library recovery path.
-- The first video slice is provider-free `inspect_video(one.mp4)`. It lazily
-  loads the optional OpenCV backend, validates metadata plus one decoded frame,
-  and writes nothing. Frame selection, recognition, and audio extraction are
-  not implemented yet.
+- Provider-free video inspection and retained-frame extraction are available.
+  `inspect_video(one.mp4)` writes nothing; `extract_video_frames()` performs a
+  bounded five-second coarse scan, count-driven negative-feedback selection,
+  and complete-directory JPEG publication. Recognition and audio extraction
+  are not implemented yet.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
@@ -69,6 +70,9 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   password, partial-result, or text-mode settings.
 - exposes `inspect_video()` separately for one local MP4 when the `video` extra
   is installed; this inspection API performs no recognition or output writes.
+- exposes `extract_video_frames()` for an explicit output parent; it creates a
+  same-stem directory containing ordered `frames/frame-<index>.jpg` files and
+  rejects an existing target instead of overwriting or resuming it.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The

@@ -386,7 +386,8 @@ The following directions remain traceable but are not current work:
   retained only in `legacy_app/`.
 - PDF text mode and repair plus long or persisted/resumable audio remain
   phase-gated and unavailable. Video recognition is not implemented; #120 adds
-  only lazy, provider-free MP4 inspection as the first ordered video slice. The direct PDF vision
+  lazy MP4 inspection and #121 adds provider-free negative-feedback frame
+  selection plus retained JPEGs. The direct PDF vision
   facade and its ordinary image-sidecar resume are implemented; the
   experimental direct short-audio API is implemented and live-proven only for
   one in-memory MP3 of at most 300 seconds.

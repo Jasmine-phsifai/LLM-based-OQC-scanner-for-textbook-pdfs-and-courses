@@ -210,20 +210,25 @@ audio, and persisted/resumable audio remain unavailable. #120 explicitly rejects
 legacy repair-Markdown compatibility. PDF recognition is offline- and
 Google-live-proven.
 
-The first provider-free video slice is available:
+The provider-free video inspection and retained-frame slices are available:
 
 ```python
-from ocrllm import inspect_video
+from ocrllm import extract_video_frames, inspect_video
 
 info = inspect_video("lecture.mp4")
+frames = extract_video_frames("lecture.mp4", output_dir="output")
 ```
 
 Install `ocrllm[video]` for lazy `opencv-python>=4.13,<4.14` support. The function
 accepts one local MP4, validates metadata and a real first-frame decode, returns
-immutable `VideoInfo`, writes nothing, and makes no provider call. Frame
-selection/retention, video recognition, audio extraction, independent image and
-audio provider bindings, output, resume, and worker routing are not implemented
-yet. Plain `import ocrllm` does not import OpenCV or NumPy.
+immutable `VideoInfo`, writes nothing, and makes no provider call.
+`extract_video_frames()` adds five-second coarse thumbnails, bounded
+count-driven negative-feedback selection, and ordered immutable
+`RetainedVideoFrame` records. It publishes validated JPEGs together under
+`output/lecture/frames/` and rejects an existing `output/lecture` instead of
+overwriting or resuming it. Video recognition, audio extraction, independent
+image and audio provider bindings, resume, and worker routing are not
+implemented yet. Plain `import ocrllm` does not import OpenCV or NumPy.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.
