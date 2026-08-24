@@ -73,6 +73,11 @@ request, public facade, and in-memory result are implemented for one MP3 of at
 most 300 seconds. Persistence, resume, groups, upload, and long-audio routing
 do not exist. Stage A2 has not started.
 
+#110 re-proved the distributable boundary after the recent audio changes. A
+clean archive ran 1325 tests with one expected skip, built a 202,692-byte wheel,
+and passed dependency-empty base import plus audio, image, DashScope, Google,
+combined audio+Google, and installed public PDF profiles without provider calls.
+
 The ordered current work is `#065 Unified Execution Queue` in
 `docs/ACTIVE_STATE_AND_RULES.md`. Its bounded legacy-provider audit and native
 `google-genai` direct-Python image slice are complete. The #067 live gate found

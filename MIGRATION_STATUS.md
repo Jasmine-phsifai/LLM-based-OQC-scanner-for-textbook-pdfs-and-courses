@@ -77,8 +77,11 @@ Phase 1 maturation is offline implementation-complete:
   probe now uses lazy `miniaudio>=1.71,<2`, fully decodes bounded five-minute
   snapshots, and rejects the fixture-proven malformed cases before dispatch.
   The user-facing `audio` extra remains independent, while `dev` also carries
-  miniaudio so the shipped short-audio tests run the real probe in a clean
-  development profile; the base distribution remains dependency-empty.
+  miniaudio and Google GenAI so the shipped short-audio tests run their real
+  probe and SDK boundary in a clean development profile; the base distribution
+  remains dependency-empty. #110 repaired that exact clean-gate dependency
+  mirror and passed 1325 archived tests with one expected skip, a 202,692-byte
+  wheel, and all six isolated profiles without a provider call.
   One local `.mp3` is copied through an open handle to fixed `source.mp3`, with
   a separate 25 MiB local safety ceiling and cleanup ownership;
   FFmpeg/PyAV/Mutagen remain outside the A1 runtime. Exact public audio

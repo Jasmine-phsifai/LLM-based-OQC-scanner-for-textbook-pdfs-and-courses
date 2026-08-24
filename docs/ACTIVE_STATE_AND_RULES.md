@@ -84,6 +84,14 @@ The independent `audio` extra remains the user-facing A1 runtime profile. The
 `dev` extra also includes `miniaudio` because the shipped short-audio adapter
 tests execute that real probe rather than treating its dependency as an
 expected skip; this does not make audio a base requirement.
+#110 corrected the clean-archive test environment to include the already
+declared `google-genai>=2.9,<3` development dependency. The complete gate for
+clean commit `8991b83` then passed 1325 archived tests with one expected skip,
+built a 202,692-byte wheel, and passed base import plus all six isolated
+profiles, including audio+Google and installed public PDF recognition. No
+provider API was called and the disposable gate root was removed. This repairs
+the release proof, not the runtime dependency boundary: the base distribution
+remains dependency-empty and Google stays an explicit extra.
 The snapshot copies one regular local `.mp3` through an open file handle into a
 fixed `source.mp3` name, rejects growth/shrink and a 25 MiB local resource
 ceiling, closes the caller's handle, then probes those owned bytes before
