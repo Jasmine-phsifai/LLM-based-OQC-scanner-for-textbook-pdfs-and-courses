@@ -105,7 +105,11 @@ single failed-range marker cannot recover an unattempted suffix under the
 current serial fail-fast loop. #102 reduced the product choice to whether
 historical legacy Markdown with an explicit `第 N` / `第 N-M 页识别失败` marker
 is an intentional new-library compatibility input; implementation remains
-paused for that confirmation. The audio slice has no hidden
+paused for that confirmation. #106 confirmed that the general repair wording in
+the maintainer-decision file is conditional, then fixed the recommended yes-path:
+a separate `repair_pdf` facade, strict pre-dispatch marker/page validation, one
+bounded request per original marker, span-based atomic replacement after every
+success, and no active-producer/checkpoint change. The audio slice has no hidden
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 

@@ -245,6 +245,10 @@ is often accepted.
   one-based failed-page marker. Confirm whether that historical compatibility
   input is intentionally in new-library scope before implementation; do not
   widen the active producer merely to manufacture repair markers.
+- #106 clarified the apparent tension inside this section: the general repair
+  bullets above describe the desired behavior *if* historical compatibility is
+  approved; they do not themselves answer the later, more specific scope gate.
+  One explicit maintainer yes/no remains required.
 
 ## Resolved confirmation and next authority
 

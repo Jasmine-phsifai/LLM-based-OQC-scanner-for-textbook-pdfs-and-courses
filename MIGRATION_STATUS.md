@@ -157,7 +157,11 @@ retry, fallback, or Files lifecycle; the bounded manual repair product choice
 is now the immediate queue. #102 narrowed it to one confirmation: whether
 explicitly failed ranges in historical legacy Markdown are an intentional
 compatibility input. Active missing-state suffix recovery remains ordinary
-resume; implementation is paused pending that answer.
+resume; implementation is paused pending that answer. #106 resolved the
+conditional implementation shape without treating it as consent: a separate
+`repair_pdf` facade, strict full marker/page preflight, one bounded image request
+per original marker, and span-based atomic publication after each success, with
+no new checkpoint schema or active producer change.
 #085 briefly generalized settled usage around an internal response returned by an
 injected test double. #086 found no valid public consumer for that behavior and
 reverted it: injected providers return Markdown strings, Google retains its exact

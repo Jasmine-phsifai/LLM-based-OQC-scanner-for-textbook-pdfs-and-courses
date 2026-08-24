@@ -619,6 +619,44 @@ slice may consume only the exact legacy syntax at its input boundary without
 promoting it to active state. No provider call or product-code edit was made by
 any of these contract audits.
 
+#106 checked the maintainer-decision record rather than inferring consent from
+its general repair description. Its later, specific instruction still says to
+confirm historical compatibility before implementation, so the gate is not
+answered. If the answer is yes, the recommended contract is now fixed enough to
+implement without another architecture round:
+
+- expose one separate `repair_pdf(pdf_path, markdown_path, *, config=None)`
+  facade; do not overload `recognize()`, change the active PDF producer, or add
+  a normal resume/checkpoint schema;
+- accept only existing UTF-8 historical Markdown containing the exact legacy
+  one-based single/range HTML comments (`第 N` or `第 N-M 页识别失败`, including
+  the historical `页逐页识别失败` wording). Validate every marker and PDF page
+  bound before dispatch; reject zero, reversed, out-of-range, duplicate,
+  overlapping, malformed, or over-eight-page ranges with zero provider calls;
+- process original marker spans in document order. Snapshot and inspect the PDF
+  once, render only each exact marked range, and reuse the current memory-only
+  image recognition path. One marker is one bounded image request; never infer
+  or run an unmarked suffix;
+- rebuild from original spans rather than global string replacement, so model
+  output containing marker-like text cannot redirect a later replacement.
+  Atomically publish each successful replacement before starting the next
+  provider call. A later typed failure or cancellation leaves the current and
+  later markers intact while preserving already published paid work; rerunning
+  scans only the remaining markers;
+- return the ordinary `RecognitionResult` only when every original marker was
+  repaired. Reject conflicting normal output/resume options rather than
+  silently ignoring them. Use existing snapshot, inspection, renderer, output
+  claim, image processor, atomic Markdown writer, and typed errors; do not touch
+  frozen contracts/worker or build a generic repair framework.
+
+The first implementation regression should use a 24-page PDF whose middle
+`第 9-16 页识别失败` marker is repaired by exactly one injected-provider call,
+while the successful prefix/suffix stay byte-identical and all rendered/temp
+files are removed. The next lifecycle regression should make marker one succeed
+and marker two fail, prove marker one was atomically retained before the second
+call, then rerun and dispatch only marker two. This is a conditional execution
+contract, not implementation authority.
+
 ### P2 — Explicitly deferred work
 
 Credential- and budget-gated DashScope live re-verification, the future
