@@ -1899,6 +1899,20 @@ neighbor tests and the complete 1,467-test offline suite pass. No provider call,
 API signature, output layout, dependency, frozen boundary, or open
 #127/#149/#152 choice changed.
 
+#191 proves #190 from the distributed Python library rather than the source
+checkout. Exact tracked commit `ed5569e835d3b84c42f7055ebbebef759bb3174c`
+built offline from a clean Git archive into a 241,014-byte wheel (SHA-256
+`88becffa6d19acc41282e6c03d5649051cc08a62edbc899ae44064bbb7f7f2fc`).
+It installed with `--no-deps` into an external target; package and distribution
+origins both resolved there. A fresh process accepted `.JPG`, rejected `.png`
+with the public #190 error, and confirmed that `cv2`, NumPy, imageio-ffmpeg,
+Pillow, miniaudio, Google GenAI, OpenAI/httpx, and `legacy_app` remained unloaded
+after plain import. The wheel contains `ocrllm/retained_video_frame.py` and
+`ocrllm/py.typed`. The exact disposable proof root was removed. No runtime,
+manifest, dependency, environment, provider, credential, frozen boundary, or
+open #127/#149/#152 choice changed; do not add another build harness for this
+already-proven value contract.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

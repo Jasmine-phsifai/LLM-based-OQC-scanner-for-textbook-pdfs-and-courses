@@ -3967,3 +3967,17 @@ Atomic task — Iteration #190: audit the public retained-frame value itself as 
 **最小修复。** 路线 A 只在 `RetainedVideoFrame.__post_init__()` 要求 `path.suffix.casefold() == ".jpg"`；路线 B 再检查完整文件名、frame index 对应、存在性、真实解码、路径解析或 hash。选择 A：非本类型的媒体在唯一值边界直接拒绝，存在性与 JPEG 字节仍由已有图片 preflight 负责，没有第二套 decoder。新增独立 `tests/test_retained_video_frame.py`，PNG 构造回归在实现前如预期 **1 failed**，实现后通过；没有接受 `.jpeg` 这种库从不生成的新别名，也没有绑定 `frame-XXXXXXXX` 名称。
 
 **验证、环境事实与过度设计复查。** outcome、frame facade、composition、publication、combined video 和 smoke 的聚焦集合为 **74 passed in 4.97s**；`compileall -q src tests tools` 与 `git diff --check` 通过。第一次完整套件得到 **1,465 passed、2 failed**，两个失败都在冻结 Node worker gate，原因只是当前 PATH 找不到 Node，和本轮视频变更无关，但不能称为通过。按既定规则让轻量任务只读定位到已有 `D:\Anaconda\envs\STA\node.exe`（v22.23.2），没有下载或安装；只在第二次测试进程临时加入 PATH 后，完整离线套件为 **1,467 passed in 59.60s**。无网络、provider、凭据、依赖安装、legacy compatibility、frozen `contracts/worker` 修改或 #127/#149/#152 决策。没有加入 existence/resolve/symlink/hash/filename-index/内容快照防御；本轮只关闭真实复现的 PNG 假 JPEG。
+
+## #191 — 2026-08-25：从干净 wheel 证明 JPEG 约束确实属于可安装 Python 包
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #191: prove the new retained-JPEG invariant from a clean, externally installed wheel rather than trusting the source checkout. Success means rereading the authoritative state and diary, building exact committed `ed5569e` from a disposable Git archive, installing the wheel without dependencies outside the repository, proving public `RetainedVideoFrame` rejects PNG while accepting `.jpg`, confirming plain `import ocrllm` remains free of heavy video/image/audio modules, checking wheel origin and contents, deleting the exact temporary root, and recording evidence without changing runtime code. This matters because the user requires a real Python library: a source-tree regression is insufficient if packaging, lazy imports, or the installed public facade diverge.
+```
+
+**为什么值得单独做。** #146 规定只有 public surface、manifest 或 runtime dependency boundary 改变才重跑 clean-wheel 证明；#190 收紧了公开 `RetainedVideoFrame` 构造契约，因此满足这个条件。路线 A 是只相信 source tests；路线 B 是从精确已提交树构建并在仓库外导入。选择 B，但不重跑全 profile、真实视频或 provider：本轮只验证新的公开值约束和 lightweight package 边界。
+
+**固定工作流与主代理复核。** 按用户“下载/安装/主动检查交给轻量任务”的规则，轻量任务只执行一次 archive/build/install/probe/cleanup；主代理同时核对 `pyproject.toml` 的 wheel 包仍只有 `src/ocrllm`、base dependencies 仍为空，精确提交中确有 `retained_video_frame.py`、README 和 `py.typed`，没有新建第二套 build harness。工作流用 `git archive` 取精确提交 `ed5569e835d3b84c42f7055ebbebef759bb3174c`，利用已有 Hatchling 离线构建，并以 `--no-deps` 安装到唯一临时根下的外部 target；没有联网、下载或更改环境。
+
+**结果、清理与过度设计复查。** wheel 为 **241,014 bytes**，SHA-256 `88becffa6d19acc41282e6c03d5649051cc08a62edbc899ae44064bbb7f7f2fc`；包路径和 distribution metadata 路径都落在外部 target。新鲜进程中 `.JPG` 构造成功，`.png` 得到 #190 的预期 `ValueError`；wheel 同时包含 `ocrllm/retained_video_frame.py` 和 `ocrllm/py.typed`。普通导入没有加载 `cv2`、`numpy`、`imageio_ffmpeg`、`PIL`、`miniaudio`、`google/genai`、`openai`、`httpx` 或 `legacy_app`。唯一临时根已删除并确认不存在。无 repo runtime/test/API/manifest/dependency、provider、credential、frozen `contracts/worker` 或 #127/#149/#152 选择变化；不把一次公开值变化扩成全 profile release gate、第二构建脚本或重复真实视频测试。
