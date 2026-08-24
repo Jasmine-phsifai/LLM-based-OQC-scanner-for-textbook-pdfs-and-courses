@@ -167,7 +167,9 @@ def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
 
     summary = smoke.run_google_genai_video_smoke(_arguments())
 
+    assert summary["report_type"] == "video_outcome"
     assert summary == {
+        "report_type": "video_outcome",
         "status": "passed",
         "catalog_count": 1,
         "model": MODEL,
@@ -381,6 +383,7 @@ def test_video_smoke_does_not_compose_when_both_branches_failed(
 
     summary = smoke.run_google_genai_video_smoke(_arguments())
 
+    assert summary["report_type"] == "video_outcome"
     assert summary["outcome_status"] == "failed"
     assert summary["frames"]["provider_calls_attempted"] == 1
     assert summary["audio"]["provider_calls_attempted"] == 1
@@ -533,6 +536,7 @@ def test_video_smoke_main_redacts_unexpected_failure(
     assert smoke.main(["--model", MODEL, "--video", "private-name.mp4"]) == 1
     raw = capsys.readouterr().out
     assert json.loads(raw) == {
+        "report_type": "runner_failure",
         "status": "failed",
         "error": {
             "code": "UNEXPECTED_SAFE_FAILURE",

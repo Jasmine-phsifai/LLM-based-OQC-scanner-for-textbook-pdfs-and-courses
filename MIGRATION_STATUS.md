@@ -564,6 +564,10 @@ The following directions remain traceable but are not current work:
   #196 takes that same real outcome through public atomic Markdown publication
   at a non-ASCII target and verifies returned path/content/assets/call metadata
   plus cleanup. No second fixture or publication subsystem was added.
+  #197's one post-change Google attempt retained no branch result because its
+  external controller confused settled failed outcomes with runner failures and
+  discarded valid safe JSON. The maintained runner now distinguishes
+  `video_outcome` from `runner_failure`; no live retry or product claim followed.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

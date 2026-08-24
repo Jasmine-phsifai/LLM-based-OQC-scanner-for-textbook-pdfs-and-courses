@@ -1995,6 +1995,31 @@ publication feature. No runtime, API, provider, dependency, output layout,
 legacy compatibility, frozen boundary, or open #127/#149/#152 choice changed;
 do not add manifests, resume, or another path fixture from this proof.
 
+#197 attempted the one authorized post-#193 Google combined-video live recheck,
+but preserves no provider outcome because the external controller discarded the
+runner's otherwise valid safe JSON. The controller used one real audible MP4 at
+a non-ASCII source path, set child `TEMP`/`TMP` to a non-ASCII parent, loaded the
+existing QSettings credential only in memory, launched the maintained runner
+exactly once on `gemini-2.5-flash`, and did not retry. The fixture completed;
+the runner exited 1 after 6,570.72 ms with empty stderr. Credential and source-
+path scans were false, no temporary residue remained, and the single disposable
+root was removed. The controller then treated every top-level `status="failed"`
+as a runner-level `{error}` shape. That is wrong: a fully settled video outcome
+may also be `failed` while carrying safe `frames` / `audio` / `composition`
+evidence. Because the parsed object was discarded, no catalog count, branch
+status, provider-call count, token usage, or error code may be inferred from
+this attempt.
+
+The maintained runner now removes that proven protocol ambiguity with one
+explicit discriminator: complete settled summaries carry
+`report_type="video_outcome"`, while catalog/model/orchestration failures carry
+`report_type="runner_failure"`. No generic schema framework or provider behavior
+changed. Fourteen runner tests and 83 runner/Google-adapter/combined-video tests
+pass. Do not rerun merely to recover this lost result or seek green; a future
+otherwise-warranted live controller must validate `report_type` before the
+shared `status` value. No library runtime, API, dependency, output contract,
+legacy compatibility, frozen boundary, or open #127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

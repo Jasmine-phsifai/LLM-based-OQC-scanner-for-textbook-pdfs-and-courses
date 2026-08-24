@@ -475,6 +475,10 @@ objects and prints only catalog/model, branch status, retained/group/asset
 counts, stable error codes, exact-or-null calls, and validated per-model token
 usage when composition succeeds. It never prints recognition text, paths,
 credentials, or raw provider responses and performs no retry or model switch.
+Every JSON object is discriminated before its shared pass/fail status:
+`report_type="video_outcome"` means the media branches settled, while
+`report_type="runner_failure"` means catalog/model/orchestration did not produce
+a settled outcome.
 The #186 robustness run retained three equal-luminance color scenes and made one
 image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.

@@ -4051,3 +4051,19 @@ Atomic task — Iteration #196: identify and close the next evidence-backed matu
 **最小测试变化与真实结果。** #195 的同一个 1 秒真实有声 MP4、同一个中文源/输出目录、同一对独立 image/audio provider seam 完全复用；测试不再只调用 `compose_video_result()`，而是调用 `publish_video_result(outcome, 识别输出/最终识别结果.md)`。最终结果为 complete，`output_path` 精确等于目标，磁盘 UTF-8 Markdown 与返回 `markdown` 完全相同，assets 仍为受控 JPEG 后接 `audio.mp3`，`current_run_provider_call_count == 2`，输出父目录没有 `.ocrllm-*.tmp`。因为 publish 内部已经调用 compose，删除同一测试里的直接 compose 是减少重复，而不是减少产品证据。没有运行时代码变更。
 
 **验证与过度设计复查。** 精确真实媒体测试为 **1 passed in 0.44s**；combined video、outcome、composition 与 publication 集合为 **45 passed in 4.58s**；`compileall -q src tests tools` 和 `git diff --check` 通过。轻量独立审计的相邻集合为 **60 passed in 5.20s**。#193 刚对 runtime 完成全量 1,468 项，本轮仅替换一条测试的最后消费步骤，因此不机械重跑全量或 clean wheel。无网络、provider、凭据、安装、runtime/API/dependency/output layout、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策；没有新增 manifest、resume、hash、通用 publication abstraction、第二 fixture 或每种 Unicode 字母表测试。
+
+## #197 — 2026-08-25：一次真实 Google 音画检查因 controller 混淆两种失败 JSON 而丢证据
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #197: run one bounded authorized live Google combined-video smoke after the retained-JPEG Windows runtime change, using a real audible MP4 on non-ASCII source/output paths and the maintained redacted runner. Success means reconciling authority and diary, reviewing the runner and credential-loading boundary, discovering the current live catalog, making exactly one image-group call and one audio call with separate configs, preserving honest branch status/call evidence and retained artifacts, validating secret/content/path redaction, cleaning all temporary data, and changing code only if the live result exposes a reproducible library defect. This matters because #193 changed the exact JPEG bytes/path seam consumed by providers, while #195/#196 used fakes; the library’s hardest failures remain real API behavior.
+```
+
+**唯一 live 流程与安全边界。** 先复核 maintained runner 及其 **14 passed** 的离线安全测试。按用户“主动检查交给轻量任务”的规则，轻量子代理在 `oqcnew` 进程内从 QSettings `OCRLLM/QCR` 的 `ui/google_api_key` 读取凭据，只报告 credential present，并只向一个 OCRLLM 子进程注入 `GOOGLE_API_KEY`；key 不进入命令、文件、仓库、日志或报告。唯一 disposable root 内先生成 1 秒、64×48、2 fps、蓝色视频加 440 Hz/16 kHz AAC 音轨，再移动到中文源目录；子进程 `TEMP/TMP` 指向中文临时父目录，使 runner 内部 retained output 也经过非 ASCII 路径。runner 明确模型 `gemini-2.5-flash`、timeout 120 秒，只启动一次，无 retry、fallback、换模型或 invalid-key probe。
+
+**可以保留与不能声称的证据。** fixture exit 0；runner exit 1，耗时 **6,570.72 ms**，stderr 为空，stdout 是一个可解析 JSON。stdout/stderr 的 credential scan 与 source-path scan 均为 false；中文 TEMP 下没有 `ocrllm-google-video-smoke-*`、图片/音频 snapshot 等 residue；唯一根已删除并确认不存在。可是 controller 的 schema gate 返回 false，随后丢弃已解析对象。因此本轮不能声称 catalog 数、图片/音频是否 dispatch、分支 error code、调用数、usage 或 product outcome；runner exit 1 也不能区分 typed robustness failure 与 controller 以外的具体分支状态。没有第二次 live 调用来补结果。
+
+**真实原因、两条路线与最小修复。** 离线追踪 runner 后确认顶层 `status="failed"` 有两种合法形态：catalog/model/orchestration 没得到 outcome 时是 `{status,error}`；音画分支已经完整结算但 gate 未通过时，则是 `{status,catalog_count,model,outcome_status,frames,audio,composition}`。controller 错把所有 failed 都要求为第一种。路线 A 只写说明；路线 B 给两个现有形态增加一个字符串判别字段。选择 B：完整摘要固定 `report_type="video_outcome"`，顶层 runner 错误固定 `report_type="runner_failure"`。不加 schema class、version registry、JSON 库或第三种结果；README 同步说明先看 `report_type`，再看共享 status。
+
+**离线验证与过度设计复查。** 原有 success-summary 精确断言与 main failure 精确断言都更新为相应 discriminator，已结算的双分支失败测试也确认仍是 `video_outcome`。runner 文件 **14 passed in 0.10s**；runner、Google image/audio adapter 与 combined-video 相邻集合 **83 passed in 4.84s**；`compileall -q src tests tools` 与 `git diff --check` 通过。本轮改的是维护 live 工具协议，不是 library runtime；不因证据丢失修改 provider error handling、不猜测这次 JSON 内容、不重发 API、不加日志持久化/通用 schema/重试，也不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。

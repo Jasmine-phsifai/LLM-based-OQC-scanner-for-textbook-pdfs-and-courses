@@ -1,4 +1,4 @@
-"""Run one bounded, credential-safe Google GenAI combined-video live gate."""
+"""Run one bounded live gate and emit discriminated credential-safe JSON."""
 
 from __future__ import annotations
 
@@ -117,6 +117,7 @@ def _safe_video_summary(
         and composition["status"] == "complete"
     )
     return {
+        "report_type": "video_outcome",
         "status": "passed" if passed else "failed",
         "catalog_count": catalog_count,
         "model": model,
@@ -373,6 +374,7 @@ def _report_failure(*, code: str, stage: str | None, calls: int | None) -> int:
     print(
         json.dumps(
             {
+                "report_type": "runner_failure",
                 "status": "failed",
                 "error": {
                     "code": code,
