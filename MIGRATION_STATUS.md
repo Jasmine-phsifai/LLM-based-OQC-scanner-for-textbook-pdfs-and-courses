@@ -87,7 +87,11 @@ PDF recognition is implemented and live-proven: #078 discovered 37 current
 Google models, then `gemini-2.5-flash` completed 16 pages as exactly two serial
 requests with two complete checkpoints, ordered published output, aggregate
 usage 4,802/117, and no retained rendered pages. Content repair remains
-unimplemented and is now the immediate queue.
+unimplemented and is now the immediate queue. #079 proved that active failed
+Markdown has no defined marker yet: the producer publishes only complete range
+sections and raises without final Markdown on a failed group. The maintainer
+must choose the minimal failed-range contract before implementation; localized
+legacy regex is not silently promoted into active identity.
 Native Google direct-Python image
 recognition and experimental memory-only short-audio recognition are now
 implemented, with per-model usage reporting when Google supplies it; no general

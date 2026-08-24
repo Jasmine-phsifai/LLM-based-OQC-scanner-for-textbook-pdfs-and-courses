@@ -424,6 +424,19 @@ Exit gate: one real marker-based failure range is repaired without rerunning
 successes. Non-goals: a general repair workflow, speculative marker schema, or
 repair as an alternative to normal resume.
 
+#079 found one product-contract ambiguity before implementation. The active
+producer emits only successful `ocrllm:pdf-pages start=N end=M` sections and
+publishes no final PDF Markdown when a group fails; therefore no active failed
+range currently exists for repair to discover after sidecar loss. Legacy repair
+auto-detects localized Chinese failure comments, but those comments are not a
+stable active identity and legacy publishes them with a non-atomic direct write.
+Do not copy that regex or silently invent failure identity. P1-d remains the
+immediate queue, paused only for the maintainer to choose among: (1) a minimal
+exact active failed-range marker plus atomic partial publication (recommended,
+because it makes automatic repair real); (2) a caller-supplied exact range
+validated against existing success markers; or (3) narrow legacy-comment
+compatibility. No provider call or product edit was made by this audit.
+
 ### P2 — Explicitly deferred work
 
 Paid DashScope live re-verification, the future local-model OpenAI-compatible

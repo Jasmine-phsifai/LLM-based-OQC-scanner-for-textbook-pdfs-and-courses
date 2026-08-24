@@ -2270,3 +2270,19 @@ Atomic task — Iteration #078: rerun the unchanged P1-c 16-page Google PDF gate
 **唯一一次 live 结果。** 前台 gate 选择 `gemini-2.5-flash`，live catalog 返回 **37** 个模型。公共 `recognize(one.pdf)` 对 16 张合成授权页图完成恰好 **2** 个串行八页请求，`page_count/group_count/provider_call_count` 为 **16/2/2**；当前模型累计 input/output tokens 为 **4,802/117**。最终结果 `published=true`，两个 child checkpoint 均 complete，range marker 有序，`rendered_pages_retained=0`。进程 exit **0**，elapsed **12.719 s**，stderr nonempty **false**，captured API-key pattern **false**；fixture temp 与 `ocrllm-google-pdf-*` 均为 0。没有第三批、retry、fallback、模型切换、OCR 正文/路径/raw response 输出或 tracked edit。
 
 **主审结论与过度设计复盘。** #072 已证明取消后只补第二组且不重付第一组，#073 已证明安装后 wheel 的真实 PDFium/公共 facade/lifecycle，#078 补齐真实 Google 两批与 usage/checkpoint/publish 证据；三者合并满足 P1-c 全部 exit condition。没有为了证明一次成功增加 live framework、长期日志、evidence schema、provider 抽象或永久 credential bridge。P1-c 正式关闭；统一队列只前进到既有 P1-d 最小手工 PDF repair，不在本轮顺手实现，也不启动火山引擎/OpenAI-compatible 或 multi-provider generalization。
+
+## #079 — 2026-08-24：P1-d 实现前确认 active Markdown 尚无失败范围身份
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #079: define and implement the smallest P1-d manual PDF repair slice using the stable page-range markers proven in P1-c. Success means a caller can explicitly repair one failed eight-page range when ordinary resume state is missing or unusable, only that range reaches the existing image/provider path, successful surrounding Markdown is preserved, the replacement is published atomically, and malformed or ambiguous historical output is rejected before any provider call. This matters because unstable APIs can outlive checkpoint state, but recovery must remain a narrow manual patch—not a second resume engine or generalized document editor.
+```
+
+**新证据使本轮从实现转为契约审计。** authority 只说“从 stable marker 找失败范围”，但 active `combine_pdf_group_results()` 只生成 `<!-- ocrllm:pdf-pages start=N end=M -->` 成功 section；`recognize_pdf()` 任一 group 失败就附加 settled evidence 后抛错，不发布 final PDF Markdown。也就是说 sidecar 丢失后，目前没有 active 失败 Markdown 可供自动 repair 扫描。这个事实让开工假设失效，继续写 parser 必然暗中创造新产品语义，因此按循环规则中途改变为先消除歧义。
+
+**legacy 父级证据。** legacy `find_failed_pages()` 用中文正则找单页/范围失败 comment，`repair(pdf, md)` 逐页重渲染和调用，把成功文本替换进原 comment；全部失败时不写，部分成功时写入后再抛剩余失败。CLI/GUI 都复用同一 processor，没有第二协议。但该路径没有直接 PDF repair regression，publication 是普通 `Path.write_text()`；早期日记又明确要求 active 不移植 localized Markdown regex，而按 typed state 扩展。可迁移的是“只重提失败单元、保留成功正文、失败诚实、原子发布”，不是旧正则、逐页协议或非原子覆盖。
+
+**active seam 与三条路线。** 最小公共入口应是独立 `repair_pdf(...)`，不能把 `repair=True` 塞进普通 `recognize()`，也不建 generic repair abstraction。路线①（推荐）定义一个精确、最小 active failed-range marker，并让 group failure 原子发布带既有有序 range sections 的 partial Markdown；repair 自动找一个失败 section，只渲染/调用该范围并原子替换。路线②不新增失败 marker，要求 caller 显式给 exact `(start,end)`，并只允许匹配已有 range marker；实现更小，但不能“从失败 Markdown 自动找”，也可能允许误选本来成功的 section。路线③只兼容一条 legacy 中文失败 comment；它能处理旧文件，却把本地化展示文字提升为 active identity，与已有规则冲突。三条路线会改变 public behavior，无法由代理替维护者决定。
+
+**过度设计复盘、验证与暂停点。** 两名轻量代理只读审查 legacy/active seam，主代理逐行复核 processor、marker assembler、atomic writer、output claims 和测试；无 provider、凭据、依赖或 tracked code 修改。没有提前写多 marker parser、版本化 repair schema、自动重试、per-page reconstruction、UI 或第二 sidecar。只更新 authority/迁移日记，要求先确认路线；确认后下一 iteration 才写失败优先测试，并保持一个失败 range、一个 provider call、原子保留 surrounding Markdown 的 exit gate。
