@@ -553,6 +553,10 @@ The following directions remain traceable but are not current work:
   byte file I/O. A real MP4 now completes inspection, negative-feedback
   selection, and retained-pixel verification through Chinese source and output
   parent paths without adding a generic path layer or changing the output layout.
+  #194 proves that correction from exact commit `a56d0de` as a clean wheel
+  installed outside the repository: plain import remains lightweight and one
+  real Unicode-path MP4 publishes the expected three retained JPEGs. The
+  disposable build/install root was removed and no package boundary changed.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

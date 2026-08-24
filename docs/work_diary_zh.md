@@ -4009,3 +4009,17 @@ Atomic task — Iteration #193: verify the provider-free video slice on real Win
 **两条路线与最小修复。** 路线 A 让 OpenCV 继续把帧编码成 JPEG 并从编码缓冲解码校验，Python `Path.open("xb")` 只负责把压缩字节写到 Unicode 路径；路线 B 把帧先写进纯 ASCII 临时目录再移动，会增加第二临时目录、跨卷行为和清理分支。选择 A。保留了精确写入字节数、普通文件、磁盘大小、可解码、shape 一致、完整目录一次发布及失败不留半成品等现有检查。原来的第二帧写失败测试改为第二次 JPEG 编码失败，继续证明零部分发布；没有引入通用 path abstraction、外部 temp 参数、整视频内存读取或 legacy 格式兼容。
 
 **真实回归、子代理复核与验证。** 新增 Windows-only 真实 MP4 回归：先以 ASCII 名生成 30 帧三场景 MP4，再移动到中文源目录，调用公开 `inspect_video()` 和 `extract_video_frames()` 输出到中文目录；结果为 30 帧，留取索引 `[0,10,29]`，文件名严格为三个 `frame-XXXXXXXX.jpg`，从磁盘读回的像素均值约为 20/230/70。测试不能再用 `cv2.imread(中文路径)`，否则会在断言侧重复同一个后端限制，因此由 Python 读字节、OpenCV 解码。轻量只读审计确认普通 Unicode stem 长度已有覆盖，缺口正是非 ASCII 父目录。当前文件 **14 passed in 1.01s**；inspection、frame extraction、frame/video recognition 和 retained-frame 聚焦集合 **47 passed in 5.86s**；`compileall -q src tests tools` 与 `git diff --check` 通过。只给测试进程临时加入已有 `D:\Anaconda\envs\STA\node.exe` 路径后，完整离线套件为 **1,468 passed in 61.63s**，没有下载或安装。无网络、provider、凭据、依赖安装、public API、输出布局、provider 分离、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策变化。
+
+## #194 — 2026-08-25：从仓库外安装的 wheel 证明中文视频路径修复属于真实 library
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #194: prove the Windows non-ASCII video-path correction from the exact committed wheel, outside the repository, without provider access. Success means reconciling the authoritative state and diary, building commit `a56d0de` from a clean disposable archive, installing it without dependencies into an external target, running one real Unicode-path inspection and negative-feedback retained-JPEG probe through the installed public package, verifying lightweight plain import and artifact cleanup, and changing runtime code only if the installed distribution diverges. This matters because the product is a Python library: a source-tree fix is incomplete evidence if packaging or import isolation prevents downstream users from receiving it.
+```
+
+**为什么本轮值得做，以及两条路线。** #193 改了真实 retained-JPEG 写出后端；#146 的规则允许在 relevant runtime、manifest 或 dependency boundary 改变后重做一次 clean-wheel 证明。路线 A 只相信源码树的 1,468 条测试，速度快但不能证明 wheel 带上修复文件、active README 和类型标记，也不能证明仓库外 import；路线 B 从精确已提交树构建、无依赖安装，并只复现刚改变的中文视频路径。选择 B。没有新增 build harness，也没有把这次验证扩成 provider、全 profile、长视频或压力测试。
+
+**固定流程、主代理复核和安装结果。** 按“下载、安装、主动检查交给轻量任务”的持续规则，轻量子代理只读仓库并负责唯一一次 archive/build/install/probe/cleanup；主代理同时亲自复核 `pyproject.toml`：wheel 仍只打包 `src/ocrllm`，base dependencies 仍为空，`video` 仍只是可选的 OpenCV 与 imageio-ffmpeg，并确认精确提交中包含修正后的 `write_selected_video_frames.py`、`README_ACTIVE_LIBRARY.md` 和 `py.typed`。HEAD 精确为 `a56d0de1377f09963608fdf5c5dacce54fbaeb6c`。生成的 `ocrllm-0.1.0-py3-none-any.whl` 为 **246,391 bytes**，SHA-256 `c1cf52988e4cd25c992e06daf15dd43a1fa2dcc8dc829c28ed879de8815a6bc4`，以 `--no-deps` 安装到仓库外 target；新进程确认 package 与 distribution 来源都在那里。
+
+**真实 wheel 证据、清理和过度设计复查。** 普通 `import ocrllm` 后，`cv2`、NumPy、imageio-ffmpeg、Pillow、miniaudio、Google GenAI、OpenAI/httpx 与 `legacy_app` 均未加载。随后仍由该外部安装包处理一个先生成再移动到中文父目录/文件名的 30 帧 MP4，并输出到中文父目录：`inspect_video()` 返回 30 帧，`extract_video_frames()` 留取 `[0,10,29]`，三个文件名严格受控且都是磁盘普通文件，目标父目录正确；从磁盘字节解码的均值约为 **17.33 / 227.33 / 67.33**，与暗/亮/中灰三个源场景一致。唯一 disposable temp root 已删除并确认不存在，仓库状态仍只有两个既有未跟踪用户文件。无网络、provider、凭据、下载、依赖安装、环境修改、runtime/API/manifest/dependency/output 变化、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。因为本轮只验证精确 #193 runtime，没有机械重跑全量测试，也不新增轮子脚本、安装测试框架或通用 Unicode abstraction。

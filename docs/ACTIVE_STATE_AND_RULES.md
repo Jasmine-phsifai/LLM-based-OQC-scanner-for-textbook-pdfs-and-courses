@@ -1944,6 +1944,23 @@ video tests pass; full-suite evidence is recorded in the diary. No API,
 dependency, provider behavior, output layout, frozen boundary, or open
 #127/#149/#152 choice changed.
 
+#194 proves #193 from the distributed Python library rather than the source
+checkout. Exact tracked commit `a56d0de1377f09963608fdf5c5dacce54fbaeb6c`
+built offline from one clean Git archive into a 246,391-byte wheel (SHA-256
+`c1cf52988e4cd25c992e06daf15dd43a1fa2dcc8dc829c28ed879de8815a6bc4`).
+It installed with `--no-deps` into an external target. A fresh process resolved
+both package and distribution there, kept OpenCV, NumPy, imageio-ffmpeg, Pillow,
+miniaudio, Google GenAI, OpenAI/httpx, and `legacy_app` unloaded after plain
+import, then generated and moved one real MP4 to a non-ASCII source path. The
+installed public `inspect_video()` / `extract_video_frames()` path reported 30
+frames, retained indices `[0, 10, 29]`, published the three controlled JPEG
+names below the non-ASCII output parent, and reproduced the expected dark /
+bright / medium scene pixels. The wheel contains the corrected writer, active
+README, and `py.typed`; the exact disposable proof root was removed. No runtime,
+API, dependency, provider, environment, output contract, frozen boundary, or
+open #127/#149/#152 choice changed. Do not repeat this clean-wheel proof unless
+the relevant runtime, package manifest, or dependency boundary changes again.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
