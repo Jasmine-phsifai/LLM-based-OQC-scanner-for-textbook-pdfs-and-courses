@@ -90,8 +90,9 @@ invalid-key probe returned credential-scoped authentication. No transcript was
 published, so this proves the result boundary rather than transcription
 quality. #107 additionally makes every error inside that adapter state whether
 the one recognition call was actually attempted: zero before
-`generate_content`, one after entering it. P0-c is complete. #070 then proved
-live cancellation after one settled
+`generate_content`, one after entering it. #108 also preserves that count when
+the call succeeds but later owned-audio-snapshot cleanup fails. P0-c is
+complete. #070 then proved live cancellation after one settled
 Google image draft and resume of only the missing review: two total provider
 calls, the draft reused with zero replay calls, and a complete published result.
 P1-a is complete. #071 completed P1-b: `recognize_batch()` now requires an

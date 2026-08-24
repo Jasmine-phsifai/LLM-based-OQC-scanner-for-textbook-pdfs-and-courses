@@ -138,7 +138,9 @@ was published, so this is public-result and lifecycle proof, not a
 transcription-quality evaluation. The direct path remains experimental and
 memory-only. #107 made its failure-side attempted-call value explicit: zero for
 adapter failures before `generate_content`, one after the single recognition
-dispatch begins, without adding retries or a billing ledger. The routine audio
+dispatch begins. #108 preserves the value of one when recognition succeeds but
+owned-snapshot cleanup subsequently fails. Neither adds retries or a billing
+ledger. The routine audio
 live runner now omits the redundant invalid-key
 request and reports a safe catalog/model-selection/recognition failure stage;
 historical credential evidence remains unchanged. #070 completed P1-a with eight authorized images: cancellation

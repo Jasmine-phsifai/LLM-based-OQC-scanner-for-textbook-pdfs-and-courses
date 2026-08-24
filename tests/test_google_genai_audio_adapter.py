@@ -16,6 +16,7 @@ from ocrllm.errors import (
     ConfigError,
     InvalidSource,
     NoSpeechDetected,
+    OutputError,
     ProviderError,
     ProviderUnavailable,
 )
@@ -280,6 +281,36 @@ def test_public_google_audio_result_usage_order_and_snapshot_cleanup(
     assert call["contents"][1]["mime_type"] == "audio/mpeg"
     assert fake.clients[0].closed is True
     assert list(temp_dir.glob("ocrllm-audio-*")) == []
+
+
+def test_google_audio_reports_completed_call_when_snapshot_cleanup_fails(
+    tmp_path, monkeypatch
+) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    snapshot_module = importlib.import_module("ocrllm.audio.snapshot_short_mp3")
+    fake = _FakeGoogleModule()
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    def fail_snapshot_cleanup(_snapshot_root):
+        raise OutputError(
+            "The validated audio snapshot could not be removed after use.",
+            code="OUTPUT_WRITE_FAILED",
+        )
+
+    monkeypatch.setattr(
+        snapshot_module,
+        "_delete_snapshot_directory",
+        fail_snapshot_cleanup,
+    )
+
+    with pytest.raises(OutputError) as caught:
+        recognize(FIXTURE, config=_config(temp_dir=tmp_path / "snapshots"))
+
+    assert caught.value.details["provider_calls_attempted"] == 1
+    assert len(fake.models.generate_calls) == 1
+    assert fake.clients[0].closed is True
 
 
 def test_google_audio_response_keeps_missing_usage_unknown() -> None:

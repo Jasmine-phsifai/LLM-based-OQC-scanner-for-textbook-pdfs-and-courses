@@ -326,6 +326,13 @@ it does not add a billing ledger, retry, model switching, or fallback, and
 existing error identity, retryability, cleanup precedence, and successful
 per-model token usage remain unchanged.
 
+#108 closed the adjacent post-adapter lifecycle gap: when Google has returned
+a successful short-audio response but removal of the owned MP3 snapshot then
+fails, the public `OutputError` now reports `provider_calls_attempted=1`.
+Pre-adapter option, source, and snapshot failures retain their existing typed
+local-error contract rather than receiving a modality-wide synthetic zero.
+This is one processor-local settled-call flag, not generalized accounting.
+
 Exit gate met: one public real-MP3 result completed with catalog/model selection,
 provider limits, exact call/usage evidence, and no false success. The earlier
 model-scoped quota failure remains recorded rather than hidden by retry or
