@@ -2874,3 +2874,13 @@ Atomic task — Iteration #117: select and close one current, evidence-backed de
 **独立只读核对。** 轻量代理在不编辑、不安装、不下载、不联网的条件下核对 public `recognize()`、`recognize_batch()`、image/audio/PDF/output/provider 路径及相关测试，没有发现本轮可处理的已证明缺陷。唯一可能继续细化的是 DashScope 早期 setup 阶段的调用计数，但现行合同明确允许没有 adapter 精确账目时沿用入口级计数，且当前规则禁止继续主动 accounting 扫描，因此不把它重新命名为 defect。主代理独立确认 P1-d 的剩余问题没有被后来文字回答：是否让新 library 的独立 `repair_pdf` 接受 legacy 已生成 Markdown 中明确的 `第 N` / `第 N-M 页识别失败` 标记作为兼容输入。yes 才授权 #106 已固定的窄实现；no 则冻结 P1-d 并由维护者授权推进下一队列。
 
 **验证与过度设计复盘。** 本轮不改产品源码和测试，所以不重复运行 #116 已在同一 HEAD 通过的 1338 项全量，也不把旧绿灯冒充新证明；只做文档 diff、冻结目录和工作树检查后提交本调查记录。继续加 setup 计数、symlink 邻居、provider base class、fallback、API pool、第二 repair/resume 或 worker workaround 都会是本轮最可能的过度设计，全部未做。两个用户未跟踪文件保持未动。下一步必须由维护者回答上述历史 Markdown compatibility 的 yes/no；在答案前不创建平行实现队列。
+
+## #118 — 2026-08-24：P1-d 历史 Markdown 输入授权第二次连续核对
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #118: verify whether any new repository or user evidence has answered the P1-d historical-Markdown compatibility decision since iteration #117, without repeating architecture work or creating a parallel queue. Success means re-reading the authoritative decision boundary and latest diary, checking the current worktree and decision record for an explicit yes/no, and either beginning the already-specified narrow implementation if authorized or recording one truthful consecutive blocker audit with no speculative edits. This matters because implementing compatibility without consent would widen the new library’s public input contract, while repeatedly redesigning the already-fixed conditional contract would add documentation without product progress.
+```
+
+**结果与边界。** 当前 `HEAD` 与 `origin/master` 都是 `80bd4f7`，工作树仍只有两个用户保留的未跟踪文件。authority、START_HERE、package AGENTS 和维护者决定仍一致写明：历史 legacy Markdown 是否成为新 library 的公开兼容输入必须由维护者明确回答；在答案前 P1-d 不获实现授权，也不得建立平行队列。#117 后没有新的用户 yes/no 或仓库决定；自动继续 heartbeat 不是 scope 授权。本轮因此是同一阻塞条件的第二次连续核对，不写产品代码、不复制测试、不再次扫描别的边缘问题，也不重复运行同一源码 HEAD 已通过的全量。只验证日记 diff、冻结目录和工作树后提交。下一步仍需维护者明确回答 yes 或 no。
