@@ -1802,6 +1802,16 @@ metadata declared four frames but whose decoder yielded only three remains an
 honest `VIDEO_INVALID` at the exact-final-frame gate; the library does not hide
 that corrupt/decode-inconsistent tail by silently accepting the preceding frame.
 
+#184 proves the current pinned OpenCV backend consistently applies MP4 display
+rotation without another runtime abstraction. A bounded asymmetric 96x64
+landscape stream with a real 90-degree display matrix is reported by
+`inspect_video()` as 64x96; the negative-feedback scan and final retained JPEG
+use that same portrait orientation, including the expected rotated corner
+colors. Keep this real-container regression. Do not add a manual rotation
+pipeline, legacy metadata compatibility, or another public orientation setting
+unless a supported backend reproduces a caller-visible inconsistency. One
+hundred ten focused tests and the complete 1,463-test offline suite pass.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

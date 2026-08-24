@@ -122,6 +122,55 @@ def _write_variable_frame_rate_mp4(path: Path) -> Path:
     return path
 
 
+def _write_rotated_display_mp4(path: Path) -> Path:
+    import cv2
+    import imageio_ffmpeg
+    import numpy as np
+
+    encoded_path = path.with_name(f"encoded-{path.name}")
+    writer = cv2.VideoWriter(
+        str(encoded_path),
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        2.0,
+        (96, 64),
+    )
+    assert writer.isOpened()
+    try:
+        frame = np.zeros((64, 96, 3), dtype=np.uint8)
+        frame[:32, :48] = (0, 0, 255)
+        frame[32:, 48:] = (255, 0, 0)
+        writer.write(frame)
+        writer.write(frame)
+    finally:
+        writer.release()
+
+    completed = subprocess.run(
+        (
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-display_rotation",
+            "90",
+            "-i",
+            str(encoded_path),
+            "-c",
+            "copy",
+            str(path),
+        ),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=30,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    assert completed.returncode == 0
+    return path
+
+
 def _windows_path_units(path: Path) -> int:
     return len(str(path).encode("utf-16-le")) // 2
 
@@ -201,6 +250,22 @@ def test_extract_video_frames_uses_vfr_container_time_and_frame_pts(
         [0.0, 4.52],
         abs=0.02,
     )
+
+
+def test_extract_video_frames_applies_mp4_display_rotation(tmp_path: Path) -> None:
+    import cv2
+
+    source = _write_rotated_display_mp4(tmp_path / "phone.mp4")
+
+    info = inspect_video(source)
+    frames = extract_video_frames(source, output_dir=tmp_path / "output")
+
+    assert (info.width_pixels, info.height_pixels) == (64, 96)
+    assert [frame.frame_index for frame in frames] == [1]
+    retained = cv2.imread(str(frames[0].path))
+    assert retained.shape[:2] == (96, 64)
+    assert retained[12, 52, 0] > 220
+    assert retained[84, 12, 2] > 220
 
 
 def test_video_frame_scan_counts_the_final_frame_before_decoding() -> None:

@@ -122,6 +122,10 @@ call evidence unknown. Do not replace that unknown with inferred zero calls.
 #183 requires VFR-safe parsing: use container duration, seek the five-second
 presentation timeline, and retain decoded frame PTS. Preserve the exact final
 frame and candidate cap; do not add ffprobe or claim #149 source stability.
+#184 proves the pinned OpenCV backend applies MP4 display rotation consistently
+to inspection, comparison, and retained JPEGs. Keep the real-container test;
+do not add manual rotation or a public orientation setting without a reproduced
+backend inconsistency.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

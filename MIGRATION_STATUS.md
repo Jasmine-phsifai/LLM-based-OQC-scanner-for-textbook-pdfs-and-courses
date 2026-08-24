@@ -527,6 +527,10 @@ The following directions remain traceable but are not current work:
   `frame_index / FPS`. Exact-final-frame and bounded-candidate rules remain;
   #149 source snapshot placement is still open. An externally installed clean
   wheel reproduces the corrected 4.56-second VFR path without eager media imports.
+  #184 verifies a real phone-style MP4 display matrix through the public
+  provider-free path. The pinned OpenCV backend consistently changes 96x64
+  encoded storage to 64x96 display dimensions for inspection, comparison, and
+  retained JPEG pixels, so no manual rotation layer or public setting was added.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

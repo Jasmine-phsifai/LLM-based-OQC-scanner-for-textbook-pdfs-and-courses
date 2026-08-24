@@ -320,7 +320,10 @@ The complete native-Google recognition example above requires
 validates metadata and a real first-frame decode, returns immutable `VideoInfo`,
 writes nothing, and makes no provider call. Its duration comes from the MP4
 container rather than `frame_count / FPS`, so variable-frame-rate input does
-not receive a fabricated constant-rate duration.
+not receive a fabricated constant-rate duration. MP4 display-rotation metadata
+is applied by the pinned OpenCV backend: `VideoInfo` dimensions and retained
+JPEG pixels both use the decoded display orientation rather than the encoded
+landscape storage dimensions.
 `extract_video_frames()` adds five-second coarse thumbnails, bounded
 count-driven negative-feedback selection, and ordered immutable
 `RetainedVideoFrame` records. Coarse seeks use presentation time and each
