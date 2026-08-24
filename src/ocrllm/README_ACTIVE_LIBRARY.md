@@ -134,7 +134,9 @@ rather than treating installed code as sufficient. Experimental direct facades
 may be described separately without implying worker registration.
 The direct Google image adapter is experimental. Its current model catalog is
 queried only by explicit Google operations, not by import or shared capability
-reporting.
+reporting. Public failures distinguish zero recognition calls before
+`generate_content()` from one call after entering it; catalog discovery itself
+is not counted as a recognition call.
 
 The experimental direct Google short-audio facade:
 

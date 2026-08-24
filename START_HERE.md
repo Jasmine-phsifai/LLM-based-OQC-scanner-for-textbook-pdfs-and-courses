@@ -88,7 +88,10 @@ capability/worker registry remains frozen at 20 and does not claim Google worker
 support. #113 reduced the maintained routine image check to one recognition
 instead of replaying the historical group and invalid-key probes; its bounded
 refresh found 37 models and completed one call with usage 595/443, with no retry
-or retained sensitive/output data. The smallest native Google short-audio
+or retained sensitive/output data. #115 makes Google image failures equally
+honest about dispatch: catalog/model-selection and other pre-generate failures
+report zero recognition calls, while a failure inside `generate_content`
+reports one. The smallest native Google short-audio
 direct API is live-proven for one memory-only MP3 and a bounded native inline
 request below 20,000,000 bytes.
 #068 first returned honest `PROVIDER_QUOTA_EXHAUSTED` / `model` on

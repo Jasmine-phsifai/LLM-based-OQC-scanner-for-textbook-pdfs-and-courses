@@ -135,6 +135,11 @@ it: #113 reduced each normal run to catalog discovery plus one single-image
 public recognition and added safe catalog/model-selection/recognition failure
 stages. Its bounded refresh found 37 models and completed one call with usage
 595/443, no retry, output text, credential leak, or residue.
+#115 also fixed native Google image failure accounting: catalog/model-selection
+and other pre-`generate_content` failures now report zero recognition calls,
+while a failure after entering `generate_content` reports one. The shared
+provider wrapper preserves that adapter-owned fact without adding a ledger or
+retry policy.
 The direct API is proven, but the frozen 20-entry shared capability/worker
 registry was deliberately unchanged and does not advertise Google worker support.
 P0-c is complete. The earlier authorized `gemini-3.1-pro-preview` run remains

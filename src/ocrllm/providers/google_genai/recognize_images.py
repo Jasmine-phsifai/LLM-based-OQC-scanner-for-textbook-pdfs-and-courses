@@ -28,29 +28,38 @@ def recognize_images(
     config: Config,
 ) -> VisionProviderResponse:
     """Preflight, discover, and dispatch exactly one generateContent call."""
-    config = snapshot_config(config)
-    settings = config.provider
-    if type(settings) is not GoogleGenAISettings:
-        raise ConfigError(
-            "The built-in Google provider requires exact GoogleGenAISettings.",
-            code="CONFIG_INVALID",
-        ) from None
-    model = config.vision_model.name
-    if type(model) is not str or not model:
-        raise ConfigError(
-            "Google GenAI image recognition requires an explicit model.",
-            code="CONFIG_MISSING",
-        ) from None
+    provider_calls_attempted = 0
+    api_key: str | None = None
+    try:
+        config = snapshot_config(config)
+        settings = config.provider
+        if type(settings) is not GoogleGenAISettings:
+            raise ConfigError(
+                "The built-in Google provider requires exact GoogleGenAISettings.",
+                code="CONFIG_INVALID",
+            ) from None
+        model = config.vision_model.name
+        if type(model) is not str or not model:
+            raise ConfigError(
+                "Google GenAI image recognition requires an explicit model.",
+                code="CONFIG_MISSING",
+            ) from None
 
-    request = build_google_genai_image_request(
-        image_paths,
-        prompt=prompt,
-        model=model,
-        cancellation=config.cancellation,
-    )
-    raise_if_cancelled(config.cancellation)
-    google_module = load_google_genai()
-    api_key = resolve_google_genai_credential(settings)
+        request = build_google_genai_image_request(
+            image_paths,
+            prompt=prompt,
+            model=model,
+            cancellation=config.cancellation,
+        )
+        raise_if_cancelled(config.cancellation)
+        google_module = load_google_genai()
+        api_key = resolve_google_genai_credential(settings)
+    except OCRLLMError as error:
+        if "provider_calls_attempted" not in error.details:
+            error._add_safe_detail("provider_calls_attempted", 0)
+        del api_key
+        raise
+
     client = None
     response: VisionProviderResponse | None = None
     public_error: OCRLLMError | None = None
@@ -75,9 +84,11 @@ def recognize_images(
                 )
             else:
                 raise_if_cancelled(config.cancellation)
+                sdk_contents = _sdk_contents(google_module, request.contents)
+                provider_calls_attempted = 1
                 raw_response = client.models.generate_content(
                     model=model,
-                    contents=_sdk_contents(google_module, request.contents),
+                    contents=sdk_contents,
                 )
                 response = parse_google_genai_response(raw_response, model=model)
         except OCRLLMError as error:
@@ -94,12 +105,20 @@ def recognize_images(
         del api_key
 
     if public_error is not None:
+        if "provider_calls_attempted" not in public_error.details:
+            public_error._add_safe_detail(
+                "provider_calls_attempted", provider_calls_attempted
+            )
         raise public_error from None
     if response is None:
         raise ProviderError(
             "Google GenAI returned no image-recognition response.",
             code="PROVIDER_RESPONSE_INVALID",
-            details={"provider": "google", "model": model},
+            details={
+                "provider": "google",
+                "model": model,
+                "provider_calls_attempted": provider_calls_attempted,
+            },
         ) from None
     return response
 

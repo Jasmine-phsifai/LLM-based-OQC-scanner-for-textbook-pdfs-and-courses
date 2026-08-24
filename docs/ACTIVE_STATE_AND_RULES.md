@@ -274,6 +274,17 @@ or OCR body was published, the child credential environment was removed, and
 no owned temporary residue remained. There was no retry, model switch, second
 invocation, dependency change, or product-code change.
 
+#115 corrected image-side attempted-call disclosure at the native Google
+adapter boundary. SDK/client/catalog failures, a missing selected model, SDK
+Part conversion, and cancellation before `generate_content()` now report zero
+recognition calls; failures after entering that single method report one. The
+shared provider wrapper preserves an exact count supplied by a built-in adapter
+and supplies its former entry-based default only when the adapter has no finer
+fact. Public regressions prove catalog failure and model absence make zero
+generate calls while an exception from `generate_content()` reports one. This
+does not count the catalog request as recognition work, add retries, or create a
+cross-provider billing or routing abstraction.
+
 ### P0-c — Native Google short-audio vertical slice (completed by #069)
 
 The bounded direct slice is implemented and live-proven. The
@@ -818,6 +829,17 @@ Future agents must assume the following and verify before trusting any claim:
   deterministic Windows regression reaches exactly 259 UTF-16 units without
   repeating the 96-character source stem; this does not claim arbitrary deep
   path support.
+
+- **OPEN — the owned PDF state directory currently follows a Windows junction.**
+  A bounded #115 reproduction placed the expected same-named PDF state directory
+  as a junction to a directory outside `output_dir`; with `overwrite=True`, one
+  successful public PDF call wrote its child Markdown and resume state through
+  that junction. `prepare_pdf_state_directory()` currently checks
+  `Path.is_dir()`, which follows the link. The next bounded fix should reject a
+  symlink/junction or other non-owned directory object before render/provider
+  dispatch using the existing `OUTPUT_PATH_INVALID` contract. Do not broaden
+  this into arbitrary path sandboxing, cross-process locking, or a filesystem
+  security framework.
 
 - **Same-target output/state ownership is consistent for supported in-process
   concurrency.** Every file-producing `recognize()` claims its resolved target

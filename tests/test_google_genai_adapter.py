@@ -503,6 +503,106 @@ def test_public_google_recognition_reports_model_call_and_token_usage(tmp_path, 
     assert all(client.closed for client in fake.clients)
 
 
+def test_public_google_missing_model_reports_zero_recognition_calls(
+    tmp_path, monkeypatch
+):
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+    fake = _FakeGoogleModule()
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+    monkeypatch.setattr(
+        fake.models,
+        "list",
+        lambda: (
+            SimpleNamespace(
+                name="models/other-model",
+                supported_actions=["generateContent"],
+            ),
+        ),
+    )
+    image = write_test_image(tmp_path / "source.png")
+
+    with pytest.raises(ProviderUnavailable) as missing_model:
+        recognize_public(
+            image,
+            config=Config(
+                provider=_google_settings(),
+                vision_model=VisionModelSettings(name=MODEL),
+            ),
+        )
+
+    assert missing_model.value.details["failure_scope"] == "model"
+    assert missing_model.value.details["provider_calls_attempted"] == 0
+    assert [
+        dict(attempt) for attempt in missing_model.value.details["model_attempts"]
+    ] == [
+        {
+            "model": MODEL,
+            "outcome": "PROVIDER_UNAVAILABLE",
+            "disposition": "retry",
+            "provider_calls_attempted": 0,
+        }
+    ]
+    assert fake.models.generate_calls == []
+    assert len(fake.clients) == 1
+    assert fake.clients[0].closed is True
+
+
+def test_public_google_catalog_failure_reports_zero_recognition_calls(
+    tmp_path, monkeypatch
+):
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+    fake = _FakeGoogleModule()
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    def fail_catalog():
+        raise ConnectionError("PRIVATE-CATALOG-FAILURE")
+
+    monkeypatch.setattr(fake.models, "list", fail_catalog)
+    image = write_test_image(tmp_path / "source.png")
+
+    with pytest.raises(ProviderError) as catalog_failure:
+        recognize_public(
+            image,
+            config=Config(
+                provider=_google_settings(),
+                vision_model=VisionModelSettings(name=MODEL),
+            ),
+        )
+
+    assert catalog_failure.value.code == "PROVIDER_NETWORK"
+    assert catalog_failure.value.details["provider_calls_attempted"] == 0
+    assert fake.models.generate_calls == []
+    assert fake.clients[0].closed is True
+
+
+def test_public_google_generate_failure_reports_one_recognition_call(
+    tmp_path, monkeypatch
+):
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+    fake = _FakeGoogleModule()
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    def fail_generate(*, model, contents):
+        del model, contents
+        raise ConnectionError("PRIVATE-GENERATE-FAILURE")
+
+    monkeypatch.setattr(fake.models, "generate_content", fail_generate)
+    image = write_test_image(tmp_path / "source.png")
+
+    with pytest.raises(ProviderError) as generate_failure:
+        recognize_public(
+            image,
+            config=Config(
+                provider=_google_settings(),
+                vision_model=VisionModelSettings(name=MODEL),
+            ),
+        )
+
+    assert generate_failure.value.code == "PROVIDER_NETWORK"
+    assert generate_failure.value.details["provider_calls_attempted"] == 1
+    assert fake.clients[0].closed is True
+
+
 def test_google_review_sums_fresh_usage_for_the_same_model(tmp_path, monkeypatch):
     adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
     fake = _FakeGoogleModule()
@@ -660,4 +760,5 @@ def test_oversized_inline_aggregate_is_rejected_before_sdk_construction(
             ),
         )
     assert captured.value.code == "SOURCE_TOO_LARGE"
+    assert captured.value.details["provider_calls_attempted"] == 0
     assert sdk_constructed is False

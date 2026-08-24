@@ -143,8 +143,9 @@ def _dispatch_provider_call(
             if resolved_provider.built_in and isinstance(error, OCRLLMError)
             else map_injected_provider_error(error, model=resolved_provider.model)
         )
-        public_error._add_safe_detail(
-            "provider_calls_attempted",
-            1 if dispatch_started else 0,
-        )
+        if "provider_calls_attempted" not in public_error.details:
+            public_error._add_safe_detail(
+                "provider_calls_attempted",
+                1 if dispatch_started else 0,
+            )
         raise public_error from None
