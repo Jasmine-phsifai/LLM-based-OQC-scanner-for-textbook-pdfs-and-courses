@@ -90,6 +90,10 @@ retained frame indices are strictly increasing and timestamps never move backwar
 Do not add path-identity, timestamp-uniqueness, or generic ordering machinery.
 #167 also makes contiguous `0..n-1` frame-group indices a constructor invariant;
 do not duplicate that immutable structural check during composition.
+#168 makes every settled frame group's immutable indices/timestamps, and their
+exact equality with retained frames, constructor invariants. Reuse the one
+internal identity reader; do not duplicate its metadata schema or add a public
+identity abstraction.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

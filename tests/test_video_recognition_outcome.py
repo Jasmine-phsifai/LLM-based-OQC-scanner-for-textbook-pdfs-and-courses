@@ -28,6 +28,10 @@ def _frame_outcome() -> BatchItemOutcome:
         result=RecognitionResult(
             markdown="Frame result.",
             source_type="image",
+            metadata={
+                "video_frame_indices": (0,),
+                "video_frame_timestamps_seconds": (0.0,),
+            },
         ),
     )
 
@@ -214,5 +218,39 @@ def test_video_outcome_rejects_out_of_order_group_indices(tmp_path: Path) -> Non
                 BatchItemOutcome(index=1, result=frame_result),
                 BatchItemOutcome(index=0, result=frame_result),
             ),
+            audio_error=VideoError(code="VIDEO_NO_AUDIO_STREAM"),
+        )
+
+
+@pytest.mark.parametrize(
+    ("metadata", "message"),
+    [
+        ({}, "identity is missing or invalid"),
+        (
+            {
+                "video_frame_indices": (10,),
+                "video_frame_timestamps_seconds": (5.0,),
+            },
+            "does not match retained frames",
+        ),
+    ],
+)
+def test_video_outcome_rejects_missing_or_drifted_frame_group_identity(
+    tmp_path: Path,
+    metadata: dict[str, object],
+    message: str,
+) -> None:
+    output_root = tmp_path / "video"
+    frame_result = RecognitionResult(
+        markdown="Frame result.",
+        source_type="image",
+        metadata=metadata,
+    )
+
+    with pytest.raises(ValueError, match=message):
+        VideoRecognitionOutcome(
+            output_root=output_root,
+            retained_frames=(_frame(output_root / "frames" / "frame.jpg"),),
+            frame_outcomes=(BatchItemOutcome(index=0, result=frame_result),),
             audio_error=VideoError(code="VIDEO_NO_AUDIO_STREAM"),
         )

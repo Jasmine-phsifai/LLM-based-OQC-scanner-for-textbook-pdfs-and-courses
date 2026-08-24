@@ -9,6 +9,7 @@ from typing import Literal
 
 from .batch_item_outcome import BatchItemOutcome
 from .errors import OCRLLMError, VideoError
+from .read_video_frame_group_identity import read_video_frame_group_identity
 from .result import RecognitionResult
 from .retained_video_frame import RetainedVideoFrame
 
@@ -73,6 +74,19 @@ class VideoRecognitionOutcome:
                 ) from None
             if frame_outcome.result.source_type != "image":
                 raise ValueError("video frame results must describe images") from None
+        if self.frame_outcomes:
+            group_identity: list[tuple[int, float]] = []
+            for frame_outcome in self.frame_outcomes:
+                indices, timestamps = read_video_frame_group_identity(frame_outcome)
+                group_identity.extend(zip(indices, timestamps, strict=True))
+            retained_identity = tuple(
+                (frame.frame_index, frame.timestamp_seconds)
+                for frame in self.retained_frames
+            )
+            if tuple(group_identity) != retained_identity:
+                raise ValueError(
+                    "video frame group identity does not match retained frames"
+                ) from None
         if (not self.frame_outcomes) == (self.frame_error is None):
             raise ValueError(
                 "video outcome must carry frame outcomes or one frame error"

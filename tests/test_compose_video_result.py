@@ -438,7 +438,13 @@ def test_compose_video_result_rejects_fully_failed_outcome(tmp_path: Path) -> No
         frame_outcomes=(
             BatchItemOutcome(
                 index=0,
-                error=ProviderError("Frame provider failed."),
+                error=ProviderError(
+                    "Frame provider failed.",
+                    details={
+                        "video_frame_indices": (0,),
+                        "video_frame_timestamps_seconds": (0.0,),
+                    },
+                ),
             ),
         ),
         audio_error=ProviderError("Audio provider failed."),
@@ -474,26 +480,4 @@ def test_compose_video_result_rejects_missing_retained_artifact(
     )
 
     with pytest.raises(OutputError, match="artifact"):
-        compose_video_result(outcome)
-
-
-def test_compose_video_result_rejects_frame_identity_drift(tmp_path: Path) -> None:
-    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
-    outcome = VideoRecognitionOutcome(
-        output_root=tmp_path / "video",
-        retained_frames=(frame,),
-        frame_outcomes=(
-            BatchItemOutcome(
-                index=0,
-                result=_frame_result(
-                    markdown="Wrong identity.",
-                    indices=(10,),
-                    timestamps=(5.0,),
-                ),
-            ),
-        ),
-        audio_error=ProviderError("Audio provider failed."),
-    )
-
-    with pytest.raises(ValueError, match="does not match retained frames"):
         compose_video_result(outcome)

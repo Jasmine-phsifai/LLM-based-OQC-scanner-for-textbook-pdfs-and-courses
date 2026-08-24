@@ -85,7 +85,16 @@ def test_publish_video_result_rejects_fully_failed_outcome_without_output(
         output_root=output_root,
         retained_frames=(frame,),
         frame_outcomes=(
-            BatchItemOutcome(index=0, error=ProviderError("Frames failed.")),
+            BatchItemOutcome(
+                index=0,
+                error=ProviderError(
+                    "Frames failed.",
+                    details={
+                        "video_frame_indices": (0,),
+                        "video_frame_timestamps_seconds": (0.0,),
+                    },
+                ),
+            ),
         ),
         audio_error=ProviderError("Audio failed."),
     )

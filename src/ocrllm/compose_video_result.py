@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import math
-from collections.abc import Mapping
-
 from .aggregate_current_model_token_usage import (
     aggregate_current_model_token_usage,
 )
-from .batch_item_outcome import BatchItemOutcome
 from .build_recognition_result import build_recognition_result
 from .errors import OCRLLMError, VideoError
 from .processor_output import ProcessorOutput
+from .read_video_frame_group_identity import read_video_frame_group_identity
 from .result import RecognitionResult
 from .video_recognition_outcome import VideoRecognitionOutcome
 
@@ -32,13 +29,9 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     provider_call_counts: list[int | None] = []
     warnings: list[str] = []
     hotwords: list[str] = []
-    composed_indices: list[int] = []
-    composed_timestamps: list[float] = []
 
     for item in outcome.frame_outcomes:
-        indices, timestamps = _read_frame_group_identity(item)
-        composed_indices.extend(indices)
-        composed_timestamps.extend(timestamps)
+        indices, timestamps = read_video_frame_group_identity(item)
         body = [
             f"## Retained frame group {item.index + 1}",
             (
@@ -69,19 +62,6 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
                 }
             )
         sections.append("\n\n".join(body))
-
-    if outcome.frame_outcomes:
-        retained_identity = tuple(
-            (frame.frame_index, frame.timestamp_seconds)
-            for frame in outcome.retained_frames
-        )
-        composed_identity = tuple(
-            zip(composed_indices, composed_timestamps, strict=True)
-        )
-        if composed_identity != retained_identity:
-            raise ValueError(
-                "video frame group identity does not match retained frames"
-            ) from None
 
     metadata: dict[str, object] = {
         "video_frame_count": len(outcome.retained_frames),
@@ -165,35 +145,6 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         ),
         output_path=None,
     )
-
-
-def _read_frame_group_identity(
-    item: BatchItemOutcome,
-) -> tuple[tuple[int, ...], tuple[float, ...]]:
-    source: Mapping[str, object]
-    if item.result is not None:
-        source = item.result.metadata
-    else:
-        assert item.error is not None
-        source = item.error.details
-    indices = source.get("video_frame_indices")
-    timestamps = source.get("video_frame_timestamps_seconds")
-    if (
-        type(indices) is not tuple
-        or not indices
-        or any(type(index) is not int or index < 0 for index in indices)
-        or type(timestamps) is not tuple
-        or len(timestamps) != len(indices)
-        or any(
-            not isinstance(timestamp, (int, float))
-            or isinstance(timestamp, bool)
-            or not math.isfinite(float(timestamp))
-            or float(timestamp) < 0
-            for timestamp in timestamps
-        )
-    ):
-        raise ValueError("video frame group identity is missing or invalid") from None
-    return indices, tuple(float(timestamp) for timestamp in timestamps)
 
 
 def _format_values(values: tuple[int, ...] | tuple[float, ...]) -> str:

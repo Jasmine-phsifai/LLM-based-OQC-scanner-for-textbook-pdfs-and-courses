@@ -434,7 +434,10 @@ The following directions remain traceable but are not current work:
   retained frame indices must be strictly increasing and timestamps cannot move
   backward, including for manually constructed outcomes. Frame-group result
   indices must be contiguous caller order `0..n-1`; invalid structures never
-  reach a misleading complete status. It does not resolve aliases or symlinks.
+  reach a misleading complete status. Every settled frame group must carry a
+  valid immutable identity, and the flattened identities must exactly match the
+  retained-frame tuple at outcome construction. It does not resolve aliases or
+  symlinks.
   `compose_video_result()` explicitly
   converts a returned complete
   or partial outcome into a memory-only standard video result with ordered

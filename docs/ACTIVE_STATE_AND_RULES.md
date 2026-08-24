@@ -1609,6 +1609,24 @@ valid and composable. Outcome/composition tests pass 25 tests; the complete
 video/import neighbor set passes 76 tests. No metadata identity rule, provider
 behavior, API signature, dependency, frozen boundary, or open decision changed.
 
+#168 relocates immutable frame-group identity validity and equality to the
+public outcome boundary. Previously a caller could construct a complete frame
+group with missing metadata, or with indices and timestamps that disagreed with
+`retained_frames`; `VideoRecognitionOutcome.status` still reported `complete`,
+and only `compose_video_result()` rejected the contradiction.
+
+The existing metadata parser now lives in the narrowly named internal
+`read_video_frame_group_identity.py` module. The outcome constructor uses it for
+every settled successful or failed group, flattens the group identities, and
+requires exact equality with the retained-frame tuple. Composition reuses the
+same reader for rendering but no longer owns or duplicates the equality check;
+its now-unused global identity accumulators were removed. Missing and drifted
+identity regressions failed before implementation and pass afterward. The
+focused outcome, composition, recognition, publication, controlled-runner, and
+import set passes 77 tests; the complete offline suite passes 1,456 tests. No
+public API, provider behavior, output format, dependency, frozen boundary, or
+open decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

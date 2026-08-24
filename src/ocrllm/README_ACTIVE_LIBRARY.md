@@ -353,7 +353,10 @@ every retained frame path has parent `output_root / "frames"`, and an audio
 artifact, when present, is exactly `output_root / "audio.mp3"`.
 Retained frame indices must be strictly increasing and their timestamps must
 not move backward. Frame-group outcome indices must be the contiguous caller
-order `0..n-1`.
+order `0..n-1`. Every settled group must also carry valid frame indices and
+timestamps whose flattened identity exactly equals the retained-frame tuple;
+the outcome constructor rejects missing or drifted identity before `status`
+can report a misleading completion.
 `VIDEO_NO_AUDIO_STREAM` must be carried by a `VideoError` and cannot be paired
 with an audio artifact. Manual constructors must reuse
 those same `Path` values; the contract does not resolve aliases or symlinks.

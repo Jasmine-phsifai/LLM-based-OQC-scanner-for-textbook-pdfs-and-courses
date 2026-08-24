@@ -100,7 +100,9 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   the first audio track without imposing the short recognizer's duration limit.
 - keeps exact frame indices and timestamps on every settled video-frame group,
   including typed failures and undispatched cancellation, so callers do not
-  have to reconstruct group membership after recognition.
+  have to reconstruct group membership after recognition. A public video
+  outcome is accepted only when those ordered group identities exactly cover
+  its retained frames; invalid outcomes cannot report `complete` first.
 - distinguishes a valid MP4 with no audio stream (`VIDEO_NO_AUDIO_STREAM`) from
   a declared audio stream that is corrupt or cannot be decoded (`VIDEO_INVALID`).
 - exposes `recognize_video()` as one Python-library orchestration call with
