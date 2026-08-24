@@ -246,7 +246,7 @@ there is no cross-process pool state. File-producing calls claim one output targ
 for the duration of a recognition, so direct threads and `recognize_batch()` cannot
 split final Markdown from its resume sidecar. The claim is process-local: separate
 processes must not target the same output path concurrently. PDF repair, long
-audio, and persisted/resumable audio remain unavailable. #120 explicitly rejects
+audio chunking, and persisted/resumable audio remain unavailable. #120 explicitly rejects
 legacy repair-Markdown compatibility. PDF recognition is offline- and
 Google-live-proven.
 

@@ -1404,6 +1404,23 @@ extended-path layer, symlink sandbox, cleanup transaction, or broader collision
 graph from this audit. The proven #149 same-source snapshot defect and the open
 #127 cancellation choice remain separate and are not weakened by this result.
 
+#155 corrects three maintained scope statements that lagged the shipped direct
+APIs. The root README now says specifically that **long-audio** video routing is
+unavailable instead of broadly saying video routing has not started.
+`START_HERE.md` now names provider-free composition and atomic final Markdown
+publication as shipped public steps, while keeping video branch resume,
+long-audio routing, and worker routing unavailable. The package README replaces
+the obsolete global “long audio unavailable” statement with the accurate
+“long-audio chunking unavailable” boundary. Historically scoped statements and
+the frame-only `recognize_video_frames()` limitation remain unchanged.
+
+Public import of `recognize_video`, `compose_video_result`, and
+`publish_video_result` succeeds. Focused orchestration, composition,
+publication, lightweight-import, and static-export tests pass 36 tests in 1.24
+seconds without network or provider calls. No runtime code, API, capability,
+provider, dependency, frozen contract, worker route, resume behavior, or
+long-audio video integration changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

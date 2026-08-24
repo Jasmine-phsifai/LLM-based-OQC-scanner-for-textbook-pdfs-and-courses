@@ -298,8 +298,10 @@ recognition are live-proven but remain memory-only; their published gates are
 not transcription-quality evaluations. PDF repair, long-audio chunk/resume,
 and persisted/resumable audio remain unavailable. Video recognition is now
 available as one typed orchestration facade over retained-frame extraction and
-recognition plus independently configured extracted-audio recognition. It does
-not yet compose a final video document or resume those branches. Local user
+recognition plus independently configured extracted-audio recognition.
+Provider-free composition and atomic final Markdown publication are separate
+public steps. Video branch resume, long-audio routing, and worker routing remain
+unavailable. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 

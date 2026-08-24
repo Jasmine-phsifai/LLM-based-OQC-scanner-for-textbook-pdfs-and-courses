@@ -3481,3 +3481,17 @@ Atomic task — Iteration #154: find and fix one concrete defect in the already-
 **两个轻量审计与 Windows 证据。** 一个只读任务覆盖 frame/audio extraction、orchestration、composition 和 publication，定向 **49 passed**，没有复现残留、覆盖或错误类型缺陷。另一个只读任务沿 legacy >260 事故核对当前代码：源文件 stem 会规范化并限制为 96 个 UTF-16 单元，60 个补充平面字符会收紧为 48 个字符；现有近 259 单元和 supplementary-Unicode 实际路径测试均通过，三类视频输出失败会诚实成为 `OUTPUT_PATH_INVALID`、`OUTPUT_WRITE_FAILED` 或 `VIDEO_INVALID`，没有假成功。调用者若主动选择已经超出系统可用范围的深层根目录仍可能失败，但当前公开合同没有承诺任意深根目录；从这里加入全库长路径框架会重复 legacy 的复杂度而没有新库失败证据。
 
 **本人复跑、停止边界与过度设计复查。** 主代理使用已有 Node 临时 PATH 亲自重跑 frame extraction、audio extraction、video recognition、composition、publication 与 outcome 集合，结果 **55 passed in 1.70s**，无网络、provider、凭据、安装或下载。没有产品代码、测试、依赖、公开 API、frozen `contracts/worker` 或现有路径规则改动；只把 no-defect 证据写回 authority 和日记。#149 的同一路径跨阶段换字节是假成功，仍必须由一个共享 MP4 snapshot 修；本轮结果没有否定它。#127、#149、#152 仍等待维护者选择。继续加通用 long-path、跨媒体 snapshot framework、递归 cleanup manager 或 symlink graph 都会是本轮明确拒绝的过度设计。
+
+## #155 — 2026-08-25：当前文档不再把已发布的视频组合与长音频整体写成未来功能
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #155: correct one stale public product-boundary claim that still treats shipped video recognition as future work, and verify the installed-package documentation remains consistent with executable APIs. Success means re-reading authority and diary, proving the exact contradiction against public imports/tests, choosing whether to fix wording only or a deeper capability boundary, making the smallest accurate correction, checking all maintained entry documents for the same stale claim, and committing/pushing with a Chinese diary entry. This matters because users should not be told to postpone functionality the library already ships, while genuinely deferred video resume and long-audio integration must remain clearly deferred.
+```
+
+**核对、两条路线和真正的陈旧点。** 同步 origin、重读 authority 与 #153—#154 日记后，根 README 的 `video routing have not started` 在同一段长音频上下文里可能被理解为全部视频路由未开始；`START_HERE` 更直接地说视频识别“尚不能组合最终视频文档”；package README 还写着全局 `long audio` 不可用。公开 import 实测 `recognize_video`、`compose_video_result`、`publish_video_result` 都是可调用函数，代码和既有测试也证明独立 composition 与 atomic publication 已发布，standalone long MP3 已 live-proven。路线 A 改 capability 状态或把 `recognize_video()` 变成自动 composition；这会改变已稳定的显式两步合同。路线 B 只修 maintained current wording，继续把 resume、长音频视频接线和 worker 标为 unavailable。选择路线 B。
+
+**修正范围与主审。** 根 README 现在明确是 `long-audio video routing` 未实现，而不是普通视频路由；`START_HERE` 明确列出 provider-free composition 与 atomic final Markdown publication 是独立 public steps；package README 把陈旧的 `long audio unavailable` 收紧为 `long audio chunking unavailable`。主代理逐段检查后保留两类正确语句：`recognize_video()` 自身只返回 outcome、不自动发布；更低层的 `recognize_video_frames()` 自身也不 compose。这些函数级限制没有与库级能力混淆。轻量只读审查独立得到相同边界，没有建议改 `MIGRATION_STATUS` 的准确 current/historical 表述。
+
+**验证与过度设计复查。** 公开 import 直接通过；视频 orchestration、composition、publication、lightweight import 和 static export 定向集合为 **36 passed in 1.24s**，无网络、provider、凭据、安装或下载。没有运行时代码、测试、API、capability、provider、依赖、frozen `contracts/worker`、resume 或长音频视频路由改动。没有为了三处文案增加“文档注册表”、自动文档测试或统一 capability schema；这些会比本轮陈旧句本身更难维护。#127、#149、#152 仍是明确待决项。

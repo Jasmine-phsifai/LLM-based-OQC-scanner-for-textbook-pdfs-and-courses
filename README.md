@@ -22,7 +22,7 @@ As of 2026-08-25:
 - The former standalone Stage 2 vision/audio scaffold was removed. Native
   Google inline short MP3 and Files-based single-request long MP3 paths are
   implemented and live-proven; both remain memory-only. Long-audio chunking,
-  resume, and video routing have not started.
+  resume, and long-audio video routing remain unavailable.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. Its bounded Google exit gate completed 16 pages in two
