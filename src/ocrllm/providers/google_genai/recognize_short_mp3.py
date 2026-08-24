@@ -47,13 +47,15 @@ def recognize_short_mp3(
         cancellation=config.cancellation,
     )
     raise_if_cancelled(config.cancellation)
-    google_module = load_google_genai()
-    api_key = resolve_google_genai_credential(settings)
+    api_key: str | None = None
     client = None
     response: GoogleGenAIAudioResponse | None = None
     public_error: OCRLLMError | None = None
+    provider_calls_attempted = 0
     try:
         try:
+            google_module = load_google_genai()
+            api_key = resolve_google_genai_credential(settings)
             client = google_module.Client(
                 api_key=api_key,
                 http_options=google_client_options(
@@ -73,9 +75,11 @@ def recognize_short_mp3(
                 )
             else:
                 raise_if_cancelled(config.cancellation)
+                sdk_contents = _sdk_contents(google_module, request.contents)
+                provider_calls_attempted = 1
                 raw_response = client.models.generate_content(
                     model=model,
-                    contents=_sdk_contents(google_module, request.contents),
+                    contents=sdk_contents,
                 )
                 response = parse_google_genai_audio_response(raw_response, model=model)
         except OCRLLMError as error:
@@ -92,12 +96,20 @@ def recognize_short_mp3(
         del api_key
 
     if public_error is not None:
+        if "provider_calls_attempted" not in public_error.details:
+            public_error._add_safe_detail(
+                "provider_calls_attempted", provider_calls_attempted
+            )
         raise public_error from None
     if response is None:
         raise ProviderError(
             "Google GenAI returned no short-audio response.",
             code="PROVIDER_RESPONSE_INVALID",
-            details={"provider": "google", "model": model},
+            details={
+                "provider": "google",
+                "model": model,
+                "provider_calls_attempted": provider_calls_attempted,
+            },
         ) from None
     return response
 

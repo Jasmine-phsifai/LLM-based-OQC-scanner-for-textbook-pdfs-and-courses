@@ -317,6 +317,15 @@ remained, and the exact generated fixture directory was deleted. This refresh
 proves the revised routine runner against a real provider interaction; it does
 not expand the short-audio product boundary.
 
+#107 corrected the direct short-audio adapter's failure accounting. Public
+errors now report `provider_calls_attempted=0` when SDK setup, catalog/model
+selection, or pre-dispatch cancellation fails, and `1` once the single
+`generate_content` recognition call has been entered, including mapped network
+and rejected/empty/no-speech response failures. The value is invocation-local;
+it does not add a billing ledger, retry, model switching, or fallback, and
+existing error identity, retryability, cleanup precedence, and successful
+per-model token usage remain unchanged.
+
 Exit gate met: one public real-MP3 result completed with catalog/model selection,
 provider limits, exact call/usage evidence, and no false success. The earlier
 model-scoped quota failure remains recorded rather than hidden by retry or

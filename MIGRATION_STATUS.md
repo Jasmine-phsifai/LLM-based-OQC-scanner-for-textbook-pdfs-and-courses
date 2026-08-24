@@ -136,7 +136,10 @@ MP3 through the public facade in exactly one provider call, with input/output
 usage 150/10 and a separate credential-scoped invalid-key failure. No transcript
 was published, so this is public-result and lifecycle proof, not a
 transcription-quality evaluation. The direct path remains experimental and
-memory-only. The routine audio live runner now omits the redundant invalid-key
+memory-only. #107 made its failure-side attempted-call value explicit: zero for
+adapter failures before `generate_content`, one after the single recognition
+dispatch begins, without adding retries or a billing ledger. The routine audio
+live runner now omits the redundant invalid-key
 request and reports a safe catalog/model-selection/recognition failure stage;
 historical credential evidence remains unchanged. #070 completed P1-a with eight authorized images: cancellation
 observed one persisted draft after one call (usage 2401/1502), resume reused it

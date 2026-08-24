@@ -221,6 +221,31 @@ def test_google_audio_adapter_checks_catalog_before_generate(monkeypatch) -> Non
         recognize(FIXTURE, config=_config())
 
     assert caught.value.details["failure_scope"] == "model"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert fake.models.generate_calls == []
+    assert fake.clients[0].closed is True
+
+
+def test_google_audio_sdk_content_failure_is_not_counted_as_dispatch(monkeypatch) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    fake = _FakeGoogleModule()
+
+    def fail_from_bytes(**_kwargs):
+        raise ValueError("PRIVATE SDK CONTENT ERROR")
+
+    fake.types = SimpleNamespace(
+        Part=SimpleNamespace(from_bytes=fail_from_bytes),
+        HttpOptions=_HttpOptions,
+    )
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    with pytest.raises(ProviderError) as caught:
+        recognize(FIXTURE, config=_config())
+
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert "PRIVATE SDK CONTENT ERROR" not in str(caught.value)
     assert fake.models.generate_calls == []
     assert fake.clients[0].closed is True
 
@@ -287,6 +312,7 @@ def test_google_audio_provider_error_closes_client_and_snapshot(tmp_path, monkey
         recognize(FIXTURE, config=_config(temp_dir=temp_dir))
 
     assert caught.value.code == "PROVIDER_NETWORK"
+    assert caught.value.details["provider_calls_attempted"] == 1
     assert "PRIVATE PROVIDER BODY" not in str(caught.value)
     assert fake.clients[0].closed is True
     assert list(temp_dir.glob("ocrllm-audio-*")) == []
@@ -318,6 +344,7 @@ def test_google_audio_never_accepts_no_speech_empty_or_refusal(
         recognize(FIXTURE, config=_config())
 
     assert caught.value.code == expected_code
+    assert caught.value.details["provider_calls_attempted"] == 1
     if expected_code == "PROVIDER_REFUSED_RECOGNITION":
         assert caught.value.details["provider"] == "google"
         assert caught.value.details["model"] == MODEL
