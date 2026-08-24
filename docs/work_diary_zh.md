@@ -2336,3 +2336,19 @@ Atomic task — Iteration #082: run one bounded real Google short-audio regressi
 **唯一一次真实执行结果。** 前台只执行一次既有 `run_google_genai_audio_smoke.py`，固定模型 `gemini-2.5-flash`，没有 retry、fallback 或第二模型。current catalog 仍为 **37**；公共结果 `status="passed"`，recognition provider call **1**，provider 实报 input/output tokens **150/10**。既有 invalid-key robustness probe 返回 **`PROVIDER_AUTHENTICATION` / `credential`**。进程 exit **0**，elapsed **12.987 s**，stderr nonempty **false**，Google key pattern detected **false**。runner 不输出 transcript、路径、raw response 或 upstream message，因此这是运行与生命周期回归，不是转录质量评分。
 
 **清理、结论与过度设计复盘。** WAV、MP3、stdout/stderr capture 和精确临时目录全部删除并验证不存在；临时 key 环境没有留在父进程。真实调用没有暴露产品缺陷，所以本轮没有为了制造代码变化而添加重试器、模型枚举修补、audio fallback、Files upload、长音频、persistence/resume、worker capability 或通用 live framework。只把刷新后的 real-provider 证据写入唯一 authority 和中文日记；P1-d 仍等待维护者产品选择，`contracts/`、`worker/` 和两个用户未跟踪文件保持未动。
+
+## #083 — 2026-08-24：校正 legacy provider 证据表中三个过时的 active PDF 结论
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #083: reconcile the current legacy-provider evidence table with the PDF capability that actually shipped, without changing its historical parent evidence or implementing the unresolved P1-d contract. Success means checking each PDF-related row against active code, tests, #078 live proof, and #080's repair decision; replacing only stale child-library claims; preserving the distinction between observed legacy incidents and current active evidence; and committing one concise documentation correction. This matters because this table guides future error handling, and statements such as "PDF is unimplemented" now send maintainers toward the wrong architecture.
+```
+
+**假设、两条路线与证据边界。** 初始假设是表格的 legacy 事件、来源和 action 仍是真实父级证据，只有最后一栏的 active child 对照滞后。路线①重写整份 provider error 表并重新判断所有厂家；路线②只核对三条 PDF 行，保留前四栏，精确修正 current active seam。选择②，因为本轮没有任何新证据推翻 legacy 行为或其他 provider 分类。主代理核对 authority、日记、`recognize_pdf()`、PDF renderer 和回归；轻量代理独立只读同三行，结论一致。
+
+**三处真实漂移与修正。** 第一行原称 PDF unimplemented；现改为 active 以八页串行 fail-fast image group 工作，失败保留已完成 child sidecar 并附 settled-group evidence，但不发布 final Markdown 或 failed-unit marker，普通 resume 可复用完成组。第二行原称没有 active PDF seam、等待 marker 稳定；现改为 checkpoint 与成功 range marker 已由 #078 live 证明稳定，缺少的是 repair 和失败 marker，P1-d 因 #080 的 A/B/C 产品选择暂停，禁止复制中文 regex 和非原子写。第三行原称未来必须选 PDFium；现改为 active 已使用 PDFium，source/renderer failure 是本地 typed failure，会停止 PDF 操作而不是触发 provider retry，并已有 offline、installed-wheel、Google live 三层证据。
+
+**没有被夸大的部分。** active provider/group 失败不会生成 legacy 所说的 typed failed Markdown unit，因此只写“settled sidecar 和 error evidence”，没有写“成功输出已发布”。legacy fallback encoder 没有移植，不能从父级 `broken data stream` 事件推断 child 也有相同 bug；active 只声明 PDFium render/decode 失败保持本地和诚实。P1-d 的 A/B/C 未获维护者选择，本轮没有把任何路线写成已授权实现。
+
+**验证、减法与过度设计复盘。** `tests/test_pdf_recognition.py` 为 **9 passed in 1.11s**，覆盖 sidecar/resume/fail-fast/renderer 当前事实；三条旧短语搜索、Markdown diff、敏感模式和 `git diff --check` 通过。本轮不调用 provider、不读凭据、不改产品代码、tests、legacy、`contracts/` 或 `worker/`，也不新建 error taxonomy、repair schema 或平行证据文档。变更只是让现有证据表停止把已经交付的 PDF 写成未来功能。
