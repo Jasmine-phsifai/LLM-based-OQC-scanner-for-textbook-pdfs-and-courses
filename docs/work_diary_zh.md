@@ -3839,3 +3839,17 @@ Atomic task — Iteration #181: verify that the standard result composed from a 
 **真实贯通结果。** 复用 #177 的十张 retained frame，native Google 图片配置指定 `test-image-model`，离线 adapter 的两次 8+2 请求各报告 **11 input / 3 output tokens**；独立音频配置指定 `test-audio-model`，既有 fake adapter 一次报告 **7 input / 2 output tokens**。最终 `compose_video_result()` 精确给出图片 **22/6**、音频 **7/2** 两项有序模型用量，`current_run_provider_call_count` 仍为 **3**。图片和音频 request snapshots 均按原测试清理，运行时代码无需修改。
 
 **验证与过度设计复查。** 新断言单独为 **1 passed in 1.39s**。第一次扩大命令猜了一个不存在的 `tests/test_aggregate_current_model_token_usage.py`，pytest 在收集前报告 file not found、零测试；定位真实消费者文件后，video、composition、Google image/audio/long-audio adapter 与 import 集合为 **103 passed in 4.13s**。`compileall` 和 `git diff --check` 通过；只给测试子进程临时补入已有 Node 路径后的完整离线套件为 **1,460 passed in 57.38s**。无网络、真实 provider、凭据、安装、依赖、运行时代码、公开 API、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有导出内部响应类、增加 provider 基类、账单 ledger、跨 provider identity、retry/fallback 或新 fixture；本轮只让现有真实集成测试证明用户已经决定的“input/output token 按模型累计”。
+
+## #182 — 2026-08-25：后续图片批次失败时，已结算 token 与媒体成果一起保留
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #182: verify that a real combined-video run preserves already-settled per-model token usage when a later native image-provider group fails, while the separately configured audio branch succeeds and undispatched suffix groups remain honest cancellations. Success means rereading authority/diary, strengthening the existing #180 real 3+3+3+1 regression rather than adding another media fixture, making the offline native Google image double return structured usage once and fail on call two, proving the partial composition retains only actually settled image/audio token totals and unknown overall call count, changing runtime only if evidence is lost, running focused/full offline tests, documenting the superseding proof, and committing/pushing one coherent change. This matters because “preserve paid work” includes its usage evidence, not only Markdown and files.
+```
+
+**覆盖判断与最小升级。** 构造型 composition 测试已经证明“成功结果 + 失败 error”的 token 合并，但真实 3+3+3+1 视频仍使用 Markdown-only injected provider，只能证明首批 Markdown、retained JPEG 和独立音频不丢。路线 A 是新增第三个 60 秒真实 fixture 测试；路线 B 是让 #181 已有的离线 native Google image helper 支持“第 N 次失败”，并用它升级 #180 的现有回归。选择 B。原来的一秒真实视频测试继续用 injected image + Google audio，仍证明不同 provider seam 能并列工作；因此没有用 native Google 测试替换或缩小公开 injected 能力。
+
+**真实失败后的结算证据。** 同一十帧视频按 **3+3+3+1** 分组。native image adapter 第一次返回 `test-image-model` 的 **11 input / 3 output tokens**，第二次抛 typed provider error，后两组保持未 dispatch 的 `Cancelled`；音频仍完成一次并返回 `test-audio-model` 的 **7 input / 2 output tokens**。partial composition 只保留这两项真实结算用量，没有把失败调用或取消组编造成 token；两个取消组缺少调用证据，所以总调用数仍正确为 **None**。两批 image request snapshots 和一个 audio snapshot 都已清理，十张 retained JPEG 与 MP3 仍存在。
+
+**验证与过度设计复查。** 升级回归单独为 **1 passed in 1.36s**；video orchestration、frame adapter、composition、Google image/audio adapter 与 lightweight/import 集合为 **106 passed in 4.63s**，`compileall` 与 `git diff --check` 通过。只给完整测试进程临时补入已有 Node 路径后的离线套件为 **1,460 passed in 58.09s**。无网络、真实 provider、凭据、安装、依赖、运行时代码、公开 API、输出格式、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有新 fixture、新结果字段、账单 ledger、provider 基类、fallback/retry、跨分支 transaction 或 injected 结构化响应；只是把现有真实失败证明补到“已付费成果包含 token 证据”这一层。

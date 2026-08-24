@@ -1760,6 +1760,21 @@ exported and no runtime, API, provider framework, billing ledger, dependency,
 output, frozen boundary, or open #127/#149/#152 decision changed. One hundred
 three focused tests and the complete 1,460-test offline suite pass.
 
+#182 strengthens #180's real 3+3+3+1 later-failure regression with the native
+Google image response path already used by #181. The first image group settles
+11 input and 3 output tokens for `test-image-model`; the second native adapter
+call fails, both suffix groups remain undispatched cancellations, and the
+separate audio branch settles 7 input and 2 output tokens for
+`test-audio-model`. Partial composition preserves exactly those two paid usage
+records while its provider-call total remains unknown under #139. Both request-
+owned image and audio snapshots are removed, while all retained media assets
+remain. The earlier one-group combined test still proves an injected image
+provider can run beside Google audio, so this upgrade does not narrow the
+provider-separation seam. No runtime, API, public injected-provider response,
+provider framework, billing ledger, dependency, output, frozen boundary, or
+open #127/#149/#152 decision changed. One hundred six focused tests and the
+complete 1,460-test offline suite pass.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

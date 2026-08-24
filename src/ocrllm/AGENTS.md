@@ -116,6 +116,9 @@ zero calls, retries, model switching, or a cross-branch transaction.
 #181 proves real combined-video composition keeps native Google image and audio
 token usage separate by explicit model. Preserve #086: public injected providers
 return Markdown strings and do not gain the internal structured response type.
+#182 proves a later native image-group failure preserves already-settled image
+and audio model usage, cleans request snapshots, and leaves cancelled suffix
+call evidence unknown. Do not replace that unknown with inferred zero calls.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

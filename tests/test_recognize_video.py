@@ -174,11 +174,15 @@ def _install_fake_audio(
 
 def _install_fake_google_image(
     monkeypatch: pytest.MonkeyPatch,
+    *,
+    fail_on_call: int | None = None,
 ) -> list[tuple[Path, ...]]:
     observed: list[tuple[Path, ...]] = []
 
     def fake_google_image(image_paths, *, prompt, config):
         observed.append(tuple(image_paths))
+        if len(observed) == fail_on_call:
+            raise ProviderError("Image provider failed.")
         return VisionProviderResponse(
             markdown="# Frames\n",
             input_tokens=11,
@@ -294,20 +298,23 @@ def test_recognize_video_preserves_settled_work_after_later_group_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _write_multiscene_mp4(tmp_path / "lecture.mp4")
-    image_provider = _ImageProvider(fail_on_call=2)
+    observed_images = _install_fake_google_image(monkeypatch, fail_on_call=2)
     observed_audio = _install_fake_audio(monkeypatch)
 
     outcome = recognize_video(
         source,
         output_dir=tmp_path / "output",
         image_config=Config(
-            provider=image_provider,
+            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            vision_model=VisionModelSettings(name="test-image-model"),
             execution=RecognitionExecutionPolicy(maximum_images_per_request=3),
+            temp_dir=tmp_path / "image-snapshots",
         ),
         audio_config=_audio_config(tmp_path),
     )
 
-    assert [len(call) for call in image_provider.calls] == [3, 3]
+    assert [len(call) for call in observed_images] == [3, 3]
+    assert all(not path.exists() for call in observed_images for path in call)
     assert [item.index for item in outcome.frame_outcomes] == [0, 1, 2, 3]
     assert outcome.frame_outcomes[0].succeeded
     assert isinstance(outcome.frame_outcomes[1].error, ProviderError)
@@ -319,6 +326,7 @@ def test_recognize_video_preserves_settled_work_after_later_group_failure(
     assert "provider_calls_attempted" not in outcome.frame_outcomes[2].error.details
     assert "provider_calls_attempted" not in outcome.frame_outcomes[3].error.details
     assert len(observed_audio) == 1
+    assert not observed_audio[0].exists()
     assert outcome.audio_result is not None
     assert outcome.audio_artifact is not None
     assert outcome.audio_artifact.is_file()
@@ -333,6 +341,18 @@ def test_recognize_video_preserves_settled_work_after_later_group_failure(
     assert composed.metadata["successful_video_frame_group_count"] == 1
     assert composed.metadata["failed_video_frame_group_count"] == 3
     assert composed.metadata["current_run_provider_call_count"] is None
+    assert composed.metadata["current_model_token_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_tokens": 11,
+            "output_tokens": 3,
+        },
+        {
+            "model": "test-audio-model",
+            "input_tokens": 7,
+            "output_tokens": 2,
+        },
+    )
 
 
 def test_recognize_video_preserves_audio_after_frame_provider_failure(

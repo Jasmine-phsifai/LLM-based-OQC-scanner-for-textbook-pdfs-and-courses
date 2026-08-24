@@ -516,6 +516,11 @@ The following directions remain traceable but are not current work:
   and audio usage as 7 input / 2 output tokens while retaining the exact three-
   call total. Public injected providers remain Markdown-only under #086; no
   provider or accounting contract changed.
+  #182 upgrades the real 3+3+3+1 later-failure proof to the same native Google
+  accounting path. The first image group and independent audio branch retain
+  exact 11/3 and 7/2 model usage after the second image call fails; cancelled
+  suffix groups keep the overall call total unknown. Request snapshots are
+  cleaned and retained assets remain. No runtime contract changed.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate
