@@ -3741,3 +3741,17 @@ Atomic task — Iteration #174: verify whether standalone `recognize_video_frame
 **最小实现与独立复核。** `recognize_video_frames()` 现在先运行 memory-only option 检查，再运行 `validate_vision_provider_config()`，之后才验证 retained tuple、JPEG 和分组。local OCR、injected provider、DashScope 动态 catalog、合法 exact tuple 的顺序、最多八张分组、失败后的 undispatched cancellation 都不变。轻量只读代理使用有效 JPEG 和缺 model 的 Google 配置复核，得到入口 `ConfigError`、零 provider 调用；它没有改文件或联网。没有复制规则、增加公共配置、兼容 legacy batch 格式，或建立第二套 batch abstraction。
 
 **验证、环境事实与过度设计复查。** 回归转绿后，frame facade、完整视频、generic batch、Google adapter 和 lightweight/import 合集为 **86 passed in 2.79s**，`compileall` 通过。第一次扩大测试误用了缺少 `imageio_ffmpeg` 的 STA Python，6 项在 fixture 创建阶段失败，未进入产品路径；定位已有环境后固定使用 `D:\Anaconda\envs\OCRLLM\python.exe`。第一次完整套件只因当前 PATH 找不到已有 Node，在 frozen worker harness 停于 **673 passed / 1 failed**；仅给测试子进程临时加入 `D:\Anaconda\envs\STA` 后，完整离线套件为 **1,458 passed in 54.50s**。没有安装、下载、网络、真实 provider、凭据、输出、公开 API、依赖、frozen `contracts/worker` 或 #127/#149/#152 改动。明确拒绝了改 generic batch、提前访问动态 catalog、建立 provider preflight framework、给每组复制配置错误或新增 transaction/compatibility layer；本轮只消除两个公开视频入口之间已经证明的确定性语义差异。
+
+## #175 — 2026-08-25：视频双配置前置拒收已有实现，补齐 library 使用说明而不重复造代码
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #175: verify that the public combined-video facade rejects an invalid audio-provider configuration before source decoding, retained-frame output, or image-provider dispatch, and fix only a reproduced preflight gap. Success means rereading the current authority and diary, exercising one real MP4 with a valid injected image configuration and invalid audio configuration, proving exact filesystem/provider side effects, reusing the existing audio validator if correction is needed, preserving image/audio separation and generic result settlement, running focused/full offline tests, and committing/pushing one coherent change. This matters because provider separation is not mature if an invalid second branch can waste work or leave artifacts before the library rejects the call.
+```
+
+**原缺陷假设被现有证据否定。** 同步 origin、重读 authority、日记和 package 规则后，逐行确认 `recognize_video()` 在 `extract_video_frames()` 之前依次完成 image config、确定性 vision provider 规则、audio config 和 `validate_google_mp3_options()`；因此非法音频配置不会先解析视频。已有 `test_recognize_video_rejects_invalid_audio_config_before_output_or_dispatch` 还用一个不存在的 source 精确证明 source 未被打开、图片 provider 零调用、output 不存在。路线 A 是再加一个真实 MP4 的永久同义回归或抽象一层“视频配置事务”；路线 B 是保留现有最强的 precedence 测试，只做一次真实媒体复核，并修补面向用户文档没有说明双配置前置拒收的缺口。选择 B；不为了满足“每轮改代码”而制造重复实现。
+
+**真实媒体复核与最小文档修正。** 轻量只读任务在系统临时目录生成 1 秒可听 MP4，FFmpeg exit 0；图片使用记录调用的 injected provider，音频故意错误地复用该图片 provider。公共 `recognize_video()` 立即抛出 `ConfigError(code="CONFIG_INVALID")`，图片调用数 **0**，output directory 调用前后均不存在，无 frame/MP3 产物；临时目录成功删除。root README 和 active-library README 现在明确：两个 config 都在读取视频、创建媒体输出和 dispatch 任一 provider 前校验。authority #126 本来已准确记载同一事实，迁移边界也未变化，因此不追加一份重复状态条目。
+
+**验证与过度设计复查。** 主代理亲自运行非法配置回归、真实双分支成功回归和 lightweight/import 合集，得到 **12 passed in 0.84s**；只给测试子进程临时加入已有 Node 路径后的完整离线套件为 **1,458 passed in 53.90s**，`git diff --check` 通过。无网络、凭据、provider 请求、安装、依赖、运行时/API/测试改动、输出格式、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。明确拒绝重复 real-MP4 fixture、统一配置框架、provider hierarchy、fallback、retry 和 transaction 层；本轮的维护价值是让 Python package 用户在调用前就知道错误配置不会浪费另一分支工作。

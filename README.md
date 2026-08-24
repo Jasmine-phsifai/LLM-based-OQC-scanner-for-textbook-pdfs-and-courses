@@ -108,7 +108,9 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - distinguishes a valid MP4 with no audio stream (`VIDEO_NO_AUDIO_STREAM`) from
   a declared audio stream that is corrupt or cannot be decoded (`VIDEO_INVALID`).
 - exposes `recognize_video()` as one Python-library orchestration call with
-  explicit image and audio configs; it retains frames and extracted MP3,
+  explicit image and audio configs. It validates both configurations before
+  reading the video, creating media output, or dispatching either provider;
+  then it retains frames and extracted MP3,
   preserves each branch's result or typed error, and computes honest
   `complete`, `partial`, or `failed` status without publishing final Markdown.
   Its outcome requires the exact lexical `output_root/frames/*` and optional

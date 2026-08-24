@@ -340,8 +340,10 @@ valid but has no audio stream; present-but-corrupt or undecodable audio remains
 current audio recognizer remains the separately installed `audio,google`
 short-MP3 slice (maximum 300 decoded seconds and 25 MiB), so longer extracted
 tracks fail honestly at recognition. Image and audio providers are selected by
-the two separate `Config` objects. `recognize_video()` uses those same proven
-boundaries and returns a `VideoRecognitionOutcome`: retained media, ordered
+the two separate `Config` objects. `recognize_video()` validates both configs
+before reading the source, creating retained media, or dispatching either
+provider. It then uses those same proven boundaries and returns a
+`VideoRecognitionOutcome`: retained media, ordered
 frame-group outcomes or a typed frame error, and an audio result or typed audio
 error. A silent MP4 can therefore complete as frame-only, while corrupt audio or
 a provider failure remains partial or failed. The call does not compose or
