@@ -144,7 +144,11 @@ without replay and made one fresh review call (usage 4278/1066), then published
 a complete result. Total calls were exactly two. #071 completed P1-b with an
 exact top-level tuple, zero-side-effect full preflight, and two live ordered
 eight-image groups. Both completed with one call each and complete published
-state; reported input/output usage was 2401/1131 and 2401/988. P1-c PDF through
+state; reported input/output usage was 2401/1131 and 2401/988. #105 then
+re-proved the shipped wheel itself from outside the repository: valid tuple
+ordering, exact-container rejection, same-stem collision rejection, and a later
+corrupt source all matched the public contract, with zero calls and zero
+output/temp residue for every invalid case. P1-c PDF through
 the existing image/resume path now passes focused tests and a real local
 16-page PDFium probe: two ordered eight-page calls, two complete child states,
 zero retained rendered PNGs, and a one-call resume after the second group is

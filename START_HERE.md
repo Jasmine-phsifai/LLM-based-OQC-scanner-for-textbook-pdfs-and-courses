@@ -96,7 +96,10 @@ exact top-level tuple while preserving each item's existing atomic-path or
 grouped-`Sequence` contract, and validates the entire batch plus output targets
 before any snapshot, directory, executor, or provider work. Two live groups of
 eight images completed in order with exactly two total Google calls and complete
-published state. #078 completed P1-c PDF-through-image/resume. Bounded P1-d
+published state. #105 separately re-proved the exact-tuple, tuple-subclass,
+same-stem collision, and later-corrupt-source behavior through public imports
+from a freshly installed wheel; every invalid case made zero provider calls and
+left no output/temp residue. #078 completed P1-c PDF-through-image/resume. Bounded P1-d
 manual PDF repair is the immediate decision point, but #080 proved that a
 single failed-range marker cannot recover an unattempted suffix under the
 current serial fail-fast loop. #102 reduced the product choice to whether

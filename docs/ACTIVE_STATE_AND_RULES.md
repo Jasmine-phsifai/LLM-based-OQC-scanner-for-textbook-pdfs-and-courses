@@ -394,6 +394,18 @@ the child exit code as null, so no child OS exit code is claimed. Stderr/secret/
 path/private-content scans were false, and tool/capture temporary state was
 removed. No OCR text or provider raw response was published.
 
+#105 added the missing installed-artifact check without changing the contract.
+One freshly built 204,174-byte wheel (SHA-256
+`1daa2b81a6357ecf360fbc02d626bde8a40e7daa9a0f0f8c1dc46b7fb6ab92da`)
+was installed into a disposable Python 3.10.20 environment and imported from
+that environment outside the repository. Through public imports, one exact
+tuple returned two ordered successful outcomes and exactly two injected-provider
+calls. An outer list and tuple subclass each returned `SOURCE_INVALID` with zero
+calls; a same-stem collision returned `OUTPUT_EXISTS` with zero calls and no
+output/temp directory; a later corrupt image returned `SOURCE_INVALID` with
+zero calls and no output/temp directory. This found no product drift and does
+not justify another batch abstraction or a wider live-runner protocol.
+
 Exit gate met: invalid and colliding batches make zero calls, exact top-level
 tuple ordering and per-item grouped-source compatibility remain correct, and
 two live batches passed. Non-goals remain arbitrary top-level iterable
