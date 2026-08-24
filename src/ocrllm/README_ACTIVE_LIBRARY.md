@@ -273,7 +273,8 @@ video_outcome = recognize_video(
         audio_model=AudioModelSettings(name="gemini-2.5-flash"),
     ),
 )
-video_result = compose_video_result(video_outcome)
+if video_outcome.status != "failed":
+    video_result = compose_video_result(video_outcome)
 ```
 
 Install `ocrllm[video]` for lazy OpenCV and `imageio-ffmpeg` support. The function
@@ -305,7 +306,10 @@ frame-group outcomes or a typed frame error, and an audio result or typed audio
 error. A silent MP4 can therefore complete as frame-only, while corrupt audio or
 a provider failure remains partial or failed. The call does not compose or
 publish final Markdown and does not delete its retained frames or MP3. A
-partial image-group or audio `RecognitionResult` keeps the video outcome and
+caller should inspect the branch results/errors and top-level status first;
+`compose_video_result()` accepts only complete or partial outcomes and leaves a
+fully failed outcome as structured failure evidence. An explicitly partial
+image-group or audio `RecognitionResult` keeps the video outcome and
 later composed result partial; complete means every usable child result is
 complete. Successful frame-group outcomes must contain exact image
 `RecognitionResult` values; non-image results are rejected before composition.

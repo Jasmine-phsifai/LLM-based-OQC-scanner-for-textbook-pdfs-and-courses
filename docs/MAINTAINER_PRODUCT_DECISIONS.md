@@ -401,6 +401,10 @@ is often accepted.
   successful frame group carries an exact `RecognitionResult` whose
   `source_type` is `image`; reject a mismatch instead of composing it under the
   Frames heading. Do not generalize this into a media graph or result hierarchy.
+- #143 keeps fully failed video outcomes as structured branch evidence. Caller
+  examples must inspect `VideoRecognitionOutcome.status` and call
+  `compose_video_result()` only for complete or partial outcomes; do not add a
+  serializer or exception wrapper merely to make failed outcomes composable.
 
 ## Resolved confirmation and next authority
 

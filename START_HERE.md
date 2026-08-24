@@ -166,6 +166,9 @@ now stops at construction instead of becoming a complete composed result.
 in both `VideoRecognitionOutcome` and `compose_video_result()`.
 #142 rejects a non-image `RecognitionResult` inside a video frame group before
 it can be composed under the Frames section.
+#143 re-proves the current facade from a clean externally installed wheel and
+guards the package example so fully failed outcomes remain structured evidence
+instead of being passed to `compose_video_result()`.
 Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

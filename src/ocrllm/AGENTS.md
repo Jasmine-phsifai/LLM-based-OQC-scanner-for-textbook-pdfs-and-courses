@@ -59,6 +59,9 @@ Partial children remain usable but keep both outcome and composition partial.
 #142 requires every successful frame-group outcome to carry an exact image
 `RecognitionResult`. Reject branch/media mismatches at outcome construction;
 do not relabel them during composition or build a generic media graph.
+#143 requires downstream examples to inspect `VideoRecognitionOutcome.status`
+before composition. Fully failed outcomes remain branch-level evidence and are
+not converted to a standard video result.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

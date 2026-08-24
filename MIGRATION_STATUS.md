@@ -420,6 +420,11 @@ The following directions remain traceable but are not current work:
   do not overflow retained-frame paths. Maximum-length stable segments now use
   ceiling partition counts instead of rounding down and exceeding the selected
   attempt's bound. Cancellation, publication, and resume remain separate.
+  A clean archive of commit `c7f30f0` built and installed outside the
+  repository without network, kept plain import free of heavy media modules,
+  and completed one local video through separate injected image and fake-audio
+  calls plus provider-free composition. Package examples now guard fully
+  failed outcomes before that composition step.
 
 ## Obsolete Prose Kept For Trace
 

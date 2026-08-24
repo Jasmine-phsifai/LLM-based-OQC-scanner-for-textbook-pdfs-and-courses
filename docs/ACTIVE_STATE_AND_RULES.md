@@ -1189,6 +1189,32 @@ Fifty-five focused video neighbors and the full 1,423-test offline suite pass;
 compileall, lightweight import, diff hygiene, and frozen-boundary checks are
 clean.
 
+#143 re-proves the post-fix video facade as an externally installed Python
+library rather than adding another constructor invariant. A clean Git archive
+of exact commit `c7f30f0` built offline into a 227,012-byte wheel (SHA-256
+`996122aea3749bb40d916a7ac725c752101393728f5f84de036fa6c51beed807`).
+Installed with `--no-deps` outside the repository, package and distribution
+origins both resolved inside that target; public `recognize_video`,
+`VideoRecognitionOutcome`, and `compose_video_result` imported while OpenCV,
+NumPy, imageio-ffmpeg, and miniaudio remained unloaded after plain import.
+
+One generated local MP4 then completed through the installed public facade with
+separate injected image and fake-audio configurations: one frame group, one
+image call, one audio call, recognized audio, two retained assets, and a
+provider-free composed result containing both sections and two calls. The
+result stayed memory-only with `output_path=None`; no network, provider,
+credential, dependency download, or project-environment installation occurred,
+and the exact temporary proof root was removed.
+
+The package README had one caller-visible mismatch: its example unconditionally
+composed the returned outcome even though fully failed outcomes are deliberately
+rejected by `compose_video_result()`. The example now checks the existing
+top-level status first, and its prose tells callers to inspect branch
+results/errors; complete and partial outcomes remain composable, while failed
+outcomes remain structured evidence. This is documentation of the existing
+contract, not a serializer, failure wrapper, new result state, publication, or
+resume feature. Thirty-two focused composition/import regressions pass.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

@@ -3289,3 +3289,17 @@ Atomic task — Iteration #142: prevent a public video frame-group outcome from 
 **证据、两条路线和选择。** 真实 `recognize_video_frames()` 只产生 `source_type="image"`，audio branch 也已显式检查 exact `RecognitionResult` 与 `source_type="audio"`；唯独 frame outcome 只检查外层 `BatchItemOutcome`。public 回归把 audio `RecognitionResult` 放进成功 frame group，旧构造器稳定 **DID NOT RAISE**，之后即可被 composer 当作 Frames 正文。路线一是在 composer 临时检查；路线二是在 outcome 构造时与 audio 分支对称拒绝。选择路线二，防止错误对象进入状态和组合逻辑。
 
 **最小实现、审查与验证。** `__post_init__()` 在确认 frame outcomes 是 exact tuple 且成员为 exact `BatchItemOutcome` 后，只遍历成功成员：result 必须是 exact `RecognitionResult`，且 `source_type` 必须为 `image`。错误成员仍携带原 typed `OCRLLMError`，不受影响。精确 runtime type 检查避免不合规值后来以普通 `AttributeError` 泄漏，也符合本库“非法对象直接拒收”的边界。两份独立只读审查确认校验位置、错误成员旁路、真实 `recognize_video_frames()` 产物和 audio 对称性均正确。视频 outcome、composition、帧识别、公开编排与 Google runner 定向集合为 **55 passed in 1.71s**；完整离线测试为 **1,423 passed in 54.71s**，`compileall -q src tests tools`、`git diff --check`、轻量 import 和冻结目录检查通过。没有网络、provider、凭据、安装或下载；没有修改通用 `BatchItemOutcome`，也没有加入媒体层级、重复帧规则、serializer、#127 取消、发布或 resume。只用一个代表性 audio-as-frame 回归固定 source mismatch，没有机械参数化所有非图片 canonical 类型。
+
+## #143 — 2026-08-25：当前视频 facade 重新通过外部安装证明
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #143: prove the current post-fix video API remains a real externally installable Python library and improve only the caller-facing usage gap that the installed artifact demonstrates. Success means reconciling current authority and diary, building from a clean tracked archive without network, installing the wheel outside the repository, importing the public video symbols with no eager heavy media modules, exercising one local video outcome/composition through separate image/audio configs, and adding at most one concise public usage clarification if the evidence shows it is missing. This matters because repeated constructor fixes are useful only if downstream callers can still install and consume the package; continuing speculative invariant scans would drift toward overdesign.
+```
+
+**假设、两条路线与文档缺口。** #130 已证明早期视频 composition wheel，但 #131—#142 又修改了留帧、路径、状态和 outcome 合同。路线一是继续扫描手工构造边角；路线二是回到用户强调的“它真的是 library”，从干净归档重证外部安装和真实本地视频。选择路线二。主线审计 package README 时发现代码示例无条件调用 `compose_video_result(video_outcome)`，但公开函数明确拒绝 fully failed outcome；这会让照抄示例的用户在真实 provider 双分支失败时得到意外 `ValueError`。没有为此设计 serializer 或异常包装，只让示例先检查现有 `status`，并说明先读 branch result/error。
+
+**轻量任务的 clean-wheel 证据。** 固定构建、安装和主动检查按维护者规则交给轻量任务。它从 exact commit `c7f30f0` 创建 clean Git archive，使用本机缓存 Hatchling 离线构建成功；wheel 为 **227,012 bytes**，SHA-256 `996122AEA3749BB40D916A7AC725C752101393728F5F84DE036FA6C51BEED807`。`--no-deps` 安装到仓库外 target 后，package 与 distribution origin 都在 target，版本 0.1.0，三个视频公开符号可导入；plain import 未加载 cv2、NumPy、imageio-ffmpeg 或 miniaudio。
+
+**真实本地消费、验证与边界。** installed wheel 使用已有本地 imageio-ffmpeg 生成 MP4，再以分开的 injected image config 和 fake audio processor 调用公开 `recognize_video()`：outcome complete、audio recognized、一个 frame group、图片与音频各一次调用；composition 含两个独立区段、两个存在的 assets、调用数 2、`output_path=None`。精确 TEMP 根删除并确认不存在。没有网络、provider、凭据、下载或项目环境安装。独立文档审查确认 guard 与当前 public contract 一致；composition/outcome/import/lightweight 定向集合为 **32 passed in 0.47s**，compileall、diff 和冻结目录检查通过。本轮只有 package README 与 current-state/日记同步，没有产品代码、测试、manifest、依赖、API、serializer、#127 取消、发布或 resume 修改；没有因成功 proof 再造第二个构建脚本。
