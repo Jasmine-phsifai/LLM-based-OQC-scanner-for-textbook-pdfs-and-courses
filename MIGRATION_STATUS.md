@@ -196,6 +196,11 @@ protocol annotation and public README now state that boundary directly.
 state and making no request for the failed group.
 #089 then refreshed the real local 16-page PDFium public-facade path: two serial
 groups, two complete sidecars, final output, and zero page/snapshot residue.
+#116 closes the proven Windows junction escape at the same-named PDF state path:
+an existing state object must be an ordinary directory, so a real junction now
+fails with `OUTPUT_PATH_INVALID` before render/provider work while an ordinary
+pre-existing directory remains valid for overwrite. No general sandbox, lock,
+or check/use-race framework was added.
 #073 strengthens the isolated installed-wheel proof for that same slice: a
 real 16-page PDF must traverse public `recognize()` as two serial groups of
 eight, publish two child states plus the final range-marked output, and leave

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import importlib
+import os
+import subprocess
 import sys
 import threading
 import time
@@ -181,12 +183,14 @@ def _pdf_config(
     *,
     output_dir: Path | None = None,
     resume: bool = False,
+    overwrite: bool = False,
     cancellation: object | None = None,
 ) -> Config:
     return Config(
         provider=provider,
         output_dir=output_dir,
         resume=resume,
+        overwrite=overwrite,
         cancellation=cancellation,
         execution=RecognitionExecutionPolicy(max_parallel_requests=4),
     )
@@ -231,6 +235,81 @@ def test_public_pdf_uses_two_ordered_bounded_image_groups(
     assert result.metadata["page_count"] == 16
     assert result.metadata["pdf_group_count"] == 2
     assert result.metadata["current_run_provider_call_count"] == 2
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows junction regression")
+def test_pdf_rejects_junction_state_directory_before_provider_dispatch(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=1)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    outside_target = tmp_path / "outside"
+    outside_target.mkdir()
+    state_directory = output_dir / "book_board"
+    created = subprocess.run(
+        [
+            "cmd.exe",
+            "/d",
+            "/c",
+            "mklink",
+            "/J",
+            str(state_directory),
+            str(outside_target),
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    if created.returncode != 0:
+        pytest.skip("This Windows test environment cannot create a junction")
+    provider = _RecordingProvider()
+
+    try:
+        with pytest.raises(OutputError) as captured:
+            recognize(
+                source,
+                config=_pdf_config(
+                    provider,
+                    output_dir=output_dir,
+                    overwrite=True,
+                ),
+            )
+
+        assert captured.value.code == "OUTPUT_PATH_INVALID"
+        assert provider.calls == []
+        assert not (output_dir / "book_board.md").exists()
+        assert list(outside_target.iterdir()) == []
+    finally:
+        if os.path.lexists(state_directory):
+            os.rmdir(state_directory)
+
+
+def test_pdf_overwrite_accepts_existing_ordinary_state_directory(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=1)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    state_directory = output_dir / "book_board"
+    state_directory.mkdir(parents=True)
+    provider = _RecordingProvider(state_directory=state_directory)
+
+    result = recognize(
+        source,
+        config=_pdf_config(
+            provider,
+            output_dir=output_dir,
+            overwrite=True,
+        ),
+    )
+
+    assert len(provider.calls) == 1
+    assert result.output_path == output_dir / "book_board.md"
+    assert list(state_directory.glob("*.ocrllm-state.json"))
 
 
 def test_cancel_after_first_pdf_group_resumes_without_replaying_it(

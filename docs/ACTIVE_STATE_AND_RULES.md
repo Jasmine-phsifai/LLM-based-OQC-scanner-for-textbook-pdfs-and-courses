@@ -830,16 +830,15 @@ Future agents must assume the following and verify before trusting any claim:
   repeating the 96-character source stem; this does not claim arbitrary deep
   path support.
 
-- **OPEN — the owned PDF state directory currently follows a Windows junction.**
-  A bounded #115 reproduction placed the expected same-named PDF state directory
-  as a junction to a directory outside `output_dir`; with `overwrite=True`, one
-  successful public PDF call wrote its child Markdown and resume state through
-  that junction. `prepare_pdf_state_directory()` currently checks
-  `Path.is_dir()`, which follows the link. The next bounded fix should reject a
-  symlink/junction or other non-owned directory object before render/provider
-  dispatch using the existing `OUTPUT_PATH_INVALID` contract. Do not broaden
-  this into arbitrary path sandboxing, cross-process locking, or a filesystem
-  security framework.
+- **FIXED BY #116 — the owned PDF state directory no longer follows a Windows
+  junction.** The public failing regression used a real junction from the
+  expected same-named state path to a directory outside `output_dir`; the old
+  implementation dispatched once and wrote through it. A pre-existing state
+  path is now inspected without following it and must be an ordinary directory,
+  otherwise public recognition returns `OUTPUT_PATH_INVALID` before render or
+  provider dispatch. A neighboring regression preserves `overwrite=True` for an
+  ordinary pre-existing directory. This is deliberately not arbitrary path
+  sandboxing, cross-process locking, or a claim to close check/use races.
 
 - **Same-target output/state ownership is consistent for supported in-process
   concurrency.** Every file-producing `recognize()` claims its resolved target

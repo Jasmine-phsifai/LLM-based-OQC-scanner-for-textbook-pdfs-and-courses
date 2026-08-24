@@ -142,6 +142,10 @@ same-named state directory. A real local 16-page PDFium probe and focused
 cancel/resume tests pass; `recognize_batch()` intentionally rejects PDF for this
 first slice. Its initial bounded Google exit attempt made zero provider calls
 because the current Windows profile then had no Google credential.
+The same-named state path must be an ordinary directory: #116 proves on Windows
+that a pre-existing junction is rejected with `OUTPUT_PATH_INVALID` before
+render/provider dispatch, while ordinary overwrite/resume directory behavior is
+preserved. This is a narrow ownership check, not a filesystem sandbox.
 
 #073 upgrades the isolated `pdf-vision` package smoke from a one-page backend
 probe to a public 16-page installed-wheel run. It requires two serial groups of
