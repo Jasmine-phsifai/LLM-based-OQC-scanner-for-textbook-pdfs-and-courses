@@ -2222,3 +2222,19 @@ Atomic task — Iteration #075: re-audit the only remaining P1-c unblock conditi
 **安全探测与结果。** 主线程只输出 availability boolean，不输出 value、长度、前后缀、路径或 raw settings。当前 `GOOGLE_API_KEY=False`、`GEMINI_API_KEY=False`、legacy QSettings value `False`；QSettings probe error `False`，所以这是成功读取后的确切缺失，不是 PyQt/registry 探测失败。`AnyAuthorizedCredentialAvailable=False`，因此没有构造 16 页 fixture、没有加载 Google SDK/catalog、没有 provider/API 调用，也没有 retry 或第二来源搜索。没有遍历用户目录、Windows Credential Manager、浏览器、shell history、旧账号 registry 或其他可能含秘密的位置。
 
 **重复阻塞审计、过度设计边界与解锁条件。** 同一 credential blocker 从 #072 首次出现，经过 #073 installed-wheel 证明和 #074 发布工作流修复后，在 #075 仍原样存在，已经满足连续多轮审计；safe in-scope 替代工作已完成。继续增加 PDF 配置、cleanup/race 回归、第二 credential store、自动 key discovery、Google transport、repair 或 P2 会违反 unified queue，而不是成熟度进展。本轮无产品/测试代码可诚实修改，文档只把当前外部状态和停止条件提升为 authority。解锁方式只有：让当前 agent 进程获得非空 `GOOGLE_API_KEY` 或 `GEMINI_API_KEY`，或在当前 Windows 账户的 `OCRLLM/QCR`、`ui/google_api_key` 保存授权 key；不要把 key 发到聊天、命令行、tracked 文件或日记。恢复后只执行一次既定 16 页 gate，通过才关闭 P1-c 并重新评估 P1-d。
+
+## #076 — 2026-08-24：恢复 legacy GUI 启动器与桌面入口
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #076: restore the existing legacy Windows launcher and a desktop entry that opens the current GUI settings path. Success means the launcher uses the intended local environment, starts without a shell error, and the desktop entry points to that verified launcher; no credential is copied, logged, or stored by the repair. This matters because the open live gate should be unblocked through the product’s existing settings flow, without adding a second credential mechanism.
+```
+
+**假设、路线与选择。** 初始可能性包括桌面文件被移动、BAT 损坏、环境缺失和依赖缺失。只读检查后，桌面实际是 `C:\Users\13301\OneDrive\Desktop`，其中没有 OCRLLM 的 BAT 或快捷方式；仓库只保留 `legacy_app/launch_gui.bat` 和环境安装脚本。两条修复路线是：①修复既有 launcher 并恢复指向它的桌面快捷方式；②另写设置工具或直接修改 QSettings。选择①，因为用户实际缺陷是产品无法启动，路线②会复制凭据入口，并掩盖启动故障。
+
+**失败优先证据与最小修复。** `D:\Anaconda\envs\OCRLLM\python.exe` 已存在且能导入 PyQt5，但当前 `PATH` 找不到 `conda` 或 `conda.bat`。修前运行 `cmd.exe /d /c "legacy_app\launch_gui.bat --help"` 稳定返回 1，并错误声称 conda 未安装。BAT 同时为 62 个 LF、0 个 CRLF；同目录 `setup_env.bat` 是 CRLF。修复只让 launcher 优先调用当前仓库既定的 OCRLLM interpreter，不存在时仍沿用原 conda fallback；没有写环境自动发现器或第二种配置机制。`.gitattributes` 精确固定两个 legacy BAT 为 CRLF，避免 checkout 后重新变成不可靠换行。
+
+**验证与外部入口。** 修后同一 `--help` 命令返回 0，中文帮助正常。真实 `--spawn 1` 返回 0，并比运行前多出一个 Python GUI 进程；该窗口保留给维护者填写设置。新建 `C:\Users\13301\OneDrive\Desktop\OCRLLM Legacy.lnk`，目标精确是 tracked `legacy_app\launch_gui.bat`，工作目录是 `legacy_app`，没有覆盖同名文件。没有读取、打印、转存或调用任何 Google 凭据，也没有 provider 请求。
+
+**过度设计复盘与后续边界。** 直接固定本机既有 interpreter 路径有机器环境假设，但它与本仓库明确环境位置一致，并保留 conda fallback；继续扩成跨发行版、跨磁盘、注册表扫描或通用 launcher framework 才会超过这个 legacy 修复。active library 当前没有 UI/BAT，不应为此增加 launcher 或 QSettings 依赖。P1-c 仍未因“窗口能打开”而完成；只有维护者在现有设置页保存授权值后，下一轮才运行一次既定 16 页 Google gate。

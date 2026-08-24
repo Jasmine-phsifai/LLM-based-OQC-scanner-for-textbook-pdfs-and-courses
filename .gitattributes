@@ -5,6 +5,10 @@
 # changes. Keep EOL bytes as-is instead of running text normalization filters.
 * -text
 
+# Windows command scripts require CRLF for reliable cmd.exe parsing.
+legacy_app/launch_gui.bat text eol=crlf
+legacy_app/setup_env.bat text eol=crlf
+
 # Binary files should not be normalized.
 *.png binary
 *.jpg binary

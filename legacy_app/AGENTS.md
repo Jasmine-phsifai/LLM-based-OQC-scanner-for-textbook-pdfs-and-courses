@@ -890,3 +890,33 @@ error、refusal、empty 和 no-speech 都不会发布成功 transcript。
 **Carry-forward judgement.** 是。**WARNING FOR src/ocrllm**：A1 必须把 provider error、empty、refusal
 和 no-speech 映射成明确异常，失败时不发布 Markdown、不返回成功路径；不得复制 legacy 的失败文本回填、
 隐藏协议 fallback 或依模型名猜协议。
+
+## 2026-08-24 — legacy GUI launcher rejected an existing OCRLLM environment (fixed)
+
+**What broke.** Double-clicking `launch_gui.bat` stopped with “conda was not
+found” on the current Windows account, and there was no OCRLLM desktop entry.
+The intended interpreter already existed at
+`D:\Anaconda\envs\OCRLLM\python.exe`, and it could import PyQt5, so the error
+was a launcher failure rather than a missing application environment.
+
+**True root cause and fix.** The launcher required `conda` or `conda.bat` to be
+on `PATH` even when the complete named environment was already installed. It
+also had LF-only line endings, unlike the existing CRLF setup script. The BAT
+now uses the verified environment interpreter directly and retains the old
+conda activation path only as a fallback. `.gitattributes` pins both legacy
+BAT files to CRLF. A desktop shortcut named `OCRLLM Legacy.lnk` was created in
+the current account's resolved OneDrive Desktop and points only to the tracked
+launcher; it stores no provider credential.
+
+**Verification.** Before the fix, `cmd.exe /d /c "legacy_app\launch_gui.bat
+--help"` returned 1 with the conda error. After the fix, the same command
+returned 0 with the GUI argument help. A real `--spawn 1` run returned 0 and
+created one new Python GUI process from the intended environment. No provider
+API was called and no credential was read, printed, or written.
+
+**Carry-forward judgement.** Limited. The active `src/ocrllm` package has no
+GUI or BAT launcher and must not acquire one for compatibility. The general
+risk can reappear in future optional command entrypoints: environment presence
+must be checked by the executable actually needed, not inferred only from a
+shell activation command being on `PATH`. No `WARNING FOR src/ocrllm` is
+needed until such a launcher is intentionally added.

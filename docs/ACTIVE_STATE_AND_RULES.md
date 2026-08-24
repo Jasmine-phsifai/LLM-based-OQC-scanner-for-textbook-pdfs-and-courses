@@ -367,6 +367,17 @@ P1-c until an authorized key is made available to this process or that current
 QSettings location. Do not select unrelated hardening or P1-d merely to avoid
 the external gate.
 
+#076 repaired the separate legacy GUI entry path needed for the maintainer to
+populate that existing QSettings value. `legacy_app/launch_gui.bat` now uses
+the verified `D:\Anaconda\envs\OCRLLM\python.exe` directly when present and
+falls back to its previous conda activation route; its Windows line endings
+are pinned as CRLF. The current account also has an `OCRLLM Legacy.lnk`
+shortcut on its resolved OneDrive Desktop pointing to that tracked launcher.
+The BAT help path and one real spawned GUI process passed. This did not read or
+write a provider key and does not close P1-c; the queue remains paused until
+the maintainer saves the authorized value through the opened legacy settings
+page.
+
 ### P1-d — Minimal PDF repair after stable markers
 
 Only after PDF checkpoint and Markdown markers are stable, migrate the smallest
