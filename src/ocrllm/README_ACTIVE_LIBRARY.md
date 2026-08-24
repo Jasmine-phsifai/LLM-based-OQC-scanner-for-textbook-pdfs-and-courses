@@ -57,8 +57,10 @@ from ocrllm import (
 
 The wheel includes an empty `py.typed` marker. This makes the inline annotations
 in the installed package discoverable through the standard typed-package
-contract; it does not add a runtime dependency or eagerly import optional
-providers.
+contract. Static-only facade exports make documented top-level imports precise:
+an isolated installed-wheel Pyright 1.1.408 probe resolves `Config` and
+`RecognitionResult`, and rejects a string passed to `Config.timeout_seconds`.
+This adds no runtime dependency and does not eagerly import optional providers.
 
 Phase 0 contract honesty, Phase 1 real board/image, the Phase 2 development
 worker, and Phase 2A image-library completion are GO. Stage M is offline

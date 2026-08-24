@@ -18,7 +18,8 @@ The repository has two boundaries:
 
 The active library has GO coverage for the image contract, local OCR, the
 development JSONL worker, provider error disposition, credential scheduling,
-image resume, installed inline-type discovery through `py.typed`, and a bounded
+image resume, installed inline-type checking through `py.typed` and static-only
+public facade exports, and a bounded
 source distribution that contains only the active package and required build
 metadata rather than the legacy app or working-directory artifacts. Stage M
 Phase 1 maturation is offline implementation-complete:

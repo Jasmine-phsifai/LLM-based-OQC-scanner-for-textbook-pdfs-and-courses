@@ -1,5 +1,76 @@
 """Lazy public OCRLLM library facade."""
 
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from .audio_model_settings import AudioModelSettings as AudioModelSettings
+    from .batch_item_outcome import BatchItemOutcome as BatchItemOutcome
+    from .capability_report import CapabilityReport as CapabilityReport
+    from .config import Config as Config
+    from .credential_pool_policy import CredentialPoolPolicy as CredentialPoolPolicy
+    from .errors import (
+        AllCandidatesExhausted as AllCandidatesExhausted,
+        Cancelled as Cancelled,
+        ConcurrencyLimited as ConcurrencyLimited,
+        ConfigError as ConfigError,
+        DependencyMissing as DependencyMissing,
+        InvalidSource as InvalidSource,
+        NoSpeechDetected as NoSpeechDetected,
+        NoTextDetected as NoTextDetected,
+        OCRBackendError as OCRBackendError,
+        OCRLLMError as OCRLLMError,
+        OutputError as OutputError,
+        OutputExists as OutputExists,
+        PDFError as PDFError,
+        ProviderAccountSuspended as ProviderAccountSuspended,
+        ProviderContentBlocked as ProviderContentBlocked,
+        ProviderError as ProviderError,
+        ProviderPermissionDenied as ProviderPermissionDenied,
+        ProviderRequestInvalid as ProviderRequestInvalid,
+        ProviderUnavailable as ProviderUnavailable,
+        QuotaExhausted as QuotaExhausted,
+        RateLimited as RateLimited,
+        ResumeStateError as ResumeStateError,
+        UnsupportedFormat as UnsupportedFormat,
+    )
+    from .get_capabilities import get_capabilities as get_capabilities
+    from .local_ocr_settings import LocalOCRSettings as LocalOCRSettings
+    from .provider_error_disposition import (
+        ProviderErrorDisposition as ProviderErrorDisposition,
+        get_provider_error_disposition as get_provider_error_disposition,
+    )
+    from .providers.dashscope.credential import (
+        DashScopeCredential as DashScopeCredential,
+    )
+    from .providers.dashscope.credential_pool import (
+        DashScopeCredentialPool as DashScopeCredentialPool,
+    )
+    from .providers.dashscope.credential_pool_report import (
+        DashScopeCredentialPoolReport as DashScopeCredentialPoolReport,
+        DashScopeCredentialSlotReport as DashScopeCredentialSlotReport,
+    )
+    from .providers.dashscope.provider_settings import (
+        DashScopeSettings as DashScopeSettings,
+    )
+    from .providers.google_genai.list_google_genai_models import (
+        list_google_genai_models as list_google_genai_models,
+    )
+    from .providers.google_genai.provider_settings import (
+        GoogleGenAISettings as GoogleGenAISettings,
+    )
+    from .recognition_execution_policy import (
+        RecognitionExecutionPolicy as RecognitionExecutionPolicy,
+    )
+    from .recognition_preferences import (
+        RecognitionPreferences as RecognitionPreferences,
+    )
+    from .recognize import recognize as recognize
+    from .recognize_batch import recognize_batch as recognize_batch
+    from .result import RecognitionResult as RecognitionResult
+    from .vision_model_settings import VisionModelSettings as VisionModelSettings
+
+
 _PUBLIC_IMPORTS = {
     "AudioModelSettings": (".audio_model_settings", "AudioModelSettings"),
     "AllCandidatesExhausted": (".errors", "AllCandidatesExhausted"),

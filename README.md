@@ -30,8 +30,10 @@ As of 2026-08-24:
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
-- Built wheels include the standard `py.typed` marker so downstream type
-  checkers can discover the package's inline annotations.
+- Built wheels include the standard `py.typed` marker and static-only lazy-facade
+  exports. An isolated installed-wheel Pyright probe resolves documented public
+  types and rejects an invalid `Config` argument without making runtime imports
+  eager.
 
 The authoritative defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,

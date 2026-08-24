@@ -168,8 +168,12 @@ counts provider
 calls and model/workflow attempts separately from tokens. Resume is the primary
 recovery mechanism. The installed package carries the standard `py.typed`
 marker, so standards-compliant downstream type checkers can discover its shipped
-inline annotations. The marker and installed-wheel resource are proven; a real
-downstream checker resolution/diagnostic probe has not yet completed.
+inline annotations. #101 added static-only public re-exports for the lazy
+facade and proved the current installed wheel with standalone Pyright 1.1.408:
+a documented valid consumer resolved `Config` and `RecognitionResult` exactly,
+while `Config(timeout_seconds="wrong")` failed with `reportArgumentType`.
+Runtime import remains lazy, and a source-level guard keeps the static export
+set equal to `__all__`.
 Hatch derives distribution version metadata from the public
 `ocrllm.__version__` assignment; `pyproject.toml` no longer carries a second
 hand-maintained version string.
