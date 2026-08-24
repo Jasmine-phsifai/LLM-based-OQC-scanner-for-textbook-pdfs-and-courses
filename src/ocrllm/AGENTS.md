@@ -42,6 +42,10 @@ safe JSON before cleanup. These are controller rules, not product features.
 audio `PROVIDER_QUOTA_EXHAUSTED`, with honest partial outcome/composition and
 two retained assets. Treat this as expected non-retryable provider evidence;
 do not add adapter retry, automatic model switching, or provider pooling.
+#138 requires exact lexical artifact layout in every public video outcome:
+frames use `output_root/frames/*` and optional audio uses
+`output_root/audio.mp3`. Reject mismatches at construction, but do not turn
+this into path resolution, symlink policy, hashes, manifests, or a sandbox.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

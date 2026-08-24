@@ -97,6 +97,8 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   explicit image and audio configs; it retains frames and extracted MP3,
   preserves each branch's result or typed error, and computes honest
   `complete`, `partial`, or `failed` status without publishing final Markdown.
+  Its outcome requires the exact lexical `output_root/frames/*` and optional
+  `output_root/audio.mp3` layout; it does not resolve path or symlink aliases.
 - exposes `compose_video_result()` as a provider-free explicit second step for
   a returned complete or partial video outcome. It keeps ordered frame and
   audio sections separate, preserves stable failure codes, reports retained

@@ -377,6 +377,11 @@ is often accepted.
   and extracted MP3. Do not retry or switch models inside the current adapter.
   Future caller-owned provider/model routing may consume this typed evidence,
   but this quota event does not authorize building that future layer now.
+- #138 treats `VideoRecognitionOutcome.output_root` as an exact lexical layout
+  contract, not decorative metadata. Retained frames must use its `frames`
+  child and optional audio must use its `audio.mp3`; construction rejects
+  mismatches before composition. Do not infer physical containment or add
+  `resolve()`, symlink traversal, hashes, manifests, or filesystem sandboxing.
 
 ## Resolved confirmation and next authority
 

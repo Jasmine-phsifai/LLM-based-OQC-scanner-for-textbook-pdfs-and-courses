@@ -153,7 +153,9 @@ runner completed, so it proves no provider outcome; the next controller must
 poll that exact session and preserve safe JSON before cleanup. #137 did so: one
 image call succeeded, one audio call returned `PROVIDER_QUOTA_EXHAUSTED`, and
 the public outcome/composition honestly preserved a two-asset partial result
-without retry or model switching.
+without retry or model switching. #138 then makes the public outcome reject
+frame/audio paths outside its exact lexical `output_root/frames/*` and optional
+`output_root/audio.mp3` layout before composition.
 Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

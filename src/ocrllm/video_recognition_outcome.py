@@ -33,6 +33,14 @@ class VideoRecognitionOutcome:
             raise TypeError(
                 "video retained_frames must contain exact RetainedVideoFrame values"
             ) from None
+        frames_directory = self.output_root / "frames"
+        if any(
+            frame.path.parent != frames_directory
+            for frame in self.retained_frames
+        ):
+            raise ValueError(
+                "video retained frame paths must use the exact output_root/frames layout"
+            ) from None
         if type(self.frame_outcomes) is not tuple:
             raise TypeError("video frame_outcomes must be an exact tuple") from None
         if any(type(outcome) is not BatchItemOutcome for outcome in self.frame_outcomes):
@@ -73,6 +81,13 @@ class VideoRecognitionOutcome:
             Path,
         ):
             raise TypeError("video audio_artifact must be a pathlib.Path") from None
+        if (
+            self.audio_artifact is not None
+            and self.audio_artifact != self.output_root / "audio.mp3"
+        ):
+            raise ValueError(
+                "video audio artifact must use the exact output_root/audio.mp3 path"
+            ) from None
 
     @property
     def audio_state(self) -> Literal["recognized", "absent", "failed"]:

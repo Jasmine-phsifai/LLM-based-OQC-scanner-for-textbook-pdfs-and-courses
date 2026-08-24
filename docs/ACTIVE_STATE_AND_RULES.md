@@ -1102,6 +1102,26 @@ trigger an adapter-internal retry. A future caller/provider-routing slice may
 decide when another model is appropriate, but this result does not authorize
 building that layer now. Sixty focused Google/video/composition regressions pass.
 
+#138 closes one public video-result integrity gap proven independently before
+editing. A manually constructed `VideoRecognitionOutcome` could declare one
+`output_root` while carrying existing JPEG/MP3 artifacts from unrelated paths;
+provider-free composition then returned those foreign files as assets of the
+claimed video. Construction now rejects any retained frame whose lexical parent
+is not exactly `output_root / "frames"`, and rejects any audio artifact not
+exactly equal to `output_root / "audio.mp3"`. Every outcome produced by public
+`recognize_video()` already uses that layout. The existing missing-artifact
+composition regression now keeps its missing frame inside the declared frames
+directory, so layout mismatch and later file disappearance remain separate
+failures.
+
+This is an exact `Path`-layout invariant, not physical containment: manual
+constructors must reuse the same lexical paths, and `..`, absolute/relative, or
+symlink aliases are not resolved. No existence check, canonicalization, symlink
+walk, duplicate-frame rule, hash, manifest, cleanup transaction, or filesystem
+sandbox was added. Four constructor regressions plus real local video,
+composition, and Google-runner neighbors pass; the full offline suite passes
+1,413 tests, with compileall, diff hygiene, and frozen-boundary checks clean.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

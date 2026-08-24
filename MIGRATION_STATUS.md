@@ -7,7 +7,7 @@ file and that file differ, that file wins.
 
 ## Current Status
 
-Last synchronized: 2026-08-24.
+Last synchronized: 2026-08-25.
 
 The repository has two boundaries:
 
@@ -401,7 +401,10 @@ The following directions remain traceable but are not current work:
   one in-memory MP3 of at most 300 seconds. Public `recognize_video()` now
   orchestrates the retained-frame and extracted-audio branches with separate
   configs and returns a typed complete/partial/failed outcome while retaining
-  owned media. `compose_video_result()` explicitly converts a returned complete
+  owned media. Its public outcome rejects frame/audio paths outside the exact
+  lexical `output_root/frames/*` and optional `output_root/audio.mp3` layout;
+  it does not resolve aliases or symlinks. `compose_video_result()` explicitly
+  converts a returned complete
   or partial outcome into a memory-only standard video result with ordered
   frame and audio sections; it does not publish Markdown, resume video work,
   route long audio, or expose a worker command. Safety-cap frame selection now

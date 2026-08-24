@@ -3221,3 +3221,19 @@ Atomic task — Iteration #137: repeat the controlled Google combined-video gate
 **脱敏、生命周期和主审。** runner JSON/schema 校验通过，stderr 为空；凭据、识别正文、输入输出路径、raw exception/response 扫描均未命中。外层证据根在解析前一直保留，完成后先确认位于系统 TEMP，再删除并确认不存在；没有任务进程或凭据环境残留。主代理复核 Google adapter：在 `generate_content()` 前明确把 `provider_calls_attempted` 从 0 变为 1，quota advisory 映射为 `PROVIDER_QUOTA_EXHAUSTED`，该错误不可重试。第一次离线命令误写了不存在的 `tests/test_google_genai_error_mapping.py`，所以零测试执行；改用真实 `test_google_genai_adapter.py` 后，Google runner、adapter、公开视频和组合邻居共 **60 passed in 1.16s**，`compileall` 和 `git diff --check` 通过。
 
 **产品判断与过度设计复查。** 这次结果没有证明产品代码缺陷，反而证明当前分支独立结算、稳定错误分类、调用次数和 partial 组合都按预期工作。没有为了免费层 quota 暂时耗尽而降低响应验证、自动重试、立即换模、加入 provider pool 或实现未来 provider class。维护者已经明确未来会让不同 provider/模型有独立策略，但那要在 OCRLLM 本身稳定后由 caller-owned routing 消费现有类型化证据；本轮 quota 事件不授权提前搭建。下一步不应立刻再次消耗同一音频 quota，而应等待刷新期间继续修复/验证已有视频 library 边界，仍保留 #127 取消语义的维护者决策门槛。
+
+## #138 — 2026-08-25：视频 outcome 不再接受错位媒体路径
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #138: make the public video outcome reject media artifacts that do not belong to its declared output root, without adding hashes, manifests, cleanup transactions, or filesystem resolution policy. Success means a reproducible public construction currently composes mismatched frame/audio files, the smallest constructor invariant rejects those mismatches while preserving every real recognize_video() outcome, symlink/path-normalization behavior is not broadened, and focused plus full offline tests pass. This matters because a library result that claims ownership of unrelated artifacts can silently compose the wrong video evidence.
+```
+
+**证据、两条路线与决定。** 之前的只读审计曾指出 `VideoRecognitionOutcome.output_root` 与实际 frame/audio 路径没有关系；本轮重新拉取当前 HEAD 后，让同一轻量任务独立复现：声明 `<tmp>/claimed`，帧和音频放在另一目录，只要文件存在，outcome 和 `compose_video_result()` 都接受，并把外部文件列为同一个视频的 assets。路线一是在 composer 临时补检查；路线二是在公开 outcome 构造时立即拒绝自相矛盾对象。选择路线二，因为错对象不应继续流过库。所有当前产品构造点都由 frame 的真实父目录得到 output root，并把音频写为同根 `audio.mp3`，所以这不是为了手工对象破坏真实调用。
+
+**失败优先与最小实现。** 新建职责单一的 outcome 回归文件：foreign frame 和 foreign audio 两项在旧代码中明确 `DID NOT RAISE`，正常布局通过。实现只增加两个词法比较：每个 frame 的 `path.parent` 必须等于 `output_root / "frames"`；存在 audio 时必须等于 `output_root / "audio.mp3"`。没有读文件、解析视频或调用 provider。一个旧 composer 测试原本想证明“帧发布后丢失”，却把缺失帧放在 output root 外，同时混入路径错位；将它移到根内的 `frames/missing.jpg` 后，仍由 composition 阶段验证真实文件不存在，两个失败责任被拆开。
+
+**主审修正：精确布局，不是假称物理 containment。** 独立 review 指出直接 `Path` 相等会拒绝语义上可能相同的 `..`、绝对/相对或 symlink alias，并且不能阻止根内 symlink 指向外部。这个判断正确，但本轮不通过 `resolve()` 扩张兼容或安全范围。维护者偏好对不确定输入直接拒绝，因此合同明确为**精确词法布局**：手工构造者必须复用相同 Path；不解析 alias，不跟随 symlink，也不宣称物理所有权。错误文本和 README/MIGRATION_STATUS 均改成 exact lexical layout，并补一项 `..` alias 必须拒绝的回归。没有顺便添加 duplicate-frame、canonicalization、symlink walk、hash 或 sandbox。
+
+**验证、library 边界和过度设计复查。** outcome、真实本地 `recognize_video()`、composition 与 Google runner 邻居最终为 **31 passed in 0.95s**；其中公开视频测试会实际生成并解析本地 MP4，证明产品返回布局没有被破坏。完整离线测试为 **1,413 passed in 51.96s**；`compileall -q src tests tools`、`git diff --check` 和冻结 `contracts/` / `worker/` 检查通过。没有安装、下载或 provider 调用。修改只有构造不变量、四项回归、一个旧测试责任修正和公开文档；没有新路径 helper、provider 逻辑、resume、最终 Markdown、#127 取消、legacy 格式或 social 功能。

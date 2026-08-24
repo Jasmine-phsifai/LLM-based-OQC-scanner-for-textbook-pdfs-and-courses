@@ -272,9 +272,14 @@ def test_compose_video_result_rejects_fully_failed_outcome(tmp_path: Path) -> No
 def test_compose_video_result_rejects_missing_retained_artifact(
     tmp_path: Path,
 ) -> None:
-    missing = RetainedVideoFrame(0, 0.0, tmp_path / "missing.jpg")
+    output_root = tmp_path / "video"
+    missing = RetainedVideoFrame(
+        0,
+        0.0,
+        output_root / "frames" / "missing.jpg",
+    )
     outcome = VideoRecognitionOutcome(
-        output_root=tmp_path / "video",
+        output_root=output_root,
         retained_frames=(missing,),
         frame_outcomes=(
             BatchItemOutcome(
