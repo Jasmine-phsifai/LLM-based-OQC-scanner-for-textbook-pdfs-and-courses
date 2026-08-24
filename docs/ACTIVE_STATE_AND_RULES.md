@@ -849,6 +849,30 @@ explicit `gemini-2.5-flash` run then discovered 37 models and successfully
 recognized a 4.783-second MP3 extracted from a generated speech MP4 in exactly
 one call, reporting 193 input and 12 output tokens and publishing no Markdown.
 
+#124 closes the first observed composition prerequisite without defining a
+video document. Every settled `recognize_video_frames()` group now carries the
+exact ordered `video_frame_indices` and `video_frame_timestamps_seconds` in its
+successful result metadata or typed error details. This identity follows the
+actual caller-selected group size, including a lower image limit, and is also
+attached to an undispatched cancelled suffix. Later composition therefore does
+not have to infer failed or paid group membership from a current batch-size
+setting, the legacy failure that made repair ambiguous. The return type,
+provider calls, fail-fast settlement, frame artifacts, and memory-only boundary
+are unchanged. A combined video result, Markdown format, orchestration,
+cleanup policy, cancellation layer, resume state, and audio/frame alignment
+remain deliberately undefined until they have a truthful consumer.
+
+The #124 source suite passes 1,373 tests. Its bounded Google gate discovered
+37 current models and sent two generated frames as one `gemini-2.5-flash`
+request. The successful outcome retained exact indices `(0, 12)` and
+timestamps `(0.0, 0.5)`, reported one provider call plus 853 input / 5 output
+tokens, and exposed no recognized content or credential. There was no retry,
+fallback, second request, repository write, or retained temporary directory.
+A fresh 221,257-byte wheel installed with `--no-deps` outside the repository
+kept video symbols lazy, then grouped four valid JPEGs as 3+1 through an
+injected provider and returned exact identities `(0, 10, 20)` / `(30,)` with
+timestamps `(0.0, 0.5, 1.0)` / `(1.5,)`.
+
 The #121 source suite passes 1,351 tests, and a fresh 215,956-byte wheel installed
 outside the repository retained three ordered, decodable JPEGs from a generated
 72-frame MP4 with no staging residue. The all-profile clean-archive gate is not

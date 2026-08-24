@@ -2978,3 +2978,23 @@ Atomic task — Iteration #123: add the smallest executable audio side of the vi
 **验证与过度设计复查。** 新 extraction、视频帧、Google audio、lazy/static public 相关集为 **65 passed in 1.67s**；源码全套为 **1373 passed in 53.72s**。Public Contract 的 52 个名字与 `ocrllm.__all__` 完全相等；release gate 已把 `imageio-ffmpeg` 加入 archive dev 依赖、video profile 期望分发和真实 installed audio extraction smoke，并把它列入 base import 禁止集合。最可能被认为过度防御的是第二次完整 decode、plain-parent 拒绝和 `fsync`：前两项分别直接阻断 legacy 已存在的截断假成功与输出路径越界类别，第三项与本库其他原子发布一致且本轮已用 Windows 真路径修正，不是为假想格式加兼容。没有时长策略、音频分段、调用聚合、跨进程锁、FFmpeg 搜索器、provider 类、fallback、hotwords、最终视频 Markdown、resume、worker、legacy state 或 social 代码。
 
 **独立 wheel 产物复验。** 轻量代理在零下载、零 provider 调用下从当前工作树构建 fresh wheel：`ocrllm-0.1.0-py3-none-any.whl`，**220,730 bytes**，SHA-256 `858163ce0244268031531ef93f4b8e8c5cb6e60a43382ad355f991a6c0ce269a`。`--no-deps` 安装后从仓库外确认导入来源是临时 target；解析公开音频抽取符号仍未加载 cv2、NumPy、imageio-ffmpeg 或 miniaudio。METADATA 的 base 依赖为空，`video` extra 同时包含受限版本的 imageio-ffmpeg 与 OpenCV。安装包对一份短 AAC-in-MP4 成功抽出 **5,408-byte** MP3，未留下 `.part` 或 staging 文件；唯一随机 proof root 已删除并确认不存在。
+
+## #124 — 2026-08-24：让每个视频帧识别结果保留精确帧组身份
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #124: determine and implement the smallest honest video composition boundary that turns the already-proven retained-frame and extracted-audio branches into one library-owned result without introducing legacy formats, a provider hierarchy, or long-audio machinery. Success means the boundary is derived from current authority and actual consumer behavior, preserves independent image/audio provider outcomes and cleanup ownership, remains importable as a lightweight Python package, has failure-first regressions plus proportionate real evidence, and is documented, committed, and pushed as one coherent change. This matters because the video pipeline now executes both media branches, but it is not yet a usable library workflow unless callers can receive an explicit, maintainable combined result without guessing which paid work succeeded.
+```
+
+**证据改变了原子目标。** 主代理重读 authority、包规则、#120—#123 日记和当前实现；三个轻量只读任务分别核对 active 结果类型与 API、legacy 最终输出/真实修复事故、当前生命周期与测试缺口。路线 A 是马上增加 `recognize_video()` 和新的组合结果；路线 B 是先修正现有帧识别结果丢失帧组身份的问题。选择 B。原因不是缩小工作，而是 composition 目前无法诚实回答一个已成功付费或失败的 group 到底覆盖哪些帧：`recognize_video_frames()` 把 `RetainedVideoFrame` 降为路径后只返回普通 group index，而 caller 的图片上限可以低于 8；事后按“当前 batch size”重建会复现 legacy video repair 已发生过的成员歧义。此时先设计 partial/failed 视频状态、最终 Markdown、音频缺失语义、清理和 resume，会把猜测固化为公共格式。
+
+**失败优先与最小实现。** 回归先稳定得到两个 `KeyError: video_frame_indices`：成功组和 provider 失败/未派发取消组都没有自身成员信息。修正只留在 `recognize_video_frames.py`：按实际 effective image limit 先建立唯一 frame groups，再把同一 groups 的路径送给原有 `recognize_batch()`；每个成功 `RecognitionResult.metadata` 增加精确有序的 `video_frame_indices` 与 `video_frame_timestamps_seconds`，每个 typed failure（包括 fail-fast 后未派发的 `Cancelled`）在安全 details 中得到同样身份。返回类型仍为 `list[BatchItemOutcome]`，原 error 对象、调用计数、model ledger、provider 次数、顺序和 fail-fast 结算没有改变。较低图片上限的 3+3+1 回归证明 identity 来自真实分组，而不是固定假设 8。
+
+**边界与过度设计复查。** 本轮没有新增 `VideoRecognitionResult`、combined outcome、Markdown composer、orchestrator、manifest、checkpoint、resume、cleanup transaction、跨进程锁、音画时间对齐、hotwords、长音频、provider class/fallback、worker、legacy 格式或 social 代码。两个 metadata 数组是 composition 无法绕过的最小事实，也是 legacy 真实失败的直接回归；没有加入帧路径、source hash、重复身份类或第二套 batch 抽象。第一次定向组合为 **48 passed in 1.91s**。Google 实时子任务第一次只检查环境变量，因未读取已授权 QSettings 源在 catalog 前返回配置缺失，精确 **0 provider calls**；它已被要求按仓库既有安全读取方式再执行一次，而主代理继续离线核验。
+
+**真实 API、全量与工具环境。** 同一轻量任务随后按仓库既有安全方式只在进程内读取 `QSettings("OCRLLM", "QCR")`，动态发现 **37** 个模型；当前配置且仍服务的 `gemini-2.5-flash` 对两张生成 JPEG 形成一组并恰好调用一次。成功 metadata 保留帧号 `(0, 12)`、时间 `(0.0, 0.5)`、`provider_call_count=1`，usage 为 **853 input / 5 output tokens**；没有 retry、fallback、第二次请求、key、路径、OCR 正文或原始响应输出，唯一临时目录已清理。第一次 root 全量在 47% 处出现两个失败，`-x` 重跑在 **625 passed** 后证明原因只是当前非交互 PATH 找不到已有 Node，未运行到本轮视频测试；只给测试子进程补入 `D:\Anaconda\envs\STA` 后，最终全量为 **1373 passed in 53.31s**。`compileall -q src tests tools` 和 release-gate PowerShell AST parse 同时通过，没有安装依赖或修改持久环境。
+
+**installed wheel 证明。** 另一轻量任务零网络构建 fresh wheel：`ocrllm-0.1.0-py3-none-any.whl`，**221,257 bytes**，SHA-256 `dfe26f524db3c8f0199bf61d3f5a6eca03a9e82cd8b6b6aabd2489284f8e345f`。仓库外 `--no-deps --target` 导入来源正确，解析视频公开符号后 cv2、NumPy、imageio-ffmpeg、miniaudio 均未加载。安装包以 injected provider 识别四张真实 JPEG，在较低上限下精确形成 3+1，并返回帧号 `(0,10,20)/(30,)` 与时间 `(0.0,0.5,1.0)/(1.5,)`；唯一临时目录已删除并确认不存在。最后增加的调用计数保持断言只收紧既有测试：失败 group 仍为一次 provider call，未派发取消 group 仍不伪造调用；定向组合 **40 passed in 1.55s**。
+
+收尾时一条把 diff、status 和敏感模式放在一起的 PowerShell 命令因正则引号没有终止，在任何子命令启动前被解析器拒绝；拆成三个只读命令后，`diff --check` 通过，tracked diff 未命中真实 key/Bearer 模式，frozen `contracts/`、`worker/` 与 legacy 均无改动。两份既有用户未跟踪文件继续原样保留。

@@ -15,12 +15,13 @@ existing offline resume and installed-wheel proofs. #120 answered P1-d no: the
 new library does not consume legacy localized repair Markdown, and ordinary
 resume remains its PDF recovery path. P1-e video is now active in ordered
 slices: #120 shipped lazy local MP4 inspection and #121 shipped bounded
-negative-feedback frame selection plus retained JPEGs. Next comes existing
-image-path recognition, separately configurable audio recognition, then
-lifecycle/resume. Keep the result a lightweight Python
+negative-feedback frame selection plus retained JPEGs; #122 recognized ordered
+frame groups, #123 extracted audio for an independent audio config, and #124
+kept exact group identity on every settled outcome. Composition and lifecycle
+come next, but their output/failure semantics must be derived from these real
+outcomes rather than copied from legacy. Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
-second scene detector, or build provider generalization before the two real
-video media consumers exist.
+second scene detector, or premature provider generalization.
 
 `contracts/` and `worker/` are frozen. Do not change them.
 

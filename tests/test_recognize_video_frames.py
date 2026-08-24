@@ -60,6 +60,20 @@ def test_recognize_video_frames_groups_at_eight_and_preserves_order(
     ]
     assert [outcome.index for outcome in outcomes] == [0, 1, 2]
     assert [outcome.succeeded for outcome in outcomes] == [True, True, True]
+    assert [
+        outcome.result.metadata["video_frame_indices"]
+        for outcome in outcomes
+        if outcome.result is not None
+    ] == [tuple(range(0, 80, 10)), tuple(range(80, 160, 10)), (160,)]
+    assert [
+        outcome.result.metadata["video_frame_timestamps_seconds"]
+        for outcome in outcomes
+        if outcome.result is not None
+    ] == [
+        tuple(float(value) for value in range(0, 40, 5)),
+        tuple(float(value) for value in range(40, 80, 5)),
+        (80.0,),
+    ]
 
 
 def test_recognize_video_frames_respects_lower_image_limit(tmp_path: Path) -> None:
@@ -76,6 +90,11 @@ def test_recognize_video_frames_respects_lower_image_limit(tmp_path: Path) -> No
 
     assert [len(group) for group in provider.groups] == [3, 3, 1]
     assert all(outcome.succeeded for outcome in outcomes)
+    assert [
+        outcome.result.metadata["video_frame_indices"]
+        for outcome in outcomes
+        if outcome.result is not None
+    ] == [(0, 10, 20), (30, 40, 50), (60,)]
 
 
 def test_recognize_video_frames_keeps_honest_failure_outcomes(tmp_path: Path) -> None:
@@ -88,6 +107,16 @@ def test_recognize_video_frames_keeps_honest_failure_outcomes(tmp_path: Path) ->
     assert outcomes[0].succeeded
     assert isinstance(outcomes[1].error, ProviderUnavailable)
     assert isinstance(outcomes[2].error, Cancelled)
+    assert outcomes[1].error.details["video_frame_indices"] == tuple(
+        range(80, 160, 10)
+    )
+    assert outcomes[1].error.details["video_frame_timestamps_seconds"] == tuple(
+        float(value) for value in range(40, 80, 5)
+    )
+    assert outcomes[1].error.details["provider_calls_attempted"] == 1
+    assert outcomes[2].error.details["video_frame_indices"] == (160,)
+    assert outcomes[2].error.details["video_frame_timestamps_seconds"] == (80.0,)
+    assert "provider_calls_attempted" not in outcomes[2].error.details
 
 
 @pytest.mark.parametrize(

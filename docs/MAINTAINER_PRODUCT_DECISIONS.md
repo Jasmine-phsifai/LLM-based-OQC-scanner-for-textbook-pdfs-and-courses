@@ -294,6 +294,12 @@ is often accepted.
   300-second/25-MiB limits. Do not add a combined video result, provider base
   class, fallback pool, hotword coupling, long-audio route, or resume contract
   before their observed consumers require them.
+- #124 requires every successful, failed, or undispatched frame-recognition
+  group to retain its exact ordered frame indices and timestamps. Composition
+  must consume this recorded group identity rather than reconstruct membership
+  from today's image limit. This is a narrow correction to the existing
+  outcome boundary, not authority for a combined result type, final Markdown,
+  cleanup transaction, or resume manifest.
 
 ## Resolved confirmation and next authority
 

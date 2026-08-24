@@ -127,10 +127,13 @@ compatibility parser is built. P1-e video is now active. #120 added
 provider-free `inspect_video()` for one MP4 through a lazy OpenCV extra; #121
 adds bounded coarse comparison, count-driven negative-feedback calibration,
 and complete-directory retained JPEG publication through
-`extract_video_frames()`. Frame recognition, separately configured audio
-recognition, and composition follow in that order. The audio slice has no hidden
-retry, fallback, upload, persistence, resume, or worker-registry claim. The
-queue explicitly stops further proactive filesystem/accounting edge scans.
+`extract_video_frames()`. #122 recognizes ordered frame groups, #123 extracts a
+validated MP3 so a separate audio config/provider can recognize it, and #124
+keeps exact frame indices/timestamps on every settled frame-group outcome.
+Composition and lifecycle follow from these observed outcomes. The audio slice
+has no hidden retry, fallback, upload, persistence, resume, or worker-registry
+claim. The queue explicitly stops further proactive filesystem/accounting edge
+scans.
 
 #072 has implemented P1-c offline: `recognize(one.pdf)` lazily uses
 `ocrllm[pdf-vision]`, snapshots at most 100 MiB without whole-file Python reads,
@@ -164,10 +167,10 @@ output tokens, published ordered output with two complete child checkpoints,
 retained no rendered pages, cleaned both temporary roots, and exposed no key or
 OCR body. Combined with the earlier offline resume and installed-wheel proofs,
 P1-d is closed without legacy compatibility. P1-e local parsing and
-retained-frame selection are implemented; the immediate queue is feeding those
-frames through the existing image path, followed by a concrete image/audio
-provider split at the real consumer boundary. Provider generalization remains
-deferred.
+retained-frame selection, frame recognition, audio extraction, and a concrete
+image/audio provider split are implemented. Every frame group retains exact
+identity for the next composition/lifecycle slice. Provider generalization
+remains deferred.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203
@@ -207,7 +210,8 @@ disposition-gated, and fully disclosed offline. Experimental direct Google
 short-audio recognition is live-proven but remains memory-only; its published
 gate is not a transcription-quality evaluation. PDF repair, long audio, and
 persisted/resumable audio remain unavailable. Video recognition is not yet
-available, but provider-free MP4 inspection and retained-frame extraction are
+available as one composed facade, but MP4 inspection, retained-frame extraction
+and recognition, plus independently configured extracted-audio recognition are
 active P1-e slices. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.

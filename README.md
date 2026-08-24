@@ -84,6 +84,9 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - exposes `extract_video_audio()` for one explicit `.mp3` target under an
   existing plain directory; it stages, fully decodes, and atomically publishes
   the first audio track without imposing the short recognizer's duration limit.
+- keeps exact frame indices and timestamps on every settled video-frame group,
+  including typed failures and undispatched cancellation, so callers do not
+  have to reconstruct group membership after recognition.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The
