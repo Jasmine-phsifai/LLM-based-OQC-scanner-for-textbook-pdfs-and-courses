@@ -56,8 +56,12 @@ def select_video_frame_candidates(
 
     if len(best) <= target_high:
         return best
-    step = len(best) / target_high
-    return tuple(best[int(index * step)] for index in range(target_high))
+    final_index = len(best) - 1
+    final_slot = target_high - 1
+    return tuple(
+        best[int(index * final_index / final_slot + 0.5)]
+        for index in range(target_high)
+    )
 
 
 def _segment_video_frame_candidates(
@@ -118,4 +122,3 @@ def _thumbnail_difference(first: Any, second: Any, *, cv2: Any) -> float:
     difference = cv2.absdiff(first, second)
     _, changed = cv2.threshold(difference, 25, 255, cv2.THRESH_BINARY)
     return float(cv2.countNonZero(changed)) / float(changed.size)
-

@@ -3105,3 +3105,19 @@ Atomic task — Iteration #130: close the fresh-wheel evidence gap exposed by #1
 **独立安装和真实本地视频证据。** exact commit `570ef43` 的干净归档经临时隔离 Hatchling 成功生成 `ocrllm-0.1.0-py3-none-any.whl`，大小 **225,988 bytes**，SHA-256 为 `A29A668CADB8E8610AAED4B23C8E61E037D5E5A73C7A1421B8988B05E7B6E489`。该 wheel 用 `--no-deps` 安装到仓库外的独立 target；从仓库外工作目录导入时，包来源和版本均指向该 target，普通 `import ocrllm` 没有加载 OpenCV、NumPy、imageio-ffmpeg 或 miniaudio。随后生成一个真实本地 MP4，用独立的注入式图片 provider 和 fake 短音频 processor 调用已安装的 `recognize_video()`，得到 `complete`、一个帧组、一次图片调用和一次音频调用；再调用已安装的 `compose_video_result()`，结果同时包含 `Video frames` 与 `Video audio`，两个 asset 均存在，current-run provider calls 为 2，`output_path is None`。没有真实 provider、凭据或文件发布，最终精确临时根已删除并确认不存在。
 
 **过度设计复查。** 没有修改 `pyproject.toml`、构建后端、产品代码或测试，因为干净归档和安装证明已经排除仓库打包缺陷。没有为 stderr、归档目录或临时脚本问题增加通用 build controller、自动重试、缓存管理或目录扫描；可持续的最小规则只有三条：发布证明使用干净归档；先确认明确 source root 的 `pyproject.toml`；原生命令以退出码和期望产物判断成功。#127 的取消语义仍未决定，本轮没有借打包调查绕过它，也没有开始最终 Markdown 发布、resume、provider 泛化或 social 功能。
+
+## #131 — 2026-08-25：安全上限不再丢掉视频结尾候选帧
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #131: identify and close the next proven usability defect in the shipped video-library path without choosing the unresolved #127 cancellation semantics or adding legacy compatibility. Success means reconciling the authoritative queue with current code and tests, selecting one defect demonstrated by an external caller or real local media path, implementing only that coherent correction, proving package import and video behavior, and recording the decision in the Chinese diary and current-state documents. This matters because the video pipeline now builds and runs from a wheel, so maturity should advance through observed caller-facing gaps rather than speculative framework work.
+```
+
+**重新判断与路线选择。** 重读 authority、日记、当前视频实现和完整测试后，最初“检查 lifecycle/输入输出缺口”的假设被更直接的内容丢失证据取代。路线一是收紧手工构造 `VideoRecognitionOutcome` 时 output root 与 asset 的路径关系；公开 `recognize_video()` 本身不会生成错位对象，这更接近防御调用者自己拼错。路线二是修正负反馈选帧的安全上限：十轮校准后候选仍超出目标上限时，现有 `best[int(i * len(best) / target_high)]` 不覆盖最后候选。选择路线二，因为它影响真实视频内容，而不是只保护手工构造对象。Legacy 父实现含有同一公式，属于真实父代码风险，但本轮先在新库当前路径独立证明，未假定孩子必然有错。
+
+**失败优先与最小修复。** 构造一小时、100 个相邻变化都足够大的候选，使十轮反馈始终超过 40 帧上限。正确要求是最终恰好 40 帧、首帧为 0、末帧为 99 且严格递增；旧实现实际末帧为 **97**，证明视频结尾才出现的板书会被安全裁剪静默丢失。实现只把上限映射改为按 `0..len(best)-1` 对应 `0..target_high-1` 的端点包含取样，既没有增加 helper 文件、配置、阈值或第二场景检测器，也没有改变正常已经落入 28—40 帧/小时区间的结果。
+
+**验证和主审。** 首次测试命令误用了没有 OpenCV 的 STA Python，只得到依赖缺失，未被当作产品红灯；检查已有 Conda 环境后改用现成 OCRLLM 环境，得到预期 `97 != 99`。修复后的抽帧、帧识别、视频编排与组合定向集为 **34 passed in 1.61s**，其中原有测试会生成并解析真实本地 MP4。主代理逐行复核公式，并穷举候选数 11—500、上限 10—候选数减一，确认数量、首尾和严格递增。独立 review 扩到候选数 1,000、上限 10—100，结论相同且认为测试没有锁死内部间距。最终全量为 **1,393 passed in 52.23s**；`compileall -q src tests tools`、`git diff --check` 通过，冻结 `contracts/` 与 `worker/` 没有变化。没有依赖安装、provider/API 调用或凭据使用。
+
+**新发现与过度设计复查。** 独立审计另复现了 Windows 输出名缺陷：`normalize_output_stem()` 当前截取 96 个 Python code point；96 个 emoji 实际是 192 个 UTF-16 units，会把已有受控父目录下的 frame path 推到 349 units并触发 `OUTPUT_WRITE_FAILED`，而同条件 ASCII stem 成功。主代理复核函数并确认 `len(value)==96`、UTF-16 units 为 192。该缺陷优先级高，但不与本轮选帧公式混改；已经进入下一原子任务。下一轮只应按完整 Unicode 字符的 UTF-16 unit 预算截断，不做 extended-path、通用 path framework 或 hash manifest。本轮同样没有碰 #127 取消、最终发布、resume、provider 泛化、legacy 格式或 social 功能。

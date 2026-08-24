@@ -138,7 +138,9 @@ branch results/errors and media artifacts. #129 adds explicit, provider-free
 ordered frames and audio in separate sections without publishing a file or
 inventing time alignment. #130 then built the exact current clean archive,
 installed its wheel outside the repository, and re-proved that complete local
-video path while keeping plain package import lightweight. Final publication,
+video path while keeping plain package import lightweight. #131 fixes the
+density safety cap so it retains the final video candidate instead of possibly
+ending early. The next defect is UTF-16-unit stem truncation on Windows. Final publication,
 cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

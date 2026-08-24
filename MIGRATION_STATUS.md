@@ -404,7 +404,10 @@ The following directions remain traceable but are not current work:
   owned media. `compose_video_result()` explicitly converts a returned complete
   or partial outcome into a memory-only standard video result with ordered
   frame and audio sections; it does not publish Markdown, resume video work,
-  route long audio, or expose a worker command.
+  route long audio, or expose a worker command. Safety-cap frame selection now
+  preserves both video endpoints, so density limiting cannot silently discard
+  the last retained candidate. The next active defect is Windows UTF-16-unit
+  stem truncation; cancellation, publication, and resume remain separate.
 
 ## Obsolete Prose Kept For Trace
 

@@ -151,6 +151,42 @@ def test_extract_video_frames_negative_feedback_adjusts_selection_density() -> N
     assert [candidate.frame_index for candidate in selected] == [2, 5, 8, 11, 14, 17, 19]
 
 
+def test_extract_video_frames_density_cap_keeps_video_ending() -> None:
+    import cv2
+    import numpy as np
+
+    from ocrllm.video.select_video_frame_candidates import select_video_frame_candidates
+    from ocrllm.video.video_frame_candidate import VideoFrameCandidate
+
+    candidates = tuple(
+        VideoFrameCandidate(
+            frame_index=index,
+            timestamp_seconds=float(index * 36),
+            thumbnail=np.full(
+                (128, 128),
+                255 if index % 2 else 0,
+                dtype=np.uint8,
+            ),
+        )
+        for index in range(100)
+    )
+
+    selected = select_video_frame_candidates(
+        candidates,
+        duration_seconds=3600.0,
+        cv2=cv2,
+    )
+
+    selected_indices = tuple(candidate.frame_index for candidate in selected)
+    assert len(selected_indices) == 40
+    assert selected_indices[0] == 0
+    assert selected_indices[-1] == 99
+    assert all(
+        selected_indices[index] < selected_indices[index + 1]
+        for index in range(len(selected_indices) - 1)
+    )
+
+
 @pytest.mark.skipif(os.name != "nt", reason="Windows legacy path-limit regression")
 def test_extract_video_frames_does_not_amplify_near_limit_paths(
     tmp_path: Path,

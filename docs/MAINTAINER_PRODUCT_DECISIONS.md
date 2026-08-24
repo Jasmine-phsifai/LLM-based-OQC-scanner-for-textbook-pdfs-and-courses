@@ -346,6 +346,14 @@ is often accepted.
   Assert `pyproject.toml` at the chosen archive root instead of guessing an
   extra nesting level. These are proof-harness rules, not reasons to broaden the
   package manifest or add a general build controller.
+- #131 requires safety-cap downsampling to retain both the first and final video
+  candidates. Losing the last candidate can lose content written only at the
+  end of a lecture; preserve exact cap and order without adding a second scene
+  detector or changing the 28--40 frames/hour calibration policy.
+- **Open after #131:** the 96-unit output-stem budget must be measured in Windows
+  UTF-16 units, not Python code points. Preserve whole Unicode characters and
+  the existing 259-unit path boundary. Do not use this concrete supplementary-
+  character failure to introduce extended-path support or a path framework.
 
 ## Resolved confirmation and next authority
 

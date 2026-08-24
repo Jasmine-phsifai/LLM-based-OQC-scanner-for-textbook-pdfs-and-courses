@@ -988,6 +988,26 @@ expected artifact rather than by an empty stderr requirement, and assert the
 explicit extraction root contains `pyproject.toml`. Do not turn these observed
 test-harness errors into a package build framework or broaden the Hatch manifest.
 
+#131 fixes one inherited content-loss defect in the negative-feedback frame
+selector. When ten calibration attempts still left more candidates than the
+hourly safety cap, the old uniform index formula could omit the final candidate
+(100 candidates capped to 40 ended at index 97). The cap now maps the first and
+last output slots exactly to the first and last candidates while preserving an
+exact cap and strict order. This keeps a board state that appears only at the
+video ending; it does not change calibration targets, thresholds, candidate
+scanning, provider grouping, or artifact lifecycle. The full source suite passes
+1,393 tests, including real local MP4 neighbors, and exhaustive arithmetic review
+proved unique ordered endpoints for all supported candidate/cap sizes.
+
+The next active video defect is already reproduced on Windows: output-stem
+normalization caps 96 Python code points rather than 96 UTF-16 path units. A
+96-emoji stem therefore occupies 192 Windows units and can push a retained-frame
+path past the maintained 259-unit boundary, ending in `OUTPUT_WRITE_FAILED` even
+though the equivalent ASCII stem succeeds. Fix this as the next atomic defect by
+truncating the normalized stem on complete-character UTF-16-unit boundaries;
+do not add extended-path support or a general path framework. #127 cancellation
+and final publication/resume remain separate open product decisions.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,
