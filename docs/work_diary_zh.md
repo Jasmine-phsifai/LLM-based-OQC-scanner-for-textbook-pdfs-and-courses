@@ -3881,3 +3881,17 @@ Atomic task — Iteration #184: verify that the provider-free video parser and n
 **公开路径结果和最小变更。** `inspect_video()` 返回 width 64 / height 96；五秒负反馈比较和最终按 index 重读都使用相同自动方向；保留 JPEG 也是 portrait，原编码左上红块旋转到显示左下、右下蓝块旋转到显示右上。没有复现 caller-visible 缺陷，因此运行时代码不改。只在既有 `test_extract_video_frames.py` 增加一个两帧真实容器 helper 和一条公开回归，同时把 active README 明确为 pinned OpenCV backend 的当前行为。后端会向 stderr 输出“读取尺寸与源编码尺寸不同”的提示，但返回值、选择结果和 JPEG 都正确，本轮不为无害提示包一层日志拦截。
 
 **验证与过度设计复查。** 新测试所在文件为 **12 passed in 0.74s**；inspection、frame/audio extraction、frame/video recognition、composition、publication、smoke 与 lightweight/import 聚焦集合为 **110 passed in 7.12s**；`compileall`、`git diff --check` 通过；只给测试子进程临时补入已有 Node 路径后的完整离线套件为 **1,463 passed in 70.99s**。无网络、provider、凭据、安装、依赖、public API、配置、输出布局、legacy format、frozen `contracts/worker` 或 #127/#149/#152 选择。过度设计风险正是路线 A：它会重复 OpenCV 已一致完成的工作，还会引入元数据方向、像素方向和三次 capture 状态同步问题；本轮以真实回归代替这层假想防御。因运行时、manifest、public surface 和依赖均未变化，不机械重复 clean-wheel 构建。
+
+## #185 — 2026-08-25：负反馈比较不再静默丢掉等亮度的颜色场景变化
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #185: verify whether the provider-free negative-feedback selector silently drops a real slide change when two sampled frames differ materially in color but have nearly equal grayscale luminance. Success means rereading the authoritative state and diary, tracing the current comparison metric, generating one bounded MP4 with an actual color-only scene change on the existing five-second grid, proving the public retained-frame result, and—only if the change is missed—choosing the narrowest readable comparison correction that preserves bounded thumbnails, ordering, VFR timing, and lightweight imports; then run focused/full offline tests, document the evidence in Chinese, commit, and push. This matters because a retained-frame pipeline that discards colored annotations or diagrams before provider dispatch cannot be trusted even when OCR-oriented grayscale slides work.
+```
+
+**真实失败证据。** 扫描器此前把每个候选帧直接转成 128×128 灰度图，selector 对灰度绝对差做阈值。主代理先把公开失败写成测试；轻量只读代理独立生成相同类型样本。15 秒、2 fps 的 MP4 在 0/5/10/14.5 秒粗采样位置交替使用 BGR 红 `(0,0,200)` 与校准绿 `(0,102,0)`；编码解码后两者平均灰度都为 **59.0**，但视觉颜色完全不同。旧实现稳定只返回末帧 `[29]`；新增公开回归在修复前明确失败：预期 `[0,10,29]`，实际 `[29]`。这证明是进入 provider 前的信息丢失，不是 legacy 格式兼容或假想边界。
+
+**两条路线与实现。** 路线 A 把所有候选改为 128×128 BGR，代码最短，但在 10,000 候选上限下把缩略图像素缓冲增至三倍。路线 B 保留 128×128 单通道 luminance thumbnail 负责细字和结构，再给每个内部候选增加 32×32 BGR color thumbnail；相邻变化与累计漂移分别计算两种像素变化比例并取较大值。选择 B。额外颜色缓冲每候选 3,072 bytes，相对原 16,384-byte 灰度缓冲增加 **18.75%**。颜色比较用每像素最大通道差，仍复用同一个 25 强度阈值、change/drift 比例、五秒网格、十次反馈和最终帧规则；没有公开参数、numpy import、histogram、第二 detector 或新的 provider 行为。
+
+**结果、验证与过度设计复查。** 同一真实 MP4 现在返回 frame identities **(0,0.0)/(10,5.0)/(29,14.5)**；现有灰度密度反馈、maximum segment、VFR、旋转矩阵和真实 combined-video 回归保持通过。当前测试文件为 **13 passed in 0.96s**；视频解析/识别/组合/发布、smoke 与 lightweight/import 聚焦集合为 **111 passed in 6.99s**；`compileall`、`git diff --check` 通过；只给测试进程临时补入已有 Node 路径后的完整离线套件为 **1,464 passed in 57.75s**。无网络、provider、凭据、安装、依赖、public API、输出布局、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。过度设计风险包括全尺寸彩色候选、直方图/感知模型、颜色阈值配置和提高采样频率；本轮都未加入，只修已经由公开调用复现的灰度碰撞。

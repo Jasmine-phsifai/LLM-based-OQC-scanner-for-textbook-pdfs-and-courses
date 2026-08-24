@@ -60,6 +60,27 @@ def _write_final_frame_change_mp4(path: Path) -> Path:
     return path
 
 
+def _write_equal_luma_color_change_mp4(path: Path) -> Path:
+    import cv2
+    import numpy as np
+
+    writer = cv2.VideoWriter(
+        str(path),
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        2.0,
+        (64, 48),
+    )
+    assert writer.isOpened()
+    try:
+        for color in ((0, 0, 200), (0, 102, 0), (0, 0, 200)):
+            frame = np.full((48, 64, 3), color, dtype=np.uint8)
+            for _ in range(10):
+                writer.write(frame)
+    finally:
+        writer.release()
+    return path
+
+
 def _write_variable_frame_rate_mp4(path: Path) -> Path:
     import cv2
     import imageio_ffmpeg
@@ -235,6 +256,19 @@ def test_extract_video_frames_compares_and_retains_a_changed_final_frame(
     assert all(frame.path.is_file() for frame in frames)
 
 
+def test_extract_video_frames_retains_equal_luma_color_changes(
+    tmp_path: Path,
+) -> None:
+    source = _write_equal_luma_color_change_mp4(tmp_path / "color-slides.mp4")
+
+    frames = extract_video_frames(source, output_dir=tmp_path / "output")
+
+    assert [frame.frame_index for frame in frames] == [0, 10, 29]
+    assert [frame.timestamp_seconds for frame in frames] == pytest.approx(
+        [0.0, 5.0, 14.5]
+    )
+
+
 def test_extract_video_frames_uses_vfr_container_time_and_frame_pts(
     tmp_path: Path,
 ) -> None:
@@ -349,7 +383,8 @@ def test_extract_video_frames_negative_feedback_adjusts_selection_density() -> N
             VideoFrameCandidate(
                 frame_index=index,
                 timestamp_seconds=float(index * 5),
-                thumbnail=thumbnail,
+                luminance_thumbnail=thumbnail,
+                color_thumbnail=np.repeat(thumbnail[:, :, None], 3, axis=2),
             )
         )
 
@@ -373,8 +408,13 @@ def test_extract_video_frames_density_cap_keeps_video_ending() -> None:
         VideoFrameCandidate(
             frame_index=index,
             timestamp_seconds=float(index * 36),
-            thumbnail=np.full(
+            luminance_thumbnail=np.full(
                 (128, 128),
+                255 if index % 2 else 0,
+                dtype=np.uint8,
+            ),
+            color_thumbnail=np.full(
+                (32, 32, 3),
                 255 if index % 2 else 0,
                 dtype=np.uint8,
             ),
@@ -419,7 +459,8 @@ def test_extract_video_frames_maximum_segment_rounds_up() -> None:
             VideoFrameCandidate(
                 frame_index=index,
                 timestamp_seconds=float(index * 5),
-                thumbnail=thumbnail,
+                luminance_thumbnail=thumbnail,
+                color_thumbnail=np.repeat(thumbnail[:, :, None], 3, axis=2),
             )
         )
 

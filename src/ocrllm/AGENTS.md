@@ -126,6 +126,9 @@ frame and candidate cap; do not add ffprobe or claim #149 source stability.
 to inspection, comparison, and retained JPEGs. Keep the real-container test;
 do not add manual rotation or a public orientation setting without a reproduced
 backend inconsistency.
+#185 requires sampled color-only scene changes to survive comparison. Preserve
+the detailed luminance thumbnail plus the small color thumbnail; do not replace
+them with full-size BGR candidates or add a second detector/public color tuning.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

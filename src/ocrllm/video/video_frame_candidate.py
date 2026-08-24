@@ -8,9 +8,9 @@ from typing import Any
 
 @dataclass(frozen=True, slots=True)
 class VideoFrameCandidate:
-    """One sampled source position and its grayscale comparison thumbnail."""
+    """One sampled source position with detail and color thumbnails."""
 
     frame_index: int
     timestamp_seconds: float
-    thumbnail: Any
-
+    luminance_thumbnail: Any
+    color_thumbnail: Any

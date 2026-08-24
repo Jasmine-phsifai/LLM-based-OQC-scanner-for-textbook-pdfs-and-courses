@@ -531,6 +531,10 @@ The following directions remain traceable but are not current work:
   provider-free path. The pinned OpenCV backend consistently changes 96x64
   encoded storage to 64x96 display dimensions for inspection, comparison, and
   retained JPEG pixels, so no manual rotation layer or public setting was added.
+  #185 fixes grayscale-only selector loss with a small second thumbnail: a real
+  equal-luminance red/green MP4 now retains all three sampled scene segments.
+  The five-second grid and negative-feedback algorithm remain one bounded
+  selector; no histogram or fine-gap detector was added.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

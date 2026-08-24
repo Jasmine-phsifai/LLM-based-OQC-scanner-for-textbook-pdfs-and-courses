@@ -328,8 +328,10 @@ landscape storage dimensions.
 count-driven negative-feedback selection, and ordered immutable
 `RetainedVideoFrame` records. Coarse seeks use presentation time and each
 retained timestamp is the decoded frame's actual presentation timestamp; FPS
-remains informational rather than the timestamp clock. It publishes validated
-JPEGs together under
+remains informational rather than the timestamp clock. Comparison keeps the
+existing 128x128 luminance detail plus a 32x32 color thumbnail, so sampled
+color-only scene changes are not erased merely because their grayscale
+luminance matches. It publishes validated JPEGs together under
 `output/lecture/frames/` and rejects an existing `output/lecture` instead of
 overwriting or resuming it. This is not a fine-gap scene detector: content that
 appears entirely between two coarse samples can be absent from the retained

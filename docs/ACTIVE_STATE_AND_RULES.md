@@ -1812,6 +1812,19 @@ pipeline, legacy metadata compatibility, or another public orientation setting
 unless a supported backend reproduces a caller-visible inconsistency. One
 hundred ten focused tests and the complete 1,463-test offline suite pass.
 
+#185 fixes a reproduced information-loss error in negative-feedback selection.
+A real 15-second MP4 alternates red and green sampled scenes whose decoded
+grayscale means are both 59; the previous grayscale-only thumbnails retained
+only the final frame. Candidates now keep the existing 128x128 luminance detail
+and one 32x32 BGR thumbnail. The selector uses the larger per-pixel change ratio,
+so the public result retains frame identities `(0, 0.0)`, `(10, 5.0)`, and
+`(29, 14.5)` without changing the five-second grid, feedback thresholds, or
+final-frame rule. The additional thumbnail pixel storage is 18.75 percent of
+the prior luminance buffer, rather than tripling the bounded candidate memory.
+Do not turn this correction into a second scene detector, histogram pipeline,
+public color setting, or fine-gap sampling. One hundred eleven focused tests
+and the complete 1,464-test offline suite pass.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

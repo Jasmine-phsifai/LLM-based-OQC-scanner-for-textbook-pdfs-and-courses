@@ -14,6 +14,7 @@ from .video_frame_candidate import VideoFrameCandidate
 
 _COARSE_INTERVAL_SECONDS = 5.0
 _THUMBNAIL_SIZE = (128, 128)
+_COLOR_THUMBNAIL_SIZE = (32, 32)
 _MAX_CANDIDATES = 10_000
 
 
@@ -141,7 +142,8 @@ def _read_candidate(
                 details={"frame_index": frame_index},
             ) from None
         grayscale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        thumbnail = cv2.resize(grayscale, _THUMBNAIL_SIZE)
+        luminance_thumbnail = cv2.resize(grayscale, _THUMBNAIL_SIZE)
+        color_thumbnail = cv2.resize(frame, _COLOR_THUMBNAIL_SIZE)
     except VideoError:
         raise
     except (KeyboardInterrupt, SystemExit):
@@ -154,5 +156,6 @@ def _read_candidate(
     return VideoFrameCandidate(
         frame_index=frame_index,
         timestamp_seconds=float(timestamp_milliseconds) / 1000.0,
-        thumbnail=thumbnail,
+        luminance_thumbnail=luminance_thumbnail,
+        color_thumbnail=color_thumbnail,
     )

@@ -76,14 +76,14 @@ def _segment_video_frame_candidates(
     segments: list[tuple[int, int]] = []
     segment_start = 0
     for index in range(1, len(candidates)):
-        adjacent_change = _thumbnail_difference(
-            candidates[index - 1].thumbnail,
-            candidates[index].thumbnail,
+        adjacent_change = _candidate_difference(
+            candidates[index - 1],
+            candidates[index],
             cv2=cv2,
         )
-        accumulated_drift = _thumbnail_difference(
-            candidates[segment_start].thumbnail,
-            candidates[index].thumbnail,
+        accumulated_drift = _candidate_difference(
+            candidates[segment_start],
+            candidates[index],
             cv2=cv2,
         )
         if adjacent_change > change_threshold or accumulated_drift > drift_threshold:
@@ -119,7 +119,29 @@ def _segment_video_frame_candidates(
     return tuple(candidates[end] for _, end in bounded_segments)
 
 
+def _candidate_difference(
+    first: VideoFrameCandidate,
+    second: VideoFrameCandidate,
+    *,
+    cv2: Any,
+) -> float:
+    return max(
+        _thumbnail_difference(
+            first.luminance_thumbnail,
+            second.luminance_thumbnail,
+            cv2=cv2,
+        ),
+        _thumbnail_difference(
+            first.color_thumbnail,
+            second.color_thumbnail,
+            cv2=cv2,
+        ),
+    )
+
+
 def _thumbnail_difference(first: Any, second: Any, *, cv2: Any) -> float:
     difference = cv2.absdiff(first, second)
+    if len(difference.shape) == 3:
+        difference = difference.max(axis=2)
     _, changed = cv2.threshold(difference, 25, 255, cv2.THRESH_BINARY)
     return float(cv2.countNonZero(changed)) / float(changed.size)
