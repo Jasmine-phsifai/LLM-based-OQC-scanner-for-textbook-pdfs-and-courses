@@ -28,7 +28,10 @@ image sidecars. The historical 500-page ceiling, `text`/`auto` modes, arbitrary
 page/password/partial options, and one-marker-per-page proposal are superseded;
 bounded source bytes, per-page render pixels, and aggregate live image pixels
 remain. `pdf-vision` is the only PDF extra. Offline implementation is present,
-but current status remains P1-c until the bounded Google gate passes.
+and #078 satisfied its bounded Google gate with one 16-page run through exactly
+two serial requests, two complete child checkpoints, ordered published output,
+current-model usage, and zero retained rendered pages. The authority now moves
+only to the separately bounded P1-d manual repair slice.
 
 ## Implementation Directive
 

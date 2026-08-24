@@ -94,7 +94,8 @@ exact top-level tuple while preserving each item's existing atomic-path or
 grouped-`Sequence` contract, and validates the entire batch plus output targets
 before any snapshot, directory, executor, or provider work. Two live groups of
 eight images completed in order with exactly two total Google calls and complete
-published state. P1-c PDF-through-image/resume is now the immediate queue. The audio slice has no hidden
+published state. #078 completed P1-c PDF-through-image/resume, so bounded P1-d
+manual PDF repair is now the immediate queue. The audio slice has no hidden
 retry, fallback, upload, persistence, resume, or worker-registry claim. The
 queue explicitly stops further proactive filesystem/accounting edge scans.
 
@@ -104,23 +105,29 @@ renders one page at a time and one serial group of eight at a time, reuses the
 ordinary image checkpoints, and publishes ordered range-marked Markdown plus a
 same-named state directory. A real local 16-page PDFium probe and focused
 cancel/resume tests pass; `recognize_batch()` intentionally rejects PDF for this
-first slice. The bounded Google exit run made zero provider calls because the
-current Windows profile has no Google credential, so P1-c remains the immediate
-queue and P1-d repair has not started.
+first slice. Its initial bounded Google exit attempt made zero provider calls
+because the current Windows profile then had no Google credential.
 
 #073 upgrades the isolated `pdf-vision` package smoke from a one-page backend
 probe to a public 16-page installed-wheel run. It requires two serial groups of
 eight through an injected no-network provider, two complete ordinary image
 sidecars, ordered range-marked final output, and no snapshot or rendered-PNG
-residue. This is packaging/runtime evidence only; the Google P1-c gate remains
-open.
+residue. This was packaging/runtime evidence, later complemented by #078 live.
 
 #075 rechecked all implemented credential sources without reading or printing
 a secret. Neither `GOOGLE_API_KEY`, `GEMINI_API_KEY`, nor the current account's
 legacy `OCRLLM/QCR` QSettings key `ui/google_api_key` is available; the probe
-succeeded and made zero provider calls. The queue is paused at P1-c until one
-of those authorized sources is populated for the current process/account. Do
-not begin repair or invent another credential store while blocked.
+succeeded and made zero provider calls. #076 then restored the legacy settings
+entry path and the maintainer populated the existing QSettings source.
+
+#078 completed P1-c. A foreground, no-retry `gemini-2.5-flash` run discovered
+37 current models and recognized a 16-page PDF through exactly two serial
+eight-page image requests. It reported aggregate usage of 4,802 input and 117
+output tokens, published ordered output with two complete child checkpoints,
+retained no rendered pages, cleaned both temporary roots, and exposed no key or
+OCR body. Combined with the earlier offline resume and installed-wheel proofs,
+the immediate queue is now the bounded P1-d manual PDF repair; provider
+generalization remains deferred.
 
 All no-cost Stage M exit criteria pass at product checkpoint `700cc05`, with
 the clean-archive evidence recorded by `5d966e1`. The root suite reported 1203

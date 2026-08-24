@@ -2256,3 +2256,17 @@ Atomic task — Iteration #077: verify whether the repaired legacy GUI has now p
 **为何本轮不能判定通过或失败。** 外层工具在子 Python 完成前返回，子进程脱离后 stdout pipe 丢失。只读复盘证明子进程一度仍运行，精确临时目录出现了 16 张 fixture、`input.pdf`、output/snapshots 和识别中间物，之后进程自然退出；没有执行清理命令，最终两类精确临时目录均为 0。由于安全 JSON 只在丢失的 stdout 中，目录也已按生命周期删除，现存证据不能证明 catalog 数、实际 provider call 是 0/1/2、token、checkpoint 或 published 状态。本轮因此严格记为 execution-wrapper 层的 **inconclusive**，不是 Google 错误、不是 library defect、也不是 P1-c pass；没有自动 retry 或第二模型尝试。
 
 **过度设计复盘与下一步。** 本轮没有为了 wrapper 故障修改 live runner、持久化 raw output、增加调用日志、debug sidecar 或永久 credential bridge；这些都会为一次工具编排问题污染产品。下一轮若继续 P1-c，应让轻量代理使用前台 `exec` 和 session wait 保持同一 stdout pipe，仍只运行一次既定 16 页 gate，不使用 detached process，也不把本轮不可知调用数伪装成 0。P1-d 和 provider 通用化继续不启动。
+
+## #078 — 2026-08-24：以前台持有输出的真实 Google PDF 闭环关闭 P1-c
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #078: rerun the unchanged P1-c 16-page Google PDF gate exactly once with foreground process ownership and retained sanitized output. Success means the current live catalog serves the selected model, public PDF recognition completes two ordered eight-page requests, token usage and complete checkpoints are proven, temporary artifacts are removed, and no credential or OCR content reaches logs; any typed provider failure remains the final outcome without retry. This matters because #077 reached the real workflow but lost its evidence at the execution-wrapper boundary, leaving the product gate honestly open.
+```
+
+**authority、假设与执行边界。** 重读 #077、P1-c exit gate 和 live runner 后，确认仓库 runner 没有新缺陷证据；唯一需要纠正的是外层必须一直拥有同一 stdout session。凭据仍只从当前账户 QSettings 在 Python 进程内临时转入环境。固定流程再次交给轻量代理，但明确禁止 `Start-Process`、detached/Popen、PID 旁路轮询、retry、换模型和 tracked edit；若 `exec_command` 返回 session id，就只用该 id 等到退出。主代理本人逐项复核 runner：成功 JSON 必须同时证明 catalog、16 页、2 组、2 calls、模型 usage、2 个 complete sidecar、ordered markers、published 和 0 retained PNG，缺一项都不关闭 P1-c。
+
+**唯一一次 live 结果。** 前台 gate 选择 `gemini-2.5-flash`，live catalog 返回 **37** 个模型。公共 `recognize(one.pdf)` 对 16 张合成授权页图完成恰好 **2** 个串行八页请求，`page_count/group_count/provider_call_count` 为 **16/2/2**；当前模型累计 input/output tokens 为 **4,802/117**。最终结果 `published=true`，两个 child checkpoint 均 complete，range marker 有序，`rendered_pages_retained=0`。进程 exit **0**，elapsed **12.719 s**，stderr nonempty **false**，captured API-key pattern **false**；fixture temp 与 `ocrllm-google-pdf-*` 均为 0。没有第三批、retry、fallback、模型切换、OCR 正文/路径/raw response 输出或 tracked edit。
+
+**主审结论与过度设计复盘。** #072 已证明取消后只补第二组且不重付第一组，#073 已证明安装后 wheel 的真实 PDFium/公共 facade/lifecycle，#078 补齐真实 Google 两批与 usage/checkpoint/publish 证据；三者合并满足 P1-c 全部 exit condition。没有为了证明一次成功增加 live framework、长期日志、evidence schema、provider 抽象或永久 credential bridge。P1-c 正式关闭；统一队列只前进到既有 P1-d 最小手工 PDF repair，不在本轮顺手实现，也不启动火山引擎/OpenAI-compatible 或 multi-provider generalization。

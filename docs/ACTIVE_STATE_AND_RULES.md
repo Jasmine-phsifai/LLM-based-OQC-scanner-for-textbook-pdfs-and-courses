@@ -350,8 +350,8 @@ the Google live exit gate.
 
 The authorized Google exit attempt stopped with zero provider calls because
 neither `GOOGLE_API_KEY`/`GEMINI_API_KEY` nor `OCRLLM/QCR` QSettings supplied a
-credential in the current `13301` profile. P1-c therefore remains the immediate
-queue until one bounded 16-page Google run proves exactly two image requests,
+credential in the current `13301` profile. P1-c therefore remained the immediate
+queue until one bounded 16-page Google run could prove exactly two image requests,
 current per-model usage, complete child checkpoints, ordered range markers, and
 no retained page PNGs. Do not advance to P1-d on offline evidence alone.
 
@@ -362,10 +362,10 @@ explicit `GoogleGenAISettings.api_key`, then `GOOGLE_API_KEY`, then
 `OCRLLM/QCR`, key `ui/google_api_key`; the library does not read that store
 implicitly. The current process has neither environment value, and the current
 Windows account has no nonempty value at that QSettings key. The probe itself
-succeeded and made zero provider calls. Heartbeat work is therefore paused at
-P1-c until an authorized key is made available to this process or that current
-QSettings location. Do not select unrelated hardening or P1-d merely to avoid
-the external gate.
+succeeded and made zero provider calls. Heartbeat work was therefore paused at
+P1-c until an authorized key became available to the process or that current
+QSettings location. Unrelated hardening and P1-d were not selected to avoid the
+external gate.
 
 #076 repaired the separate legacy GUI entry path needed for the maintainer to
 populate that existing QSettings value. `legacy_app/launch_gui.bat` now uses
@@ -376,7 +376,7 @@ shortcut on its resolved OneDrive Desktop pointing to that tracked launcher.
 The BAT help path and one real spawned GUI process passed. This did not read or
 write a provider key and does not close P1-c; the queue remains paused until
 the maintainer saves the authorized value through the opened legacy settings
-page.
+page; at that point the queue was still paused.
 
 #077 confirmed that the current-account QSettings value is now nonempty without
 reading or printing it. One authorized 16-page gate process was started with
@@ -386,7 +386,8 @@ execution wrapper detached before completion and lost the runner's sanitized
 JSON stream, so no retained evidence proves the catalog count, provider-call
 count, token usage, checkpoint completion, or publication result. This is an
 orchestration-level inconclusive run, not a Google or library failure and not a
-P1-c pass. It was not retried in the same iteration; P1-c remains open.
+P1-c pass. It was not retried in the same iteration, so P1-c remained open for
+the next iteration.
 
 The maintainer also recorded a deferred provider-extension direction in
 `docs/MAINTAINER_PRODUCT_DECISIONS.md`: after the OCRLLM product paths are
@@ -394,7 +395,22 @@ stable, new providers should be additive independent classes with evidenced
 provider-owned defaults and mappings, while future cross-provider pooling is a
 separate coordinator. The currently configured free Volcengine
 OpenAI-compatible source is future bounded-test authority only. Do not begin
-that abstraction or adapter while P1-c is open.
+that abstraction or adapter as a substitute for the then-open P1-c gate.
+
+#078 closed P1-c with one foreground, no-retry Google run through the public
+PDF facade. Live catalog discovery returned 37 models and
+`gemini-2.5-flash` recognized 16 synthetic authorized pages as exactly two
+serial groups of eight. The result reported exactly two provider calls,
+aggregate current-model usage of 4,802 input and 117 output tokens, two
+complete child checkpoints, ordered range markers, and a published final
+Markdown with zero retained rendered pages. The process exited 0 after 12.719
+seconds; stderr was empty, the safe capture contained no API-key pattern, and
+both fixture and runner temporary directories were removed. There was no retry,
+fallback, model switch, third batch, OCR-body publication, or source edit.
+Together with #072's cancellation/resume proof and #073's installed-wheel
+runtime proof, this satisfies every P1-c exit condition. The immediate queue is
+now the already-bounded P1-d manual PDF repair below; do not broaden it into a
+general repair framework or begin provider generalization in its place.
 
 ### P1-d — Minimal PDF repair after stable markers
 

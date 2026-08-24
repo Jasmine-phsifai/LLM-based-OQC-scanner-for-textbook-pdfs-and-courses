@@ -75,7 +75,7 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
   conservative provider envelope below 20,000,000 bytes. Persistence, resume,
   groups, long audio, Files upload, retries, and fallback are not implemented;
 - not started: Stage A2 long-audio recognition;
-- implemented offline, live gate open: the first PDFium vision slice. One PDF
+- implemented and live-proven: the first PDFium vision slice. One PDF
   becomes serial eight-page image groups, ordinary image sidecars preserve
   settled work, range markers preserve group order, and rendered pages have a
   bounded lifetime. No PDF settings, PDF worker contract, repair, PyMuPDF,
@@ -83,9 +83,11 @@ and image resume. Stage M Phase 1 maturation is offline implementation-complete:
 
 The ordered current work is
 [`#065 Unified Execution Queue`](docs/ACTIVE_STATE_AND_RULES.md#065-unified-execution-queue).
-PDF recognition is implemented offline; its bounded Google live exit remains
-open because the current Windows profile supplied no credential and the attempt
-therefore made zero provider calls. Content repair remains unimplemented.
+PDF recognition is implemented and live-proven: #078 discovered 37 current
+Google models, then `gemini-2.5-flash` completed 16 pages as exactly two serial
+requests with two complete checkpoints, ordered published output, aggregate
+usage 4,802/117, and no retained rendered pages. Content repair remains
+unimplemented and is now the immediate queue.
 Native Google direct-Python image
 recognition and experimental memory-only short-audio recognition are now
 implemented, with per-model usage reporting when Google supplies it; no general
@@ -117,13 +119,14 @@ state; reported input/output usage was 2401/1131 and 2401/988. P1-c PDF through
 the existing image/resume path now passes focused tests and a real local
 16-page PDFium probe: two ordered eight-page calls, two complete child states,
 zero retained rendered PNGs, and a one-call resume after the second group is
-interrupted. Its Google gate remains the immediate queue; do not add hidden
-retry, fallback, or a Files lifecycle, and do not begin repair yet.
+interrupted. #078 closed its Google gate with the same two-group shape and no
+retry, fallback, or Files lifecycle; the bounded manual repair slice is now the
+immediate queue.
 #073 strengthens the isolated installed-wheel proof for that same slice: a
 real 16-page PDF must traverse public `recognize()` as two serial groups of
 eight, publish two child states plus the final range-marked output, and leave
 no rendered PNG or snapshot residue. It changes no public boundary and does
-not satisfy the still-open Google live gate.
+not replace the later successful #078 Google live evidence.
 The shared 20-entry capability/worker registry remains unchanged and does not
 advertise this direct audio path.
 The generic compatibility endpoint and future local-model compatibility remain

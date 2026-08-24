@@ -68,8 +68,8 @@ public direct facade copies one local MP3 to a compact owned snapshot, fully
 decodes it through lazy `ocrllm[audio]`, and can send one bounded native inline
 request through lazy `ocrllm[google]`. This path remains experimental and
 memory-only despite its successful #069 public-result gate. Stage A2 has not
-started. The first PDFium vision slice is implemented offline and awaits its
-bounded Google exit gate.
+started. The first PDFium vision slice is implemented and live-proven; its
+bounded repair follow-up has not started.
 
 The current image facade:
 
@@ -255,8 +255,12 @@ current catalog, and requires exactly two serial eight-page recognition calls,
 two complete child checkpoints, ordered range markers, atomic final output,
 current per-model token usage, and zero retained page PNGs. It prints no OCR
 body or path and performs no retry, fallback, model switching, or third batch.
-The #072 attempt made zero provider calls because the current Windows profile
-contained no Google credential; this live gate remains open.
+The successful #078 gate discovered 37 current models and used
+`gemini-2.5-flash` for exactly two serial calls over sixteen pages. It reported
+aggregate input/output usage of 4,802/117, two complete child checkpoints,
+ordered published output, and zero retained rendered pages. The foreground
+process exited 0 after 12.719 seconds with empty stderr, no credential-shaped
+captured text, no retry or fallback, and both temporary roots removed.
 
 ## Current Maturation Boundary
 

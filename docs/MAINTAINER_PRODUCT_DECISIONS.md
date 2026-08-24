@@ -251,8 +251,10 @@ is often accepted.
   settled draft. #071 completed the formerly temporary P1-b tuple/preflight
   clarification and its two-batch live proof. #072 implemented the P1-c offline
   candidate and proved two serial eight-page groups plus one-group-only resume
-  with real local PDFium and injected-provider tests. Its bounded Google attempt
-  made zero calls because the current Windows profile exposed no credential, so
-  the next authority item remains P1-c in
-  [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-c--pdf-through-the-imageresume-path).
-  Do not create a parallel queue here.
+  with real local PDFium and injected-provider tests. #078 then closed P1-c:
+  one foreground `gemini-2.5-flash` run processed 16 pages as exactly two
+  serial requests, published two complete child states plus ordered final
+  output, reported current-model usage, and retained no rendered pages. The
+  next authority item is the already-bounded P1-d manual repair in
+  [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-d--minimal-pdf-repair-after-stable-markers).
+  Do not create a parallel queue or start provider generalization here.

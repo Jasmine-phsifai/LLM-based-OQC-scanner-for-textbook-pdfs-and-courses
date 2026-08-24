@@ -22,10 +22,11 @@ As of 2026-08-24:
 - The former standalone Stage 2 vision/audio scaffold was removed. One bounded
   native Google MP3 path is implemented and live-proven; it remains memory-only.
   Stage A2 long audio has not started.
-- The first PDFium vision slice is implemented offline. `recognize(one.pdf)`
+- The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
-  stable range markers. Its bounded Google exit gate remains open because the
-  current Windows profile supplied no credential; PDF repair has not started.
+  stable range markers. Its bounded Google exit gate completed 16 pages in two
+  calls with two complete checkpoints and no retained rendered pages; PDF
+  repair has not started.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
   `legacy_app/AGENTS.md`.
