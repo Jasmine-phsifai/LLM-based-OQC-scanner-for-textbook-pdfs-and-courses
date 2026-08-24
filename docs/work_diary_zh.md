@@ -2238,3 +2238,21 @@ Atomic task — Iteration #076: restore the existing legacy Windows launcher and
 **验证与外部入口。** 修后同一 `--help` 命令返回 0，中文帮助正常。真实 `--spawn 1` 返回 0，并比运行前多出一个 Python GUI 进程；该窗口保留给维护者填写设置。新建 `C:\Users\13301\OneDrive\Desktop\OCRLLM Legacy.lnk`，目标精确是 tracked `legacy_app\launch_gui.bat`，工作目录是 `legacy_app`，没有覆盖同名文件。没有读取、打印、转存或调用任何 Google 凭据，也没有 provider 请求。
 
 **过度设计复盘与后续边界。** 直接固定本机既有 interpreter 路径有机器环境假设，但它与本仓库明确环境位置一致，并保留 conda fallback；继续扩成跨发行版、跨磁盘、注册表扫描或通用 launcher framework 才会超过这个 legacy 修复。active library 当前没有 UI/BAT，不应为此增加 launcher 或 QSettings 依赖。P1-c 仍未因“窗口能打开”而完成；只有维护者在现有设置页保存授权值后，下一轮才运行一次既定 16 页 Google gate。
+
+## #077 — 2026-08-24：记录未来 provider 扩展边界，并诚实保留一次丢失输出的 live gate
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #077: verify whether the repaired legacy GUI has now populated the one authorized credential source that unblocks the already-defined P1-c Google PDF gate. Success means checking only presence—not value—through the documented environment and current-account QSettings sources; if available, run exactly the bounded 16-page/two-batch gate and record honest evidence, and if absent, make zero provider calls and preserve the queue boundary. This matters because the launcher defect is fixed, but product maturity advances only when the public PDF path actually survives a real provider run.
+```
+
+**新决策与当前不实施边界。** 维护者确认现有测试账户已配置 provider 来源，并另外提供一个免费的火山引擎 OpenAI-compatible 来源，供未来该兼容能力进入排期后做有界 robustness 测试。OCRLLM 核心图片、PDF、音频、视频、resume、repair 稳定后，provider 的目标结构应是“新增厂商主要新增一个独立、可冷读的 provider class”；每类拥有有证据的并发、推理强度、同厂模型选择和错误映射默认值，未来 multi-provider pool/fallback 再作为单独协调层。该方向写入既有 `MAINTAINER_PRODUCT_DECISIONS.md`，没有新增计划文件。本轮不接火山引擎、不做 OpenAI-compatible adapter、不建立通用 plugin framework，也不按模型逐个打补丁。
+
+**主代理架构复核。** 当前 Google 和 DashScope 的请求构造、响应解析、catalog、credential 与错误映射已经分居各自 provider 目录；PDF/图片 processor 没有厂商分支。现阶段唯一明确的 built-in 分派集中在 `resolve_vision_provider.py` 的两个分支，共享 `call_vision_provider.py` 负责调用边界和统一结果校验。它不是最终可插拔类结构，但仍是可读的过渡 seam；现在重构会先于产品稳定，继续向 resolver 堆更多厂商分支或把厂商错误塞进共享层才会形成未来约束。
+
+**凭据探测与单次 live 尝试。** 主线程只得到三个布尔量：两个进程环境来源为空，当前账户 `OCRLLM/QCR` 的 `ui/google_api_key` 非空，QSettings 状态正常；没有读取、输出长度/片段或保存值。按维护者新增工作流，固定 live 执行和等待交给轻量代理。代理在同一 Python 进程内部读取 QSettings、临时设置环境，再建立 16 张合成页图和 PDF；选择当前目标 `gemini-2.5-flash`，启动既有 P1-c runner。凭据不在命令行、PowerShell 父环境、文件或输出中。
+
+**为何本轮不能判定通过或失败。** 外层工具在子 Python 完成前返回，子进程脱离后 stdout pipe 丢失。只读复盘证明子进程一度仍运行，精确临时目录出现了 16 张 fixture、`input.pdf`、output/snapshots 和识别中间物，之后进程自然退出；没有执行清理命令，最终两类精确临时目录均为 0。由于安全 JSON 只在丢失的 stdout 中，目录也已按生命周期删除，现存证据不能证明 catalog 数、实际 provider call 是 0/1/2、token、checkpoint 或 published 状态。本轮因此严格记为 execution-wrapper 层的 **inconclusive**，不是 Google 错误、不是 library defect、也不是 P1-c pass；没有自动 retry 或第二模型尝试。
+
+**过度设计复盘与下一步。** 本轮没有为了 wrapper 故障修改 live runner、持久化 raw output、增加调用日志、debug sidecar 或永久 credential bridge；这些都会为一次工具编排问题污染产品。下一轮若继续 P1-c，应让轻量代理使用前台 `exec` 和 session wait 保持同一 stdout pipe，仍只运行一次既定 16 页 gate，不使用 detached process，也不把本轮不可知调用数伪装成 0。P1-d 和 provider 通用化继续不启动。

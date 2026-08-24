@@ -378,6 +378,24 @@ write a provider key and does not close P1-c; the queue remains paused until
 the maintainer saves the authorized value through the opened legacy settings
 page.
 
+#077 confirmed that the current-account QSettings value is now nonempty without
+reading or printing it. One authorized 16-page gate process was started with
+`gemini-2.5-flash`, created the bounded fixture and recognition artifacts, and
+then exited naturally with all exact temporary directories removed. The outer
+execution wrapper detached before completion and lost the runner's sanitized
+JSON stream, so no retained evidence proves the catalog count, provider-call
+count, token usage, checkpoint completion, or publication result. This is an
+orchestration-level inconclusive run, not a Google or library failure and not a
+P1-c pass. It was not retried in the same iteration; P1-c remains open.
+
+The maintainer also recorded a deferred provider-extension direction in
+`docs/MAINTAINER_PRODUCT_DECISIONS.md`: after the OCRLLM product paths are
+stable, new providers should be additive independent classes with evidenced
+provider-owned defaults and mappings, while future cross-provider pooling is a
+separate coordinator. The currently configured free Volcengine
+OpenAI-compatible source is future bounded-test authority only. Do not begin
+that abstraction or adapter while P1-c is open.
+
 ### P1-d — Minimal PDF repair after stable markers
 
 Only after PDF checkpoint and Markdown markers are stable, migrate the smallest

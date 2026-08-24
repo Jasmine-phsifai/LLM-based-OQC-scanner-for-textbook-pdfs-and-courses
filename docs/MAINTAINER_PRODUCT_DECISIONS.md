@@ -202,6 +202,29 @@ is often accepted.
   catalog, error codes, retry/switch behavior, and terminal outcomes. Do not
   install a generic policy such as "retry six times". Retry decisions must be
   supported by evidence for the specific provider and error scope.
+- **Deferred provider-extension target.** After the core OCRLLM product paths
+  are stable, provider integration should become additive: adding a provider
+  should primarily mean adding one independently readable provider class (and
+  its focused tests), not modifying conditionals throughout media processors or
+  the common orchestration path. Each provider class should own its evidenced
+  defaults and mappings for request parallelism, reasoning/effort controls,
+  model selection within that provider, and provider-specific error handling.
+  A future multi-provider pool or fallback policy may coordinate those classes,
+  but must preserve the existing typed error scopes and must not pretend that
+  shared wire compatibility makes provider behavior interchangeable.
+- This is a future architectural constraint, not current implementation
+  authority. Do not refactor the already-working Google and DashScope slices
+  into a generalized plugin framework before OCRLLM's own image, PDF, audio,
+  video, resume, and repair paths are stable. For now, keep provider-specific
+  behavior inside the existing provider directories and avoid leaking new
+  Google- or DashScope-only branches into shared processors.
+- The maintainer has configured the current test account with the existing
+  provider sources and an additional free Volcengine OpenAI-compatible source.
+  The latter is authorized for future bounded compatibility and robustness
+  tests when an OpenAI-compatible feature is actually scheduled. Its presence
+  does not activate that feature now, prove model compatibility, or authorize
+  hardcoding and repairing models one by one; model discovery and provider
+  behavior remain live evidence.
 - This direction does not reactivate social-media downloading or recognition.
 
 ## Resume and bounded manual repair
