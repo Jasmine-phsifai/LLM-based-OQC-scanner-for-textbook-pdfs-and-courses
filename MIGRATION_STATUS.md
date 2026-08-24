@@ -392,8 +392,10 @@ The following directions remain traceable but are not current work:
   extraction; callers use separate image and audio `Config` calls, allowing
   different providers without a provider framework. #124 makes every settled
   frame group self-identifying with exact frame indices and timestamps so later
-  composition cannot infer membership from a changed group size. Long-audio
-  recognition and video composition remain unavailable. The direct PDF vision
+  composition cannot infer membership from a changed group size. #125 gives a
+  truly silent MP4 the distinct `VIDEO_NO_AUDIO_STREAM` code while corrupt
+  declared audio remains `VIDEO_INVALID`. Long-audio recognition and video
+  composition remain unavailable. The direct PDF vision
   facade and its ordinary image-sidecar resume are implemented; the
   experimental direct short-audio API is implemented and live-proven only for
   one in-memory MP3 of at most 300 seconds.

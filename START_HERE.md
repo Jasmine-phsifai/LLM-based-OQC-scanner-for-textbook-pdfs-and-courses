@@ -130,7 +130,9 @@ and complete-directory retained JPEG publication through
 `extract_video_frames()`. #122 recognizes ordered frame groups, #123 extracts a
 validated MP3 so a separate audio config/provider can recognize it, and #124
 keeps exact frame indices/timestamps on every settled frame-group outcome.
-Composition and lifecycle follow from these observed outcomes. The audio slice
+#125 distinguishes a truly silent MP4 from corrupt declared audio without
+parsing FFmpeg logs. Composition and lifecycle follow from these observed
+outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. The queue explicitly stops further proactive filesystem/accounting edge
 scans.

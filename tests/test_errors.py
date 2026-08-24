@@ -54,6 +54,12 @@ def test_public_error_defaults_have_stable_codes(error, code):
     assert error.details == {}
 
 
+def test_video_error_accepts_missing_audio_stream_code():
+    error = VideoError(code="VIDEO_NO_AUDIO_STREAM")
+
+    assert error.code == "VIDEO_NO_AUDIO_STREAM"
+
+
 def test_provider_retryability_defaults_follow_stable_failure_category():
     assert ProviderError(code="PROVIDER_NETWORK").retryable is True
     assert ProviderError(code="PROVIDER_TIMEOUT").retryable is True

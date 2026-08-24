@@ -873,6 +873,26 @@ kept video symbols lazy, then grouped four valid JPEGs as 3+1 through an
 injected provider and returned exact identities `(0, 10, 20)` / `(30,)` with
 timestamps `(0.0, 0.5, 1.0)` / `(1.5,)`.
 
+#125 makes the audio-branch absence state caller-actionable before video
+composition. `extract_video_audio()` now raises the existing `VideoError` with
+stable code `VIDEO_NO_AUDIO_STREAM` only when a required first-audio-stream
+mapping fails and the same bounded FFmpeg probe succeeds with that mapping
+made optional. The probe copies at most one packet to the null muxer, uses no
+stderr parsing or platform-specific exit number, and publishes no staging
+file. If both probes fail, or a declared audio stream later fails extraction or
+full decode, the code remains `VIDEO_INVALID`; backend launch and timeout
+classification are unchanged. This lets a future orchestrator accept a truly
+silent video as frame-only while still reporting a corrupt audio branch. It is
+one new code on `VideoError`, not a subclass, stream-inspection API, ffprobe
+dependency, provider behavior, or combined-video success policy.
+
+The #125 source suite passes 1,376 tests. A fresh 221,765-byte wheel installed
+outside the repository kept all video/audio heavy modules out of plain import.
+Its public extractor returned `VIDEO_NO_AUDIO_STREAM` for a real silent MP4
+with no target or staging residue, while a real AAC MP4 published one
+nonempty 2,672-byte MP3. The disposable proof root was removed; no provider or
+credential was used.
+
 The #121 source suite passes 1,351 tests, and a fresh 215,956-byte wheel installed
 outside the repository retained three ordered, decodable JPEGs from a generated
 72-frame MP4 with no staging residue. The all-profile clean-archive gate is not

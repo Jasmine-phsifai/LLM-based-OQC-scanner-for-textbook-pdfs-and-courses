@@ -17,9 +17,10 @@ resume remains its PDF recovery path. P1-e video is now active in ordered
 slices: #120 shipped lazy local MP4 inspection and #121 shipped bounded
 negative-feedback frame selection plus retained JPEGs; #122 recognized ordered
 frame groups, #123 extracted audio for an independent audio config, and #124
-kept exact group identity on every settled outcome. Composition and lifecycle
-come next, but their output/failure semantics must be derived from these real
-outcomes rather than copied from legacy. Keep the result a lightweight Python
+kept exact group identity on every settled outcome. #125 distinguishes a valid
+silent MP4 from corrupt declared audio. Composition and lifecycle come next,
+but their output/failure semantics must be derived from these real outcomes
+rather than copied from legacy. Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
 

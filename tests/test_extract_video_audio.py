@@ -122,10 +122,86 @@ def test_extract_video_audio_rejects_video_without_audio_and_cleans_staging(
     with pytest.raises(VideoError) as captured:
         extract_video_audio(source, output_path=output_path)
 
-    assert captured.value.code == "VIDEO_INVALID"
+    assert captured.value.code == "VIDEO_NO_AUDIO_STREAM"
+    assert captured.value.details == {"stage": "audio_stream_probe"}
     assert not output_path.exists()
     assert not list(output_parent.glob(".ocrllm-audio-*"))
     assert retained_frame.is_file()
+
+
+def test_audio_stream_probe_keeps_nonabsence_failures_invalid(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_silent_mp4(tmp_path / "source.mp4")
+    output_path = tmp_path / "audio.mp3"
+    module = __import__("ocrllm.video.extract_video_audio", fromlist=["unused"])
+    calls: list[list[str]] = []
+
+    def fail_required_and_optional(*args, **kwargs):
+        calls.append(args[0])
+        return subprocess.CompletedProcess(args[0], 1)
+
+    monkeypatch.setattr(module.subprocess, "run", fail_required_and_optional)
+
+    with pytest.raises(VideoError) as captured:
+        extract_video_audio(source, output_path=output_path)
+
+    assert captured.value.code == "VIDEO_INVALID"
+    assert captured.value.details == {"stage": "audio_stream_probe"}
+    assert len(calls) == 2
+    assert "-xerror" in calls[0]
+    assert "-frames:a" in calls[0]
+    assert "0:a:0" in calls[0]
+    assert "0:a:0?" in calls[1]
+    assert not output_path.exists()
+    assert not list(tmp_path.glob(".ocrllm-audio-*"))
+
+
+def test_present_but_corrupt_audio_is_not_reported_as_missing(
+    tmp_path: Path,
+) -> None:
+    valid_source = _write_mp4_with_audio(tmp_path / "valid.mp4")
+    source = tmp_path / "corrupt.mp4"
+    completed = subprocess.run(
+        [
+            str(_ffmpeg_executable()),
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(valid_source),
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a:0",
+            "-c",
+            "copy",
+            "-bsf:a",
+            "noise=amount=1",
+            "-movflags",
+            "+faststart",
+            str(source),
+        ],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=30,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    assert completed.returncode == 0
+    output_path = tmp_path / "audio.mp3"
+
+    with pytest.raises(VideoError) as captured:
+        extract_video_audio(source, output_path=output_path)
+
+    assert captured.value.code == "VIDEO_INVALID"
+    assert captured.value.details == {"stage": "extraction"}
+    assert not output_path.exists()
+    assert not list(tmp_path.glob(".ocrllm-audio-*"))
 
 
 def test_extract_video_audio_rejects_existing_target_before_backend_work(
@@ -187,7 +263,7 @@ def test_extract_video_audio_rejects_invalid_success_output_before_publication(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    source = _write_silent_mp4(tmp_path / "source.mp4")
+    source = _write_mp4_with_audio(tmp_path / "source.mp4")
     output_path = tmp_path / "audio.mp3"
     module = __import__("ocrllm.video.extract_video_audio", fromlist=["unused"])
     calls = 0

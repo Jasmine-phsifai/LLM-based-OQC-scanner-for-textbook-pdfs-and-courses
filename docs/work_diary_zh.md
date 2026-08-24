@@ -2998,3 +2998,21 @@ Atomic task — Iteration #124: determine and implement the smallest honest vide
 **installed wheel 证明。** 另一轻量任务零网络构建 fresh wheel：`ocrllm-0.1.0-py3-none-any.whl`，**221,257 bytes**，SHA-256 `dfe26f524db3c8f0199bf61d3f5a6eca03a9e82cd8b6b6aabd2489284f8e345f`。仓库外 `--no-deps --target` 导入来源正确，解析视频公开符号后 cv2、NumPy、imageio-ffmpeg、miniaudio 均未加载。安装包以 injected provider 识别四张真实 JPEG，在较低上限下精确形成 3+1，并返回帧号 `(0,10,20)/(30,)` 与时间 `(0.0,0.5,1.0)/(1.5,)`；唯一临时目录已删除并确认不存在。最后增加的调用计数保持断言只收紧既有测试：失败 group 仍为一次 provider call，未派发取消 group 仍不伪造调用；定向组合 **40 passed in 1.55s**。
 
 收尾时一条把 diff、status 和敏感模式放在一起的 PowerShell 命令因正则引号没有终止，在任何子命令启动前被解析器拒绝；拆成三个只读命令后，`diff --check` 通过，tracked diff 未命中真实 key/Bearer 模式，frozen `contracts/`、`worker/` 与 legacy 均无改动。两份既有用户未跟踪文件继续原样保留。
+
+## #125 — 2026-08-24：区分静音视频与损坏音轨
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #125: make video audio extraction distinguish an honestly silent video from a present-but-invalid audio track before introducing the combined video workflow. Success means the distinction is derived from real FFmpeg behavior, exposed through the smallest stable typed error contract, covered by real MP4 fixtures and installed-package evidence, leaves existing atomic publication and lazy-import behavior intact, and gives the next orchestration slice enough information to treat “no audio exists” differently from “audio processing failed.” This matters because returning a partial video outcome is only truthful if the library can tell an optional absent branch from a broken branch; today both collapse into `VIDEO_INVALID`.
+```
+
+**假设、两条路线与 legacy 边界。** 开工假设是：没有音频流的有效视频可以完成 frame-only recognition，但存在且损坏的音轨仍是失败。三个轻量只读/运行任务分别核对错误 taxonomy、legacy silent-video 行为和 bundled FFmpeg 7.1 的真实返回。Legacy 有显式 frames-only pipeline，默认全流程却会让任何 audio extraction nonzero 阻断；它没有 silent-video 专门测试或类型。路线 A 是现在就做 combined video outcome，再把所有 `VIDEO_INVALID` 猜成可忽略音频；路线 B 是先让 extraction 给出 caller 可判断的精确 absence code。选择 B。错误契约又比较了新 subclass、`details[reason]` 和现有 `VideoError` 的新 stable code；选择 `VIDEO_NO_AUDIO_STREAM` code，因为它已有真实 composition consumer，且不需要多一个异常层级。
+
+**真实 FFmpeg 判别协议。** 主代理和轻量任务都用 disposable MP4 验证：必选 `-map 0:a:0` 对 silent MP4 失败、对有效 AAC 成功；同一命令改为可选 `0:a:0?` 后 silent MP4 成功。不能依赖 Windows 的 signed `-22`，也不能解析可能含路径/metadata 的英文 stderr。最终 probe 用 `-xerror`、stream copy、`-frames:a 1` 和 null mux：必选成功即证明 declared stream 可映射；必选失败而可选成功才是 no-audio；两者都失败仍是 `VIDEO_INVALID`。它最多复制一个 packet，不把十小时音频多做一次完整 scan；随后原有 extraction 和完整 MP3 decode 继续负责真实解码完整性。没有引入 ffprobe、PyAV、stderr parser、codec allowlist 或新的 stream-info API。
+
+**失败优先、实现与真实损坏样本。** 新测试先得到三项明确失败：silent fixture 仍返回 `VIDEO_INVALID`、双 probe failure 仍标成 extraction、`VideoError` 拒绝新 code。实现只在 `STABLE_ERROR_CODES`/`VideoError.allowed_codes` 增加一个 code，并在 staging 创建前执行 probe；因此 silent、probe timeout 或结构失败不会产生临时 MP3。`_run_ffmpeg()` 复用一个只返回 exit code 的内部执行函数，原有 timeout/backend redaction、600 秒上限、无 shell/stdin/window 和 process-control 行为不变。第一次用 faststart MP4 简单截尾的“损坏”测试没有抛错：FFmpeg 合法容错为较短但可解码音频，这是真实发现，不能当 corrupt fixture。随后用 bundled `noise=amount=1` bitstream filter 只破坏 AAC 而保留 MP4/视频首帧；公共 extraction 稳定返回 `VIDEO_INVALID`、`stage=extraction`，不会误报 missing，也不发布目标或 staging。定向 extraction/error/video/import 集最终为 **60 passed in 1.77s**，其中精确 extraction/error 子集为 **35 passed in 0.78s**。
+
+**过度设计复查与待完成验证。** 新 code 是下一组合调用处理 silent branch 所需的最小事实，不是把静音当作成功 transcript；未来 orchestrator 只能把这个 code 当“分支不存在”，不能吞掉 `VIDEO_INVALID`、timeout、backend 或 provider failures。本轮没有 combined result、final Markdown、partial 状态、清理事务、resume、provider/retry/fallback、长音频、worker、legacy format 或 social 改动，也没有 Google/provider 请求；变化完全在本地媒体边界，真实 FFmpeg fixture 比无关 API smoke 更直接。接下来只做 full source、fresh installed wheel、lazy import、文档/差异核验后提交。
+
+**全量与 installed wheel 证明。** 最终 root 全量在测试子进程 PATH 补入既有 Node 目录后为 **1376 passed in 52.81s**；`compileall -q src tests tools`、release-gate PowerShell AST parse 和 `diff --check` 通过。轻量任务零网络构建 fresh wheel：**221,765 bytes**，SHA-256 `c446d6bdfed2a3cf043111a0ac46eb5a033bcc6af2c12fee4e5675e0c21ce996`。仓库外安装来源正确，裸 import 不加载 cv2、NumPy、imageio-ffmpeg 或 miniaudio；真实 silent MP4 得到 `VIDEO_NO_AUDIO_STREAM` 且无目标/staging，真实 AAC MP4 成功发布 **2,672-byte** MP3 且无 staging。唯一临时目录已删除并确认不存在；最后协议断言收紧后的定向集为 **40 passed in 1.15s**。没有安装/下载、provider、credential、frozen 目录、legacy 或用户未跟踪文件改动。

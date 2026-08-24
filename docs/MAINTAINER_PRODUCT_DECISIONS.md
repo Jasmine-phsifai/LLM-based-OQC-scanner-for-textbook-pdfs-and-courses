@@ -300,6 +300,12 @@ is often accepted.
   from today's image limit. This is a narrow correction to the existing
   outcome boundary, not authority for a combined result type, final Markdown,
   cleanup transaction, or resume manifest.
+- #125 distinguishes a valid silent video from broken audio with
+  `VideoError.code == "VIDEO_NO_AUDIO_STREAM"`. Composition may treat only that
+  code as an absent optional branch; `VIDEO_INVALID`, backend failure, timeout,
+  and provider errors remain real failures. Keep this as a code on the existing
+  error class—do not add a no-audio subclass, ffprobe/PyAV dependency, raw
+  FFmpeg-log parser, or successful empty transcript.
 
 ## Resolved confirmation and next authority
 

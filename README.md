@@ -87,6 +87,8 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - keeps exact frame indices and timestamps on every settled video-frame group,
   including typed failures and undispatched cancellation, so callers do not
   have to reconstruct group membership after recognition.
+- distinguishes a valid MP4 with no audio stream (`VIDEO_NO_AUDIO_STREAM`) from
+  a declared audio stream that is corrupt or cannot be decoded (`VIDEO_INVALID`).
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The

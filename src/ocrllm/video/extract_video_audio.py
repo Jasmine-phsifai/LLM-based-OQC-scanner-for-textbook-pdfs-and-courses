@@ -31,6 +31,7 @@ def extract_video_audio(
         _preflight_audio_output(target)
         inspect_video(source_path)
         ffmpeg = load_imageio_ffmpeg_executable()
+        _require_video_audio_stream(source_path, ffmpeg=ffmpeg)
         staging_path = _create_staging_path(target.parent)
         primary_error: BaseException | None = None
         try:
@@ -129,6 +130,25 @@ def _run_ffmpeg(
     *,
     stage: str,
 ) -> None:
+    returncode = _run_ffmpeg_returncode(
+        executable,
+        arguments,
+        stage=stage,
+    )
+    if returncode != 0:
+        raise VideoError(
+            "The video audio stream is invalid or could not be decoded.",
+            code="VIDEO_INVALID",
+            details={"stage": stage},
+        ) from None
+
+
+def _run_ffmpeg_returncode(
+    executable: Path,
+    arguments: tuple[str, ...],
+    *,
+    stage: str,
+) -> int:
     try:
         completed = subprocess.run(
             [
@@ -160,12 +180,56 @@ def _run_ffmpeg(
             code="VIDEO_BACKEND_UNAVAILABLE",
             details={"stage": stage},
         ) from error
-    if completed.returncode != 0:
+    return completed.returncode
+
+
+def _require_video_audio_stream(source_path: Path, *, ffmpeg: Path) -> None:
+    required_arguments = (
+        "-xerror",
+        "-i",
+        os.fspath(source_path),
+        "-map",
+        "0:a:0",
+        "-frames:a",
+        "1",
+        "-c:a",
+        "copy",
+        "-f",
+        "null",
+        "-",
+    )
+    if (
+        _run_ffmpeg_returncode(
+            ffmpeg,
+            required_arguments,
+            stage="audio_stream_probe",
+        )
+        == 0
+    ):
+        return
+
+    optional_arguments = tuple(
+        "0:a:0?" if argument == "0:a:0" else argument
+        for argument in required_arguments
+    )
+    if (
+        _run_ffmpeg_returncode(
+            ffmpeg,
+            optional_arguments,
+            stage="audio_stream_probe",
+        )
+        == 0
+    ):
         raise VideoError(
-            "The video does not contain a decodable audio track.",
-            code="VIDEO_INVALID",
-            details={"stage": stage},
+            "The video has no audio stream.",
+            code="VIDEO_NO_AUDIO_STREAM",
+            details={"stage": "audio_stream_probe"},
         ) from None
+    raise VideoError(
+        "The video audio stream could not be inspected.",
+        code="VIDEO_INVALID",
+        details={"stage": "audio_stream_probe"},
+    ) from None
 
 
 def _validate_staged_mp3(staging_path: Path, *, ffmpeg: Path) -> None:

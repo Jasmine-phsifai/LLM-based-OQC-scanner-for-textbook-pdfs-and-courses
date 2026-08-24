@@ -44,6 +44,7 @@ STABLE_ERROR_CODES = frozenset(
         "PDF_PAGE_RANGE_INVALID",
         "VIDEO_BACKEND_UNAVAILABLE",
         "VIDEO_INVALID",
+        "VIDEO_NO_AUDIO_STREAM",
         "NO_SPEECH_DETECTED",
         "OUTPUT_EXISTS",
         "OUTPUT_PATH_INVALID",
@@ -171,7 +172,9 @@ class VideoError(OCRLLMError):
 
     default_code = "VIDEO_INVALID"
     default_message = "The video could not be processed."
-    allowed_codes = frozenset({"VIDEO_BACKEND_UNAVAILABLE", "VIDEO_INVALID"})
+    allowed_codes = frozenset(
+        {"VIDEO_BACKEND_UNAVAILABLE", "VIDEO_INVALID", "VIDEO_NO_AUDIO_STREAM"}
+    )
 
 
 class InvalidSource(OCRLLMError):
