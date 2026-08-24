@@ -159,7 +159,8 @@ input/output token usage when the endpoint supplies it. Public injected provider
 return Markdown strings and make no token-usage claim. Existing attempt disclosure
 counts provider
 calls and model/workflow attempts separately from tokens. Resume is the primary
-recovery mechanism.
+recovery mechanism. The installed package carries the standard `py.typed`
+marker, so downstream type checkers can consume its shipped inline annotations.
 
 ### P0-a — Bounded legacy provider-error evidence audit (completed by #066)
 

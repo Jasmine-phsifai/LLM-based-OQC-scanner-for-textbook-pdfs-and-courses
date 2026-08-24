@@ -2460,3 +2460,19 @@ Atomic task — Iteration #090: select the next maturity target from the authori
 **供应商未来约束已存在，无需重复写。** `MAINTAINER_PRODUCT_DECISIONS.md` 已经记录：核心产品路径稳定后，新 provider 应主要通过独立可读的 provider class 增加，由每个 class 保有经过真实证据支持的并发、effort、模型选择和错误处理默认值；跨 provider pool/fallback 是另外的协调层。额外免费 Volcengine OpenAI-compatible 来源只在相关功能真正排期后用于有界 robustness test，不建立逐模型永久修补。本轮确认该记录已在 Git 历史中且与 authority 一致，没有复制成第二份决策文档，也没有提前重构现有 Google/DashScope 路径。
 
 **暂停点、验证与过度设计复盘。** 本轮不把“必须产生代码 diff”当作成熟度指标：在队列受产品选择和外部门槛约束时，制造空 tuple、新 iterable 兼容、更多文件异常、provider 基类、第二 resume 或通用 repair 都会违背已确认优先级。只读源码搜索没有发现当前 defect register 之外的明确 `TODO`/`NotImplementedError` 产品缺口；出现的 `pass` 都位于异常清理或测试夹具，不据此机械造任务。没有 provider call、凭据读取、下载、安装、产品代码或测试修改；`contracts/`、`worker/` 和两个用户未跟踪文件保持未动。下一次实现前必须先获得 P1-d A/B/C 决定，或取得 DashScope live gate 的预算与 endpoint；否则应继续暂停 heartbeat，而不是从邻近代码扩张范围。
+
+## #091 — 2026-08-24：让安装后的 inline annotations 成为标准 typed-package 合同
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #091: audit the active library’s built wheel and installed metadata for one concrete consumer-facing packaging defect, without reopening deferred provider or repair work. Success means reconciling the authority and diary, building the current wheel from the tracked tree, comparing its import surface, dependency metadata, package data, and basic CLI-free installation behavior with the documented contract, then fixing only a defect that a clean consumer can reproduce. This matters because a library can pass source-tree tests yet still be unusable or misleading after installation.
+```
+
+**假设、两条路线与 artifact 证据。** P1-d 仍等待产品选择，但已交付 wheel 是独立、已有真实消费者的产品表面。路线①继续从 PDF/provider 邻近文件想象异常；路线②实际构建 wheel，核对 import、METADATA、RECORD 和 package data。选择②。现有 OCRLLM/base/STA 环境没有 `build` 与 `hatchling` 的可用组合，因此固定下载/构建由轻量代理在 pip 隔离环境完成，没有持久安装到任何项目环境；主代理同时审查 `pyproject.toml`、公共注解和 package 文件。本轮没有把“本机构建后端缺失”误报为 OCRLLM 缺陷。
+
+**失败优先与最小修复。** 修复前公共包有大量 `dataclass`、`Literal`、返回类型和参数注解，却没有 PEP 561 的 `py.typed` 标记。新增最小回归通过 `importlib.resources.files("ocrllm")` 要求 marker 存在且为空，首次稳定为 **1 failed in 0.05s**。产品改动只有一个零字节 `src/ocrllm/py.typed`；没有 stub tree、typing adapter、mypy 配置或新运行依赖。源码回归随后为 **1 passed in 0.02s**。官方 PEP 561 说明 inline-typed package 通过该 marker 让下游类型检查器选择已安装源码中的类型信息；本轮只声明“可发现”，不声称所有第三方 strict 配置均零诊断。
+
+**真实 wheel 复验。** 修复后的隔离构建 exit **0**，产物 `ocrllm-0.1.0-py3-none-any.whl` 为 **202,984 bytes**，SHA-256 为 `9af1bd4265bd3092b335dab7e93ced452a8af12040434964cce8f37d8fd8f039`。wheel 中 `ocrllm/py.typed` 长度为 **0**，RECORD 的空文件 SHA-256 与 size 均校验通过。主代理从仓库外以该 wheel 直接导入，得到 **45** 个 public exports，marker 可读取，且 base import 没有加载 Pillow、OpenAI、Google GenAI 或 PDFium。METADATA 的 `Requires-Python >=3.10`、空 base dependencies 和六个 runtime extras 与 `pyproject.toml` 一致；RECORD 全部 200 行通过哈希/大小校验，未包含 root tests、docs 或 `legacy_app`。marker、轻量 import 和 public import contract 的最终定向集为 **10 passed in 0.38s**，changed source/test 的 compileall 和 `git diff --check` 通过。一次中间命令引用不存在的 `tests/test_package_import.py`，pytest 在收集前诚实退出且没有执行测试；修正为实际的 `tests/test_import_contract.py` 后才记录上述通过结果。
+
+**减法与过度设计复盘。** wheel 仍包含 package 内的 `AGENTS.md`（2,692 bytes）和 `README_ACTIVE_LIBRARY.md`（15,622 bytes），但它们是当前边界说明、体积很小且 authority 没有要求从发行物删除；本轮不顺手创建排除规则。冻结的 `contracts/`、`worker/` 仍随 active package 发布，冻结不是删除授权。没有改 provider、repair、runtime、extras、版本、license、构建后端或公共导出；没有 live API、凭据或长期构建环境修改。只修复一个安装者可见的 typed-package 标记缺口，并以 source test、真实 wheel 和仓库外 import 三层证明。

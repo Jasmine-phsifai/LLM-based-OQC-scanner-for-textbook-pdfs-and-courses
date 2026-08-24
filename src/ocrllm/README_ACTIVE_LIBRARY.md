@@ -55,6 +55,11 @@ from ocrllm import (
 )
 ```
 
+The wheel includes an empty `py.typed` marker. This makes the inline annotations
+in the installed package discoverable through the standard typed-package
+contract; it does not add a runtime dependency or eagerly import optional
+providers.
+
 Phase 0 contract honesty, Phase 1 real board/image, the Phase 2 development
 worker, and Phase 2A image-library completion are GO. Stage M is offline
 implementation-complete: lazy DashScope catalog validation, atomic file-backed
