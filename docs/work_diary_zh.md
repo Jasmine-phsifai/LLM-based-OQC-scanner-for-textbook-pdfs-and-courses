@@ -3825,3 +3825,17 @@ Atomic task — Iteration #180: verify that a real multi-group combined-video ru
 **结果与错误诚实性。** 公共 `recognize_video()` 实际只发送前两批：第 1 批成功，第 2 批产生 provider error 并记录一次调用，第 3、4 批为未 dispatch 的 `Cancelled`，没有伪造 `provider_calls_attempted=0`。独立 fake Google audio 分支仍恰好调用一次并成功；十张 retained JPEG 与 `audio.mp3` 全部存在。outcome 和 composition 均为 partial，组合资产顺序仍是十张图片后接音频；由于两个取消结果没有调用证据，`current_run_provider_call_count` 正确为 **None**，而不是把已知三次与假定零次相加。
 
 **验证、一次环境误判与过度设计复查。** 第一次定向命令误用缺少 OpenCV 的 `STA` Python，fixture 在导入 `cv2` 时失败、provider 零调用；改用仓库指定的 `D:\Anaconda\envs\OCRLLM\python.exe` 后新回归通过。video orchestration、frame adapter、composition、outcome 和 lightweight/import 聚焦集合为 **60 passed in 4.41s**；compileall 与 `git diff --check` 通过。只给完整测试进程临时加入已有 Node 路径后的全量离线套件为 **1,460 passed in 58.67s**。无网络、真实 provider、凭据、安装、依赖、运行时代码、API、输出格式、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有增加第二个 fixture 文件、retry/fallback、跨分支 transaction、调用账本或压力测试；运行时已符合合同，因此本轮只留下能防止以后回归的真实媒体证据。
+
+## #181 — 2026-08-25：真实视频的图片与音频 token 按模型分账，不重开 injected 内部类型
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #181: verify that the standard result composed from a real combined-video run with separate image and audio configurations preserves honest per-model token usage and provider-call evidence without merging branch data into a misleading total. Success means rereading the authoritative state and diary, inspecting the existing aggregation contract, exercising the bounded real multi-group fixture with distinct injected image and fake-Google audio metadata, proving exact model-separated input/output totals and call evidence, changing only the smallest existing aggregation seam if a concrete defect appears, running focused/full offline tests, updating the Chinese diary/current authority, and committing/pushing one coherent proof or fix. This matters because image/audio provider separation is not a mature library boundary if downstream Python callers cannot trust the accounting produced by composition.
+```
+
+**权威记录推翻了初始测试方案。** 聚合器已经按模型累计成功结果与已结算错误中的 input/output token，构造型 composition 回归也已覆盖不同模型。真正缺的是实际视频编排到最终结果的贯通证据。初始 prompt 提到让 injected image 提供结构化 usage，但重读 #085/#086 后确认这条路线曾经实现又被明确撤回：公开 injected provider 只返回 Markdown 字符串，内部 `VisionProviderResponse` 没有顶层导出。轻量只读复核仍建议给 injected provider 返回该内部类型并指定模型；主代理因其违反当前权威而拒绝采纳。路线 A 是重新扩大 injected 合同，路线 B 是保留已有 injected-image + Google-audio 测试证明不同 seam，另把真实 8+2 成功回归改成离线替换 native Google image adapter，用两个明确模型验证内建 usage。选择 B。
+
+**真实贯通结果。** 复用 #177 的十张 retained frame，native Google 图片配置指定 `test-image-model`，离线 adapter 的两次 8+2 请求各报告 **11 input / 3 output tokens**；独立音频配置指定 `test-audio-model`，既有 fake adapter 一次报告 **7 input / 2 output tokens**。最终 `compose_video_result()` 精确给出图片 **22/6**、音频 **7/2** 两项有序模型用量，`current_run_provider_call_count` 仍为 **3**。图片和音频 request snapshots 均按原测试清理，运行时代码无需修改。
+
+**验证与过度设计复查。** 新断言单独为 **1 passed in 1.39s**。第一次扩大命令猜了一个不存在的 `tests/test_aggregate_current_model_token_usage.py`，pytest 在收集前报告 file not found、零测试；定位真实消费者文件后，video、composition、Google image/audio/long-audio adapter 与 import 集合为 **103 passed in 4.13s**。`compileall` 和 `git diff --check` 通过；只给测试子进程临时补入已有 Node 路径后的完整离线套件为 **1,460 passed in 57.38s**。无网络、真实 provider、凭据、安装、依赖、运行时代码、公开 API、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有导出内部响应类、增加 provider 基类、账单 ledger、跨 provider identity、retry/fallback 或新 fixture；本轮只让现有真实集成测试证明用户已经决定的“input/output token 按模型累计”。

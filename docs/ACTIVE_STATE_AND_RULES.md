@@ -1747,6 +1747,19 @@ provider, retry/fallback, output, dependency, frozen boundary, or open
 #127/#149/#152 decision changed. Sixty focused tests and the complete 1,460-test
 offline suite pass.
 
+#181 proves that the same real 8+2 combined-video path keeps native Google image
+and audio usage separated by explicit model in the final standard result. The
+offline image adapter reports 11 input and 3 output tokens for each of its two
+calls; the fake audio adapter reports 7 input and 2 output tokens for its one
+call. Composition therefore exposes exact ordered totals of 22/6 for
+`test-image-model` and 7/2 for `test-audio-model`, while the provider-call total
+remains three. The separate injected-image plus Google-audio orchestration test
+remains in place, but injected providers still return only public Markdown
+strings and make no usage claim under #086. No internal response type was
+exported and no runtime, API, provider framework, billing ledger, dependency,
+output, frozen boundary, or open #127/#149/#152 decision changed. One hundred
+three focused tests and the complete 1,460-test offline suite pass.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

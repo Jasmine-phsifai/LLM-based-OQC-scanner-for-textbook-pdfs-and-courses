@@ -511,6 +511,11 @@ The following directions remain traceable but are not current work:
   groups, and still completes the separate audio call. The partial composition
   retains every media asset and reports current-run calls as unknown because
   cancelled suffix groups have no call evidence. No runtime contract changed.
+  #181 strengthens the real 8+2 success proof with two explicit native Google
+  models: final composition preserves image usage as 22 input / 6 output tokens
+  and audio usage as 7 input / 2 output tokens while retaining the exact three-
+  call total. Public injected providers remain Markdown-only under #086; no
+  provider or accounting contract changed.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

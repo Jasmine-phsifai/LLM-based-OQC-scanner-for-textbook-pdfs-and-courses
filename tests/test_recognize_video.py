@@ -16,12 +16,14 @@ from ocrllm import (
     ProviderError,
     RecognitionExecutionPolicy,
     VideoRecognitionOutcome,
+    VisionModelSettings,
     compose_video_result,
     recognize_video,
 )
 from ocrllm.providers.google_genai.google_genai_audio_response import (
     GoogleGenAIAudioResponse,
 )
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
 
 def _ffmpeg_executable() -> Path:
@@ -170,6 +172,27 @@ def _install_fake_audio(
     return observed
 
 
+def _install_fake_google_image(
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[tuple[Path, ...]]:
+    observed: list[tuple[Path, ...]] = []
+
+    def fake_google_image(image_paths, *, prompt, config):
+        observed.append(tuple(image_paths))
+        return VisionProviderResponse(
+            markdown="# Frames\n",
+            input_tokens=11,
+            output_tokens=3,
+        )
+
+    adapter = __import__(
+        "ocrllm.providers.google_genai.recognize_images",
+        fromlist=["unused"],
+    )
+    monkeypatch.setattr(adapter, "recognize_images", fake_google_image)
+    return observed
+
+
 def test_recognize_video_runs_real_media_and_keeps_providers_separate(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -217,13 +240,17 @@ def test_recognize_video_keeps_real_multigroup_order_and_separate_audio(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _write_multiscene_mp4(tmp_path / "lecture.mp4")
-    image_provider = _ImageProvider()
+    observed_images = _install_fake_google_image(monkeypatch)
     observed_audio = _install_fake_audio(monkeypatch)
 
     outcome = recognize_video(
         source,
         output_dir=tmp_path / "output",
-        image_config=Config(provider=image_provider),
+        image_config=Config(
+            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            vision_model=VisionModelSettings(name="test-image-model"),
+            temp_dir=tmp_path / "image-snapshots",
+        ),
         audio_config=_audio_config(tmp_path),
     )
 
@@ -231,9 +258,9 @@ def test_recognize_video_keeps_real_multigroup_order_and_separate_audio(
         frame.frame_index for frame in outcome.retained_frames
     )
     assert retained_indices == (0, 5, 10, 20, 25, 30, 35, 45, 50, 59)
-    assert [len(call) for call in image_provider.calls] == [8, 2]
+    assert [len(call) for call in observed_images] == [8, 2]
     provider_paths = tuple(
-        path for call in image_provider.calls for path in call
+        path for call in observed_images for path in call
     )
     assert tuple(path.name for path in provider_paths) == tuple(
         frame.path.name for frame in outcome.retained_frames
@@ -248,6 +275,18 @@ def test_recognize_video_keeps_real_multigroup_order_and_separate_audio(
     composed = compose_video_result(outcome)
     assert composed.status == "complete"
     assert composed.metadata["current_run_provider_call_count"] == 3
+    assert composed.metadata["current_model_token_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_tokens": 22,
+            "output_tokens": 6,
+        },
+        {
+            "model": "test-audio-model",
+            "input_tokens": 7,
+            "output_tokens": 2,
+        },
+    )
 
 
 def test_recognize_video_preserves_settled_work_after_later_group_failure(
