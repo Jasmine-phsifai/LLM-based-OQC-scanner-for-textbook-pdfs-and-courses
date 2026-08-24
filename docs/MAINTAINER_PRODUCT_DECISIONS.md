@@ -359,6 +359,12 @@ is often accepted.
   not nearest-integer rounding. A declared maximum is not a target average: do
   not reduce the segment count to save frames. Existing five-second candidate
   quantization and the separate hourly density cap remain unchanged.
+- #134 leaves the post-selector Google video gate open. A partial live result is
+  useful evidence, but a failed branch's call count cannot be inferred from the
+  absence of success metadata. The next live attempt requires a maintained
+  combined-video smoke runner that records only stable error code, safe stage,
+  and `provider_calls_attempted`; do not add retry, fallback, or provider routing
+  to make the gate pass.
 
 ## Resolved confirmation and next authority
 

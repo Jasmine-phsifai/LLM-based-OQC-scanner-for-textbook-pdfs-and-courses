@@ -143,7 +143,10 @@ density safety cap so it retains the final video candidate instead of possibly
 ending early. #132 fixes shared output-stem truncation to use the existing
 Windows UTF-16-unit budget while preserving complete Unicode characters. #133
 uses ceiling partition counts so a maximum-length stable segment is not rounded
-into too few retained intervals. Final publication, cancellation refinement, and
+into too few retained intervals. #134's post-change Google video run proved the
+image and partial-composition paths but lost the failed audio branch's safe error
+evidence; build the bounded combined-video smoke runner before another live run.
+Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. The queue explicitly stops further proactive filesystem/accounting edge

@@ -3155,3 +3155,19 @@ Atomic task — Iteration #133: verify and repair the inherited “maximum segme
 **验证、主审与边界。** 失败优先回归先得到明确的 `355.0 <= 315.0` 失败；实现后的抽帧、帧识别、视频编排和组合定向集为 **36 passed in 1.64s**，包含真实本地 MP4 邻居。主代理复核了公式和公共样本，独立 review 的 frame selection 集为 **8 passed in 0.19s**，确认 `ceil` 保证理想子段长度不超过当轮上限，候选量化只选择已有时间点，不产生重复或倒序；密度超限仍由现有端点保留裁剪处理。最终 root 全量为 **1,396 passed in 53.70s**；`compileall -q src tests tools`、`git diff --check` 通过，冻结 `contracts/`/`worker/` 无变化。没有安装、下载、provider/API、凭据、legacy 或用户未跟踪文件改动。
 
 **过度设计复查与下一步。** 本轮没有增加可配置 max-gap、第二检测器、fine scan、插帧、时间轴对象或场景分类；只让已有最大分段算式不再向下舍入。#127、最终发布和 video resume 仍未越过维护者决定。#131—#133 连续修改了真实视频进入 provider 前的留帧和路径行为，所以下一轮应优先用已授权免费的 Google 图像/音频各一次重新打通当前公开视频路径，而不是继续从代码层雕琢选择器。
+
+## #134 — 2026-08-25：真实 Google 视频返回诚实 partial，但门禁证据未闭合
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #134: re-prove the current public video path against the authorized live Google service after the frame-selection and Unicode-path corrections. Success means discovering the current model catalog, generating one synthetic speech-and-slide MP4, making exactly one image request and one audio request through separate configs with no retry or fallback, returning an honest complete or typed partial/failed outcome, composing it in memory, exposing only sanitized call/usage/artifact evidence, and cleaning all test-owned files. This matters because offline correctness is insufficient for a library whose hardest boundary is real multimodal provider behavior.
+```
+
+**边界和执行方式。** 当前仓库只有分开的 Google image/audio runner，没有组合视频 runner。按用户要求，真实调用和主动检查交给已经跑通过 #126 的轻量任务；主代理同时复核当前 authority、已有 runner 的保密输出规则和音频调用链。任务只在进程内读取已经授权的保存凭据，动态列出一次目录；37 个模型中包含显式 `gemini-2.5-flash`，未硬编码支持清单。测试生成授权的多段文字画面与合成语音 MP4，用独立 image/audio `Config` 调用公开 `recognize_video()`，再调用 `compose_video_result()`；没有把凭据、路径、识别正文或 raw response 写入仓库或摘要。
+
+**真实结果。** 图片分支识别成功，保留 **5** 张 JPEG、形成 **1** 个 frame group，并从成功 metadata 证明恰好 **1** 次图像 generation。音频先成功抽取为 **120,608 bytes / 约 30.000204 秒**的 MP3，并通过 25 MiB / 300 秒以内的本地 snapshot/probe，但随后返回失败；公共 outcome 因此诚实为 `partial`，没有把图片成功或 MP3 丢掉。纯组合继续成功，状态仍为 partial，保留 5 JPEG + 1 MP3 共 **6** 个 assets、frames/audio 分区，`output_path=None`。stderr 为空，secret scan 和临时根清理通过；总耗时约 **20.86 秒**，没有 retry、fallback 或换模。
+
+**必须撤回的错误结论。** 轻量任务首份摘要把“`audio_result` 不存在，所以读不到成功 metadata”错误写成“音频 provider 调用 0”。主代理立即要求不重跑、只从已保存结果恢复 exact error；复核确认音频 Config、抽取和 snapshot 均已通过，但临时 controller 没有保存 `audio_error.code`、safe details 或 `provider_calls_attempted`，清理后已无法诚实恢复。Google audio adapter 会在内部 catalog 后、generation 前把计数从 0 改为 1，因此现有摘要既不能证明 dispatch，也不能证明未 dispatch。**音频零调用结论已撤回**；exact code、stage 和调用次数均记为 unknown，不能猜成模型、quota、空回复或本地错误。
+
+**决定修正和过度设计复查。** 再跑一次可能得到绿色结果，却会掩盖本次验证器没有保存失败证据的问题，所以本轮不重试、不换模型、不改产品代码。下一原子任务改为维护一个小型 combined-video smoke runner：离线失败优先测试必须要求 complete/partial/failed 都输出每个分支的稳定 code、safe stage 和 `provider_calls_attempted`，并继续禁止正文、路径、key、raw response；之后才做下一次真实调用。它不是第二 provider 层、通用 telemetry、retry/fallback、API pool 或产品持久化。#127、最终 Markdown 和 video resume 仍未越过维护者决定。工作树只有两个原有未跟踪文件，冻结目录和产品源均未改动。

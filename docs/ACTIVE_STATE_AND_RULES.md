@@ -1024,6 +1024,27 @@ endpoint-preserving density cap still applies afterward. The full suite passes
 1,396 tests. The next evidence step is a bounded authorized Google video run
 through the current frame and audio branches, not another speculative selector.
 
+#134 attempted that post-change live proof and must not be reported as a closed
+two-branch gate. The current catalog returned 37 models and included explicit
+`gemini-2.5-flash`. One synthetic multi-section speech MP4 traversed public
+`recognize_video()`: the image branch recognized one group in exactly one known
+generation call, while the audio branch returned a typed failure after a valid
+120,608-byte, approximately 30.000204-second MP3 passed extraction and local
+snapshot/probe. The outcome honestly remained partial; provider-free composition
+retained five JPEGs plus the MP3, kept separate frame/audio sections, and left
+`output_path=None`. There was no retry, fallback, model switch, stderr, secret
+leak, or temporary residue.
+
+The ephemeral live controller failed its evidence duty: it did not retain the
+audio error's stable code or safe `provider_calls_attempted`, then initially
+misread the absence of successful audio-result metadata as zero audio calls.
+That zero-call claim is retracted; current evidence cannot say whether the audio
+request dispatched or why it failed. Do not rerun merely to cover this trace.
+Before the next live attempt, add one small maintained combined-video smoke
+runner whose offline tests require exact branch code/stage/call evidence for both
+success and failure. This is test observability, not a provider framework or
+product retry path. No product-code defect was proven by #134.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,
