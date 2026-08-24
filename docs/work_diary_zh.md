@@ -3369,3 +3369,17 @@ Atomic task — Iteration #147: correct the stale distribution summary so instal
 **双 wheel 离线证明。** 轻量固定任务从 clean `HEAD=161ee8d` 构建 baseline，再仅覆盖当前 `pyproject.toml` 构建 candidate；两次 Hatchling 离线构建均 exit 0。baseline 为 **228,594 bytes**、SHA-256 `E8EF125EE70B59BB93C12C84CA868D4308FD456EC5E81E85CCF2412DE8AF5469`；candidate 为 **228,601 bytes**、SHA-256 `D46AF9CE8624C361F1AFD49AA70CE7FA1E27CA059F07C147F12101B7FEAF56EB`。candidate METADATA Summary 精确匹配新文本；两个 wheel 的 member list、`Provides-Extra`、`Requires-Dist` 和所有非生成 metadata payload hash 完全相同。
 
 **仓库外消费与过度设计复查。** candidate 用 `--no-deps --no-index` 安装到外部 target，package/distribution origin 均在外部，版本 0.1.0，视频公开入口可导入；导入前后均未加载 cv2、NumPy、imageio-ffmpeg 或 miniaudio。精确临时根删除并确认不存在。没有网络、provider、凭据、持久安装、runtime code、tests、依赖、extras、frozen `contracts/worker` 或 legacy 修改；没有新增 metadata schema/test、classifier 大清理、发布流水线或重新打开 #127。已有完整 1,430-test 证据紧邻运行时代码，本轮一行 metadata 用双 wheel 对照和 12 项定向验证，不机械重跑全量。
+
+## #148 — 2026-08-25：五秒粗采样不再漏掉真实视频末帧
+
+**本轮英文自我任务。**
+
+```text
+Investigate and close one concrete gap in the current video-recognition vertical slice, prioritizing the user's required architecture: video parsing, negative-feedback frame retention, independently configurable image and audio providers, and a lightweight importable Python package. Success means reconciling the authoritative state and diary, proving the next gap from current code/tests rather than legacy formats, choosing the smallest product-aligned correction, verifying it at the public library boundary, documenting it in Chinese, and committing/pushing one coherent change. This matters because the video path must work as a real library workflow, not merely as internally polished helpers.
+```
+
+**权威重读、重新判断与分工。** 同步 `origin/master` 后确认当前实现已经通过 `recognize_video(image_config=..., audio_config=...)` 分开使用图片和音频配置；README、代码与测试都没有要求兼容 legacy 格式。#127 的取消语义仍需要维护者选择，不能借本轮偷定。路线 A 是继续寻找 provider 分离缺口；路线 B 是检查视频解析和负反馈留帧。轻量只读审计跑了 45 项视频/import 测试并认为现有链路完整，只提出“静音视频是否仍应要求有效音频配置”这一未授权产品问题。主审没有照抄结论：逐行检查 `scan_video_frame_candidates()` 后发现五秒网格只生成 `0, step, 2*step...`，所谓“保留结尾”其实只保留最后一个候选，并不保证候选是源视频末帧。因此切换到路线 B。
+
+**先失败、再修复的真实 MP4 证据。** 新回归生成 2 fps、共 6 帧的三秒 MP4：前五帧是暗画面，最后一帧突然变亮。旧实现只比较索引 0，公开 `extract_video_frames()` 实际返回 `[0]`；要求 `[0, 5]` 的回归明确失败。修复仅先构造现有粗采样索引；如果最后一帧不在网格上，就追加 `frame_count - 1`，随后才检查原有 10,000 候选上限。修复后返回 `[0, 5]`，时间戳为 `[0.0, 2.5]`，两张 JPEG 都真实存在。原三段视频的最后代表图从索引 20 变为同一稳定段的真实末帧 29，覆盖到 14.5 秒。
+
+**验证与过度设计复查。** 帧提取、视频编排、帧识别、视频检查和轻量导入共 **41 passed in 2.03s**；额外的上限回归证明追加末帧后的 10,001 个候选仍在打开视频前拒绝。只给测试进程临时加入现有 `D:\Anaconda\envs\STA\node.exe` 所在目录后，完整离线套件为 **1,432 passed in 53.52s**；没有下载、安装或持久环境修改。产品修改没有改变五秒间隔、差异阈值、反馈次数、密度目标、JPEG 发布、provider、配置或公开 API，只多解码至多一个末帧；候选数量仍以常量内存计算并在任何候选解码前拒绝。没有加入可调采样器、第二场景检测器、逐帧扫描、音画对齐、provider 类、fallback、legacy 格式、取消策略或 frozen `contracts/worker` 变化。这一轮修的是实际尾部盲区，不是为假想输入增加防御层。

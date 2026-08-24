@@ -78,6 +78,9 @@ changes.
 #147 makes the distribution Summary name only the shipped image, PDF,
 short-audio, and video surfaces. Keep packaging metadata accurate, but do not
 turn it into claims for PDF text, long audio, fallback, or worker support.
+#148 requires the bounded coarse video scan to include the exact final source
+frame when the five-second grid does not. Preserve this tail coverage without
+adding a configurable sampler or a second scene detector.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

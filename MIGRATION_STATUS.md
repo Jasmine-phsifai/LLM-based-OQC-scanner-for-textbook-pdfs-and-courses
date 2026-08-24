@@ -444,6 +444,12 @@ The following directions remain traceable but are not current work:
   wheel comparison proves identical extras, requirements, member lists, and
   runtime payloads outside generated metadata; external lightweight import also
   passes. This is metadata accuracy, not a new capability.
+  #148 fixes the coarse video scan's uncovered tail: the exact final source
+  frame is appended when it is not already on the five-second grid, remains
+  inside the existing 10,000-candidate bound, and participates in the unchanged
+  negative-feedback selection. A real three-second MP4 with a final-frame scene
+  change now retains both the opening and final frames; the complete offline
+  suite passes 1,432 tests.
   A clean archive of commit `c7f30f0` built and installed outside the
   repository without network, kept plain import free of heavy media modules,
   and completed one local video through separate injected image and fake-audio

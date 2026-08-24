@@ -8,7 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from ocrllm import OutputError, OutputExists, RetainedVideoFrame, extract_video_frames
+from ocrllm import (
+    OutputError,
+    OutputExists,
+    RetainedVideoFrame,
+    VideoError,
+    VideoInfo,
+    extract_video_frames,
+)
 
 
 def _write_sectioned_mp4(path: Path) -> Path:
@@ -27,6 +34,25 @@ def _write_sectioned_mp4(path: Path) -> Path:
             frame = np.full((48, 64, 3), value, dtype=np.uint8)
             for _ in range(10):
                 writer.write(frame)
+    finally:
+        writer.release()
+    return path
+
+
+def _write_final_frame_change_mp4(path: Path) -> Path:
+    import cv2
+    import numpy as np
+
+    writer = cv2.VideoWriter(
+        str(path),
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        2.0,
+        (64, 48),
+    )
+    assert writer.isOpened()
+    try:
+        for value in (20, 20, 20, 20, 20, 230):
+            writer.write(np.full((48, 64, 3), value, dtype=np.uint8))
     finally:
         writer.release()
     return path
@@ -59,14 +85,14 @@ def test_extract_video_frames_retains_ordered_change_representatives(
     frames = extract_video_frames(source, output_dir=output_parent)
 
     assert type(frames) is tuple
-    assert [frame.frame_index for frame in frames] == [0, 10, 20]
+    assert [frame.frame_index for frame in frames] == [0, 10, 29]
     assert [frame.timestamp_seconds for frame in frames] == pytest.approx(
-        [0.0, 5.0, 10.0]
+        [0.0, 5.0, 14.5]
     )
     assert [frame.path.name for frame in frames] == [
         "frame-00000000.jpg",
         "frame-00000010.jpg",
-        "frame-00000020.jpg",
+        "frame-00000029.jpg",
     ]
     assert all(type(frame) is RetainedVideoFrame for frame in frames)
     assert all(frame.path.parent == output_parent / "lecture" / "frames" for frame in frames)
@@ -75,6 +101,40 @@ def test_extract_video_frames_retains_ordered_change_representatives(
 
     with pytest.raises(FrozenInstanceError):
         frames[0].frame_index = 1  # type: ignore[misc]
+
+
+def test_extract_video_frames_compares_and_retains_a_changed_final_frame(
+    tmp_path: Path,
+) -> None:
+    source = _write_final_frame_change_mp4(tmp_path / "ending-change.mp4")
+
+    frames = extract_video_frames(source, output_dir=tmp_path / "output")
+
+    assert [frame.frame_index for frame in frames] == [0, 5]
+    assert [frame.timestamp_seconds for frame in frames] == pytest.approx(
+        [0.0, 2.5]
+    )
+    assert all(frame.path.is_file() for frame in frames)
+
+
+def test_video_frame_scan_counts_the_final_frame_before_decoding() -> None:
+    from ocrllm.video.scan_video_frame_candidates import scan_video_frame_candidates
+
+    with pytest.raises(VideoError) as captured:
+        scan_video_frame_candidates(
+            Path("must-not-open.mp4"),
+            video_info=VideoInfo(
+                frame_count=49_997,
+                frames_per_second=1.0,
+                duration_seconds=49_997.0,
+                width_pixels=64,
+                height_pixels=48,
+            ),
+            cv2=None,
+        )
+
+    assert captured.value.code == "VIDEO_INVALID"
+    assert captured.value.details["maximum_candidate_count"] == 10_000
 
 
 def test_extract_video_frames_rejects_existing_video_directory_without_changes(

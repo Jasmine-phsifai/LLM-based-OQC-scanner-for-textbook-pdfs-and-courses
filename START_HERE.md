@@ -186,6 +186,9 @@ overwrite safety, asset-collision refusal, packaged typing marker, and lazy
 heavy dependencies. #147 updates only the wheel Summary so it names the shipped
 image, PDF, short-audio, and video surfaces; dual-wheel comparison proves extras,
 dependencies, members, and runtime payloads did not change. The queue explicitly
+records #148's frame-scan correction: the actual source final frame now always
+participates in bounded comparison, so a scene change after the last five-second
+grid position cannot disappear before negative-feedback selection. It still
 stops further proactive
 filesystem/accounting edge scans.
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from itertools import chain
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +28,10 @@ def scan_video_frame_candidates(
         1,
         int(video_info.frames_per_second * _COARSE_INTERVAL_SECONDS),
     )
-    candidate_count = (video_info.frame_count + frame_step - 1) // frame_step
+    coarse_frame_indices = range(0, video_info.frame_count, frame_step)
+    final_frame_index = video_info.frame_count - 1
+    append_final_frame = coarse_frame_indices[-1] != final_frame_index
+    candidate_count = len(coarse_frame_indices) + int(append_final_frame)
     if candidate_count > _MAX_CANDIDATES:
         raise VideoError(
             "The video requires too many comparison samples.",
@@ -36,8 +40,12 @@ def scan_video_frame_candidates(
         ) from None
 
     candidates: list[VideoFrameCandidate] = []
+    frame_indices = chain(
+        coarse_frame_indices,
+        (final_frame_index,) if append_final_frame else (),
+    )
     with open_video_capture(source, cv2=cv2) as capture:
-        for frame_index in range(0, video_info.frame_count, frame_step):
+        for frame_index in frame_indices:
             try:
                 positioned = capture.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
                 decoded, frame = capture.read()

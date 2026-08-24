@@ -30,8 +30,9 @@ As of 2026-08-25:
   image-sidecar resume remains the library recovery path.
 - Provider-free video inspection and retained-frame extraction are available.
   `inspect_video(one.mp4)` writes nothing; `extract_video_frames()` performs a
-  bounded five-second coarse scan, count-driven negative-feedback selection,
-  and complete-directory JPEG publication. `recognize_video_frames()` feeds
+  bounded five-second coarse scan that always compares the actual final frame,
+  count-driven negative-feedback selection, and complete-directory JPEG
+  publication. `recognize_video_frames()` feeds
   the exact ordered retained-frame tuple through the existing image path in
   groups of at most eight and returns honest batch outcomes. It is memory-only;
   `extract_video_audio()` now atomically publishes a fully decoded mono MP3

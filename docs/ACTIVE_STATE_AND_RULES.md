@@ -1318,6 +1318,27 @@ Hatch build proved TOML validity. Both build roots were removed. No runtime
 code, dependency, extra, provider, credential, frozen boundary, or persistent
 environment changed.
 
+#148 closes an actual end-of-video blind spot in the provider-free frame scan.
+The five-second index grid previously omitted the exact final source frame
+unless `(frame_count - 1)` happened to be divisible by the frame step. A scene
+change in the trailing partial interval therefore never entered comparison and
+could not be retained. The scanner now appends that exact final index when
+needed before enforcing the existing 10,000-candidate ceiling; comparison,
+negative-feedback thresholds, density targets, publication, and public APIs are
+unchanged.
+
+A real 2-fps, three-second MP4 whose first five frames were dark and final frame
+was bright reproduced the old result as `[0]`; the focused regression first
+failed because frame 5 was absent and now returns `[0, 5]` with timestamps
+`[0.0, 2.5]`. The existing three-section fixture now retains the end of its last
+stable section at frame 29 rather than the earlier coarse candidate at frame 20.
+Forty-one frame extraction, video orchestration, frame recognition, inspection, and
+lightweight-import tests pass; the complete offline suite passes 1,432 tests in
+53.52 seconds. No provider, credential, network, dependency,
+config, cancellation, legacy format, frozen boundary, or final-output behavior
+changed. This is one extra bounded local decode, not a tunable sampler, second
+scene detector, or generalized video-analysis framework.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,
