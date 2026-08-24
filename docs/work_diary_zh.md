@@ -4023,3 +4023,17 @@ Atomic task — Iteration #194: prove the Windows non-ASCII video-path correctio
 **固定流程、主代理复核和安装结果。** 按“下载、安装、主动检查交给轻量任务”的持续规则，轻量子代理只读仓库并负责唯一一次 archive/build/install/probe/cleanup；主代理同时亲自复核 `pyproject.toml`：wheel 仍只打包 `src/ocrllm`，base dependencies 仍为空，`video` 仍只是可选的 OpenCV 与 imageio-ffmpeg，并确认精确提交中包含修正后的 `write_selected_video_frames.py`、`README_ACTIVE_LIBRARY.md` 和 `py.typed`。HEAD 精确为 `a56d0de1377f09963608fdf5c5dacce54fbaeb6c`。生成的 `ocrllm-0.1.0-py3-none-any.whl` 为 **246,391 bytes**，SHA-256 `c1cf52988e4cd25c992e06daf15dd43a1fa2dcc8dc829c28ed879de8815a6bc4`，以 `--no-deps` 安装到仓库外 target；新进程确认 package 与 distribution 来源都在那里。
 
 **真实 wheel 证据、清理和过度设计复查。** 普通 `import ocrllm` 后，`cv2`、NumPy、imageio-ffmpeg、Pillow、miniaudio、Google GenAI、OpenAI/httpx 与 `legacy_app` 均未加载。随后仍由该外部安装包处理一个先生成再移动到中文父目录/文件名的 30 帧 MP4，并输出到中文父目录：`inspect_video()` 返回 30 帧，`extract_video_frames()` 留取 `[0,10,29]`，三个文件名严格受控且都是磁盘普通文件，目标父目录正确；从磁盘字节解码的均值约为 **17.33 / 227.33 / 67.33**，与暗/亮/中灰三个源场景一致。唯一 disposable temp root 已删除并确认不存在，仓库状态仍只有两个既有未跟踪用户文件。无网络、provider、凭据、下载、依赖安装、环境修改、runtime/API/manifest/dependency/output 变化、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。因为本轮只验证精确 #193 runtime，没有机械重跑全量测试，也不新增轮子脚本、安装测试框架或通用 Unicode abstraction。
+
+## #195 — 2026-08-25：中文路径下的完整视频音画分支一起跑通
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #195: verify the complete local combined-video library path on real Windows non-ASCII source and output parents, including retained frames, extracted audio, and independently configured image/audio recognition branches, without network access. Success means reconciling authority and diary, locating existing combined-video fixtures and provider seams, running one bounded audible MP4 through public `recognize_video()`, proving branch separation, ordered retained assets, honest call evidence, and Unicode artifact placement, and making only a reproduced backend correction if a stage fails. This matters because #193/#194 proved only the frame half; a video library is not mature if audio extraction or either independent provider branch still breaks on the same ordinary Windows paths.
+```
+
+**缺口、两条路线与范围选择。** #193/#194 已证明检查、负反馈比较和 JPEG 写出，但没有经过 `recognize_video()` 的 FFmpeg 音频提取、图片快照、MP3 快照、两套配置和 composition。已有 ASCII 真实测试分别证明 1 秒有声音画组合、60 秒十帧的 8+2 图片分组以及图片/音频按模型 token 分离。路线 A 复用现有 1 秒有声 fixture、注入图片 provider 和 fake Google audio seam，只补 Unicode combined 边界；路线 B 再做 60 秒中文多组、真实 Google 或新 harness。选择 A。既有 #177/#181 已负责非平凡排序和 token，重复它们只会把正交路径回归变成组合压力测试。
+
+**真实结果与 provider 分离。** 测试先以 ASCII 名生成带 440 Hz AAC 音轨的真实 MP4，再移动到 `课程资料/讲座视频.mp4`，输出根为 `识别输出`。图片用注入 provider 和 `图片请求缓存`，音频用 Google 配置/fake adapter 和 `音频请求缓存`；公开 `recognize_video()` 一次通过。结果为 complete，留取索引 `[1]` 与严格文件名 `frame-00000001.jpg`，`audio.mp3` 真实存在；图片 provider 只收到图片临时根内的 JPEG，音频 adapter 只收到音频临时根内的 MP3，两边各一次，调用结束后两个 snapshot 均不存在、两个临时根无后代、输出根无 `.ocrllm-audio-*` staging。`compose_video_result()` 资产严格为 JPEG 后接 MP3，`current_run_provider_call_count == 2`。FFmpeg 和后续两条分支都没有暴露新的 Unicode 缺陷，所以运行时代码不改。
+
+**验证失误、最终证据与过度设计复查。** 精确新测试为 **1 passed in 0.46s**。第一次聚焦命令猜了不存在的 `tests/test_snapshot_mp3.py`，第二次虽然搜索得到 `test_snapshot_short_mp3.py`，命令仍误用了 `test_audio_snapshot.py`；两次都在收集前以零测试退出，均未冒充验证。第三次使用真实文件名后，combined video、frame/audio extraction、frame facade、图片快照和短 MP3 快照为 **89 passed in 7.23s**；`compileall -q src tests tools` 与 `git diff --check` 通过。轻量只读审计独立确认此前只有 ASCII combined 测试，并确认当前新回归正好补齐路径缺口。无网络、真实 provider、凭据、安装、runtime/API/dependency/output 变化、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策；不为每种文字重复一套 fixture，不直接记录/公开 Config 对象，也不添加 Unicode path manager。

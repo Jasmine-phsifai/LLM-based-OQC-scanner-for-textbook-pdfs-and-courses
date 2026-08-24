@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -268,6 +269,62 @@ def test_recognize_video_runs_real_media_and_keeps_providers_separate(
     assert composed.status == "complete"
     assert "# Video frames" in composed.markdown
     assert "# Video audio" in composed.markdown
+    assert composed.assets == tuple(
+        frame.path for frame in outcome.retained_frames
+    ) + (outcome.audio_artifact,)
+    assert composed.metadata["current_run_provider_call_count"] == 2
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows Unicode path regression")
+def test_recognize_video_keeps_separate_providers_on_unicode_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ascii_source = _write_mp4(tmp_path / "source.mp4")
+    source_parent = tmp_path / "\u8bfe\u7a0b\u8d44\u6599"
+    source_parent.mkdir()
+    source = ascii_source.replace(source_parent / "\u8bb2\u5ea7\u89c6\u9891.mp4")
+    output_parent = tmp_path / "\u8bc6\u522b\u8f93\u51fa"
+    image_temp = tmp_path / "\u56fe\u7247\u8bf7\u6c42\u7f13\u5b58"
+    audio_temp = tmp_path / "\u97f3\u9891\u8bf7\u6c42\u7f13\u5b58"
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch)
+
+    outcome = recognize_video(
+        source,
+        output_dir=output_parent,
+        image_config=Config(
+            provider=image_provider,
+            temp_dir=image_temp,
+        ),
+        audio_config=Config(
+            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            audio_model=AudioModelSettings(name="test-audio-model"),
+            temp_dir=audio_temp,
+        ),
+    )
+
+    assert outcome.status == "complete"
+    assert [frame.frame_index for frame in outcome.retained_frames] == [1]
+    assert outcome.output_root == output_parent / "\u8bb2\u5ea7\u89c6\u9891"
+    assert [frame.path.name for frame in outcome.retained_frames] == [
+        "frame-00000001.jpg"
+    ]
+    assert all(frame.path.is_file() for frame in outcome.retained_frames)
+    assert outcome.audio_artifact == outcome.output_root / "audio.mp3"
+    assert outcome.audio_artifact.is_file()
+    assert len(image_provider.calls) == 1
+    assert all(image_temp in path.parents for path in image_provider.calls[0])
+    assert len(observed_audio) == 1
+    assert audio_temp in observed_audio[0].parents
+    assert all(not path.exists() for path in image_provider.calls[0])
+    assert not observed_audio[0].exists()
+    assert not any(image_temp.rglob("*"))
+    assert not any(audio_temp.rglob("*"))
+    assert not list(outcome.output_root.glob(".ocrllm-audio-*"))
+
+    composed = compose_video_result(outcome)
+    assert composed.status == "complete"
     assert composed.assets == tuple(
         frame.path for frame in outcome.retained_frames
     ) + (outcome.audio_artifact,)

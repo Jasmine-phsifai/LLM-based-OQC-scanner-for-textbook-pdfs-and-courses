@@ -557,6 +557,10 @@ The following directions remain traceable but are not current work:
   installed outside the repository: plain import remains lightweight and one
   real Unicode-path MP4 publishes the expected three retained JPEGs. The
   disposable build/install root was removed and no package boundary changed.
+  #195 carries the same Windows non-ASCII boundary through a real audible
+  `recognize_video()` call: independently configured image and audio branches
+  each settle once, clean their separate snapshots, retain JPEG plus MP3, and
+  compose in order. Existing multigroup tests continue to own 8+2 ordering.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

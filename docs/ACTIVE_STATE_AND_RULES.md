@@ -1961,6 +1961,23 @@ API, dependency, provider, environment, output contract, frozen boundary, or
 open #127/#149/#152 choice changed. Do not repeat this clean-wheel proof unless
 the relevant runtime, package manifest, or dependency boundary changes again.
 
+#195 extends the real Windows non-ASCII evidence through the complete local
+combined-video facade without changing runtime behavior. One audible one-second
+MP4 was generated at an ASCII path, moved to `课程资料/讲座视频.mp4`, and passed
+to public `recognize_video()` with `识别输出` as output parent. An injected image
+provider and the existing fake Google-audio seam used different `Config`
+objects and different non-ASCII snapshot parents. The result was complete:
+one retained `frame-00000001.jpg`, one decoded `audio.mp3`, exactly one image
+call plus one audio call, cleaned request snapshots/staging, and provider-free
+composition with JPEG then MP3 assets and exact current-run call count two.
+Existing #177/#181 real-media tests remain responsible for nontrivial 8+2 frame
+ordering and model-separated token totals, so this regression does not duplicate
+their 60-second fixture. The exact test and 89 video/extraction/snapshot tests
+pass. No network, real provider, runtime, API, dependency, output layout, frozen
+boundary, or open #127/#149/#152 choice changed; do not generalize this into a
+path framework or repeat the already-proven multigroup scenario under every
+filename alphabet.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
