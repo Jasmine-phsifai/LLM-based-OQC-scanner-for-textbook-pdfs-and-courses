@@ -20,8 +20,10 @@ frame groups, #123 extracted audio for an independent audio config, and #124
 kept exact group identity on every settled outcome. #125 distinguishes a valid
 silent MP4 from corrupt declared audio. #126 adds the first narrow
 `recognize_video()` orchestration outcome over those exact branches. It retains
-media and typed partial failures but does not invent final Markdown, resume, or
-provider generalization. Final document composition and recovery come next and
+media and typed partial failures. #129 adds explicit memory-only
+`compose_video_result()` for already returned complete or partial outcomes; it
+keeps frames and audio separate and does not publish Markdown, infer time
+alignment, or copy legacy formats. Final publication and recovery come next and
 must be derived from these real outcomes rather than copied from legacy. Keep
 the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,

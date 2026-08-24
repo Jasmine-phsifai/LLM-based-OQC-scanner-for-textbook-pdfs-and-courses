@@ -133,9 +133,11 @@ keeps exact frame indices/timestamps on every settled frame-group outcome.
 #125 distinguishes a truly silent MP4 from corrupt declared audio without
 parsing FFmpeg logs. #126 adds public `recognize_video()` with separate image
 and audio configs and a typed `VideoRecognitionOutcome` that retains honest
-branch results/errors and media artifacts without composing final Markdown.
-Final document composition, cancellation refinement, and resume follow from
-these observed outcomes. The audio slice
+branch results/errors and media artifacts. #129 adds explicit, provider-free
+`compose_video_result()` for complete or partial returned outcomes; it keeps
+ordered frames and audio in separate sections without publishing a file or
+inventing time alignment. Final publication, cancellation refinement, and
+resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. The queue explicitly stops further proactive filesystem/accounting edge
 scans.

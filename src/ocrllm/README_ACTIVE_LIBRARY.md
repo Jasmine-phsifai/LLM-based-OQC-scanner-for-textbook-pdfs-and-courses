@@ -51,6 +51,7 @@ from ocrllm import (
     VideoInfo,
     VideoRecognitionOutcome,
     VisionModelSettings,
+    compose_video_result,
     extract_video_audio,
     extract_video_frames,
     recognize,
@@ -272,6 +273,7 @@ video_outcome = recognize_video(
         audio_model=AudioModelSettings(name="gemini-2.5-flash"),
     ),
 )
+video_result = compose_video_result(video_outcome)
 ```
 
 Install `ocrllm[video]` for lazy OpenCV and `imageio-ffmpeg` support. The function
@@ -303,7 +305,15 @@ frame-group outcomes or a typed frame error, and an audio result or typed audio
 error. A silent MP4 can therefore complete as frame-only, while corrupt audio or
 a provider failure remains partial or failed. The call does not compose or
 publish final Markdown and does not delete its retained frames or MP3.
-Automatic fallback, resume, final document composition, and worker routing
+`compose_video_result()` is an explicit, provider-free second step for an
+already returned complete or partial outcome. It creates one memory-only
+`RecognitionResult(source_type="video")` with separate ordered Video frames and
+Video audio sections, exact retained-frame identities, honest stable error codes,
+all retained media in `assets`, current-run provider-call totals, and
+provider-reported input/output tokens accumulated separately by model. It does
+not align audio text to frame timestamps, publish a file, parse legacy output,
+or accept a fully failed outcome.
+Automatic fallback, resume, final Markdown publication, and worker routing
 remain unavailable. Plain
 `import ocrllm` does not import OpenCV, NumPy, or imageio-ffmpeg.
 Local user screenshots are uncommitted

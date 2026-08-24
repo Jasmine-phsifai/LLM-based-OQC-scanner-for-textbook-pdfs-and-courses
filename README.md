@@ -11,7 +11,7 @@ Current truth is maintained in
 before relying on any dated phase, decision, checkpoint, review, or incident
 record. Those files preserve history and do not override current status.
 
-As of 2026-08-24:
+As of 2026-08-25:
 
 - Phase 0 contract honesty, the Phase 1 image gate, the Phase 2 development
   worker, and Phase 2A image-library completion are GO.
@@ -37,8 +37,10 @@ As of 2026-08-24:
   `extract_video_audio()` now atomically publishes a fully decoded mono MP3
   through the lazy video extra. Frame and audio recognition use separate
   `Config` objects, so their providers can differ. `recognize_video()` now
-  settles both branches into a typed `VideoRecognitionOutcome` without
-  inventing final Markdown. Long-audio recognition, final document composition,
+  settles both branches into a typed `VideoRecognitionOutcome`.
+  `compose_video_result()` can explicitly turn a returned complete or partial
+  outcome into a standard memory-only video `RecognitionResult` with separate
+  frame and audio sections. Long-audio recognition, final Markdown publication,
   resume, and worker routing are not implemented yet.
 - Native Google image and short-audio adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
@@ -94,7 +96,12 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - exposes `recognize_video()` as one Python-library orchestration call with
   explicit image and audio configs; it retains frames and extracted MP3,
   preserves each branch's result or typed error, and computes honest
-  `complete`, `partial`, or `failed` status without generating final Markdown.
+  `complete`, `partial`, or `failed` status without publishing final Markdown.
+- exposes `compose_video_result()` as a provider-free explicit second step for
+  a returned complete or partial video outcome. It keeps ordered frame and
+  audio sections separate, preserves stable failure codes, reports retained
+  media as assets, and accumulates provider-reported tokens by model. It does
+  not infer audio/frame alignment or accept a fully failed outcome.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The

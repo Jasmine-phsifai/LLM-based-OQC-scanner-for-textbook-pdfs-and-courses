@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-24 against the
+Status: **authoritative and current.** Last verified 2026-08-25 against the
 working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
@@ -933,10 +933,11 @@ either direction, add extraction cancellation parameters, or document the
 current asymmetry as intended behavior until the maintainer selects the public
 semantics.
 
-This is a Python orchestration result, not final video content. It adds no
-combined Markdown, legacy format, cleanup transaction, resume/checkpoint,
-audio/frame alignment, shared hotwords, long-audio routing, retry, fallback,
-provider hierarchy, worker, GUI, or social workflow. The source suite passes
+As shipped by #126 this was a Python orchestration result, not final video
+content. That iteration added no combined Markdown, legacy format, cleanup
+transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
+long-audio routing, retry, fallback, provider hierarchy, worker, GUI, or social
+workflow. The source suite passes
 1,382 tests. A fresh 224,623-byte wheel (SHA-256
 `105fa6cc56617bcc410173ed2d4cad2db456638bf8e82fd99f51830e6773da3b`)
 installed outside the repository kept
@@ -944,6 +945,36 @@ the public facade and outcome importable without loading OpenCV, NumPy,
 imageio-ffmpeg, or miniaudio, then completed one local video with separate
 injected frame and fake-audio calls while retaining one JPEG and the extracted
 MP3; its disposable root was removed.
+
+#129 adds the explicit provider-free
+`compose_video_result(outcome) -> RecognitionResult` second step. It accepts
+only an already returned complete or partial exact `VideoRecognitionOutcome`;
+a fully failed outcome remains structured failure evidence and cannot be
+relabelled as a successful result. The composition keeps ordered frame groups
+and audio as separate Markdown sections, consumes each group's recorded frame
+indices/timestamps, verifies those identities still exactly cover the retained
+frames, exposes every retained JPEG plus MP3 as assets, and retains stable error
+codes for partial branches. A silent video says that no audio stream was present
+without inventing a transcript. It aggregates known input/output tokens
+separately per model and current-run provider calls across settled branches.
+
+This is memory-only composition: it makes no provider call and does not publish
+Markdown, align audio to frame timestamps, parse legacy output, add resume or a
+manifest, or change #127's open cancellation semantics. The existing PDF and
+new video composition now share one internal token-usage accumulator rather
+than maintaining a third copy of that logic.
+
+The final source suite passes 1,392 tests. A real generated MP4 traversed the
+local frame/audio orchestration with separate injected providers and then the
+public composition step, producing a complete video result with both sections,
+retained assets, and two current-run provider calls without a cloud request.
+Fresh installed-wheel proof remains incomplete: offline `uv build` could not
+resolve uncached Hatchling, and a bounded online build workflow remained at
+`Building wheel...` for 180 seconds without producing an artifact. Its two
+build-owned uv processes were stopped and both exact temporary roots removed.
+This is a build-environment blocker, not installed-package evidence or a product
+pass; the prior #126 installed wheel remains evidence only for the earlier
+orchestration surface.
 
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide

@@ -14,6 +14,7 @@ from ocrllm import (
     GoogleGenAISettings,
     ProviderError,
     VideoRecognitionOutcome,
+    compose_video_result,
     recognize_video,
 )
 from ocrllm.providers.google_genai.google_genai_audio_response import (
@@ -142,6 +143,16 @@ def test_recognize_video_runs_real_media_and_keeps_providers_separate(
     assert outcome.audio_artifact.is_file()
     assert all(frame.path.is_file() for frame in outcome.retained_frames)
     assert not observed_audio[0].exists()
+
+    composed = compose_video_result(outcome)
+    assert composed.source_type == "video"
+    assert composed.status == "complete"
+    assert "# Video frames" in composed.markdown
+    assert "# Video audio" in composed.markdown
+    assert composed.assets == tuple(
+        frame.path for frame in outcome.retained_frames
+    ) + (outcome.audio_artifact,)
+    assert composed.metadata["current_run_provider_call_count"] == 2
 
 
 def test_recognize_video_preserves_audio_after_frame_provider_failure(

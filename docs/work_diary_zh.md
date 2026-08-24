@@ -3069,3 +3069,23 @@ Atomic task — Iteration #128: make the maintained clean-archive gate fail or p
 **验证与诚实边界。** 新脚本回归为 **2 passed in 1.42s**，PowerShell AST、`compileall -q src tests tools` 和 `git diff --check` 通过。轻量任务首次跑 root 全套得到 **1,382 passed, 2 failed in 56.52s**；两项都是进程 PATH 没有 Node，和本轮改动无关。主代理随后用精确文件搜索找到已安装的 `D:\Anaconda\envs\STA\node.exe`，轻量任务只重跑两个失败项，得到 **2 passed in 0.79s**，没有安装或下载。因此当前改动的全部测试已通过，但不虚构为“一次 root 命令全绿”。没有运行新的 all-profile clean gate，所以 #126 的 incomplete 结论仍有效；本轮修的是下次运行可观测、有上限，而不是假称网络门禁已经通过。
 
 **过度设计复查。** 最可疑之处是内部 helper 看起来可能演化成通用 process runner。当前它留在单一 gate 脚本内，只有一个生产调用，静态回归也锁定调用数为一；没有第二脚本、下载器、缓存管理、包级重试、heartbeat daemon 或每个外部命令的统一策略。新增测试通过 AST 只抽取这个函数，是为了在零网络下执行真实时限逻辑，而不是建立另一套 gate。产品 `src/ocrllm`、provider、视频结果、legacy、冻结 `contracts/`/`worker/` 和两个用户未跟踪文件均未改动。#127 的取消语义仍等待维护者选择 A/B，本轮没有绕过该决定。
+
+## #129 — 2026-08-25：将已结算视频分支显式组合为标准结果
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #129: determine the smallest truthful persisted output contract for the now-working `recognize_video()` pipeline, without importing legacy formats or implementing cancellation semantics before the maintainer chooses #127. Success means reconciling the current outcome fields, artifact ownership, public package documentation, and legacy user value; proving whether a useful final document can be composed without inventing timestamp alignment, resume state, or a second result hierarchy; and either implementing one unambiguous narrow slice or recording the exact decision that blocks it. This matters because separate image/audio providers already run end to end, but a mature library still needs a clear path from settled branch results to a caller-usable durable result.
+```
+
+**证据、两条路线与决定修正。** 初始两条路线是让 `recognize_video()` 自动写 Markdown，或提供显式纯组合步骤。三份轻量只读审查分别核对 active outcome、legacy 真正用户价值和 installed package 使用面；主代理逐行复核后选择第二条，并把“persisted”收窄为“标准 memory-only result”，文件发布留给独立生命周期决定。当前 outcome 已有每个 frame group 的精确帧号/时间和 Markdown、独立 audio Markdown、typed partial error 与 retained assets，足够组合；但没有音频分段时间或音画对应事实，不能做时间线交错。Legacy 的稳定价值同样是按时间有序板书与独立 transcript；旧的智能合并/去重曾误删内容并被撤销，因此不移植中文文件名、两份旧 Markdown、manifest、repair marker 或模糊合并。
+
+**失败优先与公共合同。** 新测试先在 collection 精确失败：facade 没有 `compose_video_result`。实现新增同名职责文件，要求 exact `VideoRecognitionOutcome` 且状态只能是 complete/partial；fully failed outcome 保留原结构化错误，不能伪装成 `RecognitionResult`。输出是 `source_type="video"` 的标准结果，`output_path=None`，Markdown 只有独立 `Video frames` 和 `Video audio` 区段。每个 frame group 按 caller order 输出精确 frame indices/timestamps；失败只写稳定 code。Silent video 明写无音轨但不伪造 transcript；partial 继续保留成功正文和失败 code。所有 retained JPEG 与已抽取 MP3 进入 `assets`，组合时用现有 result builder 确认文件仍存在；它不重新读视频、不调用 provider、不写 Markdown 文件、不清理媒体。
+
+**主审修正与结构精简。** 第一轮 46 项组合测试通过后，独立 code review 找到两个真实缺口：失败 group 的 `settled_model_usage` 尚未累计；手工构造 outcome 可用 `(1, 0)` group index 生成倒序标题。最终组合器要求 index 精确为 `0..n-1`，并验证所有 group 的 recorded identity 顺序、无遗漏地等于 retained frame tuple。已知成功结果和失败 error 内已结算 token 都按 model 分别累计 input/output；provider calls 同时计成功 metadata 和 error 的 `provider_calls_attempted`。为了不写出第三份相同算法，PDF 原有 token merge 被等价抽成 `aggregate_current_model_token_usage.py`，PDF 与视频共用；现有 PDF 行为和顺序保持不变。定向最终为 **48 passed in 3.67s**，真实 MP4 编排加组合为 **14 passed in 0.94s**。
+
+**module shadow 复核。** Review 还指出：显式先 `import ocrllm.compose_video_result` 子模块，再从 facade 导入同名函数，会得到 module。主代理实际复现后，`recognize` 和 `recognize_video` 也完全相同；一旦 Python 已把子模块写到 package attribute，扩大现有 `__getattr__` special-case 也不会被调用，review 建议不能修复该顺序。公共合同是 facade import 或直接从子模块取函数，不承诺混用两种方式。没有为单一新入口增加 callable-module、module subclass、eager registry 或文件名/函数名不一致的兼容层；这会违反当前结构规则并成为真正过度设计。
+
+**全量、真实本地路径和未完成 wheel 证据。** 最终 root suite 为 **1,392 passed in 56.25s**；`compileall -q src tests tools`、`git diff --check` 和 frozen `contracts/`/`worker/` diff 通过。真实生成 MP4 使用独立 injected image 与 fake audio provider 经公开 `recognize_video()` 后立即调用公开组合函数，得到 complete video result、两个区段、全部 retained assets 与 current-run call count 2；没有云端请求。Fresh wheel 尝试先由轻量任务确认当前 Python/其他环境和离线 uv cache 均缺 Hatchling；获准的 bounded online workflow 到 `Building wheel...` 后 180 秒仍无 artifact。任务停止其启动的两个 uv build 进程，并删除 `ocrllm-i129-wheel-*` 与 `ocrllm-i129-retry` 两个精确 TEMP 根，确认不存在。因而本轮 installed-wheel 证据诚实记为 **incomplete**，没有用 #126 旧 wheel 证明新 API，也没有把 build stall 说成产品失败。
+
+**过度设计复查与下一边界。** 没有 serializer/to_dict、自动出版、视频 manifest、resume、checkpoint、cleanup transaction、audio/frame alignment、provider hierarchy、fallback、worker、legacy parser 或 social 功能。Token helper 有 PDF 和视频两个现存消费者，并删除了 PDF 的重复实现，不是为假想未来建框架。当前仍有两个真正分开的下一决策：#127 的 branch-scoped/whole-call cancellation 需维护者选择；Markdown publication 是否允许 partial、如何命名和拒绝覆盖，应在取消选择后单独定义，不能偷偷塞回 `recognize_video()`。

@@ -332,6 +332,13 @@ is often accepted.
   losing them. Keeping the current asymmetry is not an option. Do not add a new
   status, branch hierarchy, checkpoint, or extractor cancellation framework as
   part of this choice.
+- #129 keeps video composition explicit and memory-only. A caller may turn an
+  already returned complete or partial `VideoRecognitionOutcome` into one
+  standard video `RecognitionResult`; frame groups and audio remain separate
+  sections, failed branches retain stable codes, and fully failed outcomes are
+  not converted to results. Do not infer audio/frame alignment, auto-publish
+  Markdown, create resume state, or copy legacy board/transcript file formats
+  as part of this composition boundary.
 
 ## Resolved confirmation and next authority
 

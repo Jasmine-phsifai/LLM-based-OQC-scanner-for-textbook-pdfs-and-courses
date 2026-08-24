@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from .batch_item_outcome import BatchItemOutcome as BatchItemOutcome
     from .capability_report import CapabilityReport as CapabilityReport
     from .config import Config as Config
+    from .compose_video_result import compose_video_result as compose_video_result
     from .credential_pool_policy import CredentialPoolPolicy as CredentialPoolPolicy
     from .errors import (
         AllCandidatesExhausted as AllCandidatesExhausted,
@@ -92,6 +93,7 @@ _PUBLIC_IMPORTS = {
     "CapabilityReport": (".capability_report", "CapabilityReport"),
     "ConcurrencyLimited": (".errors", "ConcurrencyLimited"),
     "Config": (".config", "Config"),
+    "compose_video_result": (".compose_video_result", "compose_video_result"),
     "ConfigError": (".errors", "ConfigError"),
     "CredentialPoolPolicy": (".credential_pool_policy", "CredentialPoolPolicy"),
     "DashScopeCredential": (
@@ -225,6 +227,7 @@ __all__ = [
     "VideoInfo",
     "VideoRecognitionOutcome",
     "VisionModelSettings",
+    "compose_video_result",
     "recognize",
     "recognize_batch",
     "recognize_video_frames",
