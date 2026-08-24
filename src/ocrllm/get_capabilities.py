@@ -1,4 +1,4 @@
-"""Report every atomic OCRLLM capability without network or optional imports."""
+"""Report the frozen shared registry without network calls or optional imports."""
 
 from __future__ import annotations
 
@@ -32,7 +32,10 @@ _CAPABILITY_NAMES = (
     "video.mp4-h264-aac",
 )
 _DEFERRED_REASON_BY_CAPABILITY = {
-    "provider.dashscope.audio-short": "Intentionally deferred to Stage A1.",
+    "provider.dashscope.audio-short": (
+        "Stage A1 shipped only the direct Google short-audio path; "
+        "DashScope short audio remains deferred."
+    ),
     "provider.dashscope.filetrans": "Intentionally deferred to Stage A2.",
     "worker.jsonl.v1alpha2": "Intentionally deferred to Phase 3.",
     "pdf.text": "Intentionally deferred to Phase 3.",
@@ -42,7 +45,10 @@ _DEFERRED_REASON_BY_CAPABILITY = {
     "audio.short.wav-pcm-s16": (
         "Intentionally deferred to a later audio-format gate."
     ),
-    "audio.short.mp3-mpeg-layer3": "Intentionally deferred to Stage A1.",
+    "audio.short.mp3-mpeg-layer3": (
+        "The experimental direct Google short-MP3 API is live-proven; "
+        "shared worker support remains deferred."
+    ),
     "audio.short.m4a-aac-lc": (
         "Intentionally deferred to a later audio-format gate."
     ),
@@ -59,7 +65,7 @@ _DEFERRED_REASON_BY_CAPABILITY = {
 
 
 def get_capabilities(config: Config | None = None) -> tuple[CapabilityReport, ...]:
-    """Return deterministic installed/configured/proven atomic capabilities."""
+    """Return deterministic reports for the shared capability/worker registry."""
 
     if config is None:
         image_status = "available"

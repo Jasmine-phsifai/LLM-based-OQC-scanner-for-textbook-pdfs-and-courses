@@ -148,14 +148,16 @@ def test_v1alpha1_worker_is_available_and_later_phases_are_deferred() -> None:
         assert reports[name].status == "deferred"
 
 
-def test_deferred_audio_capabilities_name_the_current_migration_gate() -> None:
+def test_deferred_audio_capabilities_distinguish_the_direct_google_api() -> None:
     reports = _by_name()
 
     assert reports["provider.dashscope.audio-short"].reason == (
-        "Intentionally deferred to Stage A1."
+        "Stage A1 shipped only the direct Google short-audio path; "
+        "DashScope short audio remains deferred."
     )
     assert reports["audio.short.mp3-mpeg-layer3"].reason == (
-        "Intentionally deferred to Stage A1."
+        "The experimental direct Google short-MP3 API is live-proven; "
+        "shared worker support remains deferred."
     )
     assert reports["provider.dashscope.filetrans"].reason == (
         "Intentionally deferred to Stage A2."

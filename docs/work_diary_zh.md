@@ -2770,3 +2770,19 @@ Atomic task — Iteration #110: re-run the maintained clean-archive release gate
 **amend 后的最终 artifact 复验。** 同一轻量代理对 clean commit `8991b836958c06a9efc42e55b260c4d8249dbe03` 再次完整运行，没有跳过 profile、编辑仓库或调用 provider；exit **0**。archive pytest **1325 passed / 1 skipped in 58.54s**，wheel/base 仍为 **202,692 / 999,524 bytes**，六个 profile 的版本、delta 和 smoke 输出与上段完全一致。最终 import wall median/p95/max：OCRLLM **2.44965/2.8299/2.8447 ms**、CPU **0/0/15.625 ms**；base Anaconda **2.24155/2.6672/2.9022 ms**、CPU **0/15.625/15.625 ms**。解析 miniaudio/httpcore 时公开 PyPI 代理/SSL 曾短暂失败，pip 使用既有下载重试与缓存完成；这不是 OCRLLM/provider retry。精确 proof root `ocrllm-stage-m-offline-gate-4f6d610efa8e4172889e5c0e13ddf43d` 已确认不存在。
 
 **停止哈希循环的诚实边界。** 写入上一段必然再次改变 Git hash，但本次补记只改 `docs/ACTIVE_STATE_AND_RULES.md` 与 `docs/work_diary_zh.md`：二者都被当前 sdist allowlist 排除；产品源码、测试、pyproject、README 和已修正的 gate 脚本与 `8991b83` byte-identical。因此不第三次重复六套下载安装。docs-only descendant `6f26140` 的 root suite 为 **1326 passed in 42.80s**，`compileall -q src tests tools` 与 PowerShell parse 通过；相对 `8991b83` 的 diff 仍精确只有上述两份文档，frozen/source 无变化，secret/status 检查通过。release artifact 证据精确对应 `8991b83` 的 packaged/gate bytes，不冒充最终文档 commit 自身又做过一次完整 artifact gate。
+
+## #111 — 2026-08-24：共享能力报告不再把已完成的短 MP3 直接 API 写成未来阶段
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #111: audit the public capability report against the live-proven direct short-MP3 API and determine whether it currently tells callers that an implemented feature is unavailable. Success means reconciling the frozen worker registry rule, the get_capabilities() public meaning, current tests/docs, and actual recognize(.mp3) behavior; distinguishing “direct API available” from “worker route unavailable”; and correcting only a proven misleading claim without extending contracts/ or worker/. This matters because product discovery that contradicts executable behavior is a shipped defect, while advertising unimplemented worker or long-audio support would be worse.
+```
+
+**事实、两条路线与选择。** `recognize(.mp3)` 的 native Google 路径已经由离线、安装包和真实 API 证据证明，但 `get_capabilities()` 的 `audio.short.mp3-mpeg-layer3` 仍为 `deferred`，理由还是“推迟到 Stage A1”；同表的 DashScope short-audio 也写着同一句，而 Stage A1 已经结束。代码历史、authority 和 package README 同时证明，这 20 项是给开发 worker 共用且有意冻结的注册表，不是所有直接 facade 的动态清单。路线①把 MP3 改为 `available` 或新增 Google 项，会让 worker 客户误以为已经能调度音频；路线②保留 20 个名字和 `deferred` 状态，只修正错误理由并明确 direct API / worker 的边界。选择②。只读轻量代理独立得到同样结论；主代理逐行复核 `get_capabilities.py`、公共 facade、测试和现行文档后采用更窄方案。
+
+**失败优先与最小修复。** 先把公开回归改成当前事实，旧实现得到 **1 failed / 11 passed in 0.13s**，唯一差异是 MP3 仍称 Stage A1 未开始。实现只改 `get_capabilities.py` 的模块/函数说明和两个 reason：MP3 说明“实验性 Google 直接 API 已 live-proven，但共享 worker 支持仍 deferred”；DashScope 说明 Stage A1 只交付 Google 路径，DashScope 仍 deferred。没有增加状态种类、参数、注册表项、provider 探测、依赖或网络调用。测试名称也改为锁定这一区分，而不是继续声称过期阶段是“current migration gate”。
+
+**验证、附带发现与过度设计复盘。** 修正后 capability、Google image/audio adapter 定向集合为 **67 passed in 0.51s**。第一次扩大命令引用了不存在的 `tests/test_worker_capabilities.py`，因此在收集前退出，不算产品结果；随后用真实文件清单并在子进程 PATH 临时加入 #110 已定位的 Node，worker + capability 为 **122 passed in 3.56s**。该组合同时证明一个旧的顺序缺陷：worker 先 direct-import 同名子模块后，包级 `ocrllm.get_capabilities` 会变成 module，后跑 capability 测试得到 11 个 `TypeError`。曾尝试在 `__init__` eager-import 函数，组合问题消失，但全量得到 **1326 passed / 1 failed in 45.15s**，失败明确是 maintained lightweight-import contract；该尝试和专用测试已撤回。最直接修法要改 frozen worker 的一行 import，而 callable module / package `__getattribute__` 都难以冷读，因此本轮只在 authority 登记已证实缺陷，不越界修复。
+
+最可能的过度设计仍是给 `CapabilityReport` 增加 `surface=direct/worker`、拆第二套注册表、动态探测 provider，或借机把 Google/DashScope 统一成 provider class；这些都超出一个陈旧理由所需，也会违反 frozen boundary，因此没有做。未来 provider class/fallback/API pool 决策已在维护者决策文档中记录，本轮不实现。撤回附带尝试后，带现有 Node PATH 的最终离线全量为 **1326 passed in 43.32s**；`compileall -q src tests tools`、`git diff --check`、冻结目录 diff 和新增 diff 的敏感模式检查全部通过。没有 live API、凭据、下载或安装；两个用户未跟踪文件、P1-d blocker、`contracts/` 和 `worker/` 保持未动。

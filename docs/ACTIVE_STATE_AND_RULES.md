@@ -84,6 +84,20 @@ The independent `audio` extra remains the user-facing A1 runtime profile. The
 `dev` extra also includes `miniaudio` because the shipped short-audio adapter
 tests execute that real probe rather than treating its dependency as an
 expected skip; this does not make audio a base requirement.
+#111 corrected two stale Stage A1 reasons in the frozen 20-entry shared
+capability/worker registry. The MP3 entry remains `deferred` there because that
+status describes worker support, but its reason now names the separately
+live-proven experimental direct Google API. The DashScope short-audio entry
+likewise says that Stage A1 shipped Google only instead of claiming Stage A1 is
+still in the future. No registry name, worker route, or provider behavior changed.
+One adjacent pre-existing defect is now proven but intentionally not hidden:
+if a process imports `ocrllm.worker.run_worker_control_loop` before resolving
+the lazy package attribute `ocrllm.get_capabilities`, Python installs the
+same-named submodule on the package and the later facade attribute is not
+callable. The straightforward fix changes the frozen worker's import; eager
+loading from `ocrllm.__init__` breaks the maintained lightweight-import contract,
+and a callable-module workaround is rejected as opaque overdesign. Keep this
+open until the worker boundary is explicitly unfrozen.
 #110 corrected the clean-archive test environment to include the already
 declared `google-genai>=2.9,<3` development dependency. The complete gate for
 clean commit `8991b83` then passed 1325 archived tests with one expected skip,
