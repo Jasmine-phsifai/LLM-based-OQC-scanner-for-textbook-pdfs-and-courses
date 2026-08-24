@@ -1,4 +1,4 @@
-"""Structural protocol for one synchronous image-recognition capability."""
+"""Structural protocol for one synchronous injected image provider."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from ..config import Config
-    from .vision_provider_response import VisionProviderResponse
 
 
 class VisionProvider(Protocol):
@@ -20,6 +19,6 @@ class VisionProvider(Protocol):
         *,
         prompt: str,
         config: Config,
-    ) -> str | VisionProviderResponse:
+    ) -> str:
         """Recognize one ordered image group synchronously."""
         ...

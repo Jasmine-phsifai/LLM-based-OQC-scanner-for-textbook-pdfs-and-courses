@@ -2384,3 +2384,19 @@ Atomic task — Iteration #085: extend the proven PDF later-group failure regres
 **最小修复与行为边界。** 产品代码只把上述 provider-name 判断改为“本轮确实收到结构化 usage 时才输出”。这不是把缺失值变成零，也不是推算字符串 provider 的 token；普通字符串返回仍不产生 usage。失败错误现在精确包含一条 `{model: offline-pdf-model, input_count: 123, output_count: 45, unit: tokens}`，没有重复累计。后续 `resume=True` 仍复用第一组，只重新派发第 9—16 页，最终保持两个 complete child sidecar 和完整 Markdown。
 
 **验证、环境说明与过度设计复盘。** 红灯之后新回归为 **1 passed in 0.65s**；PDF、image processor、Google adapter、Stage maturation 和 defect-register 相关集合为 **114 passed in 3.95s**，changed source/test 的 compileall 通过。首次 root 全量为 **1309 passed / 2 failed in 42.27s**，两项失败都在 Node worker test 启动前报告当前 PATH 无 `node`，与本轮代码无关。按维护者规则，现有 Node 定位交给轻量代理；它只读找到 `D:\Anaconda\envs\STA\node.exe` v22.23.2，没有下载或安装。仅对测试进程临时补 PATH 后，使用 `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q` 得到 **1311 passed in 42.44s**。本轮没有 live provider call、凭据读取、新字段、计费引擎、provider class/fallback、retry、repair、`contracts/` 或 `worker/` 修改；也没有把 future multi-provider 约束误当作现在建设框架的授权。
+
+## #086 — 2026-08-24：阻止内部 provider usage 响应意外变成公共合同
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #086: audit whether #085’s “structured usage from an injected provider” is a coherent, usable active-library contract or an accidental internal-type leak, then make the smallest correction supported by code and tests. Success means reconciling the authority and diary, tracing the public provider protocol and exports, choosing explicitly between documenting the boundary, exporting an existing response type, or narrowing the claim, and verifying that ordinary string providers remain unchanged; no provider framework, billing layer, fallback, or new response abstraction may be introduced. This matters because a half-public usage seam would make today’s library confusing and constrain the later additive provider-class design.
+```
+
+**初始假设、复核结果与路线选择。** 起初假设 #085 已证明运行行为，但其测试从 `ocrllm.providers.vision_provider_response` 内部路径导入类型，外部 injected provider 是否能合理使用它尚未证明。两条路线是：①把 `VisionProviderResponse` 加入顶层导出并承诺第三方结构化 usage；②保留现有内部 adapter 通道，把公开 injected-provider 合同收紧回 Markdown `str`。主代理复核 `ocrllm.__init__`、`Config`、协议、README 和测试后，轻量代理独立只读得到相同结论：顶层 `_PUBLIC_IMPORTS`/`__all__` 没有该类型或协议，公开示例只返回字符串，唯一直接使用者是内部 Google adapter 与 #085 测试夹具。选择②，因为路线①会在 provider 泛化尚未开始时提前冻结字段和兼容责任。
+
+**发现的合同不一致与第一次修正。** 虽然公共文档只承诺字符串，`Config.provider` 类型注解引用的内部 `VisionProvider` 协议却写成 `str | VisionProviderResponse`。修改前直接断言得到 **`actual_return_annotation=str | VisionProviderResponse`** 并失败。这会让阅读源码或使用类型工具的人误以为未导出的内部类属于可依赖公共返回值。第一次修正删除该协议对内部响应类型的类型检查导入，并把返回注解改为 `str`；直接 probe 与 40 项定向测试通过。
+
+**为何中途撤回 #085。** 继续复核消费者后发现，仅收紧注解却保留 #085 的泛化条件仍不诚实：当前只有内建 Google 返回结构化 usage，而旧的 `provider.name == "google"` 已经正确服务它；#085 的红灯完全来自违反公开 `str` 合同的 injected 测试夹具。它证明代码可以被内部类型驱动，却没有证明产品存在第二个消费者。按“新证据触发重审”和“没有消费者不扩展”的规则，本轮撤回 #085 对 `recognize_images.py` 的一行泛化、结构化测试夹具和 usage 断言，恢复 #084 的真实 PDF outage/resume 测试。Google 行为没有改变。
+
+**文档边界、验证与过度设计复盘。** 根 README、active package README、authority 和 migration status 现在一致说明：公开 injected provider 同步返回 Markdown 字符串；内部 built-in adapter 可用既有结构化响应携带 endpoint 实报 usage；该类型没有顶层导出。修正后的直接 probe 证明返回注解为 `str` 且顶层不可访问；第一次收紧阶段的定向集为 **40 passed in 0.88s**、相关集为 **153 passed in 4.03s**、root 为 **1311 passed in 42.42s**。完整撤回 #085 隐藏扩展后，#084、Google adapter、import/config 定向集为 **69 passed in 1.07s**，最终相关集为 **153 passed in 4.06s**，临时补入既有 Node 路径后的 root 全量为 **1311 passed in 41.86s**。本轮承认并撤回前一轮的轻微过度设计，没有 live 调用、凭据、provider class、公共响应类、fallback、billing、repair、`contracts/` 或 `worker/` 修改。未来出现第二个真实 adapter 时，再根据其返回与 usage 证据扩展共享逻辑。

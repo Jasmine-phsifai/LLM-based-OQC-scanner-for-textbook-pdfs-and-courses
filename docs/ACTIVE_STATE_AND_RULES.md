@@ -155,10 +155,9 @@ pages through PDFium and reuses the image/resume path in serial groups of eight.
 Content repair is not implemented; P1-d is paused at the explicit product
 choice recorded below because one failed marker cannot recover an unattempted
 suffix under the current fail-fast loop. The Google adapters report per-model
-input/output token usage when the endpoint supplies it. The shared image
-processor also preserves exact structured usage returned deliberately by an
-injected provider; ordinary string-returning providers make no token-usage
-claim. Existing attempt disclosure counts provider
+input/output token usage when the endpoint supplies it. Public injected providers
+return Markdown strings and make no token-usage claim. Existing attempt disclosure
+counts provider
 calls and model/workflow attempts separately from tokens. Resume is the primary
 recovery mechanism.
 
@@ -361,15 +360,17 @@ Markdown is published, and exactly one completed child sidecar remains. A later
 passed without a product-code change; it does not introduce retry, partial
 Markdown, failed-range markers, or P1-d repair semantics.
 
-#085 extended that regression with an explicit model and a structured successful
-response reporting 123 input and 45 output tokens for group one. The first run
-exposed a narrow shared-processor defect: exact usage was accumulated but emitted
-only when the resolved provider name was `google`, so the outer PDF error lost
-settled usage from an injected provider. The processor now emits usage whenever
-an actual structured response supplied it. The failure reports that one model's
-usage exactly once, while ordinary string responses still produce no usage and
-missing values are never invented as zero. Resume still reuses group one and
-dispatches only group two. This is not a billing subsystem or provider framework.
+#085 temporarily generalized structured usage emission after an injected test
+double returned the internal `VisionProviderResponse`. #086's consumer audit
+showed that this was not a valid product defect: the internal response type and
+`VisionProvider` are not top-level exports, the public injected-provider example
+returns a Markdown string, no public consumer imports the structured type, and
+Google was already the only real adapter producing it. The #085 production
+condition and unsupported usage assertion are therefore reverted; #084's valid
+PDF failure/resume coverage remains. The injected-provider protocol annotation
+is narrowed to `str`, while internal built-in adapters retain their existing
+structured response. A future second real adapter may generalize usage on its
+own evidence; this iteration does not pre-build that contract.
 
 #073 strengthens the existing `pdf-vision` release profile without changing
 the product contract. The isolated installed wheel must build a real 16-page

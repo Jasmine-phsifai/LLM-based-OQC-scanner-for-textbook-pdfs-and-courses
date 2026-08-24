@@ -537,7 +537,7 @@ def _recognize_images_once(
                 ),
             }
         )
-    if current_model_usage:
+    if resolved_provider.name == "google":
         metadata["current_model_token_usage"] = current_model_token_usage()
 
     return ProcessorOutput(

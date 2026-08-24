@@ -109,6 +109,10 @@ The current image facade:
   candidate queue performs bounded, disclosed recovery for quota exhaustion,
   provider unavailability, and model-scoped permission denial only.
 
+The public injected-provider method returns one Markdown `str`. The structured
+response used internally to carry built-in adapter usage is not exported and is
+not a public third-party provider contract.
+
 The built-in DashScope board/image capability is available under the bounded
 Phase 1 contract. The v17 Beijing gate completed exactly 52 provider calls with
 no retry; both independent full-corpus runs passed. Run B repaired exactly one

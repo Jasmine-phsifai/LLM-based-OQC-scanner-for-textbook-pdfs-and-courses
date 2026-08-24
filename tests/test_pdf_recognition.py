@@ -20,13 +20,11 @@ from ocrllm import (
     OutputError,
     PDFError,
     RecognitionExecutionPolicy,
-    VisionModelSettings,
     recognize,
     recognize_batch,
 )
 from ocrllm.errors import ProviderError
 from ocrllm.pdf.snapshot_pdf import MAX_PDF_SOURCE_BYTES
-from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
 from write_test_image import write_test_image
 
@@ -129,28 +127,6 @@ class _RecordingProvider:
                 self._active_calls -= 1
 
 
-class _UsageThenFailProvider(_RecordingProvider):
-    def recognize_images(
-        self,
-        image_paths,
-        *,
-        prompt: str,
-        config: Config,
-    ) -> str | VisionProviderResponse:
-        markdown = super().recognize_images(
-            image_paths,
-            prompt=prompt,
-            config=config,
-        )
-        if len(self.calls) == 1:
-            return VisionProviderResponse(
-                markdown=markdown,
-                input_tokens=123,
-                output_tokens=45,
-            )
-        return markdown
-
-
 def _install_fake_pdfium(monkeypatch, *, page_count: int = 16) -> None:
     fake_module = SimpleNamespace(
         PYPDFIUM_INFO=SimpleNamespace(api_tag=(5, 11, 0), beta=None),
@@ -206,11 +182,9 @@ def _pdf_config(
     output_dir: Path | None = None,
     resume: bool = False,
     cancellation: object | None = None,
-    model: str | None = None,
 ) -> Config:
     return Config(
         provider=provider,
-        vision_model=VisionModelSettings(name=model),
         output_dir=output_dir,
         resume=resume,
         cancellation=cancellation,
@@ -303,7 +277,7 @@ def test_cancel_after_first_pdf_group_resumes_without_replaying_it(
     assert len(tuple((output_dir / "book_board").glob("*.ocrllm-state.json"))) == 2
 
 
-def test_second_pdf_group_provider_failure_preserves_usage_and_resumes(
+def test_second_pdf_group_provider_failure_keeps_first_state_and_resumes(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -311,30 +285,18 @@ def test_second_pdf_group_provider_failure_preserves_usage_and_resumes(
     source = _write_pdf_placeholder(tmp_path / "book.pdf")
     output_dir = tmp_path / "output"
     state_directory = output_dir / "book_board"
-    provider = _UsageThenFailProvider(fail_once_on_call=2)
+    provider = _RecordingProvider(fail_once_on_call=2)
 
     with pytest.raises(ProviderError) as interrupted:
         recognize(
             source,
-            config=_pdf_config(
-                provider,
-                output_dir=output_dir,
-                model="offline-pdf-model",
-            ),
+            config=_pdf_config(provider, output_dir=output_dir),
         )
 
     assert interrupted.value.code == "PROVIDER_NETWORK"
     assert interrupted.value.retryable is True
     assert interrupted.value.details["provider_calls_attempted"] == 2
     assert interrupted.value.details["settled_pdf_group_count"] == 1
-    assert interrupted.value.details["settled_model_usage"] == (
-        {
-            "model": "offline-pdf-model",
-            "input_count": 123,
-            "output_count": 45,
-            "unit": "tokens",
-        },
-    )
     assert provider.calls == [
         tuple(f"page-{page_number:06d}.png" for page_number in range(1, 9)),
         tuple(f"page-{page_number:06d}.png" for page_number in range(9, 17)),
@@ -344,12 +306,7 @@ def test_second_pdf_group_provider_failure_preserves_usage_and_resumes(
 
     resumed = recognize(
         source,
-        config=_pdf_config(
-            provider,
-            output_dir=output_dir,
-            resume=True,
-            model="offline-pdf-model",
-        ),
+        config=_pdf_config(provider, output_dir=output_dir, resume=True),
     )
 
     assert provider.calls == [

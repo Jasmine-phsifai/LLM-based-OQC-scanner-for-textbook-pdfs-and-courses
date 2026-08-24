@@ -113,8 +113,9 @@ the configured vision provider and board profile; no separate PDF provider
 protocol exists.
 
 An injected provider is an integration seam, not live quality evidence. The
-provider must return synchronously. Resume requires its nonempty
-`resume_identity` attribute.
+provider must return one Markdown `str` synchronously. Resume requires its
+nonempty `resume_identity` attribute. Structured adapter responses are internal
+and are not a public injected-provider return contract.
 
 ## Boundaries
 

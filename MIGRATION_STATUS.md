@@ -129,10 +129,11 @@ zero retained rendered PNGs, and a one-call resume after the second group is
 interrupted. #078 closed its Google gate with the same two-group shape and no
 retry, fallback, or Files lifecycle; the bounded manual repair product choice
 is now the immediate queue and implementation remains paused.
-#085 additionally proves that a later PDF provider failure preserves exact
-structured token usage from an already-settled group even for an injected
-provider with an explicit model. The shared image seam now emits only usage that
-was actually returned; ordinary string providers remain unknown rather than zero.
+#085 briefly generalized settled usage around an internal response returned by an
+injected test double. #086 found no valid public consumer for that behavior and
+reverted it: injected providers return Markdown strings, Google retains its exact
+built-in usage path, and the internal response type is not a public contract. The
+protocol annotation and public README now state that boundary directly.
 #073 strengthens the isolated installed-wheel proof for that same slice: a
 real 16-page PDF must traverse public `recognize()` as two serial groups of
 eight, publish two child states plus the final range-marked output, and leave
