@@ -1495,6 +1495,28 @@ snapshot, frozen boundary, or open product decision changed. This content
 proof does not close #149: all reads still need one request-owned MP4 snapshot
 after the maintainer chooses its location.
 
+#162 refreshes the combined-video live evidence against the current Google
+service without changing the library. The maintained redacted runner discovered
+37 models and invoked `gemini-2.5-flash` exactly once for the one retained-frame
+group and exactly once for the extracted audio, using separate image and audio
+configurations. The image branch returned `PROVIDER_RESPONSE_INVALID`; the
+audio branch returned `PROVIDER_QUOTA_EXHAUSTED`. The public outcome was
+therefore honestly `failed`, composition did not start, and no final result or
+false success was produced. The retained JPEG and extracted MP3 remained
+observable in the branch outcome until the controller completed cleanup.
+
+The runner exited 1 with valid sanitized JSON and empty stderr. It reported
+one call for each branch, one retained frame, one image group, and an audio
+artifact; it exposed no credential, path, transcript, or raw provider response.
+The exact synthetic-fixture temporary root was removed. Before the live run,
+the runner, video orchestration, image adapter, and audio adapter regression set
+passed 77 tests in 1.31 seconds. No retry, fallback, model switch, product code,
+test contract, provider abstraction, dependency, frozen boundary, source
+snapshot decision, cancellation decision, or long-audio chunking decision
+changed. This is a valid robustness result, not a successful recognition gate:
+the next bounded live run may recheck service recovery after a relevant product
+change, but must not be repeated merely to turn these typed failures green.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

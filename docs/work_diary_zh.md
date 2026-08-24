@@ -3575,3 +3575,17 @@ Atomic task — Iteration #161: exercise the shipped negative-feedback video sel
 **两种断言与最小增强。** 路线 A 把三个平均亮度锁成精确数值或很窄的 `approx`，会把 codec 细微差异误当产品失败。路线 B 用互不重叠的宽区间证明暗 `<40`、亮 `>200`、中灰在 `50..100`，并把已经存在的三个 JPEG 各解码一次，同时复用这些对象检查尺寸。选择路线 B。产品运行时代码、selector 参数和 fixture 都不变；只增强已有真实端到端回归，使“选择 identity 正确”和“实际发布像素属于相应场景”同时成立，没有增加第二个 scene detector 或新测试框架。
 
 **验证与过度设计复查。** frame extraction 全集为 **10 passed in 0.21s**；frame extraction、frame recognition、完整 video orchestration 和 composition 邻接集合为 **46 passed in 1.64s**；`compileall -q src tests tools` 与 `git diff --check` 通过。无网络、provider、凭据、安装或下载；没有运行时代码、API、依赖、输出格式、frozen `contracts/worker` 或 #127/#149/#152 改动。没有增加颜色模型、场景标签、可配置阈值、第二检测器或像素 hash。这个内容证明也没有解决 #149：当前所有 decode 仍可能在 caller source 被替换后读取不同字节，必须等 snapshot 位置选择后统一源生命周期。
+
+## #162 — 2026-08-25：组合视频 Google 实测对两种供应商失败保持诚实
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #162: re-prove the current short-video library path with one bounded live Google run using the maintained redacted runner and separate image/audio configurations. Success means rereading authority and diary, auditing the runner before execution, delegating the credential-bound fixed workflow to a lightweight agent, using one synthetic one-group MP4, capturing exact-or-null calls and typed branch outcomes without transcript or credential exposure, fixing only a reproduced library/runner defect, and committing/pushing a Chinese diary record. This matters because recent offline hardening is not a substitute for confirming that real image and audio provider plumbing still works end to end.
+```
+
+**边界、两条路线与离线复核。** 重读 authority、日记、package 规则和 `run_google_genai_video_smoke.py` 后，确认本轮只刷新已经存在的短视频组合路径，不选择 #127 取消、#149 源快照位置或 #152 长音频切片范围。路线 A 是看到真实服务失败后立即加入自动重试、换模型或通用 provider fallback；这会把一次外部错误扩成尚未决定的架构。路线 B 是让现有受控 runner 各调用一次，并保留其稳定错误码和准确调用数。选择路线 B。主代理先复核 runner 不输出正文、路径、key 或 raw response，并运行 runner contract、视频 orchestration、Google 图像和音频 adapter 合集，得到 **77 passed in 1.31s**；`compileall -q tools/run_google_genai_video_smoke.py` 通过。
+
+**唯一一次真实执行。** 固定流程交给轻量任务：在系统 TEMP 中生成 **3.5 秒 / 34,905 bytes** 的非隐私有声 MP4，只在 controller 进程中从 `OCRLLM/QCR` 读取非空凭据并短暂传给子进程，显式选择 `gemini-2.5-flash`、timeout 120。当前 catalog 返回 **37** 个模型。runner 恰好启动一次，耗时 **4,727.402 ms**、exit **1**、stderr 为空，安全 JSON 可解析。图片分支保留 **1** 张 JPEG、组成 **1** 组并恰好调用 **1** 次，返回 `PROVIDER_RESPONSE_INVALID`；音频分支已产生 MP3 并恰好调用 **1** 次，返回 `PROVIDER_QUOTA_EXHAUSTED`。顶层如实为 `failed`，composition 为 `not_started`、资产数 0，没有把任一失败写成完成，也没有 retry、fallback 或模型切换。
+
+**清理、结论与过度设计复查。** 捕获内容的 credential pattern 检查为 false，输出不含转录正文、源/输出路径或原始响应；精确 TEMP 根删除后 residue 为 false。controller 最初尝试导入当前环境没有安装的 PySide6，因此在 runner/provider 调用前停止；随后只把 controller 的 QSettings 读取改用已有 PyQt5，产品代码、依赖和仓库均未修改，真实 runner 仍只执行一次。这次结果证明分离的图片/音频配置都真实到达各自 provider，并证明失败结算诚实，但不是成功识别 gate。没有为了追求绿灯增加错误码映射猜测、六次重试、自动换模、provider class、API pool、长期日志或第二个 live runner；也没有修改 frozen `contracts/worker` 和三个开放决定。只有未来相关产品改动后才值得再做一次有界恢复检查，不能为了把本轮失败刷绿而立刻重复调用。
