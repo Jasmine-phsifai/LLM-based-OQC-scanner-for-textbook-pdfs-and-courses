@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal
 
 from .batch_item_outcome import BatchItemOutcome
-from .errors import OCRLLMError
+from .errors import OCRLLMError, VideoError
 from .result import RecognitionResult
 from .retained_video_frame import RetainedVideoFrame
 
@@ -85,6 +85,14 @@ class VideoRecognitionOutcome:
             OCRLLMError,
         ):
             raise TypeError("video audio_error must be an OCRLLMError") from None
+        if (
+            self.audio_error is not None
+            and self.audio_error.code == "VIDEO_NO_AUDIO_STREAM"
+            and not isinstance(self.audio_error, VideoError)
+        ):
+            raise TypeError(
+                "VIDEO_NO_AUDIO_STREAM must use a VideoError"
+            ) from None
         if self.audio_artifact is not None and not isinstance(
             self.audio_artifact,
             Path,

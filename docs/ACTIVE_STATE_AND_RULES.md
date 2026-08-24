@@ -1459,6 +1459,25 @@ No provider, network, credential, dependency, public API, output layout,
 frozen contract/worker boundary, cancellation choice, source-snapshot choice,
 or long-audio chunking choice changed.
 
+#158 closes one false-absence state in the public video outcome constructor.
+`VIDEO_NO_AUDIO_STREAM` is produced by local MP4 inspection as a `VideoError`;
+the real `ProviderError` family cannot carry that code. The public base
+`OCRLLMError`, however, accepts every stable code. A manual outcome could
+therefore carry `OCRLLMError(code="VIDEO_NO_AUDIO_STREAM")`, be classified as
+`audio_state="absent"`, and become `status="complete"` with complete frames.
+Composition would then state that no audio stream existed even though the error
+did not represent the video extractor's proof.
+
+`VideoRecognitionOutcome` now requires the no-stream code to be carried by a
+`VideoError`; the wrong error family is rejected at construction. Valid silent
+videos and every real orchestration path remain unchanged. This adds no error
+code, subclass, state value, provider policy, or routing behavior. The failing
+regression was proved before implementation; seven outcome tests and 60 video
+orchestration, audio-state, composition, publication, and smoke-runner contract
+tests pass in 1.66 seconds. Compilation and diff checks pass, with no network,
+provider, credential, dependency, public signature, frozen boundary, or open
+decision numbered 127, 149, or 152 changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

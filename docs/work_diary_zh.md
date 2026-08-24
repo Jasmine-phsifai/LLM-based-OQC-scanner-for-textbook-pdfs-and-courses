@@ -3523,3 +3523,17 @@ Atomic task — Iteration #157: identify and close one concrete usability or cor
 **两条路线、红灯回归与最小修复。** 路线 A 只对路径字符串做 `normpath/abspath` 比较，能挡本次 `..`，却仍把“是否为同一文件”错误地近似成字符串问题。路线 B 保留原有精确 `Path` 快速判断，并只在目标已经存在时用操作系统文件身份与现有 retained assets 比较。选择路线 B；它也自然拒绝同一文件的链接别名，却没有扫描目录或定义 sandbox。新增公开回归在修复前稳定为 **1 failed**，并确实观察到没有抛出 `OutputError`。修复集中在 `publish_video_result.py` 的一个私有发布前检查：相同文件返回 `OUTPUT_PATH_INVALID`，不进入 claim/write，原资产字节不变；无法完成身份比较也诚实拒绝，而不是冒险覆盖。
 
 **独立审查、验证与过度设计复查。** 轻量只读审查先跑了 **49 passed**，未发现除已知 #149 外的缺陷；主代理没有把“测试没发现”当成无缺陷证明，继续通过真实别名路径找到了本轮问题。修复后 publication 集合为 **8 passed**，frame/audio extraction、video orchestration、outcome、composition、publication 合集为 **56 passed in 1.73s**，`compileall` 与 `git diff --check` 通过。无网络、provider、凭据、安装或下载；没有 API、输出布局、依赖、frozen `contracts/worker`、#127、#149 或 #152 改动。没有加入通用路径规范化框架、symlink sandbox、asset manifest/hash、递归资源图或跨进程 transaction；这些都超过“最终 Markdown 不得替换自己返回的 retained asset”这一条已经存在的产品约束。
+
+## #158 — 2026-08-25：只有视频解析错误可以证明视频没有音轨
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #158: harden one truthful-state invariant in the public video outcome without changing provider execution or the three unresolved product decisions. Success means rereading the current authority and diary, proving whether a manually constructed public outcome can misclassify a provider failure as “no audio,” fixing only the established absence contract if reproducible, running focused offline tests, and committing/pushing one coherent change with a Chinese diary entry. This matters because a library’s immutable result type must not report complete from the wrong error category even when callers construct it directly.
+```
+
+**先推翻原假设，再定位更窄缺陷。** 同步 origin、重读 authority、日记和 package 规则后，逐项追踪 `VIDEO_NO_AUDIO_STREAM`。最初怀疑 provider error 能携带这个 code，但 `ProviderError.allowed_codes` 明确排除所有 `VIDEO_*`，所以这个假设不成立，没有按错误前提修改 provider。真实 producer 只有 `extract_video_audio()`：必需音轨 probe 失败、可选音轨 probe 成功时才产生 `VideoError(code="VIDEO_NO_AUDIO_STREAM")`。不过公开导出的基类 `OCRLLMError` 允许全部稳定 code，而 outcome 构造器只要求它属于这个基类，`audio_state` 只比较字符串。公开构造实测接受普通 `OCRLLMError(code="VIDEO_NO_AUDIO_STREAM")`，返回 `audio_state="absent"`；完整画面使顶层变成 `complete`，随后 composition 会写出“没有音轨”。
+
+**两条路线与失败先行。** 路线 A 在 `audio_state` 读取时把错误类型不匹配悄悄归为 `failed`，保留一个 code 与 error family 自相矛盾的对象。路线 B 在不可变 outcome 构造时直接拒绝：只有 `VideoError` 才能声明 `VIDEO_NO_AUDIO_STREAM`。选择路线 B，沿用 #140/#142 已有的 fail-fast constructor 规则，不增加状态或错误类。新增回归在修复前稳定得到 **1 failed**；最小实现只多导入现有 `VideoError`，并在已有 `audio_error` 类型验证之后加一个类型/code 组合检查。真实 silent MP4 仍使用原有 `VideoError`，不受影响。
+
+**独立核查、验证与过度设计复查。** 轻量只读核查确认唯一生产者、provider error 不可能携带该 code、普通 `OCRLLMError` 可复现错误完成态，也确认 composition 会消费这个错误的 `audio_state`。修复后 outcome 集合为 **7 passed**；video recognition、outcome、composition、publication、audio extraction 与受控 smoke-runner contract 合集为 **60 passed in 1.66s**；`compileall -q src tests tools` 与 `git diff --check` 通过。一次 Windows `rg tests/test_*.py` 因 PowerShell 不展开该 glob 报路径语法错误，改用 `rg -g 'test_*.py'` 后完整核对，所有正常 no-stream 构造都使用 `VideoError`。无网络、provider、凭据、安装、下载、API、依赖、frozen `contracts/worker` 或 #127/#149/#152 变化。没有把所有 error family/code 组合做成注册表，也没有深冻结错误对象或增加 serializer；这些都超过本轮已经复现的 false-complete 问题。
