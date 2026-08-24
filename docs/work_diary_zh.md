@@ -2368,3 +2368,19 @@ Atomic task — Iteration #084: prove the active PDF path handles the legacy-obs
 **resume 证明。** 同一 provider 随后恢复正常，`resume=True` 的第三次实际 provider 调用仍是第 9—16 页；第 1—8 页没有再次 dispatch。最终结果 complete、`pdf_group_count=2`、本轮 `current_run_provider_call_count=1`、final Markdown 存在、child sidecar 变为两个。这里总失败调用数 2 与恢复轮当前调用数 1 是两个不同时间范围，没有新造 accounting 字段。
 
 **验证、父级证据与过度设计复盘。** 新测试连同 PDF、batch execution 和 defect-register 相关集合为 **54 passed in 3.54s**，该测试文件 compileall 通过；补充 final Markdown 实际存在断言后单测复跑为 **1 passed in 0.67s**；`git diff --check`、敏感模式和用户文件保护随后复核。authority 与 legacy provider evidence 的 active 栏现在指向这条直接回归，而不是只凭 cancellation 推断。没有 provider live call、凭据、retry loop、自动 resume、partial Markdown、failed marker、repair、产品代码、`contracts/` 或 `worker/` 修改；测试通过后没有为了制造修复而继续扩大异常类型矩阵。
+
+## #085 — 2026-08-24：保留 PDF 后批失败前已经结算的精确模型用量
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #085: extend the proven PDF later-group failure regression to verify per-model token evidence for already-settled paid work, without creating a billing subsystem. Success means the first successful group returns exact structured input/output usage for an explicit model, the second group fails through the existing typed path, the raised error preserves that usage exactly once, and resume still dispatches only the missing group; change production code only if the regression exposes a real loss. This matters because honest failure reporting must not hide already-spent provider work, while missing usage must remain unknown rather than estimated.
+```
+
+**authority、假设和两条路线。** 本轮先重读 current authority、#084 直接失败轨迹、usage ledger、PDF settled-work 附加逻辑和维护者关于“按模型累计 input/output token、不要建立复杂调用计数”的决定。初始假设是 `attach_pdf_settled_work()` 已经会合并第一组 usage，但 #084 的 provider 只返回字符串，所以这一条付费证据链没有被直接证明。路线①新增 billing 字段、历史累计表或 provider 通用层；路线②只让既有回归的第一组返回已有 `VisionProviderResponse`，显式指定模型并断言既有 `settled_model_usage`。选择②，因为它直接验证现有消费者，不改变公开错误结构。
+
+**失败优先与暴露的真实缺陷。** 测试让第 1—8 页返回 `offline-pdf-model` 的精确 **123 input / 45 output tokens**，第 9—16 页仍由第二次真实 dispatch 抛 `ConnectionError`。新增断言第一次运行出现 `KeyError: settled_model_usage`，证明不是假想敌。逐行复核发现 shared image processor 已经接受 `VisionProviderResponse`、按模型累计精确 usage，却只在 `resolved_provider.name == "google"` 时把它写入 metadata；因此 injected provider 的第一组 sidecar 虽已完成，PDF 外层看不到其已经结算的用量。
+
+**最小修复与行为边界。** 产品代码只把上述 provider-name 判断改为“本轮确实收到结构化 usage 时才输出”。这不是把缺失值变成零，也不是推算字符串 provider 的 token；普通字符串返回仍不产生 usage。失败错误现在精确包含一条 `{model: offline-pdf-model, input_count: 123, output_count: 45, unit: tokens}`，没有重复累计。后续 `resume=True` 仍复用第一组，只重新派发第 9—16 页，最终保持两个 complete child sidecar 和完整 Markdown。
+
+**验证、环境说明与过度设计复盘。** 红灯之后新回归为 **1 passed in 0.65s**；PDF、image processor、Google adapter、Stage maturation 和 defect-register 相关集合为 **114 passed in 3.95s**，changed source/test 的 compileall 通过。首次 root 全量为 **1309 passed / 2 failed in 42.27s**，两项失败都在 Node worker test 启动前报告当前 PATH 无 `node`，与本轮代码无关。按维护者规则，现有 Node 定位交给轻量代理；它只读找到 `D:\Anaconda\envs\STA\node.exe` v22.23.2，没有下载或安装。仅对测试进程临时补 PATH 后，使用 `D:\Anaconda\envs\OCRLLM\python.exe -m pytest -q` 得到 **1311 passed in 42.44s**。本轮没有 live provider call、凭据读取、新字段、计费引擎、provider class/fallback、retry、repair、`contracts/` 或 `worker/` 修改；也没有把 future multi-provider 约束误当作现在建设框架的授权。
