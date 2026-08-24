@@ -2860,3 +2860,17 @@ Atomic task — Iteration #116: close the proven Windows junction escape in the 
 **失败优先、实现与有效邻居。** Windows-only public regression 建立指向 `output_dir` 外部临时目录的真实 junction。旧实现稳定得到 **1 failed in 0.21s**：没有抛错，且确实写过 junction；测试在 `finally` 仅移除精确 junction，临时目录仍由 pytest 管理。实现仅把已有对象的 `Path.is_dir()` 换为一次 `os.lstat()`，并拒绝非目录或带 `FILE_ATTRIBUTE_REPARSE_POINT` 的对象，沿用 `OUTPUT_PATH_INVALID`。没有解析目标、比较根目录、循环追踪或新增异常类型。相邻测试预建普通状态目录并使用 `overwrite=True`，仍完成一页 PDF、一次 provider 调用和普通 sidecar 写入。首次组合测试时，编辑位置误把原 16 页测试的尾部断言移进新的一页邻居测试，导致一个与产品无关的测试失败；主代理复核 diff 后立即把断言放回原测试，再继续验证，没有把该失败算作产品回归证据。
 
 **验证与过度设计复盘。** junction、普通目录和原 16 页三项为 **3 passed in 0.50s**；扩大到 PDF、output、image resume/validation 为 **78 passed in 3.11s**；最终 root suite 为 **1338 passed in 45.02s**。`compileall -q src tests tools`、`git diff --check` 和 frozen `contracts/`/`worker/` diff 均通过，117 条非日记新增 tracked 行中的 Google/OpenAI/Bearer credential pattern 为 0。最可能的过度设计是通用 filesystem sandbox、遍历所有祖先、跨进程锁、junction 目标白名单或声称关闭检查后被替换的竞态；本轮都没有做。代码同时自然拒绝 symlink/non-directory，但只增加一个真实 Windows junction regression，因为它是已发生并可稳定证明的问题。provider、fallback、API pool、P1-d repair、legacy、social 和 frozen 目录均未动，也没有 API、凭据、下载或安装；两个用户未跟踪文件保持未动。
+
+## #117 — 2026-08-24：停止无权威依据的缺陷扩搜，回到 P1-d 唯一决策门
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #117: select and close one current, evidence-backed defect in already-shipped OCRLLM behavior after the PDF junction fix, without reopening frozen worker/contracts or the unresolved P1-d compatibility choice. Success means reconciling the authoritative queue and latest diary, identifying a reproducible active-library failure rather than inventing an edge contract, proving it through the public surface, applying the smallest readable correction, and completing focused plus full verification with updated Chinese records. This matters because maturity work should now follow recorded product risk and executable failures, not continue speculative filesystem hardening or prematurely build provider generalization.
+```
+
+**证据改变任务与两条路线。** 主代理重读 authority、START_HERE、package AGENTS、维护者决定和 #116 日记后发现，原任务的前提不成立：当前唯一立即队列是 P1-d，而 authority 明确要求停止继续做 proactive filesystem/accounting edge scan；已知 `get_capabilities` import-order 缺陷的直接修复又必须改 frozen worker。路线一为了保持“每轮必须改代码”继续从绿灯 direct facade 猜异常合同；路线二停止该错误方向，确认是否存在已经记录、公开可复现且不受冻结边界约束的遗漏，然后把真正的重大选择交还维护者。选择路线二。
+
+**独立只读核对。** 轻量代理在不编辑、不安装、不下载、不联网的条件下核对 public `recognize()`、`recognize_batch()`、image/audio/PDF/output/provider 路径及相关测试，没有发现本轮可处理的已证明缺陷。唯一可能继续细化的是 DashScope 早期 setup 阶段的调用计数，但现行合同明确允许没有 adapter 精确账目时沿用入口级计数，且当前规则禁止继续主动 accounting 扫描，因此不把它重新命名为 defect。主代理独立确认 P1-d 的剩余问题没有被后来文字回答：是否让新 library 的独立 `repair_pdf` 接受 legacy 已生成 Markdown 中明确的 `第 N` / `第 N-M 页识别失败` 标记作为兼容输入。yes 才授权 #106 已固定的窄实现；no 则冻结 P1-d 并由维护者授权推进下一队列。
+
+**验证与过度设计复盘。** 本轮不改产品源码和测试，所以不重复运行 #116 已在同一 HEAD 通过的 1338 项全量，也不把旧绿灯冒充新证明；只做文档 diff、冻结目录和工作树检查后提交本调查记录。继续加 setup 计数、symlink 邻居、provider base class、fallback、API pool、第二 repair/resume 或 worker workaround 都会是本轮最可能的过度设计，全部未做。两个用户未跟踪文件保持未动。下一步必须由维护者回答上述历史 Markdown compatibility 的 yes/no；在答案前不创建平行实现队列。
