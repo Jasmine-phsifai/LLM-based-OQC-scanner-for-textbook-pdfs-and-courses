@@ -23,18 +23,24 @@ def _frame_result(
     *,
     markdown: str,
     output_path: Path | None = None,
+    include_usage: bool = False,
 ) -> RecognitionResult:
+    metadata: dict[str, object] = {
+        "provider": "google",
+        "model": MODEL,
+        "provider_call_count": 1,
+        "video_frame_indices": (0,),
+        "video_frame_timestamps_seconds": (0.0,),
+    }
+    if include_usage:
+        metadata["current_model_token_usage"] = (
+            {"model": MODEL, "input_tokens": 10, "output_tokens": 2},
+        )
     return RecognitionResult(
         markdown=markdown,
         source_type="image",
         output_path=output_path,
-        metadata={
-            "provider": "google",
-            "model": MODEL,
-            "provider_call_count": 1,
-            "video_frame_indices": (0,),
-            "video_frame_timestamps_seconds": (0.0,),
-        },
+        metadata=metadata,
     )
 
 
@@ -42,16 +48,22 @@ def _audio_result(
     *,
     markdown: str,
     output_path: Path | None = None,
+    include_usage: bool = False,
 ) -> RecognitionResult:
+    metadata: dict[str, object] = {
+        "provider": "google",
+        "model": MODEL,
+        "provider_call_count": 1,
+    }
+    if include_usage:
+        metadata["current_model_token_usage"] = (
+            {"model": MODEL, "input_tokens": 20, "output_tokens": 4},
+        )
     return RecognitionResult(
         markdown=markdown,
         source_type="audio",
         output_path=output_path,
-        metadata={
-            "provider": "google",
-            "model": MODEL,
-            "provider_call_count": 1,
-        },
+        metadata=metadata,
     )
 
 
@@ -64,6 +76,7 @@ def _build_outcome(
     keep_audio_artifact: bool = True,
     frame_output_path: Path | None = None,
     audio_output_path: Path | None = None,
+    include_usage: bool = False,
 ) -> VideoRecognitionOutcome:
     output_root = output_dir / "video"
     frames_dir = output_root / "frames"
@@ -84,6 +97,7 @@ def _build_outcome(
                 result=_frame_result(
                     markdown=private_markdown,
                     output_path=frame_output_path,
+                    include_usage=include_usage,
                 ),
             ),
         )
@@ -103,6 +117,7 @@ def _build_outcome(
             _audio_result(
                 markdown=private_markdown,
                 output_path=audio_output_path,
+                include_usage=include_usage,
             )
             if audio_error is None
             else None
@@ -182,6 +197,32 @@ def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
     assert private_markdown not in raw
     assert str(_arguments().video) not in raw
     assert observed_roots and all(not root.exists() for root in observed_roots)
+
+
+def test_video_smoke_reports_only_validated_model_token_usage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_catalog(monkeypatch)
+
+    def fake_recognize_video(source, *, output_dir, image_config, audio_config):
+        return _build_outcome(
+            Path(output_dir),
+            private_markdown="PRIVATE TOKEN USAGE TRANSCRIPT",
+            include_usage=True,
+        )
+
+    monkeypatch.setattr(smoke, "recognize_video", fake_recognize_video)
+
+    summary = smoke.run_google_genai_video_smoke(_arguments())
+
+    assert summary["composition"]["model_token_usage"] == [
+        {
+            "model": MODEL,
+            "input_tokens": 30,
+            "output_tokens": 6,
+        }
+    ]
+    assert "PRIVATE TOKEN USAGE TRANSCRIPT" not in json.dumps(summary)
 
 
 def test_video_smoke_preserves_audio_provider_failure_call_count(

@@ -457,6 +457,21 @@ one provider call, input/output usage 150/10, and a credential-scoped invalid-ke
 failure. Its recognized text was validated internally but not published, so the
 gate proves this bounded result path rather than transcription quality.
 
+## Bounded Google Combined-Video Live Smoke
+
+Install `ocrllm[video,image,audio,google]` and run one authorized MP4 through
+`tools/run_google_genai_video_smoke.py` with an explicit current-catalog model,
+video path, and timeout. The runner uses separate image and audio `Config`
+objects and prints only catalog/model, branch status, retained/group/asset
+counts, stable error codes, exact-or-null calls, and validated per-model token
+usage when composition succeeds. It never prints recognition text, paths,
+credentials, or raw provider responses and performs no retry or model switch.
+The #186 robustness run retained three equal-luminance color scenes and made one
+image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
+top-level outcome honestly remained failed and no token usage was invented.
+That color-and-tone fixture proves dispatch/error handling, not transcription
+quality.
+
 ## Bounded Google PDF Live Smoke
 
 Install `ocrllm[pdf-vision,google]`, set `GOOGLE_API_KEY` (or

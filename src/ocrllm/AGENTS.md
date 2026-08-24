@@ -129,6 +129,9 @@ backend inconsistency.
 #185 requires sampled color-only scene changes to survive comparison. Preserve
 the detailed luminance thumbnail plus the small color thumbnail; do not replace
 them with full-size BGR candidates or add a second detector/public color tuning.
+#186 live-proves one image and one audio dispatch after that change, with both
+returning honest `PROVIDER_RESPONSE_INVALID`. Do not rerun to seek green; the
+redacted runner may report only validated exact-model usage after composition.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

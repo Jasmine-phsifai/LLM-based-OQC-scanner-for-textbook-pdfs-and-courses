@@ -535,6 +535,11 @@ The following directions remain traceable but are not current work:
   equal-luminance red/green MP4 now retains all three sampled scene segments.
   The five-second grid and negative-feedback algorithm remain one bounded
   selector; no histogram or fine-gap detector was added.
+  #186 sends that three-frame result through one bounded live Google combined-
+  video run. Image and audio each attempted one call and independently returned
+  `PROVIDER_RESPONSE_INVALID`; the failed outcome was not composed and no token
+  usage was fabricated. The safe runner can now report validated per-model
+  usage when a future settled composition actually supplies it.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

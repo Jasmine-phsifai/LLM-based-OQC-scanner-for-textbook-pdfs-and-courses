@@ -1825,6 +1825,22 @@ Do not turn this correction into a second scene detector, histogram pipeline,
 public color setting, or fine-gap sampling. One hundred eleven focused tests
 and the complete 1,464-test offline suite pass.
 
+#186 runs the one warranted post-#185 live robustness gate and strengthens its
+maintained redacted runner. The runner now emits validated
+`model_token_usage` only when composition carries exact nonnegative usage for
+the one selected model; missing or failed branch usage is never invented. A
+synthetic audible 15-second MP4 first retained frame indices `0, 10, 29`, then
+current discovery returned 37 models and explicit `gemini-2.5-flash` made one
+image-group call plus one separate audio call. Both settled as
+`PROVIDER_RESPONSE_INVALID`; the top-level outcome was honestly failed,
+composition did not start, and token usage remained absent. Exit was 1 after
+9,127.535 ms with empty stderr, safe JSON, no credential/content/source-path
+disclosure, and no temporary residue. The fixture contained color scenes and a
+tone rather than transcribable text/speech, so this proves live dispatch and
+failure honesty, not quality. Do not retry or switch models merely to turn this
+gate green; another live run needs a relevant runtime/boundary change. One
+hundred five focused tests and the complete 1,465-test offline suite pass.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

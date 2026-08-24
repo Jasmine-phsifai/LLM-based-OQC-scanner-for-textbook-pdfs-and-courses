@@ -6,7 +6,7 @@ import argparse
 import json
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -107,7 +107,7 @@ def _safe_video_summary(
 
     frames = _safe_frame_summary(outcome, model)
     audio = _safe_audio_summary(outcome, model)
-    composition = _safe_composition_summary(outcome)
+    composition = _safe_composition_summary(outcome, model)
     passed = (
         outcome.status == "complete"
         and frames["status"] == "complete"
@@ -217,6 +217,7 @@ def _safe_audio_summary(
 
 def _safe_composition_summary(
     outcome: VideoRecognitionOutcome,
+    model: str,
 ) -> dict[str, object]:
     if outcome.status == "failed":
         return {"status": "not_started", "asset_count": 0, "error": None}
@@ -231,11 +232,15 @@ def _safe_composition_summary(
                 "Google video smoke returned an unexpected composition boundary.",
                 code="CONFIG_INVALID",
             ) from None
-        return {
+        summary: dict[str, object] = {
             "status": result.status,
             "asset_count": len(result.assets),
             "error": None,
         }
+        model_token_usage = _safe_model_token_usage(result.metadata, model)
+        if model_token_usage:
+            summary["model_token_usage"] = model_token_usage
+        return summary
     except OCRLLMError as error:
         return {
             "status": "failed",
@@ -248,6 +253,49 @@ def _safe_composition_summary(
             "asset_count": 0,
             "error": _safe_error("UNEXPECTED_SAFE_FAILURE", "composition", 0),
         }
+
+
+def _safe_model_token_usage(
+    metadata: Mapping[str, object],
+    model: str,
+) -> list[dict[str, object]]:
+    usage = metadata.get("current_model_token_usage")
+    if usage is None:
+        return []
+    if type(usage) is not tuple:
+        raise ConfigError(
+            "Google video smoke returned invalid model-usage evidence.",
+            code="CONFIG_INVALID",
+        ) from None
+
+    safe_usage: list[dict[str, object]] = []
+    for item in usage:
+        if not isinstance(item, Mapping):
+            raise ConfigError(
+                "Google video smoke returned invalid model-usage evidence.",
+                code="CONFIG_INVALID",
+            ) from None
+        input_tokens = item.get("input_tokens")
+        output_tokens = item.get("output_tokens")
+        if (
+            item.get("model") != model
+            or type(input_tokens) is not int
+            or input_tokens < 0
+            or type(output_tokens) is not int
+            or output_tokens < 0
+        ):
+            raise ConfigError(
+                "Google video smoke returned invalid model-usage evidence.",
+                code="CONFIG_INVALID",
+            ) from None
+        safe_usage.append(
+            {
+                "model": model,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+            }
+        )
+    return safe_usage
 
 
 def _result_call_count(result: Any, source_type: str, model: str) -> int:
