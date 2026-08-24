@@ -3925,3 +3925,17 @@ Atomic task — Iteration #187: verify that combined-video orchestration does no
 **真实媒体证据。** 主代理和轻量只读任务分别复用已经在 audio extractor 测试中证明有效的 FFmpeg 方法：先生成有画面和 AAC 音轨的 MP4，再用 `-bsf:a noise=amount=1` 重封装，让视频帧仍可解码而音频确实损坏。公共 combined facade 留下一个 JPEG；注入图片 provider 恰好调用一次并成功。音频 extraction 返回 **VIDEO_INVALID**、stage **extraction**，守卫 audio adapter 调用为 **0**；`audio_artifact=None`，没有 `audio.mp3` 或 `.ocrllm-audio-*`。outcome 为 partial，composition 也为 partial，assets 只有 retained JPEG，`current_run_provider_call_count=1`。
 
 **最小变更、验证与过度设计复查。** 现有低层测试只证明 extractor 能区分“无音轨”和“音轨损坏”，没有贯通 `recognize_video()` 的调用及组合证据；本轮只在已有 combined-video 测试文件新增一个真实 corruption helper 和一条回归，并把 active README 明确为独立分支语义。单测为 **1 passed in 0.44s**；视频编排、音频提取、outcome、composition、smoke 与 lightweight/import 聚焦集合为 **70 passed in 5.62s**；`compileall -q src tests tools`、`git diff --check` 通过；完整离线套件为 **1,466 passed in 59.88s**。无网络、provider、凭据、安装、产品 runtime、public API、依赖、输出布局、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有为了“先拒绝所有意外”牺牲已可用画面，也没有加入跨分支 transaction、预探测副本、retry/fallback 或第二 outcome；如果维护者未来希望 corrupt audio 使整视频硬失败，需要作为单独产品决定，而不是伪装成防御性修复。
+
+## #188 — 2026-08-25：把视频源快照收紧为一个必须由维护者回答的位置选择
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #188: reduce the open #149 source-mutation defect to one explicit maintainer choice without implementing either path. Success means rereading the authoritative state and diary, re-running or inspecting the existing same-path replacement proof, tracing every source open and output-directory lifetime in `recognize_video()`, comparing only the two already-authorized snapshot placements against current cleanup, collision, Windows-path, and plain-library constraints, rejecting any third abstraction, and recording one concise recommendation plus the exact user decision needed. This matters because frame comparison, retained JPEGs, and audio must read one immutable request source, but choosing snapshot ownership implicitly would freeze public filesystem semantics and block later long-audio video routing.
+```
+
+**缺陷仍在，不需要再造一次假失败。** 当前源码与 #149 后没有 source-lifetime 改动。`extract_video_frames()` 依次从 caller path 读取 inspect metadata、FFmpeg duration、五秒候选和最终 JPEG；`recognize_video()` 随后又从同一路径 inspect/probe/decode 音频。已有真实 os.replace 证据已证明候选来自暗视频、最终 JPEG 来自同形亮视频而调用成功；重新看源码即可确认缺陷仍可达，机械重复同一实验不会增加决策信息。
+
+**仅比较两条已授权路线。** A（继续推荐）在 caller `output_dir` 下建立短固定前缀加随机身份的隐藏 sibling MP4；先以固定块从已经打开的源流复制，然后 inspection、scan、selected decode、audio extraction 和未来长音频路由都只接这个 request-owned path，最外层 `finally` 删除。它不改公开签名，不借用两个可能互不相同的 image/audio `Config.temp_dir`，并把临时空间与 retained assets 放在调用者已经选择的同一卷。代价是 snapshot 前必须创建/验证 `output_dir`，且 caller 给出的过深路径仍可能得到 typed path/backend failure；本轮不增加 extended-path 层。B 新增独立 `video_temp_dir` 公共参数，允许短路径或大容量异卷，但 standalone/combined API、文档和第二目录 ownership 都要扩展；即使选 B，内部仍必须有一个共享 context，参数本身不能修复音画分叉。
+
+**推荐、停止点与过度设计复查。** 主代理与轻量只读审计独立推荐 A。它符合用户此前“同目录、暴力拒绝冲突、不为极端情况扩 API”的方向；大文件不会读入内存，而是固定块复制。现在缺的不是更多代码证据，而是维护者是否接受“原视频大小的隐藏临时副本与最终资产共用 output volume”。本轮只更新唯一 authority 与中文日记，`git diff --check` 通过；没有 runtime、测试、API、输出格式、provider、网络、凭据、依赖、legacy compatibility 或 frozen `contracts/worker` 改动。明确拒绝第三条路线：不建 generic media snapshot framework、content-addressed cache、global temp manager、内存整文件、hash-only recheck，也不只修 frame half。维护者确认 A 后才实现；若拒绝，则选择 B 并接受新公共参数。

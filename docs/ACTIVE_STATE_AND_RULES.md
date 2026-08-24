@@ -1853,6 +1853,23 @@ layer changed. Keep the real regression; do not turn one corrupt media branch
 into whole-video rejection without a separate maintainer decision. Seventy
 focused tests and the complete 1,466-test offline suite pass.
 
+#188 re-audits the still-open #149 placement choice against the current source
+and rejects adding a third design. The defect remains: frame inspection,
+duration, candidate scan, selected JPEG decode, and combined audio extraction
+still reopen the caller path. Route A remains recommended: create one short-
+named hidden sibling MP4 under caller `output_dir`, stream the opened source in
+fixed chunks, share that owned path across the complete frame/audio request,
+and remove it in one request-level `finally`. This preserves public signatures,
+keeps temporary disk use on the caller-selected output volume, and avoids
+misusing either independent provider `Config.temp_dir`. Route B adds an explicit
+public video-temp-directory parameter; it gives callers a short or separate
+large-volume location, but still needs the same internal shared context and
+adds a second caller-managed directory lifecycle. Current deep output paths can
+still fail honestly under A; do not add extended-path machinery. The maintainer
+must now choose A or B. Until then, do not implement a frame-only snapshot,
+generic media snapshot/cache, content addressing, in-memory video, or reinterpret
+provider temp settings.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
