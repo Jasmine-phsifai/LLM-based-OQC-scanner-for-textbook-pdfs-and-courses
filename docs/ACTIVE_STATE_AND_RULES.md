@@ -1669,6 +1669,27 @@ source video/import/type-marker tests pass. Both disposable proof roots were
 removed. No network, provider, credential, dependency download, repository
 runtime change, new build harness, frozen boundary, or open decision changed.
 
+#173 fixes a real violation of #126's pre-output configuration contract. A
+generated audible MP4 was passed to public `recognize_video()` with valid audio
+configuration and `GoogleGenAISettings` for images but no required explicit
+vision model. Before the fix, the call did not raise `ConfigError`: it created
+the same-stem frame directory, published `audio.mp3`, and ran the fake audio
+provider before the image branch settled its configuration failure. This made a
+deterministic caller mistake perform avoidable filesystem and provider work.
+
+The existing Google-model and missing-provider rules now live in the internal,
+zero-I/O `validate_vision_provider_config()` function. `recognize_video()` calls
+it after structural/image-persistence validation and before audio validation or
+media extraction; `resolve_vision_provider()` reuses it before resolving the
+actual adapter. DashScope's live catalog check remains in model resolution and
+is not moved into deterministic preflight, so validation adds no network call.
+The regression failed first and now proves `ConfigError`, zero audio calls, and
+no output directory. An independent real-MP4 reproduction confirms only the
+caller source remains. Ninety-two focused image/video/provider/import tests and
+the complete 1,457-test offline suite pass. No public API, provider type,
+fallback, retry, output layout, source snapshot decision, dependency, frozen
+boundary, or cancellation/long-audio decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

@@ -6,6 +6,9 @@ from pathlib import Path
 
 from .config import Config
 from .errors import Cancelled, ConfigError, OCRLLMError
+from .providers.validate_vision_provider_config import (
+    validate_vision_provider_config,
+)
 from .recognize import recognize
 from .recognize_video_frames import recognize_video_frames
 from .validate_config import validate_config
@@ -25,6 +28,7 @@ def recognize_video(
     """Settle independent frame and audio recognition for one local MP4."""
     validated_image_config = validate_config(image_config)
     _reject_image_persistence(validated_image_config)
+    validate_vision_provider_config(validated_image_config)
     validated_audio_config = validate_config(audio_config)
     validate_google_mp3_options(
         (Path("video-audio.mp3"),),

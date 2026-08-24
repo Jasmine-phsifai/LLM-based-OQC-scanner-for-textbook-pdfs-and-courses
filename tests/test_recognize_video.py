@@ -270,3 +270,25 @@ def test_recognize_video_rejects_invalid_audio_config_before_output_or_dispatch(
 
     assert image_provider.calls == []
     assert not output_dir.exists()
+
+
+def test_recognize_video_rejects_invalid_image_config_before_output_or_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    observed_audio = _install_fake_audio(monkeypatch)
+    output_dir = tmp_path / "output"
+
+    with pytest.raises(ConfigError, match="explicit model"):
+        recognize_video(
+            source,
+            output_dir=output_dir,
+            image_config=Config(
+                provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            ),
+            audio_config=_audio_config(tmp_path),
+        )
+
+    assert observed_audio == []
+    assert not output_dir.exists()

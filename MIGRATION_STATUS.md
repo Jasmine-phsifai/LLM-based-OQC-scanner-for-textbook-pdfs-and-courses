@@ -492,6 +492,10 @@ The following directions remain traceable but are not current work:
   `py.typed` are packaged; a real local MP4 completes with separate injected
   image/audio calls and composition, while fresh plain import remains free of
   optional media modules.
+  #173 fixes a deterministic image-config preflight gap in the combined video
+  facade. A missing Google vision model now raises before frame/audio output or
+  either provider branch; the provider resolver reuses the same local validator
+  instead of maintaining a second copy of those rules.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

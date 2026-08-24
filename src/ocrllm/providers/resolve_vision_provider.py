@@ -5,21 +5,18 @@ from __future__ import annotations
 import importlib
 
 from ..config import Config
-from ..errors import ConfigError
 from .dashscope.provider_settings import DashScopeSettings
 from .dashscope.resolve_dashscope_model import resolve_dashscope_model
 from .google_genai.provider_settings import GoogleGenAISettings
 from .resolved_vision_provider import ResolvedVisionProvider
+from .validate_vision_provider_config import validate_vision_provider_config
 
 
 def resolve_vision_provider(config: Config) -> ResolvedVisionProvider:
     """Return one explicit vision provider without initiating external work."""
+    validate_vision_provider_config(config)
     provider = config.provider
-    if provider is None:
-        raise ConfigError(
-            "Image recognition requires an explicit Config.provider.",
-            code="CONFIG_MISSING",
-        ) from None
+    assert provider is not None
 
     if type(provider) is DashScopeSettings:
         provider_module = importlib.import_module(
@@ -38,11 +35,7 @@ def resolve_vision_provider(config: Config) -> ResolvedVisionProvider:
 
     if type(provider) is GoogleGenAISettings:
         model = config.vision_model.name
-        if type(model) is not str or not model:
-            raise ConfigError(
-                "Google GenAI image recognition requires an explicit model.",
-                code="CONFIG_MISSING",
-            ) from None
+        assert type(model) is str and model
         provider_module = importlib.import_module(
             ".google_genai.recognize_images",
             package=__package__,
