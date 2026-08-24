@@ -230,6 +230,17 @@ temporary files and key-bearing environment variables were removed. Recognized
 text was validated internally but deliberately not published, so this proves a
 real public result and transport lifecycle, not transcription quality.
 
+#082 refreshed that live boundary after the later PDF/batch work. One new
+3.468888889-second, 22,068-byte synthetic-speech MP3 completed through the
+unchanged public facade on `gemini-2.5-flash`. The current catalog again
+contained 37 `generateContent` models; recognition made exactly one provider
+call and reported input/output usage of 150/10. The existing invalid-key probe
+again returned `PROVIDER_AUTHENTICATION` with credential scope. The process
+exited 0 after 12.987 seconds, stderr was empty, the capture contained no
+credential pattern, and the generated audio/capture directory was removed.
+No transcript or provider text was published, and no retry, model switch,
+fallback, product edit, dependency install, or download occurred.
+
 Exit gate met: one public real-MP3 result completed with catalog/model selection,
 provider limits, exact call/usage evidence, and no false success. The earlier
 model-scoped quota failure remains recorded rather than hidden by retry or

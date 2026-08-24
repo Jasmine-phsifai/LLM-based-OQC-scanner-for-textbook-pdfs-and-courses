@@ -2320,3 +2320,19 @@ Atomic task — Iteration #081: while P1-d awaits the maintainer's product choic
 **拒绝的假想缺陷。** 扫描还发现空 tuple 当前返回空列表，以及自定义 `Sequence` 在迭代时抛 `RuntimeError` 会原样传播；但现行契约没有要求 batch 非空，也没有真实生产证据要求吞掉任意自定义容器异常。为这两点写新防御会重新走向“兼容所有意外”，因此本轮不改代码、不加测试、不扩大 contract。
 
 **验证、过度设计复盘与边界。** 以 #078 的 authority 证据、现有 PDF regression 和 exact-tuple regression 作为事实来源；`tests/test_pdf_recognition.py` 与 `tests/test_recognize_batch_execution.py` 合计 **30 passed in 2.82s**，证明当前实现仍与修正文案一致。文档矛盾搜索确认唯一 current queue 不再声称 P1-c live gate 开放；`git diff --check` 和敏感模式扫描通过。没有 provider call、凭据读取、下载、依赖安装、产品代码、`contracts/` 或 `worker/` 修改。该轮只消除会导致重复工作的一处当前状态矛盾，不新建状态文件、文档层级、自动同步器或文档测试框架。
+
+## #082 — 2026-08-24：重新用真实 Google 短音频确认公共路径仍可运行
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #082: run one bounded real Google short-audio regression through the current public OCRLLM API while P1-d remains undecided, and fix only a defect that the live request actually exposes. Success means reconciling authority and diary, using the existing authorized synthetic MP3 workflow and live catalog, making no retry or model-by-model repair loop, capturing only sanitized call/usage/error evidence, verifying cleanup, and recording the result without broadening the experimental A1 contract. This matters because the product's difficult boundary is real provider behavior, and offline tests must not substitute for "the audio path still runs."
+```
+
+**假设、两条路线与执行分工。** 初始假设是当前账号 QSettings 的 Google 凭据仍可用，但只允许检查非空并在同一子进程短暂使用，不能输出值。路线①只重跑 25 个 adapter/runner/fixture 离线测试；路线②先跑这些回归锁定边界，再用一次真实短语音验证当前目录、请求、响应、usage 和错误映射。选择②，因为维护者已明确说明免费 Google 的真实琐碎错误才是 provider 难点。固定生成、执行、等待与清理由轻量代理完成；主代理同时逐行复核公共 `recognize_validated_short_mp3()`、native adapter、inline request builder、response validator、error mapper 和 live runner，不让等待阻塞审查。
+
+**离线与输入证据。** `tests/test_google_genai_audio_live_smoke.py`、`tests/test_google_genai_audio_adapter.py`、`tests/test_a1_mp3_fixtures.py` 合计 **25 passed in 0.24s**。live 输入不是用户录音：Windows `System.Speech` 合成固定短语 “OCR LLM audio test one two three.”，再由环境已存在的 `imageio_ffmpeg` 转成 **22,068 bytes / 3.468888889 s** MP3。没有安装或下载依赖。凭据只由同一 Python 进程从 `QSettings("OCRLLM", "QCR")` 的 `ui/google_api_key` 读取、确认非空并短暂放入进程环境；命令、输出、捕获和仓库均不含其值。
+
+**唯一一次真实执行结果。** 前台只执行一次既有 `run_google_genai_audio_smoke.py`，固定模型 `gemini-2.5-flash`，没有 retry、fallback 或第二模型。current catalog 仍为 **37**；公共结果 `status="passed"`，recognition provider call **1**，provider 实报 input/output tokens **150/10**。既有 invalid-key robustness probe 返回 **`PROVIDER_AUTHENTICATION` / `credential`**。进程 exit **0**，elapsed **12.987 s**，stderr nonempty **false**，Google key pattern detected **false**。runner 不输出 transcript、路径、raw response 或 upstream message，因此这是运行与生命周期回归，不是转录质量评分。
+
+**清理、结论与过度设计复盘。** WAV、MP3、stdout/stderr capture 和精确临时目录全部删除并验证不存在；临时 key 环境没有留在父进程。真实调用没有暴露产品缺陷，所以本轮没有为了制造代码变化而添加重试器、模型枚举修补、audio fallback、Files upload、长音频、persistence/resume、worker capability 或通用 live framework。只把刷新后的 real-provider 证据写入唯一 authority 和中文日记；P1-d 仍等待维护者产品选择，`contracts/`、`worker/` 和两个用户未跟踪文件保持未动。
