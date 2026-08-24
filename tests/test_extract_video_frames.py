@@ -187,6 +187,46 @@ def test_extract_video_frames_density_cap_keeps_video_ending() -> None:
     )
 
 
+def test_extract_video_frames_maximum_segment_rounds_up() -> None:
+    import cv2
+    import numpy as np
+
+    from ocrllm.video.select_video_frame_candidates import select_video_frame_candidates
+    from ocrllm.video.video_frame_candidate import VideoFrameCandidate
+
+    black = np.zeros((128, 128), dtype=np.uint8)
+    white = np.full((128, 128), 255, dtype=np.uint8)
+    candidates = []
+    for index in range(181):
+        if index <= 5:
+            thumbnail = white if index % 2 else black
+        elif index < 40:
+            thumbnail = white
+        else:
+            thumbnail = black
+        candidates.append(
+            VideoFrameCandidate(
+                frame_index=index,
+                timestamp_seconds=float(index * 5),
+                thumbnail=thumbnail,
+            )
+        )
+
+    selected = select_video_frame_candidates(
+        tuple(candidates),
+        duration_seconds=900.0,
+        cv2=cv2,
+    )
+
+    timestamps = (0.0,) + tuple(
+        candidate.timestamp_seconds for candidate in selected
+    )
+    assert max(
+        timestamps[index + 1] - timestamps[index]
+        for index in range(len(timestamps) - 1)
+    ) <= 315.0
+
+
 @pytest.mark.skipif(os.name != "nt", reason="Windows legacy path-limit regression")
 def test_extract_video_frames_does_not_amplify_near_limit_paths(
     tmp_path: Path,

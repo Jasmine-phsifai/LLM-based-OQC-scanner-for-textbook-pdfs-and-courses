@@ -3139,3 +3139,19 @@ Atomic task — Iteration #132: repair the reproduced Windows supplementary-Unic
 **验证、主审和边界。** 修复后的四项核心回归（ASCII 控制字符、纯函数补充字符、真实 ASCII 长 stem MP4、真实 emoji stem MP4）全部通过；普通输出、视频、PDF 和 image resume 邻居为 **61 passed in 2.96s**。独立 review 的 `test_output.py + test_extract_video_frames.py` 为 **22 passed in 0.49s**，并额外确认 NFC/清洗发生在截断前、截断前后尾部点/空格语义不变、普通图片输出也能用修正后的 Unicode stem 发布。最终 root 全量为 **1,395 passed in 55.45s**；`compileall -q src tests tools`、`git diff --check` 通过，冻结 `contracts/`/`worker/` 无变化。没有安装/下载、provider/API 调用、凭据、legacy 或用户未跟踪文件改动。
 
 **过度设计复查与下一边界。** 这次只纠正已经存在且被真实路径复现的 96-unit 预算，没有顺便解决任意深父目录、Windows 保留名、文件系统 normalization 差异、extended-length path 或全库路径策略。#127 的取消语义仍需维护者选择，最终 Markdown 发布与自己的 video resume 也继续等待该生命周期决定；没有以路径修复为理由推进这些功能、provider 泛化或 social 工作。
+
+## #133 — 2026-08-25：最大视频分段数不再向下舍入
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #133: verify and repair the inherited “maximum segment” calculation in negative-feedback video frame selection if it can currently leave a stable visual interval longer than its declared bound. Success means reproducing the gap with deterministic candidates, replacing only the faulty arithmetic, preserving density calibration and endpoint behavior, proving real local video neighbors, and documenting the correction without expanding into another detector or configurable policy. This matters because a maximum-gap safeguard that rounds down can silently skip several minutes of unchanged-but-still-relevant lecture content.
+```
+
+**证据修正与公共复现。** Legacy 父实现和新库都使用 `int(duration / max + 0.5)`，最初只从算式推测 2.45 个所需区间会被舍入成 2 个。主代理没有据此直接修改，而是先检查公共反馈函数：一小时完全静止样本会被密度目标碰巧补救，说明私有公式失败不能自动等同于公共缺陷。随后构造 900 秒候选：开头有少量强变化，中段结束于 195 秒，200 秒后进入稳定尾段。第一轮灵敏度的最大段长为 315 秒，旧代码产生 8 帧，已经落在 7—10 的目标范围而立即返回，但尾部代表帧为 550、900 秒，公共结果最长空档达到 **355 秒**。因此反馈不会普遍掩盖该错误。
+
+**两条路线与最小实现。** 一条路线是调整每小时目标或给尾段增加特殊规则；这会改变整个负反馈策略并制造第二份条件。另一条路线是按“最大值”的现有含义把分段数从四舍五入改为 `ceil(duration / max_segment_seconds)`。选择后者，只新增标准库 `math` 导入并替换一行算式。修复后的同一公共样本增加一个稳定尾段代表帧，最后几个索引从 `(39, 110, 180)` 变为 `(39, 86, 133, 180)`，最长空档降为 **235 秒**。阈值、五秒候选采样、10 轮反馈、28—40 帧/小时目标、#131 首尾安全裁剪和写文件过程均不变。
+
+**验证、主审与边界。** 失败优先回归先得到明确的 `355.0 <= 315.0` 失败；实现后的抽帧、帧识别、视频编排和组合定向集为 **36 passed in 1.64s**，包含真实本地 MP4 邻居。主代理复核了公式和公共样本，独立 review 的 frame selection 集为 **8 passed in 0.19s**，确认 `ceil` 保证理想子段长度不超过当轮上限，候选量化只选择已有时间点，不产生重复或倒序；密度超限仍由现有端点保留裁剪处理。最终 root 全量为 **1,396 passed in 53.70s**；`compileall -q src tests tools`、`git diff --check` 通过，冻结 `contracts/`/`worker/` 无变化。没有安装、下载、provider/API、凭据、legacy 或用户未跟踪文件改动。
+
+**过度设计复查与下一步。** 本轮没有增加可配置 max-gap、第二检测器、fine scan、插帧、时间轴对象或场景分类；只让已有最大分段算式不再向下舍入。#127、最终发布和 video resume 仍未越过维护者决定。#131—#133 连续修改了真实视频进入 provider 前的留帧和路径行为，所以下一轮应优先用已授权免费的 Google 图像/音频各一次重新打通当前公开视频路径，而不是继续从代码层雕琢选择器。

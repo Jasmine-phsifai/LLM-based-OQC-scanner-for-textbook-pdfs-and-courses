@@ -1012,6 +1012,18 @@ extended-path support, reserved-name handling, or a general path framework.
 The full source suite passes 1,395 tests. #127 cancellation and final
 publication/resume remain separate open product decisions.
 
+#133 fixes the second inherited negative-feedback arithmetic defect. A segment
+longer than its current maximum was divided with nearest-integer rounding, so a
+900-second mixed-change fixture returned within the target density while still
+jumping 355 seconds from one retained candidate to the next under a 315-second
+attempt limit. Segment count now uses the mathematical ceiling. The same public
+fixture retains one additional representative and reduces its longest gap to
+235 seconds. This changes neither thresholds nor the 28--40 frames/hour target;
+candidate timestamps remain quantized to the existing five-second scan, and the
+endpoint-preserving density cap still applies afterward. The full suite passes
+1,396 tests. The next evidence step is a bounded authorized Google video run
+through the current frame and audio branches, not another speculative selector.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

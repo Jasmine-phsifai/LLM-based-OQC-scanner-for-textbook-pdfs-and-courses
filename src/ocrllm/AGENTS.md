@@ -27,8 +27,9 @@ alignment, or copy legacy formats. #130 proves that exact facade from a clean,
 freshly installed wheel through a real local MP4 without loading heavy video
 dependencies during plain import. #131 keeps the final candidate when excessive
 frame density is capped; #132 makes the shared 96-unit output-stem budget use
-Windows UTF-16 units without splitting supplementary characters. Final
-publication and recovery come later and
+Windows UTF-16 units without splitting supplementary characters; #133 stops
+maximum-length segment partitioning from rounding down. Re-run the bounded
+Google video path before more selector work. Final publication and recovery come later and
 must be derived from these real outcomes rather than copied from legacy. Keep
 the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,

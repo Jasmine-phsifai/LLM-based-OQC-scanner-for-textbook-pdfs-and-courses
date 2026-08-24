@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from .video_frame_candidate import VideoFrameCandidate
@@ -99,7 +100,7 @@ def _segment_video_frame_candidates(
         if duration <= max_segment_seconds:
             bounded_segments.append((start, end))
             continue
-        part_count = max(2, int(duration / max_segment_seconds + 0.5))
+        part_count = math.ceil(duration / max_segment_seconds)
         part_duration = duration / part_count
         part_start = start
         for part_index in range(1, part_count):

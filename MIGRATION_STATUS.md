@@ -408,8 +408,9 @@ The following directions remain traceable but are not current work:
   preserves both video endpoints, so density limiting cannot silently discard
   the last retained candidate. Shared output-stem truncation now measures its
   existing 96-unit budget in Windows UTF-16 units, so supplementary characters
-  do not overflow retained-frame paths. Cancellation, publication, and resume
-  remain separate.
+  do not overflow retained-frame paths. Maximum-length stable segments now use
+  ceiling partition counts instead of rounding down and exceeding the selected
+  attempt's bound. Cancellation, publication, and resume remain separate.
 
 ## Obsolete Prose Kept For Trace
 

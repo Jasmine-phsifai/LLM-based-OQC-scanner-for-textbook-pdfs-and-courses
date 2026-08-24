@@ -355,6 +355,10 @@ is often accepted.
   existing 259-unit controlled path boundary. This concrete supplementary-
   character fix does not authorize extended-path support, reserved-name work,
   or a general path framework.
+- #133 calculates the number of maximum-length video subsegments with ceiling,
+  not nearest-integer rounding. A declared maximum is not a target average: do
+  not reduce the segment count to save frames. Existing five-second candidate
+  quantization and the separate hourly density cap remain unchanged.
 
 ## Resolved confirmation and next authority
 
