@@ -7,6 +7,9 @@ from dataclasses import replace
 from .batch_item_outcome import BatchItemOutcome
 from .config import Config
 from .errors import ConfigError, InvalidSource
+from .providers.validate_vision_provider_config import (
+    validate_vision_provider_config,
+)
 from .recognize_batch import recognize_batch
 from .resolve_effective_image_limit import resolve_effective_image_limit
 from .retained_video_frame import RetainedVideoFrame
@@ -29,6 +32,7 @@ def recognize_video_frames(
     """
     cfg = validate_config(config)
     _reject_video_persistence(cfg)
+    validate_vision_provider_config(cfg)
     _validate_retained_frame_tuple(frames)
     configured_limit, _ = resolve_effective_image_limit(cfg)
     group_size = min(_VIDEO_FRAME_GROUP_LIMIT, configured_limit)

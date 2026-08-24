@@ -496,6 +496,10 @@ The following directions remain traceable but are not current work:
   facade. A missing Google vision model now raises before frame/audio output or
   either provider branch; the provider resolver reuses the same local validator
   instead of maintaining a second copy of those rules.
+  #174 applies that zero-I/O deterministic preflight to the independently public
+  retained-frame facade. Missing provider or Google vision-model configuration
+  now raises before retained-JPEG validation instead of becoming a first-group
+  outcome; generic batch settlement and valid group ordering are unchanged.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

@@ -97,6 +97,9 @@ identity abstraction.
 #173 requires deterministic image-provider configuration errors to be rejected
 before combined-video media output. Reuse the one local vision-config validator;
 do not turn dynamic catalogs into preflight network calls.
+#174 applies that same deterministic preflight to the independently public
+`recognize_video_frames()` entry before retained-JPEG validation. Do not change
+generic batch settlement or add another frame-batch abstraction.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

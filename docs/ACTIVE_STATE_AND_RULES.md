@@ -1690,6 +1690,18 @@ the complete 1,457-test offline suite pass. No public API, provider type,
 fallback, retry, output layout, source snapshot decision, dependency, frozen
 boundary, or cancellation/long-audio decision changed.
 
+#174 closes the same deterministic configuration gap in the independently
+public `recognize_video_frames()` facade. Before the fix, valid retained JPEGs
+plus `GoogleGenAISettings` without an explicit vision model returned a failed
+first-group `BatchItemOutcome` instead of rejecting the operation-wide caller
+mistake. The facade now reuses `validate_vision_provider_config()` after its
+memory-only option check and before retained-frame/JPEG validation. Generic
+`recognize_batch()` settlement remains unchanged, as do valid tuple ordering,
+group limits, provider dispatch, and dynamic DashScope resolution. The new
+regression failed first; 86 focused tests and the complete 1,458-test offline
+suite pass. No network, provider call, API, dependency, output, frozen boundary,
+or open #127/#149/#152 decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

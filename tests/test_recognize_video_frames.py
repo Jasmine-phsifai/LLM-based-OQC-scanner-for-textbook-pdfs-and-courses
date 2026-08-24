@@ -10,6 +10,7 @@ from ocrllm import (
     Cancelled,
     Config,
     ConfigError,
+    GoogleGenAISettings,
     InvalidSource,
     RecognitionExecutionPolicy,
     RetainedVideoFrame,
@@ -194,6 +195,23 @@ def test_recognize_video_frames_preflights_every_image_before_dispatch(
         recognize_video_frames(tuple(frames), config=Config(provider=provider))
 
     assert provider.groups == []
+
+
+def test_recognize_video_frames_rejects_invalid_provider_config_globally(
+    tmp_path: Path,
+) -> None:
+    frames = _retained_frames(tmp_path, 1)
+
+    with pytest.raises(
+        ConfigError,
+        match="Google GenAI image recognition requires an explicit model",
+    ):
+        recognize_video_frames(
+            frames,
+            config=Config(
+                provider=GoogleGenAISettings(api_key="test-only-google-key")
+            ),
+        )
 
 
 @pytest.mark.parametrize(
