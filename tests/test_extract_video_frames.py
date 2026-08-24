@@ -97,7 +97,12 @@ def test_extract_video_frames_retains_ordered_change_representatives(
     assert all(type(frame) is RetainedVideoFrame for frame in frames)
     assert all(frame.path.parent == output_parent / "lecture" / "frames" for frame in frames)
     assert all(frame.path.is_file() for frame in frames)
-    assert all(cv2.imread(str(frame.path)).shape[:2] == (48, 64) for frame in frames)
+    decoded_frames = [cv2.imread(str(frame.path)) for frame in frames]
+    assert all(frame.shape[:2] == (48, 64) for frame in decoded_frames)
+    decoded_means = [float(frame.mean()) for frame in decoded_frames]
+    assert decoded_means[0] < 40.0
+    assert decoded_means[1] > 200.0
+    assert 50.0 < decoded_means[2] < 100.0
 
     with pytest.raises(FrozenInstanceError):
         frames[0].frame_index = 1  # type: ignore[misc]

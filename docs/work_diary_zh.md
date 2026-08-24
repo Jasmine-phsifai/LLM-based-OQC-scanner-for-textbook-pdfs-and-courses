@@ -3561,3 +3561,17 @@ Atomic task — Iteration #160: verify that the public retained-frame recognitio
 **追踪结果、两条路线与已有覆盖。** 同步 origin、重读 authority、日记和 package 规则后，逐行复核 `recognize_video_frames()`。`_validate_retained_frame_tuple()` 要求非空 exact tuple、每项 exact `RetainedVideoFrame`，随后要求 `frame_index` 严格递增且 timestamp 不得倒退；整组图片路径再由普通 batch preflight 全量解码，全部通过后才可能 dispatch。已有参数化回归直接覆盖逆序与重复 index，并断言 injected provider 的调用列表为空。路线 A 是继续拒绝“不同 index 指向同一 Path”或“两个 index 具有相同 timestamp”；但库自身 `extract_video_frames()` 已按真实 index 生成唯一文件名，authority #138/#142 明确把合同限定为 exact library-returned tuple，并拒绝新增 duplicate-frame policy。路线 B 保留现有主身份 `frame_index` 的严格顺序和 timestamp 非倒退规则。选择路线 B，不为人工伪造的同图多身份增加第二套文件身份规则。
 
 **验证与停止判断。** `tests/test_recognize_video_frames.py` 全集为 **14 passed in 0.66s**；frame recognition、frame extraction、composition 和完整 video orchestration 邻接集合为 **46 passed in 1.64s**；`compileall -q src tests tools` 与 `git diff --check` 通过。无网络、provider、凭据、安装或下载。本轮没有运行时代码、测试、authority、API、依赖、输出格式、frozen `contracts/worker` 或 #127/#149/#152 改动；authority 已准确记录 exact ordered tuple 和 pre-dispatch 全量验证，无需重复追加。加入 path canonicalization、same-file graph、timestamp 唯一性或 generic media identity 层都会比 extractor 的真实输出更宽，属于本轮明确拒绝的过度设计。当前阻碍视频继续收束的高价值缺陷仍是 #149：同一个 caller MP4 可在 frame/audio 两次解析之间换字节；修复需要维护者在隐藏的 output_dir 同级 snapshot 与新增显式 video temp option 之间选择。
+
+## #161 — 2026-08-25：真实三场景视频现在验证保留 JPEG 的内容，不只验证文件存在
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #161: exercise the shipped negative-feedback video selector on a real multi-scene MP4 and fix only a reproducible scene-retention defect independent of the unresolved snapshot placement. Success means rereading authority and diary, generating a bounded synthetic MP4 with known visual transitions, running the public extract_video_frames() path through real OpenCV, comparing retained timestamps and decoded colors against the source scenes, making the smallest selector correction only if evidence fails, and committing/pushing a Chinese diary record. This matters because mocked candidate tests cannot by themselves prove that real decode, comparison, selection, and JPEG retention work together as a library workflow.
+```
+
+**重核现有证据与实际测量。** 同步 origin、重读 authority、日记和 package 规则后，发现现有 `test_extract_video_frames_retains_ordered_change_representatives` 已经不是 mock：它用真实 OpenCV 写入三段各十帧的 2-fps MP4，亮度依次为 20、230、70，并通过公开 `extract_video_frames()` 精确得到 index `[0, 10, 29]` 和 timestamp `[0.0, 5.0, 14.5]`。因此 selector 没有复现新的场景遗漏，不应改 threshold。真正的证明缺口是测试只检查三个 JPEG 可解码且都是 64×48；如果 seek/write 错误地把同一张有效图片写到三个路径，它仍会通过。独立临时运行读取实际保留 JPEG，平均亮度为 `[17.33, 227.33, 67.33]`，与三段压缩后的内容一致。
+
+**两种断言与最小增强。** 路线 A 把三个平均亮度锁成精确数值或很窄的 `approx`，会把 codec 细微差异误当产品失败。路线 B 用互不重叠的宽区间证明暗 `<40`、亮 `>200`、中灰在 `50..100`，并把已经存在的三个 JPEG 各解码一次，同时复用这些对象检查尺寸。选择路线 B。产品运行时代码、selector 参数和 fixture 都不变；只增强已有真实端到端回归，使“选择 identity 正确”和“实际发布像素属于相应场景”同时成立，没有增加第二个 scene detector 或新测试框架。
+
+**验证与过度设计复查。** frame extraction 全集为 **10 passed in 0.21s**；frame extraction、frame recognition、完整 video orchestration 和 composition 邻接集合为 **46 passed in 1.64s**；`compileall -q src tests tools` 与 `git diff --check` 通过。无网络、provider、凭据、安装或下载；没有运行时代码、API、依赖、输出格式、frozen `contracts/worker` 或 #127/#149/#152 改动。没有增加颜色模型、场景标签、可配置阈值、第二检测器或像素 hash。这个内容证明也没有解决 #149：当前所有 decode 仍可能在 caller source 被替换后读取不同字节，必须等 snapshot 位置选择后统一源生命周期。

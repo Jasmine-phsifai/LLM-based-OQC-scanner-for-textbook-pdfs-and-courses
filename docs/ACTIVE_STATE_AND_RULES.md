@@ -1478,6 +1478,23 @@ tests pass in 1.66 seconds. Compilation and diff checks pass, with no network,
 provider, credential, dependency, public signature, frozen boundary, or open
 decision numbered 127, 149, or 152 changed.
 
+#161 strengthens the real provider-free negative-feedback regression without
+retuning the selector. The existing three-scene 2-fps MP4 already proved exact
+retained indices `(0, 10, 29)` and timestamps `(0.0, 5.0, 14.5)`, but it only
+checked that the resulting JPEGs decoded at the expected dimensions. It would
+not have caught a frame-seek/write defect that placed the same decodable scene
+at every retained path. The same test now decodes each published JPEG once and
+proves broad, codec-tolerant dark, bright, and mid-gray intensity bands in the
+same order. The observed means were approximately 17.33, 227.33, and 67.33.
+
+The frame-extraction suite passes ten tests and the extraction, frame
+recognition, orchestration, and composition neighbors pass 46 tests in 1.64
+seconds. Compilation and diff checks pass. No selector threshold, sampling
+interval, density target, runtime code, provider, dependency, API, source
+snapshot, frozen boundary, or open product decision changed. This content
+proof does not close #149: all reads still need one request-owned MP4 snapshot
+after the maintainer chooses its location.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
