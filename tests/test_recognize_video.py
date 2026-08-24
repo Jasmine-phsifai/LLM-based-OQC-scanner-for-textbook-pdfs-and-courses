@@ -127,6 +127,41 @@ def _write_multiscene_mp4(path: Path) -> Path:
     return path
 
 
+def _write_corrupt_audio_mp4(path: Path) -> Path:
+    valid_source = _write_mp4(path.with_name(f"valid-{path.name}"))
+    completed = subprocess.run(
+        [
+            str(_ffmpeg_executable()),
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(valid_source),
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a:0",
+            "-c",
+            "copy",
+            "-bsf:a",
+            "noise=amount=1",
+            "-movflags",
+            "+faststart",
+            str(path),
+        ],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=30,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    assert completed.returncode == 0
+    return path
+
+
 class _ImageProvider:
     def __init__(self, *, fail_on_call: int | None = None) -> None:
         self.fail_on_call = fail_on_call
@@ -405,6 +440,38 @@ def test_recognize_video_preserves_frames_and_audio_artifact_on_audio_failure(
     assert outcome.audio_artifact is not None
     assert outcome.audio_artifact.is_file()
     assert all(frame.path.is_file() for frame in outcome.retained_frames)
+
+
+def test_recognize_video_keeps_image_branch_when_audio_is_corrupt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_corrupt_audio_mp4(tmp_path / "corrupt-audio.mp4")
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch)
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=_audio_config(tmp_path),
+    )
+    composed = compose_video_result(outcome)
+
+    assert outcome.status == "partial"
+    assert all(item.succeeded for item in outcome.frame_outcomes)
+    assert len(image_provider.calls) == 1
+    assert observed_audio == []
+    assert outcome.audio_state == "failed"
+    assert outcome.audio_error is not None
+    assert outcome.audio_error.code == "VIDEO_INVALID"
+    assert outcome.audio_error.details == {"stage": "extraction"}
+    assert outcome.audio_artifact is None
+    assert all(frame.path.is_file() for frame in outcome.retained_frames)
+    assert not list(outcome.output_root.glob(".ocrllm-audio-*"))
+    assert composed.status == "partial"
+    assert composed.assets == tuple(frame.path for frame in outcome.retained_frames)
+    assert composed.metadata["current_run_provider_call_count"] == 1
 
 
 def test_recognize_video_is_failed_when_neither_provider_produces_a_result(

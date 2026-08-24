@@ -1841,6 +1841,18 @@ failure honesty, not quality. Do not retry or switch models merely to turn this
 gate green; another live run needs a relevant runtime/boundary change. One
 hundred five focused tests and the complete 1,465-test offline suite pass.
 
+#187 rechecks the local-corrupt-audio boundary after initially questioning
+whether the entire video should be rejected before paid work. A real audible
+MP4 remuxed with FFmpeg's audio noise bitstream filter remains frame-decodable
+but fails audio extraction with `VIDEO_INVALID` at stage `extraction`. The
+independent image branch completes one call; the audio provider makes zero
+calls, no MP3 or audio staging file remains, and composition is an honest
+partial result whose exact current-run call count is one. This matches the
+existing branch-separation product contract, so no runtime order or transaction
+layer changed. Keep the real regression; do not turn one corrupt media branch
+into whole-video rejection without a separate maintainer decision. Seventy
+focused tests and the complete 1,466-test offline suite pass.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

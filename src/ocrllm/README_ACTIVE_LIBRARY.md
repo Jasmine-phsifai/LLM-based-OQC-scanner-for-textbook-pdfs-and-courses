@@ -361,8 +361,11 @@ provider. It then uses those same proven boundaries and returns a
 `VideoRecognitionOutcome`: retained media, ordered
 frame-group outcomes or a typed frame error, and an audio result or typed audio
 error. A silent MP4 can therefore complete as frame-only, while corrupt audio or
-a provider failure remains partial or failed. The call does not compose or
-publish final Markdown and does not delete its retained frames or MP3. A
+an audio-provider failure remains partial or failed. If a present audio stream
+cannot be decoded locally, the independent image branch may still complete;
+audio makes zero provider calls, carries `VIDEO_INVALID`, and publishes no MP3.
+The call does not compose or publish final Markdown and does not delete its
+retained frames or MP3. A
 caller should inspect the branch results/errors and top-level status first;
 `compose_video_result()` accepts only complete or partial outcomes and leaves a
 fully failed outcome as structured failure evidence. An explicitly partial

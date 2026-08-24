@@ -540,6 +540,10 @@ The following directions remain traceable but are not current work:
   `PROVIDER_RESPONSE_INVALID`; the failed outcome was not composed and no token
   usage was fabricated. The safe runner can now report validated per-model
   usage when a future settled composition actually supplies it.
+  #187 proves real local audio corruption does not erase a valid image branch:
+  image recognition completes once, audio dispatch remains zero, no MP3/staging
+  survives, and composition reports partial with one exact current-run call.
+  No cross-branch preflight transaction was added.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate
