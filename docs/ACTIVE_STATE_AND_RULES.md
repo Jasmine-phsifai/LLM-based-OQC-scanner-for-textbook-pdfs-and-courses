@@ -1386,6 +1386,24 @@ combined-video stability. The maintainer must choose a hidden snapshot inside
 `output_dir` beside the final same-stem root, without a new API, versus an
 explicit temp-directory parameter before implementation.
 
+#154 performs a bounded stop audit around the other shipped video filesystem
+lifecycles and finds no independent defect. Frame extraction writes every JPEG
+under a hidden staging directory and publishes the directory only when complete;
+audio extraction stages and fully validates its MP3 before atomic replacement;
+recognition preserves branch errors and retained artifacts; final Markdown uses
+the existing atomic writer and protects prior content on overwrite failure.
+Source-derived video directory names remain capped at 96 UTF-16 units, and the
+existing near-260-unit and supplementary-Unicode Windows regressions pass.
+
+The focused command over frame extraction, audio extraction, video recognition,
+composition, publication, and outcome validation passes 55 tests in 1.70
+seconds without network or provider calls. Caller-selected output roots beyond
+the operating system's usable path boundary may still fail with a typed output
+or backend error; no false success was reproduced. Do not add a generic
+extended-path layer, symlink sandbox, cleanup transaction, or broader collision
+graph from this audit. The proven #149 same-source snapshot defect and the open
+#127 cancellation choice remain separate and are not weakened by this result.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

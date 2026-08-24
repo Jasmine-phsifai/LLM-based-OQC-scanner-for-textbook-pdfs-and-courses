@@ -3467,3 +3467,17 @@ Atomic task — Iteration #153: audit and correct one caller-visible capability/
 **最小修复、独立审查与验证。** 产品改动只有 `_DEFERRED_REASON_BY_CAPABILITY` 中一个字符串：`The standalone direct Google Files long-MP3 API is live-proven; shared capability/worker registration remains deferred.`；现有测试同步固定完整文字，没有新增重复测试。轻量只读审查确认 status、20 项顺序和 worker 合同都不应变化，也不应增加 `surface` 字段。capability、lazy import 和公开类型定向集合为 **20 passed in 0.37s**；完整离线套件在只对子进程补入已有 Node PATH 后为 **1,451 passed in 55.61s**。没有网络、provider、凭据、安装或下载；普通 import 行为不变。
 
 **过度设计复查。** 本轮没有解冻或修改 `contracts/worker`，没有新增 capability name、状态、字段、direct registry、provider 探测或 Google catalog 调用，也没有借能力文案声称 A2b resume、视频长音频接线或 DashScope FileTrans 已完成。只修一个已经被真实公开 facade 推翻的陈旧 reason；把 direct API 和 worker registry 合并才是本轮明确拒绝的结构扩大。#152 的 A/B 选择仍原样等待维护者，当前修复不依赖它。
+
+## #154 — 2026-08-25：视频文件生命周期审计没有硬造新防御层
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #154: find and fix one concrete defect in the already-shipped video/file lifecycle that is independent of the open cancellation, snapshot-placement, and A2b decisions. Success means re-reading current authority and diary, exercising public video extraction/publication rather than speculating from code, proving one caller-visible failure or stopping with a documented no-defect result, choosing between two bounded corrections if a defect exists, preserving retained assets and output safety, running proportional tests, and committing/pushing one coherent change. This matters because video maturity now depends more on trustworthy filesystem behavior than on adding another abstraction.
+```
+
+**审计范围、两条路线和主审结论。** 同步 origin、重读 authority 与 #149—#153 日记后，主代理逐行复核 `extract_video_frames()`、`write_selected_video_frames()`、`extract_video_audio()`、`recognize_video()`、`compose_video_result()` 和 `publish_video_result()`。路线 A 是从 legacy 的 260 字符事故继续加入通用 extended-path、symlink sandbox、统一清理 transaction 或更广的资产冲突图；路线 B 是先证明新库是否真的存在同类假成功，没有证据就停止。选择路线 B。frame 会先在随机隐藏目录写完并逐张重新解码验证，再一次 rename 整个目录；audio 在目标同目录建立 staging MP3，完整 FFmpeg 解码验证后才 replace；最终 Markdown 复用完整 write/flush/fsync/close 后发布的原子 writer。识别一支失败时保留另一支已结算结果与资源，当前合同中没有发现部分内容被当作完整成功。
+
+**两个轻量审计与 Windows 证据。** 一个只读任务覆盖 frame/audio extraction、orchestration、composition 和 publication，定向 **49 passed**，没有复现残留、覆盖或错误类型缺陷。另一个只读任务沿 legacy >260 事故核对当前代码：源文件 stem 会规范化并限制为 96 个 UTF-16 单元，60 个补充平面字符会收紧为 48 个字符；现有近 259 单元和 supplementary-Unicode 实际路径测试均通过，三类视频输出失败会诚实成为 `OUTPUT_PATH_INVALID`、`OUTPUT_WRITE_FAILED` 或 `VIDEO_INVALID`，没有假成功。调用者若主动选择已经超出系统可用范围的深层根目录仍可能失败，但当前公开合同没有承诺任意深根目录；从这里加入全库长路径框架会重复 legacy 的复杂度而没有新库失败证据。
+
+**本人复跑、停止边界与过度设计复查。** 主代理使用已有 Node 临时 PATH 亲自重跑 frame extraction、audio extraction、video recognition、composition、publication 与 outcome 集合，结果 **55 passed in 1.70s**，无网络、provider、凭据、安装或下载。没有产品代码、测试、依赖、公开 API、frozen `contracts/worker` 或现有路径规则改动；只把 no-defect 证据写回 authority 和日记。#149 的同一路径跨阶段换字节是假成功，仍必须由一个共享 MP4 snapshot 修；本轮结果没有否定它。#127、#149、#152 仍等待维护者选择。继续加通用 long-path、跨媒体 snapshot framework、递归 cleanup manager 或 symlink graph 都会是本轮明确拒绝的过度设计。
