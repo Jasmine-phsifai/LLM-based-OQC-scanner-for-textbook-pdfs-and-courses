@@ -83,6 +83,14 @@ class VideoRecognitionOutcome:
             raise TypeError("video audio_artifact must be a pathlib.Path") from None
         if (
             self.audio_artifact is not None
+            and self.audio_error is not None
+            and self.audio_error.code == "VIDEO_NO_AUDIO_STREAM"
+        ):
+            raise ValueError(
+                "an absent audio stream cannot have an artifact"
+            ) from None
+        if (
+            self.audio_artifact is not None
             and self.audio_artifact != self.output_root / "audio.mp3"
         ):
             raise ValueError(

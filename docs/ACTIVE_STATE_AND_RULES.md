@@ -1138,6 +1138,32 @@ compatibility was added. Focused video/composition regressions pass; final full
 suite evidence is 1,419 passed in 55.79 seconds, with `compileall -q src tests
 tools`, diff hygiene, and frozen-boundary checks clean.
 
+#140 closes one contradictory public video-outcome state. A manual caller could
+pair `VideoError(code="VIDEO_NO_AUDIO_STREAM")` with the exact owned
+`output_root / "audio.mp3"` artifact. The outcome then reported audio as absent
+and complete while provider-free composition exposed that MP3 in `assets` and
+said no stream was present. `VideoRecognitionOutcome` now rejects this pair at
+construction. An extracted MP3 remains valid with an audio recognition result
+or a real recognition failure; only the explicit no-stream code requires no
+audio artifact.
+
+This is one constructor invariant already guaranteed by `recognize_video()`,
+not a new lifecycle design. Composition does not silently discard an artifact,
+and no new state, serializer, path policy, cleanup transaction, publication,
+resume, cancellation, provider behavior, or legacy compatibility was added.
+Focused and full verification are recorded in the working diary.
+The final offline suite passes 1,420 tests in 55.08 seconds; focused video
+neighbors, `compileall -q src tests tools`, lightweight import, diff hygiene,
+and frozen-boundary checks are clean.
+
+An independent public-object audit during #140 proved a separate open defect
+for the next iteration: a frame or audio `RecognitionResult(status="partial")`
+is currently counted as a fully successful branch, so both
+`VideoRecognitionOutcome.status` and the composed result can incorrectly become
+`complete`. Do not mix that correction into #140; fix status propagation next
+without adding a new state model. Cancellation remains the independent #127
+maintainer choice.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

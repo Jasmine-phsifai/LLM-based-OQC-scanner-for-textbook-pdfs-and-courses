@@ -3251,3 +3251,17 @@ Atomic task — Iteration #139: stop provider-free video composition from conver
 **失败优先证据和最小实现。** 新回归先证明三种旧谎报：音频已有 MP3、provider 错误却缺少 `provider_calls_attempted` 时，组合只报告已知图片调用；成功图片结果缺少次数时报告 0；整条图片 provider 分支失败但缺少次数时，只报告已知音频调用。旧实现对应得到 1、0、1，而不是未知。实现仅把两个读取 helper 的缺失返回从 0 改为 `None`，逐分支收集后执行“全部已知才求和”。若 `current_run_provider_call_count` 明确存在但为 null，它优先表示本轮未知，不能再退回读取旧口径 `provider_call_count`；只有新字段完全不存在时才兼容旧字段。静音 `VIDEO_NO_AUDIO_STREAM` 和没有 MP3 的 `VideoError` 是解析阶段已结束、未进入 provider 的已知零；没有 MP3 的任意其他错误仍不能猜成零。按模型 input/output token 汇总完全不变。
 
 **独立审查、验证与过度设计复查。** 第一份只读审查确认保留字段并传播 `None` 与维护 Google 视频 runner 的 exact-or-null 规则一致，并纠正了初稿中过宽的“只要没有 MP3 就算零”：实现还要求错误属于 `VideoError`。最终 code review 又发现显式 `provider_calls_attempted=1` 会被这个推断覆盖；最终顺序改为先保留合法显式次数，只有证据缺失、没有 MP3 且属于 `VideoError` 时才推断零，并以 `VIDEO_INVALID` 和 `VIDEO_NO_AUDIO_STREAM` 两种回归固定。没有为手工矛盾 outcome 新建一致性验证器。视频组合、公开视频编排、Google runner 和 outcome 定向集合为 **37 passed in 1.00s**；最后一次完整离线测试为 **1,419 passed in 55.79s**，`compileall -q src tests tools`、`git diff --check`、轻量 import 和冻结目录检查通过。没有网络、provider、凭据、安装或下载。本轮没有账本、telemetry、计费、阶段枚举、强制所有错误携带次数、retry、fallback、provider class、持久化、legacy 格式、GUI 或 social 功能；只修复标准组合结果的诚实性。
+
+## #140 — 2026-08-25：无音轨结果不再同时携带 MP3
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #140: audit the public video composition boundary for one reproducible correctness or lifecycle defect after exact-or-unknown call accounting, and fix only a defect that the current library API can demonstrate. Success means reconciling current authority and diary, proving the issue through public objects before editing, preserving separate image/audio providers and lightweight imports, and avoiding cancellation, publication, resume, legacy-format, telemetry, or routing expansion. This matters because the video path is now usable end to end, so the next maturity gain should remove a real caller-visible lie rather than add another speculative feature.
+```
+
+**假设、复现和路线选择。** 当前 authority 明确冻结 #127 取消决定，并要求停止继续扩张文件系统和 accounting 边角，因此审计只看公开视频 outcome/composition。公共复现用一张根内帧、成功图片 group、根内 `audio.mp3` 和 `VideoError(code="VIDEO_NO_AUDIO_STREAM")` 构造 outcome；旧对象接受它并得到 `audio_state="absent"`、`status="complete"`，composer 一边把 MP3 放进 assets，一边写“No audio stream was present.”。路线一是在 composer 偷偷丢掉 MP3；路线二是在 outcome 构造时拒绝矛盾。选择路线二，因为错误对象不应继续流动，且真实 `recognize_video()` 本来就不会产生该组合。
+
+**失败优先和最小实现。** 新回归在修改前稳定得到 **DID NOT RAISE**。实现只在既有 `VideoRecognitionOutcome.__post_init__()` 增加一个不变量：存在 audio artifact 时，audio error 不得是 `VIDEO_NO_AUDIO_STREAM`。其他 audio provider 失败仍保留已经抽取的 MP3；成功音频结果、真实静音和精确词法路径规则都不变。没有新 helper、状态枚举、serializer 或兼容层。
+
+**独立发现、验证与下一轮边界。** 另一只读审计用公共对象证明：图片或音频子结果若明确为 `status="partial"`，当前 outcome 仍只看“存在 result”，从而把整体和 composed result 错升为 `complete`。这是独立的状态传播缺陷，应作为 #141 首要任务；本轮不把第二项修复混进构造不变量，也不借机加入状态协调器。它同时观察到手工 frame result 可声明错误媒体类型等次要构造缺口，但没有足够理由在本轮继续扫并扩大验证器。独立 code review 确认本轮不变量位于类型检查之后，只拒绝 no-stream + artifact，`VIDEO_INVALID` 和 `PROVIDER_*` 失败仍能保留 MP3。视频 outcome、composition、公开视频编排和 Google runner 定向集合为 **38 passed in 1.01s**；完整离线测试为 **1,420 passed in 55.08s**，`compileall -q src tests tools`、`git diff --check`、轻量 import 和冻结目录检查通过。没有网络、provider、凭据、安装或下载。

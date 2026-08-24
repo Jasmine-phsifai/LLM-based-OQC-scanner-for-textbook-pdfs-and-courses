@@ -401,7 +401,9 @@ The following directions remain traceable but are not current work:
   one in-memory MP3 of at most 300 seconds. Public `recognize_video()` now
   orchestrates the retained-frame and extracted-audio branches with separate
   configs and returns a typed complete/partial/failed outcome while retaining
-  owned media. Its public outcome rejects frame/audio paths outside the exact
+  owned media. `VIDEO_NO_AUDIO_STREAM` is incompatible with an audio artifact,
+  so a manual outcome cannot claim absence while exposing an MP3. Its public
+  outcome also rejects frame/audio paths outside the exact
   lexical `output_root/frames/*` and optional `output_root/audio.mp3` layout;
   it does not resolve aliases or symlinks. `compose_video_result()` explicitly
   converts a returned complete

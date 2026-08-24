@@ -159,6 +159,9 @@ frame/audio paths outside its exact lexical `output_root/frames/*` and optional
 current-run provider calls exact-or-unknown: any settled provider branch that
 lacks reliable call evidence makes the total `None`; only a proven
 pre-dispatch video/audio parsing branch contributes zero.
+#140 rejects a contradictory video outcome that reports
+`VIDEO_NO_AUDIO_STREAM` while also retaining `audio.mp3`; invalid public state
+now stops at construction instead of becoming a complete composed result.
 Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

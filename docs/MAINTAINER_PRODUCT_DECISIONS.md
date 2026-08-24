@@ -388,6 +388,10 @@ is often accepted.
   keep `current_run_provider_call_count` present with value `null`. A silent
   stream or typed video/audio parsing failure before provider dispatch is known
   zero. Do not add billing, telemetry, a call ledger, or provider routing.
+- #140 rejects `VIDEO_NO_AUDIO_STREAM` together with any `audio_artifact` at
+  `VideoRecognitionOutcome` construction. Absence and a retained MP3 cannot
+  both be true; do not let composition silently discard the file or invent a
+  fourth audio state.
 
 ## Resolved confirmation and next authority
 

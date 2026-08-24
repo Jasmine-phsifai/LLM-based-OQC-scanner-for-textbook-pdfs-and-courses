@@ -83,6 +83,26 @@ def test_video_outcome_accepts_its_declared_owned_artifact_layout(
     assert outcome.audio_artifact == audio_artifact
 
 
+def test_video_outcome_rejects_audio_artifact_for_absent_stream(
+    tmp_path: Path,
+) -> None:
+    output_root = tmp_path / "video"
+
+    with pytest.raises(
+        ValueError,
+        match="absent audio stream cannot have an artifact",
+    ):
+        VideoRecognitionOutcome(
+            output_root=output_root,
+            retained_frames=(
+                _frame(output_root / "frames" / "frame.jpg"),
+            ),
+            frame_outcomes=(_frame_outcome(),),
+            audio_artifact=output_root / "audio.mp3",
+            audio_error=VideoError(code="VIDEO_NO_AUDIO_STREAM"),
+        )
+
+
 def test_video_outcome_does_not_resolve_lexical_path_aliases(
     tmp_path: Path,
 ) -> None:

@@ -50,6 +50,9 @@ this into path resolution, symlink policy, hashes, manifests, or a sandbox.
 Missing evidence from any settled provider branch makes
 `current_run_provider_call_count` null; only a proven pre-dispatch video/audio
 parsing outcome is zero. Do not add a ledger, telemetry layer, or billing API.
+#140 makes audio absence and an audio artifact mutually exclusive in a public
+video outcome. Reject the contradiction at construction; do not hide it by
+dropping the artifact during composition or adding another audio state.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

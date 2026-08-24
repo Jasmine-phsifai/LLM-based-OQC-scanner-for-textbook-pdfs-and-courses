@@ -307,7 +307,8 @@ a provider failure remains partial or failed. The call does not compose or
 publish final Markdown and does not delete its retained frames or MP3. A
 `VideoRecognitionOutcome` uses an exact lexical artifact layout: every retained
 frame path has parent `output_root / "frames"`, and an audio artifact, when
-present, is exactly `output_root / "audio.mp3"`. Manual constructors must reuse
+present, is exactly `output_root / "audio.mp3"`. `VIDEO_NO_AUDIO_STREAM` cannot
+be paired with an audio artifact. Manual constructors must reuse
 those same `Path` values; the contract does not resolve aliases or symlinks.
 `compose_video_result()` is an explicit, provider-free second step for an
 already returned complete or partial outcome. It creates one memory-only
