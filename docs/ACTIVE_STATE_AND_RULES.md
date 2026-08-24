@@ -160,7 +160,9 @@ return Markdown strings and make no token-usage claim. Existing attempt disclosu
 counts provider
 calls and model/workflow attempts separately from tokens. Resume is the primary
 recovery mechanism. The installed package carries the standard `py.typed`
-marker, so downstream type checkers can consume its shipped inline annotations.
+marker, so standards-compliant downstream type checkers can discover its shipped
+inline annotations. The marker and installed-wheel resource are proven; a real
+downstream checker resolution/diagnostic probe has not yet completed.
 
 ### P0-a — Bounded legacy provider-error evidence audit (completed by #066)
 

@@ -2476,3 +2476,19 @@ Atomic task — Iteration #091: audit the active library’s built wheel and ins
 **真实 wheel 复验。** 修复后的隔离构建 exit **0**，产物 `ocrllm-0.1.0-py3-none-any.whl` 为 **202,984 bytes**，SHA-256 为 `9af1bd4265bd3092b335dab7e93ced452a8af12040434964cce8f37d8fd8f039`。wheel 中 `ocrllm/py.typed` 长度为 **0**，RECORD 的空文件 SHA-256 与 size 均校验通过。主代理从仓库外以该 wheel 直接导入，得到 **45** 个 public exports，marker 可读取，且 base import 没有加载 Pillow、OpenAI、Google GenAI 或 PDFium。METADATA 的 `Requires-Python >=3.10`、空 base dependencies 和六个 runtime extras 与 `pyproject.toml` 一致；RECORD 全部 200 行通过哈希/大小校验，未包含 root tests、docs 或 `legacy_app`。marker、轻量 import 和 public import contract 的最终定向集为 **10 passed in 0.38s**，changed source/test 的 compileall 和 `git diff --check` 通过。一次中间命令引用不存在的 `tests/test_package_import.py`，pytest 在收集前诚实退出且没有执行测试；修正为实际的 `tests/test_import_contract.py` 后才记录上述通过结果。
 
 **减法与过度设计复盘。** wheel 仍包含 package 内的 `AGENTS.md`（2,692 bytes）和 `README_ACTIVE_LIBRARY.md`（15,622 bytes），但它们是当前边界说明、体积很小且 authority 没有要求从发行物删除；本轮不顺手创建排除规则。冻结的 `contracts/`、`worker/` 仍随 active package 发布，冻结不是删除授权。没有改 provider、repair、runtime、extras、版本、license、构建后端或公共导出；没有 live API、凭据或长期构建环境修改。只修复一个安装者可见的 typed-package 标记缺口，并以 source test、真实 wheel 和仓库外 import 三层证明。
+
+## #092 — 2026-08-24：不把 `py.typed` artifact 证明夸大为真实 checker 通过
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #092: verify that the newly declared typed-package contract is usable by a real downstream type checker, rather than stopping at marker presence. Success means installing the tracked wheel and one isolated checker in a disposable environment, checking a small consumer program that uses only documented top-level imports, confirming that correct code receives useful types and an intentional misuse is rejected, then fixing only a reproducible public-annotation defect. This matters because py.typed is valuable only if installed consumers can actually resolve the lazy public API.
+```
+
+**假设、两条路线与具体风险。** #091 只证明 marker 在 wheel 中、可从仓库外读取；本轮不把它自动等同于诊断有效。路线①对全部内部模块开启 strict lint 并永久加入 checker 依赖；路线②只检查文档公开的顶层消费者：`Config(output_dir=Path(...))` 与 `RecognitionResult = recognize(...)` 应有精确类型，而故意传入 `Config(timeout_seconds="wrong")` 必须被拒绝。选择②。主代理复核发现运行时 facade 使用 module-level `__getattr__` 延迟加载，`__init__.py` 没有 `TYPE_CHECKING` re-export，且 `__getattr__` 返回值未精确注解；这存在顶层 import 被 checker 视为 `Any` 的合理风险，但代码观察本身不是工具实证。
+
+**固定下载工作流与诚实失败。** 轻量代理在 `%TEMP%` 创建独立 Python 3.10.20 venv，隔离构建并安装当前 `ocrllm 0.1.0` 成功，没有写入 OCRLLM/base/STA 环境。第一次只下载 mypy 2.3.1 wheel：代理握手超时后，11.2 MB 文件停在约 3.9 MB，三分钟无进展；代理只终止自己启动的精确 pip 进程。现有 Conda 环境没有 mypy/pyright/basedpyright；VS Code Pylance 2026.3.1 的内部 `pyright.bundle.js` 用本机 Node v22.23.2 执行 `--version` 虽 exit 0，却没有输出，不能冒充可用 CLI。第二次使用同一 venv 且只要求 mypy 源码发行包，4.0 MB 文件停在约 1.4 MB；一分钟无进展后同样只终止该 pip 子进程。没有第三次下载、镜像切换或全局安装。
+
+**证据改变后的决定。** 没有真实 checker 输出，就不能选择 `TYPE_CHECKING` 下约 45 个 re-export、增加 `__init__.pyi` 或给动态 `__getattr__` 建立一组 overload。三条方式都会复制公共出口并引入同步成本；当前只能说明它们是候选，不能称为修复。authority 因此把 #091 的强表述从“checker 可以消费”收窄为已证明的“标准 marker 可发现”，并明确 resolution/diagnostic probe 尚未完成。README 和 migration 原本只声明 discovery，没有回退 marker 或 artifact test。
+
+**验证、清理与过度设计复盘。** 本轮只有证据边界文档变更；`git diff --check` 和敏感模式检查通过后提交。临时 venv 由负责固定流程的轻量代理删除并确认不存在。没有修改 `src/ocrllm/__init__.py`、测试、依赖、provider、repair、`contracts/` 或 `worker/`，没有 API/凭据访问。下一次只有在已有 checker 可运行或一次受控下载真正成功后，才执行上述 good/bad consumer probe；若正确代码精确、错误代码被拒绝，则不改 facade，若错误仍作为 `Any` 通过，再用失败输出选择最小静态出口方案。
