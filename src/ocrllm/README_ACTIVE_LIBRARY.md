@@ -318,7 +318,9 @@ immutable `VideoInfo`, writes nothing, and makes no provider call.
 count-driven negative-feedback selection, and ordered immutable
 `RetainedVideoFrame` records. It publishes validated JPEGs together under
 `output/lecture/frames/` and rejects an existing `output/lecture` instead of
-overwriting or resuming it. `recognize_video_frames()` accepts only the exact
+overwriting or resuming it. This is not a fine-gap scene detector: content that
+appears entirely between two coarse samples can be absent from the retained
+tuple. `recognize_video_frames()` accepts only the exact
 ordered tuple returned by this library and reuses ordinary image recognition
 in groups of at most eight. It is memory-only and returns one existing
 `BatchItemOutcome` per group. Every successful result carries exact

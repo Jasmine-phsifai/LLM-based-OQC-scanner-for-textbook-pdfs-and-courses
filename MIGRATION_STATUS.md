@@ -482,6 +482,11 @@ The following directions remain traceable but are not current work:
   negative-feedback selection. A real three-second MP4 with a final-frame scene
   change now retains both the opening and final frames; the complete offline
   suite passes 1,432 tests.
+  #170 measures the remaining intended coarse-scan boundary with two real MP4s:
+  a high-contrast scene entirely between five-second samples is not retained
+  when the sampled first/grid/final frames remain unchanged. Caller-facing
+  documentation now states this limitation; no fine-gap scan or second scene
+  detector was added.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

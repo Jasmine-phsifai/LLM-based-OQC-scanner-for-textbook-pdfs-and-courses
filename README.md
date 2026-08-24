@@ -91,7 +91,9 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   is installed; this inspection API performs no recognition or output writes.
 - exposes `extract_video_frames()` for an explicit output parent; it creates a
   same-stem directory containing ordered `frames/frame-<index>.jpg` files and
-  rejects an existing target instead of overwriting or resuming it.
+  rejects an existing target instead of overwriting or resuming it. Selection
+  compares a five-second coarse grid plus the exact final frame; a scene that
+  appears entirely between those samples can be missed.
 - exposes memory-only `recognize_video_frames()` for a nonempty exact tuple of
   library `RetainedVideoFrame` values; it reuses image preflight and recognition
   in ordered groups of at most eight and creates no video-specific provider.

@@ -1627,6 +1627,23 @@ import set passes 77 tests; the complete offline suite passes 1,456 tests. No
 public API, provider behavior, output format, dependency, frozen boundary, or
 open decision changed.
 
+#170 measures rather than widens the documented five-second coarse-selection
+boundary. A real 12-second, 2-fps MP4 placed four bright frames at 2.0--3.5
+seconds while every coarse-grid and final sample was dark; public
+`extract_video_frames()` retained only dark frame 23 at 11.5 seconds. An
+independent 15-second, 2-fps MP4 placed its bright scene at 6.0--8.5 seconds and
+likewise retained only dark final frame 29 at 14.5 seconds. Both temporary roots
+were removed.
+
+This behavior matches #121's explicit five-second grid plus #148's exact-final
+addition and the existing exclusion of fine-gap scanning. It is therefore a
+product limitation, not a selector defect within the current contract. The
+root and active-library READMEs now tell callers that scenes appearing entirely
+between coarse samples can be missed. No sampling interval, threshold,
+negative-feedback rule, detector, provider behavior, API, dependency, frozen
+boundary, or open decision changed. Forty focused frame/video/import tests and
+the complete 1,456-test offline suite pass.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

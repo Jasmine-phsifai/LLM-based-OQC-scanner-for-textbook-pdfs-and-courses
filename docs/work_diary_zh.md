@@ -3685,3 +3685,17 @@ Atomic task — Iteration #169: verify that the public `recognize_video()` orche
 **假设、现有路径与独立复核。** 同步 origin 并重读 authority、日记和 package 规则后，主代理假设两套公开 `Config` 虽然 API 上分开，失败路径仍可能串用或压掉另一分支。逐行检查 `recognize_video.py` 后确认：两套配置各自完整验证；图片 persistence 和 Google MP3 专用限制都在创建输出前拒绝；图片配置只传给 `recognize_video_frames()`，音频配置只传给 extracted MP3 的 `recognize()`。轻量只读代理独立运行公开编排和导入集合，得到 **16 passed**；它同时核对了五条已有真实本地 MP4 回归：双分支成功、图片 provider 失败而音频仍成功、音频 provider 失败而图片结果与 MP3 仍保留、双 provider 各调用一次后诚实 failed、非法音频配置零输出零调用。它第一次误用缺少 `miniaudio` 的独立 benchmark 环境，失败属于环境依赖；换回仓库权威 OCRLLM 环境后全绿，未改仓库。
 
 **亲自验证、路线选择与停止理由。** 主代理用 `D:\Anaconda\envs\OCRLLM\python.exe` 亲自重跑 `test_recognize_video.py`、lightweight import 和 import contract，结果同为 **16 passed in 1.26s**。路线 A 是在没有失败证据时新增 provider 基类、通用 fallback、第二套 branch state 或重复的 config-identity 断言；这会把已经由真实调用行为证明的边界扩大成未来框架。路线 B 是如实否定原缺陷假设，不改产品代码或测试，只保留调查证据，并把下一轮重新指向负反馈留帧的实际运行。选择 B。#162 已在真实 Google 请求中证明图片和音频各恰好调用一次并分别返回自己的错误，本轮也没有相关运行时变化，因此不重复 live 请求刷结果。无网络、provider、凭据、安装、依赖、公开 API、authority、迁移边界、frozen `contracts/worker` 或 #127/#149/#152 改动；两个用户未跟踪文件保持未动。这次停止本身是过度设计控制，不把“每轮必须有代码 diff”置于产品真实性之上。
+
+## #170 — 2026-08-25：真实短场景证明五秒粗采样边界，文档不再暗示完整场景捕获
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #170: exercise the shipped negative-feedback frame selector on a real MP4 containing a brief interior scene change that falls between the five-second coarse samples, and fix only a reproduced omission within the existing bounded algorithm. Success means rereading authority/diary, tracing the current candidate and comparison rules, using one bounded synthetic video with known scene timing, proving whether the brief scene is retained through public `extract_video_frames()`, applying the smallest correction without adding a second detector or configurable sampling system, preserving candidate limits and output layout, running focused and full offline tests, updating Chinese records, and committing/pushing one coherent change. This matters because retained frames drive all later image recognition; a selector that only works for long scenes can make the entire video library honestly structured yet miss the content users asked it to recognize.
+```
+
+**权威边界使原修复假设失效。** 同步 origin、重读 authority、日记、package 规则和留帧实现后，确认 #121 明确承诺的是每五秒一个灰度缩略图，#148 只补准确末帧，且 authority 明确排除 `fine-gap scan`。因此“捕获任意两个采样点之间的短场景”比 legacy 主路线和当前产品都更强；若直接把扫描改成逐帧、细间隔、运动检测或第二 detector，不是修 bug，而是未经决策扩大视频产品。路线 A 是为了原 prompt 强行加细扫描；路线 B 是先用真实内容测量限制，只在粗采样自身违约时修代码。选择 B。
+
+**两次独立真实测量。** 主代理生成 12 秒、2-fps、24 帧 MP4：只有 index 4--7（2.0--3.5 秒）为亮场景，index 0/10/20/23 全暗。公开视频接口最终只保留 index **23**、timestamp **11.5**、JPEG mean **17.33** 的暗帧，临时目录由 `TemporaryDirectory` 清除。轻量只读代理另生成 15 秒、2-fps、30 帧 MP4，把高对比场景放在 index 12--17（6.0--8.5 秒），粗采样为 0/10/20/29；最终也只保留 index **29**、timestamp **14.5** 的暗帧，并确认清理后无残留。两次都证明短场景确实会漏，但没有发现候选索引、末帧、比较、JPEG 写入或清理违反当前规则。
+
+**最小成熟化改进、验证与过度设计复查。** 产品算法不变；root README 和 active-library README 现在直说这是五秒粗网格加准确末帧，不是 fine-gap scene detector，完全落在采样点之间的内容可能不进入 retained tuple。迁移状态与唯一 authority 记录两次可执行证据，避免以后把 coarse comparison 宣传成完整场景检测。frame extraction、frame recognition、完整 video orchestration 和 lightweight/import 集合为 **40 passed in 1.93s**；只给测试进程临时加入已有 Node 路径后的完整离线套件为 **1,456 passed in 56.29s**。无 provider、网络、凭据、安装、依赖、API、阈值、采样间隔、第二 detector、frozen `contracts/worker` 或 #127/#149/#152 改动。没有加入可调 sampler、逐帧扫描、光流、运动窗口或新公共设置；明确限制比为少数短场景付出全视频解码和更复杂维护更符合当前优先级。
