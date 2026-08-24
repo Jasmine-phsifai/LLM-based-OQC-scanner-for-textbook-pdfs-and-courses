@@ -173,6 +173,14 @@ is often accepted.
   DashScope FileTrans remains a separate future provider path because current
   live authorization is Google, not a reason to prebuild a shared long-audio
   abstraction.
+- **Open #152 A2b chunk scope.** Choose whether the persisted A2b path (A) splits
+  only audio above Google's 9.5-hour single-prompt ceiling, or (B, recommended)
+  uses fixed ordered chunks for every long MP3 so ordinary lecture failures can
+  resume without replaying all settled work. A minimizes calls but does not
+  address the main unstable-provider recovery case. B consumes more request
+  quota and requires a fixed overlap policy. Keep the existing A2a entry as the
+  explicit one-shot option either way; do not add a configurable/adaptive
+  threshold before this choice is made.
 
 ## PDF verification scale
 

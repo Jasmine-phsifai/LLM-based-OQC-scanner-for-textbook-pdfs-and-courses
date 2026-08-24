@@ -77,7 +77,10 @@ video probe. #151 now implements and live-proves standalone
 longer than the current 9.5-hour single-prompt limit. It owns the source,
 uploads once, waits within the configured timeout, generates once, deletes the
 remote file, and closes the client. Chunking, resume, fallback, batch/worker
-support, and video integration remain later gates.
+support, and video integration remain later gates. #152 narrows A2b to one open
+choice: chunk only the 9.5-to-10-hour overflow, or use fixed ordered chunks for
+every persisted long-MP3 run so ordinary lectures can resume without replay.
+No chunk/checkpoint implementation is authorized until that choice is made.
 
 #110 re-proved the distributable boundary after the recent audio changes. A
 clean archive ran 1325 tests with one expected skip, built a 202,692-byte wheel,

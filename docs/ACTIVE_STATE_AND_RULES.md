@@ -1436,6 +1436,41 @@ runner printed neither transcript, source path, credential, remote URI, nor raw
 provider response. Stage A2a is complete; A2b chunk/checkpoint work and video
 routing remain separate future gates.
 
+#152 narrows A2b to one unresolved product choice before code. The shipped A2a
+path is a sound one-request lifecycle, but it cannot preserve any transcript
+when a long generation fails or the process stops. The legacy Google path gives
+useful code-level evidence for ordered 1,800-second logical windows with 30
+seconds of context on each boundary, immediate per-segment checkpointing, and
+zero-call reuse of matching completed segments. It does **not** give production
+or live evidence for Google chunk transcription, overlap trimming, or source
+identity: its tests use fakes, its source match is only path/size/mtime, overlap
+deduplication is delegated to the prompt, final publication is non-atomic, and
+remote Files are not deleted. With `PYTHONPATH=legacy_app`, focused Pytest on
+`legacy_app/tests/test_google_audio_routing.py` passes 27 tests in 6.60 seconds
+without network or provider calls; this validates the code-only behavior, not
+live Google quality.
+
+Two bounded A2b routes remain. Route A splits only inputs above Google's 9.5-hour
+single-prompt limit, minimizing calls but leaving ordinary long lectures unable
+to resume. Route B, recommended, keeps A2a as the explicit in-memory one-shot
+operation and makes the persisted A2b operation use fixed ordered chunks for all
+long MP3s; each settled transcript is atomically recorded before the next call,
+and `resume=True` reuses only a strong matching source/request/segment identity.
+Route B addresses the observed unstable-provider recovery need but consumes more
+per-request quota and requires an explicit overlap policy. The maintainer must
+choose A or B before chunk extraction or checkpoint code is added.
+
+The smallest maintainable state is audio-specific and versioned. Reuse the
+existing strong source-fingerprint shape and generic atomic Markdown writer,
+but do not reuse or generalize the image-specific resume schema/classes. Persist
+the immutable ordered segment plan and each segment's exact actual/logical
+ranges, validated Markdown hash, model, and attempted generation count. Do not
+persist remote IDs when every segment owns one upload/generate/delete lifecycle.
+Do not add configurable chunk sizing, parallel recognition, retry/model switch,
+provider fallback, a generic checkpoint framework, legacy Markdown repair, or
+video integration in the first A2b slice. #127 and #149 still block video
+routing, not this standalone design investigation.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

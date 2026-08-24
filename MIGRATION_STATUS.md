@@ -112,7 +112,11 @@ Phase 1 maturation is offline implementation-complete:
   307.98-second live input discovered 37 models, made one
   `gemini-2.5-flash` generation, reported usage 9,893/25, deleted the remote
   file, closed the client, and left no residue. Chunking/resume is A2b; video
-  integration waits for #127 cancellation and #149 snapshot placement;
+  integration waits for #127 cancellation and #149 snapshot placement. #152
+  confirms A2b needs an audio-specific versioned sidecar rather than generalized
+  image state, but leaves one maintainer choice: chunk only above 9.5 hours, or
+  use fixed chunks for every persisted long-MP3 run so ordinary lectures can
+  resume without replay;
 - implemented and live-proven: the first PDFium vision slice. One PDF
   becomes serial eight-page image groups, ordinary image sidecars preserve
   settled work, range markers preserve group order, and rendered pages have a

@@ -3435,3 +3435,21 @@ Atomic task — Iteration #151: implement and live-prove the smallest standalone
 **过度设计复查与仍未做。** 没有把 A2a 接进视频，没有 chunking、30 分钟 overlap、并发切片、checkpoint/resume、FileTrans、模型切换、fallback、provider base class、API pool、worker/contracts、GUI、legacy 格式或 social 代码。`recognize_long_mp3()` 是为了隔离未决视频语义而新增的窄入口，不是第二套配置体系；以后统一路由有真实消费者时可以收回。没有提交 308 秒 fixture，也没有把 live 生成器塞进库。远端 delete、client close、snapshot 清理和已付费调用计数都有本轮真实资源所有权依据，不属于假想敌；继续设计十小时调度或多 provider fallback 才会越过当前证据。
 
 **最终复核与可安装包证明。** 共享 option validator 收口后，长短音频、runner、视频、batch、lazy import 和公开类型的定向回归重新运行，结果为 **134 passed in 3.11s**；完整离线套件再次运行，结果为 **1,451 passed in 54.95s**。主审随后修正一处纯 import 排序并单独重跑 short probe **15 passed in 0.10s**；`compileall -q src tests tools`、`git diff --check`、敏感模式扫描和 frozen 目录检查通过。固定离线构建/安装交给轻量任务：当前候选使用缓存 Hatchling 构建为 **227,791 bytes** 的 `ocrllm-0.1.0-py3-none-any.whl`，SHA-256 `17e519d67de72467621f6106820afd6f5ab8a1ea4951fc2b36cc57ce5f06bee8`；仓库外 `--no-deps --no-index` 安装成功，METADATA Summary 精确为 `Importable OCRLLM library for image, PDF, audio, and video recognition.`，十个新增长 MP3 模块与 `py.typed` 都在 wheel 内。仓库外公开导入 `recognize_long_mp3` 和 `Config` 成功，plain import 没有加载 `google.genai`、miniaudio、OpenCV、NumPy 或 imageio-ffmpeg；验证 TEMP 根已删除，仓库未被构建任务修改。
+
+## #152 — 2026-08-25：A2b 先收紧为一个真正影响调用次数的产品选择
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #152: determine and close the smallest evidence-backed gap between the newly proven single-upload long-MP3 path and recoverable lecture-audio recognition, without integrating video or introducing a provider framework. Success means reconciling the current authority and diary, proving one concrete failure or missing contract from current code/legacy evidence, choosing between at least two bounded paths, implementing only if the semantics are already authoritative, verifying proportionately, recording the Chinese diary, and committing/pushing one coherent change. This matters because unstable APIs make replaying a long paid-or-quota-limited request unacceptable, but speculative checkpoint machinery would make the library harder to maintain.
+```
+
+**重新核对后的假设与真实缺口。** 开始时同步 origin，工作区仍只有两个维护者保护的未跟踪文件；重读 authority、A2 计划、维护者决定和 #150—#151 日记。当前 A2a 的单次上传、生成、删除和错误诚实性没有新缺陷，但它只有一个不可拆分的结果：请求失败或进程终止时，没有任何 transcript 可以保留。#127 和 #149 只阻止长音频自动接入视频，并不妨碍独立 A2b；真正缺失的是“哪些音频必须分片”的产品规则。直接写 checkpoint 会先偷定分片范围、调用次数和重叠策略，因此本轮改为证据收敛而不是先造状态文件。
+
+**两条路线与推荐。** 路线 A 只对超过 Google 9.5 小时单 prompt 上限、但仍在私有 10 小时产品上限内的输入分片。它请求最少，却意味着普通一小时、三小时或九小时课程仍是一次不可恢复的大请求，几乎没有解决用户强调的 API 崩溃、quota 耗尽后整段重做问题。路线 B 保留现有 A2a 作为明确的一次性内存入口；只要调用者选择持久化 A2b，就对所有长 MP3 使用固定、有序的片段，每段成功后先原子保存，再开始下一次 provider 调用。路线 B 更符合 resume 目标，故推荐，但它会增加按次计算的免费 quota 消耗，并必须冻结一个重叠规则。不能把这项差异伪装成内部实现细节，也不应加入可配置阈值或自适应算法逃避选择；已把 A/B 记录为 #152 维护者待决问题。
+
+**legacy 证据的强弱。** 轻量只读任务确认父应用使用 1,800 秒逻辑片段和边界两侧 30 秒上下文；片段身份是序号加 actual/logical 四个时间边界，识别严格按序，每段成功后立即写 checkpoint，下一次匹配后跳过 provider 调用。主代理本人逐行复核相同代码。定向 legacy 测试第一次因未把 `legacy_app` 放入 `PYTHONPATH` 而在收集期得到 `ModuleNotFoundError: OCRLLM`；只修正当前子进程的 `PYTHONPATH` 后，`legacy_app/tests/test_google_audio_routing.py` 为 **27 passed in 6.60s**，无网络或 provider 调用。这只是 fake/code 证据，不是 Google 长音频生产证明：legacy 的 source identity 只有路径、size、mtime；重叠去重靠 prompt 要求模型自行遵守；最终 Markdown 非原子写；Google remote File 不删除。父应用已有 10,053.4 秒真实成功来自 DashScope FileTrans，不能误写成 Google 分片成功。
+
+**状态结构审计与精简边界。** 第二个轻量只读任务核对新库 checkpoint：`ImageResumeState`、`ImageSlotState` 和 `ImageSlotCheckpoint` 明确携带 image media、workflow pass 与 image snapshot 语义，把它们改成跨媒体大 schema 会让后续维护更困难。A2b 应有自己的 versioned audio sidecar，只复用既有强 source fingerprint 的形状和通用原子 Markdown writer。最小状态保存 source/request identity、不可变的有序 segment plan、每段 exact actual/logical 范围、已验证 Markdown 及哈希、实际模型和 generation 调用数；每段各自完成 upload/generate/delete 时不保存 remote ID。首版严格串行，不加入并行识别、自动 retry/换模、fallback、DashScope 抽象、通用 checkpoint 框架、legacy Markdown repair 或视频接线。
+
+**本轮完成和过度设计复查。** 本轮没有产品代码、公开 API、依赖、测试文件、provider 调用或 live quota 消耗；也没有修改 frozen `contracts/worker`。这不是因为 workload，而是两条路线会真实改变常规课程的请求数量，必须由维护者明确选择。已把证据、推荐路线、最小状态和禁区同步到 authority、A2 计划、维护者决定、迁移状态和入口导航，避免下一轮从散落 legacy 细节重新推理。继续在选择前增加 segment planner、音频 sidecar 类或 30 分钟常量都会产生无消费者代码，属于本轮明确拒绝的过度设计。

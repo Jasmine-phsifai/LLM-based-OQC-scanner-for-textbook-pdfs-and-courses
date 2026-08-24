@@ -424,6 +424,17 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 - A2b may add the smallest evidence-driven Google chunk/checkpoint route after
   A2a succeeds. Duration remains the routing input toward the private ten-hour
   product ceiling, subject to current provider size and duration limits.
+- #152 leaves one explicit maintainer choice before A2b code: (A) split only
+  above Google's single-prompt ceiling, minimizing calls but providing recovery
+  only for the 9.5-to-10-hour tail; or (B, recommended) keep A2a as the explicit
+  one-shot operation and use fixed ordered chunks for every persisted long-MP3
+  run, so ordinary lecture failures can resume without replay. Do not invent a
+  configurable threshold or adaptive chunk policy while this choice is open.
+- A2b uses its own versioned audio state and a strong source/request/segment
+  identity. It may reuse generic fingerprint and atomic-write behavior, but it
+  must not generalize or import image slot semantics. The first slice remains
+  serial and owns one complete upload/generate/delete lifecycle per missing
+  segment.
 - DashScope FileTrans remains a later independent provider path. When it is
   implemented, add its explicit long-model identity, persist its task ID and
   strong source/request identity before polling, and resume a matching task
