@@ -9,10 +9,12 @@ import pytest
 
 from ocrllm import (
     AudioModelSettings,
+    Cancelled,
     Config,
     ConfigError,
     GoogleGenAISettings,
     ProviderError,
+    RecognitionExecutionPolicy,
     VideoRecognitionOutcome,
     compose_video_result,
     recognize_video,
@@ -124,13 +126,13 @@ def _write_multiscene_mp4(path: Path) -> Path:
 
 
 class _ImageProvider:
-    def __init__(self, *, fail: bool = False) -> None:
-        self.fail = fail
+    def __init__(self, *, fail_on_call: int | None = None) -> None:
+        self.fail_on_call = fail_on_call
         self.calls: list[tuple[Path, ...]] = []
 
     def recognize_images(self, image_paths, *, prompt, config):
         self.calls.append(tuple(image_paths))
-        if self.fail:
+        if len(self.calls) == self.fail_on_call:
             raise ProviderError("Image provider failed.")
         return "# Frames\n"
 
@@ -248,12 +250,58 @@ def test_recognize_video_keeps_real_multigroup_order_and_separate_audio(
     assert composed.metadata["current_run_provider_call_count"] == 3
 
 
+def test_recognize_video_preserves_settled_work_after_later_group_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_multiscene_mp4(tmp_path / "lecture.mp4")
+    image_provider = _ImageProvider(fail_on_call=2)
+    observed_audio = _install_fake_audio(monkeypatch)
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(
+            provider=image_provider,
+            execution=RecognitionExecutionPolicy(maximum_images_per_request=3),
+        ),
+        audio_config=_audio_config(tmp_path),
+    )
+
+    assert [len(call) for call in image_provider.calls] == [3, 3]
+    assert [item.index for item in outcome.frame_outcomes] == [0, 1, 2, 3]
+    assert outcome.frame_outcomes[0].succeeded
+    assert isinstance(outcome.frame_outcomes[1].error, ProviderError)
+    assert isinstance(outcome.frame_outcomes[2].error, Cancelled)
+    assert isinstance(outcome.frame_outcomes[3].error, Cancelled)
+    assert (
+        outcome.frame_outcomes[1].error.details["provider_calls_attempted"] == 1
+    )
+    assert "provider_calls_attempted" not in outcome.frame_outcomes[2].error.details
+    assert "provider_calls_attempted" not in outcome.frame_outcomes[3].error.details
+    assert len(observed_audio) == 1
+    assert outcome.audio_result is not None
+    assert outcome.audio_artifact is not None
+    assert outcome.audio_artifact.is_file()
+    assert all(frame.path.is_file() for frame in outcome.retained_frames)
+    assert outcome.status == "partial"
+
+    composed = compose_video_result(outcome)
+    assert composed.status == "partial"
+    assert composed.assets == tuple(
+        frame.path for frame in outcome.retained_frames
+    ) + (outcome.audio_artifact,)
+    assert composed.metadata["successful_video_frame_group_count"] == 1
+    assert composed.metadata["failed_video_frame_group_count"] == 3
+    assert composed.metadata["current_run_provider_call_count"] is None
+
+
 def test_recognize_video_preserves_audio_after_frame_provider_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _write_mp4(tmp_path / "lecture.mp4")
-    image_provider = _ImageProvider(fail=True)
+    image_provider = _ImageProvider(fail_on_call=1)
     observed_audio = _install_fake_audio(monkeypatch)
 
     outcome = recognize_video(
@@ -305,7 +353,7 @@ def test_recognize_video_is_failed_when_neither_provider_produces_a_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _write_mp4(tmp_path / "lecture.mp4")
-    image_provider = _ImageProvider(fail=True)
+    image_provider = _ImageProvider(fail_on_call=1)
     observed_audio = _install_fake_audio(monkeypatch, fail=True)
 
     outcome = recognize_video(

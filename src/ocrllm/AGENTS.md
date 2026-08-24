@@ -109,6 +109,10 @@ describe all Stage A2 work as unstarted.
 #179 distinguishes the provider-free `video` extra from the complete Google
 combined-video profile, which also needs `image`, `audio`, and `google`. Keep
 those dependencies optional instead of widening the `video` extra.
+#180 proves that a later image-group failure preserves earlier paid frame work
+and the separately settled audio branch, while undispatched suffix groups stay
+typed cancellations. Keep their provider-call evidence unknown; do not invent
+zero calls, retries, model switching, or a cross-branch transaction.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -1733,6 +1733,20 @@ name both profiles, and the package README no longer implies `video` alone can
 execute its Google example. No dependency set, runtime, API, provider, frozen
 boundary, or open #127/#149/#152 decision changed.
 
+#180 closes the remaining real-media evidence gap for failure after paid frame
+work. The same bounded ten-frame MP4 is grouped 3+3+3+1 through the public
+execution limit: the injected image provider succeeds once, fails on its second
+call, and receives no suffix groups. The returned frame outcomes remain ordered
+as success, provider failure, cancellation, cancellation; the independently
+configured fake audio branch still runs once and succeeds. All retained JPEGs
+and the MP3 remain usable, so outcome and composition are honestly partial.
+Composition reports the current-run provider-call total as unknown because the
+undispatched cancellation outcomes carry no call evidence, preserving #139
+instead of inventing zeros. This is a regression-only proof: no runtime, API,
+provider, retry/fallback, output, dependency, frozen boundary, or open
+#127/#149/#152 decision changed. Sixty focused tests and the complete 1,460-test
+offline suite pass.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

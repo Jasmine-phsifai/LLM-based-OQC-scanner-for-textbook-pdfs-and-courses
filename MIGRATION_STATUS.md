@@ -505,6 +505,12 @@ The following directions remain traceable but are not current work:
   retained frames dispatch as ordered 8+2 image calls while the separate audio
   configuration dispatches once, and provider-free composition reports three
   exact current-run calls. No runtime contract changed.
+  #180 proves the corresponding later-failure path with the same real media:
+  grouping ten retained frames as 3+3+3+1 preserves the first paid image result,
+  records the second-call provider failure, cancels both undispatched suffix
+  groups, and still completes the separate audio call. The partial composition
+  retains every media asset and reports current-run calls as unknown because
+  cancelled suffix groups have no call evidence. No runtime contract changed.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

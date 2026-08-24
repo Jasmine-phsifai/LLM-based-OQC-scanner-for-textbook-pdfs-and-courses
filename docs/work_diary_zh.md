@@ -3811,3 +3811,17 @@ Atomic task — Iteration #179: verify that the maintained installation guidance
 **两条路线与最小修正。** 路线 A 把 Pillow、miniaudio 和 google-genai 全塞进 `video` extra，让一句旧命令变真，但会使 provider-free 视频解析失去轻量可选依赖边界。路线 B 明确分两个档位：`ocrllm[video]` 只负责无 provider 的解析/提取；完整 native-Google combined-video 示例安装 `ocrllm[video,image,audio,google]`。选择 B。package README 改正示例旁说明；root checkout 安装段保留原 DashScope image/PDF + provider-free video 命令，并增加完整 Google 视频命令。没有改变 extras、依赖版本、runtime 或 public API。
 
 **验证与过度设计复查。** 主代理核对三个 lazy dependency failure 的 `extra`/required distribution、公开示例用到的配置和四组 `pyproject` extras；video orchestration/extraction、Google image/audio adapter、import contract 与 lightweight import 聚焦集合为 **101 passed in 4.03s**，只给测试子进程临时加入已有 Node 路径后的完整离线套件为 **1,459 passed in 57.48s**。无网络、provider、凭据、安装、下载、运行时代码、测试框架、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有增加 meta-extra、dependency resolver、安装矩阵脚本或 clean-wheel 重跑；#146 明确要求依赖/manifest/public surface 未变化时不重复构建证明，本轮只修用户可执行命令。
+
+## #180 — 2026-08-25：后续图片批次失败不再只是低层假设，真实视频保住已付费结果和独立音频
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #180: verify that a real multi-group combined-video run preserves the first paid image-group result and the independent audio result when a later image group fails, while undispatched suffix groups remain honest cancellations. Success means rereading authority/diary, reusing #177's bounded real MP4 rather than adding another fixture, configuring a lower public image limit to create four groups, failing exactly the second injected image call, proving ordered success/failure/cancellation outcomes, one audio call, partial composition, retained assets, and exact-or-unknown call evidence, changing runtime code only if the observed contract breaks, running focused/full offline tests, and committing/pushing one coherent regression or fix. This matters because provider separation is useful only if later batch failure cannot erase already-paid frame work or the other media branch.
+```
+
+**缺口、选择和复核。** 现有低层 frame adapter 已证明第 2 批失败后停止，combined-video 则分别证明真实多批全成功和首批失败后音频继续；缺的是“真实视频先成功一批、后续才失败”的交叉证据。路线 A 是 mock 帧提取再塞十张图，执行快但无法覆盖真实负反馈留帧和资产生命周期；路线 B 是复用 #177 的 60 秒、1 fps、64×48、十二个灰度场景 MP4，公开设置每批最多三图形成 **3+3+3+1**。选择 B；测试 provider 的失败开关仅从“每次都失败”收紧为“第 N 次失败”，没有建立通用故障注入框架。轻量只读复核独立确认 #139 下的预期结果，未改文件。
+
+**结果与错误诚实性。** 公共 `recognize_video()` 实际只发送前两批：第 1 批成功，第 2 批产生 provider error 并记录一次调用，第 3、4 批为未 dispatch 的 `Cancelled`，没有伪造 `provider_calls_attempted=0`。独立 fake Google audio 分支仍恰好调用一次并成功；十张 retained JPEG 与 `audio.mp3` 全部存在。outcome 和 composition 均为 partial，组合资产顺序仍是十张图片后接音频；由于两个取消结果没有调用证据，`current_run_provider_call_count` 正确为 **None**，而不是把已知三次与假定零次相加。
+
+**验证、一次环境误判与过度设计复查。** 第一次定向命令误用缺少 OpenCV 的 `STA` Python，fixture 在导入 `cv2` 时失败、provider 零调用；改用仓库指定的 `D:\Anaconda\envs\OCRLLM\python.exe` 后新回归通过。video orchestration、frame adapter、composition、outcome 和 lightweight/import 聚焦集合为 **60 passed in 4.41s**；compileall 与 `git diff --check` 通过。只给完整测试进程临时加入已有 Node 路径后的全量离线套件为 **1,460 passed in 58.67s**。无网络、真实 provider、凭据、安装、依赖、运行时代码、API、输出格式、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有增加第二个 fixture 文件、retry/fallback、跨分支 transaction、调用账本或压力测试；运行时已符合合同，因此本轮只留下能防止以后回归的真实媒体证据。
