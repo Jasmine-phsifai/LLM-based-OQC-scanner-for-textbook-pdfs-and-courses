@@ -3089,3 +3089,19 @@ Atomic task — Iteration #129: determine the smallest truthful persisted output
 **全量、真实本地路径和未完成 wheel 证据。** 最终 root suite 为 **1,392 passed in 56.25s**；`compileall -q src tests tools`、`git diff --check` 和 frozen `contracts/`/`worker/` diff 通过。真实生成 MP4 使用独立 injected image 与 fake audio provider 经公开 `recognize_video()` 后立即调用公开组合函数，得到 complete video result、两个区段、全部 retained assets 与 current-run call count 2；没有云端请求。Fresh wheel 尝试先由轻量任务确认当前 Python/其他环境和离线 uv cache 均缺 Hatchling；获准的 bounded online workflow 到 `Building wheel...` 后 180 秒仍无 artifact。任务停止其启动的两个 uv build 进程，并删除 `ocrllm-i129-wheel-*` 与 `ocrllm-i129-retry` 两个精确 TEMP 根，确认不存在。因而本轮 installed-wheel 证据诚实记为 **incomplete**，没有用 #126 旧 wheel 证明新 API，也没有把 build stall 说成产品失败。
 
 **过度设计复查与下一边界。** 没有 serializer/to_dict、自动出版、视频 manifest、resume、checkpoint、cleanup transaction、audio/frame alignment、provider hierarchy、fallback、worker、legacy parser 或 social 功能。Token helper 有 PDF 和视频两个现存消费者，并删除了 PDF 的重复实现，不是为假想未来建框架。当前仍有两个真正分开的下一决策：#127 的 branch-scoped/whole-call cancellation 需维护者选择；Markdown publication 是否允许 partial、如何命名和拒绝覆盖，应在取消选择后单独定义，不能偷偷塞回 `recognize_video()`。
+
+## #130 — 2026-08-25：补齐当前视频组合接口的独立 wheel 证据
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #130: close the fresh-wheel evidence gap exposed by #129 by determining why the declared Hatchling wheel build remains at `Building wheel...`, then fix only a repository-owned packaging defect if one exists. Success means reproducing the build with bounded stage output, separating environment/tool failure from package-manifest failure, producing and installing the exact current wheel outside the repository if feasible, exercising the real local video composition path, and cleaning every build-owned temporary artifact. This matters because a Python library is not mature if its source tests pass but its current public surface cannot be independently built and imported.
+```
+
+**假设、路线和实际结论。** 开始时保留两条路线：如果干净归档也无法被 Hatchling 构建，就调查并最小修复仓库自己的 manifest；如果干净归档能构建，就把问题限定为环境或验证工具，不动产品。只读审计确认 `pyproject.toml` 已把 wheel 限定为 `src/ocrllm`，sdist 也只有 `pyproject.toml`、`README.md` 和 `src/ocrllm`；当前 Git 树没有被跟踪的 build、dist、虚拟环境、链接或超长路径，最长跟踪路径只有 94 个字符。工作区被忽略的 `temp/pdf_images` 中确实有会触发 Windows `Filename too long` 的用户临时数据，因此 wheel 证明必须从干净 Git 归档开始，但没有删除或改动这些文件。
+
+**验证工具的三次失败及纠正。** 第一次直接 Hatchling 实际已经成功生成 wheel，但 PowerShell 的 `$ErrorActionPreference=Stop` 把 Hatchling 正常写到 stderr 的 wheel 路径当成 `NativeCommandError`，包装器因此在安装前错误退出。第二次包装器又假设 `git archive` 解压后存在单一顶层子目录，而实际 `docs/`、`src/` 直接位于指定解压根；第三次生成的临时控制脚本自身有 `try` 缩进语法错误，甚至没有执行。这三次都没有证明产品失败。为避免继续调试一套一次性控制器，最终轻量任务改用逐步 PowerShell 命令：显式把解压目录当 source root，先断言其中存在 `pyproject.toml`，并用原生命令退出码和 wheel 是否存在共同判断成功。所有失败任务拥有的精确 TEMP 根均已删除，仓库未被修改。
+
+**独立安装和真实本地视频证据。** exact commit `570ef43` 的干净归档经临时隔离 Hatchling 成功生成 `ocrllm-0.1.0-py3-none-any.whl`，大小 **225,988 bytes**，SHA-256 为 `A29A668CADB8E8610AAED4B23C8E61E037D5E5A73C7A1421B8988B05E7B6E489`。该 wheel 用 `--no-deps` 安装到仓库外的独立 target；从仓库外工作目录导入时，包来源和版本均指向该 target，普通 `import ocrllm` 没有加载 OpenCV、NumPy、imageio-ffmpeg 或 miniaudio。随后生成一个真实本地 MP4，用独立的注入式图片 provider 和 fake 短音频 processor 调用已安装的 `recognize_video()`，得到 `complete`、一个帧组、一次图片调用和一次音频调用；再调用已安装的 `compose_video_result()`，结果同时包含 `Video frames` 与 `Video audio`，两个 asset 均存在，current-run provider calls 为 2，`output_path is None`。没有真实 provider、凭据或文件发布，最终精确临时根已删除并确认不存在。
+
+**过度设计复查。** 没有修改 `pyproject.toml`、构建后端、产品代码或测试，因为干净归档和安装证明已经排除仓库打包缺陷。没有为 stderr、归档目录或临时脚本问题增加通用 build controller、自动重试、缓存管理或目录扫描；可持续的最小规则只有三条：发布证明使用干净归档；先确认明确 source root 的 `pyproject.toml`；原生命令以退出码和期望产物判断成功。#127 的取消语义仍未决定，本轮没有借打包调查绕过它，也没有开始最终 Markdown 发布、resume、provider 泛化或 social 功能。

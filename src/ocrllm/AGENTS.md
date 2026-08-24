@@ -23,7 +23,9 @@ silent MP4 from corrupt declared audio. #126 adds the first narrow
 media and typed partial failures. #129 adds explicit memory-only
 `compose_video_result()` for already returned complete or partial outcomes; it
 keeps frames and audio separate and does not publish Markdown, infer time
-alignment, or copy legacy formats. Final publication and recovery come next and
+alignment, or copy legacy formats. #130 proves that exact facade from a clean,
+freshly installed wheel through a real local MP4 without loading heavy video
+dependencies during plain import. Final publication and recovery come next and
 must be derived from these real outcomes rather than copied from legacy. Keep
 the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,

@@ -968,13 +968,25 @@ The final source suite passes 1,392 tests. A real generated MP4 traversed the
 local frame/audio orchestration with separate injected providers and then the
 public composition step, producing a complete video result with both sections,
 retained assets, and two current-run provider calls without a cloud request.
-Fresh installed-wheel proof remains incomplete: offline `uv build` could not
-resolve uncached Hatchling, and a bounded online build workflow remained at
-`Building wheel...` for 180 seconds without producing an artifact. Its two
-build-owned uv processes were stopped and both exact temporary roots removed.
-This is a build-environment blocker, not installed-package evidence or a product
-pass; the prior #126 installed wheel remains evidence only for the earlier
-orchestration surface.
+Iteration #130 closed the fresh installed-wheel evidence gap without changing
+the package. A clean archive of exact commit `570ef43` built a 225,988-byte
+wheel (SHA-256
+`a29a668cadb8e8610aaed4b23c8e61e037d5e5a73c7a1421b8988b05e7b6e489`)
+through direct Hatchling. Installed with `--no-deps` outside the repository,
+that wheel kept plain `import ocrllm` free of OpenCV, NumPy, imageio-ffmpeg, and
+miniaudio; then one generated local MP4 completed public `recognize_video()`
+with separate injected image and fake-audio processors and composed both video
+sections, two retained assets, and two current-run provider calls with no
+published Markdown. The exact proof root was removed.
+
+The earlier 180-second `uv build` observation was therefore not evidence of a
+package defect. Two later proof wrappers also stopped before product execution:
+one treated Hatchling's successful wheel-path stderr as a PowerShell native
+error, and one assumed a nonexistent archive nesting level. Packaging evidence
+must use a clean Git archive, judge native build success by exit code plus the
+expected artifact rather than by an empty stderr requirement, and assert the
+explicit extraction root contains `pyproject.toml`. Do not turn these observed
+test-harness errors into a package build framework or broaden the Hatch manifest.
 
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide

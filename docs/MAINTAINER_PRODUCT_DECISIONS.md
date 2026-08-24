@@ -339,6 +339,13 @@ is often accepted.
   not converted to results. Do not infer audio/frame alignment, auto-publish
   Markdown, create resume state, or copy legacy board/transcript file formats
   as part of this composition boundary.
+- #130 proves the current video-composition facade from a freshly built and
+  externally installed wheel. Release proofs should build from an explicit
+  clean Git-archive root and determine native-command success from its exit code
+  plus the expected artifact; Hatchling may print the wheel path on stderr.
+  Assert `pyproject.toml` at the chosen archive root instead of guessing an
+  extra nesting level. These are proof-harness rules, not reasons to broaden the
+  package manifest or add a general build controller.
 
 ## Resolved confirmation and next authority
 
