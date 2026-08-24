@@ -3769,3 +3769,17 @@ Atomic task — Iteration #176: verify that public `VideoRecognitionOutcome` can
 **独立公开类型复核。** 轻量只读任务使用顶层导出的类型构造四种对象：空 `retained_frames` 立即得到 `ValueError`；有 retained frame 但既无 outcomes 也无 frame error 得到 `ValueError`；outcomes 与 frame error 同时存在也得到同一互斥错误；合法 silent-video 结构成功构造，`status="complete"`、`audio_state="absent"`。独立 outcome 套件为 **12 passed**，主代理亲自运行 outcome、composition、publication 与真实 video orchestration 邻接集合为 **41 passed in 1.30s**。无运行时代码、测试、API、文档合同、网络、provider、凭据、安装、依赖、输出格式、legacy compatibility 或 frozen `contracts/worker` 变化。
 
 **停止判断与下一项重大选择。** 本轮只记录调查证据，不给已经正确的 constructor 再加 helper、schema、validator 或重复断言；authority 与迁移状态本来已准确，无需追加重复条目。继续在这一区域寻找人工伪造对象的假想敌已经接近过度设计。当前阻碍视频真实生命周期继续成熟的高价值问题仍是 #149：同一个 caller MP4 在 scan、retained decode 与 audio extraction 之间可能被替换。推荐方案 A 是在 `output_dir` 内、最终同名目录旁建立隐藏的 request-owned 流式磁盘快照，整个调用只读该快照并在结束时删除，不新增公开参数；方案 B 是新增显式 `temp_dir`。在维护者选择前不实现半套快照或继续用边缘防御绕开它。
+
+## #177 — 2026-08-25：真实负反馈留帧跨过默认八图边界，并保持音频 provider 独立
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #177: verify the public combined-video library path on a real synthetic MP4 whose negative-feedback selector retains more than eight frames, forcing multiple ordered image-provider groups while the audio branch uses its separate configuration. Success means rereading authority/diary, checking whether this exact composed path is already covered, generating one bounded non-private MP4 only if evidence is missing, proving retained order, per-group call boundaries, independent audio dispatch, outcome/composition status, and cleanup, adding a permanent regression only if it covers a real untested interaction without duplicating lower-level tests, running focused/full offline verification, and committing/pushing one coherent change. This matters because frame-only grouping and one-group combined video tests do not by themselves prove that real selection, multiple image requests, separate audio, and composition work together as an importable library workflow.
+```
+
+**覆盖缺口与两条路线。** 同步 origin、重读 authority、日记和 package 规则后，确认 lower-level frame adapter 已用 17 张现成 JPEG 证明 8+8+1；combined-video 真实媒体回归虽然断言 image call 数等于 outcome group 数，但一秒蓝色视频只保留一帧，没有跨过默认八图边界。路线 A 是 mock `extract_video_frames()` 强塞十帧，仍不能证明真实 scan、negative feedback、JPEG publication 和后续两分支共同工作；路线 B 是寻找最小稳定真实 fixture。选择 B。轻量只读任务最多三次试探，第一次即找到 60 秒、1 fps、64×48、12 个灰度场景的 MP4：提取约 0.08 秒，稳定保留十帧 `(0, 5, 10, 20, 25, 30, 35, 45, 50, 59)`，临时目录完整清理。无需一小时视频或压力测试。
+
+**永久集成回归与一次错误断言。** 新测试用 OpenCV 写入上述低分辨率场景，再用已有 FFmpeg 加一条 60 秒合成正弦音轨。公共 `recognize_video()` 使用 injected image provider 和独立 Google audio config/fake adapter；十帧按默认 **8+2** 两次调用，音频恰好调用一次，outcome 与 composition 均 complete，组合结果的 exact current-run call count 为 **3**。第一次运行唯一失败来自测试错误地要求 provider 收到 retained artifact 原路径；普通 image pipeline 按设计先建立 request-owned snapshots。修正后改为验证十个文件名顺序相同，并确认 provider 所见 image snapshots 与 audio snapshot 在调用后都不存在，没有修改产品代码来迎合错误断言。
+
+**验证与过度设计复查。** 真实 combined test 转绿；video orchestration、frame adapter、真实 selector、composition 和 lightweight/import 邻接集合为 **57 passed in 3.34s**，changed test compileall 通过。只给测试子进程临时加入已有 Node 路径后的完整离线套件为 **1,459 passed in 54.63s**。无网络、凭据、真实 provider、安装、依赖、运行时代码、API、输出格式、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有扩大 live gate、改变每批八张、增加 provider framework、fallback/retry、生成长视频、加入新 fixture 文件或建立第二套集成 harness；只补一个此前缺失的真实跨模块交互证明。

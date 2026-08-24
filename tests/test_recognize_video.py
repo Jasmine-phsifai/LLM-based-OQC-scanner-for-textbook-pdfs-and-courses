@@ -68,6 +68,61 @@ def _write_mp4(path: Path, *, with_audio: bool = True) -> Path:
     return path
 
 
+def _write_multiscene_mp4(path: Path) -> Path:
+    import cv2
+    import numpy as np
+
+    silent_path = path.with_name(f"{path.stem}-silent.mp4")
+    writer = cv2.VideoWriter(
+        str(silent_path),
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        1.0,
+        (64, 48),
+    )
+    assert writer.isOpened()
+    try:
+        for index in range(60):
+            value = (20 + (index // 5) * 30) % 256
+            writer.write(np.full((48, 64, 3), value, dtype=np.uint8))
+    finally:
+        writer.release()
+
+    command = [
+        str(_ffmpeg_executable()),
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-i",
+        str(silent_path),
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=440:sample_rate=16000:duration=60",
+        "-shortest",
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        str(path),
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=30,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+    finally:
+        silent_path.unlink(missing_ok=True)
+    assert completed.returncode == 0
+    return path
+
+
 class _ImageProvider:
     def __init__(self, *, fail: bool = False) -> None:
         self.fail = fail
@@ -153,6 +208,44 @@ def test_recognize_video_runs_real_media_and_keeps_providers_separate(
         frame.path for frame in outcome.retained_frames
     ) + (outcome.audio_artifact,)
     assert composed.metadata["current_run_provider_call_count"] == 2
+
+
+def test_recognize_video_keeps_real_multigroup_order_and_separate_audio(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_multiscene_mp4(tmp_path / "lecture.mp4")
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch)
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=_audio_config(tmp_path),
+    )
+
+    retained_indices = tuple(
+        frame.frame_index for frame in outcome.retained_frames
+    )
+    assert retained_indices == (0, 5, 10, 20, 25, 30, 35, 45, 50, 59)
+    assert [len(call) for call in image_provider.calls] == [8, 2]
+    provider_paths = tuple(
+        path for call in image_provider.calls for path in call
+    )
+    assert tuple(path.name for path in provider_paths) == tuple(
+        frame.path.name for frame in outcome.retained_frames
+    )
+    assert all(not path.exists() for path in provider_paths)
+    assert [item.index for item in outcome.frame_outcomes] == [0, 1]
+    assert all(item.succeeded for item in outcome.frame_outcomes)
+    assert len(observed_audio) == 1
+    assert not observed_audio[0].exists()
+    assert outcome.status == "complete"
+
+    composed = compose_video_result(outcome)
+    assert composed.status == "complete"
+    assert composed.metadata["current_run_provider_call_count"] == 3
 
 
 def test_recognize_video_preserves_audio_after_frame_provider_failure(

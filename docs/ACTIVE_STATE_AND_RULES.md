@@ -1702,6 +1702,17 @@ regression failed first; 86 focused tests and the complete 1,458-test offline
 suite pass. No network, provider call, API, dependency, output, frozen boundary,
 or open #127/#149/#152 decision changed.
 
+#177 closes an integration-evidence gap between the real selector, default
+frame grouping, separate audio configuration, and composition. A bounded
+60-second, 1-fps, 64x48 audible MP4 with twelve deterministic grayscale scenes
+retains ten ordered frames. Public `recognize_video()` sends their owned image
+snapshots to one injected provider as exact groups of 8+2, calls the separately
+configured fake Google audio path once, removes both image and audio request
+snapshots, returns a complete two-group outcome, and composes an exact current-
+run call total of three. The new regression uses real OpenCV and FFmpeg media
+but no network or provider. It changes no selector, provider, API, output,
+dependency, frozen boundary, or open #127/#149/#152 decision.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

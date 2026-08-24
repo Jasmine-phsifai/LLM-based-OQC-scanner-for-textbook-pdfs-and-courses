@@ -500,6 +500,10 @@ The following directions remain traceable but are not current work:
   retained-frame facade. Missing provider or Google vision-model configuration
   now raises before retained-JPEG validation instead of becoming a first-group
   outcome; generic batch settlement and valid group ordering are unchanged.
+  #177 proves one real selected video crosses the default group boundary: ten
+  retained frames dispatch as ordered 8+2 image calls while the separate audio
+  configuration dispatches once, and provider-free composition reports three
+  exact current-run calls. No runtime contract changed.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

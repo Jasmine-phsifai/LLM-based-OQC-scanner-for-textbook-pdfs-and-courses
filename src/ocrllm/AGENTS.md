@@ -100,6 +100,9 @@ do not turn dynamic catalogs into preflight network calls.
 #174 applies that same deterministic preflight to the independently public
 `recognize_video_frames()` entry before retained-JPEG validation. Do not change
 generic batch settlement or add another frame-batch abstraction.
+#177 proves the real combined-video path across the default eight-image group
+boundary with ordered 8+2 image calls and one separate audio call. Preserve
+that integration without turning the fixture into a stress test or live gate.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
