@@ -30,8 +30,10 @@ frame density is capped; #132 makes the shared 96-unit output-stem budget use
 Windows UTF-16 units without splitting supplementary characters; #133 stops
 maximum-length segment partitioning from rounding down. #134's bounded Google
 run returned honest partial output but its ephemeral controller lost the audio
-error code/call evidence. Add a small maintained combined-video smoke runner
-before another live call. Final publication and recovery come later and
+error code/call evidence. #135 adds a maintained, redacted combined-video smoke
+runner with independent image/audio configs and exact-or-null call evidence.
+The next controlled one-group live fixture must use it. Final publication and
+recovery come later and
 must be derived from these real outcomes rather than copied from legacy. Keep
 the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,

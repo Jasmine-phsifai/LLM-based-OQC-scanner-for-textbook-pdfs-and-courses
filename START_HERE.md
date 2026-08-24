@@ -145,7 +145,9 @@ Windows UTF-16-unit budget while preserving complete Unicode characters. #133
 uses ceiling partition counts so a maximum-length stable segment is not rounded
 into too few retained intervals. #134's post-change Google video run proved the
 image and partial-composition paths but lost the failed audio branch's safe error
-evidence; build the bounded combined-video smoke runner before another live run.
+evidence. #135 adds the maintained, redacted combined-video smoke runner with
+separate image/audio configs and exact-or-unknown branch call evidence; the next
+bounded live run must use it with a controlled one-image-group fixture.
 Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

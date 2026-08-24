@@ -365,6 +365,12 @@ is often accepted.
   combined-video smoke runner that records only stable error code, safe stage,
   and `provider_calls_attempted`; do not add retry, fallback, or provider routing
   to make the gate pass.
+- #135 implements that runner as a maintenance tool rather than a public API.
+  The gate fixture is controlled to one image group: only one image call, one
+  audio call, and complete composition pass. Missing failure-call evidence stays
+  unknown instead of becoming zero. Ordinary multi-group video remains valid
+  library input; do not duplicate extraction or generalize provider routing to
+  make this narrow smoke accept arbitrary media.
 
 ## Resolved confirmation and next authority
 

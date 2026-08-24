@@ -1045,6 +1045,26 @@ runner whose offline tests require exact branch code/stage/call evidence for bot
 success and failure. This is test observability, not a provider framework or
 product retry path. No product-code defect was proven by #134.
 
+#135 adds that maintained combined-video smoke runner without spending another
+provider request. It discovers the current Google catalog, requires an explicit
+model and controlled short MP4 fixture, calls public `recognize_video()` with
+separate image/audio configurations, then calls provider-free
+`compose_video_result()`. Its JSON contains only catalog/model identity, branch
+status, stable error code, runner-owned stage, artifact counts, and directly
+supported `provider_calls_attempted`. Missing failure evidence remains `null`;
+only a pre-dispatch audio extraction/no-stream failure is reported as zero.
+The binary gate passes only for one successful image-group call, one successful
+audio call, and complete composition. Partial and failed product outcomes remain
+visible but fail the gate. Thirteen offline regressions cover complete, partial,
+frame/audio provider failure, missing call evidence, extraction failure, silent
+video, fully failed outcome, composition failure, inconsistent or persisted
+branch evidence, redaction, and cleanup. No live call, product-code change,
+retry, fallback, provider abstraction, telemetry system, or persistence format
+was added. The next live attempt must use this runner and its controlled fixture;
+ordinary multi-group videos remain valid library inputs but are not this one-call
+smoke gate. The full offline source suite passes 1,409 tests; compileall,
+diff hygiene, and frozen-boundary checks pass.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

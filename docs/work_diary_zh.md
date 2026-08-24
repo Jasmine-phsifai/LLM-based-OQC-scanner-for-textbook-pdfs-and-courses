@@ -3171,3 +3171,21 @@ Atomic task — Iteration #134: re-prove the current public video path against t
 **必须撤回的错误结论。** 轻量任务首份摘要把“`audio_result` 不存在，所以读不到成功 metadata”错误写成“音频 provider 调用 0”。主代理立即要求不重跑、只从已保存结果恢复 exact error；复核确认音频 Config、抽取和 snapshot 均已通过，但临时 controller 没有保存 `audio_error.code`、safe details 或 `provider_calls_attempted`，清理后已无法诚实恢复。Google audio adapter 会在内部 catalog 后、generation 前把计数从 0 改为 1，因此现有摘要既不能证明 dispatch，也不能证明未 dispatch。**音频零调用结论已撤回**；exact code、stage 和调用次数均记为 unknown，不能猜成模型、quota、空回复或本地错误。
 
 **决定修正和过度设计复查。** 再跑一次可能得到绿色结果，却会掩盖本次验证器没有保存失败证据的问题，所以本轮不重试、不换模型、不改产品代码。下一原子任务改为维护一个小型 combined-video smoke runner：离线失败优先测试必须要求 complete/partial/failed 都输出每个分支的稳定 code、safe stage 和 `provider_calls_attempted`，并继续禁止正文、路径、key、raw response；之后才做下一次真实调用。它不是第二 provider 层、通用 telemetry、retry/fallback、API pool 或产品持久化。#127、最终 Markdown 和 video resume 仍未越过维护者决定。工作树只有两个原有未跟踪文件，冻结目录和产品源均未改动。
+
+## #135 — 2026-08-25：补齐可维护的 Google 组合视频冒烟工具
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #135: add a maintained, bounded Google combined-video smoke runner that cannot repeat #134's evidence loss, without making another live request in this iteration. Success means offline tests prove that complete, partial, extraction-failed, provider-failed, and unexpected paths emit only sanitized model/catalog/branch status, stable error code, stage, and exact attempted-call counts; the runner must call the public video and composition APIs with separate configs, clean every owned artifact, and reject summaries that cannot substantiate call counts. This matters because real-provider tests are only useful when failure evidence survives cleanup and cannot be misreported from missing success metadata.
+```
+
+**假设、两条路线和选择。** 开工假设是：本轮只修复 #134 暴露的测试证据丢失，不发真实 API 请求、不改公开库接口，也不顺带处理 #127 取消、最终 Markdown 或 video resume。第一条路线是分别调用已有图片、音频脚本后在外部拼接摘要；它会绕过真正的视频解析、负反馈留帧、独立分支和组合过程，无法证明用户正在使用的公开视频入口。第二条路线是在 `tools/` 增加一个很薄的组合视频脚本，直接调用公开 `recognize_video()` 和 `compose_video_result()`。选择第二条；它只属于维护门禁，不进入 `src/ocrllm`，因此没有给库增加第二套结果或 provider 抽象。
+
+**失败优先证据和实现。** 新测试首先因 `tools.run_google_genai_video_smoke` 不存在而在收集阶段失败。实现后，脚本动态读取 Google 当前模型目录，要求调用者明确给模型和一个受控短 MP4；图片和音频分别构造独立 `Config`，没有共享可变设置。视频 outcome 返回后，脚本直接读取每个图片组和音频分支，而不把 `compose_video_result()` 中“缺失调用次数默认为 0”的兼容汇总当作证据。成功结果必须是 Google、指定模型、正确媒体类型、内存结果且恰好一次调用；失败结果只输出稳定错误码、固定阶段和 `provider_calls_attempted`。失败详情没有可信次数时保留 JSON `null`，不会猜成 0；只有尚未产生音频文件的 `VideoError` 能根据现有编排顺序确认音频识别调用为 0。若“provider 失败但没有音频工件”这种不一致 outcome 出现，门禁直接拒绝。
+
+**结果、清理和真实 library 边界。** 顶层 `status` 是门禁是否通过，`outcome_status` 才是库返回的 complete/partial/failed；因此 partial 会如实保留各分支成果，但门禁退出失败。门禁只在一组图片恰好一次调用、音频恰好一次调用、组合完整时通过。它接受的是已知会落在一个图片组内的受控短样本；普通视频产生多个图片组仍是合法 library 行为，只是不属于这项一图一音冒烟证明。临时帧和 MP3 放在 `TemporaryDirectory`，完整、partial、组合异常和证据拒绝路径都验证了清理。输出不含识别正文、输入/输出路径、key、raw response、异常文本或任意 provider details。
+
+**测试和主审。** 13 个定向离线回归覆盖：完整双分支、音频 provider 失败及次数 1、音频次数缺失为 null、图片分支已知/未知次数、音频提取失败、无音轨、双分支失败、组合异常、没有音频工件却声称 provider 失败、带持久化路径的图片/音频结果拒绝、顶层意外异常脱敏，以及各类临时目录清理。定向结果为 **13 passed in 0.09s**。最终完整离线测试为 **1,409 passed in 56.13s**；`compileall -q src tests tools`、`git diff --check` 和冻结 `contracts/` / `worker/` 检查通过。独立审查提出的两个实质问题——内存结果不应带 `output_path`、图片失败次数也要做对称证明——均已收紧；没有安装缺失的 Ruff，也没有下载依赖或调用 provider。
+
+**过度设计复查和下一步。** 没有增加通用 telemetry、重试、fallback、模型池、provider 基类、第二套视频 outcome、重复预抽帧、持久化 schema 或 legacy 格式兼容。为了让任意长视频在调用前保证恰好一组而重复解析/抽帧，会把一个冒烟脚本变成第二套编排，故明确限定受控样本，而不是扩张工具。#135 完成的是“下一次真实测试不会再丢失败证据”；下一原子迭代应使用该工具做一次受控 Google 双分支调用，并根据实际稳定 code 决定是否存在产品缺陷，不应先写假想的错误策略。
