@@ -1713,6 +1713,16 @@ run call total of three. The new regression uses real OpenCV and FFmpeg media
 but no network or provider. It changes no selector, provider, API, output,
 dependency, frozen boundary, or open #127/#149/#152 decision.
 
+#178 repairs two current cold-start contradictions left outside #155/#156's
+earlier wording pass. The active-library README no longer says all Stage A2 work
+is unstarted: it now names the shipped, live-proven standalone Google Files
+long-MP3 A2a route while keeping A2b chunk/resume and long-audio video routing
+unavailable. `MIGRATION_STATUS.md` no longer presents historical Markdown PDF
+repair as an immediate open decision or promised next step; #120 already chose
+no legacy-marker compatibility and ordinary image-sidecar resume remains the
+recovery path. No historical plan or diary was rewritten, and no runtime, API,
+provider, dependency, frozen boundary, or open #127/#149/#152 decision changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

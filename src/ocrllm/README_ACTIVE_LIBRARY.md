@@ -87,9 +87,12 @@ implemented and live-proven: the
 public direct facade copies one local MP3 to a compact owned snapshot, fully
 decodes it through lazy `ocrllm[audio]`, and can send one bounded native inline
 request through lazy `ocrllm[google]`. This path remains experimental and
-memory-only despite its successful #069 public-result gate. Stage A2 has not
-started. The first PDFium vision slice is implemented and live-proven; its
-bounded repair follow-up has not started.
+memory-only despite its successful #069 public-result gate. Stage A2a
+standalone Google Files long-MP3 recognition is also implemented and
+live-proven; A2b chunk/resume and long-audio video routing remain unavailable.
+The first PDFium vision slice is implemented and live-proven. #120 rejected
+legacy-Markdown repair, so ordinary image-sidecar resume remains its recovery
+path.
 
 The current image facade:
 

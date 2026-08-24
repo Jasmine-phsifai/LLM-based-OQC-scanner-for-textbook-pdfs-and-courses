@@ -3783,3 +3783,17 @@ Atomic task — Iteration #177: verify the public combined-video library path on
 **永久集成回归与一次错误断言。** 新测试用 OpenCV 写入上述低分辨率场景，再用已有 FFmpeg 加一条 60 秒合成正弦音轨。公共 `recognize_video()` 使用 injected image provider 和独立 Google audio config/fake adapter；十帧按默认 **8+2** 两次调用，音频恰好调用一次，outcome 与 composition 均 complete，组合结果的 exact current-run call count 为 **3**。第一次运行唯一失败来自测试错误地要求 provider 收到 retained artifact 原路径；普通 image pipeline 按设计先建立 request-owned snapshots。修正后改为验证十个文件名顺序相同，并确认 provider 所见 image snapshots 与 audio snapshot 在调用后都不存在，没有修改产品代码来迎合错误断言。
 
 **验证与过度设计复查。** 真实 combined test 转绿；video orchestration、frame adapter、真实 selector、composition 和 lightweight/import 邻接集合为 **57 passed in 3.34s**，changed test compileall 通过。只给测试子进程临时加入已有 Node 路径后的完整离线套件为 **1,459 passed in 54.63s**。无网络、凭据、真实 provider、安装、依赖、运行时代码、API、输出格式、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有扩大 live gate、改变每批八张、增加 provider framework、fallback/retry、生成长视频、加入新 fixture 文件或建立第二套集成 harness；只补一个此前缺失的真实跨模块交互证明。
+
+## #178 — 2026-08-25：冷启动文档不再把已发布 A2a 和已关闭 PDF repair 写成未开始事项
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #178: reconcile the maintained cold-start documentation with the actually shipped video composition/publication and standalone long-MP3 library surfaces, correcting only current capability statements that still say those features have not started. Success means rereading authority/diary, verifying each suspected sentence against public code and tests, distinguishing frame-only and A1-scoped statements from genuinely stale package-wide claims, applying the smallest wording edits without rewriting historical records, running documentation/import-focused and full offline checks as proportionate, and committing/pushing one coherent documentation repair. This matters because a mature Python package is not usable if its entry documents contradict its importable public surface, even when the runtime itself is correct.
+```
+
+**旧审计已部分过期，新矛盾仍真实存在。** 同步 origin、重读 authority、日记和 package 规则后，先核对较早只读报告指出的 root README、`START_HERE` 与 active README 三处视频/长音频措辞；#155/#156 已经正确修复，照旧报告再改会制造错误。继续逐段读取才发现两个仍在维护入口中的矛盾：active README 前段写 `Stage A2 has not started`，同页后段却准确记录已发布并 live-proven 的 `recognize_long_mp3()`；`MIGRATION_STATUS.md` 仍把历史 Markdown PDF repair 写成“当前立即决策点”和未来 marker repair，但 authority #120 已明确回答 no。
+
+**两条路线与最小修正。** 路线 A 只删除错误短句，会留下短音频段直接跳到 PDF 的断裂上下文；路线 B 用短句准确写明 A2a standalone Google Files long-MP3 已实现/实测，A2b chunk-resume 与 long-audio video routing 仍不可用，同时把 PDF 段落改为 #120 已拒绝 legacy marker compatibility、ordinary image-sidecar resume 是恢复路径。选择 B。只改 active README、当前迁移导航、package 规则和唯一 authority；#079/#080 的调查结论仍保留，历史计划/日记不重写，没有把 repair 改成另一个未授权实现。
+
+**验证与过度设计复查。** 顶层 `recognize_long_mp3`、`compose_video_result`、`publish_video_result` 的导出和对应实现/测试已逐项核对；long-audio adapter、video composition/publication、import contract 与 lightweight import 聚焦集合为 **44 passed in 0.52s**，只给测试子进程临时加入已有 Node 路径后的完整离线套件为 **1,459 passed in 56.66s**。无网络、provider、凭据、安装、依赖、运行时代码、API、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 选择。没有新增文档测试框架、能力表、第二份决策文档，或机械替换所有 `Stage A2` / `repair` 历史命中；只修两个会误导当前工作顺序的维护入口。

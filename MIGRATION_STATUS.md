@@ -131,20 +131,21 @@ PDF recognition is implemented and live-proven: #078 discovered 37 current
 Google models, then `gemini-2.5-flash` completed 16 pages as exactly two serial
 requests with two complete checkpoints, ordered published output, aggregate
 usage 4,802/117, and no retained rendered pages. Content repair remains
-unimplemented and is now the immediate decision point. #079 proved that active
+unimplemented by the explicit #120 product decision. #079 proved that active
 failed Markdown has no defined marker yet: the producer publishes only complete
 range sections and raises without final Markdown on a failed group. #080 then
 proved that one failed-range marker plus the settled prefix cannot recover a
 later unattempted suffix without becoming a second resume path. The maintainer
-must now confirm whether historical Markdown with an explicit legacy failed-page
-marker is an intentional compatibility input; until then repair stays frozen
-behind ordinary resume. Active partial-state semantics will not be widened, and
-localized legacy regex is not silently promoted into active identity.
+#120 then confirmed that historical Markdown with a legacy failed-page marker is
+not an active-library compatibility input. No `repair_pdf()` or marker parser is
+planned under the current contract; ordinary image-sidecar resume remains the
+recovery path. Active partial-state semantics are not widened, and localized
+legacy regex is not promoted into active identity.
 Native Google direct-Python image recognition, experimental memory-only
 short-audio recognition, and standalone single-request long-MP3 recognition are now
 implemented, with per-model usage reporting when Google supplies it; no general
 cross-provider token-usage claim is made. Resume is the primary recovery
-path; bounded marker-based repair follows only after a stable PDF path exists.
+path; marker-based PDF repair is intentionally absent after #120.
 Offline tests are a regression floor, not live-provider evidence.
 P0-a is complete in
 [`docs/legacy_provider_error_action_evidence.md`](docs/legacy_provider_error_action_evidence.md).

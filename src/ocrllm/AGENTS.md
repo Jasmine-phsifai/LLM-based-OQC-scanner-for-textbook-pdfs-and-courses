@@ -103,6 +103,9 @@ generic batch settlement or add another frame-batch abstraction.
 #177 proves the real combined-video path across the default eight-image group
 boundary with ordered 8+2 image calls and one separate audio call. Preserve
 that integration without turning the fixture into a stress test or live gate.
+#178 keeps maintained cold-start docs aligned with shipped A2a long-MP3 support
+and the closed #120 no-repair decision. Do not reopen legacy Markdown repair or
+describe all Stage A2 work as unstarted.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
