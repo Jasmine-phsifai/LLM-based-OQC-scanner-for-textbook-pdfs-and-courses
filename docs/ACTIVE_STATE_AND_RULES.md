@@ -260,6 +260,18 @@ credential pattern, and the generated audio/capture directory was removed.
 No transcript or provider text was published, and no retry, model switch,
 fallback, product edit, dependency install, or download occurred.
 
+#097 attempted one further foreground refresh after the short-audio
+cancellation and packaging/dependency changes, using a newly generated
+3.468888889-second, 22,068-byte synthetic-speech MP3 and the same explicit
+`gemini-2.5-flash` selection. The service returned typed
+`PROVIDER_UNAVAILABLE` with provider scope after 6.253 seconds. The safe capture
+did not retain enough stage evidence to distinguish the explicit catalog call
+from the facade's catalog/generate boundary, so no catalog count or attempted
+recognition-call count is claimed. There was no retry, model switch, fallback,
+invalid-key probe, transcript/provider-text publication, credential residue,
+or audio-snapshot residue. This is honest current outage evidence, not a
+regression claim and not a replacement for #069/#082's successful live proof.
+
 Exit gate met: one public real-MP3 result completed with catalog/model selection,
 provider limits, exact call/usage evidence, and no false success. The earlier
 model-scoped quota failure remains recorded rather than hidden by retry or

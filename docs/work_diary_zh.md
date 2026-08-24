@@ -2558,3 +2558,19 @@ Atomic task — Iteration #096: audit the source distribution as a real consumer
 **修复后的 artifact 与独立重建。** 新 sdist 为 **116,917 bytes**，SHA-256 `476E3D24D752AEE479658507B1E38BDEBC49041DC44D156BB5BEC034C23190C6`；共 **202** 个文件、未压缩 **534,238 bytes**。顶层只有 `pyproject.toml`、`README.md`、generated `PKG-INFO`、`src`，以及 Hatch 自动保留的 1,209-byte `.gitignore`；legacy、evidence、tools、根 tests、docs、runtime output/temp、本地设置、两个用户文件和 sync conflict 均为零。解压 sdist 后，当前环境因没有 Hatchling 而诚实地不能 `--no-isolation` 构建；一次隔离构建 exit **0**，生成 **201,665-byte** wheel，SHA-256 `F787ADDE96A00F0B62CE821310F7F6375FF75FD3CAB46450FAADFC6D020D3B5F`。安装到独立 venv 后，从仓库外精确验证 package 与 distribution origin、版本 **0.1.0**、`py.typed`、七个 extras，以及 base import 未加载 Pillow/PDFium/OpenAI/HTTPX/Google/miniaudio。
 
 **主审纠错与过度设计复盘。** 代理首次报告的新 sdist 路径少写了末尾一个 `0`，导致主代理的第一次 archive 复核实际没有找到文件；同一组合命令又从全局旧 distribution 读到错误 extras，因此该空清单和旧 metadata 全部作废。列出精确 Temp 根后，主代理使用真实路径重新核对 archive/hash/成员，并直接用新 venv Python 限定 distribution origin，得到上述有效结果。一次字符串扫描把合法的 `src/ocrllm/output/` 计为 `/output/` 命中；顶层清单证明不存在 runtime `output`。`.gitignore` 不含本地状态或密钥，为了删除这一份 benign 1.2 KiB 文件再增加 exclude 和第三次构建属于低收益雕琢，因此明确保留。没有 provider/API、凭据读取、runtime、tests、public API、repair、`contracts/` 或 `worker/` 修改。
+
+## #097 — 2026-08-24：Google 短音频真实刷新诚实返回服务不可用
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #097: re-prove the already-shipped short-audio path against the authorized live Google service after the cancellation and packaging/dependency changes, instead of treating offline tests as production evidence. Success means reconciling current authority and diary, verifying the existing smoke runner and credential path without exposing a key, discovering the current live model catalog, sending exactly one bounded committed/synthetic MP3 through the public facade with no retry or fallback, confirming an honest result or typed provider error and cleanup, then changing code only if the live run proves a library defect. This matters because the package’s difficult product boundary is real provider behavior, and recent local success must not substitute for “it still runs.”
+```
+
+**假设复核、两条路线与 runner 减法。** 路线①继续引用 64 项 offline adapter/live-runner 测试；路线②重新生成无隐私短语 “OCR LLM audio test one two three.” 的合成语音，做一次免费 Google live。选择②。轻量代理只读审查发现既有 runner 实际会做三次 `models.list`（显式 catalog、facade 内 catalog、无效 key catalog）和一次 `generate_content`；本轮刷新不需要重复验证 invalid-key，因此没有调用该 runner。已提交的 0.5 秒 A1 fixture 是 997 Hz 纯音，也不适合作为成功转写输入。最终保持 public facade 必需的显式 catalog + 内部 catalog + 最多一次 generate，不做无效 key 请求。
+
+**凭据和输入生命周期。** OCRLLM 环境已有 `google-genai`、`miniaudio`，没有 PyQt6；active resolver 本来就不读取 legacy QSettings。主代理用 Windows registry 只检查 `Software\\OCRLLM\\QCR\\ui` 中 `google_api_key` 是否非空，第一次按根 value 名查询得到 false，随后只列出 subkey 名才确认实际值位于 `ui` 子键；没有输出长度、片段或值。轻量代理在精确 `%TEMP%` 根用 Windows System.Speech 4.0 合成 WAV，再用环境已有 FFmpeg 7.1 转成 **22,068-byte / 3.468888889-second / 22050 Hz / mono** MP3，SHA-256 `75924547b85d1ba5e7155cfe6c6903144556a37e67cebcb4171bc06dae44f95a`，并以真实 miniaudio probe 通过；没有下载、安装或仓库音频。
+
+**一次前台 live 的真实结果。** 同一 Python 进程从 registry 读取 key，只临时放入自身 `GOOGLE_API_KEY`，用明确 `gemini-2.5-flash` 和 120 秒 caller bound 执行一次；命令行、父 PowerShell 环境和文件均没有 key。进程在 **6.253 秒**返回 typed `PROVIDER_UNAVAILABLE`、`failure_scope=provider`，安全 JSON 没有 transcript、provider 原文、source/temp path 或 credential pattern，snapshot residue 为 **0**，父环境两个 Google key 均保持空。没有 retry、fallback、自动换模或 invalid-key probe。
+
+**证据边界、验证与过度设计复盘。** 一次请求前后的安全 runner 没有保存阶段状态，因此这次不能诚实区分故障发生在显式 catalog、facade 内 catalog 还是 `generate_content`，也不能把 audio failure 缺失的 attempted-call 字段猜成 0 或 1；这属于本次 evidence 精度限制，不证明产品错误。既有 #069/#082 已成功证明能力，本次证明当前临时 provider outage 会 typed failure 而非假成功。Google image/audio adapter 和 live-runner 离线回归 **64 passed in 0.45s**。没有为了一个预期服务端错误加入 audio ledger、retry、provider class、fallback、第二 transport 或模型补丁；没有产品/test 代码、paid API、repair、`contracts/` 或 `worker/` 修改。临时合成音频根在主代理检查 0 snapshot residue 后由轻量代理精确删除。

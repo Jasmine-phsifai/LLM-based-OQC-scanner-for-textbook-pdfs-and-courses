@@ -81,7 +81,11 @@ Phase 1 maturation is offline implementation-complete:
   conservative provider envelope below 20,000,000 bytes. Pre-set cancellation
   stops before snapshot/copy/decode and is checked again before dispatch; the
   synchronous SDK call itself is not interruptible. Persistence, resume, groups,
-  long audio, Files upload, retries, and fallback are not implemented;
+  long audio, Files upload, retries, and fallback are not implemented. The
+  latest bounded live refresh (#097) returned an honest provider-scoped
+  `PROVIDER_UNAVAILABLE` with no false success or snapshot residue and was not
+  retried; earlier #069/#082 successful live evidence remains the capability
+  proof;
 - not started: Stage A2 long-audio recognition;
 - implemented and live-proven: the first PDFium vision slice. One PDF
   becomes serial eight-page image groups, ordinary image sidecars preserve
