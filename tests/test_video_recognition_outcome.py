@@ -63,6 +63,26 @@ def test_video_outcome_rejects_audio_outside_declared_output_root(
         )
 
 
+def test_video_outcome_rejects_non_image_frame_result(tmp_path: Path) -> None:
+    output_root = tmp_path / "video"
+    wrong_result = RecognitionResult(
+        markdown="Audio placed in a frame group.",
+        source_type="audio",
+    )
+
+    with pytest.raises(ValueError, match="frame results must describe images"):
+        VideoRecognitionOutcome(
+            output_root=output_root,
+            retained_frames=(
+                _frame(output_root / "frames" / "frame.jpg"),
+            ),
+            frame_outcomes=(
+                BatchItemOutcome(index=0, result=wrong_result),
+            ),
+            audio_error=VideoError(code="VIDEO_NO_AUDIO_STREAM"),
+        )
+
+
 def test_video_outcome_accepts_its_declared_owned_artifact_layout(
     tmp_path: Path,
 ) -> None:

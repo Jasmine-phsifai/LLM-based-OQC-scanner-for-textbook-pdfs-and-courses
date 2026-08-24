@@ -397,6 +397,10 @@ is often accepted.
   `complete`; a `partial` child remains usable but keeps the outcome and its
   provider-free composition `partial`. Do not add a status coordinator or new
   status value.
+- #142 makes video frame-group typing explicit at the outcome boundary. Every
+  successful frame group carries an exact `RecognitionResult` whose
+  `source_type` is `image`; reject a mismatch instead of composing it under the
+  Frames heading. Do not generalize this into a media graph or result hierarchy.
 
 ## Resolved confirmation and next authority
 

@@ -164,6 +164,8 @@ pre-dispatch video/audio parsing branch contributes zero.
 now stops at construction instead of becoming a complete composed result.
 #141 fixes status propagation: a partial frame or audio child remains partial
 in both `VideoRecognitionOutcome` and `compose_video_result()`.
+#142 rejects a non-image `RecognitionResult` inside a video frame group before
+it can be composed under the Frames section.
 Final publication, cancellation refinement, and
 resume follow from these observed outcomes. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry

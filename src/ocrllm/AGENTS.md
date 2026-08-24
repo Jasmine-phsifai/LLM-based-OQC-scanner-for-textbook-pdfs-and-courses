@@ -56,6 +56,9 @@ dropping the artifact during composition or adding another audio state.
 #141 requires child result status to propagate: the video is complete only
 when every frame result and the audio result, when present, are complete.
 Partial children remain usable but keep both outcome and composition partial.
+#142 requires every successful frame-group outcome to carry an exact image
+`RecognitionResult`. Reject branch/media mismatches at outcome construction;
+do not relabel them during composition or build a generic media graph.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -403,7 +403,8 @@ The following directions remain traceable but are not current work:
   configs and returns a typed complete/partial/failed outcome while retaining
   owned media. `VIDEO_NO_AUDIO_STREAM` is incompatible with an audio artifact,
   so a manual outcome cannot claim absence while exposing an MP3. A partial
-  frame or audio child keeps the outcome and composed result partial. Its public
+  frame or audio child keeps the outcome and composed result partial. A
+  successful frame-group result must describe an image. Its public
   outcome also rejects frame/audio paths outside the exact
   lexical `output_root/frames/*` and optional `output_root/audio.mp3` layout;
   it does not resolve aliases or symlinks. `compose_video_result()` explicitly

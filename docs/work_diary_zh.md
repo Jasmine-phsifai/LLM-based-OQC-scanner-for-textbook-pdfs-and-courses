@@ -3277,3 +3277,15 @@ Atomic task — Iteration #141: stop video outcome and composition status from u
 **证据、两条路线和选择。** authority 已把 #140 的独立发现列为下一项。参数化 public 回归分别构造 partial 图片 group + complete 音频、complete 图片 group + partial 音频；旧实现两例都明确得到 `complete != partial`，并且 composer 直接复用同一个错误顶层状态。路线一是在 composer 额外降级；路线二是修正 `VideoRecognitionOutcome.status` 这一唯一状态来源。选择路线二，避免 outcome 和组合维护两套判定。
 
 **最小实现、审查与验证。** computed property 仍用“存在 result”判断是否有可用成果和是否为 failed，但 complete 条件收紧为：非空 frame outcomes 中每个都必须有 `result.status == "complete"`，audio 要么明确 absent，要么 `audio_result.status == "complete"`。partial 子结果仍是可用结果，因此顶层为 partial，不被降成 failed。两份独立只读审查逐项核对 complete frame + complete/absent audio、partial frame、partial audio、混合成功/失败、整条 frame 失败与可用音频等矩阵，未发现回归；composer 已复用 outcome 状态，不需要第二层判断。定向视频集合为 **40 passed in 0.99s**；完整离线测试为 **1,422 passed in 53.12s**，`compileall -q src tests tools`、`git diff --check`、轻量 import 和冻结目录检查通过。没有网络、provider、凭据、安装或下载。没有新 helper、状态枚举、协调器、构造验证、serializer、#127 取消、发布或 resume；也没有机械增加所有混合矩阵测试，参数化回归已直接固定本轮两条 false-complete 路径。
+
+## #142 — 2026-08-25：视频 frame group 不再接受非图片结果
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #142: prevent a public video frame-group outcome from accepting a non-image `RecognitionResult` and composing it under the Frames section. Success means reproducing the mismatch through public objects, rejecting it at `VideoRecognitionOutcome` construction just as the audio branch already rejects non-audio results, preserving typed frame errors and real `recognize_video()` outcomes, and avoiding a generalized media graph, serializer, duplicate-identity policy, cancellation, publication, or resume. This matters because a typed Python library must not let branch labels and result media types disagree while returning a plausible composed document.
+```
+
+**证据、两条路线和选择。** 真实 `recognize_video_frames()` 只产生 `source_type="image"`，audio branch 也已显式检查 exact `RecognitionResult` 与 `source_type="audio"`；唯独 frame outcome 只检查外层 `BatchItemOutcome`。public 回归把 audio `RecognitionResult` 放进成功 frame group，旧构造器稳定 **DID NOT RAISE**，之后即可被 composer 当作 Frames 正文。路线一是在 composer 临时检查；路线二是在 outcome 构造时与 audio 分支对称拒绝。选择路线二，防止错误对象进入状态和组合逻辑。
+
+**最小实现、审查与验证。** `__post_init__()` 在确认 frame outcomes 是 exact tuple 且成员为 exact `BatchItemOutcome` 后，只遍历成功成员：result 必须是 exact `RecognitionResult`，且 `source_type` 必须为 `image`。错误成员仍携带原 typed `OCRLLMError`，不受影响。精确 runtime type 检查避免不合规值后来以普通 `AttributeError` 泄漏，也符合本库“非法对象直接拒收”的边界。两份独立只读审查确认校验位置、错误成员旁路、真实 `recognize_video_frames()` 产物和 audio 对称性均正确。视频 outcome、composition、帧识别、公开编排与 Google runner 定向集合为 **55 passed in 1.71s**；完整离线测试为 **1,423 passed in 54.71s**，`compileall -q src tests tools`、`git diff --check`、轻量 import 和冻结目录检查通过。没有网络、provider、凭据、安装或下载；没有修改通用 `BatchItemOutcome`，也没有加入媒体层级、重复帧规则、serializer、#127 取消、发布或 resume。只用一个代表性 audio-as-frame 回归固定 source mismatch，没有机械参数化所有非图片 canonical 类型。

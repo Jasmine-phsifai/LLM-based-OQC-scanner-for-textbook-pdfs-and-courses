@@ -47,6 +47,15 @@ class VideoRecognitionOutcome:
             raise TypeError(
                 "video frame_outcomes must contain exact BatchItemOutcome values"
             ) from None
+        for frame_outcome in self.frame_outcomes:
+            if frame_outcome.result is None:
+                continue
+            if type(frame_outcome.result) is not RecognitionResult:
+                raise TypeError(
+                    "video frame results must be exact RecognitionResult values"
+                ) from None
+            if frame_outcome.result.source_type != "image":
+                raise ValueError("video frame results must describe images") from None
         if (not self.frame_outcomes) == (self.frame_error is None):
             raise ValueError(
                 "video outcome must carry frame outcomes or one frame error"

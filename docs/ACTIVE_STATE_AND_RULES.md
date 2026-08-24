@@ -1173,6 +1173,22 @@ resume, or legacy format was added. Forty focused video neighbors and the full
 frozen-boundary checks are clean.
 Cancellation remains the independent #127 maintainer choice.
 
+#142 closes a branch/media-type contradiction in public video outcomes. The
+audio branch already required an exact audio `RecognitionResult`, but a manual
+frame-group `BatchItemOutcome` could carry an audio, PDF, video, or even a
+non-result runtime value. The outcome accepted it; provider-free composition
+then placed its Markdown under `Video frames` and could return a plausible
+video result. Each successful frame-group outcome now requires an exact
+`RecognitionResult` with `source_type="image"`, failing immediately at outcome
+construction. Typed frame errors remain valid and unchanged.
+
+This mirrors the existing audio-branch invariant; it does not introduce a
+generic media graph, result hierarchy, duplicate-frame policy, serializer,
+cancellation change, publication, resume, provider behavior, or legacy format.
+Fifty-five focused video neighbors and the full 1,423-test offline suite pass;
+compileall, lightweight import, diff hygiene, and frozen-boundary checks are
+clean.
+
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide
 MP4. The public call retained one image group and a 14,480-byte,

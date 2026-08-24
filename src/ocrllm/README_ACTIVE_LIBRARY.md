@@ -307,7 +307,9 @@ a provider failure remains partial or failed. The call does not compose or
 publish final Markdown and does not delete its retained frames or MP3. A
 partial image-group or audio `RecognitionResult` keeps the video outcome and
 later composed result partial; complete means every usable child result is
-complete. `VideoRecognitionOutcome` uses an exact lexical artifact layout:
+complete. Successful frame-group outcomes must contain exact image
+`RecognitionResult` values; non-image results are rejected before composition.
+`VideoRecognitionOutcome` uses an exact lexical artifact layout:
 every retained frame path has parent `output_root / "frames"`, and an audio
 artifact, when present, is exactly `output_root / "audio.mp3"`.
 `VIDEO_NO_AUDIO_STREAM` cannot
