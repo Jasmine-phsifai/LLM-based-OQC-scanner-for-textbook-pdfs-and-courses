@@ -611,6 +611,11 @@ The following directions remain traceable but are not current work:
   checks each result against its own model, and preserves same-model aggregation
   or distinct-model usage. This is evidence tooling, not a new provider layer or
   public runtime API.
+  #206 then invokes that gate once on a real five-second speech-and-text MP4.
+  The exploratory `gemini-2.5-pro` image call returned `PROVIDER_UNAVAILABLE`,
+  while the separate `gemini-2.5-flash` audio call succeeded with 200/14 usage;
+  composition retained an honest two-asset partial result. No retry, fallback,
+  product-code change, or provider generalization followed.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

@@ -2218,6 +2218,35 @@ wrapper, hardcoded audio-capability list, provider framework, retry, fallback,
 model switch, legacy format support, frozen boundary, or open #127/#149/#152
 choice was added.
 
+#206 live-proves the #205 separate-model gate without changing product code.
+One synthetic five-second MP4 (71,507 bytes, MPEG-4 video plus AAC audio) used
+non-private high-contrast frame text and Windows synthetic English speech. The
+maintained runner discovered 37 models and was invoked exactly once with
+`gemini-2.5-pro` for image and the independently audio-proven
+`gemini-2.5-flash` for audio. The image choice was exploratory: current catalog
+membership existed, but the repository had no prior successful live image
+evidence for that exact model.
+
+The one retained-frame image group made one call and returned typed
+`PROVIDER_UNAVAILABLE`. The audio branch independently made one call and
+settled recognized. `VideoRecognitionOutcome` and provider-free composition
+therefore remained honestly `partial` with two retained assets; composition
+kept only the successful audio model's reported 200 input / 14 output tokens.
+The runner emitted `report_type="video_outcome"`, top-level gate status failed,
+and process exit 1 after 5,707.337 ms, which correctly distinguishes a settled
+partial product result from a runner failure. No retry or model switch followed.
+
+An earlier local fixture attempt failed before runner launch because FFmpeg
+rejected a Windows font path; it made no catalog or provider call and was
+replaced only by OpenCV's built-in text renderer. Credential and unsafe
+synthetic-content scans were false. A separate stderr/path-scan boolean was not
+captured and is not claimed. The disposable root was removed, Git state stayed
+unchanged, and 43 focused runner/video/composition regressions plus the plain
+lightweight import check pass. The image error is one live observation, not
+evidence for retry, fallback, a hardcoded capability list, or a provider
+framework. No public API, runtime, dependency, legacy format, frozen boundary,
+or open #127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

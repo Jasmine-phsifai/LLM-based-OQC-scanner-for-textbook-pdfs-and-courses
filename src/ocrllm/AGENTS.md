@@ -172,6 +172,11 @@ catalog discovery single and live, validate each result against its own model,
 and allow composition to aggregate equal names or retain distinct names. Do not
 restore a shared-model compatibility flag or infer audio capability from catalog
 membership.
+#206 live-proves that split with one call per branch: an exploratory
+`gemini-2.5-pro` image failure did not erase the separately successful
+`gemini-2.5-flash` audio result or its token usage, and composition stayed
+partial. Treat `PROVIDER_UNAVAILABLE` as this one observation; do not add retry,
+fallback, or a capability allowlist from it.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

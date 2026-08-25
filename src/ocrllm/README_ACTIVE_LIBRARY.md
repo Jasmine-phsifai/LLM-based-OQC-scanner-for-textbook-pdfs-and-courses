@@ -506,6 +506,13 @@ image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.
 That color-and-tone fixture proves dispatch/error handling, not transcription
 quality.
+The #206 separate-model run used one synthetic five-second speech-and-text MP4.
+One `gemini-2.5-pro` image call returned `PROVIDER_UNAVAILABLE`; the independent
+`gemini-2.5-flash` audio call succeeded, and composition retained a two-asset
+partial result with only the audio model's validated 200/14 token usage. The
+runner exited 1 because its full gate did not pass, but its discriminated JSON
+remained a settled `video_outcome`, not a runner failure. No retry or model
+switch was performed.
 
 ## Bounded Google PDF Live Smoke
 
