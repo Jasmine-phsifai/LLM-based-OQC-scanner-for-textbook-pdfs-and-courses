@@ -132,7 +132,12 @@ same-stem collision, and later-corrupt-source behavior through public imports
 from a freshly installed wheel; every invalid case made zero provider calls and
 left no output/temp residue. #109 also proves an exact serial MP3 tuple keeps an
 ordered success, a one-call provider failure, and an undispatched cancellation
-as three honest item outcomes. #078 completed P1-c PDF-through-image/resume.
+as three honest item outcomes. #292 closes a parallel completion-order race:
+a typed worker failure now aborts the existing shared provider start gate before
+its future reaches the collector, so an already-terminal failure cannot be
+overtaken by a success and permit one extra paid replacement call. Already-
+started work still settles, and ordering/concurrency remain unchanged. #078
+completed P1-c PDF-through-image/resume.
 #120 answered P1-d no: the library does not consume legacy localized repair
 Markdown, so ordinary resume remains its PDF recovery path and no `repair_pdf`
 compatibility parser is built. P1-e video is now active. #120 added

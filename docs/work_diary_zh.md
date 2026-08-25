@@ -5451,3 +5451,19 @@ Atomic task — Iteration #291: obtain one bounded real Google audio capability-
 **本人复核、清理、验证与过度设计结论。** 本人在清理前重新解析 stdout/metadata，并用实际非空 key 只做布尔扫描：key 原文、`AIza` 模式和音频绝对路径均未出现在 live 日志；runner 进程与本轮新建 `ocrllm-audio-*` 快照残留均为 0。轻量执行者验证两个本轮目录各自为系统 TEMP 下的精确直属子目录后分别删除，确认不存在且未触碰旧临时目录。目录/mapper/audio 定向集合为 **93 passed in 1.58s**；带既有 Node 路径的完整离线套件为 **1,548 passed in 59.15s**；`compileall -q src tests tools` 与 `git diff --check` 通过。
 
 本轮回答的是一个真实能力不匹配能否诚实失败，不是压力测试，也不证明其他模型、长音频、quota、并发或 provider fallback。为此新增公共 capability registry、硬编码支持表、逐模型探测器、通用 stress harness，或为了得到“精确 1”而扩张安全 runner，都超出当前问题并增加后续理解成本。用户已允许以后补压力性鲁棒测试，但仍应在基本流程已打通后，每轮只问一个故障问题，限制输入、调用、总时限并检查清理。
+
+## #292 — 2026-08-25：并行批次在主线程观察失败前立即关闭调用门
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #292: identify and resolve exactly one currently evidenced maturity gap in the active `ocrllm` package after #291 proved correct Google audio capability-mismatch handling, preferring an ordinary public-library defect or maintainability reduction over another live request. Success means reconciling exact commit `8c3d9a2`, the authoritative queue, latest Chinese diary, package rules, existing tests, and the newly recorded bounded-stress policy; comparing at least two non-frozen candidates; reproducing the chosen gap before editing; applying the smallest readable fix and causal regression, or documenting a no-code closure if evidence disproves it; preserving protected files, frozen `contracts/worker`, legacy/social exclusions, #127/#152, lightweight imports, separate image/audio providers, and no generic stress/provider framework; then running proportional and full verification, updating existing records, committing, and pushing. This matters because the next useful step should improve normal package behavior rather than manufacture complexity around an already-correct live failure.
+```
+
+**权威重读、候选比较与方向调整。** 基线为 `HEAD == origin/master == 8c3d9a2`，tracked tree 干净，两个受保护未跟踪文件不动。普通安装组合视频门刚在 #289 再次停于外部下载，不能立即重放；worker 同名导出被冻结，#127 取消语义和 #152 长音频策略仍需维护者选择。于是比较两个已打通流程的有限鲁棒问题：①完全离线改变 `recognize_batch()` 并行完成顺序，检查 fail-fast、调用数、顺序和已付费结果；②用一批接近 20 MB 本地线限的 Google 图片做最多一次真实调用。选择①，因为它直接检查已发布的核心批处理行为，且不需要为了找问题继续施压 provider。
+
+**自然矩阵为何不足，以及受控红灯。** 轻量固定流程先运行 50 次、4 项、并行度 2 的 Barrier 时序矩阵：每次都是 2 次 fake provider 调用、最大并行 2、一个成功、一个 `PROVIDER_UNAVAILABLE`、两个 `CANCELLED`，顺序索引始终 0—3；它没有暴露问题，也不能证明所有合法完成顺序都安全。本人随后控制 `concurrent.futures.as_completed()` 的合法交付顺序：两个初始 Future 已全部 terminal，其中一个成功、一个失败，但先把成功交给 collector；旧代码立即补交第三项，第三次 provider 调用成功后 collector 才看到早已完成的失败。公开结果诚实保留了额外付费成功，却违反“失败后不再启动新 provider 请求”。因果测试修改前精确为 **1 failed**，实际 3 calls，预期 2。
+
+**两条修法与最小实现。** 路线 A 让主线程在每次成功后扫描所有已完成 Future；它仍无法消除“扫描后、提交前”的窗口，也会重写当前结算循环。路线 B 让产生 typed failure 的 batch worker 在把同一异常交给 Future 前，立即调用已有线程安全 `ProviderRequestStartGate.abort()`。选择 B。`_recognize_batch_item()` 只新增 `except OCRLLMError: gate.abort(); raise`，没有新锁、Event、executor、scheduler、retry 或结果字段。已经越过 gate 的调用仍由原 `_settle_dispatched_outcomes()` 排空并返回；替补项即使被 executor 接收，也会在 provider gate 得到零调用的 `Cancelled`。`KeyboardInterrupt`、`SystemExit` 和普通非 OCRLLM 异常没有被扩大捕获。
+
+**验证、独立复核与过度设计结论。** 因果测试修复后 **1 passed in 0.15s**，批次、启动门、图片与 M2 resume 相邻集 **70 passed in 1.73s**。轻量执行者复核 diff 后未发现死锁、已付费结果丢失、顺序或并行上限变化；修复后相同自然矩阵 50/50 次仍全部为 2 calls、最大并行 2、索引 0—3、零违规，临时根已清理。带既有 Node 路径的完整离线套件为 **1,549 passed in 59.52s**；`compileall -q src tests tools` 与 `git diff --check` 通过。没有网络、provider API、凭据、依赖、公共签名/schema、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。把这个两行时序修复扩成通用并行调度器、事务系统、跨进程锁、自动 retry 或全库 stress harness 都会明显增加理解成本，明确不做。

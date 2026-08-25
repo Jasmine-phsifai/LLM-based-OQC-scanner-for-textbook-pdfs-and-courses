@@ -948,6 +948,14 @@ The following directions remain traceable but are not current work:
   failure output does not expose generation-attempt count, so that evidence is
   recorded as unknown. This is not a hardcoded capability list, model-by-model
   probe, stress framework, or provider abstraction.
+  #292 fixes one public parallel-batch fail-fast race. Under a controlled legal
+  completion order, both initial futures were terminal but the collector saw
+  the success before the typed failure and started a third paid provider call.
+  The failing worker now aborts the existing shared start gate before re-raising
+  its `OCRLLMError`. The causal public regression changes from three calls to
+  two; the initial success/failure and cancelled suffix remain ordered, and
+  already-started work still settles. No scheduler, new lock, retry, result
+  schema, provider API call, or #127 cancellation choice was added.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The

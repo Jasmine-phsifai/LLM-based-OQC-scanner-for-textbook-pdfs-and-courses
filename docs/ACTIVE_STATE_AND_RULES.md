@@ -3944,6 +3944,14 @@ itself raises an ordinary exception, a final redacted `SOURCE_INVALID` outcome
 represents the input position that could not be read instead of hiding all earlier
 outcomes behind that raw exception.
 
+#292 closes one narrow parallel observation race in that rule. A worker now
+aborts the existing shared provider start gate before publishing its typed
+failure to the collector thread. Therefore, if two initial futures are already
+terminal but completion iteration yields the success first, a replacement item
+cannot enter its provider: it settles as `Cancelled`, while every call that had
+already crossed the gate still settles normally. This changes no worker count,
+ordering, retry policy, result schema, or process-control behavior.
+
 ### D4 — Image resume does not cover the case that loses money. **Medium. Fixed 2026-08-18.**
 
 Two changes, both using the existing versioned job-state format. No second
@@ -5011,6 +5019,28 @@ registry and not a provider stress result. Do not hardcode the live catalog,
 probe models one by one, add audio capability metadata to the public API, or
 broaden the existing modality markers without a new real response. Later
 pressure robustness tests remain separate, capped, single-question gates.
+
+## Iteration 292: parallel batch failure closes the gate at the worker
+
+A controlled public `recognize_batch()` schedule completed both initial futures,
+one successful and one failed, then deliberately delivered the success to the
+collector first. The previous collector-only abort allowed the replacement item
+to enter its provider before the already-terminal failure was observed: three
+provider calls were made, and the extra paid success was retained honestly but
+should never have started under fail-fast.
+
+The batch worker now calls the existing `ProviderRequestStartGate.abort()` when
+an `OCRLLMError` leaves that item, before re-raising the same error through its
+future. The causal regression changes from three provider calls to two; the
+replacement and remaining suffix settle as `Cancelled`, the initial success and
+failure stay in caller order, and already-started work is still drained. A
+50-repetition natural timing matrix also retained two calls, maximum concurrency
+two, ordered outcomes, and zero violations. `KeyboardInterrupt` and `SystemExit`
+remain outside the new catch.
+
+This is a local fail-fast timing correction, not a scheduler, transaction,
+retry, cancellation-policy choice, or generalized stress harness. No provider
+API was called. The full offline suite passes 1,549 tests.
 
 ## Documentation Rules
 

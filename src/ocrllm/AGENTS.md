@@ -595,6 +595,13 @@ no retry/model switch/fallback, no leak, and no residue. Failed-run generation
 call accounting is unknown because the safe runner does not expose the adapter's
 attempt detail. The existing classification is correct, so do not add a model
 capability registry, hardcoded catalog, broader marker, or probe loop.
+#292 fixes a parallel `recognize_batch()` fail-fast observation race. A typed
+worker failure now aborts the existing shared provider start gate before its
+future exposes that failure to the collector. Thus a simultaneously completed
+success cannot cause a replacement provider call while the failure waits to be
+observed. Already-started work still settles, caller order and concurrency stay
+unchanged, and process-control exceptions remain uncaught. Keep this local; do
+not replace it with a scheduler, transaction, retry layer, or #127 decision.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

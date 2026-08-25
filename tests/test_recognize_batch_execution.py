@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent.futures
 import importlib
 import threading
 import time
@@ -14,7 +15,13 @@ from ocrllm import (
     recognize,
     recognize_batch,
 )
-from ocrllm.errors import InvalidSource, OutputExists, ProviderError, ProviderUnavailable
+from ocrllm.errors import (
+    InvalidSource,
+    OCRLLMError,
+    OutputExists,
+    ProviderError,
+    ProviderUnavailable,
+)
 
 from write_test_image import write_test_image
 
@@ -496,6 +503,89 @@ def test_parallel_failure_aborts_provider_calls_still_waiting_for_the_gate(tmp_p
             continue
         assert outcome.error.details.get("provider_calls_attempted", 0) == 0
         assert "model_attempts" not in outcome.error.details
+
+
+def test_parallel_batch_aborts_gate_before_main_observes_worker_failure(
+    tmp_path,
+    monkeypatch,
+):
+    sources = tuple(
+        write_test_image(tmp_path / f"{index}.png", color=(0, index, 0))
+        for index in range(4)
+    )
+    provider_lock = threading.Lock()
+    initial_calls_started = threading.Barrier(2)
+    provider_call_count = 0
+
+    class CoordinatedProvider:
+        def recognize_images(self, image_paths, *, prompt, config):
+            nonlocal provider_call_count
+            with provider_lock:
+                call_index = provider_call_count
+                provider_call_count += 1
+            if call_index < 2:
+                initial_calls_started.wait(timeout=5)
+            if call_index == 1:
+                raise ProviderError(
+                    "The coordinated provider request failed.",
+                    code="PROVIDER_UNAVAILABLE",
+                )
+            return f"# {image_paths[0].name}\n"
+
+    initial_futures = set()
+    failed_future = None
+
+    def deliver_success_before_already_completed_failure(futures, timeout=None):
+        nonlocal failed_future
+        current_futures = tuple(futures)
+        if not initial_futures:
+            _, pending = concurrent.futures.wait(current_futures, timeout=5)
+            assert not pending
+            initial_futures.update(current_futures)
+            failed_future = next(
+                future
+                for future in current_futures
+                if isinstance(future.exception(), ProviderError)
+            )
+            yield next(future for future in current_futures if future is not failed_future)
+            return
+
+        later_future = next(
+            future for future in current_futures if future not in initial_futures
+        )
+        try:
+            later_future.result(timeout=5)
+        except OCRLLMError:
+            pass
+        assert failed_future is not None
+        yield failed_future
+
+    monkeypatch.setattr(
+        concurrent.futures,
+        "as_completed",
+        deliver_success_before_already_completed_failure,
+    )
+
+    outcomes = recognize_batch(
+        sources,
+        config=Config(
+            provider=CoordinatedProvider(),
+            execution=RecognitionExecutionPolicy(max_parallel_requests=2),
+        ),
+    )
+
+    assert provider_call_count == 2
+    assert [outcome.index for outcome in outcomes] == [0, 1, 2, 3]
+    assert sum(outcome.succeeded for outcome in outcomes[:2]) == 1
+    assert sorted(
+        outcome.error.code
+        for outcome in outcomes[:2]
+        if outcome.error is not None
+    ) == ["PROVIDER_UNAVAILABLE"]
+    assert [outcome.error.code for outcome in outcomes[2:]] == [
+        "CANCELLED",
+        "CANCELLED",
+    ]
 
 
 @pytest.mark.parametrize("process_exception_type", [KeyboardInterrupt, SystemExit])

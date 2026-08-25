@@ -214,18 +214,22 @@ def _recognize_batch_item(
     gate: ProviderRequestStartGate,
     output_claims: OutputTargetClaims,
 ) -> RecognitionResult:
-    """Run one batch item with the operation-wide provider start gate."""
+    """Run one item and close the shared start gate before exposing a failure."""
     from .providers.provider_request_start_gate import (
         activate_provider_request_start_gate,
     )
     from .recognize import _recognize
 
-    with activate_provider_request_start_gate(gate):
-        return _recognize(
-            source,
-            config=config,
-            output_claims=output_claims,
-        )
+    try:
+        with activate_provider_request_start_gate(gate):
+            return _recognize(
+                source,
+                config=config,
+                output_claims=output_claims,
+            )
+    except OCRLLMError:
+        gate.abort()
+        raise
 
 
 def _settle_dispatched_outcomes(
