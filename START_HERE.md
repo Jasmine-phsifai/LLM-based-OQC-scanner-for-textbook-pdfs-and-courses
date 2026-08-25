@@ -714,7 +714,9 @@ local media smokes green, no cloud I/O, and complete cleanup.
 Markdown/digest, provider/model, call count, nullable tokens, and honest
 complete/partial warnings. The full 1,619-test source suite passes. No
 serialization, file I/O, dispatch, resume, repair, or public API is claimed;
-exact installed proof remains pending.
+exact commit `5580da1` passes the full installed gate with 1,618 archived tests
+passing and one expected skip, a 250,819-byte wheel, all profiles/media smokes
+green, no cloud I/O, and complete cleanup.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

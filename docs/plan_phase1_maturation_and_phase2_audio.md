@@ -514,6 +514,8 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   window, total, path, time, repair, final-result, or generic metadata fields.
   Canonical serialization and bounded atomic I/O remain the next independent
   persistence slice.
+  Exact commit `5580da1` passes the full installed gate with every profile and
+  local media smoke green and no provider call; its wheel is 250,819 bytes.
 
 ### Stage A exit gate
 

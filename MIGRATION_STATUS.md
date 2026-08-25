@@ -1313,8 +1313,10 @@ The following directions remain traceable but are not current work:
   fingerprint plan and its completed serial prefix. Each slot preserves the
   paid Markdown/digest, provider/model, calls, nullable token usage, and honest
   partial warnings. It does not add serialization, persistence, dispatch,
-  resume, repair, or public API. All 1,619 source tests pass; installed proof is
-  pending.
+  resume, repair, or public API. All 1,619 source tests pass. Exact clean commit
+  `5580da1` then passes 1,618 archived tests with one expected skip, all
+  profiles and media smokes without cloud I/O; wheel/base measure
+  250,819/1,266,497 bytes.
 
 ## Obsolete Prose Kept For Trace
 

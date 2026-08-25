@@ -5795,7 +5795,17 @@ dispatcher, resume routing, provider call, or network work. The focused
 state/identity/planner/prompt/materializer set passes **54 tests in 0.37
 seconds**; the full source suite passes **1,619 tests in 64.42 seconds**.
 Compilation, lightweight import, diff, and frozen `contracts/worker` checks
-pass. Exact clean installed proof remains the exit gate.
+pass.
+
+Exact clean commit `5580da1` passes the maintained gate with exit 0 in 246.02
+seconds. The archive reports **1,618 passed, 1 skipped in 65.86 seconds**; the
+wheel is **250,819 bytes**, leaving 11,325 bytes under the maintained ceiling,
+and base is 1,266,497 bytes. Installed deltas are: audio 91,160,733; image
+16,961,017; image+DashScope 41,536,473; Google 41,678,783; audio+Google
+130,288,651; PDF vision 25,159,473; video 254,452,854; and combined
+272,324,356 bytes. Interval, audio+Google, PDF, video, and combined smokes pass
+without cloud I/O. The delegated runner verified proxy and wheelhouse, removed
+every gate root, and left no gate process. #317 is release-proven.
 
 ## Documentation Rules
 

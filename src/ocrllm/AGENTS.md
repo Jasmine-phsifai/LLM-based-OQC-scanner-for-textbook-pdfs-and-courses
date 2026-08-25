@@ -725,6 +725,8 @@ serial prefix. Slots preserve paid Markdown/digest, provider/model, call count,
 nullable token usage, and honest complete/partial warnings. Keep paths,
 duplicated windows/source facts, arbitrary metadata, image state, repair, file
 I/O, and public exports outside these types.
+Exact commit `5580da1` passes the complete installed gate with a 250,819-byte
+wheel; every profile and local media smoke passes without cloud I/O.
 
 ## When Porting Legacy Behavior
 
