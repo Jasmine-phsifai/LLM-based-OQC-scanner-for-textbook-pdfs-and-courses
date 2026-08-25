@@ -983,6 +983,22 @@ A real two-frame/one-second video plus twelve-second AAC previously failed at
 the five-second seek and now retains its final JPEG. VFR, rotation, selector
 density, provider separation, and cancellation behavior are unchanged.
 
+#239 verifies the package containing the #238 runtime from a clean archive of exact
+commit `9b4d110`, but does **not** close the normal `[video]` installation gate.
+The one clean build produced a 248,030-byte, 235-member wheel (SHA-256
+`919857d48bbfec2cd4b51a2da8be9227350ac35477b5576c9f97907616e3e513`). Its
+base dependency set is empty, its video extra still contains only
+`imageio-ffmpeg>=0.6,<0.7` and `opencv-python>=4.13,<4.14`, and it contains the
+package plus `py.typed`. Two bounded normal pip attempts had earlier stalled
+while obtaining the 31.2 MB imageio-ffmpeg wheel. A later offline dry run could
+resolve imageio-ffmpeg 0.6.0, OpenCV 4.13.0.92, and NumPy 2.2.6 from cache
+records, but the actual clean offline install then proved that the OpenCV wheel
+payload was absent. It stopped before installed imports or real-media calls.
+This is incomplete external dependency-delivery evidence, not a reproduced
+package defect: do not repin, vendor dependencies, add another installer path,
+or claim the video extra is clean-install-proven from these runs. The exact
+temporary roots and only the two owned stalled installer processes were cleaned.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

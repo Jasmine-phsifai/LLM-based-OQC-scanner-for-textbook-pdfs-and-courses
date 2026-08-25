@@ -261,6 +261,14 @@ longer seeks at five and ten seconds beyond visual EOF. It bounds only the
 coarse grid by the frame-count/FPS estimate and still requires the exact final
 frame. No selector, provider, cancellation, resume, or public API changed.
 
+#239 confirms from a clean archive that the shipped wheel manifest still has
+an empty base and only OpenCV plus imageio-ffmpeg in `[video]`, but its normal
+dependency installation remains unproven. Two bounded network attempts stalled,
+and a cache-only install later found that resolver metadata existed without the
+OpenCV wheel payload. No pin or runtime was changed to hide that delivery gap;
+repeat the installed real-MP4 gate only when the declared wheels can actually be
+obtained, rather than adding another installer or dependency abstraction.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

@@ -735,6 +735,13 @@ The following directions remain traceable but are not current work:
   decoded stream's frame-count/FPS estimate; public container duration, exact
   final-frame PTS, VFR behavior, selector density, and provider behavior remain
   unchanged.
+  #239 clean-builds exact `9b4d110` and confirms the dependency-empty base,
+  two-entry `[video]` extra, package members, and `py.typed`, but does not close
+  the normal installed-video gate. Bounded network delivery stalled, while a
+  later offline install proved that cache metadata did not include the actual
+  OpenCV wheel payload. No package defect was reproduced, so dependency pins,
+  runtime code, and installer surface remain unchanged; installed real-MP4
+  proof waits for the declared dependency payloads to be obtainable.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
