@@ -97,6 +97,10 @@ turning the current #127 asymmetry into an accepted cancellation contract.
 keeps the public video facade import-light. Preserve whole-package selection in
 the Hatch wheel; do not add a per-module manifest, build wrapper, or eager import
 for this internal implementation.
+#214 reserves exact `output_root/audio.mp3` against Markdown publication even
+for silent video. Preserve this lexical media-layout invariant; do not turn it
+into a ban on publishing elsewhere under `output_root`, a path sandbox, or a
+general media-name registry.
 #166 makes source order a constructor invariant for every public video outcome:
 retained frame indices are strictly increasing and timestamps never move backward.
 Do not add path-identity, timestamp-uniqueness, or generic ordering machinery.

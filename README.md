@@ -126,7 +126,8 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   the same settled outcome plus an explicit output path, atomically publishes
   Markdown without overwriting by default, and returns the standard video
   result with a verified `output_path`. The Markdown target cannot replace a
-  retained frame or audio asset. It adds no recognition, resume, or legacy-format
+  retained frame or use the fixed `output_root/audio.mp3` media path, including
+  when the video is silent. It adds no recognition, resume, or legacy-format
   behavior.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,

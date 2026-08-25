@@ -34,7 +34,13 @@ def publish_video_result(
         raise TypeError(
             "publish_video_result() output_path must be a path"
         ) from None
-    _reject_retained_media_target(target, assets=composed.assets)
+    _reject_reserved_video_media_target(
+        target,
+        reserved_paths=(
+            *composed.assets,
+            outcome.output_root / "audio.mp3",
+        ),
+    )
 
     with claim_output_target(target):
         _prepare_video_markdown_target(target, overwrite=overwrite)
@@ -54,31 +60,31 @@ def publish_video_result(
         )
 
 
-def _reject_retained_media_target(
+def _reject_reserved_video_media_target(
     target: Path,
     *,
-    assets: tuple[Path, ...],
+    reserved_paths: tuple[Path, ...],
 ) -> None:
-    if target in assets:
+    if target in reserved_paths:
         raise OutputError(
-            "The video Markdown output cannot replace a retained media asset.",
+            "The video Markdown output cannot use a reserved media path.",
             code="OUTPUT_PATH_INVALID",
         ) from None
     try:
         if not os.path.lexists(target):
             return
-        aliases_retained_media = any(
+        aliases_reserved_media = any(
             os.path.lexists(asset) and os.path.samefile(target, asset)
-            for asset in assets
+            for asset in reserved_paths
         )
     except (OSError, ValueError) as error:
         raise OutputError(
-            "The video Markdown output could not be compared with retained media.",
+            "The video Markdown output could not be compared with reserved media.",
             code="OUTPUT_PATH_INVALID",
         ) from error
-    if aliases_retained_media:
+    if aliases_reserved_media:
         raise OutputError(
-            "The video Markdown output cannot replace a retained media asset.",
+            "The video Markdown output cannot use a reserved media path.",
             code="OUTPUT_PATH_INVALID",
         ) from None
 

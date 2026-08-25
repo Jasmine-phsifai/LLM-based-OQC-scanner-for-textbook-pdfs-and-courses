@@ -16,6 +16,7 @@ from ocrllm import (
     Config,
     ConfigError,
     GoogleGenAISettings,
+    OutputError,
     ProviderError,
     RecognitionExecutionPolicy,
     VideoRecognitionOutcome,
@@ -807,6 +808,20 @@ def test_recognize_video_treats_only_missing_stream_as_absent_audio(
     assert outcome.audio_artifact is None
     assert all(item.succeeded for item in outcome.frame_outcomes)
     assert len(image_provider.calls) == 1
+
+    reserved_audio_path = outcome.output_root / "audio.mp3"
+    retained_bytes = tuple(
+        frame.path.read_bytes() for frame in outcome.retained_frames
+    )
+    with pytest.raises(OutputError) as captured:
+        publish_video_result(outcome, reserved_audio_path)
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert not reserved_audio_path.exists()
+    assert tuple(
+        frame.path.read_bytes() for frame in outcome.retained_frames
+    ) == retained_bytes
+    assert list(outcome.output_root.glob(".ocrllm-*.tmp")) == []
 
 
 def test_recognize_video_rejects_invalid_audio_config_before_output_or_dispatch(

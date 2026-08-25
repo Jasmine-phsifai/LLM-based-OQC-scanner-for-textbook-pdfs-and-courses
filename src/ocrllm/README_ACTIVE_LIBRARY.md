@@ -435,8 +435,11 @@ a file, parse legacy output, or accept a fully failed outcome.
 accepts the same complete or partial outcome and one explicit path, reuses the
 same composition, atomically writes Markdown, refuses an existing target by
 default, supports explicit `overwrite=True`, and rejects a target that equals
-one of the retained frame/audio assets. Its returned standard video result
-preserves the composition and has the verified output path. It does not
+one of the retained frame/audio assets. The exact `output_root/audio.mp3` path
+remains reserved for video audio even when the settled video is silent, so a
+Markdown publication cannot make an absent-audio outcome look like an MP3. Its
+returned standard video result preserves the composition and has the verified
+output path. It does not
 recognize again, derive a legacy filename, create resume state, or publish a
 fully failed outcome. Automatic fallback, resume, and worker routing remain
 unavailable. Plain

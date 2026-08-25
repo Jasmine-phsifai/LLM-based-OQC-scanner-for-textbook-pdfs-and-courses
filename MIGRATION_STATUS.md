@@ -653,6 +653,11 @@ The following directions remain traceable but are not current work:
   external install resolves the public video callables and distribution metadata
   from the installed target without loading heavy media, provider, HTTP, or
   legacy modules. No package manifest or runtime change was required.
+  #214 reserves the exact `output_root/audio.mp3` media path during final video
+  Markdown publication even when the settled video is silent. A real silent MP4
+  now gets typed `OUTPUT_PATH_INVALID` instead of a Markdown file disguised at
+  the audio path, while retained JPEG bytes and cleanup remain intact. No wider
+  output-directory policy or provider contract changed.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

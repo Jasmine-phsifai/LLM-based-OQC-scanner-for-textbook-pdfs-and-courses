@@ -2454,6 +2454,19 @@ The proof root was removed. This proves distribution membership and import
 isolation; it does not replace #211's full source tests or claim another media or
 provider run.
 
+#214 fixes one normal publication contradiction without broadening filesystem
+policy. A complete silent-video outcome has no audio asset, but the lexical
+video layout still reserves `output_root/audio.mp3`; the previous publisher only
+compared its Markdown target with present assets and could therefore write
+Markdown at that MP3 path. Publication now rejects that exact reserved path with
+`OUTPUT_PATH_INVALID`, including the silent case. A real silent MP4 regression
+proves the absent-audio outcome remains complete, the reserved path is not
+created, retained JPEG bytes remain unchanged, and no publication staging file
+survives. The adjacent video and lightweight-import surface passes 119 tests.
+The complete offline suite passes 1,486 tests.
+No whole-output-root ban, path sandbox, alias graph, manifest, provider behavior,
+cancellation choice, or long-audio decision was added.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist
