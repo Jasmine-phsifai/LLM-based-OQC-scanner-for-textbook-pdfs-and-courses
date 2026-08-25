@@ -2,20 +2,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from .config import Config
-from .errors import Cancelled, ConfigError, OCRLLMError
-from .providers.validate_vision_provider_config import (
-    validate_vision_provider_config,
-)
-from .recognize import recognize
-from .recognize_video_frames import recognize_video_frames
-from .validate_config import validate_config
-from .validate_google_mp3_options import validate_google_mp3_options
-from .video.extract_video_audio import extract_video_audio
-from .video.prepare_video_media import prepare_video_media
-from .video_recognition_outcome import VideoRecognitionOutcome
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from .config import Config
+    from .video_recognition_outcome import VideoRecognitionOutcome
 
 
 def recognize_video(
@@ -26,6 +19,20 @@ def recognize_video(
     audio_config: Config,
 ) -> VideoRecognitionOutcome:
     """Settle independent frame and audio recognition for one local MP4."""
+    from pathlib import Path
+
+    from .errors import Cancelled, OCRLLMError
+    from .providers.validate_vision_provider_config import (
+        validate_vision_provider_config,
+    )
+    from .recognize import recognize
+    from .recognize_video_frames import recognize_video_frames
+    from .validate_config import validate_config
+    from .validate_google_mp3_options import validate_google_mp3_options
+    from .video.extract_video_audio import extract_video_audio
+    from .video.prepare_video_media import prepare_video_media
+    from .video_recognition_outcome import VideoRecognitionOutcome
+
     validated_image_config = validate_config(image_config)
     _reject_image_persistence(validated_image_config)
     validate_vision_provider_config(validated_image_config)
@@ -91,6 +98,8 @@ def recognize_video(
 
 
 def _reject_image_persistence(config: Config) -> None:
+    from .errors import ConfigError
+
     if config.output_dir is not None or config.resume or config.overwrite:
         raise ConfigError(
             "recognize_video() image recognition is memory-only and does not "

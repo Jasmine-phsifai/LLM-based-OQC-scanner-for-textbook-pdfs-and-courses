@@ -672,6 +672,12 @@ The following directions remain traceable but are not current work:
   temp roots, and independent branch failure pass together with lightweight
   import. No runtime, provider abstraction, legacy format, or new live claim was
   justified.
+  #218 fixes the active video facade's explicit-submodule import order. The two
+  same-named function modules are now tiny initialization-safe definitions and
+  the package binds their functions once, so a submodule-first import cannot
+  replace the root callable with a module. Config/error implementations, heavy
+  video/audio backends, provider SDKs, and legacy remain deferred; the frozen
+  worker collision is unchanged.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

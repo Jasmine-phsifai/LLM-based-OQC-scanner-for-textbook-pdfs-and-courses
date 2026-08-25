@@ -2,6 +2,11 @@
 
 from typing import TYPE_CHECKING
 
+# Bind the two lightweight video facade functions before callers can import
+# their same-named submodules and replace these public package attributes.
+from .recognize_video import recognize_video as recognize_video
+from .recognize_video_frames import recognize_video_frames as recognize_video_frames
+
 
 if TYPE_CHECKING:
     from .audio_model_settings import AudioModelSettings as AudioModelSettings
@@ -268,28 +273,6 @@ def __getattr__(name: str):
         )
         globals()["compose_video_result"] = compose_value
         globals()["publish_video_result"] = publish_value
-        return globals()[name]
-
-    if name in {"recognize_video", "recognize_video_frames"}:
-        video_frames_value = getattr(
-            import_module(".recognize_video_frames", __name__),
-            "recognize_video_frames",
-        )
-        video_value = getattr(
-            import_module(".recognize_video", __name__),
-            "recognize_video",
-        )
-        # Importing the adapter loads these sibling modules and would otherwise
-        # leave module objects on the public package under the function names.
-        recognize_value = getattr(import_module(".recognize", __name__), "recognize")
-        batch_value = getattr(
-            import_module(".recognize_batch", __name__),
-            "recognize_batch",
-        )
-        globals()["recognize"] = recognize_value
-        globals()["recognize_batch"] = batch_value
-        globals()["recognize_video_frames"] = video_frames_value
-        globals()["recognize_video"] = video_value
         return globals()[name]
 
     if name in {"recognize", "recognize_batch"}:

@@ -448,7 +448,11 @@ writes UTF-8 Markdown and `.md` is the recommended suffix, but suffixes are not
 validated. This is distinct from the exact library-owned media paths above.
 Automatic fallback, resume, and worker routing remain
 unavailable. Plain
-`import ocrllm` does not import OpenCV, NumPy, or imageio-ffmpeg.
+`import ocrllm` does not import OpenCV, NumPy, imageio-ffmpeg, Config/error
+implementation modules, or provider SDKs. The two lightweight video facade
+functions are bound during package initialization so explicitly importing
+their same-named submodules cannot replace the public callables with module
+objects; their runtime implementations and optional dependencies remain lazy.
 Local user screenshots are uncommitted
 supplemental material and never replace the committed corpus in pass/fail
 evidence.

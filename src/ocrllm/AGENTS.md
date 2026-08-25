@@ -222,6 +222,11 @@ the signal, add retry, or create a general lifecycle manager.
 independently snapshotted `Config` values. Do not replace them with a shared
 video config, provider superclass, routing registry, or legacy format adapter
 without a new concrete consumer and maintainer decision.
+#218 binds only the two thin video facade functions at package initialization.
+Keep their runtime imports inside the same-named function modules so plain
+`import ocrllm` continues to defer Config/errors, media backends, and providers.
+Do not replace this bounded fix with a callable module, package proxy, or import
+hook, and do not use it to change the frozen worker collision.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

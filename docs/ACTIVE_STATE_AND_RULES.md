@@ -2511,6 +2511,23 @@ claim a new live-provider run. Do not introduce a provider superclass, shared
 video config, routing registry, or legacy compatibility layer merely to restate
 separation that the two public configs already execute.
 
+#218 closes a public video import-order defect without adopting a package-wide
+module proxy. In a fresh process, explicitly importing
+`ocrllm.recognize_video` before resolving the root facade installed that module
+on the package; a later `from ocrllm import recognize_video` therefore returned
+a non-callable module. The two same-named facade modules now contain only typed
+function definitions at import time, defer their runtime dependencies until
+the function is called, and are bound once during package initialization.
+Explicit submodule-first and root-first orders now return the identical two
+public functions. Plain import still defers Config/error implementations and
+loads none of OpenCV, NumPy, imageio-ffmpeg, miniaudio, Google/OpenAI SDKs,
+HTTPX, or legacy; a measured fresh process loaded only three `ocrllm` modules.
+The focused public type/import/video surface passes 61 and the complete offline
+suite passes 1,490. This is limited to the active video facade: do not infer an
+unfreeze or fix for the separately documented worker collision, and do not add
+a callable-module class, custom package proxy, import hook, or eager runtime
+graph.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

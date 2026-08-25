@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
+from typing import TYPE_CHECKING
 
-from .batch_item_outcome import BatchItemOutcome
-from .config import Config
-from .errors import ConfigError, InvalidSource
-from .providers.validate_vision_provider_config import (
-    validate_vision_provider_config,
-)
-from .recognize_batch import recognize_batch
-from .resolve_effective_image_limit import resolve_effective_image_limit
-from .retained_video_frame import RetainedVideoFrame
-from .validate_config import validate_config
+if TYPE_CHECKING:
+    from .batch_item_outcome import BatchItemOutcome
+    from .config import Config
+    from .retained_video_frame import RetainedVideoFrame
 
 
 _VIDEO_FRAME_GROUP_LIMIT = 8
@@ -30,6 +24,13 @@ def recognize_video_frames(
     public steps; video recovery remains unavailable. Each outcome corresponds
     to one image group, not one individual frame.
     """
+    from .providers.validate_vision_provider_config import (
+        validate_vision_provider_config,
+    )
+    from .recognize_batch import recognize_batch
+    from .resolve_effective_image_limit import resolve_effective_image_limit
+    from .validate_config import validate_config
+
     cfg = validate_config(config)
     _reject_video_persistence(cfg)
     validate_vision_provider_config(cfg)
@@ -62,6 +63,10 @@ def _attach_video_frame_group_identity(
     outcome: BatchItemOutcome,
     frames: tuple[RetainedVideoFrame, ...],
 ) -> BatchItemOutcome:
+    from dataclasses import replace
+
+    from .batch_item_outcome import BatchItemOutcome
+
     frame_indices = tuple(frame.frame_index for frame in frames)
     frame_timestamps = tuple(frame.timestamp_seconds for frame in frames)
     if outcome.result is not None:
@@ -83,6 +88,8 @@ def _attach_video_frame_group_identity(
 
 
 def _reject_video_persistence(config: Config) -> None:
+    from .errors import ConfigError
+
     if config.output_dir is not None or config.resume or config.overwrite:
         raise ConfigError(
             "recognize_video_frames() is memory-only and does not accept "
@@ -92,6 +99,9 @@ def _reject_video_persistence(config: Config) -> None:
 
 
 def _validate_retained_frame_tuple(frames: object) -> None:
+    from .errors import InvalidSource
+    from .retained_video_frame import RetainedVideoFrame
+
     if type(frames) is not tuple or not frames:
         raise InvalidSource(
             "recognize_video_frames() requires a nonempty exact tuple.",

@@ -198,7 +198,7 @@ def test_recognize_video_uses_one_snapshot_for_frames_and_audio_after_replacemen
     import importlib
 
     prepare = importlib.import_module("ocrllm.video.prepare_video_media")
-    orchestrator = importlib.import_module("ocrllm.recognize_video")
+    audio_extractor = importlib.import_module("ocrllm.video.extract_video_audio")
     source = _write_mp4(
         tmp_path / "lecture.mp4",
         color="blue",
@@ -213,7 +213,7 @@ def test_recognize_video_uses_one_snapshot_for_frames_and_audio_after_replacemen
     replacement_bytes = replacement.read_bytes()
     assert original_bytes != replacement_bytes
     real_scan = prepare.scan_video_frame_candidates
-    real_extract_audio = orchestrator.extract_video_audio
+    real_extract_audio = audio_extractor.extract_video_audio
     observed_audio_sources: list[Path] = []
 
     def scan_then_replace(snapshot_path, *, video_info, cv2):
@@ -228,7 +228,11 @@ def test_recognize_video_uses_one_snapshot_for_frames_and_audio_after_replacemen
         return real_extract_audio(snapshot_path, output_path=output_path)
 
     monkeypatch.setattr(prepare, "scan_video_frame_candidates", scan_then_replace)
-    monkeypatch.setattr(orchestrator, "extract_video_audio", observe_audio_source)
+    monkeypatch.setattr(
+        audio_extractor,
+        "extract_video_audio",
+        observe_audio_source,
+    )
     observed_audio_snapshots = _install_fake_audio(monkeypatch)
     image_provider = _ImageProvider()
 

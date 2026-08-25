@@ -144,3 +144,44 @@ def test_public_recognition_callables_survive_either_lazy_import_order(
     )
 
     assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.parametrize(
+    "submodule_name",
+    ("ocrllm.recognize_video", "ocrllm.recognize_video_frames"),
+)
+def test_public_video_callables_survive_explicit_submodule_import(submodule_name):
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = (
+        "import importlib, sys; "
+        "sys.path.insert(0, sys.argv[1]); "
+        "import ocrllm; "
+        "importlib.import_module(sys.argv[2]); "
+        "from ocrllm import recognize_video, recognize_video_frames; "
+        "assert callable(recognize_video), type(recognize_video); "
+        "assert callable(recognize_video_frames), type(recognize_video_frames); "
+        "assert recognize_video is importlib.import_module("
+        "'ocrllm.recognize_video').recognize_video; "
+        "assert recognize_video_frames is importlib.import_module("
+        "'ocrllm.recognize_video_frames').recognize_video_frames; "
+        "loaded={name.split('.')[0] for name in sys.modules}; "
+        "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
+        "assert not loaded & forbidden, loaded & forbidden"
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            probe,
+            str(source_root),
+            submodule_name,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert completed.returncode == 0, completed.stderr

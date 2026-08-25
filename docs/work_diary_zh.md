@@ -4353,3 +4353,17 @@ Atomic task — Iteration #217: verify the already-built video runner’s image-
 **两条路线与选择。** 路线 A 在没有失败证据时创建 provider superclass、视频 routing registry 或共享 config；路线 B 复跑已有真实本地 MP4 证据，确认需求已被当前小结构满足，然后停止加码。选择 B。现有回归不是只测函数名：真实 MP4 经过解析、五秒候选、负反馈筛选和 JPEG 留取；注入图片 provider 只收到图片 snapshot，fake native-Google 音频边界只收到 MP3 snapshot；多组留图仍按 8+2 进入图片侧，Unicode 场景的两个临时根互不混用，任一 branch 失败时另一 branch 的结果和资产仍保留。
 
 **验证与过度设计复查。** 主代理选取上述真实媒体、分支失败和轻量 import 回归，结果 **10 passed in 2.67s**；独立审计的更宽视频/帧/import 选择为 **34 passed in 6.05s**。本轮没有 runtime、test、public API、manifest、dependency、network、credential、live provider、legacy、social、A2b、#127 或 frozen `contracts/worker` 变化，因此不机械重跑全量测试或 wheel。最接近过度设计的是把“两个配置已经分开”改造成未来多 provider 框架，或为测试再造一层 spy/router；现有真实 MP4 与两条实际 dispatch 路径已经给出直接证据，继续抽象只会增加后来阅读成本。
+
+## #218 — 2026-08-25：显式导入视频子模块不能破坏根包公开函数
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #218: harden the public Python import boundary for the shipped video facade without changing video runtime behavior or reopening frozen worker imports. Success means reconciling authority and diary; testing fresh-process import orders involving `ocrllm`, `ocrllm.recognize_video`, and `ocrllm.recognize_video_frames`; proving whether both public callables remain callable and identical regardless of supported import order while heavy media/provider modules stay unloaded; using one bounded independent audit plus personal review; writing a failing regression and the smallest lazy-import correction only if a real collision exists; preserving `contracts/`, `worker/`, provider separation, and all media semantics; running proportional import/video tests; updating Chinese records; and committing/pushing one coherent iteration. This matters because a feature is not a usable Python library if ordinary submodule imports silently replace its public functions with module objects.
+```
+
+**新鲜进程红灯与原因。** 主代理和轻量只读审计分别运行三种导入顺序。先通过根包懒加载视频函数再导入子模块时正常；但先执行 `importlib.import_module("ocrllm.recognize_video")`，随后读取根包或执行 `from ocrllm import recognize_video`，得到的是 module 而不是 function，身份比较也失败。新增两条子模块参数回归后，旧代码结果为 **1 failed, 1 passed**。原因是 Python 在导入子模块后自动把它安装到父包同名属性；因为属性已经存在，根包 `__getattr__` 没有机会纠正。这个问题只发生在 active video facade，与 frozen worker 中已经记录但不可修改的 `get_capabilities` 碰撞分开处理。
+
+**两条路线、修复与结构。** 路线 A 使用可调用 module、自定义 `ModuleType`、包级 `__getattribute__` 或 import hook；路线 B 只让两个同名视频 facade 文件在导入阶段保持极薄，并由根包初始化时绑定它们的函数。选择 B。直接提前加载旧实现的基线约为 44 ms、69 个 `ocrllm` 模块，虽然没有重依赖，仍会破坏明确的完全懒实现边界；因此把两个函数的运行依赖移动到调用阶段，类型依赖保留在 `TYPE_CHECKING`，函数仍留在诚实的同名文件中。根包只提前加载这两个定义，删除已经不可达的视频专用 `__getattr__` 分支。第一次相邻回归暴露一条测试 monkeypatch 旧模块别名；测试改为 patch 真正负责音频提取的 `video.extract_video_audio` 模块，原有同一视频 snapshot 证明没有减弱。
+
+**验证与过度设计复查。** 修复后的新鲜进程基础导入约 **7.2 ms**、只加载三个 `ocrllm` 模块；Config/error 实现和 `cv2`、NumPy、imageio-ffmpeg、miniaudio、Google/OpenAI SDK、HTTPX、legacy 均未加载。公开类型/import、combined video、frame grouping 和 smoke 相邻集合为 **61 passed in 6.34s**；完整离线套件为 **1,490 passed in 59.41s**；`compileall -q src tests`、diff 与 frozen boundary 检查通过。没有网络、credential、provider call、视频媒体语义、#127/#152、legacy/social 或 frozen `contracts/worker` 变化。最明显的过度设计是为两个确定名称建立通用 import interception；局部薄 facade 既修复真实 Python 行为，又比魔法代理更容易让下一位维护者从冷启动读懂。
