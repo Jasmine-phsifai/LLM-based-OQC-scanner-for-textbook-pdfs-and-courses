@@ -5599,3 +5599,21 @@ Atomic task — Iteration #300: complete the semantic long-video gate that #299�
 **唯一真实运行。** 一次 runner 在 child 内存读取非空 QSettings key，显式传大小写代理环境，发现当前 **37** 个模型，图片和音频均显式选 `gemini-2.5-flash`，要求 `google_files`，request timeout 120 秒。相同 session 续接 3 次，约 **172 秒**后 exit 1、stderr **0 bytes**。没有 retry、第二 runner、换模、fallback、invalid-key probe、下载或安装。图片 generation **1 次**，结果为 `PROVIDER_RESPONSE_INVALID / request`；音频 generation **1 次**，结果为 `PROVIDER_RATE_LIMITED / provider`，同时 `remote_file_deleted=true`、`provider_client_closed=true`。两个分支均无可用文本，因此顶层 failed、composition 未开始，调用与清理均诚实。
 
 **证据缺口、最小修正与过度设计复查。** 音频是 Google 的瞬态限流，不授权 adapter 内部 retry 或立即换模。图片的 request-scoped invalid response 可能来自 mapper 中的标准 HTTP/RPC 状态，但旧 runner 没有转发它们，本次不能再恢复。路线 A 是猜测并修改 mapper；路线 B 是只补安全 reporter。采用 B：HTTP 仅接受 exact int 100—599；provider status 仅接受完整 Google RPC 标准枚举。任意 status 字符串、message、raw response、路径、远端 ID 和 key 继续拒绝。Google adapter、runner、视频和长音频相邻集 **121 passed in 13.07s**。没有 runtime/API/provider 策略、重试、模型 fallback、语义检测器、依赖、A2b、legacy/social 或 frozen 边界变化。相同语义 fixture 可在额度窗口刷新后再做一次单次门禁，但必须用新 reporter 按真实 typed status 决策，不能机械循环。
+
+## #301 — 2026-08-26：同一语义长视频单次重放，仍未打通且没有标准状态
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #301: replay the frozen semantic 301-second Google video gate exactly once after the transient window, now using the strengthened status reporter. Context: #300 proved both image and Files generations were reached, audio was provider-rate-limited with complete cleanup, and image classification lacked HTTP/RPC evidence only because the prior runner omitted it. Success means reconciling current authority and diary; verifying the frozen fixture's size/hash/duration and active proxy without credentials; delegating one credential-isolated runner start with the same explicit model and Files expectation; recording exact calls, statuses, token/cleanup evidence, and terminal output; making at most one change only if the new evidence proves a library or runner defect; removing the owned fixture if the gate reaches a conclusive terminal result; then verifying, documenting, committing, and pushing. This matters because one evidence-aware replay can distinguish a refreshed transient failure from a reproducible product defect, whereas repeated blind retries or model-by-model probing would be over-design.
+```
+
+**基线、两条路线与前置门禁。** `HEAD == origin/master == 69d0c37e31aa8cc0af6a483c5a38f4e5db19ccb7`，tracked tree 干净，两份受保护未跟踪文件仍在。路线 A 是用同模型、同样本、同 Files 预期重放一次；路线 B 是换模型、拆开图片/音频或连续探测。采用 A，因为只有它能与 #300 直接比较。凭据前重新确认 fixture 为 **2,528,868 bytes**、SHA-256 `2776a1e811dfeb001bc3f558bc037dc876208d23d27b44aa1b941d474d4c79e8`、**301.0 秒、5 个 retained frames、1 个图片组**；`127.0.0.1:10080` TCP 可达，经代理访问 Google API host 为 HTTP 404 / exit 0。执行者第一次误查 WinHTTP 并在零次凭据读取、零次 live start 时停下；纠正为维护者要求的 WinINET 后，确认 `ProxyEnable=1`、`ProxyServer=127.0.0.1:10080`，没有改代理设置。
+
+**唯一 live 终态。** 执行者只启动一次 credential-isolated runner；catalog 仍为 **37**，图片和音频都显式选择 `gemini-2.5-flash`，要求 `google_files`，request timeout 为 120 秒。相同 session 续接 4 次，约 **232 秒**后 exit 1，stderr **0 bytes**。图片分支在 generation **1 次**后返回 `PROVIDER_RESPONSE_INVALID / request`；音频保留本地 artifact，但在 generation 前返回同一 code/scope，generation **0 次**，client 正常关闭。没有可报告的远端上传对象，也没有输入/输出 token。两条错误都没有合法 HTTP code 或标准 Google RPC status，因此加强后的 reporter 正确地没有输出这些字段；composition 没有开始。没有 retry、第二次 runner、换模、fallback、invalid-key probe、下载或安装。
+
+**本人代码复核与不过度修复。** 图片调用次数把错误限定在唯一一次 `generate_content` 内；音频代码证明错误发生在远端上传对象被保留之前，但现有安全事实不能继续区分 catalog、输入上限或 upload。路线 A 是给每个 SDK 操作增加阶段追踪；路线 B 是如实记录未知并保持 runtime 不变。选择 B。阶段追踪只会让报告更细，不能修复本次供应商失败，也会扩大 adapter 的证据结构；从 232 秒耗时猜原因同样不诚实。本轮因此没有代码、API、provider 策略、retry/fallback、依赖、A2b、legacy/social 或 frozen 边界变化。长视频真实成功门禁仍开放，但以后必须有新的原子理由才再调用，不能把免费 API 授权理解成机械重放许可。
+
+**清理事实。** 轻量执行者再次核对精确 TEMP 父目录只有该 fixture，大小与 hash 不变；非递归 `Remove-Item -LiteralPath` 被执行安全策略拒绝，于是按约定停止，没有用 Python、cmd、递归删除或其他方式绕过。父目录和 2.53 MB MP4 仍是已知可丢弃 residue，不能报告为已清理。
+
+**验证。** 本人重新取得完整终态：全套离线测试 **1,559 passed in 65.57s**，`compileall -q src tests tools` 与 `git diff --check` 均为 exit 0。此前有一次全量测试进程跑完但输出 session 未被保留，因此没有把那次算作证据；另一次定向命令先写错不存在的测试文件名并零测试退出，随后用真实文件名重跑为 **118 passed**。这两项都是证据通道/命令错误，不是产品失败，也没有被隐去。

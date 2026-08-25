@@ -5270,6 +5270,48 @@ frozen semantic fixture after the provider window refreshes; it must use the
 stronger runner and decide from the returned typed status rather than blindly
 looping.
 
+## Iteration 301: one evidence-aware semantic replay still fails without a standard status
+
+The exact Iteration 300 semantic fixture was frozen and reverified before any
+credential access: 2,528,868 bytes, SHA-256
+`2776a1e811dfeb001bc3f558bc037dc876208d23d27b44aa1b941d474d4c79e8`,
+301.0 seconds, five retained frames, and one image group. WinINET remained
+enabled at `127.0.0.1:10080`; TCP succeeded and direct curl through that proxy
+reached the Google API host with HTTP 404 and exit 0. A delegated executor first
+checked WinHTTP by mistake and stopped with zero credential reads and zero live
+starts. After the instruction was corrected to WinINET, it launched exactly one
+credential-isolated runner with the same current 37-model catalog, explicit
+`gemini-2.5-flash` for image and audio, expected Files transport, and the
+existing 120-second request limit. There was no retry, model switch, fallback,
+invalid-key probe, download, or dependency change.
+
+The runner reached a terminal exit 1 after about 232 seconds with empty stderr.
+The image branch attempted one generation and again returned
+`PROVIDER_RESPONSE_INVALID` with request scope. The audio branch retained its
+local artifact but failed before generation with the same code and scope; the
+client closed, and no uploaded object was retained from which remote-deletion
+truth could be reported. Neither error carried a valid HTTP status or standard
+Google RPC status, so the strengthened reporter correctly emitted neither. This
+proves that this replay's missing status was not a reporter omission; it cannot
+retroactively classify Iteration 300's different failures and does not identify
+a stable provider condition or a library defect. Composition correctly remained
+not started.
+
+Do not add retry, automatic model switching, a second provider attempt, or a
+general operation-stage telemetry system from this result. Source review places
+the image failure inside its single generation call and the audio failure before
+a remote upload object was retained, but guessing a narrower cause from elapsed
+time would be dishonest. The long-video live success gate remains open. Its next
+meaningful attempt must follow a separate atomic reason, such as a later provider
+window or a newly reproduced typed defect; it must not become a mechanical replay
+loop.
+
+The exact task-owned temporary directory still contains only the verified
+2,528,868-byte fixture. A delegated non-recursive `Remove-Item -LiteralPath`
+attempt was blocked by execution safety policy; no recursive, Python, cmd, or
+other bypass was used. Record this as known disposable residue rather than
+claiming cleanup.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
