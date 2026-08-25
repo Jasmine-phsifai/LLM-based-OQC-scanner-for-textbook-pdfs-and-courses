@@ -11,6 +11,7 @@ from ..errors import OutputError, OutputExists
 from ..output.claim_output_target import claim_output_target
 from ..output.normalize_output_stem import normalize_output_stem
 from ..retained_video_frame import RetainedVideoFrame
+from .coerce_video_output_directory import coerce_video_output_directory
 from .inspect_video import inspect_video
 from .load_opencv import load_opencv
 from .scan_video_frame_candidates import scan_video_frame_candidates
@@ -26,8 +27,9 @@ def prepare_video_media(
     output_dir: str | Path,
 ) -> Iterator[tuple[Path, tuple[RetainedVideoFrame, ...]]]:
     """Yield one stable MP4 path and its published representative JPEGs."""
+    output_directory = coerce_video_output_directory(output_dir)
     source_path = Path(source)
-    target_root = Path(output_dir) / normalize_output_stem(source_path.stem)
+    target_root = output_directory / normalize_output_stem(source_path.stem)
     _preflight_video_output(target_root)
 
     with claim_output_target(target_root):

@@ -490,6 +490,26 @@ def test_extract_video_frames_rejects_existing_video_directory_without_changes(
     assert list(existing_root.iterdir()) == [sentinel]
 
 
+class _CustomOutputPath:
+    def __fspath__(self) -> str:
+        return "custom-output"
+
+
+@pytest.mark.parametrize(
+    "output_dir",
+    ("", "   ", b"output", object(), _CustomOutputPath()),
+)
+def test_extract_video_frames_rejects_invalid_output_directory_before_source(
+    tmp_path: Path,
+    output_dir: object,
+) -> None:
+    with pytest.raises(OutputError) as captured:
+        extract_video_frames(tmp_path / "not-opened.mp4", output_dir=output_dir)
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert not (tmp_path / "not-opened").exists()
+
+
 def test_extract_video_frames_write_failure_publishes_no_partial_directory(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -1059,6 +1059,22 @@ video set passes 121 tests and the complete offline suite passes 1,504. No
 public API, provider route, retry, dependency, media selection, output layout,
 legacy compatibility, #127/#152 choice, or frozen boundary changed.
 
+#244 makes the required video output-directory argument an explicit library
+contract before source access. Both `extract_video_frames()` and
+`recognize_video()` previously let `pathlib` interpret an empty string as the
+current directory; a valid MP4 could therefore publish `<source-stem>/frames`
+under the caller's process cwd. Bytes and arbitrary objects instead leaked raw
+`TypeError`, whitespace could fail only after opening the source, and custom
+`PathLike` values were accepted despite the public `str | Path` annotation.
+The shared media preparation boundary now accepts only a nonempty exact string
+or `Path` (including ordinary concrete Path subclasses) and otherwise raises
+typed `OUTPUT_PATH_INVALID` before source, snapshot, OpenCV, FFmpeg, output, or
+provider work. Existing directory collision and parent checks remain separate.
+The video set passes 128 tests and the complete offline suite passes 1,510. No
+generic path protocol, cwd fallback, long-path policy, sandbox, public signature,
+provider/media behavior, dependency, legacy compatibility, #127/#152 choice,
+or frozen-boundary change was introduced.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

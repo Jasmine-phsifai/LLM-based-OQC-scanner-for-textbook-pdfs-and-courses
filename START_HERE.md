@@ -295,6 +295,12 @@ member and does not call it, so #127's returned-versus-propagated cancellation
 decision remains open. Exceptions and non-boolean values from an actual
 `is_set()` call remain execution-time configuration errors.
 
+#244 makes the public video `output_dir` contract exact: use a nonempty string
+or `Path`. Empty/whitespace strings, bytes, arbitrary objects, and custom
+`PathLike` wrappers now raise `OUTPUT_PATH_INVALID` before source or media work,
+instead of writing relative retained assets or leaking `TypeError`. This is one
+shared video-input check, not a generic filesystem abstraction.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

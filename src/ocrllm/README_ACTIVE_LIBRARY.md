@@ -395,7 +395,10 @@ Combined video recognition instead owns one shared snapshot under `output_dir`:
 inspection, negative-feedback comparison, retained-JPEG decode, and audio
 extraction consume that same path without copying the video twice. Every owned
 snapshot is removed before its call exits and is never a public asset or legacy
-compatibility format. `recognize_video()` validates both configs
+compatibility format. Both public retained-video entries require `output_dir`
+to be a nonempty string or `Path`; they reject empty/whitespace strings and
+signature-external path-like objects before source access rather than treating
+an empty value as the process cwd. `recognize_video()` validates both configs
 before reading the source, creating retained media, or dispatching either
 provider. That preflight requires each non-null cancellation signal to expose a
 callable `is_set` member without invoking it; cancellation state and invalid

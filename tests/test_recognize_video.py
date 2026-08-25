@@ -847,6 +847,20 @@ def test_recognize_video_rejects_invalid_audio_config_before_output_or_dispatch(
     assert not output_dir.exists()
 
 
+def test_recognize_video_rejects_empty_output_directory_before_source(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(OutputError) as captured:
+        recognize_video(
+            tmp_path / "not-opened.mp4",
+            output_dir="",
+            image_config=Config(provider=_ImageProvider()),
+            audio_config=_audio_config(tmp_path),
+        )
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+
+
 def test_recognize_video_rejects_invalid_audio_cancellation_before_source(
     tmp_path: Path,
 ) -> None:

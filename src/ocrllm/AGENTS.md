@@ -298,6 +298,10 @@ this gate until its named package boundary changes again.
 state observation: do not invoke the signal during preflight or use it to choose
 #127's returned-versus-propagated cancellation behavior. Execution still owns
 exceptions and strict-boolean validation from an actual `is_set()` call.
+#244 requires the two public retained-video entries to accept only a nonempty
+exact string or `Path` for `output_dir`, with typed rejection before source
+access. Do not restore empty-string cwd fallback, accept arbitrary `PathLike`,
+or grow this narrow coercion into a generic path framework or long-path policy.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

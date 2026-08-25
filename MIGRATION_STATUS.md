@@ -761,6 +761,12 @@ The following directions remain traceable but are not current work:
   failures after video snapshot/frame/audio work without choosing #127's
   cancellation outcome. The full offline suite passes 1,504; public API,
   providers, dependencies, output and media behavior remain unchanged.
+  #244 removes the accidental cwd fallback from both public retained-video
+  entries. Their required `output_dir` now accepts only a nonempty exact string
+  or `Path`; malformed and signature-external values produce typed
+  `OUTPUT_PATH_INVALID` before source/media work. The full offline suite passes
+  1,510 without adding a generic path layer, long-path policy, dependency, or
+  provider/media change.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
