@@ -396,6 +396,16 @@ is often accepted.
   therefore only: should one cancelled branch return the settled outcome (A),
   or should cancellation still raise after making that outcome recoverable
   (B)? Do not infer the answer from ordinary provider-error handling.
+- **#236 video recovery ordering, investigated but not authorized.** Legacy
+  production behavior proves that reusing settled paid image groups and keeping
+  frame/audio work independent are worthwhile. Do not port its five-phase
+  checkpoint, absolute-path identity, file-exists recovery, localized Markdown
+  parsing, or repair markers: they omit source bytes and exact request identity
+  and have already caused wrong reuse and ambiguous repair. Once #127 is chosen,
+  the first bounded candidate is library-owned recovery of exact retained-frame
+  groups only. Full audio/video recovery must also wait for #152's stable
+  long-audio unit contract. Published Markdown remains output, never state; this
+  note does not authorize a schema, resume facade, or repair compatibility API.
 - #129 keeps video composition explicit and memory-only. A caller may turn an
   already returned complete or partial `VideoRecognitionOutcome` into one
   standard video `RecognitionResult`; frame groups and audio remain separate

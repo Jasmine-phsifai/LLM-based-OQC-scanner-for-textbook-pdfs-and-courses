@@ -954,6 +954,17 @@ and are not evidence for either cancellation choice. Do not implement A merely
 because it is recommended, or build B's recovery machinery, until the
 maintainer explicitly chooses return or raise.
 
+#236 confirms from the legacy parent that cross-process video recovery is a
+valuable later capability, but its five phase numbers, path-only checkpoint,
+artifact-exists shortcuts, localized Markdown parsing, and repair markers are
+not safe library contracts. The useful product rule is narrower: preserve
+settled paid units independently per branch and rebuild only unpaid local media.
+After #127 is chosen, the first feasible slice is exact retained-frame-group
+recovery using library-owned typed identity; it must not parse published
+Markdown or infer state from legacy files. Full audio/video recovery waits for
+#152 to define stable long-audio units as well as #127. This investigation is
+ordering evidence, not authority to add a schema, resume API, or repair parser.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

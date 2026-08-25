@@ -199,7 +199,10 @@ image cancellation returns branch evidence, audio cancellation can hide an
 already completed image branch, dual cancellation still parses media, and
 silent video ignores an audio-only signal. The maintainer must choose returned
 branch cancellation (recommended) or propagated cancellation with a new bounded
-way to recover settled work before implementation. The audio slice
+way to recover settled work before implementation. #236 confirms that durable
+video recovery is valuable but must follow that choice; exact frame-group
+recovery comes first, while full audio/video recovery also waits for #152. No
+legacy checkpoint or Markdown repair format is imported. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. #146 additionally proves the new publication entry from an offline clean
 wheel installed outside the repository, including actual Markdown publication,
