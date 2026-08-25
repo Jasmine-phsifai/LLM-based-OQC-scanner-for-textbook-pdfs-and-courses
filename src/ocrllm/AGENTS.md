@@ -773,7 +773,10 @@ fixed regular sidecar and rejects an existing final result. It must not write,
 parse state, enumerate unrelated siblings, dispatch, overwrite, auto-rename,
 lock across processes, repair, or become public. Result/state filenames live
 only in `long_audio_output_paths.py`. The 1,692-test source suite passes; exact
-installed proof is pending.
+commit `782220d` passes the complete installed gate with a 258,617-byte wheel;
+every profile and local media smoke passes without cloud I/O. The next atomic
+fix is the stale image-specific `ResumeStateError.default_message`, not another
+audio feature or an error-hierarchy redesign.
 
 ## When Porting Legacy Behavior
 

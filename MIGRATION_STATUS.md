@@ -1360,7 +1360,11 @@ The following directions remain traceable but are not current work:
   and rejects an existing final result. It writes and parses nothing, ignores
   unrelated sibling entries, and keeps overwrite/repair/dispatch separate.
   Fixed filenames now have one source of truth. All 1,692 source tests pass;
-  exact installed proof remains open.
+  exact commit `782220d` passes the clean installed gate with 1,691 archived
+  tests and one expected skip, a 258,617-byte wheel, all profiles and local
+  media smokes green, no cloud I/O, and complete cleanup. The shared
+  `ResumeStateError` default still incorrectly names image although PDF/audio
+  now use the type; its narrow wording fix precedes the next audio slice.
 
 ## Obsolete Prose Kept For Trace
 

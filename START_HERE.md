@@ -769,7 +769,11 @@ root; resume requires the existing directory and fixed regular state sidecar,
 and rejects an already published `result.md`. It performs no writes or state
 parsing and does not inspect unrelated siblings. Fixed result/state names now
 have one source of truth. All 1,692 source tests pass; exact installed proof is
-pending.
+complete. Exact commit `782220d` passes with 1,691 archived tests and one
+expected skip, a 258,617-byte wheel, all profiles and local media smokes green,
+no cloud I/O, and complete cleanup. Before the next long-audio composition
+slice, correct the shared `ResumeStateError` default that still says "image"
+despite serving image, PDF, and audio; do not redesign the hierarchy.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

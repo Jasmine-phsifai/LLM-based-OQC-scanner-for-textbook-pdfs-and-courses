@@ -6007,7 +6007,19 @@ source suite passes 1,692 tests. Compilation, lightweight import, frozen
 `contracts/worker`, and diff checks pass. A delegated worktree build produces a
 258,617-byte wheel with 258 members and 3,527 bytes of cap headroom; it contains
 the three intended audio modules, no tests/docs, and unchanged dependency
-metadata. Exact committed installed proof is still required.
+metadata. Exact commit `782220d` passes the complete installed gate: 1,691
+archived tests pass with one expected skip; the wheel remains 258,617 bytes;
+every installed profile and local audio/PDF/video/combined smoke passes without
+cloud I/O; and all gate-owned roots and processes are removed. #323 is
+release-proven.
+
+One adjacent existing defect now outranks the next new slice:
+`ResumeStateError.default_message` still says "image resume state" even though
+the public error type now serves image, PDF, and audio state. Current audio
+callers provide explicit messages, so #323 does not emit the wrong text, but the
+shared default is no longer truthful. Correct only that default and its direct
+regression before composing the long-audio start gate; do not redesign the
+error hierarchy.
 
 ## Documentation Rules
 
