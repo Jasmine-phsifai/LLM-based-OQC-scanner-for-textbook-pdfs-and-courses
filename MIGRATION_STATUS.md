@@ -963,6 +963,15 @@ The following directions remain traceable but are not current work:
   succeeded with one call, usage 595/43, exit 0, empty stderr, no leak, and no
   residue. This single payload does not justify raising the limit, retaining a
   large fixture, probing sizes/models, or adding a stress/benchmark framework.
+  #294 resolves the former #127 video cancellation decision with maintainer-
+  selected Route A. One cancelled branch now settles in the existing frame or
+  audio error and preserves the other branch; pre-cancelled audio skips MP3
+  extraction, and dual pre-cancellation stops before source/output work. Four
+  public regressions replace the prior permissive matrix. No new result type,
+  exception carrier, checkpoint, coordinator, or extractor cancellation API
+  was added. #152 separately selects recoverable Route B with explicit whole
+  and integer-minute interval modes, but overlap remains undecided and no chunk
+  implementation landed in this iteration.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The

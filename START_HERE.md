@@ -77,10 +77,11 @@ video probe. #151 now implements and live-proves standalone
 longer than the current 9.5-hour single-prompt limit. It owns the source,
 uploads once, waits within the configured timeout, generates once, deletes the
 remote file, and closes the client. Chunking, resume, fallback, batch/worker
-support, and video integration remain later gates. #152 narrows A2b to one open
-choice: chunk only the 9.5-to-10-hour overflow, or use fixed ordered chunks for
-every persisted long-MP3 run so ordinary lectures can resume without replay.
-No chunk/checkpoint implementation is authorized until that choice is made.
+support, and video integration remain later gates. #152 now selects Route B
+while keeping explicit whole-file and interval-chunked operations. Interval
+length is configurable only in integer minutes and belongs to temporary resume
+state; overlap remains the one unresolved identity detail, so chunk/checkpoint
+implementation has not started.
 #153 also corrects the frozen capability registry's long-MP3 reason: it now
 names the direct live-proven Files facade but remains `deferred` because no
 shared worker route was added.
@@ -201,15 +202,13 @@ instead of being passed to `compose_video_result()`.
 #144 adds separate `publish_video_result()` final Markdown publication for an
 already-settled complete or partial outcome and an explicit caller path. It
 reuses atomic output without changing memory-only composition or provider
-dispatch. Cancellation refinement and resume follow from these observed
-outcomes. #145 proves the current cancellation asymmetry with no provider calls:
-image cancellation returns branch evidence, audio cancellation can hide an
-already completed image branch, dual cancellation still parses media, and
-silent video ignores an audio-only signal. The maintainer must choose returned
-branch cancellation (recommended) or propagated cancellation with a new bounded
-way to recover settled work before implementation. #236 confirms that durable
-video recovery is valuable but must follow that choice; exact frame-group
-recovery comes first, while full audio/video recovery also waits for #152. No
+dispatch. #145 recorded the former cancellation asymmetry; #294 supersedes it
+with the selected Route A contract. One cancelled branch returns in the existing
+branch error while preserving the other branch, pre-cancelled audio skips MP3
+extraction, and dual pre-cancellation stops before source/output work. #236
+confirms that durable video recovery is valuable; exact frame-group recovery
+can now follow, while full audio/video recovery still waits for #152's overlap
+decision. No
 legacy checkpoint or Markdown repair format is imported. The audio slice
 has no hidden retry, fallback, upload, persistence, resume, or worker-registry
 claim. #146 additionally proves the new publication entry from an offline clean
@@ -281,8 +280,8 @@ obtained, rather than adding another installer or dependency abstraction.
 ordinary-MP4 matrix and finds no new reproducible runtime defect. The focused
 inspection, extraction, and lightweight-import set passes 38 tests. Do not add
 a parser or retune selection from an exploratory file whose own duration and
-final PTS disagree; proceed only with a valid red case, the pending installed
-extra gate, or the maintainer's #127 cancellation decision.
+final PTS disagree; at that point the next choices were a valid red case, the
+pending installed extra gate, or #127, which #294 later resolved.
 
 #241 re-proves the #238 path once against authorized Google service. The exact
 short-video/long-audio shape retained final frame 1 at PTS 0.5, then two
@@ -298,10 +297,10 @@ draft/model-attempt evidence is not lost. This is one explicit early-validation
 mode with two video consumers, not a provider superclass or second validator.
 
 #243 also rejects a structurally invalid cancellation object in either video
-config before source access. The shared check verifies only a callable `is_set`
-member and does not call it, so #127's returned-versus-propagated cancellation
-decision remains open. Exceptions and non-boolean values from an actual
-`is_set()` call remain execution-time configuration errors.
+config before source access. The shared structural check verifies only a
+callable `is_set` member. #294 later selected Route A and now observes state
+before media work; exceptions and non-boolean return values remain execution-
+time configuration errors.
 
 #244 makes the public video `output_dir` contract exact: use a nonempty string
 or `Path`. Empty/whitespace strings, bytes, arbitrary objects, and custom
@@ -311,8 +310,9 @@ shared video-input check, not a generic filesystem abstraction.
 
 #245 confirms that standalone long-MP3 results already fit the video outcome
 and composer, but automatic duration routing must not be implemented as
-short-route failure fallback or repeated whole-audio probing. Resolve #127
-first, then use one retained-MP3 ownership seam to choose exactly one adapter.
+short-route failure fallback or repeated whole-audio probing. With #127 now
+resolved by #294, the next integration seam may retain one MP3 and select
+exactly one adapter.
 One-shot 300-second-to-model-limit integration is independent of #152; the
 9.5-to-10-hour ceiling and persisted recovery remain blocked on #152.
 
@@ -355,22 +355,22 @@ publication completed in 54.886 seconds for a 146.9 MB source and produced a
 144.0 MB MP3; the disposable root was removed. No legacy FFmpeg extraction
 timeout incident was found, so the simple 600-second bound remains unchanged.
 This proves provider-free extraction only, not long-audio recognition from
-video or a #127/#152 decision.
+video or the then-open #127/#152 decisions; #294 later resolved #127 only.
 
 #255 proves standalone long-MP3 local validation stays memory-bounded through
 the real 9.5-hour A2a ceiling. Fresh processes stayed near a 35.4 MiB peak for
 301 seconds, one hour, and 9.5 hours while file size grew from 1.2 to 136.8 MB;
 the snapshot copy and decoded samples are both consumed in fixed chunks and all
 temporary roots were removed. Keep complete streaming decode because it catches
-metadata/frame-count mismatch. No Files, chunking, video-routing, #127, or #152
-behavior changed.
+metadata/frame-count mismatch. That iteration changed no Files, chunking,
+video-routing, or cancellation behavior.
 
 #247 adds the missing public consumer proof for the opposite partial-video
 direction. A real MP4 whose frames succeed and whose audio provider fails once
 now continues through atomic `publish_video_result()` while retaining frame
 text, JPEGs, the extracted MP3, the audio error, partial status, and an exact
 two-call total. Runtime and providers did not change; long-audio cleanup partials
-remain outside video until the ordered #127/#152 work.
+remain outside video until the post-#294 #152 overlap decision and integration.
 
 #248 stops a post-response short-audio client-close error from discarding a
 valid paid transcript. The public audio result is now partial with an explicit
@@ -419,9 +419,9 @@ one injected call; the audio branch made zero provider calls and returned typed
 `SOURCE_TOO_LARGE`, leaving the top-level result honestly `partial` and keeping
 the extracted MP3. This confirms provider separation and failure honesty, while
 also proving that the five-minute A1 audio ceiling is not mature lecture-video
-support. #151 completed standalone Google Files A2a independently; integrating
-it into video still waits for #127 cancellation semantics. #211 closed the
-former #149 source-snapshot placement blocker.
+support. #151 completed standalone Google Files A2a independently; #294 later
+closed the cancellation blocker, while #152 overlap still gates the persisted
+chunk route. #211 closed the former #149 source-snapshot placement blocker.
 
 #072 has implemented P1-c offline: `recognize(one.pdf)` lazily uses
 `ocrllm[pdf-vision]`, snapshots at most 100 MiB without whole-file Python reads,

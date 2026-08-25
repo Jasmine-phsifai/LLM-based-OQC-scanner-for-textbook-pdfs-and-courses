@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-25 against the
+Status: **authoritative and current.** Last verified 2026-08-26 against the
 working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
@@ -927,27 +927,21 @@ frame groups plus recognized audio is complete; all frame groups plus
 `VIDEO_NO_AUDIO_STREAM` is also honestly complete as frame-only; any usable
 success plus another real failure is partial; no usable recognition is failed.
 
-#127 proves that cancellation is currently inconsistent at this new boundary.
-The two configs can carry different cancellation signals. A cancelled image
-branch is normally settled by `recognize_batch()` as one or more
-`BatchItemOutcome(error=Cancelled)`, after which audio can still succeed and
-the video outcome is partial. A cancelled audio branch instead propagates from
-`recognize()` through `recognize_video()`, so the caller cannot receive an
-already-settled frame result; audio extraction has already published an MP3.
-On a silent video the same audio cancellation is never observed because no
-audio recognition call occurs. Both extractors currently run before either
-recognition boundary checks its signal.
+#127 is resolved by the maintainer's Route A choice and iteration #294. The two
+configs keep independent cancellation signals. When exactly one signal is
+already set, `recognize_video()` settles `Cancelled` in the existing
+`frame_error` or `audio_error`, skips that branch's provider work, preserves the
+other branch, and returns the ordinary partial outcome. A pre-cancelled audio
+branch is rejected before MP3 extraction, including for a silent video. When
+both signals are already set, the call raises `Cancelled` before source access
+or output creation. Cancellation raised later by either recognition branch is
+also settled instead of hiding the other branch's completed work.
 
-This is an open product decision, not an accepted cancellation contract. The
-recommended direction is branch-scoped cancellation after config validation:
-settle `Cancelled` in the existing frame/audio error fields, preserve the other
-branch and retained artifacts, skip audio extraction when its signal is already
-set, and stop before output when both signals are already set. The alternative
-is whole-call propagation, but preserving paid work would then require a larger
-exception/checkpoint contract that carries completed outcomes. Do not implement
-either direction, add extraction cancellation parameters, or document the
-current asymmetry as intended behavior until the maintainer selects the public
-semantics.
+This contract adds no status, exception carrier, checkpoint, cancellation
+coordinator, or extractor-cancellation parameter. Media preparation remains a
+shared prerequisite for a surviving branch; the change does not promise
+mid-extraction cancellation. The prior asymmetric behavior and #145/#226
+matrix remain historical evidence, not the current contract.
 
 #226 re-audits every later maintainer statement and confirms that none selects
 one of those two public semantics. The general instruction to preserve settled
@@ -967,10 +961,10 @@ valuable later capability, but its five phase numbers, path-only checkpoint,
 artifact-exists shortcuts, localized Markdown parsing, and repair markers are
 not safe library contracts. The useful product rule is narrower: preserve
 settled paid units independently per branch and rebuild only unpaid local media.
-After #127 is chosen, the first feasible slice is exact retained-frame-group
+After #294 resolved #127, the first feasible slice is exact retained-frame-group
 recovery using library-owned typed identity; it must not parse published
 Markdown or infer state from legacy files. Full audio/video recovery waits for
-#152 to define stable long-audio units as well as #127. This investigation is
+#152 to define stable long-audio units. This investigation is
 ordering evidence, not authority to add a schema, resume API, or repair parser.
 
 #238 fixes an independent ordinary-container parsing defect without entering
@@ -3083,7 +3077,8 @@ runner printed neither transcript, source path, credential, remote URI, nor raw
 provider response. Stage A2a is complete; A2b chunk/checkpoint work and video
 routing remain separate future gates.
 
-#152 narrows A2b to one unresolved product choice before code. The shipped A2a
+#152 now has a selected product direction but one unresolved boundary detail.
+The shipped A2a
 path is a sound one-request lifecycle, but it cannot preserve any transcript
 when a long generation fails or the process stops. The legacy Google path gives
 useful code-level evidence for ordered 1,800-second logical windows with 30
@@ -3097,15 +3092,25 @@ remote Files are not deleted. With `PYTHONPATH=legacy_app`, focused Pytest on
 without network or provider calls; this validates the code-only behavior, not
 live Google quality.
 
-Two bounded A2b routes remain. Route A splits only inputs above Google's 9.5-hour
-single-prompt limit, minimizing calls but leaving ordinary long lectures unable
-to resume. Route B, recommended, keeps A2a as the explicit in-memory one-shot
-operation and makes the persisted A2b operation use fixed ordered chunks for all
-long MP3s; each settled transcript is atomically recorded before the next call,
-and `resume=True` reuses only a strong matching source/request/segment identity.
-Route B addresses the observed unstable-provider recovery need but consumes more
-per-request quota and requires an explicit overlap policy. The maintainer must
-choose A or B before chunk extraction or checkpoint code is added.
+The maintainer selected Route B. The future long-audio API must preserve an
+explicit whole-file operation and also allow an explicit interval-chunked
+operation. The interval length is configurable only as an integer number of
+minutes; no fractional-minute, adaptive, or provider-inferred interval belongs
+in the first contract. While a run is incomplete or resumable, its selected
+mode and interval parameters belong in request state so completed chunks cannot
+be reused under a different identity. After a final result is successfully
+published, that temporary recovery state may be discarded. Each settled chunk
+is atomically recorded before the next provider call, and resume reuses only a
+strong matching source/request/chunk identity.
+
+Repair remains a small, explicit side path rather than the primary production
+recovery mechanism. It may parse failed-slice text to obtain concrete time
+ranges and resubmit those ranges without depending on retained run-parameter
+state. It does not authorize legacy Markdown compatibility, broad fuzzy parsing,
+or a second recovery architecture. The only remaining contract question is
+whether interval chunks retain the previously recommended fixed 30 seconds of
+boundary context, use another fixed overlap, or use no overlap. Do not implement
+chunk extraction/checkpoints until that identity-affecting detail is answered.
 
 #208 found that #152 also needs an explicit source-lifetime and overlap choice,
 and that the current A2a duration check is not a complete selected-model
@@ -3119,16 +3124,13 @@ provider-wide duration envelope, not proof that every catalog model can accept
 every admitted file. No guessed reserve, hardcoded per-model table, extra model
 lookup, or post-upload token-count request was added in this iteration.
 
-The recommended smallest answer to #152 is one combined contract: choose Route
-B; require the caller's original MP3 to remain present and strongly unchanged
-for resume instead of retaining another potentially 2 GB source copy; and use
-the legacy-proven 1,800-second logical windows with 30 seconds of context while
-letting the prompt restrict each result to its logical range. The first slice
-does not add text-similarity deduplication. This remains a maintainer choice, not
-an implemented contract. Once chosen, the fixed short segments also keep the
-ordinary persisted route far from model context ceilings; the explicit A2a
-one-shot route still needs a separate, narrowly specified selected-model
-preflight correction rather than claiming the 9.5-hour duration check is enough.
+The selected source-lifetime rule requires the caller's original MP3 to remain
+present and strongly unchanged for resume instead of retaining another
+potentially 2 GB source copy. Integer-minute interval length is caller-visible;
+overlap is not yet selected. The first slice does not add text-similarity
+deduplication. Short fixed segments keep the persisted route far from model
+context ceilings; the explicit whole-file route still uses the selected-model
+preflight rather than claiming the 9.5-hour duration check alone is sufficient.
 
 #209 closes the mathematically certain part of that A2a defect without claiming
 complete context-fit prediction. The long-audio adapter materializes the one
@@ -5071,6 +5073,34 @@ not prove every image, model, future SDK serialization, exact 20 MB boundary,
 or larger request. Do not raise the limit, hardcode this fixture, retain padding
 machinery, probe multiple sizes, or create a size benchmark from this result.
 Future pressure gates remain separate and single-question.
+
+## Iteration 294: video branch cancellation is now symmetric
+
+The maintainer selected #127 Route A. Four public regressions first reproduced
+the former matrix: image cancellation was hidden inside batch items, audio
+cancellation propagated after frame work, dual pre-cancellation still opened
+the source, and silent video ignored audio cancellation. `recognize_video()`
+now observes both valid signals before media work. Dual pre-cancellation raises
+before source/output access; one pre-cancelled branch settles in the existing
+branch error, skips its provider work, and preserves the other branch. Audio
+pre-cancellation also skips extraction, including on silent input. A later
+recognition-branch `Cancelled` is settled by the same outcome boundary.
+
+This is a local orchestration correction. It does not add a public field,
+status, exception carrier, coordinator, checkpoint, retry, fallback, or
+mid-extraction cancellation parameter. Video outcome/composition/publication
+and lightweight-import neighbors pass 88 tests; the complete offline suite
+passes 1,551 tests.
+
+The same maintainer message selected #152 Route B while preserving explicit
+whole-file and interval-chunked operations. Interval length is configurable in
+integer minutes and retained only while recovery state is useful; repair is a
+small failed-time-range side path that does not depend on those retained
+parameters. Overlap remains an identity-affecting clarification, so #294 does
+not implement A2b. It also records that bounded external downloads must verify
+and propagate the active proxy before diagnosing network failure, and that
+DashScope robustness selection should use live-discovered smaller models aimed
+at formula/code/reasoning gaps rather than oversized flagship models.
 
 ## Documentation Rules
 

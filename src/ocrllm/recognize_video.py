@@ -21,6 +21,7 @@ def recognize_video(
     from .providers.validate_vision_provider_config import (
         validate_vision_provider_config,
     )
+    from .raise_if_cancelled import raise_if_cancelled
     from .recognize import recognize
     from .recognize_video_frames import recognize_video_frames
     from .validate_cancellation_signal import validate_cancellation_signal
@@ -45,6 +46,19 @@ def recognize_video(
     validate_cancellation_signal(validated_image_config.cancellation)
     validate_cancellation_signal(validated_audio_config.cancellation)
 
+    image_cancellation: Cancelled | None = None
+    audio_cancellation: Cancelled | None = None
+    try:
+        raise_if_cancelled(validated_image_config.cancellation)
+    except Cancelled as error:
+        image_cancellation = error
+    try:
+        raise_if_cancelled(validated_audio_config.cancellation)
+    except Cancelled as error:
+        audio_cancellation = error
+    if image_cancellation is not None and audio_cancellation is not None:
+        raise image_cancellation from None
+
     settled_outcome: VideoRecognitionOutcome | None = None
     try:
         with prepare_video_media(
@@ -54,39 +68,43 @@ def recognize_video(
             output_root = retained_frames[0].path.parent.parent
             audio_artifact: Path | None = None
             audio_result = None
-            audio_error: OCRLLMError | None = None
-            try:
-                audio_artifact = _extract_video_audio_from_stable_source(
-                    snapshot_path,
-                    output_path=output_root / "audio.mp3",
-                )
-            except Cancelled:
-                raise
-            except OCRLLMError as error:
-                audio_error = error
+            audio_error: OCRLLMError | None = audio_cancellation
+            if audio_error is None:
+                try:
+                    raise_if_cancelled(validated_audio_config.cancellation)
+                    audio_artifact = _extract_video_audio_from_stable_source(
+                        snapshot_path,
+                        output_path=output_root / "audio.mp3",
+                    )
+                except Cancelled as error:
+                    audio_error = error
+                except OCRLLMError as error:
+                    audio_error = error
 
             frame_outcomes = ()
-            frame_error: OCRLLMError | None = None
-            try:
-                frame_outcomes = tuple(
-                    recognize_video_frames(
-                        retained_frames,
-                        config=validated_image_config,
+            frame_error: OCRLLMError | None = image_cancellation
+            if frame_error is None:
+                try:
+                    raise_if_cancelled(validated_image_config.cancellation)
+                    frame_outcomes = tuple(
+                        recognize_video_frames(
+                            retained_frames,
+                            config=validated_image_config,
+                        )
                     )
-                )
-            except Cancelled:
-                raise
-            except OCRLLMError as error:
-                frame_error = error
+                except Cancelled as error:
+                    frame_error = error
+                except OCRLLMError as error:
+                    frame_error = error
 
-            if audio_artifact is not None:
+            if audio_artifact is not None and audio_error is None:
                 try:
                     audio_result = recognize(
                         audio_artifact,
                         config=validated_audio_config,
                     )
-                except Cancelled:
-                    raise
+                except Cancelled as error:
+                    audio_error = error
                 except OCRLLMError as error:
                     audio_error = error
 

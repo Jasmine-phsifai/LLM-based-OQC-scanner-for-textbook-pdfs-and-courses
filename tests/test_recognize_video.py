@@ -405,47 +405,7 @@ def _observe_request_owned_video_snapshot(
     return observed
 
 
-def test_image_cancellation_exit_removes_video_snapshot_and_releases_claim(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from ocrllm.output.claim_output_target import claim_output_target
-
-    source = _write_mp4(tmp_path / "lecture.mp4")
-    cancellation = Event()
-    cancellation.set()
-    image_provider = _ImageProvider()
-    _install_fake_audio(monkeypatch)
-    video_snapshots = _observe_request_owned_video_snapshot(monkeypatch)
-    outcome = None
-    cancellation_raised = False
-
-    try:
-        outcome = recognize_video(
-            source,
-            output_dir=tmp_path / "output",
-            image_config=Config(
-                provider=image_provider,
-                cancellation=cancellation,
-            ),
-            audio_config=_audio_config(tmp_path),
-        )
-    except Cancelled:
-        cancellation_raised = True
-
-    cancellation_returned = outcome is not None and any(
-        isinstance(item.error, Cancelled) for item in outcome.frame_outcomes
-    )
-    assert cancellation_raised or cancellation_returned
-    assert image_provider.calls == []
-    assert len(video_snapshots) == 1
-    assert not video_snapshots[0].exists()
-    assert not list((tmp_path / "output").glob(".ocrllm-video-source-*"))
-    with claim_output_target(tmp_path / "output" / "lecture"):
-        pass
-
-
-def test_audio_cancellation_exit_removes_video_snapshot_and_releases_claim(
+def test_image_cancellation_returns_partial_audio_without_image_dispatch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -457,34 +417,125 @@ def test_audio_cancellation_exit_removes_video_snapshot_and_releases_claim(
     image_provider = _ImageProvider()
     observed_audio = _install_fake_audio(monkeypatch)
     video_snapshots = _observe_request_owned_video_snapshot(monkeypatch)
-    outcome = None
-    cancellation_raised = False
 
-    try:
-        outcome = recognize_video(
-            source,
-            output_dir=tmp_path / "output",
-            image_config=Config(provider=image_provider),
-            audio_config=Config(
-                provider=GoogleGenAISettings(api_key="test-only-google-key"),
-                audio_model=AudioModelSettings(name="test-audio-model"),
-                temp_dir=tmp_path / "audio-snapshots",
-                cancellation=cancellation,
-            ),
-        )
-    except Cancelled:
-        cancellation_raised = True
-
-    cancellation_returned = (
-        outcome is not None and isinstance(outcome.audio_error, Cancelled)
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(
+            provider=image_provider,
+            cancellation=cancellation,
+        ),
+        audio_config=_audio_config(tmp_path),
     )
-    assert cancellation_raised or cancellation_returned
+
+    assert outcome.status == "partial"
+    assert outcome.frame_outcomes == ()
+    assert isinstance(outcome.frame_error, Cancelled)
+    assert outcome.audio_result is not None
+    assert outcome.audio_error is None
+    assert image_provider.calls == []
+    assert len(observed_audio) == 1
+    assert len(video_snapshots) == 1
+    assert not video_snapshots[0].exists()
+    assert not list((tmp_path / "output").glob(".ocrllm-video-source-*"))
+    with claim_output_target(tmp_path / "output" / "lecture"):
+        pass
+
+
+def test_audio_cancellation_returns_partial_frames_without_audio_extraction(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ocrllm.output.claim_output_target import claim_output_target
+
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    cancellation = Event()
+    cancellation.set()
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch)
+    video_snapshots = _observe_request_owned_video_snapshot(monkeypatch)
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=Config(
+            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            audio_model=AudioModelSettings(name="test-audio-model"),
+            temp_dir=tmp_path / "audio-snapshots",
+            cancellation=cancellation,
+        ),
+    )
+
+    assert outcome.status == "partial"
+    assert outcome.frame_error is None
+    assert len(outcome.frame_outcomes) == 1
+    assert outcome.frame_outcomes[0].result is not None
+    assert outcome.audio_result is None
+    assert isinstance(outcome.audio_error, Cancelled)
+    assert outcome.audio_artifact is None
+    assert len(image_provider.calls) == 1
     assert observed_audio == []
     assert len(video_snapshots) == 1
     assert not video_snapshots[0].exists()
     assert not list((tmp_path / "output").glob(".ocrllm-video-source-*"))
     with claim_output_target(tmp_path / "output" / "lecture"):
         pass
+
+
+def test_both_pre_cancelled_video_branches_stop_before_source_or_output(
+    tmp_path: Path,
+) -> None:
+    cancellation = Event()
+    cancellation.set()
+    output_dir = tmp_path / "output"
+    image_provider = _ImageProvider()
+
+    with pytest.raises(Cancelled):
+        recognize_video(
+            tmp_path / "not-opened.mp4",
+            output_dir=output_dir,
+            image_config=Config(
+                provider=image_provider,
+                cancellation=cancellation,
+            ),
+            audio_config=Config(
+                provider=GoogleGenAISettings(api_key="test-only-google-key"),
+                audio_model=AudioModelSettings(name="test-audio-model"),
+                cancellation=cancellation,
+            ),
+        )
+
+    assert image_provider.calls == []
+    assert not output_dir.exists()
+
+
+def test_audio_cancellation_outranks_silent_stream_absence(
+    tmp_path: Path,
+) -> None:
+    source = _write_mp4(tmp_path / "silent.mp4", with_audio=False)
+    cancellation = Event()
+    cancellation.set()
+    image_provider = _ImageProvider()
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=Config(
+            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            audio_model=AudioModelSettings(name="test-audio-model"),
+            cancellation=cancellation,
+        ),
+    )
+
+    assert outcome.status == "partial"
+    assert outcome.frame_error is None
+    assert len(outcome.frame_outcomes) == 1
+    assert outcome.frame_outcomes[0].result is not None
+    assert isinstance(outcome.audio_error, Cancelled)
+    assert outcome.audio_artifact is None
+    assert len(image_provider.calls) == 1
 
 
 def test_recognize_video_runs_real_media_and_keeps_providers_separate(

@@ -409,9 +409,13 @@ signature-external path-like objects before source access rather than treating
 an empty value as the process cwd. `recognize_video()` validates both configs
 before reading the source, creating retained media, or dispatching either
 provider. That preflight requires each non-null cancellation signal to expose a
-callable `is_set` member without invoking it; cancellation state and invalid
-runtime returns remain execution-time checks, so the open whole-video
-cancellation outcome is unchanged. For an injected image provider, that
+callable `is_set` member. When exactly one branch is already cancelled, the call
+returns a partial outcome with `Cancelled` in that branch's existing error
+field and preserves the other branch; pre-cancelled audio skips MP3 extraction.
+When both branches are already cancelled, it raises before source or output
+work. A later cancellation raised by either recognition branch is settled the
+same way. This adds neither mid-extraction cancellation nor a new outcome type.
+For an injected image provider, that
 preflight includes its existing callable `recognize_images` contract; the
 execution path checks again in case the caller mutates the object. It then uses
 those same proven boundaries and returns a `VideoRecognitionOutcome`: retained

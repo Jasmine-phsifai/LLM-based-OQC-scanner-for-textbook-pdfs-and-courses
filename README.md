@@ -124,6 +124,9 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   settle, the outcome remains available as `partial` with an exact
   `snapshot_cleanup_error`; composition and publication preserve the recognized
   text, media, call evidence, and a fixed cleanup warning.
+  One cancelled branch returns as its existing typed branch error while the
+  other branch remains visible; pre-cancelled audio skips extraction. If both
+  branches are already cancelled, the call stops before source or output work.
   Its outcome requires the exact lexical `output_root/frames/*` and optional
   `output_root/audio.mp3` layout; it does not resolve path or symlink aliases.
 - exposes `compose_video_result()` as a provider-free explicit second step for

@@ -69,10 +69,12 @@ not converted to a standard video result.
 The caller supplies the path; do not derive legacy names or add resume,
 manifest, cancellation, or provider behavior to the publication step. Never
 allow its Markdown target to replace a retained frame or audio asset.
-#145 proves the current video cancellation paths are asymmetric. Do not add
-tests that freeze that behavior or implement #127 until the maintainer chooses
-returned branch cancellation versus propagated cancellation with recoverable
-settled work.
+#294 resolves #127 with Route A. One cancelled video branch settles in the
+existing frame/audio error, skips its provider work, and preserves the other
+branch in a partial outcome. Pre-cancelled audio skips extraction; both signals
+already set stop before source/output work. Preserve this without adding a new
+status, exception carrier, coordinator, checkpoint, or extractor cancellation
+API.
 #146 proves `publish_video_result()` is present and usable in the clean wheel.
 Future publication work should not add another build harness or repeat this
 proof unless the public surface, manifest, or runtime dependency boundary
@@ -88,11 +90,14 @@ this invariant without adding a configurable sampler or second scene detector.
 extraction must keep consuming that exact path until request cleanup. Do not add
 a public video-temp option, separate branch snapshots, whole-video memory, a
 generic media cache, or legacy format support. #152 keeps long-audio chunk scope
-open; do not implement it until the maintainer chooses.
+partly open: Route B and explicit whole/interval modes are selected, and interval
+length is an integer-minute setting stored only while recovery remains possible.
+Do not implement until the overlap policy is selected. Repair stays a narrow
+failed-time-range side path, not a second recovery system.
 #212 makes cleanup an explicit invariant on normal, invalid-media, returned-
-cancellation, and propagated-cancellation exits: no `.ocrllm-video-source-*`
-path or in-process output claim may survive. Preserve that invariant without
-turning the current #127 asymmetry into an accepted cancellation contract.
+cancellation, and terminal dual-cancellation exits: no
+`.ocrllm-video-source-*` path or in-process output claim may survive. Preserve
+that invariant under #294's selected Route A contract.
 #213 proves the clean installed wheel contains both #211 lifecycle modules and
 keeps the public video facade import-light. Preserve whole-package selection in
 the Hatch wheel; do not add a per-module manifest, build wrapper, or eager import

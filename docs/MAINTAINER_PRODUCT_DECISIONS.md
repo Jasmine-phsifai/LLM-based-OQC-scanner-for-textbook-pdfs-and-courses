@@ -28,6 +28,13 @@ or independently reorder it.
   to a lightweight subagent. While that workflow runs, the primary agent should
   advance an independent read-only audit, focused regression, or documentation
   task instead of polling or repeating the same procedure.
+- Treat the maintainer's proxy as the normal external-download path. Before
+  diagnosing package delivery as a network failure, verify that the current
+  proxy endpoint is reachable and explicitly propagate proxy variables to the
+  delegated child when its tool does not inherit Windows settings. On
+  2026-08-26 WinINET and a real PyPI HTTPS probe verified `127.0.0.1:10080`;
+  the older `127.0.0.1:7890` endpoint was stale. Recheck rather than hardcoding
+  this machine fact into product runtime.
 - When a maintained release command has concrete evidence of hanging, give that
   exact stage a visible start message and a hard failure bound. Do not turn one
   stalled dependency preparation into a downloader, cache manager, retry
@@ -202,22 +209,24 @@ is often accepted.
   DashScope FileTrans remains a separate future provider path because current
   live authorization is Google, not a reason to prebuild a shared long-audio
   abstraction.
-- **Open #152 A2b chunk scope.** Choose whether the persisted A2b path (A) splits
-  only audio above Google's 9.5-hour single-prompt ceiling, or (B, recommended)
-  uses fixed ordered chunks for every long MP3 so ordinary lecture failures can
-  resume without replaying all settled work. A minimizes calls but does not
-  address the main unstable-provider recovery case. B consumes more request
-  quota and requires a fixed overlap policy. Keep the existing A2a entry as the
-  explicit one-shot option either way; do not add a configurable/adaptive
-  threshold before this choice is made.
-- **Recommended complete #152 answer.** Choose B, require the caller's original
-  MP3 to remain available and strongly unchanged during resume instead of
-  storing a second long-lived full copy, and begin with the legacy-evidenced
-  fixed 1,800-second logical windows plus 30 seconds of boundary context. Ask
-  the model to emit only the logical range; do not add programmatic transcript
-  similarity/deduplication in the first slice. This one yes/no decision freezes
-  chunk scope, source ownership, and overlap handling without creating public
-  chunk controls or a generic checkpoint system.
+- **Selected #152 A2b direction.** Use Route B for the future recoverable path,
+  while preserving an explicit whole-file operation. The caller may explicitly
+  select whole-file or interval-chunked recognition. Interval length is a
+  configurable exact integer number of minutes; do not accept fractional,
+  adaptive, or provider-selected intervals. Persist mode and interval identity
+  only while work can resume, then allow that temporary state to be discarded
+  after the final result is published. The caller's original MP3 must remain
+  present and strongly unchanged during resume instead of storing a second
+  long-lived full copy. The remaining decision is overlap: retain the formerly
+  proposed fixed 30 seconds of boundary context, choose another fixed overlap,
+  or use no overlap. Do not implement chunks until this identity-affecting
+  detail is explicit; do not add programmatic transcript similarity/deduplication
+  in the first slice.
+- **#152 repair boundary.** Repair is a small side path, not the production
+  recovery mechanism. It may parse failed-slice text for concrete time ranges
+  and resubmit those ranges without depending on retained mode/interval state.
+  It does not accept legacy formats, perform broad fuzzy recovery, or justify a
+  second checkpoint architecture.
 - **#245 video-integration ordering clarification.** Long Files results already
   fit `VideoRecognitionOutcome`; do not add a second outcome or audio-result
   type. The low-level public functions can be manually composed, but they copy
@@ -280,6 +289,15 @@ is often accepted.
 - Existing provider paths are not removed merely because Google is prioritized.
   Keep provider-specific request and error behavior explicit; do not force
   different protocols through a misleading common implementation.
+- A DashScope credential stored by the legacy UI may be used by a bounded
+  credential-isolating controller; the active library must not read QSettings
+  or depend on the UI. Discover the live catalog before selection. Prefer
+  explicitly selected smaller models intended to test the current quality gap
+  in formulas, LaTeX, Mermaid, future SVG code, and reasoning. The maintainer is
+  interested in roughly 27B Qwen OCR or general models when actually served,
+  but those example names are not a hardcoded support list. Do not spend tests
+  on models clearly worse than RapidOCR for ordinary OCR, and do not select
+  latest oversized flagship models for DashScope robustness runs.
 - The difficult provider work is mechanical live verification of the real model
   catalog, error codes, retry/switch behavior, and terminal outcomes. Do not
   install a generic policy such as "retry six times". Retry decisions must be
@@ -390,34 +408,28 @@ is often accepted.
   `VIDEO_NO_AUDIO_STREAM` is normal audio absence. Do not turn this into legacy
   Markdown compatibility, a final document format, cleanup transaction, resume
   manifest, provider hierarchy, retry, fallback, or API pool.
-- **Open #127 cancellation choice.** `image_config` and `audio_config` may carry
-  different cancellation signals, but the current facade treats them
-  asymmetrically: image cancellation becomes settled frame outcomes and lets
-  audio continue, while audio cancellation propagates and hides an already
-  settled frame result; silent video can ignore that audio signal entirely.
-  Choose one public contract before implementation: (A, recommended) branch
-  cancellation settles in existing `frame_error`/`audio_error`, preserves the
-  other branch, and skips pre-cancelled audio extraction; if both signals are
-  already set, stop before output. (B) any branch cancellation aborts the whole
-  call, which requires a larger way to carry already-paid outcomes without
-  losing them. Keeping the current asymmetry is not an option. Do not add a new
-  status, branch hierarchy, checkpoint, or extractor cancellation framework as
-  part of this choice.
+- **Resolved #127 cancellation choice: Route A.** `image_config` and
+  `audio_config` retain independent signals. One cancelled branch settles in
+  the existing `frame_error`/`audio_error`, preserves the other branch, and
+  skips its provider work; pre-cancelled audio also skips MP3 extraction. Both
+  signals already set stop before source or output work. Iteration #294
+  implements this without a new status, exception carrier, branch hierarchy,
+  checkpoint, or extractor cancellation framework.
   #145 executed the exact public matrix without provider calls: image-only
   cancellation returns a partial outcome and lets audio run; audio-only
   cancellation hides one completed image branch by raising; both signals still
   perform media extraction before raising; silent video ignores audio-only
   cancellation and returns complete/absent. Legacy production evidence requires
-  settled paid work to survive cancellation but cannot choose return-versus-
-  raise for this non-persistent API. Maintainer selection of A or B is still
-  required before implementation.
+  settled paid work to survive cancellation but could not choose return-versus-
+  raise for this non-persistent API. The later Route A selection supersedes this
+  historical ambiguity.
   #226 found no later statement that selects either route. “Preserve settled
   paid work” rules out the current loss but does not itself choose return or
   raise. A can reuse the existing branch errors and outcome; B necessarily adds
   a bounded outcome-recovery carrier. The remaining maintainer question is
-  therefore only: should one cancelled branch return the settled outcome (A),
-  or should cancellation still raise after making that outcome recoverable
-  (B)? Do not infer the answer from ordinary provider-error handling.
+  therefore was only whether one cancelled branch returned the settled outcome
+  or raised with a recoverable carrier. Route A is now selected and implemented;
+  do not reintroduce Route B's carrier without a new maintainer decision.
 - **#236 video recovery ordering, investigated but not authorized.** Legacy
   production behavior proves that reusing settled paid image groups and keeping
   frame/audio work independent are worthwhile. Do not port its five-phase

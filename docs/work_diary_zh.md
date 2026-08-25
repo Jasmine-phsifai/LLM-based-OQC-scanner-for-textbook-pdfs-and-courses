@@ -5485,3 +5485,21 @@ Atomic task — Iteration #293: run one bounded near-wire-limit robustness gate 
 本人在清理前读取原始安全 JSON/metadata 并用实际非空 key 只做布尔扫描：key 原文、`AIza`、fixture 绝对路径和可见测试文字均未进入日志；相关进程和本轮新建 `ocrllm-image-*` 快照残留为 0。第一次复核命令猜错执行者保存的日志文件名，得到三个本地 file-not-found，不涉及凭据、网络或 provider；按目录中的真实文件名重读后证据一致。轻量执行者验证唯一 wrapper 是系统 TEMP 直属子目录后精确删除并确认不存在。
 
 **验证与过度设计结论。** 带既有 Node 路径的完整离线套件为 **1,549 passed in 66.33s**；`compileall -q src tests tools` 与 `git diff --check` 通过。这个结果只证明今天这一个冻结请求在当前 SDK、模型和 endpoint 上成功，不证明任意图片、未来 SDK 序列化、其他模型、精确 20 MB 或更大请求。没有证据要求修改 runtime/test/runner/constant/API；提高线限、提交 15 MB fixture、保留 padding 生成器、继续二分尺寸、换模型再试或建立通用大小 benchmark/stress framework 都会超过本轮问题，明确不做。legacy/social、#127/#152 和 frozen `contracts/worker` 均未变化。
+
+## #294 — 2026-08-26：视频单分支取消返回已有 outcome，双取消在媒体工作前停止
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #294: implement the maintainer-selected Route A cancellation contract for public `recognize_video()` and durably record, but not yet implement, the newly selected long-audio Route B product contract. Success means both pre-cancelled branches stop before media output; one cancelled branch settles in the existing frame/audio error field while the other branch and already-paid results remain visible; no new outcome type, checkpoint system, or cancellation hierarchy is added; focused public regressions and the full offline suite pass; current authority, decision record, migration status, package rules, and Chinese diary agree; and the iteration is committed and pushed. This matters because video recovery and long-audio integration have been waiting on a cancellation decision, while implementing both decisions in one code change would mix two independently testable contracts.
+```
+
+**决定、两条路线与实现范围。** 维护者明确为 #127 选择 A：单分支取消应返回已有 `VideoRecognitionOutcome`，而不是抛错遮住另一分支；两个信号都已设置时则在任何媒体输出前停止。路线 A 复用 `frame_error` / `audio_error` 和 partial 状态；路线 B 需要新增可随异常取回已结算结果的 carrier。选择 A，并严格局限在 `recognize_video.py`。配置结构仍先完整验证；随后观察两个信号。双取消直接抛现有 `Cancelled`；单图片取消跳过图片 provider、保留独立音频；单音频取消在 MP3 提取前结算、保留图片；分支识别期间产生的 `Cancelled` 也进入该分支错误。没有新字段、状态、exception 类型、协调器、checkpoint、retry/fallback 或 extraction cancellation 参数。
+
+**因果红灯与绿灯。** 原来两个测试允许“抛出或返回”任一行为，无法冻结产品合同。本轮把它们改为精确 Route A，并增加双取消与静音音频取消。修改前四项同时失败：图片取消仍成为 batch item；音频取消在图片完成后冒泡；双取消仍打开不存在的源；静音视频把音频取消当成正常 absent。局部实现后 `tests/test_recognize_video.py` 为 **25 passed in 7.53s**，视频编排、组合、发布、Google runner 合同和轻量导入合计 **88 passed in 8.34s**。带既有 Node 路径的完整离线套件为 **1,551 passed in 63.18s**。
+
+**#152、repair 与 provider 方向记录。** 维护者为 #152 选择 B，但要求保留显式整段式和可开启的 interval 切片式；interval 只接受整数分钟。mode/interval 在结果尚可恢复时进入暂存身份，最终结果发布后可删除。repair 只作为小侧链，从失败切片文字取得具体时间范围后重提，不依赖保留下来的运行参数，也不兼容 legacy 格式或承担生产主恢复。此前建议的固定 30 秒上下文 overlap 会改变切片身份，而维护者本次没有明确保留、修改或删除，因此如实留下一个澄清问题，不开始 A2b 代码。DashScope 可由隔离 controller 读取 legacy UI 已存凭据，但 library 不读取 QSettings；模型必须实时发现，优先评估较小、面向公式/LaTeX/Mermaid/SVG 代码和推理缺口的模型，忽略明显不如 RapidOCR 的普通 OCR 小模型，也不选最新超大旗舰。
+
+**代理与安装门事实。** 按维护者要求，下载/安装交给轻量执行者，主线没有机械轮询。执行者先验证 Windows WinINET 代理启用在 `127.0.0.1:10080`，该端口可达且通过它访问 PyPI HTTPS 成功；旧 `127.0.0.1:7890` 不可达。它只启动一次 maintained clean gate，但 gate 在自身 clean-tracked-tree 前置检查发现本轮正在修改 `tests/test_recognize_video.py`，因此正确停止；archive、下载、安装和组合 profile 均未开始，不能算网络失败或安装证据。执行者没有改代理、缓存、依赖或仓库，并清理了自有临时根。提交本轮后，下一次由轻量执行者在 clean tracked tree 上显式传递已验证代理再跑，而不是绕开 clean gate。
+
+**过度设计复查。** 最危险的两条扩张是为 Route B 新建 outcome-carrying exception，以及趁 #152 决定一起实现 chunk/resume/repair；两者均未做。本轮新增四个测试只覆盖维护者刚选择的公开矩阵，没有扩展为通用 cancellation state machine 或中途终止 FFmpeg/OpenCV。文档记录 #152 的已定部分和唯一未定 overlap，没有自行猜测。最终工作树再次运行完整离线套件为 **1,551 passed in 65.01s**；`compileall -q src tests tools` 与 `git diff --check` 通过。受保护未跟踪文件、legacy/social、frozen `contracts/worker` 均未触碰。
