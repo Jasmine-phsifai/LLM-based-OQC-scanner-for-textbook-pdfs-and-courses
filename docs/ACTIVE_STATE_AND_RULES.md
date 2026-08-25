@@ -5330,6 +5330,37 @@ attempt was blocked by execution safety policy; no recursive, Python, cmd, or
 other bypass was used. Record this as known disposable residue rather than
 claiming cleanup.
 
+## Iteration 303: ordinary clean-installed combined video remains externally blocked
+
+One unchanged maintained clean-package gate ran from exact clean tracked commit
+`816ea90a6d328e1d1a5d206131adebb73ed61515`. Before launch, the delegated
+executor verified `HEAD == origin/master`, the active WinINET proxy at
+`127.0.0.1:10080`, TCP reachability, and explicit proxy HTTP reachability to
+PyPI and the file host. Upper- and lower-case HTTP(S)/ALL proxy variables were
+provided only to the child. The two protected untracked files remained outside
+the archive. There was exactly one direct gate invocation, no wrapper, retry,
+cache, mirror, alternate installer, dependency/pin/timeout change, or provider
+call.
+
+The only reached stage was `archived-source dependency preparation and pytest`.
+It emitted its 1,200-second start marker, then its own timeout marker and
+`stage exceeded 1200s`; the terminal exit was 1. No pytest terminal count was
+reached, so the wheel build, base install/import, eight optional profiles, and
+installed public combined-video smoke did not start. This is a bounded external
+dependency-delivery failure, not a source-test, wheel, runtime, or combined-video
+failure. The maintained gate behaved correctly and exposes no defect to repair.
+
+After terminal exit, both an independent check and the executor found zero
+matching gate processes and zero `ocrllm-stage-m-offline-gate-*` temporary roots.
+The ordinary installed `[video,audio,image]` proof therefore remains open. Do
+not mechanically replay it again under unchanged delivery conditions or grow a
+second installer/controller; another run needs a material external delivery
+change or an explicit decision to use a different bounded distribution-proof
+strategy. The gate controller, wheel selection, inline typing, and lightweight-
+import neighbors pass 21 tests, and the PowerShell script parses with zero AST
+errors. The complete source-tree offline suite remains green at 1,559 tests;
+that result does not substitute for the open clean-install proof.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

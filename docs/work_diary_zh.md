@@ -5633,3 +5633,19 @@ Atomic task — Iteration #302: identify and close one proven active-library def
 **成本、建议与待决问题。** 长音频内部片段最多比逻辑区间多 60 秒，因此长期平均额外提交量约为：1 分钟 interval **100%**、5 分钟 **20%**、30 分钟 **3.3%**。首版最小、最有父项目证据的建议是保留每侧固定 30 秒，把它作为 private constant；resume identity 保存 exact actual/logical windows；repair 从失败 logical range 派生同样 context；不增加公开 overlap 参数，不做文本相似度去重。这仍不是实现授权：维护者必须明确接受 1 分钟 interval 可能翻倍，或选择 **零 overlap**。没有 A/B 证据支持凭空发明第三个秒数。
 
 **过度设计复查。** 本轮拒绝了四种扩张：没有为两次无状态 Google 错误新增通用 telemetry；没有继续机械重放 API；没有给 overlap 做自适应比例或公开配置；没有因只读审计全绿而制造无失败用例的 runtime 修改。调查只把原来含糊的“30 秒 overlap”拆成可决定的“每侧 30 秒、相邻共享 60 秒”及其量化成本，直接服务 #152 下一步。
+
+## #303 — 2026-08-26：普通全新安装门禁再次在 archive 依赖阶段有界超时
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #303: close or truthfully classify the still-open ordinary clean-installed `[video,audio,image]` delivery gate from the current clean commit, without changing product code to force success. Context: source behavior is green, the maintained gate already owns this profile, and earlier attempts failed in dependency delivery or terminal-evidence handling rather than the package. Success means reconciling authority, diary, start guide, Git, and gate contract; verifying the active proxy and terminal-session workflow; delegating exactly one bounded clean-archive run; personally reviewing every reached stage; changing only a reproduced gate defect; recording cleanup and exact terminal evidence; then documenting, verifying, committing, and pushing. This matters because an importable library is not mature until a fresh wheel plus its declared media extras actually installs and runs outside the repository.
+```
+
+**假设、两条路线与本人审查。** 基线为 `HEAD == origin/master == 816ea90a6d328e1d1a5d206131adebb73ed61515`，tracked tree 干净，只有两份受保护未跟踪文件。路线 A 是保持唯一维护脚本不变，通过 10080 代理和已证明的 yielded session 执行一次；路线 B 是先改 timeout/cache/mirror/pin 或另造安装器。选择 A。本人逐段确认 gate 从精确 Git archive 跑测试、构建 wheel、在仓库外安装八个 profile；`video,audio,image` 只装 Pillow、miniaudio、OpenCV、NumPy、imageio-ffmpeg，明确拒绝 `google-genai`，再用公开 `recognize_video()`、`compose_video_result()`、`publish_video_result()` 运行真实本地 MP4、分离 fake image/audio provider 并核对临时资产清理。gate controller、wheel selection、inline typing、lightweight import 为 **21 passed in 2.62s**，PowerShell AST error 为 0。
+
+**唯一委派运行与终态。** 轻量执行者先确认 WinINET `ProxyEnable=1`、`ProxyServer=127.0.0.1:10080`、TCP 可达，以及显式代理访问 PyPI/file host 的前置门禁；代理变量只注入 child。它从精确 commit 直接启动一次 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/run_stage_m_offline_gate.ps1`，没有 wrapper、第二次 gate、retry、cache、mirror、替代 installer、依赖/pin/timeout 变化或 provider 调用。唯一到达的阶段打印 `stage started: archived-source dependency preparation and pytest (timeout 1200s)`，随后打印 `stage timeout` 和 `stage exceeded 1200s`，terminal exit **1**。没有 pytest terminal count，所以 wheel、base install/import、八个 optional profile 与 installed combined-video 均未开始。
+
+**分类、清理与过度设计复查。** 这是外部依赖交付阶段的有界失败，不是 source test、wheel、package runtime 或组合视频失败；日志没有把具体某个下载确定为根因，因此不从耗时猜测。维护 gate 按设计终止并清理，本人复核匹配进程 **0**、`ocrllm-stage-m-offline-gate-*` TEMP 根 **0**，工作树仍只有两份受保护文件。没有证据要求修改 gate。相同条件下继续机械重放、加长 timeout、注入 cache/mirror、repin OpenCV 或新增 controller 都会重复已经识别的流程性过度展开；普通安装证明保持开放，下一次必须有外部分发条件实质变化，或维护者明确选择另一种有界分发证明策略。
+
+**最终验证。** 当前源码完整离线套件 **1,559 passed in 63.20s**，`compileall -q src tests tools` 与 `git diff --check` 均为 exit 0。这只证明 source tree 没有回归，不能替代本轮没有到达的 clean wheel/install/profile/combined-video 证据。
