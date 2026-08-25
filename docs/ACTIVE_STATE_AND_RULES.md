@@ -1626,6 +1626,35 @@ or video-runtime defect; do not immediately replay, widen timeouts, inject a
 cache/mirror, repin, add retry, or create another installer. Stress/robustness
 work still follows a successful relevant basic installed/live flow.
 
+#272 fixes one provider-specific paid-response loss without creating a shared
+lifecycle layer. A built-in DashScope image request could return valid parsed
+Markdown and then fail only while closing its OpenAI-compatible client; the
+adapter previously replaced that usable response with
+`PROVIDER_RESPONSE_INVALID`. It now returns the existing internal
+`VisionProviderResponse(client_closed=False)`. The image processor preserves
+the Markdown as a public partial result, emits one DashScope-specific cleanup
+warning, reports exact one-call success plus `provider_client_closed=False`,
+and keeps private close text and credentials redacted. Normal DashScope results
+remain plain strings and do not gain cleanup metadata.
+
+The public regression uses a one-slot DashScope credential pool. Close-only
+failure releases the lease with one success, zero failures, no in-flight work,
+and no credential, model, or account block: local client cleanup is not
+misclassified as provider failure. A truncated response still fails, and a
+primary provider error still wins while gaining only
+`provider_client_cleanup_failed=True`. The causal pre-fix test failed because
+top-level `recognize()` raised the cleanup error instead of returning the paid
+Markdown. DashScope/Google adapter, pool, image-resume, PDF, and video neighbors
+pass 228 tests; the complete offline suite passes 1,542. No retry, fallback,
+model switch, provider framework, public response type, dependency, live call,
+legacy/social behavior, #127/#152 choice, or frozen boundary changed.
+
+One adjacent pre-existing accounting mismatch was observed but not folded into
+this lifecycle fix: when the DashScope baseline model is implicit, top-level
+metadata resolves the actual baseline while the successful `model_attempts`
+entry can retain an empty model string. Audit that as a separate atomic task;
+do not infer its correction from #272 or generalize model accounting here.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

@@ -543,12 +543,17 @@ def _recognize_images_once(
         )
     if resolved_provider.name == "google":
         metadata["current_model_token_usage"] = current_model_token_usage()
+    if resolved_provider.name == "google" or not provider_clients_closed:
         metadata["provider_client_closed"] = provider_clients_closed
 
     warnings: tuple[str, ...] = ()
     if not provider_clients_closed:
+        provider_name = {
+            "dashscope": "DashScope",
+            "google": "Google GenAI",
+        }.get(resolved_provider.name, "vision provider")
         warnings = (
-            "The Google GenAI client could not be closed after recognition.",
+            f"The {provider_name} client could not be closed after recognition.",
         )
 
     return ProcessorOutput(

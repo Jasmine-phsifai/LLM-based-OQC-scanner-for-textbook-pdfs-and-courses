@@ -9,6 +9,7 @@ from ...config import Config
 from ...errors import ConfigError, OCRLLMError, ProviderError
 from ...raise_if_cancelled import raise_if_cancelled
 from ...snapshot_config import snapshot_config
+from ..vision_provider_response import VisionProviderResponse
 from .provider_settings import DashScopeSettings
 from .build_dashscope_image_request import build_dashscope_image_request
 from .create_dashscope_openai_client import create_dashscope_openai_client
@@ -26,8 +27,8 @@ def recognize_images(
     *,
     prompt: str,
     config: Config,
-) -> str:
-    """Send one ordered, no-retry request and return complete Markdown text.
+) -> str | VisionProviderResponse:
+    """Send one ordered, no-retry request and return validated Markdown.
 
     Cancellation is honored before HTTP dispatch. Once the synchronous SDK call
     starts, direct-Python cancellation cannot interrupt it.
@@ -64,6 +65,7 @@ def recognize_images(
     client: object | None = None
     markdown: str | None = None
     public_error: OCRLLMError | None = None
+    client_closed = True
     try:
         try:
             openai_module = load_openai()
@@ -116,10 +118,9 @@ def recognize_images(
                 )
     finally:
         close_error = _close_client(client)
+        client_closed = close_error is None
         if close_error is not None:
-            if public_error is None:
-                public_error = close_error
-            else:
+            if public_error is not None:
                 public_error._add_safe_detail("provider_client_cleanup_failed", True)
         if credential_lease is not None:
             pool_error = (
@@ -152,6 +153,11 @@ def recognize_images(
             code="PROVIDER_RESPONSE_INVALID",
             details={"provider": "dashscope", "model": model},
         ) from None
+    if not client_closed:
+        return VisionProviderResponse(
+            markdown=markdown,
+            client_closed=False,
+        )
     return markdown
 
 

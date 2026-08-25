@@ -936,10 +936,7 @@ def test_sdk_authentication_failure_is_typed_and_redacted(tmp_path, monkeypatch)
     assert client.closed is True
 
 
-def test_truncated_response_and_client_cleanup_failure_never_succeed(
-    tmp_path,
-    monkeypatch,
-):
+def test_truncated_response_never_succeeds(tmp_path, monkeypatch) -> None:
     source = write_test_image(tmp_path / "board.png", size=(11, 11))
 
     truncated_client = FakeClient(response=_response(finish_reason="length"))
@@ -951,14 +948,80 @@ def test_truncated_response_and_client_cleanup_failure_never_succeed(
         )
     assert truncated.value.code == "PROVIDER_RESPONSE_INVALID"
 
-    cleanup_client = FakeClient(close_error=RuntimeError("raw close failure"))
+
+def test_successful_dashscope_image_discloses_client_close_failure(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png", size=(11, 11))
+    private_close_text = "PRIVATE DASHSCOPE CLOSE BODY"
+    private_key = "dashscope-private-close-test-key"
+    cleanup_client = FakeClient(close_error=RuntimeError(private_close_text))
     _install_fake_openai(monkeypatch, cleanup_client)
-    with pytest.raises(ProviderError) as cleanup:
-        recognize(
-            source,
-            config=Config(provider=_settings()),
-        )
-    assert cleanup.value.code == "PROVIDER_RESPONSE_INVALID"
+    pool = DashScopeCredentialPool(
+        region="ap-southeast-1",
+        credentials=(
+            DashScopeCredential(
+                credential_id="close-test-credential",
+                api_key=private_key,
+            ),
+        ),
+    )
+    ordinary = _settings(api_key=None)
+    settings = DashScopeSettings(
+        region=ordinary.region,
+        base_url=ordinary.base_url,
+        credential_pool=pool,
+    )
+
+    result = recognize(
+        source,
+        config=Config(
+            provider=settings,
+            vision_model=VisionModelSettings(
+                name="qwen3.7-plus-2026-05-26",
+            ),
+        ),
+    )
+
+    assert result.status == "partial"
+    assert result.markdown == "# Recognized board\n"
+    assert result.warnings == (
+        "The DashScope client could not be closed after recognition.",
+    )
+    assert result.metadata["provider_call_count"] == 1
+    assert result.metadata["current_run_provider_call_count"] == 1
+    assert result.metadata["provider_client_closed"] is False
+    assert tuple(dict(item) for item in result.metadata["model_attempts"]) == (
+        {
+            "model": "qwen3.7-plus-2026-05-26",
+            "outcome": "success",
+            "provider_calls_attempted": 1,
+        },
+    )
+    assert cleanup_client.closed is True
+    assert private_close_text not in repr(result)
+    assert private_key not in repr(result)
+
+    report = pool.snapshot()
+    assert report.account_state == "available"
+    assert report.model_blocks == ()
+    assert report.model_cooldowns == ()
+    assert len(report.slots) == 1
+    slot = report.slots[0]
+    assert slot.state == "available"
+    assert slot.in_flight == 0
+    assert slot.selection_count == 1
+    assert slot.success_count == 1
+    assert slot.failure_count == 0
+    assert slot.last_error_code is None
+
+
+def test_primary_dashscope_error_survives_client_cleanup_failure(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png", size=(11, 11))
 
     primary_and_cleanup_client = FakeClient(
         error=FakeOpenAIModule.AuthenticationError("raw auth failure"),

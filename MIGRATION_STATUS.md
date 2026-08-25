@@ -946,6 +946,16 @@ The following directions remain traceable but are not current work:
   while remaining account- and credential-available. Private error/key text is
   absent. Runtime and provider policy are unchanged; the full offline suite
   passes 1,540.
+  #272 preserves a successfully parsed built-in DashScope image response when
+  only client close fails. It reuses the existing internal vision response
+  cleanup bit, so callers receive partial Markdown, one provider-specific
+  warning, exact call evidence, and `provider_client_closed=False`; primary
+  provider errors retain precedence. A one-slot credential pool records one
+  success and no block/failure because local cleanup is not provider failure.
+  The full offline suite passes 1,542. No public response protocol, provider
+  framework, retry/fallback, dependency, legacy format, or frozen boundary was
+  added. The separately observed empty model identity in an implicit-default
+  DashScope `model_attempts` row remains open for a later atomic audit.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

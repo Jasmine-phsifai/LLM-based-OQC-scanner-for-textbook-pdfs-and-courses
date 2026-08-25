@@ -436,6 +436,15 @@ or audio dispatch and leave no final/staging video output. Do not force one
 error code across later frame-staging failures, inspect the registry, prepend
 extended-length prefixes, or add a general path-budget framework without a
 separate product decision and real cross-stage evidence.
+#272 preserves valid parsed DashScope image Markdown when only client close
+fails. Return the existing internal structured response with
+`client_closed=False`; the public image result stays partial with a
+DashScope-specific warning and exact call evidence. A credential-pool lease is
+successful and available because local cleanup is not provider failure. Keep a
+primary provider error primary, annotated only with cleanup failure. Do not add
+a public provider-response protocol, shared lifecycle superclass, retry,
+fallback, or model switch. The separate implicit-default-model attempt-ledger
+identity mismatch remains open for one later atomic audit.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
