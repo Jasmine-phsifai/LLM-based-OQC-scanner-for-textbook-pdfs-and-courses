@@ -355,8 +355,15 @@ def test_extract_video_frames_write_failure_publishes_no_partial_directory(
 
     source = _write_sectioned_mp4(tmp_path / "lecture.mp4")
     output_parent = tmp_path / "output"
+    real_video_capture = cv2.VideoCapture
     real_imencode = cv2.imencode
+    opened_captures = []
     encode_count = 0
+
+    def track_video_capture(path):
+        capture = real_video_capture(path)
+        opened_captures.append(capture)
+        return capture
 
     def fail_second_encode(extension, frame):
         nonlocal encode_count
@@ -365,14 +372,19 @@ def test_extract_video_frames_write_failure_publishes_no_partial_directory(
             return False, None
         return real_imencode(extension, frame)
 
+    monkeypatch.setattr(cv2, "VideoCapture", track_video_capture)
     monkeypatch.setattr(cv2, "imencode", fail_second_encode)
 
     with pytest.raises(OutputError) as captured:
         extract_video_frames(source, output_dir=output_parent)
 
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert opened_captures
+    assert all(not capture.isOpened() for capture in opened_captures)
     assert not (output_parent / "lecture").exists()
     assert not list(output_parent.glob(".ocrllm-video-*"))
+    source.unlink()
+    assert not source.exists()
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows Unicode path regression")

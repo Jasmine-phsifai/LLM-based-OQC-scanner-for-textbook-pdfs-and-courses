@@ -4081,3 +4081,17 @@ Atomic task — Iteration #198: audit the bounded-memory behavior of the shipped
 **精确计算与主动分配结果。** 一小时最多 721 个候选，数组约 **13.4 MiB**；9.5 小时最多 6,841 个，约 **126.9 MiB**；十小时最多 7,201 个，约 **133.6 MiB**；10,000 硬上限约 **185.5 MiB**。轻量子代理按固定流程在 `D:\Anaconda\envs\OCRLLM\python.exe`（Python 3.10.20、NumPy 2.2.6）执行一次无 provider、无媒体、无网络的主动分配：创建 7,201 个独立 `VideoFrameCandidate`，两类数组都用 `np.full` 实际触页。分配成功；数组精确合计 **140,102,656 bytes**，进程 private usage 增加 **150,028,288 bytes（约 143.1 MiB）**，working set 增加 **145,690,624 bytes**。删除并回收后，working set 距基线约 1.85 MiB，private usage 距基线约 2.76 MiB。仓库未产生文件。
 
 **结论与过度设计复查。** 现实现不会随视频分辨率把完整帧长期留在候选表，十小时分配也可完成，但约 143 MiB 的实测增长是产品需要公开知道的物质成本，不能继续只写“bounded”。本轮只在 active-library README、当前权威状态和迁移状态中披露数字，不改 runtime。没有质量语料支持缩小缩略图，也没有真实内存失败支持引入 packed buffer、磁盘 spill、cache、流式多遍选择或新的公开设置；现在实现这些会用明显更难理解的生命周期换取未经证明的收益，属于过度设计。相反，只因一次分配成功就宣称十小时视频整体低内存也不诚实：高分辨率解码帧和比较临时数组仍有瞬时成本。本轮不触碰 provider、API、依赖、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。
+
+## #199 — 2026-08-25：视频选帧普通失败路径释放全部媒体句柄
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #199: identify and close one evidence-backed resource-lifecycle defect in the shipped provider-free video selection path, focusing on whether decode, comparison, or retained-JPEG publication failures always release media handles and remove only request-owned partial output. Success means reconciling the authoritative state and diary, tracing every failure exit in the current implementation, reproducing one concrete leak or partial-publication defect with a deterministic real-media regression, applying the smallest local fix if needed, and otherwise recording a verified no-change audit before advancing. This matters because a Python library must remain reusable inside a long-running host process; a path that works once but leaves locked video files or half-published output is not mature on Windows.
+```
+
+**假设、两条路线与逐层审计。** 初始假设是普通异常可能遗漏 OpenCV capture 释放，或多张 JPEG 中途失败留下半目录。路线 A 是增加通用事务/生命周期管理器；路线 B 是先沿现有 ownership 逐层核对，只修复真实缺口。选择 B。`claim_output_target()` 用 `finally` 释放进程内 claim；FFmpeg metadata reader 用 `finally` close；inspect、coarse scan 和 selected-frame write 都使用同一个 `open_video_capture()`，其 `finally` release；每张 JPEG 用 Python 文件上下文；所有发布前文件只进入随机 staging root，普通失败递归删除，成功才整目录 rename。现有结构已经集中且可读，再包一层只会增加理解成本。
+
+**补齐的真实回归。** 已有真实 MP4 测试会让第二张 JPEG 的 `cv2.imencode()` 返回失败，并验证 typed `OUTPUT_WRITE_FAILED`、无最终目录、无 staging。此次没有另造 fixture，而是在同一测试中跟踪 public call 实际打开的全部 `cv2.VideoCapture`；异常返回后逐个确认 `isOpened()` 为 false，再立即删除源 MP4 并确认不存在。这同时覆盖 inspect、候选扫描、selected-frame 写出和 Windows 文件锁结果，不依赖 provider。精确测试 **1 passed in 0.19s**；inspect/extract 合集 **21 passed in 1.15s**。运行时代码无需修改。
+
+**新发现的取消提交点与过度设计复查。** 轻量只读审计用故障注入复现：若 `os.rename(staging_root, target_root)` 已真实完成、但在下一行 `published = True` 前抛 `KeyboardInterrupt`，调用会传播取消，而完整目标目录保留。这属于 #127 的取消语义选择；当前不能擅自写测试冻结。此时自动删 target 可能误删被外部进程替换的目录，吞掉取消又等于选择公开语义。更重要的是，它是需要特制“rename 成功后再抛异常”才能复现的极窄窗口，不足以证明应新增跨进程锁、manifest、事务系统或回滚身份层。结论是登记并提问，不改 runtime；普通异常的成熟度证据已经补齐。无网络、provider、凭据、依赖、API、输出布局、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策变化。

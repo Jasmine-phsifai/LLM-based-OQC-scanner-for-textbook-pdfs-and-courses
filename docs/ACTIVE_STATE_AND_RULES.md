@@ -2047,6 +2047,28 @@ provider, network, credential, media file, dependency change, or repository
 artifact. No API, dependency, output contract, legacy compatibility, frozen
 boundary, or open #127/#149/#152 choice changed.
 
+#199 audits provider-free frame-selection resource ownership across inspection,
+container-duration reading, candidate scan, selected-frame decoding, JPEG file
+writing, staging cleanup, directory publication, and the in-process output
+claim. No ordinary-path leak or partial-publication defect was found. The
+existing real MP4 regression that fails the second JPEG encode now tracks every
+actual OpenCV capture opened by the public call, proves all report closed after
+the typed `OUTPUT_WRITE_FAILED`, proves no target or staging directory remains,
+and immediately removes the source. The exact regression and the combined
+inspection/extraction set pass.
+
+One adversarial commit-point ambiguity was reproduced but deliberately not
+turned into runtime machinery or a frozen test: if an injected `os.rename`
+performs the staging-to-target move and then raises `KeyboardInterrupt` before
+the following `published = True`, the completed target remains while the call
+propagates cancellation. Automatically removing `target_root` could remove a
+replacement created by another process; suppressing cancellation would choose
+a public policy. This belongs to open #127's returned-versus-propagated
+cancellation decision. It is a narrow synthetic timing window, not evidence
+for a generalized transaction, manifest, cross-process lock, or publication
+rewrite. No runtime, API, dependency, output layout, legacy compatibility,
+frozen boundary, or open #127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

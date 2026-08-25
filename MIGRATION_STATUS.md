@@ -574,6 +574,12 @@ The following directions remain traceable but are not current work:
   process-private growth. Both representations have proven selection roles, so
   the library now documents this material bound instead of adding an unproven
   packed, spilled, or lower-resolution representation.
+  #199 strengthens the real second-JPEG-failure regression: every OpenCV capture
+  is closed, no target or staging directory survives, and the Windows source is
+  immediately removable. No ordinary lifecycle defect was found. A synthetic
+  interruption after successful directory rename can leave a complete target
+  while propagating cancellation; it remains part of open #127 rather than
+  receiving speculative rollback machinery.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

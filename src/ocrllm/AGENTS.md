@@ -135,6 +135,12 @@ redacted runner may report only validated exact-model usage after composition.
 #187 preserves branch independence for local audio corruption: valid frames may
 still dispatch, audio dispatch stays zero, and the result remains partial. Do
 not add a whole-video transaction or rejection policy without maintainer choice.
+#199 proves ordinary retained-JPEG publication failure releases every OpenCV
+capture, removes request-owned staging, publishes no target, and leaves the
+source immediately removable. A fault injected after successful directory
+rename can still propagate cancellation while leaving the completed target;
+that rare commit-point contract belongs to open #127. Do not freeze or “repair”
+it with speculative deletion before the maintainer chooses cancellation policy.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
