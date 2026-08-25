@@ -1534,6 +1534,29 @@ for later pressure-oriented robustness testing is already recorded above: it
 starts only after the relevant basic installed/live flow succeeds and remains a
 separate, question-driven, bounded, cleanup-verified iteration.
 
+#268 makes one later execution of the same maintained clean gate from exact
+commit `6386401`. The gate's archived-source stage started with its own 1,200-
+second bound and terminated at that bound after 1,212.125 seconds of total
+observed gate lifetime. Its exact terminal lines identify only
+`archived-source dependency preparation and pytest` as timed out. The same uv
+PID emitted download progress for imageio-ffmpeg, NumPy, and OpenCV; no process
+restart or explicit retry was observed. Pytest, wheel construction, optional
+profiles, installed combined-video execution, and provider calls were never
+reached.
+
+The delegated outer wrapper had one separate operator defect: after launching
+the gate it tried to assign case-insensitive PowerShell `$pid`, which is the
+read-only `$PID`, and exited before its watchdog was attached. A corrected
+watchdog later attached to the same gate PID, but the attachment time was not
+retained, so a continuously pre-armed 3,600-second outer bound is not claimed.
+This does not erase the maintained stage's independently active 1,200-second
+bound or its terminal timeout, but it means the wrapper procedure itself did
+not meet the pre-launch rule. All wrapper/gate roots and owned processes were
+removed; tracked state and the protected untracked files were unchanged. The
+ordinary installed combined-video gate remains open. Do not immediately replay
+the run, widen timeouts, inject cache or mirrors, repin, add retry, or reinterpret
+this pre-test delivery timeout as a source, wheel, or video-runtime failure.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

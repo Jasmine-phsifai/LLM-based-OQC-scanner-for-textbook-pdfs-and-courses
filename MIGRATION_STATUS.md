@@ -928,6 +928,17 @@ The following directions remain traceable but are not current work:
   tests and compileall succeeds. Treat this as one terminal delivery failure,
   not justification for timeout/index/cache/pin/retry changes; the installed
   combined-video gate remains open.
+  #268 re-runs the same maintained gate once from exact `6386401`. Its own
+  archived-source stage times out terminally at the declared 1,200-second bound
+  after one uv PID reports progress for imageio-ffmpeg, NumPy, and OpenCV; no
+  explicit retry/restart, pytest, wheel, optional profile, installed-video path,
+  or provider call follows. The delegated outer wrapper briefly exits after
+  colliding with PowerShell's read-only `$PID`, then attaches a corrected
+  watchdog to the same gate process without retaining the attachment time.
+  Therefore the stage timeout is valid, while a continuously pre-armed outer
+  bound is not claimed. All owned processes and temporary roots are gone. This
+  remains external pre-test delivery evidence and does not justify immediate
+  replay or dependency/installer changes; the combined installed gate stays open.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
