@@ -120,6 +120,10 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   then it retains frames and extracted MP3,
   preserves each branch's result or typed error, and computes honest
   `complete`, `partial`, or `failed` status without publishing final Markdown.
+  If final request-owned source-snapshot cleanup alone fails after the branches
+  settle, the outcome remains available as `partial` with an exact
+  `snapshot_cleanup_error`; composition and publication preserve the recognized
+  text, media, call evidence, and a fixed cleanup warning.
   Its outcome requires the exact lexical `output_root/frames/*` and optional
   `output_root/audio.mp3` layout; it does not resolve path or symlink aliases.
 - exposes `compose_video_result()` as a provider-free explicit second step for

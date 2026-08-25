@@ -145,7 +145,10 @@ keeps exact frame indices/timestamps on every settled frame-group outcome.
 #125 distinguishes a truly silent MP4 from corrupt declared audio without
 parsing FFmpeg logs. #126 adds public `recognize_video()` with separate image
 and audio configs and a typed `VideoRecognitionOutcome` that retains honest
-branch results/errors and media artifacts. #129 adds explicit, provider-free
+branch results/errors and media artifacts. #285 additionally preserves that
+settled work as a partial outcome when only final request-owned source-snapshot
+cleanup fails, exposing one typed cleanup error rather than discarding both
+recognition branches. #129 adds explicit, provider-free
 `compose_video_result()` for complete or partial returned outcomes; it keeps
 ordered frames and audio in separate sections without publishing a file or
 inventing time alignment. #130 then built the exact current clean archive,

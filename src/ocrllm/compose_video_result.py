@@ -76,6 +76,14 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         ),
         "audio_state": outcome.audio_state,
     }
+    if outcome.snapshot_cleanup_error is not None:
+        metadata["video_cleanup_error_code"] = (
+            outcome.snapshot_cleanup_error.code
+        )
+        warnings.append(
+            "Video source-snapshot cleanup failed with "
+            f"{outcome.snapshot_cleanup_error.code}."
+        )
     if frame_failures:
         metadata["video_frame_group_errors"] = tuple(frame_failures)
     if outcome.frame_error is not None:

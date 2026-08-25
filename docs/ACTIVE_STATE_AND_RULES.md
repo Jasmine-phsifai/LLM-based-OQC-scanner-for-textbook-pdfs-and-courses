@@ -4806,6 +4806,37 @@ and do not immediately replay. The ordinary installed combined-video gate
 remains open; later bounded stress robustness testing still follows a valid
 basic installed/live proof.
 
+## Iteration 285: final video snapshot cleanup no longer discards settled work
+
+A real one-second MP4 with one injected image call and one fixed Google-audio
+seam proved a lifecycle defect after both branches had completed. If deleting
+the request-owned source snapshot failed during `prepare_video_media()` context
+exit, `recognize_video()` raised an unannotated `OUTPUT_WRITE_FAILED` before its
+already-built `VideoRecognitionOutcome` reached the caller. The retained JPEG
+and MP3 remained, but both recognized texts, two calls, token evidence, and the
+ability to compose or publish were lost. Existing snapshot cleanup code did not
+cover this post-settlement public behavior.
+
+The snapshot deletion error now carries the exact safe stage
+`video_snapshot_cleanup`. `recognize_video()` preserves only that cleanup-only
+error after an outcome has already settled; all earlier output/provider/media
+errors retain their existing behavior. `VideoRecognitionOutcome` gained one
+specific optional `snapshot_cleanup_error: OutputError`, validated to that
+stage. Its otherwise complete outcome becomes partial. Composition and atomic
+publication preserve the frame/audio text, media, call/token evidence, add the
+fixed `video_cleanup_error_code`, and emit one fixed warning. The public error's
+traceback, cause, and context are cleared before return.
+
+The causal public regression failed before implementation, then passed through
+recognition, composition, and publication while manually cleaning its injected
+snapshot residue. Video neighbors pass 117 tests, result/import neighbors pass
+39, and the complete offline suite passes 1,548. This does not add a generic
+lifecycle protocol, cleanup retry, public snapshot path, provider framework,
+resume state, or change #127/#152. Merely attaching a call count to the thrown
+cleanup error was rejected because it would still discard paid recognition;
+putting the cleanup failure into the image or audio branch was rejected as
+misclassification.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

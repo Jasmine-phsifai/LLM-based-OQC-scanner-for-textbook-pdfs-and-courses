@@ -529,6 +529,92 @@ def test_recognize_video_runs_real_media_and_keeps_providers_separate(
     assert composed.metadata["current_run_provider_call_count"] == 2
 
 
+def test_recognize_video_preserves_settled_work_on_final_snapshot_cleanup_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot_module = importlib.import_module(
+        "ocrllm.video.snapshot_video_source"
+    )
+    real_rmtree = snapshot_module.shutil.rmtree
+    retained_snapshot_roots: list[Path] = []
+
+    def fail_normal_snapshot_cleanup(path, *args, **kwargs):
+        snapshot_root = Path(path)
+        is_video_source_snapshot = snapshot_root.name.startswith(
+            ".ocrllm-video-source-"
+        )
+        if not is_video_source_snapshot:
+            return real_rmtree(path, *args, **kwargs)
+        if kwargs.get("ignore_errors", False):
+            return real_rmtree(path, *args, **kwargs)
+        retained_snapshot_roots.append(snapshot_root)
+        raise PermissionError("injected-video-snapshot-cleanup-failure")
+
+    monkeypatch.setattr(
+        snapshot_module.shutil,
+        "rmtree",
+        fail_normal_snapshot_cleanup,
+    )
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch)
+
+    try:
+        outcome = recognize_video(
+            source,
+            output_dir=tmp_path / "output",
+            image_config=Config(provider=image_provider),
+            audio_config=_audio_config(tmp_path),
+        )
+
+        assert outcome.status == "partial"
+        assert outcome.snapshot_cleanup_error is not None
+        assert outcome.snapshot_cleanup_error.code == "OUTPUT_WRITE_FAILED"
+        assert outcome.snapshot_cleanup_error.details == {
+            "stage": "video_snapshot_cleanup"
+        }
+        assert outcome.snapshot_cleanup_error.__cause__ is None
+        assert outcome.snapshot_cleanup_error.__context__ is None
+        assert outcome.snapshot_cleanup_error.__traceback__ is None
+        assert len(image_provider.calls) == 1
+        assert len(observed_audio) == 1
+        assert all(item.succeeded for item in outcome.frame_outcomes)
+        assert outcome.audio_result is not None
+        assert outcome.audio_artifact is not None
+        assert outcome.audio_artifact.is_file()
+        assert all(frame.path.is_file() for frame in outcome.retained_frames)
+
+        composed = compose_video_result(outcome)
+        assert composed.status == "partial"
+        assert composed.metadata["video_cleanup_error_code"] == (
+            "OUTPUT_WRITE_FAILED"
+        )
+        assert composed.metadata["current_run_provider_call_count"] == 2
+        assert composed.warnings == (
+            "Video source-snapshot cleanup failed with OUTPUT_WRITE_FAILED.",
+        )
+        assert composed.assets == tuple(
+            frame.path for frame in outcome.retained_frames
+        ) + (outcome.audio_artifact,)
+
+        published = publish_video_result(
+            outcome,
+            tmp_path / "recognized-after-cleanup-failure.md",
+        )
+        assert published.status == "partial"
+        assert published.warnings == composed.warnings
+        assert published.metadata == composed.metadata
+        assert published.assets == composed.assets
+    finally:
+        for snapshot_root in retained_snapshot_roots:
+            if snapshot_root.exists():
+                real_rmtree(snapshot_root)
+
+    assert len(retained_snapshot_roots) == 1
+    assert not retained_snapshot_roots[0].exists()
+
+
 @pytest.mark.skipif(os.name != "nt", reason="Windows Unicode path regression")
 def test_recognize_video_keeps_separate_providers_on_unicode_paths(
     tmp_path: Path,

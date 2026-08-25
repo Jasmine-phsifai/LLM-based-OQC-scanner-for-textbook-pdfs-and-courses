@@ -17,7 +17,7 @@ def recognize_video(
 ) -> VideoRecognitionOutcome:
     """Settle independent frame and audio recognition for one local MP4."""
     from .clear_public_error import clear_public_error
-    from .errors import Cancelled, OCRLLMError
+    from .errors import Cancelled, OCRLLMError, OutputError
     from .providers.validate_vision_provider_config import (
         validate_vision_provider_config,
     )
@@ -45,63 +45,81 @@ def recognize_video(
     validate_cancellation_signal(validated_image_config.cancellation)
     validate_cancellation_signal(validated_audio_config.cancellation)
 
-    with prepare_video_media(
-        source,
-        output_dir=output_dir,
-    ) as (snapshot_path, retained_frames):
-        output_root = retained_frames[0].path.parent.parent
-        audio_artifact: Path | None = None
-        audio_result = None
-        audio_error: OCRLLMError | None = None
-        try:
-            audio_artifact = _extract_video_audio_from_stable_source(
-                snapshot_path,
-                output_path=output_root / "audio.mp3",
-            )
-        except Cancelled:
-            raise
-        except OCRLLMError as error:
-            audio_error = error
-
-        frame_outcomes = ()
-        frame_error: OCRLLMError | None = None
-        try:
-            frame_outcomes = tuple(
-                recognize_video_frames(
-                    retained_frames,
-                    config=validated_image_config,
-                )
-            )
-        except Cancelled:
-            raise
-        except OCRLLMError as error:
-            frame_error = error
-
-        if audio_artifact is not None:
+    settled_outcome: VideoRecognitionOutcome | None = None
+    try:
+        with prepare_video_media(
+            source,
+            output_dir=output_dir,
+        ) as (snapshot_path, retained_frames):
+            output_root = retained_frames[0].path.parent.parent
+            audio_artifact: Path | None = None
+            audio_result = None
+            audio_error: OCRLLMError | None = None
             try:
-                audio_result = recognize(
-                    audio_artifact,
-                    config=validated_audio_config,
+                audio_artifact = _extract_video_audio_from_stable_source(
+                    snapshot_path,
+                    output_path=output_root / "audio.mp3",
                 )
             except Cancelled:
                 raise
             except OCRLLMError as error:
                 audio_error = error
 
-        if frame_error is not None:
-            clear_public_error(frame_error)
-        if audio_error is not None:
-            clear_public_error(audio_error)
-        assert (audio_result is None) != (audio_error is None)
-        return VideoRecognitionOutcome(
-            output_root=output_root,
-            retained_frames=retained_frames,
-            frame_outcomes=frame_outcomes,
-            frame_error=frame_error,
-            audio_artifact=audio_artifact,
-            audio_result=audio_result,
-            audio_error=audio_error,
+            frame_outcomes = ()
+            frame_error: OCRLLMError | None = None
+            try:
+                frame_outcomes = tuple(
+                    recognize_video_frames(
+                        retained_frames,
+                        config=validated_image_config,
+                    )
+                )
+            except Cancelled:
+                raise
+            except OCRLLMError as error:
+                frame_error = error
+
+            if audio_artifact is not None:
+                try:
+                    audio_result = recognize(
+                        audio_artifact,
+                        config=validated_audio_config,
+                    )
+                except Cancelled:
+                    raise
+                except OCRLLMError as error:
+                    audio_error = error
+
+            if frame_error is not None:
+                clear_public_error(frame_error)
+            if audio_error is not None:
+                clear_public_error(audio_error)
+            assert (audio_result is None) != (audio_error is None)
+            settled_outcome = VideoRecognitionOutcome(
+                output_root=output_root,
+                retained_frames=retained_frames,
+                frame_outcomes=frame_outcomes,
+                frame_error=frame_error,
+                audio_artifact=audio_artifact,
+                audio_result=audio_result,
+                audio_error=audio_error,
+            )
+    except OutputError as error:
+        if (
+            settled_outcome is None
+            or error.details.get("stage") != "video_snapshot_cleanup"
+        ):
+            raise
+        from dataclasses import replace
+
+        clear_public_error(error)
+        return replace(
+            settled_outcome,
+            snapshot_cleanup_error=error,
         )
+
+    assert settled_outcome is not None
+    return settled_outcome
 
 
 def _reject_image_persistence(config: Config) -> None:

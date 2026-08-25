@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Literal
 
 from .batch_item_outcome import BatchItemOutcome
-from .errors import OCRLLMError, VideoError
+from .errors import OCRLLMError, OutputError, VideoError
 from .read_video_frame_group_identity import read_video_frame_group_identity
 from .result import RecognitionResult
 from .retained_video_frame import RetainedVideoFrame
@@ -25,6 +25,7 @@ class VideoRecognitionOutcome:
     audio_artifact: Path | None = None
     audio_result: RecognitionResult | None = None
     audio_error: OCRLLMError | None = None
+    snapshot_cleanup_error: OutputError | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.output_root, Path):
@@ -144,6 +145,18 @@ class VideoRecognitionOutcome:
             raise ValueError(
                 "video audio artifact must use the exact output_root/audio.mp3 path"
             ) from None
+        if self.snapshot_cleanup_error is not None:
+            if not isinstance(self.snapshot_cleanup_error, OutputError):
+                raise TypeError(
+                    "video snapshot_cleanup_error must be an OutputError"
+                ) from None
+            if (
+                self.snapshot_cleanup_error.details.get("stage")
+                != "video_snapshot_cleanup"
+            ):
+                raise ValueError(
+                    "video snapshot_cleanup_error must describe snapshot cleanup"
+                ) from None
 
     @property
     def audio_state(self) -> Literal["recognized", "absent", "failed"]:
@@ -170,6 +183,8 @@ class VideoRecognitionOutcome:
             and self.audio_result.status == "complete"
         )
         if all_frames_complete and audio_is_complete:
+            if self.snapshot_cleanup_error is not None:
+                return "partial"
             return "complete"
         if successful_frames or self.audio_result is not None:
             return "partial"

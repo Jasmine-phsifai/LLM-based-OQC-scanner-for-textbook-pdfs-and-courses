@@ -260,4 +260,5 @@ def _delete_video_snapshot(snapshot_root: Path) -> None:
         raise OutputError(
             "The request-owned video snapshot could not be removed.",
             code="OUTPUT_WRITE_FAILED",
+            details={"stage": "video_snapshot_cleanup"},
         ) from error

@@ -1054,6 +1054,18 @@ The following directions remain traceable but are not current work:
   status channel without changing the maintained gate or delivery policy. All
   owned roots/processes were cleared; the ordinary combined install gate and
   later bounded stress gate remain open in that order.
+  #285 fixes one post-settlement public video lifecycle defect. When both image
+  and audio work had completed but final request-owned source-snapshot deletion
+  failed, the context exit previously discarded the built outcome and all
+  recognition text/call evidence while leaving final JPEG/MP3 assets. The exact
+  cleanup error now carries `stage=video_snapshot_cleanup` and is retained as
+  `VideoRecognitionOutcome.snapshot_cleanup_error`; an otherwise complete
+  outcome becomes partial and can still be composed or atomically published
+  with its recognized work, call/token evidence, fixed warning, and
+  `video_cleanup_error_code`. Other errors are unchanged. The causal regression
+  failed first, video neighbors pass 117, result/import neighbors pass 39, and
+  all 1,548 offline tests pass. No generic lifecycle layer, cleanup retry,
+  resume/provider policy, #127/#152, legacy/social, or frozen boundary changed.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

@@ -533,6 +533,16 @@ policy or immediately replay. The wrapper's null exit is a reproduced host
 WaitForExit/Refresh. Future fixed workflows requiring numeric exit should use
 direct .NET Process APIs or a small explicit status channel, not a shared runner
 framework or more refresh calls. All owned roots and processes were cleared.
+#285 preserves already-settled video work when only final request-owned source-
+snapshot cleanup fails. The deletion error must carry
+`stage=video_snapshot_cleanup`; after a complete outcome exists,
+`recognize_video()` returns it as partial with one exact
+`snapshot_cleanup_error: OutputError`, cleared of internal exception links.
+Composition/publication retain both branches, media, call/token evidence, add
+`video_cleanup_error_code`, and emit one fixed warning. Earlier media/output or
+provider errors still follow their existing paths. Do not replace this with a
+generic lifecycle protocol, cleanup retry, public snapshot path, or by assigning
+the cleanup error to an unrelated image/audio branch.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
