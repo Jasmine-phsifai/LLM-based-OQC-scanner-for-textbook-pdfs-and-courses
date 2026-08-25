@@ -331,9 +331,14 @@ retained timestamp is the decoded frame's actual presentation timestamp; FPS
 remains informational rather than the timestamp clock. Comparison keeps the
 existing 128x128 luminance detail plus a 32x32 color thumbnail, so sampled
 color-only scene changes are not erased merely because their grayscale
-luminance matches. It publishes validated JPEGs together under
-`output/lecture/frames/` and rejects an existing `output/lecture` instead of
-overwriting or resuming it. On Windows, retained JPEG bytes are written through
+luminance matches. This is bounded rather than small: with the five-second
+grid, a ten-hour input retains at most 7,201 candidates whose two `uint8`
+thumbnail arrays total about 133.6 MiB; measured process-private growth was
+about 143.1 MiB at candidate retention. Inputs requiring more than 10,000
+candidates are rejected before allocation. It publishes validated JPEGs
+together under `output/lecture/frames/` and rejects an existing
+`output/lecture` instead of overwriting or resuming it. On Windows, retained
+JPEG bytes are written through
 Python's file API after OpenCV encoding, so non-ASCII source and output parents
 do not depend on OpenCV's filename encoding. This is not a fine-gap scene
 detector: content that appears entirely between two coarse samples can be

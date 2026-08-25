@@ -2020,6 +2020,33 @@ otherwise-warranted live controller must validate `report_type` before the
 shared `status` value. No library runtime, API, dependency, output contract,
 legacy compatibility, frozen boundary, or open #127/#149/#152 choice changed.
 
+#198 quantifies the existing negative-feedback selector's candidate-memory
+bound instead of treating “bounded thumbnails” as proof of low memory use. At
+the five-second grid, the scanner preflights `ceil(duration / 5) + 1`
+candidates and rejects counts above 10,000. Each real OpenCV candidate retains
+one 128x128 luminance `uint8` array and one 32x32x3 color `uint8` array: 19,456
+bytes of NumPy payload. Therefore one hour is at most 721 candidates / about
+13.4 MiB payload, and a ten-hour input is at most 7,201 candidates / about
+133.6 MiB payload before Python and allocator overhead. A deterministic
+no-provider Windows probe allocated 7,201 independent, page-committed
+`VideoFrameCandidate` values successfully: exact arrays were 140,102,656 bytes,
+while process private usage increased by 150,028,288 bytes (about 143.1 MiB)
+and returned to within about 2.8 MiB of baseline after deletion and collection.
+
+No runtime representation changed. The luminance thumbnail is needed for the
+existing detail comparison, and #185 proves that the color thumbnail prevents
+equal-luminance scene loss. Calibration can compare a candidate both with its
+adjacent predecessor and with a sensitivity-dependent segment start, so
+replacing the arrays with one fixed per-frame score is not semantics-preserving;
+precomputing every possible pair would make the bound worse. Shrinking either
+thumbnail without a quality corpus would trade a measured memory cost for an
+unmeasured recognition defect. The honest current decision is to document the
+material bound and leave optimization to a separate evidence-backed slice,
+not add packing, spilling, caching, or a second selector. The probe used no
+provider, network, credential, media file, dependency change, or repository
+artifact. No API, dependency, output contract, legacy compatibility, frozen
+boundary, or open #127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

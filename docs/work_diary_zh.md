@@ -4067,3 +4067,17 @@ Atomic task — Iteration #197: run one bounded authorized live Google combined-
 **真实原因、两条路线与最小修复。** 离线追踪 runner 后确认顶层 `status="failed"` 有两种合法形态：catalog/model/orchestration 没得到 outcome 时是 `{status,error}`；音画分支已经完整结算但 gate 未通过时，则是 `{status,catalog_count,model,outcome_status,frames,audio,composition}`。controller 错把所有 failed 都要求为第一种。路线 A 只写说明；路线 B 给两个现有形态增加一个字符串判别字段。选择 B：完整摘要固定 `report_type="video_outcome"`，顶层 runner 错误固定 `report_type="runner_failure"`。不加 schema class、version registry、JSON 库或第三种结果；README 同步说明先看 `report_type`，再看共享 status。
 
 **离线验证与过度设计复查。** 原有 success-summary 精确断言与 main failure 精确断言都更新为相应 discriminator，已结算的双分支失败测试也确认仍是 `video_outcome`。runner 文件 **14 passed in 0.10s**；runner、Google image/audio adapter 与 combined-video 相邻集合 **83 passed in 4.84s**；`compileall -q src tests tools` 与 `git diff --check` 通过。本轮改的是维护 live 工具协议，不是 library runtime；不因证据丢失修改 provider error handling、不猜测这次 JSON 内容、不重发 API、不加日志持久化/通用 schema/重试，也不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。
+
+## #198 — 2026-08-25：量清十小时视频候选缩略图的真实内存成本
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #198: audit the bounded-memory behavior of the shipped negative-feedback video selector against the private ten-hour product ceiling, without changing sampling semantics or public configuration. Success means reconciling authority and diary, measuring the exact retained candidate representation and worst-case candidate count from current code, running one deterministic no-provider allocation probe, deciding whether the current bound is acceptable or a reproduced memory defect, and applying only a local representation simplification if evidence shows avoidable growth. This matters because video files can be many hours long; a library that avoids whole-video reads can still fail in production if its supposedly bounded thumbnails quietly consume excessive memory.
+```
+
+**当前假设、两条路线与复核后的选择。** 开始时假设风险来自候选缩略图长期留存，而不是完整视频一次读入；代码复核后这个判断成立，但“有上限”不等于“内存小”。扫描间隔固定 5 秒，候选数预检为 `ceil(duration / 5) + 1`，超过 10,000 直接拒绝。每个候选同时保存 128×128 灰度 `uint8` 与 32×32×3 彩色 `uint8`，数组净载荷 19,456 字节。路线 A 是缩小图片、压缩/落盘或预计算差异；路线 B 是先量化现状，只在能保持负反馈语义时才精简。选择 B。#185 已经用真实等亮度红绿场景证明彩色缩略图不能删；灰度图负责现有细节比较。selector 的 segment start 会随 sensitivity 改变，同一候选可能与相邻帧或不同段首比较，因此一个固定分数不能替代数组；把所有组合预计算反而可能平方增长。
+
+**精确计算与主动分配结果。** 一小时最多 721 个候选，数组约 **13.4 MiB**；9.5 小时最多 6,841 个，约 **126.9 MiB**；十小时最多 7,201 个，约 **133.6 MiB**；10,000 硬上限约 **185.5 MiB**。轻量子代理按固定流程在 `D:\Anaconda\envs\OCRLLM\python.exe`（Python 3.10.20、NumPy 2.2.6）执行一次无 provider、无媒体、无网络的主动分配：创建 7,201 个独立 `VideoFrameCandidate`，两类数组都用 `np.full` 实际触页。分配成功；数组精确合计 **140,102,656 bytes**，进程 private usage 增加 **150,028,288 bytes（约 143.1 MiB）**，working set 增加 **145,690,624 bytes**。删除并回收后，working set 距基线约 1.85 MiB，private usage 距基线约 2.76 MiB。仓库未产生文件。
+
+**结论与过度设计复查。** 现实现不会随视频分辨率把完整帧长期留在候选表，十小时分配也可完成，但约 143 MiB 的实测增长是产品需要公开知道的物质成本，不能继续只写“bounded”。本轮只在 active-library README、当前权威状态和迁移状态中披露数字，不改 runtime。没有质量语料支持缩小缩略图，也没有真实内存失败支持引入 packed buffer、磁盘 spill、cache、流式多遍选择或新的公开设置；现在实现这些会用明显更难理解的生命周期换取未经证明的收益，属于过度设计。相反，只因一次分配成功就宣称十小时视频整体低内存也不诚实：高分辨率解码帧和比较临时数组仍有瞬时成本。本轮不触碰 provider、API、依赖、输出、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。

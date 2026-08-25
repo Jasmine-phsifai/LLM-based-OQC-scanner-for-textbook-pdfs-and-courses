@@ -568,6 +568,12 @@ The following directions remain traceable but are not current work:
   external controller confused settled failed outcomes with runner failures and
   discarded valid safe JSON. The maintained runner now distinguishes
   `video_outcome` from `runner_failure`; no live retry or product claim followed.
+  #198 measures the selector's previously undisclosed memory cost without
+  changing it: a ten-hour five-second grid retains at most 7,201 luminance-plus-
+  color candidates, about 133.6 MiB of array payload and about 143.1 MiB measured
+  process-private growth. Both representations have proven selection roles, so
+  the library now documents this material bound instead of adding an unproven
+  packed, spilled, or lower-resolution representation.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate
