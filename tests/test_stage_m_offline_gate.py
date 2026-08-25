@@ -209,6 +209,14 @@ def test_combined_video_profile_uses_bounded_install_and_public_pipeline() -> No
     assert "recognize_video(" in script
     assert "compose_video_result(outcome)" in script
     assert "publish_video_result(outcome, published_path)" in script
+    assert (
+        "importlib.import_module('ocrllm.processors.recognize_video_mp3')"
+        in script
+    )
+    assert (
+        "importlib.import_module('ocrllm.processors.recognize_short_mp3')"
+        not in script
+    )
     assert "processor.recognize_short_mp3 = fake_google_audio" in script
     assert "provider=GoogleGenAISettings()," in script
     assert "distribution('google-genai')" in script

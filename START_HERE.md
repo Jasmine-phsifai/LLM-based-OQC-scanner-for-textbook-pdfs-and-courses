@@ -643,6 +643,9 @@ gate installed and smoked the video profile, proving the dependency set works.
 Its 254,451,578-byte installed delta exceeded the unproven 220 MiB estimate.
 #310 inspects the exact wheel payloads and refreshes video to 260 MiB and the
 existing sum-of-profile combined ceiling to 293 MiB; no dependency changes.
+Its clean gate installed the combined profile, then #311 found the final smoke
+still patched the pre-#297 short-audio processor module. The gate now patches
+the actual `recognize_video_mp3` seam; no library compatibility shim was added.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

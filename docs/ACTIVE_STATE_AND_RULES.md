@@ -5515,6 +5515,29 @@ profile membership, runtime code, or import behavior. The failing-first
 controller regression and complete controller set pass 9 tests, and PowerShell
 parses with zero AST errors. One wheelhouse-backed clean gate remains required.
 
+That clean #310 gate from exact `baaf7cff688353e4633d53921507e24638ddc32c`
+passed 1,572 archived tests with one skip, wheel/base/import, all seven
+individual profiles, and installed the combined profile. Video measured
+254,451,578 bytes and passed inspection/audio extraction. The final embedded
+combined public smoke stopped at `<stdin>:87`, the assertion that the outcome
+was complete; the combined delta and publication assertions were not reached.
+
+## Iteration 311: combined-video gate patches the shipped audio seam
+
+The embedded gate still imported `ocrllm.processors.recognize_short_mp3` and
+replaced its `recognize_short_mp3` name. Since #297, `recognize_video()` calls
+`processors.recognize_video_mp3`, whose module imported the provider function
+directly. The stale fake therefore never ran. Because the combined profile
+intentionally excludes `google-genai`, the audio branch settled its real missing-
+dependency error and the outcome correctly was not `complete`.
+
+The gate now imports `ocrllm.processors.recognize_video_mp3` and replaces that
+module's short adapter for the two-second generated fixture. This is one test-
+seam correction, not a library facade, compatibility forwarding layer, provider
+fallback, or production monkeypatch. A failing-first exact-module regression
+now passes; the gate plus video set passes 36 tests, PowerShell has zero AST
+errors, and the final installed gate remains required.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

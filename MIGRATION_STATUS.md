@@ -1247,6 +1247,11 @@ The following directions remain traceable but are not current work:
   imageio-ffmpeg payload, raises video to 260 MiB, and preserves the existing
   sum rule by raising combined video+audio+image to 293 MiB. No dependency,
   runtime, or profile membership changes.
+  The next gate installs combined video but its embedded fake patches the old
+  standalone short-audio processor, so the audio branch honestly settles an
+  error and `outcome.status` is not complete. #311 changes only the gate seam to
+  `processors.recognize_video_mp3.recognize_short_mp3`, matching shipped #297;
+  no public/runtime compatibility wrapper is added.
 
 ## Obsolete Prose Kept For Trace
 

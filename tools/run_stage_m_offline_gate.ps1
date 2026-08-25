@@ -803,7 +803,7 @@ def fake_google_audio(snapshot, *, prompt, config):
     )
 
 
-processor = importlib.import_module('ocrllm.processors.recognize_short_mp3')
+processor = importlib.import_module('ocrllm.processors.recognize_video_mp3')
 processor.recognize_short_mp3 = fake_google_audio
 image_provider = ImageProvider()
 try:

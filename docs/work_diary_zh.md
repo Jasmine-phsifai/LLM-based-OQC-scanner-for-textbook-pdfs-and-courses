@@ -5755,3 +5755,19 @@ Atomic task — Iteration #310: explain the installed video profile’s 254,451,
 **精确内容与历史依据。** 直接读 wheel zip metadata，不解包：imageio-ffmpeg 展开 **87,682,173 bytes / 13 entries**，OpenCV **114,072,536 / 88**，NumPy **43,344,960 / 1,121**，合计约 245.1 MB；主要目录分别就是 `imageio_ffmpeg`、`cv2`、`numpy`/`numpy.libs`。加 metadata 和正常 `.pyc` 后与 254.45 MB 实测一致，没有重复包或 unrelated payload。Git blame 显示旧 220 MiB 在视频 extra 首次建立时写入，而当时三次 fresh install 都卡在 OpenCV 下载，从未得到成功安装数字；combined 253 MiB 只是旧 video 220 + audio 8 + image 25 的和。
 
 **失败优先、修正与过度设计复查。** controller 测试先因仍看到旧数字失败。video ceiling 调到 **260 MiB / 272,629,760 bytes**，对当前实测留约 17.3 MiB；combined 继续用原来的相加原则，调到 **293 MiB / 307,232,768 bytes**。没有改依赖、删 native 文件、排除 `.pyc`、增加 headless 替代品或扩大到 OpenCV 4.14/5。定向 controller **9 passed in 2.03s**，PowerShell AST error 0。完整 suite、提交与 wheelhouse-backed gate 尚需完成后才能收口。
+
+**提交后 wheelhouse gate。** 精确 `baaf7cff688353e4633d53921507e24638ddc32c` 的唯一 gate 重新核验四个 wheel size/hash 和代理，archive **1,572 passed, 1 skipped in 65.71s**，wheel/base/import、七个单独 profile 全过；video 仍为 **254,451,578 bytes** 并通过 inspection/audio extraction。combined profile 安装完成，但 embedded public smoke 在 `<stdin>:87` 的 `assert outcome.status == 'complete'` 失败，combined delta、compose/publish 后续断言未到达。gate root/process 清理为 0，wheelhouse 保留，不能报告全通过。
+
+## #311 — 2026-08-26：修正 combined smoke 的旧 audio monkeypatch seam
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #311: identify the exact installed combined-video smoke assertion that fails after all dependencies and profile budgets pass, and repair only the reproduced gate or library contract mismatch. Context: #310 proves the clean wheel installs with `[video,audio,image]`, video inspection/audio extraction work, and failure occurs inside the embedded public recognize/compose/publish probe. Success means mapping the traceback line to one assertion, reproducing it outside the full gate using the same wheelhouse-backed installed profile and fake providers, comparing current public contract with the probe expectation, applying the smallest fix, running focused/full tests, documenting, committing/pushing, and one final delegated gate. This matters because the distribution is now operational; an opaque final assertion must not be mistaken for provider or network failure.
+```
+
+**定位与根因。** 将 here-string 从 1 开始编号后，`<stdin>:87` 精确是 `assert outcome.status == 'complete'`。#297 已让 `recognize_video()` 调用 `processors.recognize_video_mp3`，而该模块直接导入 short/long provider adapter。gate 仍 import 并 patch standalone `processors.recognize_short_mp3`，所以 fake 从未进入；combined profile 又故意不装 `google-genai`，音频分支正确结算 `DependencyMissing`，outcome 自然不是 complete。这是 gate 漂移，不是库行为回归。
+
+**失败优先和最小修复。** 精确 controller 回归先因脚本找不到 `importlib.import_module('ocrllm.processors.recognize_video_mp3')` 失败。修复只把 embedded probe 的模块目标从旧 standalone processor 改为当前 video processor，仍 patch 其 `recognize_short_mp3`；两秒 fixture 必然走 short route。路线 A 是给库增加旧模块兼容转发，路线 B 是修测试 seam，选 B。没有 runtime、public API、provider fallback、第二个 fake framework 或长音频行为变化。
+
+**验证。** gate controller + `recognize_video` 集 **36 passed in 14.66s**，PowerShell AST error 0，diff check 通过。完整 suite、提交与最后一次 wheelhouse-backed clean gate 尚需完成；在 compose、publish、combined delta 全到达前仍不能叫发行门禁通过。
