@@ -4123,3 +4123,17 @@ Atomic task — Iteration #201: verify that the combined-video facade does not m
 **真实静音检查与回归。** 轻量任务在仓库外生成 OpenCV 4.13.0 的真实静音 MP4，以 recording image provider 和故意错误的 `Config(provider=image_provider)` 作为 audio config 调用公开 facade。结果是 `ConfigError(code="CONFIG_INVALID")`，image call count 为 0，output_dir 不存在，无 final/staging artifacts；源文件可删，唯一 temp root 已删除。第一次 shell controller 因字符串引号丢失在探针执行前 `SyntaxError`，没有创建内容；修正编码后的唯一有效检查得到上述结果。维护中的“有效配置 + 静音 => frame-only complete”和“无效 audio config => 零输出/零 dispatch”两条测试重跑为 **2 passed in 0.34s**。
 
 **结论与过度设计复查。** README 现在明确：silent audio 是媒体 outcome，不是 relaxed config mode；只有两套配置都通过预检，缺音轨才结算为 frame-only。没有把 `audio_config` 变成 Optional、没有先探测音轨再二次验证、没有新增 frame-only flag/facade，也没有为静音构造假的 audio result。这保留了强制输入筛选和 provider 分离，同时避免组合入口继续长出模式分支。本轮不改 runtime/API/dependency/output layout，不使用 provider/network/credential，不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。
+
+## #202 — 2026-08-25：真实短暂小字修改被累计漂移规则保留
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #202: test the negative-feedback video selector against one OCR-relevant small slide edit—a short-lived added text line that is present on the existing five-second sample grid but occupies less than the current global changed-pixel threshold. Success means reconciling authority and diary, generating one deterministic real MP4 with before/edit/after slides, proving whether the public retained tuple preserves the edited content, comparing only the analogous legacy selection rule for intent, and applying a correction only if it is both locally explainable and bounded by existing density calibration. This matters because a selector can pass color, endpoint, and timing tests yet still discard the exact incremental bullet or formula that OCR users need; retaining fewer frames is not success if sampled text disappears before any provider sees it.
+```
+
+**假设、两条路线与 legacy 对照。** 初始担心是全局 changed-pixel 比例会丢掉一行有意义的小字。路线 A 是直接降低阈值或迁移 legacy refine/ROI/pHash；路线 B 是先用固定真实 MP4 测现有累计漂移，再决定。选择 B。legacy 只用 256×256 灰度，基础 change/drift 阈值与新库相同，最低 sensitivity 同为 0.2；小于约 2% 的短暂变化不会可靠切段，粗扫 15% 以下也不触发 refine，而 pHash 只能对已选末帧去重，不能找回已丢状态。整套迁移更重且不能解决目标，因此不是合理默认修复。
+
+**真实视频结果改变了结论。** 固定 fixture 为 640×360、1 fps、20 秒、47,246 bytes：白底 lecture slide 的主体始终不变，只在 5–9 秒加入清晰高对比文字 `IMPORTANT: x = 42`，之后恢复。五秒采样为索引/时间 `[0,5,10,15,19]` / `[0,5,10,15,19]`。base→edit 与 edit→base 的 luminance changed fraction 都是 **0.02294921875**，color 为 **0.0224609375**。它没超过最低 sensitivity 下 0.03 的 adjacent cutoff，却超过约 0.02 的 accumulated-drift cutoff；内部 selector 和公开 `extract_video_frames()` 都返回 `[0,5,19]`。JPEG ROI 中第 5 帧有 4,309 个深色像素，第 0/19 帧均为 0，证明新增行真实进入了 provider 将消费的图片。第一次诊断序列化误用 `VideoInfo.width`，fixture 已清理；第二次只改为正确的 `width_pixels`，使用完全相同、未调参的 fixture。两个根均删除，无仓库残留。
+
+**结论与过度设计复查。** 本轮是正向证据，不是缺陷。不能继续缩小字体直到刻意得到失败，再据此调阈值；那会只优化一个正例而没有“光标、字幕、压缩噪声不应爆增帧”的反例。README 只诚实写明：约 2.29% 的这条清晰短暂文本已被累计漂移保留，低于有效阈值的 sampled edit 仍不保证。没有新增大型 fixture、第二 detector、文本/轮廓规则、阈值设置、legacy refine/pHash 或质量配置。本轮不改 runtime/API/dependency/output layout，不使用 provider/network/credential，不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。

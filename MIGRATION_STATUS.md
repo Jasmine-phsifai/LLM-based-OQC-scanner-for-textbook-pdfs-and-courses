@@ -590,6 +590,11 @@ The following directions remain traceable but are not current work:
   inspection, output creation, or image dispatch. Silent audio becomes a
   frame-only outcome only after both required configs pass zero-I/O preflight;
   callers wanting no audio config use the existing frame-only public functions.
+  #202 proves the current negative-feedback selector retains one OCR-relevant
+  transient edit without another detector: a sampled text line affecting about
+  2.29% of the thumbnail clears accumulated drift and survives as the middle of
+  retained frames 0/5/19. Legacy offers no stronger guarantee below roughly 2%,
+  so no refine/pHash port, threshold change, or tuned regression was added.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

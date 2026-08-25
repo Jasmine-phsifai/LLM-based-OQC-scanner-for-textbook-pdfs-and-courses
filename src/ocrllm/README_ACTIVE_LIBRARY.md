@@ -346,7 +346,10 @@ Windows extended paths. On a host with Windows long paths disabled, a retained
 JPEG path beyond the traditional limit fails with typed `OUTPUT_PATH_INVALID`
 and publishes no target or staging artifact. This is not a fine-gap scene
 detector: content that appears entirely between two coarse samples can be
-absent from the retained tuple. `recognize_video_frames()` accepts only the exact
+absent from the retained tuple. Sampled edits below the calibrated changed-pixel
+threshold are likewise not guaranteed, although a real short-lived high-contrast
+text line affecting about 2.29% of the comparison thumbnail is retained by the
+current accumulated-drift rule. `recognize_video_frames()` accepts only the exact
 ordered tuple returned by this library and reuses ordinary image recognition
 in groups of at most eight. It is memory-only and returns one existing
 `BatchItemOutcome` per group. Every successful result carries exact

@@ -151,6 +151,12 @@ audio `Config` optional. Both configs remain deterministic zero-I/O preflight;
 only a validly configured call can later settle missing audio as frame-only.
 Do not add content-dependent config validation or a second frame-only mode to
 `recognize_video()`; use the existing frame extraction/recognition functions.
+#202 proves the existing accumulated-drift path retains one sampled transient
+high-contrast text line affecting about 2.29% of its thumbnail. Do not lower
+thresholds, import legacy refine/pHash machinery, or freeze another large
+fixture from that positive probe. Changes below the effective threshold remain
+an honest quality limit until balanced positive and nuisance-motion evidence
+exists.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

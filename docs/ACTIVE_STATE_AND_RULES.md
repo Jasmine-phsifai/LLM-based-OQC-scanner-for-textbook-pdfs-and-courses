@@ -2112,6 +2112,34 @@ pass. No provider, network, credential, dependency installation, runtime, API,
 output layout, legacy compatibility, frozen boundary, or open #127/#149/#152
 choice changed.
 
+#202 tests an OCR-relevant small transient slide edit instead of inferring
+selector quality from thresholds alone. One external real 640x360, 1 fps,
+20-second MP4 held a fixed lecture slide, added the readable line
+`IMPORTANT: x = 42` only during seconds 5–9, then returned to the base slide.
+The unchanged five-second scan produced candidates 0/5/10/15/19. Base-to-edit
+and edit-to-base changed-pixel fractions were 0.02294921875 for luminance and
+0.0224609375 for color. At the lowest calibrated sensitivity, that misses the
+0.03 adjacent-change cutoff but clears the approximately 0.02 accumulated-drift
+cutoff. Both internal selection and public `extract_video_frames()` retained
+indices 0/5/19. The added-line ROI contained 4,309 dark pixels in retained frame
+5 and zero in frames 0 and 19, so the sampled transient text genuinely reached
+the public JPEG output.
+
+The legacy parent does not justify a broader port for smaller edits. Its
+grayscale threshold, sensitivity floor, segment-end representative rule, and
+later pHash dedup do not reliably preserve a transient change below about 2%;
+refine scan, ROI, blank/occlusion filtering, and pHash would add machinery
+without guaranteeing that state. The active probe therefore closes positively,
+not by tuning another fixture until it fails. Sampled edits below the effective
+threshold remain an honest quality limit requiring balanced positive examples
+and nuisance-motion counterexamples before any threshold change. The first
+diagnostic run used the wrong `VideoInfo.width` reporting attribute and stopped
+after fixture work; cleanup succeeded. The identical untuned fixture was rerun
+only with the correct `width_pixels` serializer. Both exact disposable roots
+were removed. No provider, network, credential, dependency installation,
+runtime, API, output layout, legacy compatibility, frozen boundary, or open
+#127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
