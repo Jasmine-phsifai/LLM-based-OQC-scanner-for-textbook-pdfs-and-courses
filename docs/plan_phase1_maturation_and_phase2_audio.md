@@ -507,6 +507,13 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   import image slot types or combine state, dispatch, resume, and repair at once.
   Exact commit `d590835` passes the complete installed gate with every profile
   and local media smoke green and no provider call; its wheel is 248,791 bytes.
+- #317 defines only the minimum in-memory state consumed by later serial
+  persistence. The ordered per-request fingerprint tuple is the complete plan;
+  settled slots must be its exact prefix and retain validated Markdown, calls,
+  nullable tokens, and complete/partial warnings. Do not add duplicated source,
+  window, total, path, time, repair, final-result, or generic metadata fields.
+  Canonical serialization and bounded atomic I/O remain the next independent
+  persistence slice.
 
 ### Stage A exit gate
 

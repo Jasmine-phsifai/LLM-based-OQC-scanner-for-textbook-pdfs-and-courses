@@ -709,6 +709,13 @@ installed gate: archive 1,604
 passed/1 skipped, wheel 248,791 bytes, base 1,255,390 bytes, all profiles and
 local media smokes green, no cloud I/O, and complete cleanup.
 
+#317 adds only an immutable audio-owned partial state: one ordered tuple of
+#316 request fingerprints plus the settled serial prefix. Slots preserve
+Markdown/digest, provider/model, call count, nullable tokens, and honest
+complete/partial warnings. The full 1,619-test source suite passes. No
+serialization, file I/O, dispatch, resume, repair, or public API is claimed;
+exact installed proof remains pending.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

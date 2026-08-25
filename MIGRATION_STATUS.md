@@ -1309,6 +1309,12 @@ The following directions remain traceable but are not current work:
   `d590835` then passes 1,604 archived tests with one expected skip, all
   installed profiles and media smokes, and no cloud call; its wheel/base measure
   248,791/1,255,390 bytes.
+  #317 adds the minimum audio-owned in-memory partial state: an ordered request
+  fingerprint plan and its completed serial prefix. Each slot preserves the
+  paid Markdown/digest, provider/model, calls, nullable token usage, and honest
+  partial warnings. It does not add serialization, persistence, dispatch,
+  resume, repair, or public API. All 1,619 source tests pass; installed proof is
+  pending.
 
 ## Obsolete Prose Kept For Trace
 

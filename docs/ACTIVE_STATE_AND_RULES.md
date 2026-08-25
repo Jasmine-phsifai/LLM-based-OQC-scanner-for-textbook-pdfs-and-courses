@@ -5771,6 +5771,32 @@ smokes pass without cloud I/O. The delegated runner verified the active proxy
 and wheelhouse first, removed its gate root, and left no gate process. #316 is
 release-proven.
 
+## Iteration 317: paid audio slots have one minimal in-memory state
+
+The first audio-owned partial state now binds one nonempty ordered request plan
+to its completed serial prefix. The plan is stored as exact unique #316 request
+fingerprints; its length is the total request count, so no second overall hash,
+`total_windows`, source path, duration, or duplicated window document is kept.
+Each settled slot must occupy the next zero-based plan index and match that
+entry's fingerprint. It stores only reusable Markdown plus its SHA-256,
+provider/model disclosure, attempted provider calls, independently nullable
+input/output tokens, and the existing `complete`/`partial` plus warnings facts.
+
+The status/warning pair is necessary current evidence rather than generic
+metadata: Google audio may return reusable Markdown and usage, then settle
+partial because remote/client cleanup fails. A complete slot therefore has no
+warnings; a partial slot must retain at least one. This keeps paid content
+without turning cleanup failure into success. The state is immutable and
+audio-specific; it does not import image state or expose a public facade.
+
+This iteration adds no serializer, parser, state file, atomic I/O, final
+Markdown, timestamp, estimated cost, temporary segment path, repair field,
+dispatcher, resume routing, provider call, or network work. The focused
+state/identity/planner/prompt/materializer set passes **54 tests in 0.37
+seconds**; the full source suite passes **1,619 tests in 64.42 seconds**.
+Compilation, lightweight import, diff, and frozen `contracts/worker` checks
+pass. Exact clean installed proof remains the exit gate.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

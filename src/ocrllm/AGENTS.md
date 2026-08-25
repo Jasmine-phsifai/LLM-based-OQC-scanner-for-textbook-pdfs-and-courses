@@ -719,6 +719,13 @@ types. Whole and interval modes are separate; do not infer one from file size.
 Exact commit `d590835` passes the full installed gate with a 248,791-byte wheel;
 all profiles and media smokes pass without cloud I/O.
 
+#317 adds internal `LongAudioPartialState` and `LongAudioSettledSlot`. The state
+owns an ordered unique tuple of request fingerprints and only its completed
+serial prefix. Slots preserve paid Markdown/digest, provider/model, call count,
+nullable token usage, and honest complete/partial warnings. Keep paths,
+duplicated windows/source facts, arbitrary metadata, image state, repair, file
+I/O, and public exports outside these types.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:
