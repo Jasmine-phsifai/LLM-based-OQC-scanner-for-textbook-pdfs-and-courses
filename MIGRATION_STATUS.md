@@ -1365,6 +1365,10 @@ The following directions remain traceable but are not current work:
   media smokes green, no cloud I/O, and complete cleanup. The shared
   `ResumeStateError` default still incorrectly names image although PDF/audio
   now use the type; its narrow wording fix precedes the next audio slice.
+  #324 corrects that one shared default to media-neutral saved recognition
+  state wording. Codes, retryability, hierarchy, and explicit caller messages
+  do not change. The focused error/resume set passes 81 tests and all 1,693
+  source tests pass; exact installed proof remains open.
 
 ## Obsolete Prose Kept For Trace
 

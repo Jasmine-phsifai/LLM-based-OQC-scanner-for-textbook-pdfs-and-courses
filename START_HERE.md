@@ -775,6 +775,12 @@ no cloud I/O, and complete cleanup. Before the next long-audio composition
 slice, correct the shared `ResumeStateError` default that still says "image"
 despite serving image, PDF, and audio; do not redesign the hierarchy.
 
+#324 completes that correction. The default is now the neutral "saved
+recognition state" while the stable code and every explicit caller message stay
+unchanged. The focused error/resume set passes 81 tests and all 1,693 source
+tests pass; exact installed proof is pending. The queue may return to the
+long-audio start-gate composition after this release check.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

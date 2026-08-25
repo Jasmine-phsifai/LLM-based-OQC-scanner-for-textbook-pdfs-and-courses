@@ -21,6 +21,7 @@ from ocrllm.errors import (
     ProviderUnavailable,
     QuotaExhausted,
     RateLimited,
+    ResumeStateError,
     UnsupportedFormat,
     VideoError,
 )
@@ -58,6 +59,13 @@ def test_video_error_accepts_missing_audio_stream_code():
     error = VideoError(code="VIDEO_NO_AUDIO_STREAM")
 
     assert error.code == "VIDEO_NO_AUDIO_STREAM"
+
+
+def test_resume_state_error_default_is_media_neutral():
+    error = ResumeStateError()
+
+    assert error.code == "RESUME_STATE_INVALID"
+    assert str(error) == "The saved recognition state is invalid."
 
 
 def test_provider_retryability_defaults_follow_stable_failure_category():

@@ -209,7 +209,7 @@ class ResumeStateError(OCRLLMError):
     """Saved recognition work is corrupt or belongs to another request."""
 
     default_code = "RESUME_STATE_INVALID"
-    default_message = "The image resume state is invalid."
+    default_message = "The saved recognition state is invalid."
     allowed_codes = frozenset({"RESUME_STATE_INVALID", "RESUME_STATE_MISMATCH"})
 
 

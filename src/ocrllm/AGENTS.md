@@ -778,6 +778,12 @@ every profile and local media smoke passes without cloud I/O. The next atomic
 fix is the stale image-specific `ResumeStateError.default_message`, not another
 audio feature or an error-hierarchy redesign.
 
+#324 corrects only `ResumeStateError.default_message` to the media-neutral saved
+recognition state wording. Keep its code, retryability, hierarchy, redaction,
+and explicit caller messages unchanged; do not split media-specific exception
+classes. The focused error/resume set passes 81 tests and the complete source
+suite passes 1,693 tests; exact installed proof is pending.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

@@ -6013,13 +6013,17 @@ every installed profile and local audio/PDF/video/combined smoke passes without
 cloud I/O; and all gate-owned roots and processes are removed. #323 is
 release-proven.
 
-One adjacent existing defect now outranks the next new slice:
-`ResumeStateError.default_message` still says "image resume state" even though
-the public error type now serves image, PDF, and audio state. Current audio
-callers provide explicit messages, so #323 does not emit the wrong text, but the
-shared default is no longer truthful. Correct only that default and its direct
-regression before composing the long-audio start gate; do not redesign the
-error hierarchy.
+## Iteration 324: the shared resume error default is media-neutral
+
+`ResumeStateError.default_message` now says "The saved recognition state is
+invalid." instead of misidentifying every default failure as image state. The
+stable `RESUME_STATE_INVALID` code, retryability, hierarchy, redaction, and all
+explicit image/PDF/audio caller messages are unchanged. One direct failing-first
+public-error regression covers the neutral default; the focused shared-error
+and resume set passes 81 tests, and the complete offline source suite passes
+1,693 tests. Compilation, lightweight import, frozen `contracts/worker`, and
+diff checks pass. This is a one-line correction, not a new exception family or
+wording framework. Exact committed installed proof is still required.
 
 ## Documentation Rules
 

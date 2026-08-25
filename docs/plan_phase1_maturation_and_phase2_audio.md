@@ -581,6 +581,11 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
   combine plan, ownership check, state load, and exact plan reuse for one serial
   resume start gate; it must still stop before provider dispatch, directory
   creation, final publication, overwrite, or repair.
+- #324 fixes the already-built shared `ResumeStateError` default before more
+  audio work. It now names saved recognition state rather than image; no code,
+  retryability, hierarchy, or explicit caller wording changes. All 1,693 source
+  tests pass. Exact installed proof remains the exit condition, after which the
+  next feature slice may resume the serial start-gate composition above.
 
 ### Stage A exit gate
 
