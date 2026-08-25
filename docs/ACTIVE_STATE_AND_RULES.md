@@ -2660,6 +2660,21 @@ branches; it does not add a second audio provider or justify a provider
 framework, and it should not be repeated until another relevant runtime boundary
 changes.
 
+#227 closes a smaller source-version drift in the standalone, provider-free
+`inspect_video()` entry point. OpenCV formerly kept one handle open while the
+container-duration helper reopened the caller path; directly overwriting that
+path with a second real MP4 produced a successful but impossible mixture of
+the first file's 8-frame metadata and the second file's 4-second duration. The
+inspector now records the validated file identity at entry and validates it
+again after reading duration, raising `InvalidSource(code="SOURCE_INVALID")`
+when ordinary replacement or overwrite changes that identity. It still uses
+container duration for VFR input and writes nothing. This deliberately is not
+a whole-video snapshot, content hash, or adversarial integrity guarantee: a
+caller that deliberately restores the same filesystem identity fields can
+evade the check. The public no-output inspector does not copy multi-hour input
+merely to defend against that unproven case. The focused adjacent set passes
+51 tests and the complete offline suite passes 1,495.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

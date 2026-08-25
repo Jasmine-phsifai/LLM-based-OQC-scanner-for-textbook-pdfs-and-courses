@@ -238,6 +238,13 @@ with no retry, fallback, model switch, credential/content/path/raw-response
 leak, or request-owned residue. This refreshes runtime evidence; it does not add
 a second audio provider or generalize provider routing.
 
+#227 separately keeps the public no-output `inspect_video()` honest when its
+caller path is overwritten during inspection. It compares the validated file
+identity around the OpenCV/container-duration reads and rejects an ordinary
+change with typed `SOURCE_INVALID`, instead of returning mixed metadata. It
+does not copy or hash the entire video and does not claim protection against a
+deliberate same-metadata overwrite-and-restore race.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed

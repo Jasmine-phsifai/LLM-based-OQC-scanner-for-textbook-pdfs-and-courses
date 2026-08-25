@@ -714,6 +714,13 @@ The following directions remain traceable but are not current work:
   complete two-asset composition, and aggregated 796/17 token usage. The sole
   runner invocation exited 0 with no secret/content/path/raw-response leak or
   temporary residue. No runtime or provider abstraction changed.
+  #227 prevents standalone `inspect_video()` from returning metadata combined
+  from two ordinary same-path MP4 versions. It compares validated filesystem
+  identity before inspection and after container-duration reading, then raises
+  typed `SOURCE_INVALID` on change. The no-output API still avoids copying or
+  hashing the whole video, and container duration remains authoritative for
+  VFR input; this is bounded ordinary-change detection, not an adversarial
+  integrity guarantee.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

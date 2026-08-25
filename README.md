@@ -30,7 +30,9 @@ As of 2026-08-25:
   repair will not consume legacy application's Markdown format; ordinary
   image-sidecar resume remains the library recovery path.
 - Provider-free video inspection and retained-frame extraction are available.
-  `inspect_video(one.mp4)` writes nothing; `extract_video_frames()` performs a
+  `inspect_video(one.mp4)` writes nothing and rejects ordinary caller-path
+  changes during its metadata reads instead of returning mixed metadata;
+  `extract_video_frames()` performs a
   bounded five-second coarse scan that always compares the actual final frame,
   count-driven negative-feedback selection, and complete-directory JPEG
   publication. `recognize_video_frames()` feeds

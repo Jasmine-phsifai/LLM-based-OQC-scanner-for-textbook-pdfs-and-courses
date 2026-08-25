@@ -7,23 +7,40 @@ from pathlib import Path
 
 import pytest
 
-from ocrllm import DependencyMissing, VideoError, VideoInfo, inspect_video
+from ocrllm import (
+    DependencyMissing,
+    InvalidSource,
+    VideoError,
+    VideoInfo,
+    inspect_video,
+)
 
 
-def _write_short_mp4(path: Path) -> Path:
+def _write_short_mp4(
+    path: Path,
+    *,
+    frame_count: int = 8,
+    frames_per_second: float = 10.0,
+    width_pixels: int = 64,
+    height_pixels: int = 48,
+) -> Path:
     import cv2
     import numpy as np
 
     writer = cv2.VideoWriter(
         str(path),
         cv2.VideoWriter_fourcc(*"mp4v"),
-        10.0,
-        (64, 48),
+        frames_per_second,
+        (width_pixels, height_pixels),
     )
     assert writer.isOpened()
     try:
-        for index in range(8):
-            frame = np.full((48, 64, 3), index * 20, dtype=np.uint8)
+        for index in range(frame_count):
+            frame = np.full(
+                (height_pixels, width_pixels, 3),
+                index % 255,
+                dtype=np.uint8,
+            )
             writer.write(frame)
     finally:
         writer.release()
@@ -41,6 +58,39 @@ def test_public_inspect_video_reads_one_real_mp4(tmp_path: Path) -> None:
     assert info.duration_seconds == pytest.approx(0.8)
     assert info.width_pixels == 64
     assert info.height_pixels == 48
+
+
+def test_inspect_video_rejects_source_replaced_before_duration_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_short_mp4(tmp_path / "source.mp4")
+    replacement = _write_short_mp4(
+        tmp_path / "replacement.mp4",
+        frame_count=30,
+        frames_per_second=5.0,
+        width_pixels=96,
+        height_pixels=72,
+    )
+    module = __import__("ocrllm.video.inspect_video", fromlist=["unused"])
+    real_read_duration = module.read_video_duration
+    replacement_bytes = replacement.read_bytes()
+
+    def replace_then_read_duration(source_path: Path) -> float:
+        source.write_bytes(replacement_bytes)
+        return real_read_duration(source_path)
+
+    monkeypatch.setattr(
+        module,
+        "read_video_duration",
+        replace_then_read_duration,
+    )
+
+    with pytest.raises(InvalidSource) as captured:
+        inspect_video(source)
+
+    assert captured.value.code == "SOURCE_INVALID"
+    assert source.is_file()
 
 
 def test_public_inspect_video_rejects_corrupt_mp4(tmp_path: Path) -> None:

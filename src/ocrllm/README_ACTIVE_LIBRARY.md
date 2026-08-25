@@ -325,7 +325,11 @@ The complete native-Google recognition example above requires
 validates metadata and a real first-frame decode, returns immutable `VideoInfo`,
 writes nothing, and makes no provider call. Its duration comes from the MP4
 container rather than `frame_count / FPS`, so variable-frame-rate input does
-not receive a fabricated constant-rate duration. MP4 display-rotation metadata
+not receive a fabricated constant-rate duration. If the caller path undergoes
+an ordinary overwrite or replacement while those reads are in progress, the
+function raises typed `SOURCE_INVALID` instead of returning metadata mixed from
+two file versions. This check does not copy or hash the whole video and is not
+an adversarial integrity guarantee. MP4 display-rotation metadata
 is applied by the pinned OpenCV backend: `VideoInfo` dimensions and retained
 JPEG pixels both use the decoded display orientation rather than the encoded
 landscape storage dimensions.

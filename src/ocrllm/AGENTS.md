@@ -259,6 +259,11 @@ audio request through two independent Google configs, complete composition,
 and clean request-owned media. Treat this as current service evidence, not
 authority for retry, model switching, a provider superclass, or repeated live
 gates when the relevant runtime boundary has not changed.
+#227 requires standalone `inspect_video()` to reject an ordinary caller-path
+change between its OpenCV metadata read and container-duration read. Preserve
+the pre/post validated identity check and typed `SOURCE_INVALID`, but do not
+turn this no-output API into a whole-video snapshot, content-hash system, or
+adversarial integrity claim. Container duration remains required for VFR.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

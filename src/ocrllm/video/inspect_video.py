@@ -21,7 +21,7 @@ from .read_video_duration import read_video_duration
 def inspect_video(source: str | Path) -> VideoInfo:
     """Return validated metadata after decoding the first frame of one MP4."""
     source_path = Path(source)
-    _validate_mp4_source(source_path)
+    source_identity = _validate_mp4_source(source_path)
     cv2 = load_opencv()
 
     with open_video_capture(source_path, cv2=cv2) as capture:
@@ -73,14 +73,21 @@ def inspect_video(source: str | Path) -> VideoInfo:
                     code="VIDEO_INVALID",
                 ) from None
 
+            duration_seconds = read_video_duration(source_path)
+            if _validate_mp4_source(source_path) != source_identity:
+                raise InvalidSource(
+                    "The video source changed while it was being inspected.",
+                    code="SOURCE_INVALID",
+                ) from None
+
             return VideoInfo(
                 frame_count=frame_count,
                 frames_per_second=float(frames_per_second),
-                duration_seconds=read_video_duration(source_path),
+                duration_seconds=duration_seconds,
                 width_pixels=width_pixels,
                 height_pixels=height_pixels,
             )
-        except (DependencyMissing, VideoError):
+        except (DependencyMissing, InvalidSource, VideoError):
             raise
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -91,7 +98,7 @@ def inspect_video(source: str | Path) -> VideoInfo:
             ) from error
 
 
-def _validate_mp4_source(source_path: Path) -> None:
+def _validate_mp4_source(source_path: Path) -> tuple[int, int, int, int, int]:
     suffix = source_path.suffix.casefold()
     if suffix != ".mp4":
         raise UnsupportedFormat(
@@ -115,6 +122,13 @@ def _validate_mp4_source(source_path: Path) -> None:
             "The video source must be a nonempty regular file.",
             code="SOURCE_INVALID",
         ) from None
+    return (
+        source_stat.st_dev,
+        source_stat.st_ino,
+        source_stat.st_size,
+        source_stat.st_mtime_ns,
+        source_stat.st_ctime_ns,
+    )
 
 
 def _positive_finite_property(value: object, *, name: str) -> float:
