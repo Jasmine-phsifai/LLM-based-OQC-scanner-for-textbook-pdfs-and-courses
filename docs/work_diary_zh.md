@@ -5193,3 +5193,17 @@ Atomic task — Iteration #274: audit the repeatedly stalled clean-package gate 
 **最小实现、独立审计与过度设计复查。** 维护脚本只把归档源码 pytest 的 `-q` 换成 `-ra`。以后若 1,200 秒超时前没有 session header，可确认仍停在 uv 环境准备；若 header 已出现，则是测试收集/执行阶段。轻量只读审计提出建立命名 venv、分成依赖安装与 pytest 两个进程；本人复核后拒绝：这会改变 `uv run --isolated` 的环境语义，而且两个各自 1,200 秒的 bound 会悄悄扩大总时限；要保持原总界限还得再引入共享 deadline 状态。仅为一个可观察边界这样做属于过度设计。当前改动不改变依赖/range、resolver、index、cache、retry、下载方式、同一 uv 进程、1,200 秒总 bound、taskkill 清理或后续 profile。
 
 **验证与边界。** gate controller 的 timeout、成功、非零退出、安装约束和组合视频静态回归为 **5 passed in 1.95s**；PowerShell AST 解析、`compileall -q src tests`、`git diff --check` 通过；带既有 Node 路径的完整离线套件为 **1,542 passed in 57.56s**。本轮没有运行 clean gate、没有下载、没有 provider/live/付费调用，也没有产品运行时、依赖、API、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。普通 installed combined-video 门禁仍开放，不因日志改进而声称通过；压力性鲁棒测试仍只能在相关 basic installed/live 流程成功后，作为独立、有界、问题驱动且验证清理的轮次进行。
+
+## #275 — 2026-08-25：直接证明隐式 DashScope 的 slot 写入失败仍记真实模型
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #275: prove the remaining untested #273 branch through the public API: when an implicit-default built-in DashScope image call succeeds but persisting its resume slot fails, the raised output error must name the actual baseline model, disclose exactly one provider call, preserve settled workflow/token evidence, and leave no false completed output. Success means reconciling current authority, the latest Chinese diary, package rules, existing slot-persistence failure tests, DashScope lifecycle behavior, output cleanup, and resume identity; adding one focused public regression before changing runtime; changing product code only if that regression exposes a caller-visible defect; preserving credentials, provider policy, candidate behavior, checkpoint format, public signatures, legacy/social boundaries, #127/#152, and frozen `contracts/worker`; then running proportional/full offline tests, updating records, committing, and pushing. This matters because #273’s code covers output failures, but a mature audit trail needs direct evidence for the paid-call-then-disk-failure path rather than relying only on branch inspection.
+```
+
+**复核、两条路线与证据变化。** 现有 `test_atomic_state_save_failure_publishes_no_output_or_temporary_state` 已经通过 public `recognize()` 使用隐式 built-in DashScope，fake adapter 完成一次调用，再让首次 slot 的原子 `os.replace` 失败。它已经断言 typed `OUTPUT_WRITE_FAILED`、`draft`、一次调用以及最终 Markdown/state/temp 全部不存在，唯一缺口是没有检查 #273 新修正的 attempt model。路线一是再建一套几乎相同的 DashScope adapter fixture；路线二直接增强这条精确生命周期测试；选择路线二。检查也修正了原任务的一点表述：该 fake DashScope response 不报告 token，所以“保存 token 证据”的诚实结果应是没有 `settled_model_usage`，而不是凭空生成计数。
+
+**实现与验证。** 只给既有回归增加 `model_attempts` 精确断言：唯一条目是 baseline `qwen3.7-plus-2026-05-26`、`OUTPUT_WRITE_FAILED`、一次 provider call，并断言没有伪造的 `settled_model_usage`。当前 #273 runtime 直接通过 **1 passed in 0.16s**，因此没有为了形式制造 failing-first，也没有改产品代码。image resume、DashScope adapter、candidate maturation、M2 slot 和 output 相邻集为 **92 passed in 2.85s**；`compileall -q src tests` 与 `git diff --check` 通过；带既有 Node 路径的完整离线套件为 **1,542 passed in 57.58s**。
+
+**过度设计复查。** 新增重复 fake client、给内部 `OutputError` 建共享 ledger helper、把 token 字段强制塞进不报告 usage 的 DashScope response，或修改 checkpoint schema 都不能增加当前真实保证，只会提高理解成本，明确不做。本轮无 runtime、API、provider、credential、网络/live/付费、依赖、断点格式、retry/fallback、legacy/social、#127/#152 或 frozen `contracts/worker` 变化；普通 installed/live 和后续压力性鲁棒门禁的顺序不变。

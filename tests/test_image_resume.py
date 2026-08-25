@@ -821,6 +821,16 @@ def test_atomic_state_save_failure_publishes_no_output_or_temporary_state(
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
     assert captured.value.details["workflow_pass"] == "draft"
     assert captured.value.details["provider_calls_attempted"] == 1
+    assert tuple(
+        dict(item) for item in captured.value.details["model_attempts"]
+    ) == (
+        {
+            "model": "qwen3.7-plus-2026-05-26",
+            "outcome": "OUTPUT_WRITE_FAILED",
+            "provider_calls_attempted": 1,
+        },
+    )
+    assert "settled_model_usage" not in captured.value.details
     assert len(calls) == 1
     assert not (output_dir / "board_board.md").exists()
     assert not _state_path(output_dir).exists()

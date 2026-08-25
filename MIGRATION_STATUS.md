@@ -968,6 +968,11 @@ The following directions remain traceable but are not current work:
   network/cache/retry behavior, and cleanup are unchanged. Gate-control tests
   pass 5 and all 1,542 offline tests pass. No download or clean gate ran; the
   ordinary installed combined-video proof and later stress gate remain open.
+  #275 adds direct public evidence for #273's output-failure branch without a
+  runtime change. One implicit built-in DashScope draft succeeds, atomic slot
+  persistence fails, and the typed ledger names the pinned baseline with exactly
+  one call and no fabricated token usage. No final Markdown, state, or temporary
+  file survives; 92 related and all 1,542 offline tests pass.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

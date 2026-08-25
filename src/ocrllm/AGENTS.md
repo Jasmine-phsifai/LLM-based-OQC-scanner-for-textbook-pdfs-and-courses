@@ -455,6 +455,12 @@ implicit built-in DashScope attempt under the pinned baseline model for success,
 provider failure, and output failure, while leaving caller config, resume identity,
 explicit candidates, injected providers, catalog checks, and configuration-error
 redaction unchanged. Do not add an early normalization or shared identity layer.
+#275 directly covers the implicit-default DashScope checkpoint-write failure:
+after one paid draft, `OUTPUT_WRITE_FAILED` must retain the pinned baseline,
+one attempted call, and the draft workflow pass while publishing no output,
+state, or temporary file. Do not invent token evidence when the adapter reported
+none, duplicate the same lifecycle fixture, or change runtime/checkpoint format
+for this characterization.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

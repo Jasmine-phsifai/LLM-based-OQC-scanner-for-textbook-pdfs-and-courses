@@ -1684,6 +1684,19 @@ failure redaction are unchanged. The causal public regression failed 1 / selecte
 suite passes 1,542. Do not turn this provider-specific accounting correction into
 early config normalization or a general provider model-identity layer.
 
+#275 directly proves #273's remaining output-failure branch without changing
+runtime. The existing public resume regression already performs one implicit
+built-in DashScope image call and then forces the first slot's atomic state
+replacement to fail. It now requires the `OUTPUT_WRITE_FAILED` attempt row to
+name `qwen3.7-plus-2026-05-26`, disclose exactly one call, and retain `draft` as
+the workflow pass. Because that DashScope fake returns no usage, the error must
+not invent `settled_model_usage`. The same regression continues to prove that no
+final Markdown, state sidecar, or temporary file survives. The direct test passes,
+image-resume/DashScope/candidate/slot/output neighbors pass 92, and the complete
+offline suite passes 1,542. This is
+characterization of the already-correct #273 runtime, not another ledger layer,
+provider response protocol, or checkpoint-format change.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
