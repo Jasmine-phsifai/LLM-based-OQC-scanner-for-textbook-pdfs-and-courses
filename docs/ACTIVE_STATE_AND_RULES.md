@@ -1575,6 +1575,30 @@ disposition neighbors pass 135 tests; the complete offline suite passes 1,540.
 No network, live provider, retry, automatic queue, key rotation, fallback,
 provider framework, or frozen-boundary change was made.
 
+#270 closes one shipped-package usability gap without changing the public API.
+The root README already named the correct native-Google combined-video extras
+and described separate image/audio configs, but it did not show the required
+`recognize_video()` call or the status-gated composition/publication sequence.
+It now includes one concrete DashScope-image plus Google-audio example, the
+exact union of optional extras that example needs, explicit independent
+`Config` values, a fully-failed-outcome guard, memory-only composition, and
+caller-owned atomic Markdown publication. The example reads its selected
+Google audio model from a caller environment value; this is example input, not
+a new library configuration source or hardcoded support list.
+
+The adjacent warning keeps the actual boundary visible: live catalog membership
+does not prove audio compatibility, the combined video audio consumer remains
+the native-Google short-MP3 path with a 300-second decoded limit, and automatic
+long-audio video routing is unavailable. The fenced code compiles, all imported
+names and signatures match the public package, and both config values construct
+without media or provider I/O. Public video/composition/publication/import
+neighbors pass 64 tests; the complete offline suite passes 1,540 after making
+the repository's known Node executable visible. No runtime, test framework,
+dependency, provider call, credential, legacy/social, #127/#152, or frozen
+boundary changed. The previously recorded stress/robustness authority remains
+unchanged: later tests follow the relevant basic installed/live proof and stay
+separate, bounded, question-driven, and cleanup-verified.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

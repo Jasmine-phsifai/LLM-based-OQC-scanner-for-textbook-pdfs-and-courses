@@ -155,6 +155,67 @@ For the complete native-Google combined-video workflow:
 pip install ".[video,image,audio,google]"
 ```
 
+For DashScope frame recognition with independent Google audio recognition:
+
+```powershell
+pip install ".[video,image,audio,dashscope,google]"
+```
+
+### Combined-video example with separate providers
+
+```python
+from os import environ
+from pathlib import Path
+
+from ocrllm import (
+    AudioModelSettings,
+    Config,
+    DashScopeSettings,
+    GoogleGenAISettings,
+    VisionModelSettings,
+    compose_video_result,
+    publish_video_result,
+    recognize_video,
+)
+
+
+image_config = Config(
+    provider=DashScopeSettings.for_region("cn-beijing"),
+    vision_model=VisionModelSettings(name="qwen3.7-plus-2026-05-26"),
+)
+audio_config = Config(
+    provider=GoogleGenAISettings(),
+    audio_model=AudioModelSettings(
+        name=environ["OCRLLM_GOOGLE_AUDIO_MODEL"],
+    ),
+)
+
+outcome = recognize_video(
+    "lecture.mp4",
+    output_dir=Path("video-work"),
+    image_config=image_config,
+    audio_config=audio_config,
+)
+if outcome.status == "failed":
+    raise RuntimeError(
+        "video recognition failed; inspect frame_error and audio_error"
+    )
+
+result = compose_video_result(outcome)  # memory-only
+published = publish_video_result(outcome, Path("lecture.md"))
+print(result.status, published.output_path)
+```
+
+The image and audio configurations are independent; the example intentionally
+uses different built-in providers. Set `OCRLLM_GOOGLE_AUDIO_MODEL` only after
+checking current IDs with `list_google_genai_models()` and proving audio support
+with a small request: catalog membership alone does not prove that a model
+accepts audio. The current combined-video audio branch is the native-Google
+short-MP3 path and rejects more than 300 decoded seconds. Automatic long-audio
+video routing is not implemented. `recognize_video()` retains media and returns
+typed branch evidence; only a complete or partial outcome can be composed or
+published as final Markdown.
+
 ### Built-in DashScope example
 
 ```python
