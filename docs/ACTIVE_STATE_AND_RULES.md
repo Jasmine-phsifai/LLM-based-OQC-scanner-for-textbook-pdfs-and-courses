@@ -2069,6 +2069,28 @@ for a generalized transaction, manifest, cross-process lock, or publication
 rewrite. No runtime, API, dependency, output layout, legacy compatibility,
 frozen boundary, or open #127/#149/#152 choice changed.
 
+#200 refreshes the concrete Windows path-limit evidence without widening the
+path contract. The active host reported `LongPathsEnabled=0`. A bounded external
+probe generated one real MP4 at a short path, then successfully created a
+caller output parent of 247 UTF-16 units. The normalized final directory was
+254 units, but the first retained JPEG would have been 280 units and its UUID
+staging counterpart about 324 units. Public `extract_video_frames()` returned
+typed `OutputError(code="OUTPUT_PATH_INVALID")`; no final directory, JPEG, or
+staging artifact existed, and the exact disposable root including the source
+was removed. The probe used no `\\?\` prefix, provider, network, credential,
+dependency installation, or repository artifact. The existing controlled
+near-259 ASCII and supplementary-Unicode success regressions both pass.
+
+This proves honest failure and cleanup on the tested host, not arbitrary Windows
+long-path support. It also shows that the current function can finish local
+inspection/selection before discovering that later output components are too
+long. No registry-aware limit calculation, interpreter-manifest detection,
+preflight probe directory, extended-path rewriting, or staging-lifetime refactor
+is added: those mechanisms would duplicate operating-system policy, retain a
+race with actual publication, and complicate a provider-free path that does not
+report false success. No runtime, API, dependency, output layout, legacy
+compatibility, frozen boundary, or open #127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

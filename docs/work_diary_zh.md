@@ -4095,3 +4095,17 @@ Atomic task — Iteration #199: identify and close one evidence-backed resource-
 **补齐的真实回归。** 已有真实 MP4 测试会让第二张 JPEG 的 `cv2.imencode()` 返回失败，并验证 typed `OUTPUT_WRITE_FAILED`、无最终目录、无 staging。此次没有另造 fixture，而是在同一测试中跟踪 public call 实际打开的全部 `cv2.VideoCapture`；异常返回后逐个确认 `isOpened()` 为 false，再立即删除源 MP4 并确认不存在。这同时覆盖 inspect、候选扫描、selected-frame 写出和 Windows 文件锁结果，不依赖 provider。精确测试 **1 passed in 0.19s**；inspect/extract 合集 **21 passed in 1.15s**。运行时代码无需修改。
 
 **新发现的取消提交点与过度设计复查。** 轻量只读审计用故障注入复现：若 `os.rename(staging_root, target_root)` 已真实完成、但在下一行 `published = True` 前抛 `KeyboardInterrupt`，调用会传播取消，而完整目标目录保留。这属于 #127 的取消语义选择；当前不能擅自写测试冻结。此时自动删 target 可能误删被外部进程替换的目录，吞掉取消又等于选择公开语义。更重要的是，它是需要特制“rename 成功后再抛异常”才能复现的极窄窗口，不足以证明应新增跨进程锁、manifest、事务系统或回滚身份层。结论是登记并提问，不改 runtime；普通异常的成熟度证据已经补齐。无网络、provider、凭据、依赖、API、输出布局、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策变化。
+
+## #200 — 2026-08-25：真实 Windows 超长输出路径诚实失败且无残留
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #200: verify the shipped video frame-output path against the real legacy Windows path-length failure without adding a general path framework or legacy-format compatibility. Success means reconciling current authority and diary, measuring the exact longest paths produced by the current stem-normalization and staging layout, running one real MP4 through a deliberately long but valid Windows output parent, proving either complete retained JPEG publication or one honest pre-publication typed failure with no residue, and applying only a local filename/path correction if a current-library defect reproduces. This matters because video parsing now works on non-ASCII paths, but the parent product repeatedly failed beyond the traditional 260-character boundary; a Python package must not claim Windows robustness from Unicode coverage alone.
+```
+
+**复核后缩紧任务。** 一开始准备验证长但可用的输出路径；重新读权威状态后确认 #132/#154 已经有真实 MP4 的 96-unit ASCII stem、补充 Unicode stem 和接近 259-unit 成功回归，重复它们没有价值。于是本轮改为验证尚未精确记录的另一半：调用者父目录可以创建，但最终 JPEG 和 staging 路径会越过本机系统边界时，library 是否诚实失败并清干净。路线 A 是加入 `\\?\` 重写、注册表/解释器 manifest 判断或探针目录；路线 B 是先做真实主动检查，只在出现假成功、错误类型失真或残留时修。选择 B。
+
+**真实主动检查。** 当前机器注册表 `LongPathsEnabled=0`。轻量任务在仓库外的唯一 `D:\ocrllm-i200-*` disposable root 生成一个小型真实 MP4；成功创建 247 UTF-16 units 的 `output_dir`。归一化最终目录为 254 units，第一张 `frame-00000000.jpg` 会达到 280 units，UUID staging 中对应 JPEG 约 324 units；没有人为加入 `\\?\`。公开 `extract_video_frames()` 返回 `OutputError(code="OUTPUT_PATH_INVALID")`，最终目录、JPEG、staging 都不存在；整个临时根（包括源 MP4）成功删除，证明没有遗留文件锁。第一次 controller 命令在执行前因 PowerShell 引号错误产生 `SyntaxError`，没有创建任何东西；改用 stdin 后唯一有效检查得到上述结果。无 provider、网络、凭据、安装或仓库文件。
+
+**结论、验证与过度设计复查。** 结果证明的是“本机诚实拒绝”，不是“library 支持任意 Windows 长路径”。已有两个近边界成功测试重跑为 **2 passed in 0.23s**。当前确实会在完成 provider-free inspection/selection 后才发现 staging 不可创建，对长视频有本地时间浪费；但读取注册表并不能完整代表 Python/文件系统能力，路径长度预计算仍不能消除发布竞态，提前创建探针目录又增加可见副作用和生命周期。没有假成功、provider 浪费或残留证据时，为优化这一极端失败增加平台策略层属于过度设计。本轮只补准确产品说明和权威证据，不改 runtime/API/dependency/output layout、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。

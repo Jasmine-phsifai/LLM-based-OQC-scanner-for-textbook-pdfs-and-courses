@@ -340,7 +340,11 @@ together under `output/lecture/frames/` and rejects an existing
 `output/lecture` instead of overwriting or resuming it. On Windows, retained
 JPEG bytes are written through
 Python's file API after OpenCV encoding, so non-ASCII source and output parents
-do not depend on OpenCV's filename encoding. This is not a fine-gap scene
+do not depend on OpenCV's filename encoding. Source-derived directory names are
+capped, but caller-supplied output parents are not shortened or converted to
+Windows extended paths. On a host with Windows long paths disabled, a retained
+JPEG path beyond the traditional limit fails with typed `OUTPUT_PATH_INVALID`
+and publishes no target or staging artifact. This is not a fine-gap scene
 detector: content that appears entirely between two coarse samples can be
 absent from the retained tuple. `recognize_video_frames()` accepts only the exact
 ordered tuple returned by this library and reuses ordinary image recognition

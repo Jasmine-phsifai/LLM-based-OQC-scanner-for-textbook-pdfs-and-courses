@@ -141,6 +141,11 @@ source immediately removable. A fault injected after successful directory
 rename can still propagate cancellation while leaving the completed target;
 that rare commit-point contract belongs to open #127. Do not freeze or “repair”
 it with speculative deletion before the maintainer chooses cancellation policy.
+#200 confirms the video output contract does not provide arbitrary Windows
+extended-path support. A caller-selected deep parent may fail with typed
+`OUTPUT_PATH_INVALID` and no residue when the host disables long paths. Keep
+source-stem capping, but do not add registry checks, `\\?\` rewriting, or probe
+directories merely to reject the path before provider-free scanning.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

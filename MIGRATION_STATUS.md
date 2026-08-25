@@ -580,6 +580,11 @@ The following directions remain traceable but are not current work:
   interruption after successful directory rename can leave a complete target
   while propagating cancellation; it remains part of open #127 rather than
   receiving speculative rollback machinery.
+  #200 rechecks the real legacy path boundary on a Windows host with long paths
+  disabled. A 247-unit caller output parent produced a 280-unit final JPEG path
+  and was rejected as `OUTPUT_PATH_INVALID` with no target, staging artifact,
+  or locked disposable root. This is honest bounded failure, not extended-path
+  support; no registry-aware preflight or path-rewriting layer was added.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate
