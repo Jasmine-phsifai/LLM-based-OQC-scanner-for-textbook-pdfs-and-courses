@@ -5519,3 +5519,17 @@ Atomic task — Iteration #295: execute the unchanged maintained clean-archive g
 **为什么仍不能判定门禁。** 一次性 PowerShell wrapper 没有返回 stdout、stderr 或可靠 numeric exit，因此无法知道 archive 依赖阶段是否完成，也不能声称 pytest、wheel、八个 optional profile 或 installed combined-video smoke 已经开始。这个结果既不是 package success，也不是 package failure，只证明代理前提已修正而证据通道失败。本轮不重跑、不改 pin/index/mirror/cache/retry/timeout，不从 20 分钟时长猜测故障阶段，也不改产品、测试、依赖或维护 gate。普通安装组合视频证明继续开放；以后再运行前，应先用纯本地子进程验证一个小型明确的退出码和日志通道。
 
 **主审、报告核对和过度设计复查。** 本人逐段复核维护 gate：精确 Git archive、归档 suite、wheel/base import、八个独立 extra、安装后组合视频 smoke 和各 1,200 秒内部边界仍在；没有证据要求改 gate 本体。本人确认 `bfdc877`、tracked clean、两份受保护未跟踪文件仍在且 gate 临时根已清理。本轮还根据既有日记逐段核对 #121—#293 的后两批汇报：真实 VFR、旋转、等亮度变色、Unicode/长路径、长音频生命周期、provider 分离、partial outcome 与批次竞态都是有实际输入或因果回归支撑的产品工作；反复运行普通安装门禁并多次因 wrapper、执行策略、代理或下载证据失败，才是最明显的过程性过度展开。后续应把这种机械工作压成一次预先验证控制通道的有界委派，而不是删除已证明的媒体边界处理，也不新建通用安装编排框架。
+
+## #296 — 2026-08-26：全新安装门禁复用标准子进程证据通道，不新增控制器
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #296: resolve the proven local evidence-capture weakness that invalidated #295, without downloading dependencies or rerunning the clean-package gate. Success means reconciling the current authority and diary, identifying the smallest existing process-launch seam, reproducing stdout/stderr and numeric-exit loss with a bounded local child, choosing between reusing an existing controller and making one narrow correction, and proving success/failure/timeout behavior locally; no product API, dependency, provider, proxy, retry, installer, legacy/social, or frozen-boundary change; then update the existing Chinese/current-state records, commit, and push. This matters because future delegated installation checks are worthless if their terminal evidence can disappear, while a general orchestration framework would repeat the over-design we just identified.
+```
+
+**重读后的假设变化与路线。** 起初比较两条路线：A 复用已有进程控制；B 在仓库新增一个小 controller。代码审查发现维护 gate 内部的 `Invoke-BoundedProcess` 已经直接处理阶段启动、超时、进程树终止和退出码，并有 Windows 成功、非零退出和 timeout 回归；#295 丢证据的是仓库外一次性 `Start-Process` wrapper。于是拒绝 B。再增加 repo controller 会形成第二套生命周期和日志规则，理解成本大于收益。
+
+**本地三态证明。** 第一次直接工具探针完整保留成功/失败两路文本，但外层 shell 把子退出 7 归一为 1，只能证明成功或失败，不能保留精确子码。随后两次 Python `-c` 尝试在进入 Python 前被 PowerShell 引号解析拒绝，均没有启动目标子进程、改文件或运行 gate。这些失败进一步证明复杂单行 wrapper 不可靠。本人用 `apply_patch` 创建一份可审阅的临时 Python 探针，以标准库 `subprocess.run()` 运行三个纯本地 Python child：成功得到 exit **0**、stdout `child-out`、stderr `child-err`；失败得到精确 exit **7** 和同样两路输出；一秒 timeout 得到明确 `timed_out=true` 且保留已 flush 的 `timeout-out`。验证后立即用 `apply_patch` 删除临时探针，工作树不保留新工具。
+
+**进程树补充与验证。** 主审随后发现 `subprocess.run(timeout=...)` 只直接承诺终止被启动进程，真实 gate 还可能拥有下载后代，不能把单进程 timeout 当作完整生命周期证明。第一份树探针在 timeout 异常对象里没有取得后代 PID，自身以 `IndexError` 结束；本人立即用唯一命令行片段只读定位本轮 parent **11292** 和 child **25884**，再对明确拥有的 parent 执行一次 `taskkill /PID 11292 /T /F`，确认两者均不存在。修正后的临时探针先同步读取自有后代 PID，再以 Python `Popen` 外层 timeout 和精确 `/T /F` 清理该树，终态为 `tree_kill_returncode=0`、parent/descendant 均 absent；探针随后删除。`tests/test_stage_m_offline_gate.py` 为 **5 passed in 1.95s**，覆盖 gate 内部 timeout、成功/非零退出、现有两个有界网络阶段和安装后组合视频静态合同。本轮没有网络、下载、安装、provider、凭据、产品代码、依赖、公开 API、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。后续轻量执行者可直接用标准 Python 子进程通道包住未修改 gate，显式传代理、预设外层时限，并仅在外层 timeout 时清理明确拥有的进程树；不再套 `Start-Process`，也不提交 controller。普通 installed `[video,audio,image]` 证明仍开放，本轮不因通道已证明而立即重放。

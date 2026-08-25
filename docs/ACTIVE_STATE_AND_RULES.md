@@ -5122,6 +5122,26 @@ installer/controller from this evidence-capture failure. A later attempt must
 use one small status channel whose exit and logs are proven locally before any
 download begins.
 
+## Iteration 296: reuse a proven local process channel; add no controller
+
+The #295 evidence loss belongs to its disposable outer `Start-Process`
+wrapper, not to the maintained gate's own bounded-process helper. The existing
+Windows regressions already prove the helper's success, exact nonzero-exit, and
+timeout paths. A separate local-only probe proved that Python's standard
+`subprocess.run()` retained child exits 0 and 7, both stdout and stderr, and
+partial stdout on timeout. A second owned-process probe proved that a Python
+`Popen` outer bound followed by exact Windows `taskkill /PID <owned> /T /F`
+removed both the test parent and its descendant. The probe files were removed
+after review.
+
+A future delegated gate may use that standard-library channel directly around
+the unchanged PowerShell gate, with explicit proxy environment, a pre-armed
+outer bound, and owned-tree termination if that outer bound fires. Do not wrap
+it again with `Start-Process`, add a repository
+controller, or replay the download merely because the evidence channel is now
+known. The installed combined-video proof remains open; #296 changes no
+package, dependency, runtime, provider, or public boundary.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

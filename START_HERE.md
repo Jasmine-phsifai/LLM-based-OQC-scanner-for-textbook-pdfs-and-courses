@@ -620,6 +620,15 @@ wrapper did not retain stdout, stderr, or a numeric exit code. Its roughly
 gate remains open; do not immediately replay it or infer a dependency defect.
 Before a later run, prove the wrapper's status/log channel with a local child.
 
+#296 completes only that local prerequisite. Python standard-library
+`subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
+timeout marker; an owned local parent/descendant probe also proved exact
+Windows process-tree termination after an outer timeout. The gate's own five
+bounded-process regressions pass. Future delegated execution should reuse that
+standard-library channel and owned-tree cleanup, and must not add another
+`Start-Process` wrapper or repository controller. This is not evidence that the
+clean installation itself passes.
+
 Its implementation and budgets are defined in
 `docs/ocrllm_library_go_no_go.md`. Do not run the DashScope live gate until a
 recognized credential and explicit paid-call budget exist, the exact

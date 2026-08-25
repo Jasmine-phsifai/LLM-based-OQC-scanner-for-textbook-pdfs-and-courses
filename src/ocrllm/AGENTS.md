@@ -657,6 +657,15 @@ later delegated run, locally prove the small status/log channel; do not add a
 second installer, retry immediately, or change package dependencies from this
 operator-evidence failure.
 
+#296 proves the approved channel locally: Python standard-library
+`subprocess.run()` preserves exact child exit, stdout, stderr, and timeout
+output here; a separate local parent/descendant probe proves owned Windows tree
+termination when an outer bound fires, and the maintained gate's own
+bounded-process tests pass. Reuse that standard-library channel and exact
+owned-tree cleanup for a later delegated run with explicit proxy environment.
+Do not put another `Start-Process` wrapper around it or treat this local proof as
+an installed-package result.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

@@ -1201,6 +1201,13 @@ The following directions remain traceable but are not current work:
   unknown, not failed or passed. No library boundary, dependency, or runtime
   changed; the next attempt must first prove its local status channel and must
   not immediately replay this download workflow.
+  #296 proves that prerequisite without another download: a disposable local
+  Python `subprocess.run()` probe retained exact exits 0 and 7, both output
+  streams, and timeout output. A separate owned parent/descendant probe proved
+  exact Windows tree termination after the outer timeout, while all five
+  existing gate process regressions passed. The probes were deleted and no new
+  controller or package boundary was added. The installed combined-video
+  result remains unknown and open.
 
 ## Obsolete Prose Kept For Trace
 
