@@ -218,6 +218,10 @@ catalog or proof that catalog membership implies audio support.
 `KeyboardInterrupt`/`SystemExit` while still attempting client close and local
 snapshot cleanup. Keep the nested provider-specific `try/finally`; do not map
 the signal, add retry, or create a general lifecycle manager.
+#217 confirms combined video already keeps image and audio ownership in two
+independently snapshotted `Config` values. Do not replace them with a shared
+video config, provider superclass, routing registry, or legacy format adapter
+without a new concrete consumer and maintainer decision.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -2496,6 +2496,21 @@ mapping, A2b scope, video routing, retry, fallback, and frozen boundaries are
 unchanged. Do not turn this local ordering fix into a generic provider resource
 manager or catch process-control exceptions as provider failures.
 
+#217 re-audits the combined video's already-shipped image/audio provider
+separation and finds no runtime defect to repair. `recognize_video()` snapshots
+and validates the two exact `Config` values independently; only the validated
+image config reaches retained-frame grouping and ordinary image recognition,
+while only the validated audio config reaches MP3 validation and recognition.
+Their provider, model, execution policy, cancellation signal, and temporary
+directory therefore remain branch-owned. Real local MP4 regressions cover an
+injected image provider plus native-Google audio boundary, multiple retained
+frame groups, distinct Unicode temporary roots, and either branch failing while
+the other remains usable; the focused separation/import selection passes 10.
+Plain import remains lazy. This evidence does not add a second audio provider or
+claim a new live-provider run. Do not introduce a provider superclass, shared
+video config, routing registry, or legacy compatibility layer merely to restate
+separation that the two public configs already execute.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

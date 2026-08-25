@@ -665,6 +665,13 @@ The following directions remain traceable but are not current work:
   publication writes UTF-8 Markdown to the complete caller-owned path; `.md` is
   recommended but not enforced. A mandatory suffix would be a new breaking
   product decision, not migration compatibility or a proven runtime defect.
+  #217 re-audits the combined Python-library boundary and confirms that the two
+  public configs already provide executable image/audio separation: branch
+  provider, model, execution policy, cancellation, and temporary storage do not
+  cross. Real local MP4 regressions for multigroup retention, distinct Unicode
+  temp roots, and independent branch failure pass together with lightweight
+  import. No runtime, provider abstraction, legacy format, or new live claim was
+  justified.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

@@ -4339,3 +4339,17 @@ Atomic task — Iteration #216: harden the already-shipped standalone Google Fil
 **两条路线与最小修复。** 路线 A 只在 remote delete 周围增加一层嵌套 `try/finally`，让现有 client close 无论如何都被尝试；路线 B 建立跨 provider resource manager、统一 cleanup error 类型或捕获进程控制异常。选择 A。修复没有把 `KeyboardInterrupt`/`SystemExit` 映射成 `ProviderError`，也没有吞掉或复制它；同一个对象继续自然传播。generation 已经进入时内部 attempted call 事实仍为 1，但进程控制异常不被强加公共 details。普通 delete exception 仍变成 cleanup-failed/partial warning，typed primary error 仍优先，client close helper 和 local snapshot 所有权不变。
 
 **验证与过度设计复查。** 新的两条 process-control 路径和全部 long-MP3 adapter 为 **22 passed in 0.06s**；Google image、short/long audio、long-MP3 probe、audio smoke 与轻量 import 相邻集合为 **101 passed in 1.76s**；完整离线套件为 **1,488 passed in 62.18s**。`compileall -q src tests`、`git diff --check` 与 frozen `contracts/worker` diff 通过。没有网络、真实 provider、credential、依赖安装、public signature/result schema、legacy、social、A2b chunk/resume、视频路由、retry/fallback/model switch 或 #127/#152 选择。最容易过度设计的是因此重写所有 Google/DashScope adapter cleanup、增加 ExitStack/lifecycle class 或把进程控制转成 typed provider error；真实缺陷只在这一份 upload→delete→close 顺序，局部嵌套足够。
+
+## #217 — 2026-08-25：确认视频图片/音频 provider 分离已经是真实执行边界
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #217: verify the already-built video runner’s image-provider/audio-provider separation at the public Python-library boundary, and fix at most one reproducible routing or error-honesty defect without adding provider generalization, legacy compatibility, chunking, or cancellation semantics. Success means reconciling the authoritative state and diary; tracing one real video execution from parsing through negative-feedback frame selection, retained-image publication, and the separate audio route; proving with a deterministic regression whether each provider receives only its owned media; applying the smallest correction if a defect exists; preserving lightweight `import ocrllm`, caller ordering, frozen `contracts/` and `worker/`, and existing provider-call accounting; running proportional tests; updating the Chinese diary/current-state documents; and committing/pushing one coherent change. This matters because provider separation is a stated product requirement, and a clean library boundary must be proven by execution rather than inferred from class names.
+```
+
+**代码追踪与独立审计。** 主代理从 `recognize_video()` 逐段追到配置快照、图片配置预检、负反馈留图、八图分组、普通图片识别、音频提取、MP3 配置预检和短音频识别；轻量只读审计独立检查同一条路径。没有复现配置串线：两个公开 `Config` 分别复制和验证，图片分支只收到 `validated_image_config`，音频分支只收到 `validated_audio_config`。provider、模型、执行策略、取消信号和 `temp_dir` 都随各自分支传递。当前音频实现仍明确只支持 native Google short-MP3；这不妨碍图片使用 Google、DashScope、注入 provider 或本地 OCR，也不等于已经有第二种音频 provider。
+
+**两条路线与选择。** 路线 A 在没有失败证据时创建 provider superclass、视频 routing registry 或共享 config；路线 B 复跑已有真实本地 MP4 证据，确认需求已被当前小结构满足，然后停止加码。选择 B。现有回归不是只测函数名：真实 MP4 经过解析、五秒候选、负反馈筛选和 JPEG 留取；注入图片 provider 只收到图片 snapshot，fake native-Google 音频边界只收到 MP3 snapshot；多组留图仍按 8+2 进入图片侧，Unicode 场景的两个临时根互不混用，任一 branch 失败时另一 branch 的结果和资产仍保留。
+
+**验证与过度设计复查。** 主代理选取上述真实媒体、分支失败和轻量 import 回归，结果 **10 passed in 2.67s**；独立审计的更宽视频/帧/import 选择为 **34 passed in 6.05s**。本轮没有 runtime、test、public API、manifest、dependency、network、credential、live provider、legacy、social、A2b、#127 或 frozen `contracts/worker` 变化，因此不机械重跑全量测试或 wheel。最接近过度设计的是把“两个配置已经分开”改造成未来多 provider 框架，或为测试再造一层 spy/router；现有真实 MP4 与两条实际 dispatch 路径已经给出直接证据，继续抽象只会增加后来阅读成本。
