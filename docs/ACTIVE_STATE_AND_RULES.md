@@ -3077,7 +3077,7 @@ runner printed neither transcript, source path, credential, remote URI, nor raw
 provider response. Stage A2a is complete; A2b chunk/checkpoint work and video
 routing remain separate future gates.
 
-#152 now has a selected product direction but one unresolved boundary detail.
+#152 now has a fully selected first-slice product direction.
 The shipped A2a
 path is a sound one-request lifecycle, but it cannot preserve any transcript
 when a long generation fails or the process stops. The legacy Google path gives
@@ -3107,12 +3107,11 @@ Repair remains a small, explicit side path rather than the primary production
 recovery mechanism. It may parse failed-slice text to obtain concrete time
 ranges and resubmit those ranges without depending on retained run-parameter
 state. It does not authorize legacy Markdown compatibility, broad fuzzy parsing,
-or a second recovery architecture. The only remaining contract question is
-whether interval chunks retain the previously recommended fixed 30 seconds of
-boundary context, use another fixed overlap, or use no overlap. Do not implement
-chunk extraction/checkpoints until that identity-affecting detail is answered.
+or a second recovery architecture. Interval chunks retain a private fixed 30
+seconds of context on each side of every interior logical interval. The overlap
+is not configurable.
 
-#302 makes that open choice precise. In the legacy parent,
+#302 supplied the evidence used by #304. In the legacy parent,
 `audio_overlap_seconds=30` pads every interior logical interval by 30 seconds on
 both its left and right. Two adjacent physical inputs therefore share 60 seconds,
 not 30. The prompt asks the model to emit only the logical interval and final
@@ -3122,13 +3121,12 @@ duration is 100% at one-minute intervals, 20% at five-minute intervals, and 3.3%
 at 30-minute intervals. The focused legacy Google-window and repair set passes
 38 tests, proving window and saved-range behavior but not transcription quality.
 
-The current recommendation is the smallest parent-proven option: keep a private
+The selected contract is the smallest parent-proven option: keep a private
 fixed 30 seconds on each side, record exact actual and logical windows in temporary
 resume identity, let repair derive the same context from a failed logical range,
 and add neither a public overlap setting nor programmatic transcript deduplication.
-This is still a recommendation, not implementation authority. The maintainer must
-explicitly accept the one-minute doubling cost or choose zero overlap; there is no
-evidence for inventing another fixed duration.
+The maintainer explicitly accepts the approximate one-minute doubling cost.
+There is no evidence for inventing another fixed duration.
 
 #208 found that #152 also needs an explicit source-lifetime and overlap choice,
 and that the current A2a duration check is not a complete selected-model
@@ -3145,8 +3143,9 @@ lookup, or post-upload token-count request was added in this iteration.
 The selected source-lifetime rule requires the caller's original MP3 to remain
 present and strongly unchanged for resume instead of retaining another
 potentially 2 GB source copy. Integer-minute interval length is caller-visible;
-overlap is not yet selected. The first slice does not add text-similarity
-deduplication. Short fixed segments keep the persisted route far from model
+overlap is the private fixed 30 seconds per side selected in #304. The first
+slice does not add text-similarity deduplication. Short fixed segments keep the
+persisted route far from model
 context ceilings; the explicit whole-file route still uses the selected-model
 preflight rather than claiming the 9.5-hour duration check alone is sufficient.
 
@@ -5360,6 +5359,37 @@ strategy. The gate controller, wheel selection, inline typing, and lightweight-
 import neighbors pass 21 tests, and the PowerShell script parses with zero AST
 errors. The complete source-tree offline suite remains green at 1,559 tests;
 that result does not substitute for the open clean-install proof.
+
+## Iteration 304: the A2b overlap and recovery boundary is selected
+
+The maintainer selected overlap option A and reconfirmed Route B. The future
+long-audio surface keeps an explicit whole-file operation and an explicit
+interval-chunked operation; interval length accepts exact integer minutes only.
+Every interior logical interval receives a private fixed 30 seconds of context
+on each side. Exact logical and actual windows, mode, and interval identity are
+temporary resume state and may be discarded after successful final publication.
+There is no public overlap option and no programmatic transcript deduplication.
+
+Resume remains the production recovery path. Repair remains a small side path:
+it may parse a concrete failed time range from produced text and resubmit that
+range without the former temporary parameters. It does not import legacy
+formats, add fuzzy recovery, or justify a second checkpoint architecture.
+
+External downloads and full-install gates treat the maintainer's active proxy
+as a precondition. Verify WinINET, TCP, and one explicit HTTPS request through
+the current endpoint before classifying a network failure, then pass proxy
+variables to the delegated child. This is a test/download workflow rule, not
+permission for the library to modify system proxy settings. DashScope model
+selection remains live-discovered and bounded to smaller candidates with value
+for formulas, LaTeX, Mermaid, future SVG code, or reasoning; models clearly
+worse than RapidOCR for ordinary OCR and current oversized flagships are out of
+scope. The stored legacy credential may be used only through an isolated test
+controller; the active library must not read UI settings.
+
+No runtime, API, provider hierarchy, checkpoint schema, repair parser, or
+dependency changed in this decision iteration. A generalized provider-class or
+multi-provider-pool refactor remains deferred until the current media and
+recovery paths are stable.
 
 ## Documentation Rules
 

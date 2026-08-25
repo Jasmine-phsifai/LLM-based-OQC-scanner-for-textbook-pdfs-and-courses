@@ -89,11 +89,15 @@ this invariant without adding a configurable sampler or second scene detector.
 `output_dir`. Inspection, comparison, retained decode, and combined audio
 extraction must keep consuming that exact path until request cleanup. Do not add
 a public video-temp option, separate branch snapshots, whole-video memory, a
-generic media cache, or legacy format support. #152 keeps long-audio chunk scope
-partly open: Route B and explicit whole/interval modes are selected, and interval
-length is an integer-minute setting stored only while recovery remains possible.
-Do not implement until the overlap policy is selected. Repair stays a narrow
-failed-time-range side path, not a second recovery system.
+generic media cache, or legacy format support. #152 selects Route B and explicit
+whole/interval modes; interval length is an integer-minute setting stored only
+while recovery remains possible.
+#304 closes the overlap policy with a private fixed 30 seconds of context on
+each side of every interior logical interval. Preserve exact logical and actual
+windows in temporary resumable identity, with no public overlap parameter or
+text-similarity deduplication. Repair stays a narrow failed-time-range side path
+and must not depend on retained mode/interval state or become a second recovery
+system.
 #212 makes cleanup an explicit invariant on normal, invalid-media, returned-
 cancellation, and terminal dual-cancellation exits: no
 `.ocrllm-video-source-*` path or in-process output claim may survive. Preserve

@@ -217,12 +217,11 @@ is often accepted.
   only while work can resume, then allow that temporary state to be discarded
   after the final result is published. The caller's original MP3 must remain
   present and strongly unchanged during resume instead of storing a second
-  long-lived full copy. The remaining decision is overlap: retain the formerly
-  proposed fixed 30 seconds of boundary context, choose another fixed overlap,
-  or use no overlap. Do not implement chunks until this identity-affecting
-  detail is explicit; do not add programmatic transcript similarity/deduplication
-  in the first slice.
-- **#302 overlap evidence and recommendation; decision still open.** The legacy
+  long-lived full copy. The interval route uses a private fixed 30 seconds of
+  context on each side of an interior logical interval. This is not a public
+  parameter. Do not add programmatic transcript similarity/deduplication in the
+  first slice.
+- **#304 accepts #302 overlap option A.** The legacy
   name `audio_overlap_seconds=30` means 30 seconds of context on *each* side of
   an interior logical interval. Adjacent physical inputs therefore share 60
   seconds, not 30. The model prompt tells each request to return only its logical
@@ -231,12 +230,12 @@ is often accepted.
   100% for one-minute intervals, 20% for five-minute intervals, and 3.3% for
   30-minute intervals. Focused legacy window/checkpoint/repair tests prove this
   shape but provide no live quality comparison. The smallest evidence-backed
-  recommendation is to preserve the parent exactly: fixed 30 seconds per side
-  as a private constant, no public overlap parameter, exact actual/logical
-  windows in resumable identity, and no text-similarity layer. This recommendation
-  is not authority to implement: the maintainer must explicitly accept the
-  one-minute cost or select zero overlap. Do not invent a third duration without
-  real comparative evidence.
+  selected contract preserves the parent exactly: fixed 30 seconds per side as
+  a private constant, no public overlap parameter, exact actual/logical windows
+  in temporary resumable identity, and no text-similarity layer. The maintainer
+  explicitly accepts that a one-minute interval can approximately double the
+  submitted audio. Do not invent a third duration without real comparative
+  evidence.
 - **#152 repair boundary.** Repair is a small side path, not the production
   recovery mechanism. It may parse failed-slice text for concrete time ranges
   and resubmit those ranges without depending on retained mode/interval state.

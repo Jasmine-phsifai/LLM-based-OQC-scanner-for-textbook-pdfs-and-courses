@@ -5649,3 +5649,21 @@ Atomic task — Iteration #303: close or truthfully classify the still-open ordi
 **分类、清理与过度设计复查。** 这是外部依赖交付阶段的有界失败，不是 source test、wheel、package runtime 或组合视频失败；日志没有把具体某个下载确定为根因，因此不从耗时猜测。维护 gate 按设计终止并清理，本人复核匹配进程 **0**、`ocrllm-stage-m-offline-gate-*` TEMP 根 **0**，工作树仍只有两份受保护文件。没有证据要求修改 gate。相同条件下继续机械重放、加长 timeout、注入 cache/mirror、repin OpenCV 或新增 controller 都会重复已经识别的流程性过度展开；普通安装证明保持开放，下一次必须有外部分发条件实质变化，或维护者明确选择另一种有界分发证明策略。
 
 **最终验证。** 当前源码完整离线套件 **1,559 passed in 63.20s**，`compileall -q src tests tools` 与 `git diff --check` 均为 exit 0。这只证明 source tree 没有回归，不能替代本轮没有到达的 clean wheel/install/profile/combined-video 证据。
+
+## #304 — 2026-08-26：关闭长音频 overlap 决策，不提前搭通用 provider 框架
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #304: record and reconcile the maintainer's final A2b overlap, recovery, proxy, and DashScope-selection decisions without inventing runtime architecture. Context: Route B already preserves explicit whole-file and integer-minute interval modes, but overlap was the last identity blocker; clean-install work is mechanical and must be delegated. Success means proving the referenced open choices from current authority, selecting one unambiguous contract, updating every current navigation copy and the Chinese diary, making no runtime or schema change, verifying documentation consistency, then committing and pushing. This matters because the next chunking iteration needs one stable identity contract and must not be coupled to speculative repair or provider-pool machinery.
+```
+
+**假设复核与最终决定。** 开始时把维护者的“第一个 A”理解为 #302 的 overlap 选项 A，把“第二个 B”理解为再次确认 #152 Route B。读取当前权威文档后，两者与原问题完全对应：整段式和显式 interval 切片式都保留，interval 只接受整数分钟；内部逻辑区间左右各固定增加 30 秒上下文，相邻实际输入因此共享 60 秒。30 秒是 private constant，不公开配置，也不做文字相似度去重。维护者明确接受一分钟 interval 约翻倍的提交量。
+
+**续传与 repair 边界。** mode、interval、logical/actual windows 只在任务仍可续传时进入临时状态，最终结果成功发布后可以丢弃。resume 是生产主路径。repair 只是侧链小支持：从已经生成的失败切片文字读取明确时间范围并重新提交，不依赖已经丢弃的 mode/interval 参数，不兼容 legacy 格式，不做模糊猜测，也不另建第二套 checkpoint 系统。本轮只关闭产品身份，不抢先发明状态 schema、parser 或事务框架。
+
+**代理、下载与 DashScope。** 下载和完整安装门禁继续交给轻量执行者；网络失败前必须确认 WinINET 代理已开启、当前端口可达，并把大小写 HTTP(S)/ALL proxy 变量显式传给 child。这个规则不授权库修改系统代理。DashScope 从 legacy UI 已存凭据做隔离调测时必须实时拉模型；只考虑能补数学公式、LaTeX、Mermaid、未来 SVG 代码与推理短板的较小候选，不硬编码示例型号，不测明显不如 RapidOCR 的普通 OCR 小模型，也不选“最新超大旗舰”。通用 provider class、多 provider pool 和 fallback 仍是当前媒体与恢复路径稳定后的架构方向，不在本轮建设。
+
+**委派门禁事实与过度设计复查。** 第一个执行者确认 `127.0.0.1:10080` 和经代理 PyPI HTTP 200，但漏写 `-ExecutionPolicy Bypass`，脚本被系统策略拒绝，未进入 gate。第二个执行者纠正命令，却碰到本人正在写决策文档，clean-worktree 前置检查按设计拒绝，同样未进入任何 stage。两次都不是下载、依赖或产品失败，也没有被算作全量证明。先独立提交本轮文档，再从干净提交委派真正门禁，避免为操作错误改脚本、放宽 clean 检查或制造第二套安装器。
+
+**变更范围。** 本轮仅更新当前权威、维护者决策、导航、迁移状态与库内规则；没有 runtime、公开 API、依赖、provider 层次、checkpoint、repair parser、重试、fallback、legacy/social 或 frozen worker/contracts 变化。下一原子实现应先落“整数分钟 logical windows + 每侧固定 30 秒 actual windows”的纯规划层，然后才接临时 resume 状态和真实 provider；不要把 repair 提前混入主路径。

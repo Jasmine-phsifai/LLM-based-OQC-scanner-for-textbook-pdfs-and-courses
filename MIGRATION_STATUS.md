@@ -970,8 +970,10 @@ The following directions remain traceable but are not current work:
   public regressions replace the prior permissive matrix. No new result type,
   exception carrier, checkpoint, coordinator, or extractor cancellation API
   was added. #152 separately selects recoverable Route B with explicit whole
-  and integer-minute interval modes, but overlap remains undecided and no chunk
-  implementation landed in this iteration.
+  and integer-minute interval modes. #304 then selected a private fixed 30
+  seconds of context on each side of every interior logical interval, exact
+  logical/actual temporary resume identity, and no text-similarity deduplication.
+  No chunk implementation landed in either decision iteration.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The
@@ -1215,8 +1217,10 @@ The following directions remain traceable but are not current work:
   existing Google Files lifecycle. A real generated 301-second MP4 reached
   Files exactly once, never entered short recognition, preserved separate image
   work and the retained audio artifact, and removed its owned audio snapshot.
-  General `recognize()` routing, A2b chunks/resume/repair, overlap, and the
-  private 9.5-to-10-hour range remain unchanged.
+  General `recognize()` routing, A2b chunks/resume/repair, and the private
+  9.5-to-10-hour range remain unchanged. #304 subsequently closed the A2b
+  overlap choice at a private fixed 30 seconds per side without implementing
+  chunking.
 
 ## Obsolete Prose Kept For Trace
 
