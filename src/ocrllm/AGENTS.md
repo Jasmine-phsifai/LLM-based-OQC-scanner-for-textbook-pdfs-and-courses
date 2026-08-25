@@ -429,6 +429,13 @@ Keep this as external delivery evidence only. Do not raise `UV_HTTP_TIMEOUT`,
 change the index/mirror, inject cache, repin, retry automatically, or split out
 another dependency-preparation workflow from one event. The combined gate is
 still open; a later atomic iteration may make one ordinary bounded attempt.
+#266 proves the public video facade's legacy Windows long-path failure boundary.
+Keep source-stem normalization distinct from total-path capability. If creating
+the request-owned snapshot fails, propagate its typed output error before image
+or audio dispatch and leave no final/staging video output. Do not force one
+error code across later frame-staging failures, inspect the registry, prepend
+extended-length prefixes, or add a general path-budget framework without a
+separate product decision and real cross-stage evidence.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

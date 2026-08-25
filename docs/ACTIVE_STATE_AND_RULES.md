@@ -1496,6 +1496,26 @@ or create a second dependency-preparation path from this single network event.
 A later atomic run may try the same ordinary maintained gate once; stress and
 robustness testing still waits until the basic installed flow succeeds.
 
+#266 closes the full-video coverage gap for the legacy-proven Windows path
+failure without adding path compatibility. Existing #200 evidence covered
+`extract_video_frames()` failing honestly at its frame staging boundary on a
+deep path. A new real local `recognize_video()` probe instead reached a
+different earlier boundary: with a 245-UTF-16-unit output directory, creation
+of the request-owned video snapshot crossed the legacy limit and raised typed
+`OUTPUT_WRITE_FAILED` before video inspection or either provider. Its disposable
+root was removed. These codes must not be collapsed: they describe different
+failed filesystem operations.
+
+The Windows-only public regression now deterministically simulates that legacy
+snapshot-directory refusal at the same derived path length and requires zero
+image calls, zero audio calls, no final video root, and no hidden staging. The
+existing runtime already passed, so no failing-first runtime fix or new path
+limit was invented. Ordinary Unicode and long-path-aware systems remain
+available; the library does not inspect the registry, prepend `\\?\`, calculate
+a global path budget, or promise universal extended-length support. The focused
+media set passes 95 tests and the full offline suite passes 1,537. No network or
+provider call was made.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

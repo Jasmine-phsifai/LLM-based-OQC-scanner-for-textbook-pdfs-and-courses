@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import importlib
 import os
 import subprocess
 from pathlib import Path
@@ -81,6 +82,27 @@ def _write_mp4(
     )
     assert completed.returncode == 0
     return path
+
+
+def _windows_path_units(path: Path) -> int:
+    return len(str(path).encode("utf-16-le")) // 2
+
+
+def _make_directory_with_windows_path_units(
+    base: Path,
+    target_units: int,
+) -> Path:
+    current = base
+    while _windows_path_units(current) < target_units:
+        remaining = target_units - _windows_path_units(current) - 1
+        if remaining < 1:
+            raise AssertionError(
+                "target path length cannot be reached by adding a directory"
+            )
+        current /= "d" * min(40, remaining)
+    assert _windows_path_units(current) == target_units
+    current.mkdir(parents=True)
+    return current
 
 
 def _write_multiscene_mp4(path: Path) -> Path:
@@ -317,6 +339,47 @@ def _install_fake_google_image(
     )
     monkeypatch.setattr(adapter, "recognize_images", fake_google_image)
     return observed
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows legacy path-limit regression")
+def test_recognize_video_deep_snapshot_failure_dispatches_no_provider(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if _windows_path_units(tmp_path) >= 245:
+        pytest.skip("pytest temporary root is already beyond the controlled path range")
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    output_dir = _make_directory_with_windows_path_units(tmp_path / "deep", 245)
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch)
+    snapshot_module = importlib.import_module("ocrllm.video.snapshot_video_source")
+
+    def reject_legacy_length_snapshot(*, suffix=None, prefix=None, dir=None):
+        assert suffix is None
+        assert type(prefix) is str
+        assert dir is not None
+        assert _windows_path_units(Path(dir) / prefix) > 259
+        raise OSError(206, "test-only simulated legacy Windows path limit")
+
+    monkeypatch.setattr(
+        snapshot_module.tempfile,
+        "mkdtemp",
+        reject_legacy_length_snapshot,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize_video(
+            source,
+            output_dir=output_dir,
+            image_config=Config(provider=image_provider),
+            audio_config=_audio_config(tmp_path),
+        )
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert image_provider.calls == []
+    assert observed_audio == []
+    assert not (output_dir / "lecture").exists()
+    assert not tuple(output_dir.glob(".ocrllm-video-*"))
 
 
 def _observe_request_owned_video_snapshot(
