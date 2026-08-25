@@ -70,14 +70,17 @@ implemented and live-proven: the lazy
 `miniaudio>=1.71,<2` local MP3 probe, deterministic validation corpus, bounded
 compact-name snapshot, exact audio-model configuration, native Google inline
 request, public facade, and in-memory result are implemented for one MP3 of at
-most 300 seconds. Persistence, resume, groups, upload, and long-audio routing
-do not exist. #150 activated Stage A2 planning from a real 301.056-second public
+most 300 seconds. Persistence, resume, groups, upload, and automatic routing by
+the general `recognize()` facade do not exist. #150 activated Stage A2 planning
+from a real 301.056-second public
 video probe. #151 now implements and live-proves standalone
 `recognize_long_mp3()` for one Google Files MP3 longer than 300 seconds and no
 longer than the current 9.5-hour single-prompt limit. It owns the source,
 uploads once, waits within the configured timeout, generates once, deletes the
-remote file, and closes the client. Chunking, resume, fallback, batch/worker
-support, and video integration remain later gates. #152 now selects Route B
+remote file, and closes the client. #297 integrates these existing short and
+long adapters into `recognize_video()`: one owned extracted MP3 is decoded once,
+then exactly one adapter is selected at 300 seconds. Chunking, resume, fallback,
+and batch/worker support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval
 length is configurable only in integer minutes and belongs to temporary resume
 state; overlap remains the one unresolved identity detail, so chunk/checkpoint
@@ -502,7 +505,7 @@ and persisted/resumable audio remain unavailable. Video recognition is now
 available as one typed orchestration facade over retained-frame extraction and
 recognition plus independently configured extracted-audio recognition.
 Provider-free composition and atomic final Markdown publication are separate
-public steps. Video branch resume, long-audio routing, and worker routing remain
+public steps. Video branch resume, A2b chunking, and worker routing remain
 unavailable. The request-owned video snapshot implementation is present in a
 clean externally installed wheel and does not make plain package import load
 heavy media or provider modules. Local user

@@ -29,6 +29,9 @@ from ocrllm import (
 from ocrllm.providers.google_genai.google_genai_audio_response import (
     GoogleGenAIAudioResponse,
 )
+from ocrllm.providers.google_genai.google_genai_uploaded_audio_response import (
+    GoogleGenAIUploadedAudioResponse,
+)
 from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
 
@@ -78,6 +81,42 @@ def _write_mp4(
         stderr=subprocess.DEVNULL,
         check=False,
         timeout=30,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    assert completed.returncode == 0
+    return path
+
+
+def _write_long_audio_mp4(path: Path) -> Path:
+    command = [
+        str(_ffmpeg_executable()),
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        "color=c=blue:s=16x16:r=1:d=301",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=440:sample_rate=16000:duration=301",
+        "-shortest",
+        "-c:v",
+        "mpeg4",
+        "-c:a",
+        "aac",
+        str(path),
+    ]
+    completed = subprocess.run(
+        command,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=60,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     assert completed.returncode == 0
@@ -306,11 +345,24 @@ def _install_fake_audio(
             client_closed=client_closed,
         )
 
+    def reject_long_audio(*_args, **_kwargs):
+        raise AssertionError("short video audio reached the long adapter")
+
     processor = __import__(
         "ocrllm.processors.recognize_short_mp3",
         fromlist=["unused"],
     )
     monkeypatch.setattr(processor, "recognize_short_mp3", fake_google_audio)
+    video_processor = __import__(
+        "ocrllm.processors.recognize_video_mp3",
+        fromlist=["unused"],
+    )
+    monkeypatch.setattr(video_processor, "recognize_short_mp3", fake_google_audio)
+    monkeypatch.setattr(
+        video_processor,
+        "recognize_uploaded_mp3",
+        reject_long_audio,
+    )
     return observed
 
 
@@ -580,6 +632,67 @@ def test_recognize_video_runs_real_media_and_keeps_providers_separate(
     assert composed.metadata["current_run_provider_call_count"] == 2
 
 
+def test_recognize_video_routes_real_long_audio_to_google_files_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_long_audio_mp4(tmp_path / "long-lecture.mp4")
+    image_provider = _ImageProvider()
+    observed_long_snapshots: list[Path] = []
+    video_snapshot = importlib.import_module("ocrllm.audio.snapshot_video_mp3")
+    real_probe = video_snapshot.probe_video_mp3
+    probe_calls: list[Path] = []
+
+    def observe_probe(snapshot_path: Path) -> float:
+        probe_calls.append(snapshot_path)
+        return real_probe(snapshot_path)
+
+    def reject_short_audio(*_args, **_kwargs):
+        raise AssertionError("long video audio reached the short adapter")
+
+    def fake_long_audio(snapshot, *, prompt, config):
+        assert "NOSPEECH4OCRLLM" in prompt
+        assert config.audio_model.name == "test-audio-model"
+        assert snapshot.duration_seconds > 300
+        assert snapshot.path.is_file()
+        observed_long_snapshots.append(snapshot.path)
+        return GoogleGenAIUploadedAudioResponse(
+            markdown="# Long audio\n",
+            input_tokens=101,
+            output_tokens=17,
+            remote_file_deleted=True,
+            client_closed=True,
+        )
+
+    video_processor = importlib.import_module(
+        "ocrllm.processors.recognize_video_mp3"
+    )
+    monkeypatch.setattr(video_snapshot, "probe_video_mp3", observe_probe)
+    monkeypatch.setattr(video_processor, "recognize_short_mp3", reject_short_audio)
+    monkeypatch.setattr(video_processor, "recognize_uploaded_mp3", fake_long_audio)
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=_audio_config(tmp_path),
+    )
+
+    assert outcome.status == "complete"
+    assert outcome.audio_error is None
+    assert outcome.audio_result is not None
+    assert outcome.audio_result.markdown == "# Long audio\n"
+    assert outcome.audio_result.metadata["transport"] == "google_files"
+    assert outcome.audio_result.metadata["provider_call_count"] == 1
+    assert outcome.audio_result.metadata["duration_seconds"] > 300
+    assert outcome.audio_artifact is not None
+    assert outcome.audio_artifact.is_file()
+    assert len(observed_long_snapshots) == 1
+    assert not observed_long_snapshots[0].exists()
+    assert probe_calls == observed_long_snapshots
+    assert image_provider.calls
+
+
 def test_recognize_video_preserves_settled_work_on_final_snapshot_cleanup_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -664,6 +777,59 @@ def test_recognize_video_preserves_settled_work_on_final_snapshot_cleanup_failur
 
     assert len(retained_snapshot_roots) == 1
     assert not retained_snapshot_roots[0].exists()
+
+
+def test_video_preserves_frames_and_call_count_on_audio_snapshot_cleanup_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot_module = importlib.import_module("ocrllm.audio.snapshot_mp3")
+    real_delete = snapshot_module._delete_snapshot_directory
+    retained_audio_roots: list[Path] = []
+
+    def fail_audio_snapshot_cleanup(snapshot_root: Path) -> None:
+        retained_audio_roots.append(Path(snapshot_root))
+        raise OutputError(
+            "The validated audio snapshot could not be removed after use.",
+            code="OUTPUT_WRITE_FAILED",
+        )
+
+    monkeypatch.setattr(
+        snapshot_module,
+        "_delete_snapshot_directory",
+        fail_audio_snapshot_cleanup,
+    )
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch)
+
+    try:
+        outcome = recognize_video(
+            source,
+            output_dir=tmp_path / "output",
+            image_config=Config(provider=image_provider),
+            audio_config=_audio_config(tmp_path),
+        )
+
+        assert outcome.status == "partial"
+        assert outcome.frame_error is None
+        assert all(item.succeeded for item in outcome.frame_outcomes)
+        assert outcome.audio_result is None
+        assert outcome.audio_error is not None
+        assert outcome.audio_error.code == "OUTPUT_WRITE_FAILED"
+        assert outcome.audio_error.details["provider_calls_attempted"] == 1
+        assert outcome.audio_artifact is not None
+        assert outcome.audio_artifact.is_file()
+        assert len(image_provider.calls) == 1
+        assert len(observed_audio) == 1
+        assert observed_audio[0].is_file()
+    finally:
+        for snapshot_root in retained_audio_roots:
+            if snapshot_root.exists():
+                real_delete(snapshot_root)
+
+    assert len(retained_audio_roots) == 1
+    assert not retained_audio_roots[0].exists()
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows Unicode path regression")

@@ -237,6 +237,13 @@ is often accepted.
   that decodes once and selects exactly one adapter. The existing one-shot
   300-second-to-model-limit range does not require #152; full 10-hour coverage
   and persisted lecture recovery do.
+- **#297 executes the bounded #245 seam.** `recognize_video()` now creates one
+  request-owned snapshot of its retained MP3, fully decodes it once, and selects
+  exactly one existing Google adapter: inline through 300 seconds, Files above
+  300 seconds through the current 9.5-hour single-request ceiling. It does not
+  catch short-route failure to choose, change `recognize()`, add an audio result
+  type, or implement A2b chunks/resume/repair. The #152 overlap decision still
+  owns the 9.5-to-10-hour range and persisted recovery.
 
 ## PDF verification scale
 

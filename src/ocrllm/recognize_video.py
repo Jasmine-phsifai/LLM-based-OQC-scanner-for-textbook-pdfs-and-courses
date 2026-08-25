@@ -22,7 +22,11 @@ def recognize_video(
         validate_vision_provider_config,
     )
     from .raise_if_cancelled import raise_if_cancelled
-    from .recognize import recognize
+    from .build_recognition_result import build_recognition_result
+    from .processors.recognize_video_mp3 import recognize_video_mp3
+    from .providers.provider_request_start_gate import (
+        reuse_or_create_provider_request_start_gate,
+    )
     from .recognize_video_frames import recognize_video_frames
     from .validate_cancellation_signal import validate_cancellation_signal
     from .validate_config import validate_config
@@ -99,9 +103,20 @@ def recognize_video(
 
             if audio_artifact is not None and audio_error is None:
                 try:
-                    audio_result = recognize(
-                        audio_artifact,
-                        config=validated_audio_config,
+                    audio_start_interval = (
+                        validated_audio_config.execution
+                        .provider_request_start_interval_seconds
+                    )
+                    with reuse_or_create_provider_request_start_gate(
+                        audio_start_interval
+                    ):
+                        audio_output = recognize_video_mp3(
+                            audio_artifact,
+                            config=validated_audio_config,
+                        )
+                    audio_result = build_recognition_result(
+                        audio_output,
+                        output_path=None,
                     )
                 except Cancelled as error:
                     audio_error = error

@@ -11,7 +11,7 @@ Current truth is maintained in
 before relying on any dated phase, decision, checkpoint, review, or incident
 record. Those files preserve history and do not override current status.
 
-As of 2026-08-25:
+As of 2026-08-26:
 
 - Phase 0 contract honesty, the Phase 1 image gate, the Phase 2 development
   worker, and Phase 2A image-library completion are GO.
@@ -21,8 +21,10 @@ As of 2026-08-25:
   intra-request checkpoints are shipped. Its paid live exit smoke remains open.
 - The former standalone Stage 2 vision/audio scaffold was removed. Native
   Google inline short MP3 and Files-based single-request long MP3 paths are
-  implemented and live-proven; both remain memory-only. Long-audio chunking,
-  resume, and long-audio video routing remain unavailable.
+  implemented and live-proven; both remain memory-only. Combined video now
+  selects inline audio through 300 seconds or Files above 300 seconds through
+  the current 9.5-hour single-request ceiling after one owned decode. Long-audio
+  chunking, resume, and the remaining 9.5-to-10-hour range remain unavailable.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. Its bounded Google exit gate completed 16 pages in two

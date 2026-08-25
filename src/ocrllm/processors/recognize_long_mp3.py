@@ -11,6 +11,7 @@ from ..errors import OutputError
 from ..processor_output import ProcessorOutput
 from ..providers.google_genai.recognize_uploaded_mp3 import recognize_uploaded_mp3
 from ..raise_if_cancelled import raise_if_cancelled
+from .build_long_mp3_processor_output import build_long_mp3_processor_output
 
 
 def recognize_validated_long_mp3(source_path: Path, *, config: Config) -> ProcessorOutput:
@@ -26,40 +27,10 @@ def recognize_validated_long_mp3(source_path: Path, *, config: Config) -> Proces
                 config=config,
             )
             provider_call_completed = True
-            model = config.audio_model.name
-            assert type(model) is str
-            warnings: list[str] = []
-            if not response.remote_file_deleted:
-                warnings.append(
-                    "The Google Files upload could not be deleted after recognition."
-                )
-            if not response.client_closed:
-                warnings.append(
-                    "The Google GenAI client could not be closed after recognition."
-                )
-            cleanup_complete = not warnings
-            return ProcessorOutput(
-                media_type="audio",
-                markdown=response.markdown,
-                status="complete" if cleanup_complete else "partial",
-                warnings=tuple(warnings),
-                metadata={
-                    "provider": "google",
-                    "model": model,
-                    "transport": "google_files",
-                    "provider_call_count": 1,
-                    "current_model_token_usage": (
-                        {
-                            "model": model,
-                            "input_tokens": response.input_tokens,
-                            "output_tokens": response.output_tokens,
-                        },
-                    ),
-                    "duration_seconds": snapshot.duration_seconds,
-                    "byte_size": snapshot.byte_size,
-                    "remote_file_deleted": response.remote_file_deleted,
-                    "provider_client_closed": response.client_closed,
-                },
+            return build_long_mp3_processor_output(
+                snapshot,
+                response,
+                config=config,
             )
     except OutputError as error:
         if provider_call_completed and "provider_calls_attempted" not in error.details:

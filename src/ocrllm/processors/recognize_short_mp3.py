@@ -11,6 +11,7 @@ from ..errors import OutputError
 from ..processor_output import ProcessorOutput
 from ..providers.google_genai.recognize_short_mp3 import recognize_short_mp3
 from ..raise_if_cancelled import raise_if_cancelled
+from .build_short_mp3_processor_output import build_short_mp3_processor_output
 
 
 def recognize_validated_short_mp3(source_path: Path, *, config: Config) -> ProcessorOutput:
@@ -25,33 +26,10 @@ def recognize_validated_short_mp3(source_path: Path, *, config: Config) -> Proce
                 config=config,
             )
             provider_call_completed = True
-            model = config.audio_model.name
-            assert type(model) is str
-            warnings: tuple[str, ...] = ()
-            if not response.client_closed:
-                warnings = (
-                    "The Google GenAI client could not be closed after recognition.",
-                )
-            return ProcessorOutput(
-                media_type="audio",
-                markdown=response.markdown,
-                status="partial" if warnings else "complete",
-                warnings=warnings,
-                metadata={
-                    "provider": "google",
-                    "model": model,
-                    "provider_call_count": 1,
-                    "current_model_token_usage": (
-                        {
-                            "model": model,
-                            "input_tokens": response.input_tokens,
-                            "output_tokens": response.output_tokens,
-                        },
-                    ),
-                    "duration_seconds": snapshot.duration_seconds,
-                    "byte_size": snapshot.byte_size,
-                    "provider_client_closed": response.client_closed,
-                },
+            return build_short_mp3_processor_output(
+                snapshot,
+                response,
+                config=config,
             )
     except OutputError as error:
         if (

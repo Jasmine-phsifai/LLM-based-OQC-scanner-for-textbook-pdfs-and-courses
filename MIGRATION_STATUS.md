@@ -1208,6 +1208,15 @@ The following directions remain traceable but are not current work:
   existing gate process regressions passed. The probes were deleted and no new
   controller or package boundary was added. The installed combined-video
   result remains unknown and open.
+  #297 closes the bounded video long-audio integration seam that #245 left
+  behind #127. One retained extracted MP3 is copied to one request-owned
+  snapshot and fully decoded once; duration at or below 300 seconds selects the
+  existing inline adapter, while greater duration through 9.5 hours selects the
+  existing Google Files lifecycle. A real generated 301-second MP4 reached
+  Files exactly once, never entered short recognition, preserved separate image
+  work and the retained audio artifact, and removed its owned audio snapshot.
+  General `recognize()` routing, A2b chunks/resume/repair, overlap, and the
+  private 9.5-to-10-hour range remain unchanged.
 
 ## Obsolete Prose Kept For Trace
 

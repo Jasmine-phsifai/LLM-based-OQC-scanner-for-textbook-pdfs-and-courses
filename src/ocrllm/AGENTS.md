@@ -313,6 +313,11 @@ again, documenting manual two-snapshot composition as the mature route, or
 adding another video/result API. Resolve #127 first; then one retained-audio
 ownership seam may select exactly one adapter. #152 still owns 9.5-to-10-hour
 audio and persisted recovery.
+#297 implements that seam. Preserve one owned extracted-MP3 snapshot, one full
+decode, and exactly one adapter selected at 300 seconds. Inline owns the lower
+range; Google Files owns the greater-than-300-second range through the current
+9.5-hour ceiling. Do not restore try-short-then-catch routing, add another video
+outcome, route general `recognize()`, or infer A2b overlap/chunk/resume behavior.
 #246 leaves the normal installed `[video]` gate open after one clean wheel build
 and one ordinary pip attempt timed out downloading imageio-ffmpeg. Keep the
 declared OpenCV/imageio-ffmpeg extra unchanged unless a package defect is

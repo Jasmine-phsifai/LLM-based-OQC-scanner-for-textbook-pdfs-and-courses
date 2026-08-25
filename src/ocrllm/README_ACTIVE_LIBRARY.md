@@ -89,7 +89,9 @@ decodes it through lazy `ocrllm[audio]`, and can send one bounded native inline
 request through lazy `ocrllm[google]`. This path remains experimental and
 memory-only despite its successful #069 public-result gate. Stage A2a
 standalone Google Files long-MP3 recognition is also implemented and
-live-proven; A2b chunk/resume and long-audio video routing remain unavailable.
+live-proven. `recognize_video()` selects inline audio through 300 seconds or
+Files above 300 seconds through the current 9.5-hour single-request ceiling;
+A2b chunk/resume and the remaining private 9.5-to-10-hour range remain unavailable.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
 legacy-Markdown repair, so ordinary image-sidecar resume remains its recovery
 path.
@@ -394,10 +396,12 @@ request-owned snapshot there, and atomically publishes a fully decoded mono
 function raises `VideoError(code="VIDEO_NO_AUDIO_STREAM")` when the MP4 is
 valid but has no audio stream; present-but-corrupt or undecodable audio remains
 `VIDEO_INVALID`, so callers do not have to parse FFmpeg text. The
-current audio recognizer remains the separately installed `audio,google`
-short-MP3 slice (maximum 300 decoded seconds and 25 MiB), so longer extracted
-tracks fail honestly at recognition. Image and audio providers are selected by
-the two separate `Config` objects. Standalone frame extraction and standalone
+combined recognizer uses the separately installed `audio,google` routes: it
+owns and fully decodes the extracted MP3 once, then selects inline recognition
+through 300 seconds or Google Files above 300 seconds through the current
+9.5-hour single-request ceiling. It does not try short recognition first or
+probe a second copy. Image and audio providers are selected by the two separate
+`Config` objects. Standalone frame extraction and standalone
 audio extraction each own one hidden snapshot under their output parent.
 Combined video recognition instead owns one shared snapshot under `output_dir`:
 inspection, negative-feedback comparison, retained-JPEG decode, and audio

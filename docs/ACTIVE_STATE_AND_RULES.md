@@ -69,7 +69,7 @@ working image configuration stayed unchanged and the audio-specific boundary
 landed with the bounded Stage A1 short-MP3 recognition slice. That direct,
 experimental slice is implemented and live-proven through native Google GenAI;
 it remains memory-only and does not provide persistence, resume, groups,
-upload, long-audio routing, or worker support. #151 implements and live-proves
+upload, general-`recognize()` long-audio routing, or worker support. #151 implements and live-proves
 the separate standalone Stage A2a Google Files lifecycle for one MP3 longer
 than 300 seconds; it does not alter A1 or route video. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
@@ -5141,6 +5141,33 @@ it again with `Start-Process`, add a repository
 controller, or replay the download merely because the evidence channel is now
 known. The installed combined-video proof remains open; #296 changes no
 package, dependency, runtime, provider, or public boundary.
+
+## Iteration 297: video selects one existing audio adapter after one decode
+
+The #245 video long-audio seam is now executable because #294 resolved #127.
+`recognize_video()` retains its existing extracted `audio.mp3`, creates one
+request-owned MP3 snapshot, fully decodes that snapshot once, and selects
+exactly one existing Google adapter from the decoded duration. Durations at or
+below 300 seconds use the native inline adapter; greater durations through the
+current 9.5-hour single-request ceiling use the existing Google Files
+lifecycle. The resulting ordinary audio `RecognitionResult` continues to fit
+`VideoRecognitionOutcome`, composition, publication, token/call accounting,
+partial cleanup warnings, and separate image/audio configurations.
+
+A real generated 301-second MP4 reproduced the old short-route rejection, then
+passed through the corrected public facade with one Files call, no short call,
+preserved retained frames/audio artifact, and removed owned audio snapshots.
+Short-video regressions explicitly reject accidental Files routing. A
+post-provider audio-snapshot cleanup failure also retains frame work, the public
+MP3 artifact, and exact one-call evidence. The audio, long-audio, probe, and
+video set passes 88 tests; the complete offline suite passes 1,557. Plain import
+remains free of media and provider modules.
+
+This does not route standalone `recognize()` automatically, add another public
+API/result, retry/fallback, second probe/copy, A2b chunks/resume/repair, or infer
+the unresolved overlap rule. The private 9.5-to-10-hour range and persisted
+lecture recovery remain behind #152. The ordinary installed combined-video gate
+also remains open and was not replayed in this iteration.
 
 ## Documentation Rules
 
