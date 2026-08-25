@@ -939,6 +939,15 @@ The following directions remain traceable but are not current work:
   is explicitly code-only rather than a real incident. It remains frozen until
   native SDK evidence confirms the exact shape; no speculative payment marker,
   retry/fallback policy, billing layer, or provider abstraction was added.
+  #291 performs one bounded current-catalog Google audio capability-mismatch
+  gate. Official Gemma 4 documentation excludes audio from the live-served
+  `gemma-4-26b-a4b-it`; one locally decoded 8.038141-second MP3 through the
+  maintained public runner returns the already-correct
+  `PROVIDER_UNAVAILABLE/model/recognition` result in 4.516 seconds. There is no
+  retry, fallback, model switch, leak, residue, or runtime/API change. The safe
+  failure output does not expose generation-attempt count, so that evidence is
+  recorded as unknown. This is not a hardcoded capability list, model-by-model
+  probe, stress framework, or provider abstraction.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The

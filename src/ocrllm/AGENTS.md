@@ -587,6 +587,14 @@ and request failures remain typed and redacted. A code-only legacy 400/
 than account-suspended; do not add payment-text matching until real native SDK
 evidence confirms that exact shape. No billing layer, retry/fallback, or provider
 hierarchy follows from this frozen candidate.
+#291 live-discovers 37 Google `generateContent` models and tests exactly one
+officially documented capability mismatch: `gemma-4-26b-a4b-it` accepts text
+and image, not audio. One locally preflighted 8.038141-second MP3 run terminates
+as `PROVIDER_UNAVAILABLE/model/recognition` in 4.516 seconds, with empty stderr,
+no retry/model switch/fallback, no leak, and no residue. Failed-run generation
+call accounting is unknown because the safe runner does not expose the adapter's
+attempt detail. The existing classification is correct, so do not add a model
+capability registry, hardcoded catalog, broader marker, or probe loop.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

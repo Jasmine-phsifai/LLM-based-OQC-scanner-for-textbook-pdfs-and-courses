@@ -4988,6 +4988,30 @@ the status/message shape. That later change, if evidenced, should be one narrow
 mapper branch and regression, not a billing subsystem, retry policy, or provider
 hierarchy.
 
+## Iteration 291: live Google audio capability mismatch is correctly typed
+
+Current live discovery returned 37 `generateContent` models, including
+`gemma-4-26b-a4b-it`. Google's current Gemma 4 model card says the 26B A4B and
+31B variants accept text and image but not audio; audio is limited to E2B, E4B,
+and 12B. A deterministic, locally synthesized 8.038141-second MP3 passed the
+active library's full local MP3 decode before credentials were read.
+
+The maintained short-audio runner was launched exactly once with the explicit
+26B A4B model, a 120-second request bound, and a pre-armed 300-second process
+deadline. It exited 1 after 4.516 seconds with the redacted typed result
+`PROVIDER_UNAVAILABLE / model / recognition`; stderr was empty, the deadline
+was not reached, and no credential, source path, process, snapshot, or owned
+temporary residue remained. The failure runner does not expose
+`provider_calls_attempted`, so generation-call accounting for this failed run
+is **unknown**, not invented as zero or one. There was no retry, second runner,
+model switch, fallback, invalid-key probe, or runtime/test/runner change.
+
+This proves one current capability-mismatch classification, not a model support
+registry and not a provider stress result. Do not hardcode the live catalog,
+probe models one by one, add audio capability metadata to the public API, or
+broaden the existing modality markers without a new real response. Later
+pressure robustness tests remain separate, capped, single-question gates.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
