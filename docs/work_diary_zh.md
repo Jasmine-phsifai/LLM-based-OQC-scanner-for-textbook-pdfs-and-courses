@@ -4955,3 +4955,19 @@ Atomic task — Iteration #258: make the maintained clean-archive release gate e
 第一次 PATH-absent child 忘记给新 PowerShell 加 `-ExecutionPolicy Bypass`，Windows 在加载脚本前按当前机器策略拒绝；PATH 未变、proof root 为 0。第二次只给该 child 加一次进程级 bypass 后得到上述有效证据，没有修改系统或用户 execution policy。这个是调用工具前置条件，不是 repo gate 缺陷，也没有通过修改脚本绕过主机策略。
 
 **验证与过度设计复查。** PowerShell AST parse 通过；代码、测试、配置、authority、migration 和冻结目录均无 diff，只有本轮中文日记。两条真实 child 证明比再写一个静态字符串测试更直接，完整 1,522 项套件刚在 #257 对同一代码提交通过，本轮不因文档追加机械重跑。没有新增 resolver、PATH 参数、tool manager、registry/磁盘扫描、永久环境修改或把所有 `& uv` 机械改成变量。最重要的成熟度结果是撤回错误假设：已有窄方案在当前机器确实工作，继续“修复”只会增加未来阅读成本。
+
+## #259 — 2026-08-25：七个可选依赖安装共用一个有界进程门
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #259: give each optional dependency-profile installation in the maintained Stage M clean gate one caller-visible overall process bound, using the gate’s existing process controller rather than adding another installer or retry policy. Success means reconciling current authority, latest Chinese diary, package rules, and the exact #251/#253/#257 delivery failures; personally tracing the seven profile installs, their size limits and post-install probes, `Invoke-BoundedProcess` exit/timeout/process-tree handling, quoting under repository paths with spaces, and final cleanup; delegating one bounded read-only audit of the smallest safe command shape; writing a regression that proves the gate exposes a validated install-timeout parameter and routes every profile install through the existing bounded helper; replacing only the direct unbounded pip call, with explicit zero pip retries and a bounded per-connection timeout matching the recent evidence workflow; preserving normal PyPI resolution, declared extras, profile order, no alternate installer/cache/vendor/pin changes, and no provider calls; testing a disposable fake pip child for success, nonzero exit, and timeout/tree termination without downloading; then running proportional/full offline tests, updating Chinese/current-state records, committing, and pushing. This matters because a release gate that can wait indefinitely on an unstable package host cannot reliably protect a mature Python library or be safely delegated and monitored.
+```
+
+**假设复核、两条路线与选择。** 开始时假设只有第 338 行的直接 pip 调用缺少总时限；本人逐段核对七个 profile 的 venv、安装、metadata/import smoke、真实本地媒体 smoke、体积上限和最终临时目录清理，确认 profile 内容与顺序不应改变。比较①给每次安装继续使用 `& python -m pip`，依赖外部任务的 session 轮询；②复用脚本已有的 `Invoke-BoundedProcess`，让脚本自身拥有总时限和进程树终止。选择②，因为这是同一个发布门禁内部已有的责任，不需要第二套 installer 或监督框架。轻量只读审计独立得到相同结论，并特别指出带空格 wheel 路径须作为一个带引号 requirement 传给 `Start-Process`。
+
+**红灯暴露的真实缺陷。** 首次 failing-first 回归不只得到预期的“profile 尚未接入 bounded helper”，还发现已有 helper 对成功 child 和 exit 7 child 都读到空 `ExitCode`，继而把成功误报为失败。独立 PowerShell 小实验确认：Windows PowerShell 5.1 若不在短进程退出前取得 native handle，`Start-Process -PassThru` 返回对象即使 `HasExited=True`，退出码也可能为空；仅再调用一次无参数 `WaitForExit()` 不足。最小修正是在启动后立即读取 `$process.Handle`，完成后再读取一次明确的 `$exitCode`。这不是为了本轮凭空加强工具；若不修，刚接入的正常 pip 成功也无法通过门禁。
+
+**最小实现。** 门禁新增 `OptionalProfileInstallTimeoutSeconds`，合法范围 30–3,600 秒，默认 1,200 秒。七个 profile 保持原 extras、顺序、普通 PyPI 依赖解析和后续验证，只把直接 pip 调用换成同一个 bounded helper；pip 使用 `--progress-bar off --retries 0 --timeout 30`。外层负责整次安装的总时限和超时后的进程树终止，内层 30 秒只限制单次连接等待；没有自动补跑。wheel requirement 被明确包成一个参数，以保留当前仓库路径含空格的行为。
+
+**验证与过度设计复查。** 本地 disposable child 覆盖 success、exit 7 和一秒 timeout，静态集成回归确认脚本只有 archive 与 profile 两处调用同一个 helper，并锁住公开参数和 pip 参数；focused 为 **4 passed in 1.90s**，PowerShell AST parse 通过。临时给测试进程补已有 STA Node 路径后的完整离线套件为 **1,524 passed in 58.59s**，`compileall -q src tests` 通过。本轮没有运行完整安装门禁，没有下载、provider/API/凭据、产品运行时代码、依赖声明、extra、pin、cache/mirror、legacy/social、#127/#152 或 frozen `contracts/worker` 变更。明显的过度设计路线包括第二个 installer、缓存管理器、镜像切换、指数重试、按 profile 各自一套时限和通用任务调度器；全部拒绝。普通 installed-video gate 仍开放，后续可以在独立原子轮次做一次正常安装，而用户刚授权的压力性鲁棒测试应等相应基本流程打通后再按单问题、有限调用和清理验证执行。

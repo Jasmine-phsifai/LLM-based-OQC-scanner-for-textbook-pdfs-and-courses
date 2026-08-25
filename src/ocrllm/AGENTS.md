@@ -378,6 +378,13 @@ gates.
 exclude the active package README, pin a backend solely to hide metadata-byte
 variation, or add a general manifest framework without another concrete file-
 selection defect. The ordinary installed-video dependency gate remains open.
+#259 requires every optional-profile pip install in the maintained clean gate
+to use its existing bounded process-tree controller. Keep the validated
+caller-visible overall timeout, zero pip retries, 30-second connection timeout,
+and success/nonzero/timeout regressions. Do not add a second installer, retry
+loop, mirror, cache manager, or dependency pin to make delivery look green; the
+ordinary installed-video dependency gate remains open until a real install and
+external media proof complete.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -1,6 +1,8 @@
 param(
     [string]$PythonPath = 'D:\Anaconda\envs\OCRLLM\python.exe',
     [switch]$SkipOptionalProfiles,
+    [ValidateRange(30, 3600)]
+    [int]$OptionalProfileInstallTimeoutSeconds = 1200,
     [ValidateRange(1, 3600)]
     [int]$ArchivedSourceTestTimeoutSeconds = 1200
 )
@@ -26,6 +28,9 @@ function Invoke-BoundedProcess {
     Write-Output "stage started: $StageName (timeout ${TimeoutSeconds}s)"
     $process = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList `
         -NoNewWindow -PassThru
+    # Cache the native handle before the short-lived child exits. Windows
+    # PowerShell otherwise can report a blank ExitCode for an exited process.
+    $null = $process.Handle
     if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
         Write-Output "stage timeout: $StageName"
         & taskkill.exe /PID $process.Id /T /F 2>$null | Out-Null
@@ -34,8 +39,12 @@ function Invoke-BoundedProcess {
         }
         throw "stage exceeded ${TimeoutSeconds}s: $StageName"
     }
-    if ($process.ExitCode -ne 0) {
-        throw "stage failed with exit code $($process.ExitCode): $StageName"
+    # Windows PowerShell can leave ExitCode unreadable after only the timed
+    # overload. The parameterless wait refreshes the completed process object.
+    $process.WaitForExit()
+    $exitCode = $process.ExitCode
+    if ($exitCode -ne 0) {
+        throw "stage failed with exit code ${exitCode}: $StageName"
     }
     Write-Output "stage completed: $StageName"
 }
@@ -335,8 +344,18 @@ print(sorted(declared_extras))
                 'import site; print(site.getsitepackages()[0])').Trim()
             Assert-LastExitCode "site-packages lookup failed: $profile"
             $baselineBytes = Get-DirectoryByteCount $sitePackages
-            & $profilePython -m pip install "$($wheel.FullName)[$profile]"
-            Assert-LastExitCode "profile install failed: $profile"
+            $installRequirement = '"' + "$($wheel.FullName)[$profile]" + '"'
+            Invoke-BoundedProcess `
+                -StageName "profile install: $profile" `
+                -FilePath $profilePython `
+                -ArgumentList @(
+                    '-m', 'pip', 'install',
+                    '--progress-bar', 'off',
+                    '--retries', '0',
+                    '--timeout', '30',
+                    $installRequirement
+                ) `
+                -TimeoutSeconds $OptionalProfileInstallTimeoutSeconds
 
             $expectedCsv = $expectedDistributions[$profile] -join ','
             $profileProbe = @'

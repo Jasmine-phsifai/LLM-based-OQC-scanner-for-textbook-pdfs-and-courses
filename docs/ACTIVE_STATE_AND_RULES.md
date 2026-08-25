@@ -1347,6 +1347,19 @@ plain import remains lightweight. Do not retry-loop the open delivery gate,
 pin Hatchling merely to hide metadata variation, or generalize this one explicit
 exclusion into a packaging framework.
 
+#259 bounds every optional-profile installation in the maintained clean gate.
+The seven declared profiles still use ordinary pip/PyPI dependency resolution
+in their existing order, but each install now has a caller-visible 30–3,600
+second overall bound (default 1,200 seconds), pip retries are zero, and each
+connection wait is capped at 30 seconds. The implementation reuses the gate's
+single process-tree controller; it does not add an installer, cache, mirror,
+pin, or retry policy. Regression work also exposed and fixed a Windows
+PowerShell detail in that controller: the native process handle must be cached
+before a short-lived child exits or `ExitCode` may be blank. Local disposable
+children now prove success, exit 7, and timeout behavior; the complete offline
+suite passes 1,524 and compileall succeeds. No dependency was downloaded and
+the ordinary installed-video gate remains open.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

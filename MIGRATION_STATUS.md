@@ -858,6 +858,15 @@ The following directions remain traceable but are not current work:
   the actual member set. Both backends produce 237-member, approximately
   250.4-KiB wheels without the instructions; no dependency, runtime, API, or
   installed-media claim changed.
+  #259 makes subsequent clean-gate delivery evidence bounded and recoverable:
+  all seven optional-profile pip installs reuse one process-tree controller,
+  expose a validated 30–3,600 second overall timeout (1,200 by default), use
+  zero pip retries, and cap each connection wait at 30 seconds. A Windows
+  PowerShell blank-exit-code defect in that controller was found by local fake
+  children and corrected by retaining the native process handle before wait.
+  Success, explicit nonzero exit, and timeout now pass offline regressions; no
+  package dependency, runtime API, alternate installer, or installed-video
+  claim changed, so the ordinary delivery gate remains open.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
