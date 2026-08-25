@@ -2247,6 +2247,29 @@ evidence for retry, fallback, a hardcoded capability list, or a provider
 framework. No public API, runtime, dependency, legacy format, frozen boundary,
 or open #127/#149/#152 choice changed.
 
+#207 carries the exact #206 branch shape through the final Python consumer
+without changing runtime code. The existing real one-second MP4 regression now
+uses an injected image failure with explicit `PROVIDER_UNAVAILABLE` and exact
+one-call evidence while the separate fake-native Google audio branch succeeds
+with 7 input / 2 output tokens. It then calls public
+`publish_video_result()` rather than stopping at `VideoRecognitionOutcome`.
+
+The published result and UTF-8 Markdown stay `partial`, contain the stable image
+error and successful audio Markdown but no fabricated image-provider body, and
+retain the real JPEG plus extracted MP3. Metadata reports zero successful and
+one failed frame group, `audio_state="recognized"`, two current-run provider
+calls, only the successful audio model's usage, and the failed group's exact
+frame identity. Atomic publication leaves no temporary Markdown. Forty-five
+focused orchestration/outcome/composition/publication tests pass in 4.75 seconds;
+compilation, diff checks, and plain lightweight import pass.
+
+No new result type, error graph, retry, fallback, transaction, or multi-failure
+simulation was added. Under the current fail-fast frame-group contract, a first
+provider failure makes later undispatched groups typed `Cancelled`; converting
+those into invented provider failures would be dishonest over-design. No
+provider/network call, runtime/public API/dependency/output change, legacy
+compatibility, frozen boundary, or open #127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

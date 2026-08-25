@@ -616,6 +616,11 @@ The following directions remain traceable but are not current work:
   while the separate `gemini-2.5-flash` audio call succeeded with 200/14 usage;
   composition retained an honest two-asset partial result. No retry, fallback,
   product-code change, or provider generalization followed.
+  #207 strengthens the existing real local MP4 regression through public final
+  Markdown publication for the same all-image-failed/audio-success shape. The
+  stable frame error, audio Markdown and usage, two retained assets, exact call
+  total, partial status, and atomic cleanup remain available to Python callers;
+  no runtime or API change was needed.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

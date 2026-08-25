@@ -513,6 +513,11 @@ partial result with only the audio model's validated 200/14 token usage. The
 runner exited 1 because its full gate did not pass, but its discriminated JSON
 remained a settled `video_outcome`, not a runner failure. No retry or model
 switch was performed.
+The #207 real local regression continues that exact all-image-failed and
+audio-success shape through `publish_video_result()`. The final file remains
+partial, prints the stable frame error beside the successful audio section,
+retains JPEG and MP3 assets, and preserves the audio-only usage and exact total
+calls without inventing image text.
 
 ## Bounded Google PDF Live Smoke
 

@@ -177,6 +177,11 @@ membership.
 `gemini-2.5-flash` audio result or its token usage, and composition stayed
 partial. Treat `PROVIDER_UNAVAILABLE` as this one observation; do not add retry,
 fallback, or a capability allowlist from it.
+#207 proves the same all-image-failed/audio-success shape remains honest through
+`publish_video_result()`: publish partial Markdown with the stable frame error,
+successful audio body/usage, and both retained assets. Keep later undispatched
+frame groups as `Cancelled`; do not invent provider failures or add a generic
+partial-result graph.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

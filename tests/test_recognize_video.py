@@ -165,14 +165,20 @@ def _write_corrupt_audio_mp4(path: Path) -> Path:
 
 
 class _ImageProvider:
-    def __init__(self, *, fail_on_call: int | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        fail_on_call: int | None = None,
+        failure_code: str = "PROVIDER_RESPONSE_INVALID",
+    ) -> None:
         self.fail_on_call = fail_on_call
+        self.failure_code = failure_code
         self.calls: list[tuple[Path, ...]] = []
 
     def recognize_images(self, image_paths, *, prompt, config):
         self.calls.append(tuple(image_paths))
         if len(self.calls) == self.fail_on_call:
-            raise ProviderError("Image provider failed.")
+            raise ProviderError("Image provider failed.", code=self.failure_code)
         return "# Frames\n"
 
 
@@ -452,12 +458,15 @@ def test_recognize_video_preserves_settled_work_after_later_group_failure(
     )
 
 
-def test_recognize_video_preserves_audio_after_frame_provider_failure(
+def test_video_publication_preserves_audio_after_frame_provider_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _write_mp4(tmp_path / "lecture.mp4")
-    image_provider = _ImageProvider(fail_on_call=1)
+    image_provider = _ImageProvider(
+        fail_on_call=1,
+        failure_code="PROVIDER_UNAVAILABLE",
+    )
     observed_audio = _install_fake_audio(monkeypatch)
 
     outcome = recognize_video(
@@ -470,11 +479,57 @@ def test_recognize_video_preserves_audio_after_frame_provider_failure(
     assert outcome.status == "partial"
     assert outcome.audio_state == "recognized"
     assert outcome.audio_result is not None
-    assert any(item.error is not None for item in outcome.frame_outcomes)
+    assert all(item.error is not None for item in outcome.frame_outcomes)
+    assert [item.error.code for item in outcome.frame_outcomes] == [
+        "PROVIDER_UNAVAILABLE"
+    ]
+    assert [
+        item.error.details["provider_calls_attempted"]
+        for item in outcome.frame_outcomes
+    ] == [1]
     assert len(image_provider.calls) == 1
     assert len(observed_audio) == 1
     assert outcome.audio_artifact is not None
     assert outcome.audio_artifact.is_file()
+
+    target = tmp_path / "reports" / "lecture.md"
+    published = publish_video_result(outcome, target)
+
+    retained_identity = tuple(
+        (frame.frame_index, frame.timestamp_seconds)
+        for frame in outcome.retained_frames
+    )
+    assert published.status == "partial"
+    assert published.output_path == target
+    assert target.read_text(encoding="utf-8") == published.markdown
+    assert "Recognition error: `PROVIDER_UNAVAILABLE`" in published.markdown
+    assert "# Audio" in published.markdown
+    assert "\n# Frames\n" not in published.markdown
+    assert published.assets == tuple(
+        frame.path for frame in outcome.retained_frames
+    ) + (outcome.audio_artifact,)
+    assert published.metadata["successful_video_frame_group_count"] == 0
+    assert published.metadata["failed_video_frame_group_count"] == 1
+    assert published.metadata["audio_state"] == "recognized"
+    assert published.metadata["current_run_provider_call_count"] == 2
+    assert published.metadata["current_model_token_usage"] == (
+        {
+            "model": "test-audio-model",
+            "input_tokens": 7,
+            "output_tokens": 2,
+        },
+    )
+    assert published.metadata["video_frame_group_errors"] == (
+        {
+            "index": 0,
+            "code": "PROVIDER_UNAVAILABLE",
+            "frame_indices": tuple(index for index, _ in retained_identity),
+            "frame_timestamps_seconds": tuple(
+                timestamp for _, timestamp in retained_identity
+            ),
+        },
+    )
+    assert not list(target.parent.glob(".ocrllm-*.tmp"))
 
 
 def test_recognize_video_preserves_frames_and_audio_artifact_on_audio_failure(
