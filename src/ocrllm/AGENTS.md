@@ -562,6 +562,15 @@ fixture proves failure settlement, not content-bearing success and not #282
 causality. Do not add retry/model switching or replay it to force green; a later
 success-path stress question needs a separately authorized content-bearing
 synthetic fixture.
+#288 closes that separate success-path question with a deterministic
+content-bearing fixture: ten visible-text frames formed ordered 8+2 groups,
+authorized synthesized speech produced a valid MP3, and one current-catalog
+runner completed exactly two image calls plus one independent audio call before
+composing eleven assets. The safe terminal result exited 0 in 16.927 seconds
+with verified 5,214/231 token usage, no retry/fallback/model switch, leak, or
+residue. Treat this as a capped Google video proof only; it is not evidence for
+long load, other providers, provider fallback, or long-audio behavior, and it
+does not justify a generic stress/provider framework.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

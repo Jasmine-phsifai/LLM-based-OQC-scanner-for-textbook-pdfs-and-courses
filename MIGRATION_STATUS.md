@@ -910,6 +910,17 @@ The following directions remain traceable but are not current work:
   two-group success path or causality from #282. No runtime, runner, API,
   dependency, retry/fallback, provider policy, legacy/social, #127/#152, or
   frozen boundary changed; the full offline suite remains 1,548 passed.
+  #288 independently proves the corresponding content-bearing success path
+  without replaying #287's failure fixture. A deterministic 60-second MP4 with
+  large visible scene text and locally synthesized authorized speech retained
+  ten frames as ordered 8+2 groups and a nonempty MP3. One current-catalog
+  runner completed both image groups in exactly two image calls, completed the
+  separate audio branch in one call, and composed eleven assets with verified
+  usage of 5,214 input and 231 output tokens. Exit was 0 after 16.927 seconds
+  with one safe JSON, empty stderr, no retry/fallback/model switch, leak, or
+  residue. This proves only the capped two-group Google path with separate
+  image/audio configs; it does not establish long-load, other-provider, retry,
+  fallback, or long-audio behavior and changes no runtime or public API.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The

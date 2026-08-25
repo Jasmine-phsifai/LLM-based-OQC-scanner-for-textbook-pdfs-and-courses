@@ -4907,6 +4907,36 @@ two-group success path works, use a deterministic synthetic fixture with
 visible text and authorized speech; do not immediately replay this request or
 silently change this failure-oriented fixture.
 
+## Iteration 288: content-bearing two-group video success is live-proven
+
+The independent success-path gate requested by #287 used a new deterministic,
+nonprivate 60-second MP4 rather than mutating or replaying the failure fixture.
+It contained 60 one-FPS 640x360 frames across twelve five-second scenes, each
+with large visible `OCRLLM TEST` and numbered scene text, plus locally
+synthesized authorized English speech. Provider-free public preflight retained
+ten nonempty JPEGs at indices 0, 5, 10, 20, 25, 30, 35, 45, 50, and 59, forming
+ordered 8+2 groups, and extracted a valid nonempty 240,560-byte MP3. Primary
+review independently repeated the public inspection and extraction and visually
+confirmed representative frames from both groups.
+
+The maintained runner was invoked exactly once. It discovered 37 current
+Google models and used explicit `gemini-2.5-flash` through separate image and
+audio configurations. Both image groups completed with exactly two aggregate
+image calls, the audio branch completed with exactly one call, and composition
+completed with eleven assets. Verified usage was 5,214 input and 231 output
+tokens for the same model. The direct .NET controller exited 0 after 16.927
+seconds without reaching its 420-second deadline; stdout was one 619-byte safe
+JSON object and stderr was empty. There was no retry, fallback, model switch,
+second runner, dependency change, or repository runtime/test/runner edit.
+
+This closes only the bounded content-bearing two-group success question and
+confirms that the current library can keep image and audio recognition branches
+separate through final video composition. It does not prove long-duration load,
+arbitrary media, other models/providers, retry policy, multi-provider fallback,
+or the deferred long-audio route. Future robustness runs must remain separate,
+single-question and capped; do not turn this evidence into a generic stress or
+provider framework.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
