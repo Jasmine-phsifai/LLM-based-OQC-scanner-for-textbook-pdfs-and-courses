@@ -1237,6 +1237,25 @@ or replay policy: the existing child state and top-level honesty are sufficient.
 PDF/image/Google neighbors pass 77 tests and the complete offline suite passes
 1,519.
 
+#253 truthfully refreshes the normal installed-video gate and leaves it open
+without changing package or runtime behavior. Exact commit `b91d5d0` again
+produced the same structurally valid 250,405-byte, 237-member wheel with SHA-256
+`075793d03ce4b75b9214c21d0e0f9a039b0c1d83175b21fa3337f50fbfe74dab`.
+Its base dependency set is empty, all eight extras and both `[video]` ranges are
+correct, `py.typed` is present, and no native payload is bundled.
+
+One fresh Python 3.10.20 venv made exactly one ordinary pip attempt for the
+exact wheel's `[video,audio,image]` extras through the normal PyPI index with
+zero retry and a bounded timeout. The retained session exited 1 after 26.064
+seconds while fetching `imageio-ffmpeg==0.6.0`: the proxy connection to
+`files.pythonhosted.org` was forcibly reset by the remote host (Windows 10054).
+The transaction installed nothing; only pip and setuptools remained. No
+installed import or real-MP4 proof followed, and the verified disposable root
+was removed after all owned processes exited. Treat this as precise external
+delivery failure, not permission to repin, vendor, add another installer, or
+borrow the source tree. Source package/video/publication neighbors pass 58
+tests; the normal installed-video gate remains open.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

@@ -347,6 +347,11 @@ publication and ordinary resume. Keep the two ordered eight-page child states
 authoritative: final status/warning remain partial and resume makes zero provider
 calls. Do not aggregate provider cleanup/model-attempt ledgers at PDF level or
 add legacy repair/replay machinery; the existing child sidecars are sufficient.
+#253 leaves the normal installed-video gate open after its one retained-session
+pip attempt failed with a remote proxy connection reset while fetching the
+declared imageio-ffmpeg wheel. The exact package artifact and metadata remain
+healthy and no partial install occurred. Do not retry-loop, repin, vendor,
+borrow a source environment, or claim installed real-media proof from this run.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -820,6 +820,14 @@ The following directions remain traceable but are not current work:
   while retaining the final Markdown and warning. Runtime was already correct;
   no PDF-level ledger, legacy repair format, retry, API, or dependency was added,
   and the full offline suite passes 1,519.
+  #253 keeps the ordinary installed-video gate open with better failure
+  evidence. The exact `b91d5d0` archive produced the same healthy 250,405-byte,
+  237-member wheel, but the only fresh `[video,audio,image]` pip attempt exited
+  1 after 26.064 seconds when the remote host reset the proxied
+  `files.pythonhosted.org` connection while fetching imageio-ffmpeg (Windows
+  10054). Nothing was installed and no installed-media claim followed. The
+  disposable root was removed; runtime, metadata, dependencies, and API remain
+  unchanged.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

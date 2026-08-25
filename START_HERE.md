@@ -334,6 +334,13 @@ zero provider calls and retains the same final status, warning, and Markdown.
 No runtime, PDF-level provider ledger, legacy repair format, or replay policy was
 added.
 
+#253 makes the next single normal-install attempt fully observable but does not
+close the installed-video gate. Exact commit `b91d5d0` produced the same healthy
+250,405-byte wheel; pip then exited 1 after 26.064 seconds because the remote
+host reset the proxied PyPI file connection while fetching imageio-ffmpeg
+(Windows 10054). The fresh environment installed nothing, so no external import
+or real-MP4 claim follows. No pin, installer, metadata, runtime, or API changed.
+
 #247 adds the missing public consumer proof for the opposite partial-video
 direction. A real MP4 whose frames succeed and whose audio provider fails once
 now continues through atomic `publish_video_result()` while retaining frame
