@@ -276,6 +276,13 @@ a parser or retune selection from an exploratory file whose own duration and
 final PTS disagree; proceed only with a valid red case, the pending installed
 extra gate, or the maintainer's #127 cancellation decision.
 
+#241 re-proves the #238 path once against authorized Google service. The exact
+short-video/long-audio shape retained final frame 1 at PTS 0.5, then two
+independent `gemini-2.5-flash` configs made one image call and one audio call;
+the complete two-asset composition reported 1,021/41 tokens and left no secret
+or temporary residue. This is post-change service evidence, not permission to
+repeat the run, merge configs, add retry, or generalize providers.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

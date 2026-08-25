@@ -1014,6 +1014,21 @@ add another parser, or manufacture a regression from that artifact. The next
 video gates remain the real installed `[video]` proof from #239 and the explicit
 #127 cancellation choice; neither authorizes runtime work here.
 
+#241 supplies the authorized real-service proof that #238 warranted. One
+synthetic MP4 with a two-frame/one-second video stream and twelve-second audible
+audio first passed public provider-free preflight with container duration 12.0,
+final retained frame index 1 / PTS 0.5, decodable JPEG, extracted MP3, and no
+owned residue. The maintained redacted runner then discovered 37 current Google
+models and, through two independent configs both explicitly selecting
+`gemini-2.5-flash`, completed exactly one image-group request and exactly one
+audio request. Outcome and composition were complete, retained one JPEG plus
+one MP3, and reported aggregated usage of 1,021 input / 41 output tokens. The
+sole runner invocation exited 0 in 8,548 ms with empty stderr and no credential,
+content, path, raw-response, child-environment, process, or temporary residue.
+This re-proves that the changed parser reaches both separated provider branches;
+it does not authorize retry, model switching, a shared config, provider
+framework, or another live replay without a later relevant runtime change.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

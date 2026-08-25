@@ -742,6 +742,13 @@ The following directions remain traceable but are not current work:
   OpenCV wheel payload. No package defect was reproduced, so dependency pins,
   runtime code, and installer surface remain unchanged; installed real-MP4
   proof waits for the declared dependency payloads to be obtainable.
+  #241 separately closes the post-#238 live-service question without claiming
+  installed-extra success. One two-frame/one-second video stream with twelve
+  seconds of audio passed public local preflight, then two independent Google
+  configs completed one image call and one audio call. The outcome/composition
+  retained JPEG plus MP3, reported 1,021/41 tokens, and left no credential or
+  temporary residue. No runtime, dependency, retry, model switch, shared config,
+  or provider abstraction changed.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

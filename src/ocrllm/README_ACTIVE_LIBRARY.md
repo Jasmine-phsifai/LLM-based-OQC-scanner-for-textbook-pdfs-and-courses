@@ -551,6 +551,14 @@ usage. The runner exited 0 in 9,721 ms with no retry, fallback, model switch,
 secret/content/path/raw-response disclosure, or request-owned residue. Using
 the same model in two configs does not collapse the two branch configurations
 or claim support for a second audio provider.
+After #238 corrected coarse frame seeking for a shorter video stream inside a
+longer audio container, #241 ran that exact shape once through the same gate.
+Provider-free preflight retained the exact final visual frame, then independent
+image and audio configs each completed one `gemini-2.5-flash` request. The
+complete two-asset composition reported 1,021 input / 41 output tokens; the
+single runner exited cleanly without retry, model switching, secret/content/path
+disclosure, or request-owned residue. This refresh does not change the API or
+generalize provider routing.
 The #207 real local regression continues that exact all-image-failed and
 audio-success shape through `publish_video_result()`. The final file remains
 partial, prints the stable frame error beside the successful audio section,
