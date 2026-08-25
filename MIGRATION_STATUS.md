@@ -828,6 +828,13 @@ The following directions remain traceable but are not current work:
   10054). Nothing was installed and no installed-media claim followed. The
   disposable root was removed; runtime, metadata, dependencies, and API remain
   unchanged.
+  #254 directly proves the provider-free audio extractor on one valid ten-hour
+  audible MP4: the 146,920,984-byte input became a fully decoded and atomically
+  published 144,000,512-byte MP3 in 54.886 seconds, then the disposable root
+  was removed. Shorter independent measurements and legacy history provide no
+  FFmpeg timeout failure evidence. The fixed 600-second per-process bound stays;
+  no dynamic timeout, long-audio video routing, #127/#152 choice, API, or
+  dependency was added.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

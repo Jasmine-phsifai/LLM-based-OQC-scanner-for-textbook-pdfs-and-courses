@@ -1256,6 +1256,26 @@ delivery failure, not permission to repin, vendor, add another installer, or
 borrow the source tree. Source package/video/publication neighbors pass 58
 tests; the normal installed-video gate remains open.
 
+#254 disproves a suspected long-video extraction timeout defect without changing
+runtime policy. Public `extract_video_audio()` processed a synthetic, valid
+ten-hour audible MP4 (146,920,984 bytes) through source snapshot, stream probe,
+mono MP3 extraction, complete decode validation, fsync, and atomic publication
+in 54.886 seconds. The published MP3 was 144,000,512 bytes, and the disposable
+root containing both large files was removed. A one-hour sample completed the
+same path in 5.033 seconds; an independent 120/600/1,800-second series measured
+0.294/0.902/2.540 seconds, with the 1,800-second extraction and validation
+stages separately far below the existing 600-second bound.
+
+Legacy uses the same fixed 600-second video-audio extraction timeout and records
+no FFmpeg extraction timeout incident; its duration-derived timeout belongs to
+already chunked audio windows and is not transferable evidence for this facade.
+Keep the current fixed bound, typed timeout failure, subprocess cleanup, and
+atomic staging lifecycle. Do not add a configurable or duration-scaled timeout
+until a real extraction failure records its stage and elapsed evidence. This is
+provider-free extraction proof only: combined video still routes only short MP3
+audio and does not gain long-audio recognition, #127 cancellation semantics, or
+#152 chunking. Extraction/video/composition neighbors pass 46 tests.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

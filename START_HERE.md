@@ -341,6 +341,14 @@ host reset the proxied PyPI file connection while fetching imageio-ffmpeg
 (Windows 10054). The fresh environment installed nothing, so no external import
 or real-MP4 claim follows. No pin, installer, metadata, runtime, or API changed.
 
+#254 directly challenges the fixed video-audio FFmpeg timeout with a valid
+ten-hour local MP4. Public extraction, full MP3 decode validation, and atomic
+publication completed in 54.886 seconds for a 146.9 MB source and produced a
+144.0 MB MP3; the disposable root was removed. No legacy FFmpeg extraction
+timeout incident was found, so the simple 600-second bound remains unchanged.
+This proves provider-free extraction only, not long-audio recognition from
+video or a #127/#152 decision.
+
 #247 adds the missing public consumer proof for the opposite partial-video
 direction. A real MP4 whose frames succeed and whose audio provider fails once
 now continues through atomic `publish_video_result()` while retaining frame

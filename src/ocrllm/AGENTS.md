@@ -352,6 +352,12 @@ pip attempt failed with a remote proxy connection reset while fetching the
 declared imageio-ffmpeg wheel. The exact package artifact and metadata remain
 healthy and no partial install occurred. Do not retry-loop, repin, vendor,
 borrow a source environment, or claim installed real-media proof from this run.
+#254 proves the fixed 600-second video-audio FFmpeg bound is not presently a
+duration-scaling defect: public extraction plus complete validation of a valid
+ten-hour MP4 took 54.886 seconds and cleaned its large temporary root. Keep the
+fixed bound and typed cleanup behavior; do not add dynamic/configurable timeout
+policy without a real timed-out extraction. This does not authorize long-audio
+video routing, #127, or #152.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
