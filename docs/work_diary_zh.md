@@ -5913,3 +5913,13 @@ Iteration #312 self-prompt: Determine and implement the narrowest maintainable l
 **运行与模型规则。** 下载、安装和全量安装态门禁先确认常开代理已启用并正确传给子进程，不能先把代理误关归类为普通网络故障；机械全流程交给轻量执行者，主执行者等待期间继续独立工作。DashScope 凭据只由隔离、脱敏的测试控制器复用 legacy UI 存储。后续可有限测试实时发现的约 27B 较小 OCR/通用推理候选，目标是公式、LaTeX、Mermaid、SVG/代码和推理；不追逐最新超大旗舰，普通 OCR 明显弱于 RapidOCR 的候选直接淘汰。
 
 **顺序与过度设计复查。** 下一轮只定义并预检 audio 自己的输出目录、`result.md` 和固定 sidecar 位置；无效或冲突目标必须在 provider dispatch 前拒绝。此时把路径规则与 provider dispatch、最终合成、repair、跨媒体命名空间、通用事务、provider class、自动 fallback 或 API pool 一起实现都会扩大真实需求，均不做。本轮只改权威状态、迁移入口、阶段计划和日记，没有 runtime、测试、依赖、凭据或网络操作。
+
+## #322 — 2026-08-26：先固定长音频路径，不抢跑生命周期
+
+**本轮英文原子任务。** `Atomic task — Iteration #322: define and preflight the library-owned long-audio publication paths selected in #321, without creating directories or dispatching a provider. Context: #319 accepts an explicit state path, #320 validates reuse, and #321 fixes output_dir/<normalized audio stem>/result.md plus one fixed temporary sidecar. Success means deriving those paths from one validated audio source and output directory; rejecting invalid names, non-directory parents, existing same-name targets, and result/sidecar collisions before any side effect; proving the Windows long-path risk at the bounded path-planning layer; and adding no provider, dispatch, publication, cleanup, repair, legacy format, generic transaction, or cross-media namespace. This matters because resume ownership cannot be wired safely until every paid call has one deterministic, conflict-free destination.`
+
+**中途发现与改向。** 初始任务里“路径规划器拒绝已有同名目录”与 resume 自相矛盾：合法 resume sidecar 就位于这个已存在目录中。若无运行模式一律拒绝，主恢复路径永远进不去。于是本轮删去 collision ownership，只做生命周期中立的路径计划；下一轮必须明确区分 new run 与 resume。#321 中过早写成“下一轮拒绝 collision”的句子也同步修正。这里不是增加兼容，而是避免防御代码直接破坏已确定的生产恢复方式。
+
+**失败优先与实现。** 新测试先因模块不存在而 collection 失败。新增 `LongAudioOutputPaths` 和 `plan_long_audio_output_paths()` 两个冷读职责：输入只接受 `Path`，输出固定为规范化同名 root、`result.md`、`.ocrllm-long-audio-resume.json`。允许尚未创建的 output parent；已有 parent 若不是目录则以 `OUTPUT_PATH_INVALID` 暴力拒绝。函数不建目录、不写文件、不读取 state，也不调用 provider。Windows 上任一最终绝对路径超过传统 259 个 UTF-16 单元即提前拒绝，直接覆盖 legacy 真实长路径风险，不实现 extended-path 兼容。
+
+**验证与过度设计复查。** 新增 9 项测试覆盖 Unicode/非法字符 stem、固定名称、零副作用、已有 resume root 保持中立、缺失 parent、非目录 parent、错误类型和 Windows 长路径；连同相邻输出/视频路径共 **46 passed**。完整离线源码 **1,675 passed in 63.79s**；`compileall`、轻量 import（122 modules、无 PIL/openai/httpx/onnxruntime）、frozen `contracts/worker` 和 diff check 通过。没有加入 new/resume enum、overwrite、自动改名、目录 claim、跨进程锁、通用事务、provider、dispatch、publication、repair 或 public export。精确提交后的安装态门禁仍是退出条件，并按维护者要求交给轻量执行者。

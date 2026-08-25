@@ -756,6 +756,16 @@ exports. The 1,666-test source suite passes. Exact commit `da8f0af` passes the
 complete installed gate with a 256,150-byte
 wheel; every profile and local media smoke passes without cloud I/O.
 
+#322 adds internal `LongAudioOutputPaths` and
+`plan_long_audio_output_paths()`. Keep the planner lifecycle-neutral: it owns
+only the normalized same-name root, fixed result/state names, structural parent
+validation, and the Windows legacy-length rejection. It must not create paths
+or reject every existing root, because a valid resume root already exists. The
+next consumer must explicitly distinguish new-run ownership from resume; do not
+add overwrite, auto-rename, generic locking/transactions, provider dispatch,
+repair, or public exports here. The 1,675-test source suite passes; exact
+installed proof is pending.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

@@ -5925,9 +5925,11 @@ The maintainer selected the same-name-directory publication layout. A long-audio
 job publishes beneath `output_dir/<normalized audio stem>/`; its final transcript
 is `result.md`, and temporary resume state uses one fixed library-owned sidecar
 in that directory. The next implementation slice may define and preflight only
-this audio-owned path boundary. It must reject an invalid or colliding target
-before provider dispatch and must not create a generalized output transaction,
-cross-media namespace, legacy-format adapter, or compatibility wrapper.
+this audio-owned path boundary. It must reject structurally invalid targets
+before provider dispatch; collision handling belongs to the explicit new-run or
+resume lifecycle because a resumable directory necessarily already exists. Do
+not create a generalized output transaction, cross-media namespace,
+legacy-format adapter, or compatibility wrapper.
 
 The product keeps two explicit recognition modes: whole-file and optionally
 enabled interval slicing. Interval length accepts exact integer minutes only.
@@ -5952,6 +5954,30 @@ SVG/code, and reasoning. Do not test the newest oversized flagship merely
 because it exists, and discard candidates whose ordinary OCR is clearly worse
 than RapidOCR. No provider-class hierarchy, automatic fallback, or API pool is
 part of this decision iteration.
+
+## Iteration 322: long-audio paths are deterministic before lifecycle ownership
+
+`plan_long_audio_output_paths()` now accepts validated `Path` inputs and returns
+one frozen audio-owned plan: `root`, `result`, and `resume_state`. It normalizes
+only the source stem, fixes `result.md` and `.ocrllm-long-audio-resume.json`,
+allows an absent output parent, rejects an existing non-directory parent, and
+performs no mkdir, file creation, provider dispatch, or state load. On Windows,
+any planned absolute path beyond the legacy 259 UTF-16-unit boundary fails as
+`OUTPUT_PATH_INVALID` before filesystem production work.
+
+An existing same-name job directory is intentionally neutral at this layer.
+Rejecting it here would also reject the directory containing a legitimate
+resume sidecar. The next atomic slice must define one explicit new-run versus
+resume ownership preflight: new work rejects an already claimed job root;
+resume accepts only the exact owned directory/state shape and still rejects a
+published final result unless a separately authorized overwrite contract is
+introduced. Do not infer this distinction from incidental files, auto-rename a
+collision, or add a generalized transaction/locking abstraction.
+
+The new and neighboring output regressions pass 46 tests; the complete offline
+source suite passes 1,675 tests. Compilation, lightweight import, frozen
+`contracts/worker`, and diff checks pass. Exact committed installed proof is
+still required.
 
 ## Documentation Rules
 

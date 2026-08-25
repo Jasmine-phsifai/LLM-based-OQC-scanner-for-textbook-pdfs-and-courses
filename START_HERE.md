@@ -751,8 +751,15 @@ all profiles and local media smokes green, no cloud I/O, and complete cleanup.
 `output_dir/<normalized audio stem>/result.md`, with one temporary resume
 sidecar in that same-name directory. Whole-file and optional interval modes are
 both required; interval length is exact integer minutes. The next slice is path
-definition and zero-dispatch collision preflight only, not dispatch, repair,
-provider abstraction, fallback, or legacy-format compatibility.
+definition and structural preflight only, not dispatch, repair, provider
+abstraction, fallback, or legacy-format compatibility. Collision ownership must
+distinguish a new run from the existing directory required by resume.
+
+#322 now provides the lifecycle-neutral internal path plan: normalized same-name
+root, `result.md`, and `.ocrllm-long-audio-resume.json`. It creates nothing,
+rejects a non-directory output parent and overlong Windows paths, and permits an
+existing job root until the caller explicitly selects new-run or resume
+ownership. All 1,675 source tests pass; exact installed proof is pending.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

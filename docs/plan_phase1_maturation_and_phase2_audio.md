@@ -556,10 +556,18 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
   `output_dir/<normalized audio stem>/result.md` and one temporary resume
   sidecar in that same-name directory. Both whole-file and optional interval
   modes remain required; interval length is exact integer minutes. The next
-  slice should define and preflight this path boundary only, rejecting collisions
-  before dispatch. Do not combine it with provider dispatch, final composition,
+  slice should define and structurally preflight this path boundary only. Do
+  not reject all existing job directories here because resume owns one; the
+  following lifecycle slice must distinguish new-run collision from valid
+  resume ownership. Do not combine it with provider dispatch, final composition,
   repair, legacy compatibility, generic transactions, provider classes, or
   fallback pools.
+- #322 implements that lifecycle-neutral path planner. It fixes the normalized
+  job root, `result.md`, and `.ocrllm-long-audio-resume.json`, rejects an
+  existing non-directory output parent and overlong Windows planned paths, and
+  creates nothing. All 1,675 source tests pass. The next slice is one explicit
+  new-run/resume ownership preflight; no overwrite, auto-rename, locking,
+  dispatch, repair, or generic transaction belongs in it.
 
 ### Stage A exit gate
 

@@ -1345,8 +1345,14 @@ The following directions remain traceable but are not current work:
   `output_dir/<normalized audio stem>/result.md` plus one temporary resume
   sidecar in that same-name directory. Both whole-file and optional exact-
   integer-minute interval modes remain in scope. The next slice is only path
-  definition and pre-dispatch collision rejection; repair, legacy formats,
-  provider classes, fallback pools, and dispatch remain separate.
+  definition and structural preflight. Collision ownership must distinguish a
+  new run from the existing directory required by resume; repair, legacy
+  formats, provider classes, fallback pools, and dispatch remain separate.
+  #322 implements the lifecycle-neutral internal plan for the normalized job
+  root, `result.md`, and `.ocrllm-long-audio-resume.json`. It performs no writes,
+  rejects a non-directory output parent and overlong Windows paths, and leaves
+  existing-root handling to the next explicit new-run/resume ownership gate.
+  All 1,675 source tests pass; exact installed proof remains open.
 
 ## Obsolete Prose Kept For Trace
 
