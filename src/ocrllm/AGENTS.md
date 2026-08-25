@@ -522,6 +522,17 @@ persist exit/timing; do not modify machine/user policy, the gate, dependencies,
 pins, index, mirror, cache, retry, or timeout settings. The ordinary installed
 combined-video proof stays open. Later stress robustness tests remain separate,
 capped gates after valid basic installed/live proof.
+#284 carried the known launch prerequisites and entered the unchanged gate from
+exact `6f3e8e4`, but its archive dependency/pytest process reached the maintained
+1,200-second stage timeout before `test session starts`. Archive expansion and
+uv download markers for imageio-ffmpeg, OpenCV, and NumPy appeared; pytest,
+wheel, profiles, installed combined video, credentials, and provider calls did
+not. Treat this as external delivery evidence only and do not change delivery
+policy or immediately replay. The wrapper's null exit is a reproduced host
+`Start-Process -PassThru` behavior: even a local `exit 7` child yields null after
+WaitForExit/Refresh. Future fixed workflows requiring numeric exit should use
+direct .NET Process APIs or a small explicit status channel, not a shared runner
+framework or more refresh calls. All owned roots and processes were cleared.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

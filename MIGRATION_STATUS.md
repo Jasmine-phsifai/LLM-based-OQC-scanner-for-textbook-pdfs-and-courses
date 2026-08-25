@@ -1041,6 +1041,19 @@ The following directions remain traceable but are not current work:
   without changing machine policy or delivery settings. The ordinary combined
   install proof remains open; later capped stress robustness tests still follow
   valid basic installed/live proof.
+  #284 then entered the unchanged maintained gate from exact `6f3e8e4` with the
+  known process-only execution-policy prerequisite. The gate ended at its own
+  1,200-second archive dependency/pytest timeout after 1,202.327091 seconds;
+  archive expansion and uv download markers appeared, but the pytest header,
+  wheel, profiles, combined installed-video proof, credentials, and provider
+  calls did not. This is terminal external delivery evidence, not a package
+  runtime failure, and was not replayed. Its numeric exit remained null; a
+  zero-network `exit 7` child proved that this host's Windows PowerShell
+  `Start-Process -PassThru` also returns null after WaitForExit/Refresh. Future
+  evidence collection should use direct .NET Process APIs or a small explicit
+  status channel without changing the maintained gate or delivery policy. All
+  owned roots/processes were cleared; the ordinary combined install gate and
+  later bounded stress gate remain open in that order.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

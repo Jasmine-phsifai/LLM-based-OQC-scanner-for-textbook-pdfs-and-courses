@@ -4775,6 +4775,37 @@ stress robustness work is allowed, but only after the corresponding basic
 installed/live flow is proven and only as separate question-driven, capped,
 deadline-controlled, cleanup-verified iterations rather than long-lived load.
 
+## Iteration 284: the clean gate again stopped in archive dependency delivery
+
+One unchanged maintained-gate run from exact clean commit `6f3e8e4` carried the
+known process-only execution-policy prerequisite and valid path quoting. Its
+outer deadline was armed before launch at `2026-08-25T13:00:01.8616201Z`; the
+child ended at `13:20:04.1887111Z` after 1,202.327091 seconds without triggering
+the 3,600-second outer deadline. The gate itself emitted the archive-stage start
+and terminal 1,200-second timeout markers. The archive expanded and uv reported
+downloads of imageio-ffmpeg, OpenCV, and NumPy, but `test session starts` never
+appeared. Therefore pytest, wheel building, optional-profile installation, and
+the combined installed-video proof did not begin. No credential or provider
+call occurred.
+
+The wrapper retained complete native logs but its numeric child exit was null.
+A disposable zero-network `exit 7` child reproduced that exact host behavior:
+Windows PowerShell `Start-Process -PassThru` returned a
+`System.Diagnostics.Process` with `WaitForExit=True` and `HasExited=True`, yet
+`ExitCode=$null` even after no-argument `WaitForExit()` and `Refresh()`. Do not
+invent exit 1. Future delegated process evidence that requires a numeric exit
+must use direct .NET `ProcessStartInfo`/`Process` or an equally small explicit
+status channel, not more `Start-Process` refresh calls or a general orchestration
+framework. The local probe, gate-owned root, wrapper root, and related processes
+were removed or absent after inspection.
+
+This is terminal external delivery evidence, not an archived-test, wheel,
+OpenCV-runtime, or video failure. Do not change dependencies, pins, index,
+mirror, cache, retries, timeout policy, installer, or gate structure from it,
+and do not immediately replay. The ordinary installed combined-video gate
+remains open; later bounded stress robustness testing still follows a valid
+basic installed/live proof.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
