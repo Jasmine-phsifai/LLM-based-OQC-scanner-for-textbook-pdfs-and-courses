@@ -5713,3 +5713,19 @@ Atomic task — Iteration #307: determine why the clean-installed dependency-emp
 **路线选择和过度设计复查。** 路线 A 是排除 `.pyc` 后继续声称 1 MiB；路线 B 是保持历史真实落盘口径并只调整已经失真的 base 上限，选 B。历史所有 base/profile 数字都包含 installer 生成 bytecode，改口径会失去纵向可比性。base ceiling 从 1 MiB 调为 **1.5 MiB (1,572,864 bytes)**；独立 wheel ceiling 仍为 **256 KiB (262,144 bytes)**，当前只剩 5,061 bytes 余量，仍会对源码增长强约束。没有删除 625 行活动库说明，因为它有明确安装者消费者和历史发行意图；也没有机械搜索并删除冻结模块、调 profile 预算或发明新的体积分析框架。
 
 **失败优先、验证与临时残留。** 新预算测试先因脚本仍无 `$baseTargetMaximumBytes` 明确失败，修后 controller 集 **9 passed in 2.06s**，PowerShell AST error **0**、diff check 通过。两份本轮测量 TEMP 根均已精确定位并验证位于系统 TEMP；递归 `Remove-Item -LiteralPath` 被执行安全策略拒绝，因此没有换 Python/cmd 绕过，暂记为可丢弃 residue，绝不声称已清理。完整离线套件和提交后 full gate 仍需完成后再报告。
+
+**提交后 full gate。** 精确 `1115b8b998ebfed34d63fb1e28d79ee9c89db738` 的唯一门禁再次确认代理并完成 **1,572 passed, 1 skipped in 66.39s**、wheel/base/import；六个 profile 通过：audio **3,450,056**、image **16,959,741**、image+DashScope **41,535,127**、Google **41,588,232**、audio+Google **42,488,567**、PDF vision **25,158,162 bytes**。随后 fresh pip 在 video profile 对 `opencv-python>=4.13,<4.14` 报 `(from versions: none)`；video 和 combined video 未开始。gate 临时根和相关进程均清理，不能报告全通过。
+
+## #308 — 2026-08-26：实时 catalog 证明 OpenCV pin 仍有效，拒绝错误降级
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #308: establish whether the video extra’s OpenCV constraint is satisfiable for Windows CPython 3.10, and repair the pin only if live catalog plus source tests prove the current range impossible and a narrower supported range sufficient. Context: the #307 gate passed base plus six profiles and failed only resolving `opencv-python>=4.13,<4.14`; proxy and package delivery were otherwise healthy. Success means tracing why 4.13 was selected, checking the live index without downloading wheels, proving the active video code against the nearest compatible release already available locally or in a bounded delegated install, changing one dependency range and its exact tests/docs if justified, full offline verification, commit/push, and one delegated full gate. This matters because an impossible optional dependency makes the importable library undistributable, while casually widening to arbitrary old OpenCV can hide API incompatibility.
+```
+
+**pin 来源与本机证据。** Git blame 指向视频 inspection 首片；当时当前环境真实使用 OpenCV 4.13.0.92，并因无约束 `<5` 会选择未测试 4.14 而收紧为 `>=4.13,<4.14`。现在 `D:\Anaconda\envs\OCRLLM` 仍是 Python 3.10.20、OpenCV **4.13.0.92**，本轮相邻完整 suite 已在它上面 **1,573 passed**。这不是一个未测试的未来版本假设。
+
+**轻量 catalog 任务。** 执行者确认 WinINET `127.0.0.1:10080`、TCP 与显式代理官方 PyPI；当前没有 `PIP_INDEX_URL`、`PIP_EXTRA_INDEX_URL`、`UV_INDEX_URL` 或 `UV_DEFAULT_INDEX` 覆盖。逐版本 JSON 显示 **4.13.0.90 / 4.13.0.92** 都有未 yanked 的 `cp37-abi3-win_amd64` wheel、`Requires-Python >=3.6`，兼容 CPython 3.10 x64。`uv 0.11.7 pip install --dry-run --no-cache --reinstall --index https://pypi.org/simple 'opencv-python>=4.13,<4.14'` 在 **9.62s / exit 0** 解析为 4.13.0.92 + NumPy 2.2.6，没有安装、下载 wheel body 或改缓存。大 JSON 总接口曾传输停顿，执行者改为逐版本 endpoint；没有循环重试。
+
+**决定与过度设计复查。** 路线 A 是因为单次 fresh pip 空候选就降到 4.12、放宽上界或内置 wheel；路线 B 是保留已经实测且当前可解析的窄 pin，并在 catalog 实质刷新后允许一次 clean gate，选 B。没有版本修改、mirror/cache 管理器、fallback installer 或版本轮询。若下一次仍失败，必须按精确 resolver/transport 证据分类，不能继续机械换版本。本轮只改当前事实文档，不改 runtime、依赖或测试。

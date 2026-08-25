@@ -1234,6 +1234,12 @@ The following directions remain traceable but are not current work:
   metadata, and 36,455 bytes of package documentation, with no accidental
   tests/legacy/media payload. It retains this real-disk measurement and raises
   only the base target cap to 1.5 MiB; the 256 KiB wheel cap remains unchanged.
+  Its clean rerun passes base and the first six optional profiles, then fresh
+  pip reports no candidate for the video OpenCV range. #308 proves from current
+  official PyPI metadata and a no-cache dry resolution that 4.13.0.90 and
+  4.13.0.92 remain compatible with Windows CPython 3.10 and that 4.13.0.92 plus
+  NumPy 2.2.6 resolves through the active proxy. The tested bounded pin is not
+  changed for one transient empty candidate response.
 
 ## Obsolete Prose Kept For Trace
 

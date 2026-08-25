@@ -631,7 +631,13 @@ tests with one skip, built, checked, and installed the wheel, but the real base
 target had grown to 1,265,634 bytes and exceeded the old 1 MiB budget before
 optional profiles. #307 proves the target contains no accidental payload and
 raises only that real-disk budget to 1.5 MiB; the 256 KiB wheel cap stays fixed.
-The installed combined-video gate remains open until #307 is rerun cleanly.
+The clean #307 gate then passed base plus audio, image, image+DashScope, Google,
+audio+Google, and PDF-vision profiles, but one fresh pip process reported no
+OpenCV candidates at the video profile. #308 live catalog evidence confirms
+4.13.0.90 and 4.13.0.92 still provide compatible Windows ABI3 wheels, and a
+no-cache dry resolution selects 4.13.0.92 plus NumPy 2.2.6 through the active
+proxy. The pin remains correct; the installed combined-video gate remains open
+for one clean replay after that materially different index response.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

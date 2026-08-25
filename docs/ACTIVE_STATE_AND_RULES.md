@@ -5460,6 +5460,31 @@ profile allowance, or provider/media behavior changes. The failing-first budget
 regression and complete controller set pass 9 tests; PowerShell has zero AST
 errors. A clean full-gate rerun remains required.
 
+The clean #307 rerun from exact commit `1115b8b998ebfed34d63fb1e28d79ee9c89db738`
+passed 1,572 archived tests with one expected skip, wheel/base/import checks,
+and the audio, image, image+DashScope, Google, audio+Google, and PDF-vision
+profiles. Their installed deltas were 3,450,056; 16,959,741; 41,535,127;
+41,588,232; 42,488,567; and 25,158,162 bytes. Fresh pip then reported
+`(from versions: none)` for `opencv-python>=4.13,<4.14` in the video profile,
+so video and combined video did not run. Cleanup and proxy checks passed.
+
+## Iteration 308: the OpenCV pin remains valid after live catalog verification
+
+Current official PyPI version metadata lists both `opencv-python` 4.13.0.90 and
+4.13.0.92 with non-yanked `cp37-abi3-win_amd64` wheels and Python >=3.6. Those
+tags are compatible with the gate's Windows CPython 3.10. A delegated
+`uv 0.11.7` no-cache dry resolution through the active proxy and explicit
+official index resolves 4.13.0.92 plus NumPy 2.2.6 in 9.62 seconds without
+installing or downloading wheel bodies. No PIP/UV alternate-index environment
+variable is set. The maintained OCRLLM environment also runs the complete video
+suite on installed 4.13.0.92.
+
+Therefore the one pip empty-candidate response does not justify downgrading,
+widening, hardcoding a wheel, adding a mirror, or changing the tested
+`>=4.13,<4.14` contract. This is a materially refreshed external-catalog
+condition, so one clean delegated gate replay is allowed. If that replay fails,
+record its exact resolver/transport evidence rather than cycling versions.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
