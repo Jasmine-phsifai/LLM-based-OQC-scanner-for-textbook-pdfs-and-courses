@@ -2196,6 +2196,28 @@ setting, or permanent five-minute fixture is justified. No provider, network,
 credential, dependency installation, runtime, API, output layout, legacy
 compatibility, frozen boundary, or open #127/#149/#152 choice changed.
 
+#205 corrects the maintained Google combined-video smoke gate so it now tests
+the image/audio separation already shipped by the Python library. The runner's
+obsolete single required `--model` was replaced, without an alias, by required
+`--image-model` and `--audio-model` arguments. Both names must be present in one
+live catalog discovery before any media recognition starts; catalog membership
+does not claim audio-format support, which remains for the real audio request
+to prove. Image results are validated only against the image model, audio
+results only against the audio model, and safe JSON reports both identities.
+
+Composition usage remains the library's existing per-model aggregation: two
+different configured names stay separate, while the same name used by both
+branches becomes one summed item. The smoke validator rejects usage belonging
+to an unconfigured third model and does not invent missing usage. Eighteen
+runner tests and 43 runner/video/composition tests pass; compilation and diff
+checks pass. Plain `import ocrllm` still loads none of OpenCV, NumPy,
+imageio-ffmpeg, Pillow, miniaudio, Google, OpenAI, HTTPX, or legacy modules.
+This changed a maintained evidence tool and current documentation,
+not the public `ocrllm` API or provider runtime. No live call, compatibility
+wrapper, hardcoded audio-capability list, provider framework, retry, fallback,
+model switch, legacy format support, frozen boundary, or open #127/#149/#152
+choice was added.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

@@ -166,6 +166,12 @@ candidates containing an alternating cursor calibrated to six frames, and the
 published JPEGs still represented both major slide states. Preserve this
 evidence boundary; do not add cursor/subtitle classification or retune from one
 fixture without a reproduced failure.
+#205 makes the maintained Google combined-video gate accept explicit image and
+audio models instead of pretending both branches must share one model. Keep
+catalog discovery single and live, validate each result against its own model,
+and allow composition to aggregate equal names or retain distinct names. Do not
+restore a shared-model compatibility flag or infer audio capability from catalog
+membership.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

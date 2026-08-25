@@ -490,9 +490,10 @@ gate proves this bounded result path rather than transcription quality.
 ## Bounded Google Combined-Video Live Smoke
 
 Install `ocrllm[video,image,audio,google]` and run one authorized MP4 through
-`tools/run_google_genai_video_smoke.py` with an explicit current-catalog model,
-video path, and timeout. The runner uses separate image and audio `Config`
-objects and prints only catalog/model, branch status, retained/group/asset
+`tools/run_google_genai_video_smoke.py` with explicit current-catalog
+`--image-model` and `--audio-model` values, a video path, and a timeout. The
+runner uses separate image and audio `Config` objects and prints only
+catalog/models, branch status, retained/group/asset
 counts, stable error codes, exact-or-null calls, and validated per-model token
 usage when composition succeeds. It never prints recognition text, paths,
 credentials, or raw provider responses and performs no retry or model switch.

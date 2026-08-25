@@ -4165,3 +4165,17 @@ Atomic task — Iteration #204: balance #202’s positive small-text evidence wi
 **候选差异与公开结果。** 五秒粗采样得到 61 个候选：`0,5,...,295,299`。同一主页面内 58 对非零相邻候选的 cursor-only luminance diff 全为 **0.0126953125**，color 为 **0.01171875**；最后同位置 pair 为 0。145→150 的主换页 luminance 为 **0.05401611328125**，color/max 为 **0.9892578125**。五分钟目标为 5–10 张。内部 selector 与公开 `extract_video_frames()` 完全一致，保留 `[45,95,145,195,245,299]`，时间同为这些秒数，共 6 张，间隔 50–54 秒。
 
 **像素身份、结论与过度设计复查。** 不能只凭索引跨过 150 就声称两页都在；因此用预声明 title ROI 数值分类实际发布 JPEG。前三张明确属于 A、后三张属于 B：A→A template distance 约 2.986、A→B 约 23.165；B→B 约 2.137、B→A 约 24.079。总耗时 937.837 ms，唯一外部根已删除，仓库无变化。#202–#204 现在形成平衡证据：2.29% 的短暂清晰文字被保留并被真实 Google 识别，约 1.27% 的持续光标运动不会让 61 个候选爆成输出，同时主换页不丢。没有理由修改阈值、添加 cursor/subtitle detector、公开质量设置或永久五分钟 fixture。本轮无 provider/network/credential/install/runtime/API/dependency/output layout 变化，不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。
+
+## #205 — 2026-08-25：Google 视频真实测试不再强迫图片和音频共用模型
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #205: make the maintained Google combined-video smoke reflect the library’s shipped image/audio configuration separation by requiring explicit image and audio model arguments instead of forcing one shared model. Success means reconciling authority and diary, tracing the runner’s safe-summary and token-usage validation, replacing the single-model CLI contract without a compatibility wrapper, proving distinct models reach only their respective branches and remain separately validated in composition, updating focused tests/docs, and making no provider call. This matters because Google exposes fewer audio-capable models than image-capable models; a live gate that forces one model can manufacture failures and does not test the Python library contract it claims to exercise.
+```
+
+**实际缺口、两条路线与选择。** library 的 `recognize_video()` 已经接收完全独立的 `image_config` 和 `audio_config`，视频 runtime 没有把 provider 或模型串用；问题只在维护者真实测试脚本仍只有一个必填 `--model`，再把它同时填进两套配置。这会让“图片可用、音频不可用”的真实模型组合无法测试。路线 A 是保留 `--model`，再增加两个覆盖参数；这会产生参数优先级和并不存在的旧工具兼容义务。路线 B 是直接替换成必填 `--image-model` 与 `--audio-model`。选择 B：工具不是 legacy 产品格式，也没有仓库内生产 caller 依赖旧参数。轻量只读审计独立确认 runtime 无需修改，并指出 catalog 可见不等于音频格式可用；真正能力仍应由一次真实音频请求证明，不能硬编码支持列表。
+
+**最小实现与诚实证据。** runner 仍只拉一次当前 catalog，但在创建临时输出和调用 `recognize_video()` 前验证两个模型都存在；任一缺失都返回原有安全的 `model_selection/CONFIG_INVALID`，provider 调用为零。图片 `Config`、图片结果 metadata 只接受 image model；音频一侧只接受 audio model。安全 JSON 顶层把含糊的 `model` 改为 `image_model` 和 `audio_model`。composition 沿用 library 已有的按模型累计：两个不同模型保持两项 10/2 与 20/4；同一个模型被两分支使用时合并为一项 30/6；第三个未配置模型被拒绝。缺失 usage 仍可缺失，不编造为零。没有增加第二 runner、通用 provider 类、retry/fallback/model switch 或模型能力表。
+
+**验证、library 边界与过度设计复查。** runner 精确回归为 **18 passed**；runner、`recognize_video()` 与 composition 相邻集合为 **43 passed in 4.64s**；`compileall -q src tests tools` 与 `git diff --check` 通过。普通 `import ocrllm` 仍从 `src/ocrllm/__init__.py` 导入，并且没有加载 OpenCV、NumPy、imageio-ffmpeg、Pillow、miniaudio、Google/OpenAI SDK、HTTPX 或 legacy 模块；CLI 帮助也只展示两个必填模型参数。本轮没有真实 API 调用、凭据、网络、依赖安装、library runtime/public API/output layout、legacy compatibility 或 frozen `contracts/worker` 变化，也没有越过 #127/#149/#152。最接近过度防御的是继续扩张安全 summary schema 或为历史脚本做兼容层；本轮只验证已经由 composition 保证的模型累计和一个未配置模型拒绝，没有新增重复模型修复器、provider 抽象或自动换模型。下一次有真实视频调测理由时，才用两个当前 catalog 模型运行这个入口；不能因为本轮离线测试通过就宣称某个模型实际支持音频。

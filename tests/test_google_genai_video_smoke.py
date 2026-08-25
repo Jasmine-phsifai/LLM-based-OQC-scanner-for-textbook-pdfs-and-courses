@@ -12,11 +12,12 @@ from ocrllm import (
     RetainedVideoFrame,
     VideoRecognitionOutcome,
 )
-from ocrllm.errors import ProviderError, VideoError
+from ocrllm.errors import ConfigError, ProviderError, VideoError
 from tools import run_google_genai_video_smoke as smoke
 
 
-MODEL = "gemini-video-live-model"
+IMAGE_MODEL = "gemini-video-image-model"
+AUDIO_MODEL = "gemini-video-audio-model"
 
 
 def _frame_result(
@@ -24,17 +25,18 @@ def _frame_result(
     markdown: str,
     output_path: Path | None = None,
     include_usage: bool = False,
+    model: str = IMAGE_MODEL,
 ) -> RecognitionResult:
     metadata: dict[str, object] = {
         "provider": "google",
-        "model": MODEL,
+        "model": model,
         "provider_call_count": 1,
         "video_frame_indices": (0,),
         "video_frame_timestamps_seconds": (0.0,),
     }
     if include_usage:
         metadata["current_model_token_usage"] = (
-            {"model": MODEL, "input_tokens": 10, "output_tokens": 2},
+            {"model": model, "input_tokens": 10, "output_tokens": 2},
         )
     return RecognitionResult(
         markdown=markdown,
@@ -49,15 +51,16 @@ def _audio_result(
     markdown: str,
     output_path: Path | None = None,
     include_usage: bool = False,
+    model: str = AUDIO_MODEL,
 ) -> RecognitionResult:
     metadata: dict[str, object] = {
         "provider": "google",
-        "model": MODEL,
+        "model": model,
         "provider_call_count": 1,
     }
     if include_usage:
         metadata["current_model_token_usage"] = (
-            {"model": MODEL, "input_tokens": 20, "output_tokens": 4},
+            {"model": model, "input_tokens": 20, "output_tokens": 4},
         )
     return RecognitionResult(
         markdown=markdown,
@@ -77,6 +80,8 @@ def _build_outcome(
     frame_output_path: Path | None = None,
     audio_output_path: Path | None = None,
     include_usage: bool = False,
+    image_model: str = IMAGE_MODEL,
+    audio_model: str = AUDIO_MODEL,
 ) -> VideoRecognitionOutcome:
     output_root = output_dir / "video"
     frames_dir = output_root / "frames"
@@ -98,6 +103,7 @@ def _build_outcome(
                     markdown=private_markdown,
                     output_path=frame_output_path,
                     include_usage=include_usage,
+                    model=image_model,
                 ),
             ),
         )
@@ -118,6 +124,7 @@ def _build_outcome(
                 markdown=private_markdown,
                 output_path=audio_output_path,
                 include_usage=include_usage,
+                model=audio_model,
             )
             if audio_error is None
             else None
@@ -126,9 +133,14 @@ def _build_outcome(
     )
 
 
-def _arguments() -> argparse.Namespace:
+def _arguments(
+    *,
+    image_model: str = IMAGE_MODEL,
+    audio_model: str = AUDIO_MODEL,
+) -> argparse.Namespace:
     return argparse.Namespace(
-        model=MODEL,
+        image_model=image_model,
+        audio_model=audio_model,
         video=Path("private-video-name.mp4"),
         timeout=9.0,
     )
@@ -138,7 +150,7 @@ def _install_catalog(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         smoke,
         "list_google_genai_models",
-        lambda settings, timeout_seconds: (MODEL,),
+        lambda settings, timeout_seconds: (IMAGE_MODEL, AUDIO_MODEL),
     )
 
 
@@ -155,8 +167,8 @@ def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
         observed_roots.append(Path(output_dir).parent)
         assert source == _arguments().video
         assert image_config is not audio_config
-        assert image_config.vision_model.name == MODEL
-        assert audio_config.audio_model.name == MODEL
+        assert image_config.vision_model.name == IMAGE_MODEL
+        assert audio_config.audio_model.name == AUDIO_MODEL
         assert image_config.timeout_seconds == audio_config.timeout_seconds == 9.0
         return _build_outcome(
             Path(output_dir),
@@ -171,8 +183,9 @@ def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
     assert summary == {
         "report_type": "video_outcome",
         "status": "passed",
-        "catalog_count": 1,
-        "model": MODEL,
+        "catalog_count": 2,
+        "image_model": IMAGE_MODEL,
+        "audio_model": AUDIO_MODEL,
         "outcome_status": "complete",
         "frames": {
             "status": "complete",
@@ -219,12 +232,95 @@ def test_video_smoke_reports_only_validated_model_token_usage(
 
     assert summary["composition"]["model_token_usage"] == [
         {
-            "model": MODEL,
+            "model": IMAGE_MODEL,
+            "input_tokens": 10,
+            "output_tokens": 2,
+        },
+        {
+            "model": AUDIO_MODEL,
+            "input_tokens": 20,
+            "output_tokens": 4,
+        },
+    ]
+    assert "PRIVATE TOKEN USAGE TRANSCRIPT" not in json.dumps(summary)
+
+
+def test_video_smoke_aggregates_usage_when_both_branches_use_same_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    shared_model = "gemini-video-shared-model"
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda settings, timeout_seconds: (shared_model,),
+    )
+    monkeypatch.setattr(
+        smoke,
+        "recognize_video",
+        lambda source, **kwargs: _build_outcome(
+            Path(kwargs["output_dir"]),
+            private_markdown="PRIVATE",
+            include_usage=True,
+            image_model=shared_model,
+            audio_model=shared_model,
+        ),
+    )
+
+    summary = smoke.run_google_genai_video_smoke(
+        _arguments(image_model=shared_model, audio_model=shared_model)
+    )
+
+    assert summary["composition"]["model_token_usage"] == [
+        {
+            "model": shared_model,
             "input_tokens": 30,
             "output_tokens": 6,
         }
     ]
-    assert "PRIVATE TOKEN USAGE TRANSCRIPT" not in json.dumps(summary)
+
+
+def test_video_smoke_rejects_usage_from_an_unconfigured_model() -> None:
+    with pytest.raises(ConfigError, match="invalid model-usage evidence"):
+        smoke._safe_model_token_usage(
+            {
+                "current_model_token_usage": (
+                    {
+                        "model": "unexpected-third-model",
+                        "input_tokens": 1,
+                        "output_tokens": 1,
+                    },
+                )
+            },
+            (IMAGE_MODEL, AUDIO_MODEL),
+        )
+
+
+@pytest.mark.parametrize("catalog_models", [(IMAGE_MODEL,), (AUDIO_MODEL,)])
+def test_video_smoke_rejects_missing_branch_model_before_recognition(
+    monkeypatch: pytest.MonkeyPatch,
+    catalog_models: tuple[str, ...],
+) -> None:
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda settings, timeout_seconds: catalog_models,
+    )
+    recognition_called = False
+
+    def fake_recognize_video(*args, **kwargs):
+        nonlocal recognition_called
+        recognition_called = True
+        raise AssertionError("recognition must not start")
+
+    monkeypatch.setattr(smoke, "recognize_video", fake_recognize_video)
+
+    with pytest.raises(smoke._LiveSmokeFailure) as failure:
+        smoke.run_google_genai_video_smoke(_arguments())
+
+    assert failure.value.stage == "model_selection"
+    assert failure.value.error is not None
+    assert failure.value.error.code == "CONFIG_INVALID"
+    assert recognition_called is False
 
 
 def test_video_smoke_preserves_audio_provider_failure_call_count(
@@ -533,7 +629,19 @@ def test_video_smoke_main_redacts_unexpected_failure(
         lambda arguments: (_ for _ in ()).throw(RuntimeError(secret)),
     )
 
-    assert smoke.main(["--model", MODEL, "--video", "private-name.mp4"]) == 1
+    assert (
+        smoke.main(
+            [
+                "--image-model",
+                IMAGE_MODEL,
+                "--audio-model",
+                AUDIO_MODEL,
+                "--video",
+                "private-name.mp4",
+            ]
+        )
+        == 1
+    )
     raw = capsys.readouterr().out
     assert json.loads(raw) == {
         "report_type": "runner_failure",

@@ -605,6 +605,12 @@ The following directions remain traceable but are not current work:
   published frames within the 5–10 target, while pixel checks proved three
   retained Slide A frames and three Slide B frames across the major transition.
   No threshold or cursor/subtitle detector was added.
+  #205 updates the maintained live gate to match the already-public branch
+  separation: Google combined-video smoke now requires independent image/audio
+  model arguments, validates both against one current catalog before dispatch,
+  checks each result against its own model, and preserves same-model aggregation
+  or distinct-model usage. This is evidence tooling, not a new provider layer or
+  public runtime API.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

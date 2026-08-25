@@ -158,8 +158,11 @@ uses ceiling partition counts so a maximum-length stable segment is not rounded
 into too few retained intervals. #134's post-change Google video run proved the
 image and partial-composition paths but lost the failed audio branch's safe error
 evidence. #135 adds the maintained, redacted combined-video smoke runner with
-separate image/audio configs and exact-or-unknown branch call evidence; the next
-bounded live run must use it with a controlled one-image-group fixture. #136's
+separate image/audio configs and exact-or-unknown branch call evidence. #205
+removes its obsolete shared-model CLI assumption: current runs require separate
+`--image-model` and `--audio-model` values from one live catalog and validate
+each branch against its configured model. The next bounded live run must use it
+with a controlled one-image-group fixture. #136's
 first such attempt lost its external asynchronous session identifier after the
 runner completed, so it proves no provider outcome; the next controller must
 poll that exact session and preserve safe JSON before cleanup. #137 did so: one

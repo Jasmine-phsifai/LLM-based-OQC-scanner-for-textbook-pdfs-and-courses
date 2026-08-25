@@ -33,9 +33,10 @@ class _LiveSmokeFailure(Exception):
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    """Parse one explicit model, controlled short MP4 fixture, and timeout."""
+    """Parse explicit branch models, controlled short MP4 fixture, and timeout."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", required=True)
+    parser.add_argument("--image-model", required=True)
+    parser.add_argument("--audio-model", required=True)
     parser.add_argument("--video", required=True, type=Path)
     parser.add_argument("--timeout", type=float, default=120.0)
     return parser.parse_args(argv)
@@ -52,14 +53,15 @@ def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, obj
         raise _LiveSmokeFailure("catalog", error) from None
     except Exception:
         raise _LiveSmokeFailure("catalog", None) from None
-    if arguments.model not in models:
-        raise _LiveSmokeFailure(
-            "model_selection",
-            ConfigError(
-                "The requested Google model is absent from the current catalog.",
-                code="CONFIG_INVALID",
-            ),
-        ) from None
+    for model in (arguments.image_model, arguments.audio_model):
+        if model not in models:
+            raise _LiveSmokeFailure(
+                "model_selection",
+                ConfigError(
+                    "A requested Google model is absent from the current catalog.",
+                    code="CONFIG_INVALID",
+                ),
+            ) from None
 
     try:
         with tempfile.TemporaryDirectory(
@@ -70,18 +72,19 @@ def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, obj
                 output_dir=Path(temporary_root) / "output",
                 image_config=Config(
                     provider=GoogleGenAISettings(),
-                    vision_model=VisionModelSettings(name=arguments.model),
+                    vision_model=VisionModelSettings(name=arguments.image_model),
                     timeout_seconds=arguments.timeout,
                 ),
                 audio_config=Config(
                     provider=GoogleGenAISettings(),
-                    audio_model=AudioModelSettings(name=arguments.model),
+                    audio_model=AudioModelSettings(name=arguments.audio_model),
                     timeout_seconds=arguments.timeout,
                 ),
             )
             return _safe_video_summary(
                 outcome,
-                model=arguments.model,
+                image_model=arguments.image_model,
+                audio_model=arguments.audio_model,
                 catalog_count=len(models),
             )
     except OCRLLMError as error:
@@ -95,7 +98,8 @@ def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, obj
 def _safe_video_summary(
     outcome: Any,
     *,
-    model: str,
+    image_model: str,
+    audio_model: str,
     catalog_count: int,
 ) -> dict[str, object]:
     if type(outcome) is not VideoRecognitionOutcome:
@@ -105,9 +109,12 @@ def _safe_video_summary(
         ) from None
     _validate_owned_artifacts(outcome)
 
-    frames = _safe_frame_summary(outcome, model)
-    audio = _safe_audio_summary(outcome, model)
-    composition = _safe_composition_summary(outcome, model)
+    frames = _safe_frame_summary(outcome, image_model)
+    audio = _safe_audio_summary(outcome, audio_model)
+    composition = _safe_composition_summary(
+        outcome,
+        expected_models=(image_model, audio_model),
+    )
     passed = (
         outcome.status == "complete"
         and frames["status"] == "complete"
@@ -120,7 +127,8 @@ def _safe_video_summary(
         "report_type": "video_outcome",
         "status": "passed" if passed else "failed",
         "catalog_count": catalog_count,
-        "model": model,
+        "image_model": image_model,
+        "audio_model": audio_model,
         "outcome_status": outcome.status,
         "frames": frames,
         "audio": audio,
@@ -218,7 +226,7 @@ def _safe_audio_summary(
 
 def _safe_composition_summary(
     outcome: VideoRecognitionOutcome,
-    model: str,
+    expected_models: tuple[str, str],
 ) -> dict[str, object]:
     if outcome.status == "failed":
         return {"status": "not_started", "asset_count": 0, "error": None}
@@ -238,7 +246,7 @@ def _safe_composition_summary(
             "asset_count": len(result.assets),
             "error": None,
         }
-        model_token_usage = _safe_model_token_usage(result.metadata, model)
+        model_token_usage = _safe_model_token_usage(result.metadata, expected_models)
         if model_token_usage:
             summary["model_token_usage"] = model_token_usage
         return summary
@@ -258,7 +266,7 @@ def _safe_composition_summary(
 
 def _safe_model_token_usage(
     metadata: Mapping[str, object],
-    model: str,
+    expected_models: tuple[str, str],
 ) -> list[dict[str, object]]:
     usage = metadata.get("current_model_token_usage")
     if usage is None:
@@ -269,6 +277,7 @@ def _safe_model_token_usage(
             code="CONFIG_INVALID",
         ) from None
 
+    allowed_models = frozenset(expected_models)
     safe_usage: list[dict[str, object]] = []
     for item in usage:
         if not isinstance(item, Mapping):
@@ -278,8 +287,10 @@ def _safe_model_token_usage(
             ) from None
         input_tokens = item.get("input_tokens")
         output_tokens = item.get("output_tokens")
+        model = item.get("model")
         if (
-            item.get("model") != model
+            type(model) is not str
+            or model not in allowed_models
             or type(input_tokens) is not int
             or input_tokens < 0
             or type(output_tokens) is not int
