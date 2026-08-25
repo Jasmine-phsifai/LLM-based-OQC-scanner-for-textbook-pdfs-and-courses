@@ -1360,6 +1360,23 @@ children now prove success, exit 7, and timeout behavior; the complete offline
 suite passes 1,524 and compileall succeeds. No dependency was downloaded and
 the ordinary installed-video gate remains open.
 
+#260 makes one subsequent ordinary `[video,audio,image]` delivery attempt from
+the exact clean `cc08cda` archive. Its 250,431-byte, 237-member wheel retains
+the correct eight extras, `py.typed`, zero native payloads, and no packaged
+`AGENTS.md`. The sole fresh-venv pip process stopped after 31.250 seconds with
+exit 1 because it found no candidate for declared `miniaudio>=1.71,<2`; the
+venv retained only pip/setuptools, so no installed import or media claim
+follows. This is not evidence that the declaration or Python 3.10/Windows
+support is wrong: the official PyPI simple index still lists the 1.71
+`cp310-cp310-win_amd64` wheel, and the selected project interpreter advertises
+that exact leading compatibility tag and already has 1.71 installed. The
+captured pip output did not retain enough index/proxy detail to distinguish
+transient candidate visibility from another delivery-layer cause. Do not
+repin, remove the audio extra, upgrade/bootstrap pip inside this result, or run
+an immediate second install merely to make it green. The owned process/root
+were removed; source video/package neighbors pass 98 tests. The ordinary
+installed-video gate remains open.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

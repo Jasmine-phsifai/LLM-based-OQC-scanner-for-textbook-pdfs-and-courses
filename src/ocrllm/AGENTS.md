@@ -385,6 +385,13 @@ and success/nonzero/timeout regressions. Do not add a second installer, retry
 loop, mirror, cache manager, or dependency pin to make delivery look green; the
 ordinary installed-video dependency gate remains open until a real install and
 external media proof complete.
+#260 records one such attempt that found no miniaudio candidate even though the
+official index exposes a matching 1.71 CPython 3.10 Windows x64 wheel. Treat it
+as incomplete delivery diagnostics, not a reason to repin, remove the audio
+extra, bootstrap a newer pip, inject a cache, or retry immediately. A future
+single attempt must capture interpreter/platform, safe effective index settings,
+candidate-resolution diagnostics, and the original process through terminal
+exit before deciding whether a gate-only pip compatibility change is real.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

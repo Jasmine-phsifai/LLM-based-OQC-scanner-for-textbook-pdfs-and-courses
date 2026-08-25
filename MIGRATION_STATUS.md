@@ -867,6 +867,15 @@ The following directions remain traceable but are not current work:
   Success, explicit nonzero exit, and timeout now pass offline regressions; no
   package dependency, runtime API, alternate installer, or installed-video
   claim changed, so the ordinary delivery gate remains open.
+  #260 then exercises that bound with one clean-archive
+  `[video,audio,image]` install. The 250,431-byte/237-member wheel remains
+  healthy, but fresh pip exited 1 after 31.250 seconds without finding a
+  `miniaudio>=1.71,<2` candidate and installed nothing. Official PyPI still
+  exposes a 1.71 Windows CPython 3.10 x64 wheel matching the selected
+  interpreter's leading compatibility tag, so this run does not justify a pin,
+  extra, runtime, or installer change; its retained diagnostics cannot identify
+  the exact delivery-layer cause. No installed-media claim follows and the gate
+  remains open.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
