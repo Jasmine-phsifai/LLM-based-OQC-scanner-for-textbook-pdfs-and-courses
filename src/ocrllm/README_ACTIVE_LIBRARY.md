@@ -397,8 +397,10 @@ extraction consume that same path without copying the video twice. Every owned
 snapshot is removed before its call exits and is never a public asset or legacy
 compatibility format. `recognize_video()` validates both configs
 before reading the source, creating retained media, or dispatching either
-provider. It then uses those same proven boundaries and returns a
-`VideoRecognitionOutcome`: retained media, ordered
+provider. For an injected image provider, that preflight includes its existing
+callable `recognize_images` contract; the execution path checks again in case
+the caller mutates the object. It then uses those same proven boundaries and
+returns a `VideoRecognitionOutcome`: retained media, ordered
 frame-group outcomes or a typed frame error, and an audio result or typed audio
 error. Silent audio is a media outcome, not a relaxed configuration mode: the
 required audio `Config` must still pass preflight before the source is inspected.

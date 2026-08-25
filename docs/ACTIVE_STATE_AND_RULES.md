@@ -1029,6 +1029,23 @@ This re-proves that the changed parser reaches both separated provider branches;
 it does not authorize retry, model switching, a shared config, provider
 framework, or another live replay without a later relevant runtime change.
 
+#242 closes one remaining deterministic provider-preflight hole without moving
+generic image workflow evidence. A non-null injected image provider with no
+callable `recognize_images` method previously passed video preflight; public
+`recognize_video()` could therefore inspect, snapshot, retain frames, and
+extract audio before the inevitable configuration failure, while a missing
+source misleadingly won first as `SOURCE_NOT_FOUND`. Combined video and the
+independent retained-frame facade now explicitly require the injected callable
+through the existing zero-I/O validator before source/JPEG access. Built-in
+Google and DashScope rules are unchanged. Generic image resolution deliberately
+keeps its execution-time method check so failures still carry the exact
+`workflow_pass`, `model_attempts`, and zero-call evidence; that check also
+protects against a provider object changing after preflight. Both public
+failure-priority regressions and the complete 1,502-test offline suite pass.
+No provider base class, registry, media validator, retry, API signature,
+dependency, output layout, cancellation, long-audio, or frozen-boundary change
+was introduced.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

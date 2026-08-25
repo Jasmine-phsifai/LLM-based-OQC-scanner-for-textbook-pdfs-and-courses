@@ -867,3 +867,19 @@ def test_recognize_video_rejects_invalid_image_config_before_output_or_dispatch(
 
     assert observed_audio == []
     assert not output_dir.exists()
+
+
+def test_recognize_video_rejects_noncallable_injected_image_provider_before_source(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "output"
+
+    with pytest.raises(ConfigError, match="callable recognize_images"):
+        recognize_video(
+            tmp_path / "not-opened.mp4",
+            output_dir=output_dir,
+            image_config=Config(provider=object()),
+            audio_config=_audio_config(tmp_path),
+        )
+
+    assert not output_dir.exists()

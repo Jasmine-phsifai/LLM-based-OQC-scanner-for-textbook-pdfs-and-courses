@@ -749,6 +749,12 @@ The following directions remain traceable but are not current work:
   retained JPEG plus MP3, reported 1,021/41 tokens, and left no credential or
   temporary residue. No runtime, dependency, retry, model switch, shared config,
   or provider abstraction changed.
+  #242 completes deterministic image-provider preflight for the two public
+  video entries: an injected object must expose callable `recognize_images`
+  before MP4/JPEG work begins. Generic image recognition retains its pass-local
+  execution check and therefore its workflow/model-attempt evidence. The final
+  offline suite passes 1,502; no public API, provider framework, dependency,
+  media behavior, or open-decision boundary changed.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

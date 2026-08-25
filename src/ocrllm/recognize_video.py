@@ -31,7 +31,10 @@ def recognize_video(
 
     validated_image_config = validate_config(image_config)
     _reject_image_persistence(validated_image_config)
-    validate_vision_provider_config(validated_image_config)
+    validate_vision_provider_config(
+        validated_image_config,
+        require_injected_callable=True,
+    )
     validated_audio_config = validate_config(audio_config)
     validate_google_mp3_options(
         (Path("video-audio.mp3"),),

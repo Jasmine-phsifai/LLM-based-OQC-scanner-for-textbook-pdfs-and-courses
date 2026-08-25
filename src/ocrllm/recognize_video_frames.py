@@ -30,7 +30,10 @@ def recognize_video_frames(
 
     cfg = validate_config(config)
     _reject_video_persistence(cfg)
-    validate_vision_provider_config(cfg)
+    validate_vision_provider_config(
+        cfg,
+        require_injected_callable=True,
+    )
     _validate_retained_frame_tuple(frames)
     configured_limit, _ = resolve_effective_image_limit(cfg)
     group_size = min(_VIDEO_FRAME_GROUP_LIMIT, configured_limit)

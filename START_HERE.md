@@ -283,6 +283,12 @@ the complete two-asset composition reported 1,021/41 tokens and left no secret
 or temporary residue. This is post-change service evidence, not permission to
 repeat the run, merge configs, add retry, or generalize providers.
 
+#242 makes the existing deterministic video preflight reject an injected image
+provider whose `recognize_images` member is not callable, before source or
+retained-JPEG access. The ordinary image workflow keeps its later check so its
+draft/model-attempt evidence is not lost. This is one explicit early-validation
+mode with two video consumers, not a provider superclass or second validator.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

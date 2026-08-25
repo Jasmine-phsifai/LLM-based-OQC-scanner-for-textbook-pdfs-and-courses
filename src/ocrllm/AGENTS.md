@@ -115,8 +115,10 @@ exact equality with retained frames, constructor invariants. Reuse the one
 internal identity reader; do not duplicate its metadata schema or add a public
 identity abstraction.
 #173 requires deterministic image-provider configuration errors to be rejected
-before combined-video media output. Reuse the one local vision-config validator;
-do not turn dynamic catalogs into preflight network calls.
+before combined-video media output. The two video entries explicitly require an
+injected provider's callable `recognize_images`; generic image execution keeps
+its pass-local recheck and evidence. Reuse the one local vision-config validator;
+do not turn dynamic catalogs into preflight network calls or add a provider base.
 #174 applies that same deterministic preflight to the independently public
 `recognize_video_frames()` entry before retained-JPEG validation. Do not change
 generic batch settlement or add another frame-batch abstraction.

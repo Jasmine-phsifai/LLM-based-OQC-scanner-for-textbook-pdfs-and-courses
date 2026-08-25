@@ -214,6 +214,19 @@ def test_recognize_video_frames_rejects_invalid_provider_config_globally(
         )
 
 
+def test_recognize_video_frames_rejects_noncallable_injected_provider_globally() -> None:
+    frames = (
+        RetainedVideoFrame(
+            frame_index=0,
+            timestamp_seconds=0.0,
+            path=Path("not-opened.jpg"),
+        ),
+    )
+
+    with pytest.raises(ConfigError, match="callable recognize_images"):
+        recognize_video_frames(frames, config=Config(provider=object()))
+
+
 @pytest.mark.parametrize(
     "config",
     (
