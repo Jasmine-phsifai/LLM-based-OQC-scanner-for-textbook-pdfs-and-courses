@@ -436,6 +436,26 @@ def test_google_rate_window_marker_outranks_quota_advisory():
     assert mapped.details["failure_scope"] == "provider"
 
 
+def test_google_503_high_demand_is_rate_limited_not_generic_unavailable():
+    mapper = importlib.import_module(
+        "ocrllm.providers.google_genai.map_google_genai_error"
+    )
+    raw = SimpleNamespace(
+        code=503,
+        status="UNAVAILABLE",
+        message=(
+            "This model is currently experiencing high demand. "
+            "Spikes in demand are usually temporary. Please try again later."
+        ),
+        details={},
+    )
+
+    mapped = mapper.map_google_genai_error(raw, model=MODEL)
+
+    assert isinstance(mapped, RateLimited)
+    assert mapped.details["failure_scope"] == "provider"
+
+
 @pytest.mark.parametrize(
     ("raw", "code"),
     [

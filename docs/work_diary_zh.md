@@ -4617,3 +4617,17 @@ Atomic task — Iteration #236: investigate whether the legacy application’s v
 **与 active library 的映射和两条路线。** 新库已有精确 `RetainedVideoFrame` identity、每组 frame indices/timestamps、typed branch outcome、原子 composition/publication 和独立图片/音频 config，但 `recognize_video_frames()` 与音频路径明确 memory-only，`VideoRecognitionOutcome` 没有持久化/重载边界，遗留 JPEG/MP3 也不会让现有 facade resume。路线 A 是只提供同进程 outcome retry；虽然小，却解决不了 API 崩溃、quota 次日刷新或供应商长时间故障。路线 B 是未来使用 library-owned、versioned identity 保存已结算付费单元，缺失的本地媒体可重建；不解析发布 Markdown，不接受 legacy 文件。选择 B 作为未来方向，但 **not now**：#127 先决定取消的提交/返回边界，之后可先做精确 retained-frame-group 恢复；完整音画恢复还必须等 #152 定义稳定长音频单元。不要强行把图片和音频塞进通用媒体 schema。
 
 **验证、记录与过度设计复查。** legacy `test_resume_chain.py` 为 **19 passed in 1.01s**，三个被调查模块 compile 通过；没有运行 provider、网络、凭据、依赖安装、legacy GUI/social 或 active runtime。当前 authority 和 maintainer decision 只新增迁移顺序与拒绝边界，不授权 schema/API/实现；`START_HERE` 同步提醒下一位代理不要再次调查或误搬旧格式。没有修改 `MIGRATION_STATUS`，因为 importable library 边界未变化。最明显的过度设计是现在就设计 versioned video manifest、通用 checkpoint 基类、Markdown repair 或 process transaction；另一个过度简化是只做同进程 retry 并把它叫“恢复”。本轮停在被 legacy 真实生产价值支持、又明确等待 #127/#152 的顺序结论。
+
+## #237 — 2026-08-25：Google 503 明确高需求不能丢成泛化服务不可用
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #237: compare the active native Google error mapping against the legacy application’s production-hardened Google classifications and fix at most one proven semantic divergence that can make the library retry, stop, or report the wrong thing. Success means reconciling current authority and diary; tracing both mappers and their tests; using a bounded independent comparison limited to error shapes already observed or explicitly regression-tested in legacy; reproducing any divergence through the active adapter before editing; preserving exact provider call counts, redaction, no automatic retry/model switch, and the lightweight package; or recording that the active mapper already covers all transferable evidence. This matters because Google is the authorized robustness source, and mature provider behavior depends more on honest typed failures than on additional abstraction.
+```
+
+**发现、路线与红灯。** quota advisory、RPM/TPM/RPD 窗口优先级、普通 429、普通 5xx、404、认证和不支持模态都已有 active 映射与回归。主代理和独立只读审计都只找到一个仍可迁移的差异：legacy 的真实回归把 `503 UNAVAILABLE` 且消息明确包含 `high demand` 的响应记为限流；active 则统一落为 `ProviderUnavailable`。路线 A 是保持现状，因为两者当前 disposition 都允许调用者重试；路线 B 是保留精确 `RateLimited` 类型，让调用者仍可区别容量压力与一般服务不可用。选择 B。新增回归在旧实现稳定得到 **1 failed**：实际为 `ProviderUnavailable`，不是期望的 `RateLimited`。
+
+**最小修复与边界。** 只在现有 5xx 分支内增加一个窄判断：必须是 503 或 `UNAVAILABLE`，并且经过长度限制、不会公开的 SDK message 含有 `high demand`。该形状现在返回 provider-scoped `RateLimited`；普通 500/502/503 继续返回 provider-scoped `ProviderUnavailable`。没有读取 raw details、没有把 provider 文本写进公共错误、没有自动 retry、model switch、fallback、错误基类、provider 框架或调用计数变化。图片和音频继续共享同一个 mapper，因此不复制两份规则。
+
+**验证、环境偏差与过度设计复查。** 聚焦 Google 图片 adapter 为 **34 passed in 0.28s**，provider disposition 相邻集为 **15 passed in 0.31s**；`compileall -q src tests tools` 与 `git diff --check` 通过。第一次相邻命令误写不存在的 `tests/test_google_genai_model_catalog.py`，pytest 未收集任何测试；第二次使用 STA Python 扩大到音频 adapter 时，该环境缺少可选 `miniaudio`，结果为 **81 passed, 15 failed**，失败都在 MP3 预检阶段抛 `DependencyMissing`，未到本次 mapper，不能伪装成产品回归。轻量环境检查随后找到已有 `D:\Anaconda\envs\OCRLLM\python.exe`，不安装依赖；在该环境中图片、短音频、长音频和 disposition 相邻集为 **96 passed in 0.76s**，补入既有 Node 路径后的完整离线套件为 **1,499 passed in 62.32s**。没有网络、provider call、credential、legacy/social、视频行为、#127/#152 或 frozen `contracts/worker` 变化。最容易过度设计的是从一条高需求证据扩展成通用文案规则、自动等待和模型切换；本轮只保留已被 legacy 回归证明的一条类型区别。

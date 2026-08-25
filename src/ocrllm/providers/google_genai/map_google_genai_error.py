@@ -66,6 +66,11 @@ def map_google_genai_error(error: object, *, model: str) -> OCRLLMError:
         "INTERNAL",
         "UNAVAILABLE",
     }:
+        if (code == 503 or status == "UNAVAILABLE") and "high demand" in message:
+            return RateLimited(
+                "Google GenAI temporarily rate-limited the request due to high demand.",
+                details=_scoped(details, "provider"),
+            )
         return ProviderUnavailable(
             "Google GenAI is temporarily unavailable.",
             details=_scoped(details, "provider"),

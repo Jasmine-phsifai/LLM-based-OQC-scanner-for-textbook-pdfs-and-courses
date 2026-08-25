@@ -244,6 +244,14 @@ proven `you exceeded your current quota` plus `check your plan and billing
 details` wording when no window marker is present. This changes only typed
 classification; adapters still do not retry or switch models internally.
 
+#237 transfers one further production-observed Google distinction without
+widening that policy. A `503` / `UNAVAILABLE` response whose bounded SDK message
+explicitly says the model is experiencing `high demand` is provider-scoped
+`RateLimited`; an ordinary 500/502/503 remains provider-scoped
+`ProviderUnavailable`. Both are retryable evidence, but the library still
+performs no automatic retry or model switch. The narrower public type lets a
+caller distinguish capacity pressure from an otherwise unavailable service.
+
 ### P0-b — Native Google image vertical slice (completed by #067)
 
 The smallest built-in image path now uses the actual legacy built-in transport,
