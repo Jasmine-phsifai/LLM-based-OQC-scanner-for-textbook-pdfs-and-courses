@@ -724,7 +724,9 @@ unsupported versions, non-finite values, and invalid slot facts fail as typed
 resume-state errors. All 1,629 source tests pass. This is not filesystem
 persistence or runnable resume: it adds no loader, writer, path, size policy,
 atomic replacement, dispatcher, repair parser, provider call, or public API.
-Exact clean installed proof is still pending.
+Exact commit `3724dc3` passes the clean installed gate: 1,628 archived tests
+pass with one expected skip, the wheel is 252,828 bytes, all installed profiles
+and local media smokes pass, no cloud I/O occurs, and cleanup is complete.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

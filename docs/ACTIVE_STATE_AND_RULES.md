@@ -5823,7 +5823,18 @@ provider call, final Markdown, repair parser, or public API. The focused state,
 identity, planner, prompt, and materializer set passes **64 tests in 0.38
 seconds**; the full source suite passes **1,629 tests in 64.10 seconds**.
 Compilation, lightweight import, diff, and frozen `contracts/worker` checks
-pass. Exact clean installed proof remains the #318 exit gate.
+pass.
+
+Exact clean commit `3724dc3` passes the maintained gate with exit 0 in 253.26
+seconds. The archive reports **1,628 passed, 1 skipped in 68.92 seconds**; the
+wheel is **252,828 bytes**, leaving **9,316 bytes** under the maintained cap,
+and base is 1,275,637 bytes. Installed deltas are: audio 91,169,991; image
+16,970,275; image+DashScope 41,545,751; Google 41,688,043; audio+Google
+130,297,923; PDF vision 25,168,741; video 254,462,112; and combined
+272,333,638 bytes. Interval, audio+Google, two-page PDF, video, and combined
+`2 1 1` smokes pass without cloud I/O. The delegated runner verified proxy,
+official PyPI, and wheelhouse before its single invocation, removed every gate
+root, and left no gate process. #318 is release-proven.
 
 Current audio policy is also explicit: both whole-file and interval modes are
 required; interval length accepts integer minutes only. Resume state is

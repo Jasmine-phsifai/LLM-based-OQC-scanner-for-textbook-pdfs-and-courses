@@ -733,7 +733,9 @@ wheel; every profile and local media smoke passes without cloud I/O.
 deterministic and reject duplicate keys and schema drift through the typed
 resume-state error. They are not permission to add filesystem I/O, a generic
 serialization framework, resume dispatch, repair, provider calls, or public
-exports. The 1,629-test source suite passes; exact installed proof is pending.
+exports. The 1,629-test source suite passes. Exact commit `3724dc3` passes the
+complete installed gate with a 252,828-byte wheel; every profile and local
+media smoke passes without cloud I/O.
 
 ## When Porting Legacy Behavior
 

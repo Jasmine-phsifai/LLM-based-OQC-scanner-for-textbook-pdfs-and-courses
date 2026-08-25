@@ -521,8 +521,9 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   so corruption/schema behavior can be proven independently of lifecycle
   behavior. The next slice may add one bounded audio-owned atomic save/load
   boundary; it must not add dispatch, provider calls, repair, or a generic
-  transaction framework. All 1,629 source tests pass; exact clean installed
-  proof remains pending.
+  transaction framework. All 1,629 source tests pass. Exact clean installed
+  commit `3724dc3` passes with a 252,828-byte wheel, every installed profile
+  and local media smoke green, no cloud I/O, and complete cleanup.
 
 The settled product direction supports both whole-file and interval audio.
 Interval size is configured in exact integer minutes. Persisted partial state is

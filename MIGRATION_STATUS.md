@@ -1321,8 +1321,10 @@ The following directions remain traceable but are not current work:
   strict parser. It preserves Unicode, ordering, warnings, and nullable usage,
   and rejects duplicate keys, missing/extra fields, unsupported versions, and
   invalid settled facts. It adds no filesystem I/O, resume routing, provider
-  work, repair parser, or public API. All 1,629 source tests pass; the exact
-  clean installed gate remains pending.
+  work, repair parser, or public API. All 1,629 source tests pass. Exact commit
+  `3724dc3` passes the clean installed gate with 1,628 archived tests and one
+  expected skip, a 252,828-byte wheel, all profiles and local media smokes
+  green, no cloud I/O, and complete cleanup.
 
 ## Obsolete Prose Kept For Trace
 
