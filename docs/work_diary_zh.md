@@ -4765,3 +4765,19 @@ Atomic task — Iteration #246: close or truthfully refresh the one remaining cl
 **本人审查、验证与诚实边界。** 本人确认当前 facade 的 heavy-module 隔离设计与依赖声明一致，并运行视频解析、负反馈留图、抽音频、音画 provider 分离、outcome/composition/publication 和 redacted runner 的离线相邻集合，结果为 **127 passed in 9.36s**。由于普通安装没有完成，本轮不能声称外部安装后的 `import ocrllm`、普通 MP4 或“2 帧/1 秒画面 + 12 秒音频”MP4 已通过；后者的源码树回归仍要求最终留图 index 1、PTS 0.5，但不能替代 wheel 证据。本轮没有 provider、credential、live API、runtime、测试、依赖、public API、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。
 
 **过度设计复查。** 最明显的错误方向是为了偶发下载超时改窄版本、vendor 二进制、增加 uv/conda fallback、在仓库里做 cache manager，或者用 `--no-deps` 安装后借用已有环境来宣称 `[video]` 可安装。它们都会掩盖真实的普通用户安装路径，并增加未来 agent 理解成本。本轮只刷新了可交付性证据；门仍然开放，下一次也只应在依赖可正常取得时执行一次普通安装，然后才运行外部包的两种真实 MP4 验证。
+
+## #247 — 2026-08-25：补齐“图片成功、音频失败”到最终发布的公开证据
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #247: determine whether the shipped combined-video facade preserves already-settled frame work when the audio branch fails with each currently supported local or provider error family, and fix only a reproduced honesty defect without choosing the open cancellation policy or adding recovery machinery. Success means reconciling the current authority, latest Chinese diary, package rules, and #126/#134/#138/#141/#157; personally tracing every audio failure boundary from MP4 extraction through short-audio recognition into `VideoRecognitionOutcome`, composition, call counts, token usage, and retained assets; delegating one bounded adversarial test-matrix audit; proving representative pre-dispatch, provider-dispatch, and partial-cleanup cases through the public library; changing code only if a settled image result or truthful audio evidence is actually lost; keeping providers separate, imports lazy, legacy formats absent, and #127/#152 untouched; then updating Chinese/current-state records, committing, and pushing. This matters because partial success is the core value of provider separation, while another speculative error framework would be overdesign.
+```
+
+**复核后的真实范围与两条路线。** #207 已经用真实 MP4 证明“图片失败、音频成功”能走完 outcome、composition 和原子 Markdown publication；本轮只查相反方向。本人逐段检查 `recognize_video()`、`VideoRecognitionOutcome`、`compose_video_result()`、`publish_video_result()` 和相邻回归。路线 A 是新增 partial-result/error graph 或分支协调器；路线 B 是沿用唯一 outcome，只把已有真实 MP4 的音频失败测试延伸到最终 consumer。选择 B。现有运行时已经把抽音频失败留在 `audio_error`、让图片继续结算；provider 失败后保留 `audio.mp3`；composer 保留稳定 code、可靠调用数、已结算 token 与所有 assets；publisher 原样复制状态和 metadata。没有复现证据丢失或假成功，因此不改产品代码。
+
+**独立审计与三个错误位置。** 轻量只读审计运行 **7 passed in 0.72s**，结论与本人一致。真实 corrupt-audio MP4 在 provider 前得到 `VIDEO_INVALID(stage=extraction)`，图片成功、音频调用为零、没有 MP3；普通 MP4 的音频 provider 失败保留图片结果、JPEG 和已经抽出的 MP3；长 Google Files 删除失败会返回可用正文、warning、一次调用和 partial，但当前 `recognize_video()` 只接短 MP3，所以该第三种结果只是在类型/组合层兼容，不能冒充视频已接通长音频。它仍按 #245 的顺序等待 #127 后的一次-copy/decode路由以及 #152，不新增假测试冻结未存在的能力。
+
+**最小测试变化。** 已有 `_install_fake_audio(..., fail=True)` 明明在 provider seam 内抛错，却没有像真实 adapter 一样记录已经尝试一次调用；现在只给该测试错误加 `provider_calls_attempted=1`。原 `test_recognize_video_preserves_frames_and_audio_artifact_on_audio_failure` 改名并延伸为 publication 回归：同一个真实一秒 MP4 先得到 successful frame outcome 和失败 audio outcome，再由公开 `publish_video_result()` 原子写 Markdown。断言最终仍是 partial，含图片正文和 `PROVIDER_RESPONSE_INVALID`，assets 精确为 retained JPEG 后接 MP3，成功/失败图片组为 1/0，audio state/error code 保留，总调用数精确为 2，目标目录没有 staging residue。没有复制 fixture、结果类型或 helper 文件。
+
+**验证与过度设计复查。** 最小变化后相邻路径先为 **9 passed in 1.04s**；最终视频解析、负反馈留图、抽音频、音画 provider 分离、outcome/composition/publication 和 redacted runner 集合为 **127 passed in 9.18s**，`compileall -q src tests` 与 `git diff --check` 通过。没有 live API、credential、runtime、依赖、公开 API、重试/fallback、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。最明显的过度设计是为了三种失败建立通用 branch transaction、error graph 或第二个 partial 类型，或者把尚未接入视频的长音频 cleanup partial 写成“真实视频测试”；本轮只补齐已有公开合同的对称 consumer 证据。

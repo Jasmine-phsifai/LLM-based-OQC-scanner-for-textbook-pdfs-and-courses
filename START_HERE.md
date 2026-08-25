@@ -316,6 +316,13 @@ cleaned its disposable root, and did not retry or change pins. Treat this as an
 open external delivery gate, not a package defect or permission to add another
 installer.
 
+#247 adds the missing public consumer proof for the opposite partial-video
+direction. A real MP4 whose frames succeed and whose audio provider fails once
+now continues through atomic `publish_video_result()` while retaining frame
+text, JPEGs, the extracted MP3, the audio error, partial status, and an exact
+two-call total. Runtime and providers did not change; long-audio cleanup partials
+remain outside video until the ordered #127/#152 work.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

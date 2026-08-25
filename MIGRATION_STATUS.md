@@ -780,6 +780,12 @@ The following directions remain traceable but are not current work:
   and real-MP4 proof therefore remain open. No retry, alternate installer, pin,
   vendoring, runtime, or package-boundary change was made; 127 source-tree video
   tests pass and the disposable external root was removed.
+  #247 completes the symmetric public regression for separated video branches:
+  a real MP4 with successful frame recognition and one failed audio-provider
+  call now proves partial outcome through final atomic Markdown publication,
+  retaining frame text, JPEGs, MP3, stable error, and exact call accounting.
+  This is test evidence only; runtime, provider policy, dependencies, #127, and
+  #152 are unchanged, and the 127-test video set passes.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

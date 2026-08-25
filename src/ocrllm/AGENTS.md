@@ -313,6 +313,11 @@ and one ordinary pip attempt timed out downloading imageio-ffmpeg. Keep the
 declared OpenCV/imageio-ffmpeg extra unchanged unless a package defect is
 reproduced; do not vendor, repin, add another installer, or report installed
 real-media proof before the normal installation and external MP4 calls pass.
+#247 proves both ordinary partial-video directions through public consumers.
+Keep successful frame work, retained JPEG/MP3 assets, typed audio failure, and
+reliable call evidence when the short-audio branch fails. Do not add another
+outcome type or use the standalone long-Files cleanup partial as evidence that
+video long-audio routing already exists.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

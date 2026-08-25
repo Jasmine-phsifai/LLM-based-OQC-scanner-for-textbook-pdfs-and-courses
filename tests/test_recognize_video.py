@@ -272,7 +272,10 @@ def _install_fake_audio(
     def fake_google_audio(snapshot, *, prompt, config):
         observed.append(snapshot.path)
         if fail:
-            raise ProviderError("Audio provider failed.")
+            raise ProviderError(
+                "Audio provider failed.",
+                details={"provider_calls_attempted": 1},
+            )
         return GoogleGenAIAudioResponse(
             markdown="# Audio\n",
             input_tokens=7,
@@ -709,7 +712,7 @@ def test_video_publication_preserves_audio_after_frame_provider_failure(
     assert not list(target.parent.glob(".ocrllm-*.tmp"))
 
 
-def test_recognize_video_preserves_frames_and_audio_artifact_on_audio_failure(
+def test_video_publication_preserves_frames_and_audio_artifact_on_audio_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -729,11 +732,30 @@ def test_recognize_video_preserves_frames_and_audio_artifact_on_audio_failure(
     assert outcome.audio_result is None
     assert outcome.audio_error is not None
     assert outcome.audio_error.code == "PROVIDER_RESPONSE_INVALID"
+    assert outcome.audio_error.details["provider_calls_attempted"] == 1
     assert all(item.succeeded for item in outcome.frame_outcomes)
     assert len(observed_audio) == 1
     assert outcome.audio_artifact is not None
     assert outcome.audio_artifact.is_file()
     assert all(frame.path.is_file() for frame in outcome.retained_frames)
+
+    target = tmp_path / "reports" / "lecture.md"
+    published = publish_video_result(outcome, target)
+
+    assert published.status == "partial"
+    assert published.output_path == target
+    assert target.read_text(encoding="utf-8") == published.markdown
+    assert "# Frames" in published.markdown
+    assert "Recognition error: `PROVIDER_RESPONSE_INVALID`" in published.markdown
+    assert published.assets == tuple(
+        frame.path for frame in outcome.retained_frames
+    ) + (outcome.audio_artifact,)
+    assert published.metadata["successful_video_frame_group_count"] == 1
+    assert published.metadata["failed_video_frame_group_count"] == 0
+    assert published.metadata["audio_state"] == "failed"
+    assert published.metadata["audio_error_code"] == "PROVIDER_RESPONSE_INVALID"
+    assert published.metadata["current_run_provider_call_count"] == 2
+    assert not list(target.parent.glob(".ocrllm-*.tmp"))
 
 
 def test_recognize_video_keeps_image_branch_when_audio_is_corrupt(

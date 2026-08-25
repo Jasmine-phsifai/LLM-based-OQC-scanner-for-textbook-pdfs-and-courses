@@ -1117,6 +1117,23 @@ do not repin, vendor, add an installer abstraction, or claim installed-video
 proof until one normal install actually completes. The current source-tree
 video set passes 127 tests after the later preflight/facade changes.
 
+#247 closes the asymmetric regression evidence around the already-shipped
+partial-video contract without changing runtime. The real-MP4 path previously
+proved a successful frame branch plus typed audio-provider failure only through
+`VideoRecognitionOutcome`, while the opposite successful-audio/failed-frame
+shape already continued through final Markdown publication. The same audio-
+failure test now gives its fake provider honest one-call evidence and continues
+through public `publish_video_result()`: the outcome and published result remain
+partial; recognized frame Markdown, retained JPEGs, the extracted MP3, stable
+audio error code, and exact two-branch call total all survive; the atomic target
+contains no staging residue. A real corrupt-audio MP4 separately keeps its
+successful frame result and counts the pre-dispatch audio failure as zero.
+Long-Files cleanup-warning results fit the composer but are not reachable from
+the current short-audio video facade, so do not claim or test that integration
+before the ordered #127/#152 gate. The 127-test video set and compilation pass;
+no runtime, API, provider, dependency, retry, routing, cancellation, legacy, or
+frozen-boundary behavior changed.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
