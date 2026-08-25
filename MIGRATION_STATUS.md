@@ -998,6 +998,15 @@ The following directions remain traceable but are not current work:
   audio's one-call `provider_call_count` and the composer's compatibility read
   are intentional, so no duplicate current-run field was added. The causal
   regression failed before the change; 140 neighbors and all 1,543 tests pass.
+  #279 attempted the single later ordinary clean-package gate run permitted
+  after #274, but its one-use outer wrapper lost repository-path quoting before
+  the maintained script started. PowerShell rejected the truncated `-File`
+  argument in about one second, so no archive, download, pytest, wheel install,
+  combined-video path, or provider call ran. The exact temporary wrapper was
+  inspected and removed without replay. This is invalid operator evidence, not
+  a package failure; the installed combined-video gate remains open and later
+  bounded pressure robustness tests still follow valid basic installed/live
+  proof.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

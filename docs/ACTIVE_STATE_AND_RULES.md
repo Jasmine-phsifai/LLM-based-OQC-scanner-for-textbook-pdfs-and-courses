@@ -4661,6 +4661,25 @@ nonnegative counts still sum independently by model. The public regression
 failed only on the negative usage before the change. Audio/image/PDF/video
 neighbors pass 140 tests and the full offline suite passes 1,543.
 
+## Iteration 279: later clean-gate launch produced no gate evidence
+
+The one later bounded execution authorized after #274 did not enter the
+maintained gate. Its delegated one-use wrapper passed the repository path to
+PowerShell `-File` without preserving the quoted path; PowerShell therefore
+treated only `D:\Pycharm\VSCODErepos\QCR` as the file and rejected it before
+`tools/run_stage_m_offline_gate.ps1` started. The child ended after about one
+second with exit code `-196608`; stdout contained only the PowerShell banner and
+stderr contained the path rejection. There was no archive, dependency download,
+pytest header, wheel build/install, combined-video execution, or provider call.
+
+Treat #279 as invalid operator evidence, not a package or gate failure, and do
+not change product code, dependency policy, pins, mirrors, caches, retries, or
+timeouts from it. No automatic replay was made. The exact wrapper directory was
+inspected, then removed, and zero `ocrllm-stage-m-offline-gate-*` temporary roots
+remained. The ordinary installed combined-video proof therefore stays open.
+Later pressure/robustness tests remain authorized only after the corresponding
+basic installed/live flow has valid evidence, as separate bounded atomic gates.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

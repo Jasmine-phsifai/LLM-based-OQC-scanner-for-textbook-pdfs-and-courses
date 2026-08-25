@@ -483,6 +483,13 @@ existing exact `provider_call_count`, combined video reports
 Do not duplicate the current-run field on a one-call audio result without a new
 consumer. Optional token aggregation must ignore any row containing a negative
 count; keep `None` as unknown, zero as valid, and sum valid counts per model.
+#279 did not enter the maintained clean-package gate: a one-use delegated
+wrapper lost quoting around the repository path before PowerShell `-File`, so
+there was no archive, download, pytest, wheel, installed-video, or provider
+execution. Do not infer a package defect or alter the gate/dependency policy
+from that invalid evidence. No replay was made and its exact temporary wrapper
+root was removed. The ordinary installed combined-video proof remains open;
+later pressure robustness work still follows valid basic installed/live proof.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
