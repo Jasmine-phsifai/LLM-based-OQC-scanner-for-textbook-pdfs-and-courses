@@ -112,7 +112,8 @@ Phase 1 maturation is offline implementation-complete:
   307.98-second live input discovered 37 models, made one
   `gemini-2.5-flash` generation, reported usage 9,893/25, deleted the remote
   file, closed the client, and left no residue. Chunking/resume is A2b; video
-  integration waits for #127 cancellation and #149 snapshot placement. #152
+  integration waits for #127 cancellation, while #211 has closed the former
+  #149 snapshot-placement blocker. #152
   confirms A2b needs an audio-specific versioned sidecar rather than generalized
   image state, but leaves one maintainer choice: chunk only above 9.5 hours, or
   use fixed chunks for every persisted long-MP3 run so ordinary lectures can
@@ -542,7 +543,8 @@ The following directions remain traceable but are not current work:
   now comes from existing FFmpeg metadata, coarse candidates are sought by
   presentation time, and retained identities use decoded frame PTS instead of
   `frame_index / FPS`. Exact-final-frame and bounded-candidate rules remain;
-  #149 source snapshot placement is still open. An externally installed clean
+  #149 source snapshot placement was still open at #183 and is closed by #211.
+  An externally installed clean
   wheel reproduces the corrected 4.56-second VFR path without eager media imports.
   #184 verifies a real phone-style MP4 display matrix through the public
   provider-free path. The pinned OpenCV backend consistently changes 96x64
@@ -638,9 +640,10 @@ The following directions remain traceable but are not current work:
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate
   thumbnails and indices came from old bytes, and the call reports success.
-  A request-owned streamed disk snapshot is the recommended correction, but
-  its output-sibling versus explicit public temp-directory contract remains an
-  open maintainer choice; no partial snapshot implementation is shipped.
+  #211 selects and ships the library-owned route: one hidden streamed snapshot
+  under `output_dir` feeds inspection, comparison, retained decode, and combined
+  audio extraction, then is removed. No public temp parameter, legacy format,
+  whole-video memory copy, or generic media cache was added.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

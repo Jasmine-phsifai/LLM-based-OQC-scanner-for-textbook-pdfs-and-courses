@@ -212,11 +212,12 @@ payloads did not change. The queue explicitly
 records #148's frame-scan correction: the actual source final frame now always
 participates in bounded comparison, so a scene change after the last five-second
 grid position cannot disappear before negative-feedback selection. #149 then
-proves an open source-lifecycle defect: replacing the MP4 between coarse scan
+proved a source-lifecycle defect: replacing the MP4 between coarse scan
 and retained-JPEG decode can mix selection metadata from the old bytes with
-frames from the new bytes while returning success. The temporary-storage
-contract for one request-owned streamed video snapshot requires maintainer
-selection before implementation. The queue still
+frames from the new bytes while returning success. #211 closes it with one
+library-owned streamed snapshot under `output_dir`; inspection, comparison,
+retained decode, and combined audio extraction consume that path before cleanup.
+No public video-temp parameter or legacy format was added. The queue still
 stops further proactive
 filesystem/accounting edge scans.
 
@@ -227,8 +228,8 @@ one injected call; the audio branch made zero provider calls and returned typed
 the extracted MP3. This confirms provider separation and failure honesty, while
 also proving that the five-minute A1 audio ceiling is not mature lecture-video
 support. #151 completed standalone Google Files A2a independently; integrating
-it into video still waits for #127 cancellation semantics and #149 source
-snapshot placement.
+it into video still waits for #127 cancellation semantics. #211 closed the
+former #149 source-snapshot placement blocker.
 
 #072 has implemented P1-c offline: `recognize(one.pdf)` lazily uses
 `ocrllm[pdf-vision]`, snapshots at most 100 MiB without whole-file Python reads,

@@ -34,7 +34,13 @@ def _ffmpeg_executable() -> Path:
     return Path(imageio_ffmpeg.get_ffmpeg_exe())
 
 
-def _write_mp4(path: Path, *, with_audio: bool = True) -> Path:
+def _write_mp4(
+    path: Path,
+    *,
+    with_audio: bool = True,
+    color: str = "blue",
+    frequency: int = 440,
+) -> Path:
     command = [
         str(_ffmpeg_executable()),
         "-nostdin",
@@ -45,7 +51,7 @@ def _write_mp4(path: Path, *, with_audio: bool = True) -> Path:
         "-f",
         "lavfi",
         "-i",
-        "color=c=blue:s=64x48:r=2:d=1",
+        f"color=c={color}:s=64x48:r=2:d=1",
     ]
     if with_audio:
         command.extend(
@@ -53,7 +59,7 @@ def _write_mp4(path: Path, *, with_audio: bool = True) -> Path:
                 "-f",
                 "lavfi",
                 "-i",
-                "sine=frequency=440:sample_rate=16000:duration=1",
+                f"sine=frequency={frequency}:sample_rate=16000:duration=1",
                 "-shortest",
             )
         )
@@ -180,6 +186,65 @@ class _ImageProvider:
         if len(self.calls) == self.fail_on_call:
             raise ProviderError("Image provider failed.", code=self.failure_code)
         return "# Frames\n"
+
+
+def test_recognize_video_uses_one_snapshot_for_frames_and_audio_after_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import importlib
+
+    prepare = importlib.import_module("ocrllm.video.prepare_video_media")
+    orchestrator = importlib.import_module("ocrllm.recognize_video")
+    source = _write_mp4(
+        tmp_path / "lecture.mp4",
+        color="blue",
+        frequency=440,
+    )
+    replacement = _write_mp4(
+        tmp_path / "replacement.mp4",
+        color="red",
+        frequency=880,
+    )
+    original_bytes = source.read_bytes()
+    replacement_bytes = replacement.read_bytes()
+    assert original_bytes != replacement_bytes
+    real_scan = prepare.scan_video_frame_candidates
+    real_extract_audio = orchestrator.extract_video_audio
+    observed_audio_sources: list[Path] = []
+
+    def scan_then_replace(snapshot_path, *, video_info, cv2):
+        candidates = real_scan(snapshot_path, video_info=video_info, cv2=cv2)
+        replacement.replace(source)
+        return candidates
+
+    def observe_audio_source(snapshot_path, *, output_path):
+        observed_audio_sources.append(snapshot_path)
+        assert snapshot_path != source
+        assert snapshot_path.read_bytes() == original_bytes
+        return real_extract_audio(snapshot_path, output_path=output_path)
+
+    monkeypatch.setattr(prepare, "scan_video_frame_candidates", scan_then_replace)
+    monkeypatch.setattr(orchestrator, "extract_video_audio", observe_audio_source)
+    observed_audio_snapshots = _install_fake_audio(monkeypatch)
+    image_provider = _ImageProvider()
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=_audio_config(tmp_path),
+    )
+
+    assert outcome.status == "complete"
+    assert source.read_bytes() == replacement_bytes
+    assert len(observed_audio_sources) == 1
+    assert not observed_audio_sources[0].exists()
+    assert len(observed_audio_snapshots) == 1
+    assert not observed_audio_snapshots[0].exists()
+    assert all(frame.path.is_file() for frame in outcome.retained_frames)
+    assert outcome.audio_artifact is not None and outcome.audio_artifact.is_file()
+    assert not list((tmp_path / "output").glob(".ocrllm-video-source-*"))
 
 
 def _audio_config(tmp_path: Path) -> Config:

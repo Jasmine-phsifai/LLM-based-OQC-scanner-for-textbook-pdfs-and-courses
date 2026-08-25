@@ -476,7 +476,8 @@ is often accepted.
   comparison scan when it is not already on the five-second grid. Keep the
   unchanged density and negative-feedback policy; do not use endpoint coverage
   as authority for a configurable sampler or second scene detector.
-- **Open #149 video snapshot placement.** Real execution proves that replacing
+- **Resolved #149 video snapshot placement (#211).** Real execution proves that
+  replacing
   the caller-owned MP4 between the current scan and selected-frame decode can
   publish JPEGs from different bytes while returning success; the combined
   facade may then extract still another version's audio. The correction must
@@ -486,7 +487,9 @@ is often accepted.
   same-stem output root, with no public API expansion, or (B) a new explicit
   video temporary-directory parameter. Do not use whole-file memory, a
   hash-only after-the-fact check, a generic media cache, or separate frame/audio
-  snapshots.
+  snapshots. The maintainer's library-only clarification selects A: the active
+  package owns one hidden, streamed, request-lifetime snapshot beside the final
+  same-stem root and exposes no video-temp or legacy-compatibility parameter.
 
 ## Resolved confirmation and next authority
 

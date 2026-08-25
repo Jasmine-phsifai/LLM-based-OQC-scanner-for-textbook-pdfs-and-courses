@@ -1374,7 +1374,8 @@ error. `recognize_video()` can extend the same mismatch to separately extracted
 audio because it opens the original path again after frame publication.
 
 This is a proven lifecycle defect, not another hypothetical snapshot adversary.
-Two bounded fixes remain: (A, recommended) make one request-owned MP4 copy by
+Two bounded fixes remained at discovery: (A, recommended) make one
+request-owned MP4 copy by
 streaming fixed-size chunks to a hidden disk snapshot and use that same path for
 inspection, scan, selected-frame decode, and both branches of
 `recognize_video()`; or (B) add an explicit public video-temp-directory option
@@ -1382,9 +1383,9 @@ and place the same snapshot there. A metadata/hash recheck is insufficient: it
 detects ordinary mutation only after work and does not make all decoders consume
 the same bytes. Do not load a video into memory, build a generic media snapshot
 framework, add content-addressed storage, or implement only the frame half of
-combined-video stability. The maintainer must choose a hidden snapshot inside
-`output_dir` beside the final same-stem root, without a new API, versus an
-explicit temp-directory parameter before implementation.
+combined-video stability. The later #211 library-only clarification selected a
+hidden snapshot inside `output_dir` beside the final same-stem root, without a
+new API; the explicit temp-directory alternative is obsolete.
 
 #154 performs a bounded stop audit around the other shipped video filesystem
 lifecycles and finds no independent defect. Frame extraction writes every JPEG
@@ -1401,8 +1402,8 @@ seconds without network or provider calls. Caller-selected output roots beyond
 the operating system's usable path boundary may still fail with a typed output
 or backend error; no false success was reproduced. Do not add a generic
 extended-path layer, symlink sandbox, cleanup transaction, or broader collision
-graph from this audit. The proven #149 same-source snapshot defect and the open
-#127 cancellation choice remain separate and are not weakened by this result.
+graph from this audit. The then-proven #149 same-source snapshot defect and the
+open #127 cancellation choice remained separate; #211 later closed only #149.
 
 #155 corrects three maintained scope statements that lagged the shipped direct
 APIs. The root README now says specifically that **long-audio** video routing is
@@ -1563,8 +1564,9 @@ provider failures must not be rerun merely to obtain green evidence.
 The same current-instruction block now says publication is shipped while video
 recovery/resume remains unavailable, replaces #147's obsolete short-audio-only
 distribution wording with #151's image/PDF/audio/video scope, turns #148 into a
-preserved tail-frame invariant rather than future work, and explicitly keeps
-#149 source-snapshot placement and #152 long-audio chunk scope open. It does not
+preserved tail-frame invariant rather than future work, and at #155 explicitly
+kept #149 source-snapshot placement and #152 long-audio chunk scope open. #211
+later closed only #149. This documentation correction does not
 claim automatic long-audio video routing, chunking, fallback, or worker support.
 Public video entry points remain callable; the runner, publication, import, and
 lightweight-import set passes 31 tests in 0.49 seconds. No runtime code, API,
@@ -1853,7 +1855,7 @@ layer changed. Keep the real regression; do not turn one corrupt media branch
 into whole-video rejection without a separate maintainer decision. Seventy
 focused tests and the complete 1,466-test offline suite pass.
 
-#188 re-audits the still-open #149 placement choice against the current source
+#188 re-audited the then-open #149 placement choice against the current source
 and rejects adding a third design. The defect remains: frame inspection,
 duration, candidate scan, selected JPEG decode, and combined audio extraction
 still reopen the caller path. Route A remains recommended: create one short-
@@ -1866,9 +1868,9 @@ public video-temp-directory parameter; it gives callers a short or separate
 large-volume location, but still needs the same internal shared context and
 adds a second caller-managed directory lifecycle. Current deep output paths can
 still fail honestly under A; do not add extended-path machinery. The maintainer
-must now choose A or B. Until then, do not implement a frame-only snapshot,
-generic media snapshot/cache, content addressing, in-memory video, or reinterpret
-provider temp settings.
+still had to choose A or B at that point; #211 later selected A. Do not implement
+a frame-only snapshot, generic media snapshot/cache, content addressing,
+in-memory video, or reinterpret provider temp settings.
 
 #189 verifies that the shipped image/audio provider split is real and needs no
 runtime abstraction. `recognize_video()` validates two independent `Config`
@@ -2400,6 +2402,29 @@ runtime change occurred. This proves the current endpoint populates #209's
 selected-model input field; it does not turn catalog membership into a general
 audio-capability guarantee or prove that prompt-plus-audio fits below the bound.
 
+#211 resolves and implements #149 through the library-owned route. Both public
+`extract_video_frames()` and combined `recognize_video()` stream the opened MP4
+in 1 MiB chunks into one short-named hidden directory under caller `output_dir`;
+the copy is closed before decode, and inspection, negative-feedback comparison,
+selected-JPEG decode, and combined audio extraction all consume that exact path.
+The combined facade keeps the snapshot alive for both separately configured
+provider branches and removes it at request exit; the standalone frame facade
+removes it before returning. Two real same-path replacement regressions prove
+retained JPEGs and combined audio still consume the original bytes after the
+caller path becomes a different MP4, while the hidden snapshot is absent after
+each call. The implementation does not load the video into memory, hash it
+twice, retain it after the request, add a public temp parameter, generalize
+media snapshots, or change the independent image/audio configs.
+Focused frame/combined tests pass 27 cases, the adjacent provider-free and
+combined-video surface passes 116, and the complete offline suite passes 1,483
+with no skip or failure. Compile and fresh-process public-video import checks
+pass without loading OpenCV, NumPy, FFmpeg wrapper, miniaudio, Google/OpenAI
+SDKs, HTTPX, or legacy. A supplemental dirty-tree wheel proof stopped during
+local metadata preparation because the selected existing environment lacks
+`hatchling`; it generated no wheel, installed nothing, used no network, and its
+empty fixed temporary root was removed. Do not describe that environmental
+non-run as either package success or a runtime regression.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist
@@ -2408,8 +2433,8 @@ ranges, validated Markdown hash, model, and attempted generation count. Do not
 persist remote IDs when every segment owns one upload/generate/delete lifecycle.
 Do not add configurable chunk sizing, parallel recognition, retry/model switch,
 provider fallback, a generic checkpoint framework, legacy Markdown repair, or
-video integration in the first A2b slice. #127 and #149 still block video
-routing, not this standalone design investigation.
+video integration in the first A2b slice. #127 cancellation semantics still
+block video routing; #211 has closed the former #149 source-lifecycle blocker.
 
 The bounded live gate discovered 37 current models and used explicit
 `gemini-2.5-flash` image and audio configs for one generated speech-and-slide

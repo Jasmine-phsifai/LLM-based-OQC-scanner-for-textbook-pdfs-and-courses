@@ -60,6 +60,25 @@ def _write_final_frame_change_mp4(path: Path) -> Path:
     return path
 
 
+def _write_constant_mp4(path: Path, *, value: int) -> Path:
+    import cv2
+    import numpy as np
+
+    writer = cv2.VideoWriter(
+        str(path),
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        2.0,
+        (64, 48),
+    )
+    assert writer.isOpened()
+    try:
+        for _ in range(6):
+            writer.write(np.full((48, 64, 3), value, dtype=np.uint8))
+    finally:
+        writer.release()
+    return path
+
+
 def _write_equal_luma_color_change_mp4(path: Path) -> Path:
     import cv2
     import numpy as np
@@ -254,6 +273,43 @@ def test_extract_video_frames_compares_and_retains_a_changed_final_frame(
         [0.0, 2.5]
     )
     assert all(frame.path.is_file() for frame in frames)
+
+
+def test_extract_video_frames_uses_one_snapshot_when_caller_path_is_replaced(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import cv2
+
+    prepare = __import__(
+        "ocrllm.video.prepare_video_media",
+        fromlist=["unused"],
+    )
+    source = _write_constant_mp4(tmp_path / "lecture.mp4", value=20)
+    replacement = _write_constant_mp4(tmp_path / "replacement.mp4", value=230)
+    real_scan = prepare.scan_video_frame_candidates
+
+    def scan_then_replace(snapshot_path, *, video_info, cv2):
+        candidates = real_scan(snapshot_path, video_info=video_info, cv2=cv2)
+        replacement.replace(source)
+        return candidates
+
+    monkeypatch.setattr(prepare, "scan_video_frame_candidates", scan_then_replace)
+
+    frames = extract_video_frames(source, output_dir=tmp_path / "output")
+
+    assert source.is_file()
+    assert not replacement.exists()
+    retained = cv2.imread(str(frames[0].path))
+    current_source = cv2.VideoCapture(str(source))
+    try:
+        decoded, current_frame = current_source.read()
+    finally:
+        current_source.release()
+    assert decoded
+    assert float(retained.mean()) < 50.0
+    assert float(current_frame.mean()) > 200.0
+    assert not list((tmp_path / "output").glob(".ocrllm-video-source-*"))
 
 
 def test_extract_video_frames_retains_equal_luma_color_changes(

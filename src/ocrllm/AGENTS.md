@@ -83,8 +83,12 @@ It does not claim automatic long-audio routing from `recognize()` or video,
 chunking/resume, fallback, or worker support. #148 keeps the exact final source
 frame in the bounded coarse scan when the five-second grid does not; preserve
 this invariant without adding a configurable sampler or second scene detector.
-#149 keeps request-owned video source snapshot placement open, and #152 keeps
-long-audio chunk scope open. Do not implement either until the maintainer chooses.
+#211 resolves #149 with one hidden, streamed, request-owned MP4 under caller
+`output_dir`. Inspection, comparison, retained decode, and combined audio
+extraction must keep consuming that exact path until request cleanup. Do not add
+a public video-temp option, separate branch snapshots, whole-video memory, a
+generic media cache, or legacy format support. #152 keeps long-audio chunk scope
+open; do not implement it until the maintainer chooses.
 #166 makes source order a constructor invariant for every public video outcome:
 retained frame indices are strictly increasing and timestamps never move backward.
 Do not add path-identity, timestamp-uniqueness, or generic ordering machinery.
@@ -121,7 +125,7 @@ and audio model usage, cleans request snapshots, and leaves cancelled suffix
 call evidence unknown. Do not replace that unknown with inferred zero calls.
 #183 requires VFR-safe parsing: use container duration, seek the five-second
 presentation timeline, and retain decoded frame PTS. Preserve the exact final
-frame and candidate cap; do not add ffprobe or claim #149 source stability.
+frame and candidate cap; do not add ffprobe or weaken #211 source stability.
 #184 proves the pinned OpenCV backend applies MP4 display rotation consistently
 to inspection, comparison, and retained JPEGs. Keep the real-container test;
 do not add manual rotation or a public orientation setting without a reproduced

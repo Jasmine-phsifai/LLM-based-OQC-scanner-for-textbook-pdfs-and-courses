@@ -382,7 +382,12 @@ valid but has no audio stream; present-but-corrupt or undecodable audio remains
 current audio recognizer remains the separately installed `audio,google`
 short-MP3 slice (maximum 300 decoded seconds and 25 MiB), so longer extracted
 tracks fail honestly at recognition. Image and audio providers are selected by
-the two separate `Config` objects. `recognize_video()` validates both configs
+the two separate `Config` objects. Both frame extraction and combined video
+recognition stream the caller MP4 into one hidden request-owned snapshot under
+`output_dir`; inspection, negative-feedback comparison, retained-JPEG decode,
+and combined audio extraction consume that same path, which is removed before
+the call exits. The snapshot is never a public asset or legacy compatibility
+format. `recognize_video()` validates both configs
 before reading the source, creating retained media, or dispatching either
 provider. It then uses those same proven boundaries and returns a
 `VideoRecognitionOutcome`: retained media, ordered

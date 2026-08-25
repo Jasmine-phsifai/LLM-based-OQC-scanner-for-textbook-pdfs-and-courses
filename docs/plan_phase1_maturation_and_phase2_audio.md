@@ -458,6 +458,10 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   it made no Files, generation, token-count, model-get, retry, or fallback call.
   Keep this as transport evidence, not a hardcoded catalog snapshot or a claim
   that every catalog model accepts audio.
+- #211 closes the separate video source-lifecycle blocker: the library streams
+  one hidden request-owned MP4 under `output_dir`, and the full frame plus audio
+  parse consumes that path before cleanup. Keep A2b audio state independent;
+  do not reuse the transient video snapshot as a persistent resume source.
 - A2b uses its own versioned audio state and a strong source/request/segment
   identity. It may reuse generic fingerprint and atomic-write behavior, but it
   must not generalize or import image slot semantics. The first slice remains
