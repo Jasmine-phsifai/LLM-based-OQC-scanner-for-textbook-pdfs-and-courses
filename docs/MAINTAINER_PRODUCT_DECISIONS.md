@@ -389,6 +389,13 @@ is often accepted.
   settled paid work to survive cancellation but cannot choose return-versus-
   raise for this non-persistent API. Maintainer selection of A or B is still
   required before implementation.
+  #226 found no later statement that selects either route. “Preserve settled
+  paid work” rules out the current loss but does not itself choose return or
+  raise. A can reuse the existing branch errors and outcome; B necessarily adds
+  a bounded outcome-recovery carrier. The remaining maintainer question is
+  therefore only: should one cancelled branch return the settled outcome (A),
+  or should cancellation still raise after making that outcome recoverable
+  (B)? Do not infer the answer from ordinary provider-error handling.
 - #129 keeps video composition explicit and memory-only. A caller may turn an
   already returned complete or partial `VideoRecognitionOutcome` into one
   standard video `RecognitionResult`; frame groups and audio remain separate

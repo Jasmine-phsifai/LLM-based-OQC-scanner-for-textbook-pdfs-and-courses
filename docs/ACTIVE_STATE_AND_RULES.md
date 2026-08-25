@@ -941,6 +941,19 @@ either direction, add extraction cancellation parameters, or document the
 current asymmetry as intended behavior until the maintainer selects the public
 semantics.
 
+#226 re-audits every later maintainer statement and confirms that none selects
+one of those two public semantics. The general instruction to preserve settled
+paid work rejects the current audio-cancellation loss, but does not decide
+return versus raise. Route A remains the smaller fit for this memory-only API:
+reuse the existing `Cancelled`, `frame_error` / `audio_error`, and partial
+outcome; skip a pre-cancelled audio branch before extraction; and raise before
+all output only when both signals are already set. Route B remains viable only
+if terminal cancellation gains a new bounded carrier or recovery boundary for
+the already-settled outcome. Provider/media errors already settle separately
+and are not evidence for either cancellation choice. Do not implement A merely
+because it is recommended, or build B's recovery machinery, until the
+maintainer explicitly chooses return or raise.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
