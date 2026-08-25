@@ -1220,6 +1220,23 @@ root was removed after all owned processes exited. Keep the gate open; do not
 retry within the same bounded iteration, change pins, vendor binaries, borrow
 an existing environment, or add another installer framework.
 
+#252 proves that #249's image cleanup-partial correction already survives the
+public PDF consumer and ordinary resume without another runtime change. A
+16-page injected native-Google run produces two serial eight-page groups: the
+first has usable Markdown plus `client_closed=False`, while the second is
+complete. Both child sidecars preserve their own status and cleanup metadata;
+the combined PDF is partial, ordered, atomically published, and carries the
+single cleanup warning with exact two-call and per-model token evidence.
+
+Repeating public `recognize(..., resume=True)` reuses both completed child
+sidecars, makes zero provider calls, and remains partial with the same Markdown
+and warning. Current-run token usage is intentionally absent on that resume;
+historical usage remains in the child sidecars. Do not add a PDF-level provider
+cleanup flag, model-attempt ledger, legacy repair format, transaction system,
+or replay policy: the existing child state and top-level honesty are sufficient.
+PDF/image/Google neighbors pass 77 tests and the complete offline suite passes
+1,519.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

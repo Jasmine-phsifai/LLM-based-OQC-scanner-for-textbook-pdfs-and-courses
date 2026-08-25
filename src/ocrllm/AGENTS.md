@@ -342,6 +342,11 @@ wheel manifest and metadata remain healthy, but do not claim installed runtime
 proof or a dependency-specific failure. A future bounded gate must retain and
 poll its original session; do not loop retries, repin, vendor, borrow another
 environment, or add an installer abstraction.
+#252 proves #249's cleanup-partial image result through public 16-page PDF
+publication and ordinary resume. Keep the two ordered eight-page child states
+authoritative: final status/warning remain partial and resume makes zero provider
+calls. Do not aggregate provider cleanup/model-attempt ledgers at PDF level or
+add legacy repair/replay machinery; the existing child sidecars are sufficient.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

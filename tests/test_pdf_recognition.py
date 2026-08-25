@@ -18,16 +18,19 @@ import pytest
 from ocrllm import (
     Cancelled,
     Config,
+    GoogleGenAISettings,
     InvalidSource,
     OutputError,
     PDFError,
     RecognitionExecutionPolicy,
+    VisionModelSettings,
     recognize,
     recognize_batch,
 )
 from ocrllm.errors import ProviderError
 from ocrllm.pdf.combine_pdf_group_results import combine_pdf_group_results
 from ocrllm.pdf.snapshot_pdf import MAX_PDF_SOURCE_BYTES
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 from ocrllm.result import RecognitionResult
 
 from write_test_image import write_test_image
@@ -260,6 +263,93 @@ def test_pdf_group_combination_preserves_partial_image_status() -> None:
 
     assert combined.status == "partial"
     assert combined.warnings == (warning,)
+
+
+def test_public_pdf_resumes_mixed_partial_and_complete_google_image_groups(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=16)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    state_directory = output_dir / "book_board"
+    observed: list[tuple[Path, ...]] = []
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+
+    def fake_google_image(image_paths, *, prompt, config):
+        assert "input order" in prompt
+        observed.append(tuple(Path(path) for path in image_paths))
+        call_index = len(observed)
+        return VisionProviderResponse(
+            markdown=f"Google PDF group {call_index}.\n",
+            input_tokens=11,
+            output_tokens=3,
+            client_closed=call_index != 1,
+        )
+
+    monkeypatch.setattr(adapter, "recognize_images", fake_google_image)
+
+    def config(*, resume: bool = False) -> Config:
+        return Config(
+            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            vision_model=VisionModelSettings(name="test-image-model"),
+            output_dir=output_dir,
+            resume=resume,
+            temp_dir=tmp_path / "snapshots",
+            execution=RecognitionExecutionPolicy(max_parallel_requests=4),
+        )
+
+    result = recognize(source, config=config())
+
+    assert [len(call) for call in observed] == [8, 8]
+    assert tuple(path.name for path in observed[0]) == tuple(
+        f"page-{page_number:06d}.png" for page_number in range(1, 9)
+    )
+    assert tuple(path.name for path in observed[1]) == tuple(
+        f"page-{page_number:06d}.png" for page_number in range(9, 17)
+    )
+    assert all(not path.exists() for call in observed for path in call)
+    assert result.status == "partial"
+    assert result.warnings == (
+        "The Google GenAI client could not be closed after recognition.",
+    )
+    assert result.output_path == output_dir / "book_board.md"
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert result.markdown.index("Google PDF group 1.") < result.markdown.index(
+        "Google PDF group 2."
+    )
+    assert result.metadata["current_run_provider_call_count"] == 2
+    assert result.metadata["current_model_token_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_tokens": 22,
+            "output_tokens": 6,
+        },
+    )
+
+    state_paths = sorted(state_directory.glob("*.ocrllm-state.json"))
+    assert len(state_paths) == 2
+    states = [json.loads(path.read_text(encoding="utf-8")) for path in state_paths]
+    assert [state["result"]["status"] for state in states] == [
+        "partial",
+        "complete",
+    ]
+    assert states[0]["result"]["warnings"] == [
+        "The Google GenAI client could not be closed after recognition."
+    ]
+    assert states[0]["result"]["metadata"]["provider_client_closed"] is False
+    assert states[1]["result"]["metadata"]["provider_client_closed"] is True
+
+    resumed = recognize(source, config=config(resume=True))
+
+    assert len(observed) == 2
+    assert resumed.status == "partial"
+    assert resumed.warnings == result.warnings
+    assert resumed.markdown == result.markdown
+    assert resumed.output_path == result.output_path
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert "current_model_token_usage" not in resumed.metadata
+    assert resumed.output_path.read_text(encoding="utf-8") == resumed.markdown
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows junction regression")

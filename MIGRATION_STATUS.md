@@ -813,6 +813,13 @@ The following directions remain traceable but are not current work:
   wrapper lost the original process's final exit diagnostics. No installed
   import/media claim or package/dependency failure is inferred; no retry, pin,
   installer, runtime, or API change was made.
+  #252 adds a public 16-page PDF regression for #249's cleanup-partial image
+  result. Two ordered eight-page groups publish as partial when the first is
+  usable-but-partial and the second complete; both child sidecars preserve
+  their own cleanup facts. Ordinary resume reuses them with zero provider calls
+  while retaining the final Markdown and warning. Runtime was already correct;
+  no PDF-level ledger, legacy repair format, retry, API, or dependency was added,
+  and the full offline suite passes 1,519.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

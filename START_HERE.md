@@ -326,6 +326,14 @@ OCRLLM failure is claimed and no installed MP4 proof exists. The external gate
 remains open; do not treat this diagnostic gap as permission to retry in a
 loop, repin, vendor, or borrow an existing environment.
 
+#252 proves the #249 image cleanup-partial state through the public PDF facade.
+A 16-page run keeps two ordered eight-page child sidecars, publishes partial
+Markdown when the first group has usable output plus a cleanup warning, and
+preserves the complete second group. Ordinary resume reuses both groups with
+zero provider calls and retains the same final status, warning, and Markdown.
+No runtime, PDF-level provider ledger, legacy repair format, or replay policy was
+added.
+
 #247 adds the missing public consumer proof for the opposite partial-video
 direction. A real MP4 whose frames succeed and whose audio provider fails once
 now continues through atomic `publish_video_result()` while retaining frame
