@@ -752,7 +752,9 @@ tuple, and `str` member types and returns `state.slots` only when the complete
 ordered current fingerprint tuple equals the validated saved plan. Keep it free
 of filesystem access, overall job hashes, image recovery types, provider
 dispatch, repair, final composition, authenticated-state machinery, and public
-exports. The 1,666-test source suite passes; exact installed proof is pending.
+exports. The 1,666-test source suite passes. Exact commit `da8f0af` passes the
+complete installed gate with a 256,150-byte
+wheel; every profile and local media smoke passes without cloud I/O.
 
 ## When Porting Legacy Behavior
 

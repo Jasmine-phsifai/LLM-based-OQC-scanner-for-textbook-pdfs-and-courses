@@ -5907,7 +5907,17 @@ interval materialization, repair, final composition, or public API work. The
 focused state/persistence/identity/planner set passes **101 tests in 0.51
 seconds**; the full source suite passes **1,666 tests in 65.79 seconds**.
 Compilation, lightweight import, diff, and frozen `contracts/worker` checks
-pass. Exact clean installed proof remains the #320 exit gate.
+pass.
+
+Exact clean commit `da8f0af` passes the maintained gate with exit 0 in 246.19
+seconds. The archive reports **1,665 passed, 1 skipped in 67.97 seconds**; the
+wheel is **256,150 bytes**, leaving **5,994 bytes** under 256 KiB, and base is
+1,292,416 bytes. Installed deltas are: audio 91,187,006; image 16,987,290;
+image+DashScope 41,562,806; Google 41,705,062; audio+Google 130,314,966; PDF
+vision 25,185,776; video 254,479,127; and combined 272,350,701 bytes. Interval,
+audio+Google, two-page PDF, video, and combined `2 1 1` smokes pass without
+cloud I/O. The delegated runner verified proxy, official PyPI, and wheelhouse,
+then removed every gate root and left no gate process. #320 is release-proven.
 
 ## Documentation Rules
 

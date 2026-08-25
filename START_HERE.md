@@ -743,7 +743,9 @@ settled prefix only when the complete ordered current request-fingerprint tuple
 is exactly equal; every length, order, or content mismatch is a typed
 `RESUME_STATE_MISMATCH`. All 1,666 source tests pass. This does not choose a
 state path, dispatch a provider, compose output, authenticate hostile local
-edits, or expose a public resume API; exact clean installed proof is pending.
+edits, or expose a public resume API. Exact clean installed commit `da8f0af`
+passes with 1,665 archived tests and one expected skip, a 256,150-byte wheel,
+all profiles and local media smokes green, no cloud I/O, and complete cleanup.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

@@ -549,7 +549,9 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
   tuple equality and otherwise raises `RESUME_STATE_MISMATCH`. Do not add an
   overall hash, generic recovery policy, hostile-local-file authentication,
   path selection, provider calls, or final composition. All 1,666 source tests
-  pass; exact clean installed proof remains pending.
+  pass. Exact clean installed commit `da8f0af` passes with a 256,150-byte wheel,
+  every installed profile and local media smoke green, no cloud I/O, and
+  complete cleanup.
 
 ### Stage A exit gate
 

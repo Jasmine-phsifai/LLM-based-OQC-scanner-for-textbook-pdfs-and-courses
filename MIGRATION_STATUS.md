@@ -1338,7 +1338,9 @@ The following directions remain traceable but are not current work:
   prefix; any plan length/order/content drift fails as
   `RESUME_STATE_MISMATCH`. It adds no path, I/O, provider, dispatch, repair,
   composition, authentication, or public API. All 1,666 source tests pass;
-  exact clean installed proof remains pending.
+  exact clean installed commit `da8f0af` passes with 1,665 archived tests and
+  one expected skip, a 256,150-byte wheel, all profiles and local media smokes
+  green, no cloud I/O, and complete cleanup.
 
 ## Obsolete Prose Kept For Trace
 
