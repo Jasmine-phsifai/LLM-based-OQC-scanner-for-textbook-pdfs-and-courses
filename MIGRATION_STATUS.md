@@ -755,6 +755,12 @@ The following directions remain traceable but are not current work:
   execution check and therefore its workflow/model-attempt evidence. The final
   offline suite passes 1,502; no public API, provider framework, dependency,
   media behavior, or open-decision boundary changed.
+  #243 completes the safely separable part of video cancellation preflight:
+  both configs must expose a callable `is_set` member before any MP4 work, but
+  the check does not invoke it. This prevents deterministic malformed-config
+  failures after video snapshot/frame/audio work without choosing #127's
+  cancellation outcome. The full offline suite passes 1,504; public API,
+  providers, dependencies, output and media behavior remain unchanged.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

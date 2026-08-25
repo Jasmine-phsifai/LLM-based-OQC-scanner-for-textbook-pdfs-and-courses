@@ -22,6 +22,7 @@ def recognize_video(
     )
     from .recognize import recognize
     from .recognize_video_frames import recognize_video_frames
+    from .validate_cancellation_signal import validate_cancellation_signal
     from .validate_config import validate_config
     from .validate_google_mp3_options import validate_google_mp3_options
     from .video.extract_video_audio import (
@@ -40,6 +41,8 @@ def recognize_video(
         (Path("video-audio.mp3"),),
         config=validated_audio_config,
     )
+    validate_cancellation_signal(validated_image_config.cancellation)
+    validate_cancellation_signal(validated_audio_config.cancellation)
 
     with prepare_video_media(
         source,

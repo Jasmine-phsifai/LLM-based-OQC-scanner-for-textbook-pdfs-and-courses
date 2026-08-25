@@ -289,6 +289,12 @@ retained-JPEG access. The ordinary image workflow keeps its later check so its
 draft/model-attempt evidence is not lost. This is one explicit early-validation
 mode with two video consumers, not a provider superclass or second validator.
 
+#243 also rejects a structurally invalid cancellation object in either video
+config before source access. The shared check verifies only a callable `is_set`
+member and does not call it, so #127's returned-versus-propagated cancellation
+decision remains open. Exceptions and non-boolean values from an actual
+`is_set()` call remain execution-time configuration errors.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

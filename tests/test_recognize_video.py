@@ -847,6 +847,45 @@ def test_recognize_video_rejects_invalid_audio_config_before_output_or_dispatch(
     assert not output_dir.exists()
 
 
+def test_recognize_video_rejects_invalid_audio_cancellation_before_source(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "output"
+
+    with pytest.raises(ConfigError, match=r"callable is_set\(\)"):
+        recognize_video(
+            tmp_path / "not-opened.mp4",
+            output_dir=output_dir,
+            image_config=Config(provider=_ImageProvider()),
+            audio_config=Config(
+                provider=GoogleGenAISettings(api_key="test-only-google-key"),
+                audio_model=AudioModelSettings(name="test-audio-model"),
+                cancellation=object(),
+            ),
+        )
+
+    assert not output_dir.exists()
+
+
+def test_recognize_video_rejects_invalid_image_cancellation_before_source(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "output"
+
+    with pytest.raises(ConfigError, match=r"callable is_set\(\)"):
+        recognize_video(
+            tmp_path / "not-opened.mp4",
+            output_dir=output_dir,
+            image_config=Config(
+                provider=_ImageProvider(),
+                cancellation=object(),
+            ),
+            audio_config=_audio_config(tmp_path),
+        )
+
+    assert not output_dir.exists()
+
+
 def test_recognize_video_rejects_invalid_image_config_before_output_or_dispatch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -293,6 +293,11 @@ media/provider execution or restore the obsolete paired `__getattr__` branch.
 external wheel of exact commit `79ad5d0`, in both ordinary import orders. The
 installed package remains dependency-free and execution-lazy. Do not repeat
 this gate until its named package boundary changes again.
+#243 requires combined video to reject a cancellation object without callable
+`is_set` before source/media work. Keep that structural check separate from
+state observation: do not invoke the signal during preflight or use it to choose
+#127's returned-versus-propagated cancellation behavior. Execution still owns
+exceptions and strict-boolean validation from an actual `is_set()` call.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -1046,6 +1046,19 @@ No provider base class, registry, media validator, retry, API signature,
 dependency, output layout, cancellation, long-audio, or frozen-boundary change
 was introduced.
 
+#243 closes the corresponding structural cancellation-config gap without
+choosing #127. `recognize_video()` previously accepted a cancellation object
+with no callable `is_set`, then could snapshot and parse the whole MP4, retain
+JPEGs, and extract audio before a branch finally reported `CONFIG_INVALID`.
+Both independent configs now reuse one zero-state-observation shape check before
+video media work. The check only inspects that `is_set` exists and is callable;
+it does not invoke it, move a pre-set cancellation, or define whether video
+cancellation returns branch outcomes or propagates. Runtime invocation still
+owns exceptions and strict-boolean validation from `is_set()`. The focused
+video set passes 121 tests and the complete offline suite passes 1,504. No
+public API, provider route, retry, dependency, media selection, output layout,
+legacy compatibility, #127/#152 choice, or frozen boundary changed.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
