@@ -552,6 +552,14 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
   pass. Exact clean installed commit `da8f0af` passes with a 256,150-byte wheel,
   every installed profile and local media smoke green, no cloud I/O, and
   complete cleanup.
+- #321 fixes the next consumer boundary without runtime code: long audio owns
+  `output_dir/<normalized audio stem>/result.md` and one temporary resume
+  sidecar in that same-name directory. Both whole-file and optional interval
+  modes remain required; interval length is exact integer minutes. The next
+  slice should define and preflight this path boundary only, rejecting collisions
+  before dispatch. Do not combine it with provider dispatch, final composition,
+  repair, legacy compatibility, generic transactions, provider classes, or
+  fallback pools.
 
 ### Stage A exit gate
 

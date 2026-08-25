@@ -1341,6 +1341,12 @@ The following directions remain traceable but are not current work:
   exact clean installed commit `da8f0af` passes with 1,665 archived tests and
   one expected skip, a 256,150-byte wheel, all profiles and local media smokes
   green, no cloud I/O, and complete cleanup.
+  #321 selects the library-owned long-audio publication layout:
+  `output_dir/<normalized audio stem>/result.md` plus one temporary resume
+  sidecar in that same-name directory. Both whole-file and optional exact-
+  integer-minute interval modes remain in scope. The next slice is only path
+  definition and pre-dispatch collision rejection; repair, legacy formats,
+  provider classes, fallback pools, and dispatch remain separate.
 
 ## Obsolete Prose Kept For Trace
 

@@ -5919,6 +5919,40 @@ audio+Google, two-page PDF, video, and combined `2 1 1` smokes pass without
 cloud I/O. The delegated runner verified proxy, official PyPI, and wheelhouse,
 then removed every gate root and left no gate process. #320 is release-proven.
 
+## Iteration 321: long-audio publication and operating policy is fixed
+
+The maintainer selected the same-name-directory publication layout. A long-audio
+job publishes beneath `output_dir/<normalized audio stem>/`; its final transcript
+is `result.md`, and temporary resume state uses one fixed library-owned sidecar
+in that directory. The next implementation slice may define and preflight only
+this audio-owned path boundary. It must reject an invalid or colliding target
+before provider dispatch and must not create a generalized output transaction,
+cross-media namespace, legacy-format adapter, or compatibility wrapper.
+
+The product keeps two explicit recognition modes: whole-file and optionally
+enabled interval slicing. Interval length accepts exact integer minutes only.
+The parameters needed to reproduce and resume the current request may remain in
+temporary state, but successful final publication may remove that state. Repair
+does not consume retained parameters: it is a small secondary operation that
+extracts concrete failed time ranges from failure text and resubmits only those
+ranges. Resume is the main recovery path; repair must not become another
+checkpoint engine or grow legacy-format compatibility.
+
+For dependency downloads and clean installed gates, the active proxy is an
+expected precondition. Verify that it is enabled and propagated before treating
+a failure as a general network problem. Delegate the complete mechanical run to
+a lightweight executor and continue independent work while it runs. This policy
+does not authorize runtime code to change system proxy settings.
+
+The legacy UI's stored DashScope credential may be reused only by an isolated,
+redacted test controller. Future model trials may include live-discovered,
+capable smaller candidates around the requested 27B class, including OCR or
+general reasoning models whose likely value is formulas, LaTeX, Mermaid,
+SVG/code, and reasoning. Do not test the newest oversized flagship merely
+because it exists, and discard candidates whose ordinary OCR is clearly worse
+than RapidOCR. No provider-class hierarchy, automatic fallback, or API pool is
+part of this decision iteration.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
