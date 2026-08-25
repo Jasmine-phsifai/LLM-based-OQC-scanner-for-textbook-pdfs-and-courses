@@ -1296,7 +1296,11 @@ The following directions remain traceable but are not current work:
   README's stale short-only video sentence is corrected. One worktree wheel is
   247,533 bytes with 14,611 bytes of headroom; all 1,587 source tests pass.
   A 169,681-byte worktree sdist retains the detailed README and excludes
-  tests/legacy. Exact committed clean-install proof remains pending.
+  tests/legacy. Exact clean commit `4c9e31b` then passes 1,586 archived tests
+  with one expected skip, all installed profiles and media smokes, and no cloud
+  call. Its wheel/base measure 247,533/1,249,562 bytes. The first wrapper never
+  launched a child because Windows rejected duplicate-case proxy variables;
+  the corrected uppercase-only environment passes.
 
 ## Obsolete Prose Kept For Trace
 

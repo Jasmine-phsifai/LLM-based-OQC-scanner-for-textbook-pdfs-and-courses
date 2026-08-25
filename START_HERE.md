@@ -693,6 +693,11 @@ maintained checker. A worktree build measures 247,533 bytes, restoring 14,611
 bytes of headroom; the full 1,587-test source suite passes. Exact clean installed
 proof remains pending. A real 169,681-byte sdist retains both README files and
 excludes tests/legacy, proving this is wheel-only reduction.
+Exact clean commit `4c9e31b` passes the full installed gate: archive 1,586
+passed/1 skipped, wheel 247,533 bytes, base 1,249,562 bytes, and every profile
+and media smoke green without cloud I/O. A pre-child wrapper failure also proves
+Windows `Start-Process` parents must not receive duplicate upper/lowercase proxy
+names; the corrected gate used uppercase only.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

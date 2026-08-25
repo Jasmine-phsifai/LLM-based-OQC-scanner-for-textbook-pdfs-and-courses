@@ -35,6 +35,13 @@ or independently reorder it.
   2026-08-26 WinINET and a real PyPI HTTPS probe verified `127.0.0.1:10080`;
   the older `127.0.0.1:7890` endpoint was stale. Recheck rather than hardcoding
   this machine fact into product runtime.
+- When a Windows parent will invoke PowerShell `Start-Process`, pass only one
+  casing of each proxy name. An environment block containing both `all_proxy`
+  and `ALL_PROXY` is accepted by some process paths but `Start-Process` rejects
+  it as a duplicate case-insensitive dictionary key before child launch. The
+  maintained gate is proven with uppercase `HTTP_PROXY`, `HTTPS_PROXY`, and
+  `ALL_PROXY`; do not add product-side environment normalization for this
+  operator boundary.
 - When a maintained release command has concrete evidence of hanging, give that
   exact stage a visible start message and a hard failure bound. Do not turn one
   stalled dependency preparation into a downloader, cache manager, retry

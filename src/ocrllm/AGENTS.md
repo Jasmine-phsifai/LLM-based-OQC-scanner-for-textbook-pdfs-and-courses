@@ -706,6 +706,10 @@ sdist. Standard METADATA still contains the corrected root README. The measured
 worktree wheel is 247,533 bytes with 14,611 bytes below the unchanged cap; do
 not reinclude repository documents, delete active modules, or collapse files
 merely for wheel size.
+Exact commit `4c9e31b` passes the complete installed gate with a 247,533-byte
+wheel and 1,249,562-byte base target; all profiles and media smokes pass without
+cloud I/O. For this Windows gate, an external wrapper must supply one proxy-name
+casing only because its internal `Start-Process` rejects duplicate-case keys.
 
 ## When Porting Legacy Behavior
 

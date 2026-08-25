@@ -461,7 +461,8 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   only justified removal from the wheel is the non-runtime detailed package
   README, which remains in Git/sdist while standard METADATA retains the root
   README. The measured worktree wheel falls from 261,349 to 247,533 bytes.
-  Proceed to request identity only after exact clean-install proof.
+  Exact clean commit `4c9e31b` passes every installed profile and media smoke
+  without cloud I/O. Request identity is unblocked as the next atomic slice.
 - The A2a 9.5-hour duration check is not complete selected-model preflight:
   Google's documented 32 audio tokens per second makes the full duration
   1,094,400 audio tokens before the prompt, above the current documented

@@ -5721,6 +5721,25 @@ while tests and legacy remain absent. Existing source-distribution inclusion of
 `src/ocrllm/AGENTS.md` is unchanged. Clean installed proof from the exact commit
 remains the exit gate.
 
+The first delegated gate wrapper for exact commit `4c9e31b` passed proxy and
+wheelhouse preflight but supplied both upper- and lowercase proxy names in one
+Windows environment block. PowerShell `Start-Process` rejected duplicate
+case-insensitive `all_proxy` / `ALL_PROXY` keys before launching the archived
+child. It exited 1 in 5.594 seconds with no tests, build, install, smoke,
+provider call, temp root, or process. This is retained operator evidence, not a
+product failure.
+
+One corrected invocation retained only uppercase `HTTP_PROXY`, `HTTPS_PROXY`,
+and `ALL_PROXY`, with the active `127.0.0.1:10080` proxy and wheelhouse again
+verified. It exits **0** in 248.875 seconds. The exact archive reports **1,586
+passed, 1 skipped in 68.59 seconds**; the wheel is **247,533 bytes** and base
+target **1,249,562 bytes**. Profile deltas are: audio 91,143,621; image
+16,943,905; image+DashScope 41,519,331; Google 41,661,668; audio+Google
+130,271,518; PDF vision 25,142,346; video 254,435,742; and combined
+272,307,208 bytes. The installed interval, PDF, video, and combined
+recognize/compose/publish smokes pass; no cloud API is called. The gate removes
+its root and leaves no process. #315 is release-proven.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
