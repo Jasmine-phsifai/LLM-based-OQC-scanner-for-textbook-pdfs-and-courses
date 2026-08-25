@@ -738,6 +738,13 @@ final publication, or success deletion is claimed. Exact clean installed commit
 wheel, all installed profiles and local media smokes green, no cloud I/O, and
 complete cleanup.
 
+#320 adds one pure audio reuse gate. A loaded state yields its same immutable
+settled prefix only when the complete ordered current request-fingerprint tuple
+is exactly equal; every length, order, or content mismatch is a typed
+`RESUME_STATE_MISMATCH`. All 1,666 source tests pass. This does not choose a
+state path, dispatch a provider, compose output, authenticate hostile local
+edits, or expose a public resume API; exact clean installed proof is pending.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

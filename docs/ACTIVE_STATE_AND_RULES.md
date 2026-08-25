@@ -5884,6 +5884,31 @@ audio+Google, two-page PDF, video, and combined `2 1 1` smokes pass without
 cloud I/O. The delegated runner verified proxy, official PyPI, and wheelhouse,
 then removed every gate root and left no gate process. #319 is release-proven.
 
+## Iteration 320: loaded audio state is reusable only for the exact plan
+
+One audio-specific in-memory gate now accepts an exact validated
+`LongAudioPartialState` and the exact current fingerprint tuple. It returns the
+same immutable settled-prefix tuple only when every current entry is an exact
+`str` and the complete ordered tuple equals the state plan. Empty, malformed,
+duplicated, shortened, extended, reordered, or changed plans fail with
+`RESUME_STATE_MISMATCH`; list, generator, tuple-subclass, or wrong state inputs
+are outside the exact internal contract.
+
+The gate does not rehash Markdown, reconstruct `ProcessorOutput`, duplicate
+slot facts, or add an overall job hash. #317 construction and #318 parsing have
+already validated the state plan, slot prefix, Markdown digest, calls, nullable
+usage, status, and warnings. Equality with that validated plan makes a third
+SHA-256-format/uniqueness pass redundant. This local sidecar is integrity-
+checked for ordinary corruption, not authenticated against a malicious local
+editor; adding a MAC and key lifecycle is outside the current product contract.
+
+This iteration performs no filesystem access, state naming, provider dispatch,
+interval materialization, repair, final composition, or public API work. The
+focused state/persistence/identity/planner set passes **101 tests in 0.51
+seconds**; the full source suite passes **1,666 tests in 65.79 seconds**.
+Compilation, lightweight import, diff, and frozen `contracts/worker` checks
+pass. Exact clean installed proof remains the #320 exit gate.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

@@ -747,6 +747,13 @@ passes. Exact commit `a601555` passes the complete installed gate with a
 255,474-byte wheel; every profile and local media smoke passes without cloud
 I/O.
 
+#320 adds internal `reuse_long_audio_partial_state()`. It requires exact state,
+tuple, and `str` member types and returns `state.slots` only when the complete
+ordered current fingerprint tuple equals the validated saved plan. Keep it free
+of filesystem access, overall job hashes, image recovery types, provider
+dispatch, repair, final composition, authenticated-state machinery, and public
+exports. The 1,666-test source suite passes; exact installed proof is pending.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

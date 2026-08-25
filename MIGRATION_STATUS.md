@@ -1333,6 +1333,12 @@ The following directions remain traceable but are not current work:
   1,650 source tests pass. Exact commit `a601555` passes the clean installed
   gate with 1,649 archived tests and one expected skip, a 255,474-byte wheel,
   all profiles and local media smokes green, no cloud I/O, and complete cleanup.
+  #320 adds only the pure loaded-state/current-plan reuse gate. Exact validated
+  state plus an exact current fingerprint tuple returns the same settled
+  prefix; any plan length/order/content drift fails as
+  `RESUME_STATE_MISMATCH`. It adds no path, I/O, provider, dispatch, repair,
+  composition, authentication, or public API. All 1,666 source tests pass;
+  exact clean installed proof remains pending.
 
 ## Obsolete Prose Kept For Trace
 

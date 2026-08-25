@@ -544,6 +544,12 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
   source tests pass. Exact clean installed commit `a601555` passes with a
   255,474-byte wheel, every installed profile and local media smoke green, no
   cloud I/O, and complete cleanup.
+- #320 adds only the pure request-plan match required between load and future
+  serial dispatch. It returns the validated settled prefix unchanged on exact
+  tuple equality and otherwise raises `RESUME_STATE_MISMATCH`. Do not add an
+  overall hash, generic recovery policy, hostile-local-file authentication,
+  path selection, provider calls, or final composition. All 1,666 source tests
+  pass; exact clean installed proof remains pending.
 
 ### Stage A exit gate
 
