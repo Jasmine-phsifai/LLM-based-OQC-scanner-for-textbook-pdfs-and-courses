@@ -316,6 +316,17 @@ is often accepted.
   outer tool loses exit/stdout/stderr is indeterminate, even when its local
   process and temporary directory disappear. Prove terminal capture on a local
   yielded process before another provider launch rather than blindly replaying.
+- A provider success gate must contain content the provider can actually
+  recognize. Constant-color frames plus a sine tone can validate local media
+  extraction and honest provider rejection, but cannot prove image OCR or audio
+  transcription. Use a bounded synthetic video with visible test text and
+  intelligible synthetic speech; do not add a semantic-content detector to the
+  library or retry a deliberately content-free fixture until it happens to pass.
+- Live runner errors may expose only existing allowlisted failure scopes and
+  exact boolean remote/client cleanup fields. These are needed to distinguish a
+  pre-generation Files failure without retaining provider text, remote IDs,
+  source paths, or credentials. Do not infer a provider mapping change when an
+  earlier runner omitted those safe details.
 - **Deferred provider-extension target.** After the core OCRLLM product paths
   are stable, provider integration should become additive: adding a provider
   should primarily mean adding one independently readable provider class (and

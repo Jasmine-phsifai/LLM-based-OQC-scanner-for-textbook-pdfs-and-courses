@@ -566,6 +566,11 @@ def test_video_smoke_preserves_audio_provider_failure_call_count(
                 code="PROVIDER_RATE_LIMITED",
                 details={
                     "provider_calls_attempted": 1,
+                    "failure_scope": "request",
+                    "remote_file_deleted": True,
+                    "provider_file_cleanup_failed": False,
+                    "provider_client_closed": True,
+                    "provider_client_cleanup_failed": False,
                     "raw_response": private_text,
                 },
             ),
@@ -585,6 +590,11 @@ def test_video_smoke_preserves_audio_provider_failure_call_count(
             "code": "PROVIDER_RATE_LIMITED",
             "stage": "audio_recognition",
             "provider_calls_attempted": 1,
+            "failure_scope": "request",
+            "remote_file_deleted": True,
+            "provider_file_cleanup_failed": False,
+            "provider_client_closed": True,
+            "provider_client_cleanup_failed": False,
         },
     }
     assert summary["composition"]["status"] == "partial"
@@ -641,6 +651,23 @@ def test_video_smoke_reports_only_canonical_safe_provider_failure_reasons(
     )
     assert "reason" not in unsafe
     assert private_text not in json.dumps(unsafe, sort_keys=True)
+
+    malformed_lifecycle = smoke._safe_error(
+        ProviderError(
+            private_text,
+            details={
+                "failure_scope": private_text,
+                "remote_file_deleted": 1,
+                "provider_client_closed": "yes",
+            },
+        ),
+        "audio_recognition",
+        0,
+    )
+    assert "failure_scope" not in malformed_lifecycle
+    assert "remote_file_deleted" not in malformed_lifecycle
+    assert "provider_client_closed" not in malformed_lifecycle
+    assert private_text not in json.dumps(malformed_lifecycle, sort_keys=True)
 
 
 def test_video_smoke_keeps_missing_audio_call_evidence_unknown(

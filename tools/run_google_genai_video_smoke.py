@@ -34,6 +34,15 @@ _SAFE_PROVIDER_FAILURE_REASONS = frozenset(
         "refusal",
     }
 )
+_SAFE_FAILURE_SCOPES = frozenset(
+    {"credential", "model", "provider", "request", "response"}
+)
+_SAFE_LIFECYCLE_DETAIL_NAMES = (
+    "remote_file_deleted",
+    "provider_file_cleanup_failed",
+    "provider_client_closed",
+    "provider_client_cleanup_failed",
+)
 
 
 class _LiveSmokeFailure(Exception):
@@ -474,6 +483,13 @@ def _safe_error(
         reason = error.details.get("reason")
         if type(reason) is str and reason in _SAFE_PROVIDER_FAILURE_REASONS:
             summary["reason"] = reason
+        failure_scope = error.details.get("failure_scope")
+        if type(failure_scope) is str and failure_scope in _SAFE_FAILURE_SCOPES:
+            summary["failure_scope"] = failure_scope
+        for detail_name in _SAFE_LIFECYCLE_DETAIL_NAMES:
+            detail_value = error.details.get(detail_name)
+            if type(detail_value) is bool:
+                summary[detail_name] = detail_value
     return summary
 
 

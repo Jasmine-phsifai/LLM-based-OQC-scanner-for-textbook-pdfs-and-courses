@@ -5193,6 +5193,45 @@ executor must demonstrate that it follows a yielded local process to terminal
 output. The strengthened runner and adjacent video/long-audio set pass 83 tests;
 the complete offline suite passes 1,559 tests.
 
+## Iteration 299: terminal evidence works; the semantic live gate still fails
+
+A lightweight executor first proved the required yielded-session lifecycle with
+a local child: the initial tool call returned a session, the same session was
+resumed, and both output streams plus the terminal marker were recovered after
+more than 30 seconds. The execution layer normalizes an arbitrary child exit 7
+to 1, but the maintained video runner itself intentionally returns only 0 or 1,
+so its success/failure terminal states remain distinguishable. No second process
+controller was added.
+
+Proxy diagnosis also separated reachability from a poor probe. WinINET remains
+enabled at `127.0.0.1:10080`; direct curl through it reached PyPI with HTTP 200
+before timing out while downloading that unusually large index body, and reached
+the Google API host with HTTP 404 and exit 0. The prior `Invoke-WebRequest`
+boolean was therefore not evidence that the proxy had been disabled. One
+subsequent credential-isolated runner start used the same proxy, the current
+37-model catalog, explicit `gemini-2.5-flash`, and one locally validated
+1,898,794-byte / 301.0-second MP4. The public preflight retained five frames in
+one image group. There was no retry, model switch, fallback, or second runner.
+
+The terminal safe JSON was complete but the product gate failed. The image
+branch made one generation and honestly rejected the constant-blue group as
+`PROVIDER_RESPONSE_INVALID` with `reason="missing_text"`. The Files audio branch
+failed before generation with `PROVIDER_RESPONSE_INVALID` and zero generation
+calls. Because the fixture contained only a sine tone, neither branch supplied
+recognizable product content; this run is robustness evidence, not a successful
+recognition gate. The old runner also omitted the audio error's already-safe
+scope and Files/client cleanup booleans, so the exact pre-generation stage and
+remote cleanup cannot be recovered from this attempt.
+
+The runner now forwards only allowlisted failure scopes and exact boolean
+lifecycle fields from typed errors. Malformed or arbitrary values remain absent;
+provider text, raw responses, paths, remote IDs, and credentials remain hidden.
+This is an evidence correction only. Do not infer a mapper/runtime defect from
+the sine-file result or add Files retry/state compatibility. The next live gate
+must use one synthetic video with visible OCR text and intelligible speech, then
+run once through this stronger reporter. The focused runner/video/long-audio set
+passes 83 tests.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

@@ -5567,3 +5567,19 @@ Atomic task — Iteration #298: prove the newly shipped #297 video long-audio ro
 runner 修正并离线通过后，第二次使用正确的 `google_files`、1 个图片组、明确 `gemini-2.5-flash`、120 秒请求上限启动；代理与凭据隔离前提再次满足，没有 retry、换模或 fallback。但轻量执行者的外层工具约 30 秒后没有返回 numeric exit、stdout 或 stderr。相关进程已结束且本地临时根不存在，但无法知道 provider 是否调用、远端文件是否删除，也不能把它包装成成功或失败。本轮不做第三次盲跑。下一次真实调用前，执行者必须先用纯本地 yielded process 证明会取得终态；这不是再建一个控制器，而是正确使用已有 session/write-stdin 生命周期。
 
 **验证与过度设计复查。** runner 定向及相邻视频/长音频集合为 **83 passed in 12.91s**；带既有 Node 路径的完整离线套件为 **1,559 passed in 65.04s**，`compileall -q src tests tools` 与 `git diff --check` 通过。library runtime、API、provider 调度、依赖、分片、resume、repair、legacy/social 和 frozen `contracts/worker` 均未改变。新增一个通用 provider 测试框架、持久日志系统、自动重试或第三套进程控制器都会过度设计；但把已有安全 metadata 加入 live 判定是必要证据，不是防御性扩张。当前卡点是委派工具没有把已启动进程跟到终态，而不是网络、Google 或 #297 已被证明失败。
+
+## #299 — 2026-08-26：委派终态已取回，空内容长视频得到诚实失败
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #299: close the indeterminate #298 Google long-video gate without changing library runtime. Context: the 301-second route and stricter Files-evidence runner are offline-green, but two delegated wrappers failed to preserve terminal evidence. Success means first proving, with no network or credential, that a lightweight executor can follow a yielded child beyond 30 seconds and return its exact exit/stdout/stderr; only then running one proxy-verified, credential-isolated, synthetic 301-second public recognize_video() gate with explicit google_files, one image group, one model, no retry/switch/fallback; personally reviewing the safe result; updating current authority and the Chinese diary; and committing/pushing. This matters because “the package really runs” is the product gate, while another blind API launch or another process framework would add uncertainty rather than maturity.
+```
+
+**终态通道与代理事实。** 新轻量执行者直接启动一个 35 秒本地 child：10 秒后得到 session，随后对同一 session `write_stdin`，约 32.8 秒后同时取得 `local-start`、`local-finish` 和 stderr marker。执行层把任意子退出 7 归一为 1，因此它不是通用精确退出码通道；但 maintained runner 本来只返回 0/1，足以区分本门禁。没有新增 controller。WinINET 仍为 `ProxyEnable=1 / ProxyServer=127.0.0.1:10080`。直接 curl 经代理访问 Google API 域名返回 **HTTP 404 / exit 0 / stderr empty**；PyPI `/simple/` 已返回 HTTP 200，只因页面约 45 MB、20 秒内仅收约 4.9 MB 而以 curl timeout 结束，不能据此说代理关闭。
+
+**本地预检与唯一真实运行。** 前一个执行者留下的精确 TEMP 素材被复用，没有再生成副本。本地 `inspect_video()` 和 runner frame preflight 确认 **1,898,794 bytes、301.0 秒、5 个 retained frames、1 个图片组**。一次本地 Python 命令先因执行者括号错误得到 SyntaxError，未读凭据或联网；逐字给出修正命令后 exit 0。随后唯一 live runner 在 child 环境读取非空 QSettings key，显式传递大小写代理变量，使用当前 catalog **37**、图片/音频均为 `gemini-2.5-flash`、`google_files`、120 秒请求限制；两次续接后约 **119 秒**终止为 exit 1，stderr **0 bytes**。没有 retry、第二 runner、换模、fallback 或 invalid-key probe。
+
+**真实结果与不能猜的部分。** 图片分支发送 **1 次**，恒定蓝色的 5 帧组返回 `PROVIDER_RESPONSE_INVALID / missing_text`；音频分支为 `PROVIDER_RESPONSE_INVALID`，generation count **0**，因此在 Files 上传/身份/处理状态到生成之间停止。整个 outcome 为 failed，composition 未开始。素材只有纯色画面和 440 Hz 正弦音，没有可识别文字或语音，所以图片拒绝完全合理；音频也不能作为转写成功素材。旧 runner 没有转发 error 中已有的 `failure_scope` 与远端/client cleanup 布尔值，导致本次无法再确认是远端身份、状态 FAILED/异常还是 SDK 未分类错误，也无法从终端证据确认远端删除；不根据约 119 秒耗时猜结论，不再调用 API。
+
+**最小证据修正与过度设计复查。** 路线 A 是猜测 Files 状态并修改 mapper/runtime；路线 B 是让 runner 只转发 typed error 中已有的有限 scope 和布尔生命周期字段。采用 B。新增 allowlist 只接受 `credential/model/provider/request/response`，cleanup 字段只接受 exact bool；任意字符串、整数伪布尔、provider 原文、raw response、路径、远端 ID 和 key 仍不输出。相邻 runner/视频/长音频集合 **83 passed in 12.97s**。没有语义内容自动检测器、Files 状态兼容层、retry、provider 框架、runtime/API/依赖、A2b、legacy/social 或 frozen 边界变化。下一次门禁必须改用带清晰可见文字和可懂合成语音的 301 秒视频，只运行一次；本轮空内容失败是有价值的诚实拒绝证据，但不是“全量打通”。精确 TEMP 目录只含这一份 1.9 MB fixture；执行安全策略拒绝删除，保留为已知 residue，未改用危险删除手段绕过。
