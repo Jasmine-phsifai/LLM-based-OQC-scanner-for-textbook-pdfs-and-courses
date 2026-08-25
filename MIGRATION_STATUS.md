@@ -682,6 +682,10 @@ The following directions remain traceable but are not current work:
   only names made `typing.get_type_hints()` fail. Only the pure-Python public
   signature types load with the thin video facades; recognition execution and
   every optional dependency remain lazy.
+  #220 applies the same proven collision fix only to public video composition
+  and publication. Their functions are initialization-safe and root-bound,
+  while composition, result-building, atomic output, recognition, and optional
+  dependency implementations remain lazy. No package-wide proxy was added.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

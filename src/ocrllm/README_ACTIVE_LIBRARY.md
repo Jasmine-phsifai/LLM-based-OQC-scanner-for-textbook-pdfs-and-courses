@@ -449,10 +449,11 @@ validated. This is distinct from the exact library-owned media paths above.
 Automatic fallback, resume, and worker routing remain
 unavailable. Plain
 `import ocrllm` does not import OpenCV, NumPy, imageio-ffmpeg, recognition
-execution modules, or provider SDKs. The two lightweight video facade
-functions are bound during package initialization so explicitly importing
-their same-named submodules cannot replace the public callables with module
-objects. Their public annotation types are available to ordinary
+execution modules, or provider SDKs. The four lightweight video facade
+functions for frame/combined recognition, composition, and publication are
+bound during package initialization so explicitly importing their same-named
+submodules cannot replace the public callables with module objects. Their
+public annotation types are available to ordinary
 `typing.get_type_hints()`, while recognition implementations and optional
 dependencies remain lazy.
 Local user screenshots are uncommitted

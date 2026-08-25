@@ -5,12 +5,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from .build_recognition_result import build_recognition_result
-from .compose_video_result import compose_video_result
-from .errors import OutputError, OutputExists
-from .output.claim_output_target import claim_output_target
-from .output.write_markdown_atomically import write_markdown_atomically
-from .processor_output import ProcessorOutput
 from .result import RecognitionResult
 from .video_recognition_outcome import VideoRecognitionOutcome
 
@@ -22,6 +16,12 @@ def publish_video_result(
     overwrite: bool = False,
 ) -> RecognitionResult:
     """Compose and atomically publish one complete or partial video outcome."""
+    from .build_recognition_result import build_recognition_result
+    from .compose_video_result import compose_video_result
+    from .output.claim_output_target import claim_output_target
+    from .output.write_markdown_atomically import write_markdown_atomically
+    from .processor_output import ProcessorOutput
+
     if type(overwrite) is not bool:
         raise TypeError(
             "publish_video_result() overwrite must be a boolean"
@@ -65,6 +65,8 @@ def _reject_reserved_video_media_target(
     *,
     reserved_paths: tuple[Path, ...],
 ) -> None:
+    from .errors import OutputError
+
     if target in reserved_paths:
         raise OutputError(
             "The video Markdown output cannot use a reserved media path.",
@@ -90,6 +92,8 @@ def _reject_reserved_video_media_target(
 
 
 def _prepare_video_markdown_target(target: Path, *, overwrite: bool) -> None:
+    from .errors import OutputError, OutputExists
+
     try:
         parent = target.parent
         if parent.exists() and not parent.is_dir():

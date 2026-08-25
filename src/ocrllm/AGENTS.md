@@ -229,6 +229,10 @@ providers. #219 requires their pure-Python public annotation types at module
 scope so ordinary `typing.get_type_hints()` remains exact.
 Do not replace this bounded fix with a callable module, package proxy, or import
 hook, and do not use it to change the frozen worker collision.
+#220 extends that exact rule only to `compose_video_result` and
+`publish_video_result`: keep their public types at module scope, execution
+imports inside the functions/helpers, and both root callables bound at package
+initialization. Do not generalize without another proven collision.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

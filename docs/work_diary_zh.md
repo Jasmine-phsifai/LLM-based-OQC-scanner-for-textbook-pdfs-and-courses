@@ -4381,3 +4381,17 @@ Atomic task — Iteration #219: verify that #218’s thin, import-order-safe vid
 **两条路线与选择。** 路线 A 把标准反射写成“不支持”，或建立 lazy type proxy、自定义注解解析器；路线 B 只把公开签名真正需要的纯 Python 类型恢复为 module-scope import，识别执行依赖仍留在调用阶段。独立审计推荐 A 以保持最窄导入面；主代理在测量后选择 B。B 的预估基线约 27.6 ms/25 个包内模块，最终实测更低；没有可选依赖。把一个已能复现、#218 之前正常的标准库行为永久列为不支持，不符合成熟 Python library，类型代理则明显过度设计。`Path`、`Config`、`VideoRecognitionOutcome`、`RetainedVideoFrame`、`BatchItemOutcome` 现在都是普通全局类型；运行逻辑仍按函数内 import 延迟。原“Config/error 模块完全不加载”的测试改成更有产品意义的边界：`recognize`/`recognize_batch` 执行模块在基础 import 和访问 Config 后都不加载。
 
 **验证与过度设计复查。** 新鲜进程中两份 `get_type_hints()` 返回全部精确类型；基础导入约 **20.9 ms**、25 个 `ocrllm` 模块，`recognize`/`recognize_batch` 为未加载，`cv2`、NumPy、imageio-ffmpeg、miniaudio、Google/OpenAI SDK、HTTPX、legacy 均未加载。公开类型/import/video/smoke 相邻集合为 **62 passed in 6.40s**；完整离线套件为 **1,491 passed in 61.75s**；`compileall -q src tests`、diff 和 frozen boundary 通过。没有网络、credential、provider call、媒体行为、#127/#152、legacy/social 或 frozen `contracts/worker` 变化。本轮最可能被认为过度设计的是为了反射加一层 lazy typing 系统；最终只用了普通 import，并明确接受约 14 ms 的纯 Python 初始化增加，换取可调用、静态类型和标准运行时反射三者同时成立。
+
+## #220 — 2026-08-25：视频组合与发布函数也不能被同名子模块覆盖
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #220: test the remaining public video composition/publication callables for the same explicit-submodule import collision proven in #218, without mechanically generalizing import policy across OCRLLM. Success means reconciling authority and diary; probing fresh-process root-first and submodule-first imports for `compose_video_result` and `publish_video_result`; verifying callability, identity, exact runtime type hints, and optional-dependency isolation; using one bounded independent audit plus personal code review; writing a red regression only if an actual public collision exists; applying the smallest readable fix limited to these two shipped video functions; preserving their provider-free behavior, atomic publication, lightweight recognition execution, and frozen boundaries; running proportional import/composition/publication tests; updating Chinese records; and committing/pushing one coherent iteration. This matters because leaving the adjacent half of the same public video API import-order-dependent would make #218 only a partial library fix.
+```
+
+**复现与范围。** 主代理与轻量只读审计都证明根包优先时两个函数可调用、identity/签名/运行时类型正确，但显式子模块优先会让 Python 把 module 安装到根包同名属性。手工直接读取可分别看到 compose/publish 变成 module；参数化公开导入回归在旧代码得到 **1 failed, 1 passed**，其中“看似通过”的顺序依赖另一个名称触发旧的成对 `__getattr__` 分支重新绑定，并不代表无缺陷。这里处理的只有已经公开且属于同一视频结果生命周期的 compose/publish；没有扫描全包后机械修改所有同名文件。
+
+**两条路线与最小修复。** 路线 A 建立所有 facade 共用的 import registry/proxy；路线 B 延续 #218 已证明的小模式，只处理这两个函数。选择 B。`compose_video_result.py` 在 module scope 只保留 `RecognitionResult`、`VideoRecognitionOutcome` 和错误注解类型，把 token 汇总、结果构建、frame identity 读取等执行依赖移到函数内；`publish_video_result.py` 只保留 `os`、`Path` 与公开结果/视频类型，把 compose、claim、atomic writer、ProcessorOutput 和输出错误放到调用函数/助手内。根包提前绑定这两个函数并删除已不可达的 compose/publish 专用懒分支。函数仍在同名责任文件中，没有 wrapper 或第二套 API。
+
+**验证与过度设计复查。** 修复后两种显式子模块顺序与根包顺序全部返回相同函数，`get_type_hints()` 精确；基础 import 约 **20.4 ms**、27 个包内模块，recognition、result builder、atomic writer 和全部可选媒体/provider/legacy 依赖未加载。公开 import、composition、publication、outcome 与真实 combined-video 相邻集合为 **65 passed in 6.09s**；完整离线套件为 **1,493 passed in 59.78s**；`compileall -q src tests`、diff 和 frozen boundary 通过。没有网络、credential、provider call、媒体/输出语义、#127/#152、legacy/social 或 frozen `contracts/worker` 变化。过度设计风险是把四个具体视频函数提升成全包魔法；本轮明确停止在已复现的完整视频 public surface。

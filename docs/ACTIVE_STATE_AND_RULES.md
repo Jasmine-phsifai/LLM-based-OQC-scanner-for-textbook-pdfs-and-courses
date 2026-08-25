@@ -2546,6 +2546,23 @@ type/import/video surface passes 62 and the complete offline suite passes 1,491.
 Do not replace these ordinary public type imports with lazy type proxies or
 weaken runtime annotations to `Any` merely to minimize internal module count.
 
+#220 completes the same bounded import-order repair for the remaining public
+video lifecycle functions. Explicitly importing `ocrllm.compose_video_result`
+or `ocrllm.publish_video_result` could install module objects on the package and
+make the corresponding root API non-callable; ordinary root-first access only
+hid the collision by triggering the paired lazy branch. Both modules now keep
+only public annotation types and standard-library names at initialization,
+defer composition/output execution imports until calls, and are bound alongside
+the two recognition facades during package initialization. Root-first and both
+explicit-submodule-first orders now return identical callable functions with
+exact `typing.get_type_hints()` results. Fresh import measured about 20.4 ms and
+27 package modules; recognition, result-building, atomic-write execution, every
+optional backend/provider SDK, HTTPX, and legacy remained unloaded. The focused
+import/composition/publication/video set passes 65 and the complete offline
+suite passes 1,493. This is not a package-wide import framework: do not apply it
+to unproven names or the frozen worker collision, and do not add a module proxy
+or import hook.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

@@ -2,8 +2,10 @@
 
 from typing import TYPE_CHECKING
 
-# Bind the two lightweight video facade functions before callers can import
+# Bind the lightweight video facade functions before callers can import
 # their same-named submodules and replace these public package attributes.
+from .compose_video_result import compose_video_result as compose_video_result
+from .publish_video_result import publish_video_result as publish_video_result
 from .recognize_video import recognize_video as recognize_video
 from .recognize_video_frames import recognize_video_frames as recognize_video_frames
 
@@ -261,19 +263,6 @@ def __getattr__(name: str):
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
 
     from importlib import import_module
-
-    if name in {"compose_video_result", "publish_video_result"}:
-        compose_value = getattr(
-            import_module(".compose_video_result", __name__),
-            "compose_video_result",
-        )
-        publish_value = getattr(
-            import_module(".publish_video_result", __name__),
-            "publish_video_result",
-        )
-        globals()["compose_video_result"] = compose_value
-        globals()["publish_video_result"] = publish_value
-        return globals()[name]
 
     if name in {"recognize", "recognize_batch"}:
         recognize_value = getattr(import_module(".recognize", __name__), "recognize")

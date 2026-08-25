@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
-from .aggregate_current_model_token_usage import (
-    aggregate_current_model_token_usage,
-)
-from .build_recognition_result import build_recognition_result
-from .errors import OCRLLMError, VideoError
-from .processor_output import ProcessorOutput
-from .read_video_frame_group_identity import read_video_frame_group_identity
+from .errors import OCRLLMError
 from .result import RecognitionResult
 from .video_recognition_outcome import VideoRecognitionOutcome
 
 
 def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     """Compose one returned video outcome without recognition or publication."""
+    from .aggregate_current_model_token_usage import (
+        aggregate_current_model_token_usage,
+    )
+    from .build_recognition_result import build_recognition_result
+    from .errors import VideoError
+    from .processor_output import ProcessorOutput
+    from .read_video_frame_group_identity import read_video_frame_group_identity
+
     if type(outcome) is not VideoRecognitionOutcome:
         raise TypeError(
             "compose_video_result() requires an exact VideoRecognitionOutcome"

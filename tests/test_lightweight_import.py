@@ -222,3 +222,52 @@ def test_public_video_callables_support_standard_runtime_type_hints():
     )
 
     assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.parametrize(
+    "submodule_name",
+    ("ocrllm.compose_video_result", "ocrllm.publish_video_result"),
+)
+def test_public_video_output_callables_survive_explicit_submodule_import(
+    submodule_name,
+):
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = (
+        "import importlib, sys, typing; "
+        "sys.path.insert(0, sys.argv[1]); "
+        "import ocrllm; "
+        "importlib.import_module(sys.argv[2]); "
+        "from ocrllm import compose_video_result, publish_video_result; "
+        "assert callable(compose_video_result), type(compose_video_result); "
+        "assert callable(publish_video_result), type(publish_video_result); "
+        "assert compose_video_result is importlib.import_module("
+        "'ocrllm.compose_video_result').compose_video_result; "
+        "assert publish_video_result is importlib.import_module("
+        "'ocrllm.publish_video_result').publish_video_result; "
+        "compose_hints=typing.get_type_hints(compose_video_result); "
+        "publish_hints=typing.get_type_hints(publish_video_result); "
+        "assert compose_hints['return'] is publish_hints['return']; "
+        "assert compose_hints['outcome'] is publish_hints['outcome']; "
+        "loaded={name.split('.')[0] for name in sys.modules}; "
+        "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
+        "assert not loaded & forbidden, loaded & forbidden; "
+        "assert 'ocrllm.recognize' not in sys.modules; "
+        "assert 'ocrllm.recognize_batch' not in sys.modules"
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            probe,
+            str(source_root),
+            submodule_name,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert completed.returncode == 0, completed.stderr
