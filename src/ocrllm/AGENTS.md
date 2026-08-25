@@ -254,6 +254,11 @@ caller's mutable MP4. Combined `recognize_video()` must pass its existing #211
 snapshot to the narrow stable-source helper, not create a second whole-video
 copy. Preserve cleanup on every exit without adding a generic media cache,
 public temporary-path option, or new cancellation semantics.
+#225 live-proves the post-#224 combined path with one image request and one
+audio request through two independent Google configs, complete composition,
+and clean request-owned media. Treat this as current service evidence, not
+authority for retry, model switching, a provider superclass, or repeated live
+gates when the relevant runtime boundary has not changed.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

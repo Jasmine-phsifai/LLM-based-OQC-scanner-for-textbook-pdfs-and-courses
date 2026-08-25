@@ -538,6 +538,15 @@ partial result with only the audio model's validated 200/14 token usage. The
 runner exited 1 because its full gate did not pass, but its discriminated JSON
 remained a settled `video_outcome`, not a runner failure. No retry or model
 switch was performed.
+After #224 stabilized audio extraction on the shared video snapshot, #225 ran
+the maintained gate exactly once with two independent configs both selecting
+the proven `gemini-2.5-flash`. One retained frame formed one successful image
+request, the extracted speech formed one successful audio request, and the
+complete composition retained the JPEG and MP3 with aggregated 796/17 token
+usage. The runner exited 0 in 9,721 ms with no retry, fallback, model switch,
+secret/content/path/raw-response disclosure, or request-owned residue. Using
+the same model in two configs does not collapse the two branch configurations
+or claim support for a second audio provider.
 The #207 real local regression continues that exact all-image-failed and
 audio-success shape through `publish_video_result()`. The final file remains
 partial, prints the stable frame error beside the successful audio section,

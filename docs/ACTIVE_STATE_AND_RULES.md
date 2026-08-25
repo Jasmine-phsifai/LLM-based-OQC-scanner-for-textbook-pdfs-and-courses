@@ -2628,6 +2628,25 @@ public signature, dependency, provider selection, cancellation contract, or
 legacy format changed. Do not add a generic media cache, public temporary-path
 option, compatibility wrapper, or a second snapshot inside combined video.
 
+#225 re-proves the combined public video boundary against the current native
+Google service after #224 changed the audio-extraction lifecycle. The maintained
+redacted runner discovered 37 current models and used two independent configs,
+both explicitly selecting the separately proven `gemini-2.5-flash`, for one
+synthetic five-second speech-and-text MP4. Provider-free preflight retained one
+frame. The public call then completed one image group in exactly one generation
+and recognized the extracted audio in exactly one generation; the outcome and
+provider-free composition were `complete`, retained one JPEG plus one MP3, and
+reported aggregated model usage of 796 input / 17 output tokens. The sole
+runner invocation exited 0 in 9,721 ms. Stderr, credential/content/path/raw-
+response scans, child environment, request-owned snapshots/staging paths, and
+the external capture root were all clean. An earlier local FFmpeg `drawtext`
+argument error occurred before the runner started and made zero provider calls.
+No retry, fallback, model switch, invalid-key probe, runtime edit, or second
+invocation occurred. This proves the changed lifecycle still reaches both real
+branches; it does not add a second audio provider or justify a provider
+framework, and it should not be repeated until another relevant runtime boundary
+changes.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

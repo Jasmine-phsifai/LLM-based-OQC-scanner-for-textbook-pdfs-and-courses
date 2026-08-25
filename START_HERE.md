@@ -229,6 +229,15 @@ shared video is not copied twice. A real same-path 440/880 Hz replacement test
 keeps the published MP3 tied to the inspected 440 Hz bytes and leaves no hidden
 source or staging file.
 
+#225 then runs the maintained redacted Google combined-video gate exactly once
+after that lifecycle change. Two independent configs both explicitly selected
+`gemini-2.5-flash`; one retained-frame group and one speech-audio branch each
+completed in one generation. The public outcome/composition were complete with
+JPEG plus MP3 assets and aggregated 796/17 token usage. Exit was 0 in 9,721 ms,
+with no retry, fallback, model switch, credential/content/path/raw-response
+leak, or request-owned residue. This refreshes runtime evidence; it does not add
+a second audio provider or generalize provider routing.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed
