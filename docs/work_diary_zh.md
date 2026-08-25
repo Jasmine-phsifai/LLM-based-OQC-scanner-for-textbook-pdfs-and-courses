@@ -4151,3 +4151,17 @@ Atomic task — Iteration #203: run one bounded authorized live Google image-rec
 **唯一 live 结果。** 实时 catalog 为 **37**，指定且存在的模型为 `gemini-2.5-flash`。公开 `recognize_video()` 返回 complete，保留 `[0,5,19]`；三张图组成一组，成功一组，图片 provider 精确 **1 call**。静音 audio state 为 absent，错误码 `VIDEO_NO_AUDIO_STREAM`，音频 **0 call**。`compose_video_result()` complete，assets 为三张 JPEG。子进程不输出 Markdown，只在内部检查 distinctive content：`contains_IMPORTANT=true`、`contains_42=true`。验证后的模型 usage 为 **1111 input / 55 output tokens**，子进程耗时 **4642.762 ms**。
 
 **失败记录、清理与过度设计复查。** 第一次 controller 在创建目录、启动 child、请求 catalog 或 live call 前，因为 Windows drive raw-string 字面量错误而 `SyntaxError`；它没有产生外部动作。只修正 controller 字面量后启动唯一 child 和唯一 recognition：合计 controller starts 2、child 1、live invocation 1，无 retry/fallback/model switch/invalid-key probe。child stdout/stderr 的 credential、disposable path、exact content 扫描均为 false；唯一外部根已删除，residue 0；仓库仍只有两个既有未跟踪文件。结果已经证明 retained JPEG→真实 provider→目标文字，不新增 content-exposing harness、质量评分、阈值规则或 provider framework，也不重发请求追求更多绿色结果。本轮不改 runtime/API/dependency/output layout，不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。
+
+## #204 — 2026-08-25：五分钟光标干扰被压住，同时保留两种主页面
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #204: balance #202’s positive small-text evidence with one real nuisance-motion counterexample, proving that negative-feedback calibration suppresses repeated cursor-like changes without discarding a genuine major slide transition. Success means reconciling authority and diary, generating one deterministic five-minute MP4 on the existing five-second grid with recurring small cursor motion plus one large mid-video slide change, running public frame extraction, verifying the retained count stays within the current 5–10 short-duration target while published JPEGs still represent both major slide states, and changing thresholds only if this balanced case exposes a concrete failure. This matters because lowering sensitivity to preserve text is unsafe unless the selector also resists harmless motion; mature calibration must demonstrate both recall and bounded output on real decoded video.
+```
+
+**两条路线与固定样本。** 路线 A 是根据 #202 的小字正例立即降低阈值或增加 cursor/subtitle 分类；路线 B 是先给现有规则一个真实反例：持续小运动与真正换页同时出现。选择 B。唯一 fixture 为 640×360、1 fps、300 帧/300 秒、587,721 bytes；0–149 是固定大标题和正文的 Slide A，150–299 是明显不同背景/标题/正文的 Slide B。每一帧再叠加 100×35 高对比矩形光标，在两个相邻位置逐秒交替。没有调第二套尺寸或阈值。
+
+**候选差异与公开结果。** 五秒粗采样得到 61 个候选：`0,5,...,295,299`。同一主页面内 58 对非零相邻候选的 cursor-only luminance diff 全为 **0.0126953125**，color 为 **0.01171875**；最后同位置 pair 为 0。145→150 的主换页 luminance 为 **0.05401611328125**，color/max 为 **0.9892578125**。五分钟目标为 5–10 张。内部 selector 与公开 `extract_video_frames()` 完全一致，保留 `[45,95,145,195,245,299]`，时间同为这些秒数，共 6 张，间隔 50–54 秒。
+
+**像素身份、结论与过度设计复查。** 不能只凭索引跨过 150 就声称两页都在；因此用预声明 title ROI 数值分类实际发布 JPEG。前三张明确属于 A、后三张属于 B：A→A template distance 约 2.986、A→B 约 23.165；B→B 约 2.137、B→A 约 24.079。总耗时 937.837 ms，唯一外部根已删除，仓库无变化。#202–#204 现在形成平衡证据：2.29% 的短暂清晰文字被保留并被真实 Google 识别，约 1.27% 的持续光标运动不会让 61 个候选爆成输出，同时主换页不丢。没有理由修改阈值、添加 cursor/subtitle detector、公开质量设置或永久五分钟 fixture。本轮无 provider/network/credential/install/runtime/API/dependency/output layout 变化，不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。

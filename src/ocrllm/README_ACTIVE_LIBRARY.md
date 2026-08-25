@@ -352,7 +352,10 @@ text line affecting about 2.29% of the comparison thumbnail is retained by the
 current accumulated-drift rule. One bounded live Google run then sent retained
 frames 0/5/19 in a single image group and confirmed the model output contained
 both distinctive `IMPORTANT` and `42` content; silent audio made no provider
-call. `recognize_video_frames()` accepts only the exact
+call. A separate real five-minute probe alternated a small cursor every second:
+61 coarse candidates calibrated to six retained frames while published JPEGs
+still represented both sides of one genuine major slide transition.
+`recognize_video_frames()` accepts only the exact
 ordered tuple returned by this library and reuses ordinary image recognition
 in groups of at most eight. It is memory-only and returns one existing
 `BatchItemOutcome` per group. Every successful result carries exact

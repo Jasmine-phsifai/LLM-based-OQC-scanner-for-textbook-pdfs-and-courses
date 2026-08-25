@@ -600,6 +600,11 @@ The following directions remain traceable but are not current work:
   recognized both distinctive tokens from retained frames 0/5/19 in one image
   group, while silent audio made zero calls and composition completed with
   three assets. Usage was 1111 input / 55 output tokens; no residue or leak.
+  #204 supplies the balanced nuisance-motion evidence: a real five-minute MP4
+  with a small alternating cursor produced 61 candidates but calibrated to six
+  published frames within the 5–10 target, while pixel checks proved three
+  retained Slide A frames and three Slide B frames across the major transition.
+  No threshold or cursor/subtitle detector was added.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

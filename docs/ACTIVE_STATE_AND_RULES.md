@@ -2167,6 +2167,35 @@ quality-score API, persistent harness, threshold change, or broader provider
 framework. No runtime, API, dependency, output layout, legacy compatibility,
 frozen boundary, or open #127/#149/#152 choice changed.
 
+#204 adds the nuisance-motion counterexample required before reconsidering the
+selector thresholds after #202/#203. One external real 640x360, 1 fps,
+300-frame MP4 showed Slide A for frames 0–149 and visibly different Slide B for
+150–299. A fixed 100x35 high-contrast cursor rectangle alternated between two
+nearby positions every second. The five-second scan produced 61 candidates at
+indices 0, 5, ..., 295, 299. Within a major slide, 58 nonzero adjacent pairs had
+the same cursor-only maximum changed-pixel fraction 0.0126953125 (luminance;
+color was 0.01171875); the one final same-position pair was zero. The 145→150
+major transition measured 0.05401611328125 luminance and 0.9892578125 color.
+
+The five-minute density target is 5–10 frames. Internal selection and public
+`extract_video_frames()` agreed exactly on six indices
+45/95/145/195/245/299 at 45/95/145/195/245/299 seconds, with 50–54-second gaps.
+Predeclared numeric checks over the actual published title ROI classified the
+first three JPEGs as Slide A and the last three as Slide B: same-template mean
+distances were about 2.986 and 2.137, while cross-template distances were about
+23.165 and 24.079. Thus calibration did not chase recurring nuisance motion and
+did not discard either major page state. The 587,721-byte fixture completed in
+937.837 ms; the exact external root was removed and repository state was
+unchanged.
+
+Together, #202–#204 provide balanced real evidence for the current rule: one
+sampled readable transient edit survives and reaches Google, while smaller
+recurring cursor motion remains bounded around a genuine page transition. No
+threshold change, cursor/subtitle classifier, second detector, public quality
+setting, or permanent five-minute fixture is justified. No provider, network,
+credential, dependency installation, runtime, API, output layout, legacy
+compatibility, frozen boundary, or open #127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded
