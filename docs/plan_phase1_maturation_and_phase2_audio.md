@@ -565,9 +565,11 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
 - #322 implements that lifecycle-neutral path planner. It fixes the normalized
   job root, `result.md`, and `.ocrllm-long-audio-resume.json`, rejects an
   existing non-directory output parent and overlong Windows planned paths, and
-  creates nothing. All 1,675 source tests pass. The next slice is one explicit
-  new-run/resume ownership preflight; no overwrite, auto-rename, locking,
-  dispatch, repair, or generic transaction belongs in it.
+  creates nothing. All 1,675 source tests pass. Exact clean installed commit
+  `a9fb1d0` passes with a 257,558-byte wheel, every installed profile and local
+  media smoke green, no cloud I/O, and complete cleanup. The next slice is one
+  explicit new-run/resume ownership preflight; no overwrite, auto-rename,
+  locking, dispatch, repair, or generic transaction belongs in it.
 
 ### Stage A exit gate
 

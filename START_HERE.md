@@ -759,7 +759,10 @@ distinguish a new run from the existing directory required by resume.
 root, `result.md`, and `.ocrllm-long-audio-resume.json`. It creates nothing,
 rejects a non-directory output parent and overlong Windows paths, and permits an
 existing job root until the caller explicitly selects new-run or resume
-ownership. All 1,675 source tests pass; exact installed proof is pending.
+ownership. All 1,675 source tests pass. Exact commit `a9fb1d0` passes the clean
+installed gate with 1,674 archived tests and one expected skip, a 257,558-byte
+wheel, all profiles and local media smokes green, no cloud I/O, and complete
+cleanup.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

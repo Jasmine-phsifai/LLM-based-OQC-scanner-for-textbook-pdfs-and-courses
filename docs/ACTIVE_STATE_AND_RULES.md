@@ -5976,8 +5976,11 @@ collision, or add a generalized transaction/locking abstraction.
 
 The new and neighboring output regressions pass 46 tests; the complete offline
 source suite passes 1,675 tests. Compilation, lightweight import, frozen
-`contracts/worker`, and diff checks pass. Exact committed installed proof is
-still required.
+`contracts/worker`, and diff checks pass. Exact commit `a9fb1d0` passes the
+complete installed gate: 1,674 archived tests pass with one expected skip; the
+wheel is 257,558 bytes, leaving 4,586 bytes under 256 KiB; every installed
+profile and local audio/PDF/video/combined smoke passes without cloud I/O; and
+all gate-owned roots and processes are removed. #322 is release-proven.
 
 ## Documentation Rules
 

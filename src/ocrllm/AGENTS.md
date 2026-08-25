@@ -764,7 +764,8 @@ or reject every existing root, because a valid resume root already exists. The
 next consumer must explicitly distinguish new-run ownership from resume; do not
 add overwrite, auto-rename, generic locking/transactions, provider dispatch,
 repair, or public exports here. The 1,675-test source suite passes; exact
-installed proof is pending.
+commit `a9fb1d0` passes the complete installed gate with a 257,558-byte wheel;
+every profile and local media smoke passes without cloud I/O.
 
 ## When Porting Legacy Behavior
 

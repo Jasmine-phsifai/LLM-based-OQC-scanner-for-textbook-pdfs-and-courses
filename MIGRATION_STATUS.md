@@ -1352,7 +1352,9 @@ The following directions remain traceable but are not current work:
   root, `result.md`, and `.ocrllm-long-audio-resume.json`. It performs no writes,
   rejects a non-directory output parent and overlong Windows paths, and leaves
   existing-root handling to the next explicit new-run/resume ownership gate.
-  All 1,675 source tests pass; exact installed proof remains open.
+  All 1,675 source tests pass. Exact commit `a9fb1d0` passes the clean installed
+  gate with 1,674 archived tests and one expected skip, a 257,558-byte wheel,
+  all profiles and local media smokes green, no cloud I/O, and complete cleanup.
 
 ## Obsolete Prose Kept For Trace
 
