@@ -516,6 +516,23 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   persistence slice.
   Exact commit `5580da1` passes the full installed gate with every profile and
   local media smoke green and no provider call; its wheel is 250,819 bytes.
+- #318 defines only the canonical bytes for that state and the strict inverse
+  parser. It deliberately stops before filesystem size policy and atomic I/O,
+  so corruption/schema behavior can be proven independently of lifecycle
+  behavior. The next slice may add one bounded audio-owned atomic save/load
+  boundary; it must not add dispatch, provider calls, repair, or a generic
+  transaction framework. All 1,629 source tests pass; exact clean installed
+  proof remains pending.
+
+The settled product direction supports both whole-file and interval audio.
+Interval size is configured in exact integer minutes. Persisted partial state is
+temporary resume material and may be deleted after successful final output;
+repair remains a small text-range-derived side path independent of saved
+parameters. Mechanical downloads and installed gates verify the always-on proxy
+first and are delegated while primary work continues. Later bounded DashScope
+evidence should prefer capable smaller OCR/reasoning candidates around the
+requested 27B class for formulas and structured/code output; do not select the
+largest flagship by default or preserve clearly inferior ordinary-OCR models.
 
 ### Stage A exit gate
 

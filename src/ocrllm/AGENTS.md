@@ -728,6 +728,13 @@ I/O, and public exports outside these types.
 Exact commit `5580da1` passes the complete installed gate with a 250,819-byte
 wheel; every profile and local media smoke passes without cloud I/O.
 
+#318 adds only `serialize_long_audio_partial_state()` and
+`parse_long_audio_partial_state()`. Keep their exact audio-owned schema
+deterministic and reject duplicate keys and schema drift through the typed
+resume-state error. They are not permission to add filesystem I/O, a generic
+serialization framework, resume dispatch, repair, provider calls, or public
+exports. The 1,629-test source suite passes; exact installed proof is pending.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

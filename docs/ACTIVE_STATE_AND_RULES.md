@@ -5807,6 +5807,36 @@ and base is 1,266,497 bytes. Installed deltas are: audio 91,160,733; image
 without cloud I/O. The delegated runner verified proxy and wheelhouse, removed
 every gate root, and left no gate process. #317 is release-proven.
 
+## Iteration 318: the audio partial state has one strict byte schema
+
+The #317 state now has one audio-specific canonical UTF-8 JSON representation
+and one strict parser. Serialization is deterministic, preserves Unicode and
+independently nullable token usage, and emits only the validated state and slot
+fields. Parsing rejects duplicate keys at every object depth, missing or extra
+fields, non-finite numbers, unsupported versions, malformed digests, and every
+fact already rejected by the #317 value types. Parsing and serializing a valid
+document reproduces the same bytes.
+
+This remains an internal persistence prerequisite. It performs no filesystem
+I/O and adds no path selection, size limit, atomic replacement, dispatcher,
+provider call, final Markdown, repair parser, or public API. The focused state,
+identity, planner, prompt, and materializer set passes **64 tests in 0.38
+seconds**; the full source suite passes **1,629 tests in 64.10 seconds**.
+Compilation, lightweight import, diff, and frozen `contracts/worker` checks
+pass. Exact clean installed proof remains the #318 exit gate.
+
+Current audio policy is also explicit: both whole-file and interval modes are
+required; interval length accepts integer minutes only. Resume state is
+temporary implementation state and may be removed after successful output.
+Repair remains a small side path that derives time ranges from failure text and
+must not depend on retained request parameters. Before dependency downloads,
+verify the configured proxy rather than diagnosing ordinary network failure;
+delegate the mechanical clean-install gate. Future bounded DashScope trials may
+sample capable smaller OCR/reasoning models around the requested 27B class for
+formula, LaTeX, Mermaid, SVG/code, and reasoning evidence, but must not use the
+largest flagship merely because it is available or retain models clearly worse
+than RapidOCR for ordinary OCR.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

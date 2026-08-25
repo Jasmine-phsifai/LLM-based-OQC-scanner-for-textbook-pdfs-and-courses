@@ -718,6 +718,14 @@ exact commit `5580da1` passes the full installed gate with 1,618 archived tests
 passing and one expected skip, a 250,819-byte wheel, all profiles/media smokes
 green, no cloud I/O, and complete cleanup.
 
+#318 adds the state-only canonical UTF-8 JSON serializer and strict parser.
+Valid documents round-trip byte-for-byte; duplicate keys, schema drift,
+unsupported versions, non-finite values, and invalid slot facts fail as typed
+resume-state errors. All 1,629 source tests pass. This is not filesystem
+persistence or runnable resume: it adds no loader, writer, path, size policy,
+atomic replacement, dispatcher, repair parser, provider call, or public API.
+Exact clean installed proof is still pending.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

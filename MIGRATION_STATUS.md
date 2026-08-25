@@ -1317,6 +1317,12 @@ The following directions remain traceable but are not current work:
   `5580da1` then passes 1,618 archived tests with one expected skip, all
   profiles and media smokes without cloud I/O; wheel/base measure
   250,819/1,266,497 bytes.
+  #318 gives that state one deterministic, audio-specific UTF-8 JSON schema and
+  strict parser. It preserves Unicode, ordering, warnings, and nullable usage,
+  and rejects duplicate keys, missing/extra fields, unsupported versions, and
+  invalid settled facts. It adds no filesystem I/O, resume routing, provider
+  work, repair parser, or public API. All 1,629 source tests pass; the exact
+  clean installed gate remains pending.
 
 ## Obsolete Prose Kept For Trace
 
