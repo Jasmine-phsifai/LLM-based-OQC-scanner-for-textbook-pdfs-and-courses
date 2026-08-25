@@ -444,7 +444,11 @@ successful and available because local cleanup is not provider failure. Keep a
 primary provider error primary, annotated only with cleanup failure. Do not add
 a public provider-response protocol, shared lifecycle superclass, retry,
 fallback, or model switch. The separate implicit-default-model attempt-ledger
-identity mismatch remains open for one later atomic audit.
+identity mismatch was closed by #273 at the candidate-ledger boundary. Record an
+implicit built-in DashScope attempt under the pinned baseline model for success,
+provider failure, and output failure, while leaving caller config, resume identity,
+explicit candidates, injected providers, catalog checks, and configuration-error
+redaction unchanged. Do not add an early normalization or shared identity layer.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

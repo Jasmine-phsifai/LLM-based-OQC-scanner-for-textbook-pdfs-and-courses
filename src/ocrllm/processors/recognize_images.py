@@ -103,6 +103,13 @@ def recognize_images(
                     candidate_models=(),
                 ),
             )
+        # DashScope alone accepts an implicit name and resolves it to this
+        # pinned baseline. Keep the caller config implicit for resume identity.
+        ledger_model = (
+            DEFAULT_DASHSCOPE_MODEL
+            if model is None and type(candidate_config.provider) is DashScopeSettings
+            else model or ""
+        )
         is_last = candidate_index == len(ordered_models) - 1
         try:
             output = _recognize_images_once(
@@ -152,14 +159,14 @@ def recognize_images(
             if type(local_calls_attempted) is not int or local_calls_attempted < 0:
                 local_calls_attempted = default_local_calls
             entry: dict[str, str | int | None] = {
-                "model": model or "",
+                "model": ledger_model,
                 "outcome": error.code,
                 "disposition": disposition.action,
                 "provider_calls_attempted": local_calls_attempted,
             }
             failed_model = error.details.get("failed_model")
             own_failure = not (
-                type(failed_model) is str and failed_model != (model or "")
+                type(failed_model) is str and failed_model != ledger_model
             )
             if not own_failure and type(failed_model) is str:
                 entry["failed_model"] = failed_model
@@ -204,7 +211,7 @@ def recognize_images(
                 local_calls_attempted = 0
             attempts.append(
                 {
-                    "model": model or "",
+                    "model": ledger_model,
                     "outcome": error.code,
                     "provider_calls_attempted": local_calls_attempted,
                 }
@@ -219,7 +226,7 @@ def recognize_images(
 
         attempts.append(
             {
-                "model": model or "",
+                "model": ledger_model,
                 "outcome": "success",
                 "provider_calls_attempted": output.metadata["provider_call_count"],
             }

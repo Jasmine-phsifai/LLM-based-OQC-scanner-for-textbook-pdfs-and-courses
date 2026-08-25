@@ -1652,8 +1652,16 @@ legacy/social behavior, #127/#152 choice, or frozen boundary changed.
 One adjacent pre-existing accounting mismatch was observed but not folded into
 this lifecycle fix: when the DashScope baseline model is implicit, top-level
 metadata resolves the actual baseline while the successful `model_attempts`
-entry can retain an empty model string. Audit that as a separate atomic task;
-do not infer its correction from #272 or generalize model accounting here.
+entry could retain an empty model string. #273 closes that mismatch only at the
+candidate-ledger boundary: an implicit built-in DashScope attempt is recorded
+as `qwen3.7-plus-2026-05-26` for success, provider failure, and output failure,
+matching the actual request, top-level metadata, and workflow slot. The caller's
+configuration remains implicit, so checkpoint/fingerprint identity is unchanged;
+explicit candidates, injected providers, catalog behavior, and configuration
+failure redaction are unchanged. The causal public regression failed 1 / selected
+1 before the runtime change, the related set passes 113, and the complete offline
+suite passes 1,542. Do not turn this provider-specific accounting correction into
+early config normalization or a general provider model-identity layer.
 
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup

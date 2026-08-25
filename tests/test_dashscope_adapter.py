@@ -150,6 +150,23 @@ def test_builtin_dashscope_adapter_builds_one_no_retry_request(tmp_path, monkeyp
     assert result.metadata["enable_thinking"] is False
     assert result.metadata["vl_high_resolution_images"] is True
     assert result.metadata["provider_call_count"] == 1
+    assert tuple(dict(item) for item in result.metadata["model_attempts"]) == (
+        {
+            "model": "qwen3.7-plus-2026-05-26",
+            "outcome": "success",
+            "provider_calls_attempted": 1,
+        },
+    )
+    assert tuple(dict(item) for item in result.metadata["workflow_slots"]) == (
+        {
+            "slot_id": "draft",
+            "workflow_pass": "draft",
+            "provider": "dashscope",
+            "model": "qwen3.7-plus-2026-05-26",
+            "reused": False,
+            "provider_calls_attempted": 1,
+        },
+    )
     assert result.metadata["draft_candidates"] == 1
     assert result.metadata["review_passes"] == 0
     assert result.metadata["standalone_sign_scout_model"] is None
@@ -932,6 +949,16 @@ def test_sdk_authentication_failure_is_typed_and_redacted(tmp_path, monkeypatch)
         )
     )
     assert captured.value.code == "PROVIDER_AUTHENTICATION"
+    assert tuple(
+        dict(item) for item in captured.value.details["model_attempts"]
+    ) == (
+        {
+            "model": "qwen3.7-plus-2026-05-26",
+            "outcome": "PROVIDER_AUTHENTICATION",
+            "disposition": "quarantine_credential",
+            "provider_calls_attempted": 1,
+        },
+    )
     assert secret not in rendered
     assert client.closed is True
 

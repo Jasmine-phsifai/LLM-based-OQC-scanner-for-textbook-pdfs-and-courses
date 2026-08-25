@@ -954,8 +954,13 @@ The following directions remain traceable but are not current work:
   success and no block/failure because local cleanup is not provider failure.
   The full offline suite passes 1,542. No public response protocol, provider
   framework, retry/fallback, dependency, legacy format, or frozen boundary was
-  added. The separately observed empty model identity in an implicit-default
-  DashScope `model_attempts` row remains open for a later atomic audit.
+  added. #273 closes the separately observed empty model identity in an
+  implicit-default DashScope `model_attempts` row. The ledger now names the
+  pinned baseline used by the actual request on success, provider failure, and
+  output failure, while caller config and resume identity remain implicit.
+  Explicit candidates, injected providers, catalog/configuration failures, public
+  APIs, and provider policy are unchanged; 113 related and all 1,542 offline tests
+  pass.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
