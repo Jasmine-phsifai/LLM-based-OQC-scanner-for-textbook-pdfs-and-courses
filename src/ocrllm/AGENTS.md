@@ -694,6 +694,11 @@ window check for its second real consumer. Keep `audio.long.interval.v1` explici
 about actual source bounds, clip-zero mapping, logical output bounds, and
 context-only padding. Do not add legacy markers/timestamp parsing, state,
 dispatch, repair, or a generic interval framework to this prompt boundary.
+Exact commit `5047a00` passes the maintained installed gate, including all
+profiles and both media smokes without cloud I/O. The wheel is 261,349 bytes,
+leaving 795 bytes under its ceiling. Before adding runtime files, inspect the
+wheel for real removable content; do not automatically raise the cap or merge
+clear responsibilities merely to reduce file overhead.
 
 ## When Porting Legacy Behavior
 

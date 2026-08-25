@@ -5671,6 +5671,18 @@ Request identity remains the next independent slice: it may now hash this prompt
 version without immediately becoming stale. Sidecars, serial dispatch, resume,
 repair, and public API remain unimplemented.
 
+Exact clean commit `5047a0059725da9300c27257fce133acafb0d583`
+passes the maintained installed gate with exit 0. The archive reports **1,585
+passed, 1 skipped**; the wheel is **261,349 bytes**, only 795 bytes below the
+existing 256 KiB ceiling, and the base target is **1,286,219 bytes**. Profile
+deltas are: audio 91,180,278; image 16,980,562; image+DashScope 41,555,988;
+Google 41,614,689; audio+Google 130,224,491; PDF vision 25,179,003; video
+254,472,399; and combined 272,343,865 bytes. Installed interval and combined
+video smokes pass with cleanup, no cloud call, and no residue. Before the next
+runtime slice, inspect distributable contents for evidence-backed reduction;
+do not silently raise the wheel ceiling or collapse clear responsibilities only
+to recover bytes.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

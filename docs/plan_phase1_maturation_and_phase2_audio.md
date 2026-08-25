@@ -453,6 +453,10 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   clip-relative offsets. It asks for only logical-range Markdown and no legacy
   markers/timestamps. Hash this version in the next request-identity slice;
   do not combine that work with persistence or provider dispatch.
+  Exact clean commit `5047a00` passes every installed profile and media smoke;
+  its 261,349-byte wheel leaves 795 bytes under the maintained ceiling. Audit
+  the existing distributable for justified reduction before adding identity
+  runtime files, without weakening one-file/one-responsibility structure.
 - The A2a 9.5-hour duration check is not complete selected-model preflight:
   Google's documented 32 audio tokens per second makes the full duration
   1,094,400 audio tokens before the prompt, above the current documented

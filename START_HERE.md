@@ -678,6 +678,11 @@ padding as context only, and requests only the logical range without legacy
 HTML markers or timestamps. The existing materializer validation is now one
 audio-owned function shared by its two real consumers. All 1,586 source tests
 pass; request identity, state, dispatch, resume, and repair remain later slices.
+Exact commit `5047a00` also passes the complete installed gate: archive 1,585
+passed/1 skipped, all profiles and media smokes pass without a cloud call, and
+the wheel is 261,349 bytes—795 bytes below its current ceiling. Inspect for
+real package reduction before adding the next runtime slice; do not raise the
+limit or damage file responsibilities mechanically.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

@@ -1284,6 +1284,11 @@ The following directions remain traceable but are not current work:
   timestamps nor legacy markers. A shared audio-only validator preserves the
   materializer's existing input rejection. The complete 1,586-test source suite
   passes; no provider, state, dispatch, resume, repair, or public API is added.
+  Exact `5047a00` clean-install proof exits 0 with 1,585 archived tests passing,
+  one expected skip, all profiles and media smokes green, and no cloud call.
+  Its 261,349-byte wheel is only 795 bytes below the maintained ceiling, so the
+  next runtime slice must first inspect real distributable reduction rather
+  than automatically raising the budget or merging clear responsibilities.
 
 ## Obsolete Prose Kept For Trace
 
