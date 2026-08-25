@@ -44,8 +44,10 @@ Phase 1 maturation is offline implementation-complete:
   or rate-window markers priority over quota-advisory prose, preserving
   provider-scoped rate limiting versus model-scoped spent quota; #237 also
   preserves Google 503 `high demand` as provider-scoped rate limiting while
-  leaving ordinary 5xx errors unavailable and adding no retry; frozen worker
-  progress remains separate, while local OCR retains its
+  leaving ordinary 5xx errors unavailable and adding no retry; #267 preserves
+  production-backed DashScope 403 message-only free-quota markers as model-scoped
+  quota exhaustion without exposing private exception text or adding retry/model
+  switching; frozen worker progress remains separate, while local OCR retains its
   zero-network model-loading contract; resume source hashing is bounded on
   actual snapshot reads, and fresh provider/local-OCR results are rejected
   before checkpoint or final publication if those owned bytes no longer match

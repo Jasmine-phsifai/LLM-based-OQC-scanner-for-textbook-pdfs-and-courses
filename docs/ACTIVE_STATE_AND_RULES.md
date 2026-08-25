@@ -1516,6 +1516,24 @@ a global path budget, or promise universal extended-length support. The focused
 media set passes 95 tests and the full offline suite passes 1,537. No network or
 provider call was made.
 
+#267 corrects one production-backed DashScope classification divergence without
+copying the legacy application's retry or model-switch policy. A DashScope 403
+may carry `AllocationQuota.FreeTierOnly` or `FreeAllocationQuotaExceeded` only
+in bounded exception text, with no structured `code` or `body`. That shape now
+maps to non-retryable, model-scoped `PROVIDER_QUOTA_EXHAUSTED` before generic
+403 permission handling; the private text is never copied into the public error
+or details. Detection is limited to those two exact markers, status 403, and
+1,024 characters. It does not add fuzzy provider-text parsing, automatic retry,
+candidate switching, key rotation, fallback, or a provider framework.
+
+The focused DashScope boundary suite passes 62 tests and its adapter, credential
+pool, and disposition neighbors pass 57 tests. The complete offline result is
+recorded in the matching diary entry. No live or paid provider call was made;
+the Stage M DashScope live exit gate remains open. The maintainer's permission
+for later pressure-oriented robustness testing is already recorded above: it
+starts only after the relevant basic installed/live flow succeeds and remains a
+separate, question-driven, bounded, cleanup-verified iteration.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

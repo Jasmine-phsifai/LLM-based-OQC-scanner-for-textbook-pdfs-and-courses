@@ -346,6 +346,27 @@ def test_dashscope_provider_code_precedes_generic_http_classification(
 
 
 @pytest.mark.parametrize(
+    "quota_marker",
+    ["AllocationQuota.FreeTierOnly", "FreeAllocationQuotaExceeded"],
+)
+def test_dashscope_production_message_only_quota_marker_precedes_http_403(
+    quota_marker,
+):
+    error = RuntimeError(f"private prefix: {quota_marker}: private suffix")
+    error.status_code = 403
+
+    mapped = map_dashscope_error(error, openai_module=OPENAI_SHAPE, model=MODEL)
+
+    assert isinstance(mapped, QuotaExhausted)
+    assert mapped.code == "PROVIDER_QUOTA_EXHAUSTED"
+    assert mapped.retryable is False
+    assert mapped.details["failure_scope"] == "model"
+    assert "provider_code" not in mapped.details
+    assert "private prefix" not in str(mapped)
+    assert "private suffix" not in repr(mapped.details)
+
+
+@pytest.mark.parametrize(
     "provider_code",
     ["Arrearage", "PrepaidBillOverdue", "PostpaidBillOverdue", "AccountSuspended"],
 )

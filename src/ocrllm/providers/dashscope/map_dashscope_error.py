@@ -27,6 +27,10 @@ _NONRETRYABLE_QUOTA_CODES = frozenset(
         "freequotaexceeded",
     }
 )
+_MESSAGE_ONLY_QUOTA_MARKERS = (
+    "AllocationQuota.FreeTierOnly",
+    "FreeAllocationQuotaExceeded",
+)
 _ACCOUNT_SUSPENDED_CODES = frozenset(
     {
         "accountsuspended",
@@ -92,7 +96,9 @@ def map_dashscope_error(
             "The DashScope account cannot run requests until its account state is restored.",
             details=_scoped(details, "account"),
         )
-    if _is_nonretryable_quota_code(normalized_code):
+    if _is_nonretryable_quota_code(normalized_code) or (
+        status == 403 and _has_message_only_quota_marker(error)
+    ):
         # Free-tier and unpurchased-commodity quota are granted per model, so
         # one model's exhaustion must not block other candidate models on the
         # same account (audit finding G3). Genuine account-wide states are the
@@ -294,6 +300,17 @@ def _bounded_private_text_attribute(error: Exception, name: str) -> str | None:
     if type(value) is str and len(value) <= 1024:
         return value
     return None
+
+
+def _has_message_only_quota_marker(error: Exception) -> bool:
+    """Recognize two production-backed markers omitted from structured fields."""
+    try:
+        private_text = str(error)
+    except Exception:
+        return False
+    if len(private_text) > 1024:
+        return False
+    return any(marker in private_text for marker in _MESSAGE_ONLY_QUOTA_MARKERS)
 
 
 def _normalize_provider_code(value: str | None) -> str | None:
