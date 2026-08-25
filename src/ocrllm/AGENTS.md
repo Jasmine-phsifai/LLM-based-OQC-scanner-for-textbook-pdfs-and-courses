@@ -358,6 +358,12 @@ ten-hour MP4 took 54.886 seconds and cleaned its large temporary root. Keep the
 fixed bound and typed cleanup behavior; do not add dynamic/configurable timeout
 policy without a real timed-out extraction. This does not authorize long-audio
 video routing, #127, or #152.
+#255 proves long-MP3 preflight memory stays flat through the real 9.5-hour A2a
+ceiling: fixed-chunk snapshot copying and 4,096-frame miniaudio streaming peak
+near 35.4 MiB for 301-second, one-hour, and 9.5-hour files. Keep full streaming
+decode and metadata/frame-count validation; do not replace them with metadata-
+only probing, another decoder, or generic streaming machinery. The 2 GB bound,
+Files lifecycle, video routing, #127, and #152 remain unchanged.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

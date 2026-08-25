@@ -1276,6 +1276,29 @@ provider-free extraction proof only: combined video still routes only short MP3
 audio and does not gain long-audio recognition, #127 cancellation semantics, or
 #152 chunking. Extraction/video/composition neighbors pass 46 tests.
 
+#255 proves that the standalone A2a long-MP3 local preflight is bounded in
+memory through its complete 9.5-hour one-file envelope. `snapshot_mp3()` copies
+in fixed 1 MiB chunks, and `decode_mp3_duration()` uses miniaudio's
+`mp3_stream_file(..., frames_to_read=4096)` while retaining only the current
+sample chunk and integer counts. The installed backend likewise owns one fixed
+decoder buffer and releases it in `finally`; it does not accumulate decoded
+audio.
+
+Independent fresh-process Windows measurements for real continuous 301-second,
+one-hour, and 9.5-hour MP3s (1,204,640 / 14,400,512 / 136,800,512 bytes) produced
+peak working sets of approximately 35.34 / 35.45 / 35.41 MiB and completed the
+snapshot plus full decode in 0.622 / 1.017 / 4.867 seconds. A second measurement
+series saw the same flat peak delta across 301 seconds, one hour, and 34,199
+seconds. Every owned snapshot and outer temporary root was removed.
+
+Keep the complete streaming decode: it rejects metadata/frame-count mismatch,
+including an independently attempted binary-concatenation artifact, without
+trusting duration metadata alone. Do not replace it with metadata-only probing,
+another decoder, or a generalized stream layer. The separate 2 GB source bound,
+Google Files lifecycle, 9.5-hour A2a ceiling, token-limit preflight, and lazy
+imports remain unchanged; no provider call, chunking, video routing, #127, or
+#152 behavior follows. Long/short audio neighbors pass 102 tests.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

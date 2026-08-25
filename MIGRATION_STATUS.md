@@ -835,6 +835,13 @@ The following directions remain traceable but are not current work:
   FFmpeg timeout failure evidence. The fixed 600-second per-process bound stays;
   no dynamic timeout, long-audio video routing, #127/#152 choice, API, or
   dependency was added.
+  #255 proves the A2a local long-MP3 preflight stays memory-bounded through one
+  real 9.5-hour file. Fixed 1 MiB snapshot copying plus 4,096-frame miniaudio
+  streaming held fresh-process peak working set near 35.4 MiB for 301 seconds,
+  one hour, and 9.5 hours despite file growth from 1.2 to 136.8 MB; all owned
+  snapshots were removed. Full decode remains because it catches metadata/frame
+  mismatch. No probe, API, dependency, Files lifecycle, chunking, video routing,
+  #127, or #152 change was made.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

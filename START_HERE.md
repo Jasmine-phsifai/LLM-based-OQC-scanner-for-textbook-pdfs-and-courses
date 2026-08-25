@@ -349,6 +349,14 @@ timeout incident was found, so the simple 600-second bound remains unchanged.
 This proves provider-free extraction only, not long-audio recognition from
 video or a #127/#152 decision.
 
+#255 proves standalone long-MP3 local validation stays memory-bounded through
+the real 9.5-hour A2a ceiling. Fresh processes stayed near a 35.4 MiB peak for
+301 seconds, one hour, and 9.5 hours while file size grew from 1.2 to 136.8 MB;
+the snapshot copy and decoded samples are both consumed in fixed chunks and all
+temporary roots were removed. Keep complete streaming decode because it catches
+metadata/frame-count mismatch. No Files, chunking, video-routing, #127, or #152
+behavior changed.
+
 #247 adds the missing public consumer proof for the opposite partial-video
 direction. A real MP4 whose frames succeed and whose audio provider fails once
 now continues through atomic `publish_video_result()` while retaining frame
