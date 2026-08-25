@@ -17,10 +17,12 @@ from ocrllm import (
     VideoRecognitionOutcome,
     VisionModelSettings,
     compose_video_result,
+    extract_video_frames,
     list_google_genai_models,
     recognize_video,
 )
 from ocrllm.errors import ConfigError, OCRLLMError, VideoError
+from ocrllm.recognize_video_frames import _VIDEO_FRAME_GROUP_LIMIT
 
 
 class _LiveSmokeFailure(Exception):
@@ -38,12 +40,37 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--image-model", required=True)
     parser.add_argument("--audio-model", required=True)
     parser.add_argument("--video", required=True, type=Path)
+    parser.add_argument(
+        "--expected-frame-groups",
+        required=True,
+        type=int,
+        choices=(1, 2),
+        dest="expected_frame_group_count",
+    )
     parser.add_argument("--timeout", type=float, default=120.0)
     return parser.parse_args(argv)
 
 
 def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, object]:
     """Discover the catalog, run video orchestration, and retain safe evidence."""
+    try:
+        preflight_retained_count, preflight_group_count = _preflight_video_frames(
+            arguments.video
+        )
+    except OCRLLMError as error:
+        raise _LiveSmokeFailure("video_preflight", error) from None
+    except Exception:
+        raise _LiveSmokeFailure("video_preflight", None) from None
+    if preflight_group_count != arguments.expected_frame_group_count:
+        raise _LiveSmokeFailure(
+            "video_preflight",
+            ConfigError(
+                "The controlled video does not match the expected frame-group count.",
+                code="CONFIG_INVALID",
+                details={"provider_calls_attempted": 0},
+            ),
+        ) from None
+
     try:
         models = list_google_genai_models(
             GoogleGenAISettings(),
@@ -86,6 +113,8 @@ def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, obj
                 image_model=arguments.image_model,
                 audio_model=arguments.audio_model,
                 catalog_count=len(models),
+                preflight_retained_count=preflight_retained_count,
+                expected_frame_group_count=arguments.expected_frame_group_count,
             )
     except OCRLLMError as error:
         raise _LiveSmokeFailure("video_orchestration", error) from None
@@ -95,12 +124,30 @@ def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, obj
         raise _LiveSmokeFailure("video_orchestration", None) from None
 
 
+def _preflight_video_frames(source: Path) -> tuple[int, int]:
+    """Count the controlled fixture's groups before any provider request."""
+    with tempfile.TemporaryDirectory(
+        prefix="ocrllm-google-video-preflight-"
+    ) as temporary_root:
+        frames = extract_video_frames(
+            source,
+            output_dir=Path(temporary_root) / "output",
+        )
+        retained_count = len(frames)
+    group_count = (
+        retained_count + _VIDEO_FRAME_GROUP_LIMIT - 1
+    ) // _VIDEO_FRAME_GROUP_LIMIT
+    return retained_count, group_count
+
+
 def _safe_video_summary(
     outcome: Any,
     *,
     image_model: str,
     audio_model: str,
     catalog_count: int,
+    preflight_retained_count: int,
+    expected_frame_group_count: int,
 ) -> dict[str, object]:
     if type(outcome) is not VideoRecognitionOutcome:
         raise ConfigError(
@@ -118,7 +165,9 @@ def _safe_video_summary(
     passed = (
         outcome.status == "complete"
         and frames["status"] == "complete"
-        and frames["provider_calls_attempted"] == 1
+        and frames["retained_count"] == preflight_retained_count
+        and frames["group_count"] == expected_frame_group_count
+        and frames["provider_calls_attempted"] == expected_frame_group_count
         and audio["status"] == "recognized"
         and audio["provider_calls_attempted"] == 1
         and composition["status"] == "complete"
@@ -130,6 +179,10 @@ def _safe_video_summary(
         "image_model": image_model,
         "audio_model": audio_model,
         "outcome_status": outcome.status,
+        "preflight": {
+            "retained_count": preflight_retained_count,
+            "expected_frame_group_count": expected_frame_group_count,
+        },
         "frames": frames,
         "audio": audio,
         "composition": composition,
@@ -363,7 +416,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _report_failure(
             code=failure.error.code,
             stage=failure.stage,
-            calls=_error_call_count(failure.error),
+            calls=(
+                0
+                if failure.stage == "video_preflight"
+                else _error_call_count(failure.error)
+            ),
         )
     except OCRLLMError as error:
         return _report_failure(

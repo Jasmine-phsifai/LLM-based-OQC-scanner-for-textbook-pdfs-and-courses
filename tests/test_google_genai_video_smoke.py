@@ -26,13 +26,15 @@ def _frame_result(
     output_path: Path | None = None,
     include_usage: bool = False,
     model: str = IMAGE_MODEL,
+    frame_indices: tuple[int, ...] = (0,),
+    frame_timestamps: tuple[float, ...] = (0.0,),
 ) -> RecognitionResult:
     metadata: dict[str, object] = {
         "provider": "google",
         "model": model,
         "provider_call_count": 1,
-        "video_frame_indices": (0,),
-        "video_frame_timestamps_seconds": (0.0,),
+        "video_frame_indices": frame_indices,
+        "video_frame_timestamps_seconds": frame_timestamps,
     }
     if include_usage:
         metadata["current_model_token_usage"] = (
@@ -82,30 +84,46 @@ def _build_outcome(
     include_usage: bool = False,
     image_model: str = IMAGE_MODEL,
     audio_model: str = AUDIO_MODEL,
+    retained_count: int = 1,
+    frame_group_count: int = 1,
 ) -> VideoRecognitionOutcome:
     output_root = output_dir / "video"
     frames_dir = output_root / "frames"
     frames_dir.mkdir(parents=True)
-    frame_path = frames_dir / "frame-00000000.jpg"
-    frame_path.write_bytes(b"jpeg")
-    retained_frames = (
+    retained_frames = tuple(
         RetainedVideoFrame(
-            frame_index=0,
-            timestamp_seconds=0.0,
-            path=frame_path,
-        ),
+            frame_index=index,
+            timestamp_seconds=float(index),
+            path=frames_dir / f"frame-{index:08d}.jpg",
+        )
+        for index in range(retained_count)
     )
+    for frame in retained_frames:
+        frame.path.write_bytes(b"jpeg")
     if frame_error is None:
-        frame_outcomes = (
+        frame_outcomes = tuple(
             BatchItemOutcome(
-                index=0,
+                index=group_index,
                 result=_frame_result(
                     markdown=private_markdown,
                     output_path=frame_output_path,
                     include_usage=include_usage,
                     model=image_model,
+                    frame_indices=tuple(
+                        frame.frame_index
+                        for frame in retained_frames[
+                            group_index * 8 : (group_index + 1) * 8
+                        ]
+                    ),
+                    frame_timestamps=tuple(
+                        frame.timestamp_seconds
+                        for frame in retained_frames[
+                            group_index * 8 : (group_index + 1) * 8
+                        ]
+                    ),
                 ),
-            ),
+            )
+            for group_index in range(frame_group_count)
         )
     else:
         frame_outcomes = ()
@@ -137,13 +155,22 @@ def _arguments(
     *,
     image_model: str = IMAGE_MODEL,
     audio_model: str = AUDIO_MODEL,
+    expected_frame_group_count: int = 1,
 ) -> argparse.Namespace:
     return argparse.Namespace(
         image_model=image_model,
         audio_model=audio_model,
         video=Path("private-video-name.mp4"),
         timeout=9.0,
+        expected_frame_group_count=expected_frame_group_count,
     )
+
+
+@pytest.fixture(autouse=True)
+def real_video_preflight(monkeypatch: pytest.MonkeyPatch):
+    real_preflight = smoke._preflight_video_frames
+    monkeypatch.setattr(smoke, "_preflight_video_frames", lambda source: (1, 1))
+    return real_preflight
 
 
 def _install_catalog(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -152,6 +179,45 @@ def _install_catalog(monkeypatch: pytest.MonkeyPatch) -> None:
         "list_google_genai_models",
         lambda settings, timeout_seconds: (IMAGE_MODEL, AUDIO_MODEL),
     )
+
+
+@pytest.mark.parametrize("expected_count", [1, 2])
+def test_video_smoke_parses_only_bounded_expected_group_counts(
+    expected_count: int,
+) -> None:
+    arguments = smoke.parse_arguments(
+        [
+            "--image-model",
+            IMAGE_MODEL,
+            "--audio-model",
+            AUDIO_MODEL,
+            "--video",
+            "controlled.mp4",
+            "--expected-frame-groups",
+            str(expected_count),
+        ]
+    )
+
+    assert arguments.expected_frame_group_count == expected_count
+
+
+@pytest.mark.parametrize("invalid_count", ["0", "3", "many"])
+def test_video_smoke_rejects_unbounded_expected_group_counts(
+    invalid_count: str,
+) -> None:
+    with pytest.raises(SystemExit):
+        smoke.parse_arguments(
+            [
+                "--image-model",
+                IMAGE_MODEL,
+                "--audio-model",
+                AUDIO_MODEL,
+                "--video",
+                "controlled.mp4",
+                "--expected-frame-groups",
+                invalid_count,
+            ]
+        )
 
 
 def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
@@ -187,6 +253,10 @@ def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
         "image_model": IMAGE_MODEL,
         "audio_model": AUDIO_MODEL,
         "outcome_status": "complete",
+        "preflight": {
+            "retained_count": 1,
+            "expected_frame_group_count": 1,
+        },
         "frames": {
             "status": "complete",
             "retained_count": 1,
@@ -212,6 +282,85 @@ def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
     assert private_markdown not in raw
     assert str(_arguments().video) not in raw
     assert observed_roots and all(not root.exists() for root in observed_roots)
+
+
+def test_video_smoke_preflight_counts_groups_and_cleans_frames(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    real_video_preflight,
+) -> None:
+    observed_roots: list[Path] = []
+
+    def fake_extract_video_frames(source, *, output_dir):
+        assert source == tmp_path / "controlled.mp4"
+        observed_roots.append(Path(output_dir).parent)
+        return tuple(object() for _ in range(10))
+
+    monkeypatch.setattr(smoke, "extract_video_frames", fake_extract_video_frames)
+
+    assert real_video_preflight(tmp_path / "controlled.mp4") == (10, 2)
+    assert observed_roots and all(not root.exists() for root in observed_roots)
+
+
+def test_video_smoke_rejects_excess_groups_before_catalog_or_recognition(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(smoke, "_preflight_video_frames", lambda source: (17, 3))
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("catalog must not start")
+        ),
+    )
+    monkeypatch.setattr(
+        smoke,
+        "recognize_video",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("recognition must not start")
+        ),
+    )
+
+    with pytest.raises(smoke._LiveSmokeFailure) as failure:
+        smoke.run_google_genai_video_smoke(
+            _arguments(expected_frame_group_count=2)
+        )
+
+    assert failure.value.stage == "video_preflight"
+    assert failure.value.error is not None
+    assert failure.value.error.code == "CONFIG_INVALID"
+    assert failure.value.error.details["provider_calls_attempted"] == 0
+
+
+def test_video_smoke_accepts_two_complete_frame_groups(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_catalog(monkeypatch)
+    monkeypatch.setattr(smoke, "_preflight_video_frames", lambda source: (10, 2))
+    monkeypatch.setattr(
+        smoke,
+        "recognize_video",
+        lambda source, **kwargs: _build_outcome(
+            Path(kwargs["output_dir"]),
+            private_markdown="PRIVATE TWO-GROUP RESULT",
+            retained_count=10,
+            frame_group_count=2,
+        ),
+    )
+
+    summary = smoke.run_google_genai_video_smoke(
+        _arguments(expected_frame_group_count=2)
+    )
+
+    assert summary["status"] == "passed"
+    assert summary["preflight"] == {
+        "retained_count": 10,
+        "expected_frame_group_count": 2,
+    }
+    assert summary["frames"]["retained_count"] == 10
+    assert summary["frames"]["group_count"] == 2
+    assert summary["frames"]["provider_calls_attempted"] == 2
+    assert summary["composition"]["asset_count"] == 11
 
 
 def test_video_smoke_reports_only_validated_model_token_usage(
@@ -638,6 +787,8 @@ def test_video_smoke_main_redacts_unexpected_failure(
                 AUDIO_MODEL,
                 "--video",
                 "private-name.mp4",
+                "--expected-frame-groups",
+                "1",
             ]
         )
         == 1

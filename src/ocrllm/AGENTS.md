@@ -392,6 +392,13 @@ extra, bootstrap a newer pip, inject a cache, or retry immediately. A future
 single attempt must capture interpreter/platform, safe effective index settings,
 candidate-resolution diagnostics, and the original process through terminal
 exit before deciding whether a gate-only pip compatibility change is real.
+#261 keeps bounded video robustness probing in the maintained runner rather
+than the public API. Require a declared expectation of one or two image groups
+and run provider-free retained-frame preflight before catalog/provider access;
+do not add a public planner, source-hash transaction, or generalized stress
+framework. A later batch suffix cancelled because an earlier group failed is
+undispatched and deliberately carries no provider-call evidence. Preserve that
+exact-or-unknown contract instead of rewriting the suffix as a confirmed zero.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

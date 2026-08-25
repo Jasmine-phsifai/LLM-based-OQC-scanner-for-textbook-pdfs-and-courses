@@ -876,6 +876,17 @@ The following directions remain traceable but are not current work:
   extra, runtime, or installer change; its retained diagnostics cannot identify
   the exact delivery-layer cause. No installed-media claim follows and the gate
   remains open.
+  #261 exercises the already live-proven video facade at its next controlled
+  grouping boundary. The maintained Google runner now requires a one- or
+  two-group expectation and performs provider-free frame-selection preflight
+  before catalog/provider access; mismatches stop at zero calls. One 60-second
+  synthetic video retained ten frames as ordered 8+2 groups. The first image
+  group and separate audio branch each made one call and returned
+  `PROVIDER_RESPONSE_INVALID`; the second image group remained an undispatched
+  `CANCELLED` suffix with deliberately unknown call evidence. No composition,
+  retry, fallback, model switch, token invention, or residue followed. This is
+  runner-only robustness evidence, not a public planner or product API change;
+  the complete offline suite passes 1,532 tests.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

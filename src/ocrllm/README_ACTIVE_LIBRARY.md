@@ -537,8 +537,13 @@ gate proves this bounded result path rather than transcription quality.
 
 Install `ocrllm[video,image,audio,google]` and run one authorized MP4 through
 `tools/run_google_genai_video_smoke.py` with explicit current-catalog
-`--image-model` and `--audio-model` values, a video path, and a timeout. The
-runner uses separate image and audio `Config` objects and prints only
+`--image-model` and `--audio-model` values, a video path, a timeout, and the
+required `--expected-frame-groups` value of `1` or `2`. Before catalog access,
+the runner performs a provider-free retained-frame pass and rejects a controlled
+fixture outside that exact expectation. This admits only fixtures preflighted
+as at most two image groups; the formal library still supports ordinary input
+under its own documented grouping limits. The runner uses separate image and audio `Config`
+objects and prints only
 catalog/models, branch status, retained/group/asset
 counts, stable error codes, exact-or-null calls, and validated per-model token
 usage when composition succeeds. It never prints recognition text, paths,
@@ -547,6 +552,10 @@ Every JSON object is discriminated before its shared pass/fail status:
 `report_type="video_outcome"` means the media branches settled, while
 `report_type="runner_failure"` means catalog/model/orchestration did not produce
 a settled outcome.
+For a settled outcome to pass, its retained count must match the preflight and
+its image group/call count must match the explicit expectation. This extra
+local frame pass is a runner safety check, not part of `recognize_video()` and
+not a new public planning API.
 The #186 robustness run retained three equal-luminance color scenes and made one
 image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.

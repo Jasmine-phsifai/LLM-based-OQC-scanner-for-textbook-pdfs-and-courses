@@ -1377,6 +1377,30 @@ an immediate second install merely to make it green. The owned process/root
 were removed; source video/package neighbors pass 98 tests. The ordinary
 installed-video gate remains open.
 
+#261 adds one bounded multi-group robustness probe to the maintained Google
+video runner without changing the public library. The runner now requires an
+explicit expectation of one or two retained-frame groups and performs a local,
+provider-free frame-selection pass before catalog access. A mismatch is rejected
+with zero provider calls. Complete results pass only when retained-frame count,
+group count, image call count, the separate one-call audio branch, composition,
+and asset count agree with that preflight. This is a controlled live-test guard,
+not a public planner, transaction layer, or new limit on `recognize_video()`.
+
+The single authorized run used a deterministic 60-second MP4 with 60 frames,
+12 changing grayscale scenes, and audible audio. Negative-feedback selection
+retained 10 valid JPEGs, producing ordered 8+2 image groups. With current
+catalog model `gemini-2.5-flash` for both independent branches, the first image
+group made one call and returned `PROVIDER_RESPONSE_INVALID`; its suffix group
+settled as `CANCELLED` without dispatch or invented call evidence. The audio
+branch independently made one call and returned `PROVIDER_RESPONSE_INVALID`.
+The outcome therefore remained honestly failed, composition did not start,
+and no token usage was invented. There was no retry, fallback, second model,
+or extra credential probe. The runner process, environment, and every owned
+temporary root were clean afterward. The complete offline suite passes 1,532
+tests and compileall succeeds. Preserve the existing exact-or-unknown rule:
+an undispatched batch suffix has no provider-call evidence and must not be
+rewritten as a confirmed zero merely to make aggregate accounting look exact.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
