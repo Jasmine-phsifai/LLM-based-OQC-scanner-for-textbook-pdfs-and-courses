@@ -471,6 +471,12 @@ live run must capture workspace provenance, exact exit, and per-runner safe JSON
 before it can count as evidence. Later stress robustness work remains separate,
 bounded, question-driven, deadline-controlled, and cleanup-verified after the
 corresponding basic installed/live flow is validly proven.
+#277 makes the returned video outcome a public error boundary. Before
+construction, clear traceback/cause/context links from its settled frame and
+audio errors while retaining the same objects, typed details, retryability,
+call evidence, sibling successes, and artifacts. Do not turn this into a broad
+video exception wrapper: errors propagated instead of settled, and #127's
+cancellation return-versus-raise choice, are unchanged.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

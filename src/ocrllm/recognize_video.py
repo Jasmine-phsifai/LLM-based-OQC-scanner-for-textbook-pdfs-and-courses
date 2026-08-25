@@ -16,6 +16,7 @@ def recognize_video(
     audio_config: Config,
 ) -> VideoRecognitionOutcome:
     """Settle independent frame and audio recognition for one local MP4."""
+    from .clear_public_error import clear_public_error
     from .errors import Cancelled, OCRLLMError
     from .providers.validate_vision_provider_config import (
         validate_vision_provider_config,
@@ -87,6 +88,10 @@ def recognize_video(
             except OCRLLMError as error:
                 audio_error = error
 
+        if frame_error is not None:
+            clear_public_error(frame_error)
+        if audio_error is not None:
+            clear_public_error(audio_error)
         assert (audio_result is None) != (audio_error is None)
         return VideoRecognitionOutcome(
             output_root=output_root,

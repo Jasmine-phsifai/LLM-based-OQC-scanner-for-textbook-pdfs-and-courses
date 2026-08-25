@@ -983,6 +983,13 @@ The following directions remain traceable but are not current work:
   Future stress robustness tests remain separate atomic gates after valid basic
   installed/live proof, with explicit question, scale/call bounds, deadline,
   failure criteria, and cleanup rather than a general provider load framework.
+  #277 fixes one active video outcome-boundary defect. A real corrupt-audio
+  partial result retained the correct typed extraction failure but also exposed
+  its internal traceback. The facade now clears traceback/cause/context from
+  settled frame/audio errors immediately before returning the outcome, without
+  flattening error facts, changing calls/assets, or selecting #127 cancellation
+  semantics. The causal regression failed before the change; 105 video
+  neighbors and all 1,542 offline tests pass afterward.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

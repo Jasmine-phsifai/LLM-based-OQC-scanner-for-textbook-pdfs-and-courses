@@ -4619,6 +4619,27 @@ with one explicit product question, request/input limits, a total deadline,
 honest failure criteria, and owned local/remote cleanup. It is not an ongoing
 load test or permission to build a generic provider benchmark framework.
 
+## Iteration 277: settled video branch errors drop internal exception links
+
+`recognize_video()` returns image and audio branch failures inside
+`VideoRecognitionOutcome` so one branch cannot discard the other's usable work.
+A real corrupt-audio regression proved that the returned `VIDEO_INVALID` kept
+its correct `stage=extraction` detail and partial outcome, but also retained a
+Python traceback into library internals. That diverged from the existing batch
+settlement rule, which preserves typed recovery facts while removing traceback,
+cause, and context references before an error becomes caller-owned.
+
+The video facade now applies the existing `clear_public_error()` operation once
+at the final outcome boundary to whichever frame/audio errors are settled. It
+does not flatten the error, change its code/details/retryability/call evidence,
+hide a successful sibling branch, or alter cancellation propagation. Errors
+that leave `recognize_video()` by raising rather than by a returned outcome are
+outside this correction; no general video wrapper was added. The causal test
+failed only on a non-null traceback before the change, then passed while
+retaining the image result, JPEG assets, exact extraction detail, partial
+composition, and call accounting. Video neighbors pass 105 tests and the full
+offline suite passes 1,542.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

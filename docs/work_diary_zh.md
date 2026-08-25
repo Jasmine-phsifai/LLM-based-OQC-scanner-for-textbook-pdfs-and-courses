@@ -5223,3 +5223,17 @@ Atomic task — Iteration #276: refresh the real free-tier Google image and shor
 **独立判断、验证与过度设计复查。** 为判断漏设路径是否真的导入旧包，本人只做零网络 `python -I` 探针；结果仍解析到当前 workspace source，版本 `0.1.0`，所以本机没有复现 stale-package divergence，也没有产品 import 缺陷证据。Google image/audio runner 与 adapter 离线集合为 **93 passed in 2.51s**；带既有 Node 路径的完整离线套件为 **1,542 passed in 57.30s**。本轮没有产品代码、测试、依赖、API、provider 策略、credential 持久化、retry/fallback、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。下次有界 live 只有在保存 workspace provenance、精确退出码和每个 runner 的脱敏终态 JSON 后才可计为证据；这不需要新建通用控制器。本轮最可能的过度设计是因一次 wrapper 失误改 runner、自动补跑、建立 provider benchmark 或把基础刷新扩大成压力测试，全部拒绝。
 
 **后续压力性鲁棒测试。** 维护者再次确认以后可以补。现有规则保持而不重复造计划：先为相关 installed/live 基本流程取得有效证据，再开独立原子轮次，每次只回答一个产品问题，预先写明输入规模、调用上限、总时限、失败判定和本地/远端清理；不做长期压测，也不把压力测试与日常一图一音频的“能跑起来”证明混为一谈。
+
+## #277 — 2026-08-25：视频返回结果不再携带内部异常栈
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #277: identify and close the highest-priority evidence gap that is already present in the shipped active library, without replaying the invalid Google live attempt or the repeatedly stalled clean-install gate. Success means re-reading the current authority, latest Chinese diary, start guide, and package rules; deriving the actual open queue from code and tests rather than historical prose; comparing two viable atomic candidates; delegating one bounded read-only audit while personally tracing the selected public path; adding the smallest regression and runtime fix only if a caller-visible defect is reproduced; preserving credentials, protected files, frozen `contracts/worker`, legacy/social boundaries, provider policy, #127/#152, and existing installation/live-test limits; then running proportional and full offline verification, updating the existing records, committing, and pushing. This matters because maturity work should remove a proven product risk, not compensate for an invalid operator run or manufacture work from old notes.
+```
+
+**现状、两条路线与独立审计。** 同步并重读权威、最新日记、`START_HERE.md` 和包内规则后，确认普通组合视频安装门仍受外部分发限制，#276 Google 刷新不能立即重放，DashScope Stage M live 又需要明确付费预算；#127/#152 仍是维护者选择，不能偷定。轻量只读审计在这些排除条件下只找到 DashScope live 证据缺口，没有建议 speculative runtime。本人继续追踪公开视频错误生命周期，找到一个可离线证明的候选：`recognize_video()` 会把分支失败放进返回 outcome，但音频提取错误没有经过 `recognize()` / `recognize_batch()` 已有的公开错误清理。路线一是给所有 provider-free 视频入口增加统一包装；路线二只修返回 outcome 的结算边界；选择路线二，避免改动所有抛出式 API。
+
+**先红后绿与最小实现。** 直接增强已有真实 corrupt-audio 回归，不复制 fixture。修改前它仍正确得到 partial outcome、成功图片分支、一个图片 provider call、保留 JPEG、没有 MP3/staging 残留，并返回 `VIDEO_INVALID` 与 `stage=extraction`；但新增断言精确得到 **1 failed in 0.55s**，因为 `audio_error.__traceback__` 仍指向库内部。实现只在 `VideoRecognitionOutcome` 构造前，对最终 settled 的 `frame_error` / `audio_error` 复用现有 `clear_public_error()`；错误对象、code、details、retryability、调用证据、成功兄弟分支和资产不变。最初曾在三个 catch 重复调用，个人复查后收紧为一个集中 outcome 边界，降低后续阅读成本。
+
+**验证、范围与过度设计复查。** 因果回归为 **1 passed in 0.45s**；公开视频编排、组合、发布、outcome、frame adapter 和两种媒体提取相邻集为 **105 passed in 10.38s**。第一次完整离线套件在分散实现上为 **1,542 passed in 57.29s**；把清理收紧到最终 outcome 边界后，最终代码再次得到 **1,542 passed in 57.14s**。`compileall -q src tests` 与 `git diff --check` 通过。取消仍由单独的 `except Cancelled: raise` 传播，因此没有选择 #127；那些直接从 `recognize_video()` 抛出、没有被放进 outcome 的错误也没有被新包装。本轮没有网络/provider/credential、依赖、API、错误 schema、retry/fallback、安装门、legacy/social、#152 或 frozen `contracts/worker` 变化。把一次 returned-error 缺陷扩成通用视频异常装饰器、共享 outcome 协议或 provider 框架都属于过度设计，明确不做。

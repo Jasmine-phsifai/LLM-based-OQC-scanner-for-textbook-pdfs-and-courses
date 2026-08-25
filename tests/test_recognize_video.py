@@ -1012,6 +1012,9 @@ def test_recognize_video_keeps_image_branch_when_audio_is_corrupt(
     assert outcome.audio_error is not None
     assert outcome.audio_error.code == "VIDEO_INVALID"
     assert outcome.audio_error.details == {"stage": "extraction"}
+    assert outcome.audio_error.__cause__ is None
+    assert outcome.audio_error.__context__ is None
+    assert outcome.audio_error.__traceback__ is None
     assert outcome.audio_artifact is None
     assert all(frame.path.is_file() for frame in outcome.retained_frames)
     assert not list(outcome.output_root.glob(".ocrllm-audio-*"))
