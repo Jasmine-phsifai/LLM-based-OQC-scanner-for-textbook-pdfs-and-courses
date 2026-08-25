@@ -496,6 +496,14 @@ once, validate that snapshot, and store the same tuple; do not validate an
 iterator and then consume it again. This does not relax or reinterpret
 `recognize_batch()`'s separate exact top-level tuple contract, and it does not
 justify a shared collection-normalization abstraction.
+#281 validly refreshes the maintained short-audio Google path on exact commit
+`2844513`: current catalog 37, `gemini-2.5-flash`, one call, usage 55/2, exit 0,
+empty stderr, and no secret or current temp residue. The paired image child
+started and ended, but a one-use wrapper mixed asynchronous stdout reading with
+`ReadToEnd()` and lost its exit/JSON; image calls and outcome remain unknown.
+Do not infer a product defect or replay it for a green result. A future bounded
+image refresh must use one stdout-read mode and persist exact exit plus safe
+JSON before cleanup.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

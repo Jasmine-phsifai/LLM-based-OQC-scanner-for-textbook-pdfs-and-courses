@@ -1015,6 +1015,13 @@ The following directions remain traceable but are not current work:
   policy or adding an abstraction. Two causal regressions failed before the
   fix; 74 adjacent tests and all 1,545 offline tests pass afterward. A bounded
   re-audit found no justified additional video composition/publication change.
+  #281 validly refreshes the free-tier short-audio public path from exact commit
+  `2844513`: live catalog 37, `gemini-2.5-flash`, one provider call, usage 55/2,
+  exit 0, empty stderr, and no secret/current temp residue. The paired image
+  child started and terminated, but its one-use PowerShell harness mixed async
+  stdout reading with `ReadToEnd()` and discarded exit/JSON; image calls and
+  outcome remain unknown and were not replayed. No product/runner change follows
+  from that operator-evidence failure. All 1,545 offline tests still pass.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

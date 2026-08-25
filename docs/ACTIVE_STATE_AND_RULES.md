@@ -4702,6 +4702,31 @@ normalization layer. The two causal tests failed before the change, adjacent
 result/video/PDF/worker/resume tests pass 74, and the full offline suite passes
 1,545.
 
+## Iteration 281: short Google audio refreshed; image evidence remained invalid
+
+One bounded free-tier Google refresh used exact commit `2844513`, the current
+workspace source, the maintained credential-safe runners, live catalog
+discovery, one committed 269,337-byte PNG, and one committed 2,376-byte
+0.5-second MP3. No dependency installation, retry, model switch, fallback, or
+stress load was used. The short-audio runner produced valid terminal evidence:
+exit 0 in 5,250 ms, empty stderr, catalog count 37, explicit
+`gemini-2.5-flash`, exactly one provider call, and provider-reported usage 55
+input / 2 output tokens. Its safe JSON contained no transcript, path, upstream
+message, or credential, and secret scans were false.
+
+The image child started and terminated, but its one-use PowerShell harness
+called `BeginOutputReadLine()` and then `StandardOutput.ReadToEnd()` on the same
+stream. That local logging error occurred after the child ended and discarded
+the numeric exit and JSON. Image catalog/recognition calls and outcome are
+therefore unknown; do not report image success or failure and do not replay it
+to force a result. This is operator-evidence failure, not a product/provider
+defect, so no runner or runtime changed. Future one-use controllers must choose
+one stdout-read mode and persist the resulting JSON plus exact exit before
+cleanup. The exact wrapper root was removed, related live processes and current
+image/audio snapshot residue were zero; three unrelated `ocrllm-audio-repro-*`
+directories created about nine hours earlier were left untouched. The full
+offline suite remains 1,545 passed.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
