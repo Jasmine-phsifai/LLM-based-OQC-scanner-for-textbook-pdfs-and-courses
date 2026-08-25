@@ -2597,6 +2597,20 @@ not a legacy repair. Preserve the current five-second grid plus exact final
 frame until balanced quality evidence and maintainer authority justify changing
 the sampling contract.
 
+#223 verifies that the three remaining provider-free video entry points do not
+share the root-submodule collision repaired by #218--#220. Fresh root-first and
+explicit implementation-module-first processes resolve `inspect_video`,
+`extract_video_frames`, and `extract_video_audio` to the identical callable
+objects in their `ocrllm.video.*` modules. Their public signatures and ordinary
+`typing.get_type_hints()` are exact. Root access loads only pure-Python helper
+modules; OpenCV, NumPy, imageio-ffmpeg, miniaudio, provider SDKs, HTTPX, legacy,
+and recognition execution remain unloaded until an operation actually needs
+them. Because these implementation modules are nested below `ocrllm.video`,
+Python does not install them over the same-named root attributes. Do not extend
+the four-function eager-binding rule to these names, split their readable helper
+imports merely to minimize an on-demand module count, or build another wheel
+gate without a real package-boundary change.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

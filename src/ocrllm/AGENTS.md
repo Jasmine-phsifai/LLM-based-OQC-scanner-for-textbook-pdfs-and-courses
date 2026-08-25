@@ -243,6 +243,11 @@ changed ending retains both sides. An interior-only transient remains the
 documented fine-gap limit. Do not add a short-clip cadence, midpoint scan, or
 legacy refine/pHash machinery without a separate product decision and balanced
 quality evidence.
+#223 confirms `inspect_video`, `extract_video_frames`, and
+`extract_video_audio` stay lazy, callable, identity-stable, and runtime-typed
+through their nested `ocrllm.video.*` implementation modules. Do not eagerly
+bind or split them: unlike the four root-level same-named modules, nested video
+modules cannot overwrite these root package attributes.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

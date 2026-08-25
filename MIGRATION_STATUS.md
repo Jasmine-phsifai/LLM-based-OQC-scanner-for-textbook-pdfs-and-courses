@@ -696,6 +696,11 @@ The following directions remain traceable but are not current work:
   Interior scenes that both appear and disappear between those samples remain
   the documented #170 fine-gap limit; legacy samples even less at this seam, so
   no special short-clip sampler or refinement port was added.
+  #223 verifies the other three public provider-free video functions retain
+  callable identity, signatures, runtime type hints, and optional-dependency
+  isolation in both root-first and implementation-module-first imports. Their
+  nested modules cannot overwrite root attributes, so #218's eager-binding fix
+  was intentionally not generalized.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the
