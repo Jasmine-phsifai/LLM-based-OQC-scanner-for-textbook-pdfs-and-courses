@@ -5435,6 +5435,31 @@ offline suite passes 1,572 tests. The corrected full installed gate must still
 run from the clean #306 commit before its optional profiles or combined-video
 result can be called proven.
 
+The clean #306 rerun from exact commit `7560252c1c99a863995a0f05a16a628f7e399b8f`
+then passed 1,571 archived tests with one expected RapidOCR skip, built and
+checked the wheel, and installed the dependency-empty base. It stopped before
+optional profiles because the resulting 1,265,634-byte target exceeded the
+historical 1 MiB limit. Proxy, download, wheel selection, install, cleanup, and
+terminal evidence all behaved correctly.
+
+## Iteration 307: the base disk budget reflects the mature package
+
+An offline rebuild of the same committed wheel reproduced 1,265,623 installed
+bytes: 624,362 bytes of Python source, 545,781 bytes of installer-generated
+bytecode, 59,025 bytes of distribution metadata, and 36,455 bytes of packaged
+active-library documentation. The 257,083-byte wheel contains 243 expected
+entries and no tests, legacy application, GUI, social downloader, or media
+asset. No single package file is anomalously large.
+
+The gate continues to count bytecode so its real-disk numbers remain comparable
+with all historical base/profile measurements. Only the no-deps target ceiling
+moves from 1 MiB to 1.5 MiB. The independent compressed-wheel ceiling remains
+256 KiB and is currently only 5,061 bytes above the wheel, so source growth is
+still tightly bounded. No package file, runtime, dependency, import rule,
+profile allowance, or provider/media behavior changes. The failing-first budget
+regression and complete controller set pass 9 tests; PowerShell has zero AST
+errors. A clean full-gate rerun remains required.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

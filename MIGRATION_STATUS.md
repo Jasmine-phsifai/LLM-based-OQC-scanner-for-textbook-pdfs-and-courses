@@ -1227,7 +1227,13 @@ The following directions remain traceable but are not current work:
   repairs the clean gate's first post-build check: Windows PowerShell had split
   multiline `python -c` source and supplied `is` as the apparent wheel path.
   The three wheel-content assertions now live in the single-purpose
-  `tools/check_built_wheel.py`; no package runtime or install policy changed.
+  `tools/check_built_wheel.py`; no package runtime changed. Its clean rerun
+  passed archive tests and base installation, then found the real installed
+  target at 1,265,634 bytes above the historical 1 MiB cap. #307 measures
+  624,362 bytes of source, 545,781 bytes of installer bytecode, 59,025 bytes of
+  metadata, and 36,455 bytes of package documentation, with no accidental
+  tests/legacy/media payload. It retains this real-disk measurement and raises
+  only the base target cap to 1.5 MiB; the 256 KiB wheel cap remains unchanged.
 
 ## Obsolete Prose Kept For Trace
 

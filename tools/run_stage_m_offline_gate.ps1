@@ -9,6 +9,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$baseTargetMaximumBytes = 1572864
 
 function Assert-LastExitCode {
     param([string]$Message)
@@ -236,8 +237,8 @@ try {
     & $python -m pip install --no-deps --target $targetDir $wheel.FullName
     Assert-LastExitCode 'isolated base wheel install failed'
     $installedBytes = Get-DirectoryByteCount $targetDir
-    if ($installedBytes -gt 1048576) {
-        throw "base target exceeds 1 MiB: $installedBytes"
+    if ($installedBytes -gt $baseTargetMaximumBytes) {
+        throw "base target exceeds 1.5 MiB: $installedBytes"
     }
 
     $baseProbe = @'

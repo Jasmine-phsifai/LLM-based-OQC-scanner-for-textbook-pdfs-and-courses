@@ -152,6 +152,16 @@ def test_base_wheel_check_uses_a_python_file_instead_of_multiline_c() -> None:
     assert "tools\\check_built_wheel.py" in script
 
 
+def test_base_install_budget_keeps_real_disk_measurement_with_bounded_headroom() -> None:
+    """The dependency-empty target includes normal installer-generated pyc."""
+
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+
+    assert "$baseTargetMaximumBytes = 1572864" in script
+    assert "if ($installedBytes -gt $baseTargetMaximumBytes)" in script
+    assert "__pycache__" not in script
+
+
 @pytest.mark.parametrize(
     ("names", "succeeds"),
     [

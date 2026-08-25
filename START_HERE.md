@@ -626,8 +626,12 @@ the active `127.0.0.1:10080` proxy, passed 1,558 archived tests with one skip,
 and built the wheel. It then exposed a Windows PowerShell argument bug in the
 gate's multiline wheel-content probe before any install profile began. #306
 moves those three checks into `tools/check_built_wheel.py`; focused and full
-offline regressions pass. The installed combined-video gate remains open until
-the corrected script is rerun from the clean #306 commit.
+offline regressions pass. The corrected #306 gate then passed 1,571 archived
+tests with one skip, built, checked, and installed the wheel, but the real base
+target had grown to 1,265,634 bytes and exceeded the old 1 MiB budget before
+optional profiles. #307 proves the target contains no accidental payload and
+raises only that real-disk budget to 1.5 MiB; the 256 KiB wheel cap stays fixed.
+The installed combined-video gate remains open until #307 is rerun cleanly.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
