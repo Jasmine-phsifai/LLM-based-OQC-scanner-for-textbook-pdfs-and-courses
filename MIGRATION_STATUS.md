@@ -1278,6 +1278,12 @@ The following directions remain traceable but are not current work:
   skip, the wheel is 259,949 bytes, all optional profiles pass, and the
   installed interval plus combined-video smokes clean up without a provider
   call.
+  #314 then stabilizes the missing output-affecting prompt fact before request
+  identity. `audio.long.interval.v1` maps original actual/logical bounds to the
+  uploaded clip, keeps physical padding as context only, and requests neither
+  timestamps nor legacy markers. A shared audio-only validator preserves the
+  materializer's existing input rejection. The complete 1,586-test source suite
+  passes; no provider, state, dispatch, resume, repair, or public API is added.
 
 ## Obsolete Prose Kept For Trace
 

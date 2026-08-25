@@ -5642,6 +5642,35 @@ retains two frames, makes one fake image call, observes one audio snapshot, and
 cleans up. No provider API, retry, owned gate root, or process remains. This
 release-proves the fingerprint propagation only; it does not implement resume.
 
+## Iteration 314: interval prompts bind source time to uploaded-clip time
+
+The first versioned long-audio interval prompt is now implemented internally as
+`audio.long.interval.v1`. It receives one exact planned window and states three
+separate facts: the actual original-source range present in the uploaded MP3,
+the mapping from uploaded-clip second zero to the actual source start, and the
+logical source range whose speech alone belongs in the returned Markdown. Audio
+outside the clip-relative logical range is context only. The prompt requests no
+timestamps, range labels, segment markers, or commentary and applies the
+existing no-speech sentinel to the requested logical range rather than to all
+speech in the context-padded clip.
+
+The legacy Google prompt named the logical original-course range and asked the
+model to suppress overlapping context, but omitted the actual extracted range
+and clip-zero anchor. No production incident proves that omission caused wrong
+output, so #314 records it as a design gap rather than a legacy bug. It does not
+port legacy HTML markers, fine timestamp policy, localized repair parsing, or
+Google naming. The materializer's exact-type and boundary validation moved
+unchanged into one audio-owned validator because the prompt is now its second
+real consumer; no general media/window framework was introduced.
+
+Failing-first collection proved the builder was absent. Focused prompt,
+planner, materializer, Google-audio, and video neighbors pass 106 tests;
+compilation, diff checks, frozen-boundary checks, and the complete maintained
+suite pass **1,586 tests in 64.21 seconds**. No provider or network was used.
+Request identity remains the next independent slice: it may now hash this prompt
+version without immediately becoming stale. Sidecars, serial dispatch, resume,
+repair, and public API remain unimplemented.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

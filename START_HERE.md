@@ -672,6 +672,13 @@ The exact `b9ae0c9` clean gate exits 0 with 1,581 archived tests passing and one
 expected skip, a 259,949-byte wheel, every optional profile green, and both the
 installed interval and combined-video smokes complete without a provider call.
 
+#314 adds the internal `audio.long.interval.v1` prompt before request identity
+is frozen. It gives both original-source and uploaded-clip coordinates, treats
+padding as context only, and requests only the logical range without legacy
+HTML markers or timestamps. The existing materializer validation is now one
+audio-owned function shared by its two real consumers. All 1,586 source tests
+pass; request identity, state, dispatch, resume, and repair remain later slices.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

@@ -689,6 +689,12 @@ Exact commit `b9ae0c9` passes the maintained clean gate: 1,581 archived tests
 pass with one expected skip, the wheel is 259,949 bytes, and every installed
 profile plus the interval and combined-video smokes passes without provider I/O.
 
+#314 adds only the internal versioned interval prompt and extracts the existing
+window check for its second real consumer. Keep `audio.long.interval.v1` explicit
+about actual source bounds, clip-zero mapping, logical output bounds, and
+context-only padding. Do not add legacy markers/timestamp parsing, state,
+dispatch, repair, or a generic interval framework to this prompt boundary.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

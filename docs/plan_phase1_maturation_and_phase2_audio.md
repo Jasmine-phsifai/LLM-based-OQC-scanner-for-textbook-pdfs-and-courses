@@ -447,6 +447,12 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   do not publish it as result metadata or treat it alone as a complete state.
   Exact clean commit `b9ae0c9` passes every installed profile and both maintained
   media smokes without a provider call; the shipped wheel is 259,949 bytes.
+- #314 fixes the output-affecting interval prompt before request fingerprinting.
+  `audio.long.interval.v1` states actual original-source bounds, the uploaded
+  clip's zero-time anchor, the logical original-source bounds, and their
+  clip-relative offsets. It asks for only logical-range Markdown and no legacy
+  markers/timestamps. Hash this version in the next request-identity slice;
+  do not combine that work with persistence or provider dispatch.
 - The A2a 9.5-hour duration check is not complete selected-model preflight:
   Google's documented 32 audio tokens per second makes the full duration
   1,094,400 audio tokens before the prompt, above the current documented

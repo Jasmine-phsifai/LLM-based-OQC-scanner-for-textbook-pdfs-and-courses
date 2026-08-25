@@ -257,6 +257,12 @@ is often accepted.
   instead of the original owned bytes, or expose the digest in ordinary result
   metadata. A future audio sidecar must pair this digest and byte size with the
   original file URI and request/window identity; this field alone is not resume.
+- **#314 interval prompt boundary.** Before hashing a resumable request, bind
+  each uploaded context-padded clip to both its actual original-source range and
+  logical return range. The prompt names the clip-zero anchor, treats padding as
+  context only, requests no timestamps/markers, and retains the existing
+  no-speech sentinel for the requested range. Do not port the legacy localized
+  HTML marker format or claim the prompt itself validates model output times.
 - **#245 video-integration ordering clarification.** Long Files results already
   fit `VideoRecognitionOutcome`; do not add a second outcome or audio-result
   type. The low-level public functions can be manually composed, but they copy

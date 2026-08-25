@@ -14,6 +14,7 @@ from pathlib import Path
 from ..errors import DependencyMissing, InvalidSource, OCRLLMError, OutputError
 from .build_long_audio_interval_windows import LongAudioIntervalWindow
 from .load_audio_ffmpeg_executable import load_audio_ffmpeg_executable
+from .validate_long_audio_interval_window import validate_long_audio_interval_window
 
 
 _MINIMUM_FFMPEG_TIMEOUT_SECONDS = 600
@@ -27,7 +28,7 @@ def materialize_long_audio_interval(
     window: LongAudioIntervalWindow,
 ) -> Iterator[Path]:
     """Yield one mono 16 kHz MP3 beside an already request-owned source."""
-    _validate_interval_window(window)
+    validate_long_audio_interval_window(window)
     source = Path(owned_source_path)
     executable = load_audio_ffmpeg_executable()
     segment_path = _create_interval_path(source.parent, index=window.index)
@@ -49,32 +50,6 @@ def materialize_long_audio_interval(
         raise
     finally:
         _delete_interval_path(segment_path, primary_error=primary_error)
-
-
-def _validate_interval_window(window: LongAudioIntervalWindow) -> None:
-    if type(window) is not LongAudioIntervalWindow:
-        raise TypeError("window must be an exact LongAudioIntervalWindow") from None
-    if type(window.index) is not int or window.index < 0:
-        raise ValueError("window index must be a non-negative integer") from None
-
-    boundaries = (
-        window.logical_start_seconds,
-        window.logical_end_seconds,
-        window.actual_start_seconds,
-        window.actual_end_seconds,
-    )
-    if any(
-        type(boundary) not in (int, float) or not math.isfinite(float(boundary))
-        for boundary in boundaries
-    ):
-        raise ValueError("window boundaries must be finite numbers") from None
-    if not (
-        0.0 <= window.actual_start_seconds
-        <= window.logical_start_seconds
-        < window.logical_end_seconds
-        <= window.actual_end_seconds
-    ):
-        raise ValueError("window boundaries are inconsistent") from None
 
 
 def _create_interval_path(parent: Path, *, index: int) -> Path:
