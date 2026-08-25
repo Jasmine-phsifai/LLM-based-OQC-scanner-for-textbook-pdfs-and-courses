@@ -5042,6 +5042,36 @@ This is a local fail-fast timing correction, not a scheduler, transaction,
 retry, cancellation-policy choice, or generalized stress harness. No provider
 API was called. The full offline suite passes 1,549 tests.
 
+## Iteration 293: one near-limit Google image request succeeds
+
+One deterministic, nonprivate 6000x4000 JPEG was frozen before credential
+access. It contained visible synthetic text over a high-entropy background and
+1,595,089 bytes of valid JPEG comment padding so the actual request bytes,
+rather than visual complexity alone, approached the wire guard. The final file
+was 14,922,997 bytes with SHA-256
+`1e47dbba3471cc1332c175cd2c546bc18f795b42a636e36daa54deceff0ccf78`.
+The unchanged builder, explicit `gemini-2.5-flash`, and exact default board
+prompt calculated a 19,899,869-byte upper bound: 100,131 bytes below the
+20,000,000-byte local limit. Local JPEG decode and request construction passed
+before credentials.
+
+The maintained image runner was launched exactly once with a 120-second request
+bound and pre-armed 285-second outer deadline. Current discovery returned 37
+models; the public recognition completed with exactly one provider call and
+Google-reported usage of 595 input and 43 output tokens. Numeric exit was 0
+after 27,969 ms, stdout was one 172-byte safe JSON object, and stderr was empty.
+No credential, source path, synthetic text, process, image snapshot, or owned
+temporary residue remained. There was no retry, payload mutation, second
+runner, model switch, fallback, invalid-key probe, dependency change, or runtime
+edit.
+
+This proves only that this frozen request at 99.499345% of the library's current
+wire ceiling traversed today's native SDK and endpoint successfully. It does
+not prove every image, model, future SDK serialization, exact 20 MB boundary,
+or larger request. Do not raise the limit, hardcode this fixture, retain padding
+machinery, probe multiple sizes, or create a size benchmark from this result.
+Future pressure gates remain separate and single-question.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

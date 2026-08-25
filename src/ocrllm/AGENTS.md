@@ -602,6 +602,12 @@ success cannot cause a replacement provider call while the failure waits to be
 observed. Already-started work still settles, caller order and concurrency stay
 unchanged, and process-control exceptions remain uncaught. Keep this local; do
 not replace it with a scheduler, transaction, retry layer, or #127 decision.
+#293 sends one frozen near-limit synthetic JPEG through the maintained Google
+image runner. The active builder measured 19,899,869 bytes against its
+20,000,000-byte wire ceiling; `gemini-2.5-flash` succeeded once with usage
+595/43, exit 0, empty stderr, no leak, and no residue. Runtime stays unchanged.
+Do not generalize this one payload into a higher limit, committed large fixture,
+multi-size/model probe, benchmark, or shared stress framework.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

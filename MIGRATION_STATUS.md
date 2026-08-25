@@ -956,6 +956,13 @@ The following directions remain traceable but are not current work:
   two; the initial success/failure and cancelled suffix remain ordered, and
   already-started work still settles. No scheduler, new lock, retry, result
   schema, provider API call, or #127 cancellation choice was added.
+  #293 validates one current near-wire-limit Google image request without
+  changing the package. A deterministic 14,922,997-byte JPEG produced an exact
+  active-builder upper bound of 19,899,869 bytes, 100,131 below the 20,000,000
+  local ceiling. One maintained `gemini-2.5-flash` run discovered 37 models and
+  succeeded with one call, usage 595/43, exit 0, empty stderr, no leak, and no
+  residue. This single payload does not justify raising the limit, retaining a
+  large fixture, probing sizes/models, or adding a stress/benchmark framework.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The
