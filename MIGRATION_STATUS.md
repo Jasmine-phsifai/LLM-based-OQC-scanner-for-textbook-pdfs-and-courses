@@ -1305,8 +1305,10 @@ The following directions remain traceable but are not current work:
   paid interval results can be persisted. It covers the owned source SHA-256,
   explicit whole/interval mode, provider/model, prompt version, and exact
   interval identity without adding a sidecar, dispatcher, repair parser, or
-  public API. The full source suite passes 1,605 tests; installed proof remains
-  pending.
+  public API. The full source suite passes 1,605 tests. Exact clean commit
+  `d590835` then passes 1,604 archived tests with one expected skip, all
+  installed profiles and media smokes, and no cloud call; its wheel/base measure
+  248,791/1,255,390 bytes.
 
 ## Obsolete Prose Kept For Trace
 

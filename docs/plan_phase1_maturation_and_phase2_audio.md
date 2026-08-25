@@ -505,6 +505,8 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   secret or path and adds no state or provider work. The next slice may define
   the minimum audio-owned partial state consumed by serial persistence; do not
   import image slot types or combine state, dispatch, resume, and repair at once.
+  Exact commit `d590835` passes the complete installed gate with every profile
+  and local media smoke green and no provider call; its wheel is 248,791 bytes.
 
 ### Stage A exit gate
 

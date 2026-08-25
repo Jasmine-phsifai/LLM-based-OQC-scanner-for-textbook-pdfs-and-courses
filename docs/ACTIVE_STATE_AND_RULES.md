@@ -5758,7 +5758,18 @@ SHA-256, while every settled output-affecting field is covered by regressions.
 The focused planner/prompt/materializer/identity set passes 40 tests; the full
 source suite passes **1,605 tests in 65.82 seconds**. Compilation, diff,
 lightweight import, and frozen `contracts/worker` checks pass without media,
-provider, or network work. Exact clean installed proof remains the exit gate.
+provider, or network work.
+
+Exact clean commit `d590835` passes that gate with exit 0 in 242.77 seconds.
+The archive reports **1,604 passed, 1 skipped in 67.09 seconds**; its wheel is
+**248,791 bytes**, leaving 13,353 bytes under the maintained ceiling, and the
+base target is 1,255,390 bytes. Installed deltas are: audio 91,149,508; image
+16,949,792; image+DashScope 41,525,228; Google 41,667,556; audio+Google
+130,277,412; PDF vision 25,148,238; video 254,441,629; and combined
+272,313,107 bytes. Interval, PDF, video, and combined recognize/compose/publish
+smokes pass without cloud I/O. The delegated runner verified the active proxy
+and wheelhouse first, removed its gate root, and left no gate process. #316 is
+release-proven.
 
 ## Documentation Rules
 

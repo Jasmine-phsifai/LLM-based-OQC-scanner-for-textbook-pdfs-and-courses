@@ -716,6 +716,8 @@ binds owned source SHA-256, explicit whole/interval mode, provider/model, prompt
 version, and the exact validated interval window when present. Keep it free of
 credentials, paths, state lifetime, dispatch, repair parsing, and image-resume
 types. Whole and interval modes are separate; do not infer one from file size.
+Exact commit `d590835` passes the full installed gate with a 248,791-byte wheel;
+all profiles and media smokes pass without cloud I/O.
 
 ## When Porting Legacy Behavior
 

@@ -704,7 +704,10 @@ source digest, whole/interval mode, provider, model, versioned prompt, and the
 complete interval window when present. Whole prompt version
 `audio.transcription.v1` now complements `audio.long.interval.v1`. The complete
 1,605-test source suite passes; no state, dispatch, resume, repair, public API,
-or provider call is claimed. Exact clean installed proof remains pending.
+or provider call is claimed. Exact commit `d590835` passes the complete
+installed gate: archive 1,604
+passed/1 skipped, wheel 248,791 bytes, base 1,255,390 bytes, all profiles and
+local media smokes green, no cloud I/O, and complete cleanup.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
