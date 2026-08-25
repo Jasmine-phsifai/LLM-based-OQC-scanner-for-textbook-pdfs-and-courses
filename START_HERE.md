@@ -308,6 +308,14 @@ first, then use one retained-MP3 ownership seam to choose exactly one adapter.
 One-shot 300-second-to-model-limit integration is independent of #152; the
 9.5-to-10-hour ceiling and persisted recovery remain blocked on #152.
 
+#246 makes one bounded normal-install refresh of #239 from exact commit
+`1e9cd87`. The clean 259,383-byte wheel still has an empty base and only OpenCV
+plus imageio-ffmpeg in `[video]`, but pip timed out while downloading the 31.2 MB
+imageio-ffmpeg wheel. The run stopped before installed imports and real MP4s,
+cleaned its disposable root, and did not retry or change pins. Treat this as an
+open external delivery gate, not a package defect or permission to add another
+installer.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

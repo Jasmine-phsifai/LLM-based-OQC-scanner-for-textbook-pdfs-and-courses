@@ -774,6 +774,12 @@ The following directions remain traceable but are not current work:
   #127 first, then one-copy/one-decode selection of exactly one short or Files
   adapter; #152 remains required for 9.5-to-10-hour audio and persisted recovery.
   No runtime or public boundary changed; 84 focused tests pass.
+  #246 rechecks #239 from exact commit `1e9cd87`: the clean 259,383-byte wheel
+  retains an empty base and the exact two-dependency `[video]` extra, but the
+  only normal pip attempt timed out downloading imageio-ffmpeg. Installed import
+  and real-MP4 proof therefore remain open. No retry, alternate installer, pin,
+  vendoring, runtime, or package-boundary change was made; 127 source-tree video
+  tests pass and the disposable external root was removed.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

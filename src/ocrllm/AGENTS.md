@@ -308,6 +308,11 @@ again, documenting manual two-snapshot composition as the mature route, or
 adding another video/result API. Resolve #127 first; then one retained-audio
 ownership seam may select exactly one adapter. #152 still owns 9.5-to-10-hour
 audio and persisted recovery.
+#246 leaves the normal installed `[video]` gate open after one clean wheel build
+and one ordinary pip attempt timed out downloading imageio-ffmpeg. Keep the
+declared OpenCV/imageio-ffmpeg extra unchanged unless a package defect is
+reproduced; do not vendor, repin, add another installer, or report installed
+real-media proof before the normal installation and external MP4 calls pass.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

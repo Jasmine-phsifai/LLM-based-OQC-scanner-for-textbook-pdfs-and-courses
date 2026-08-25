@@ -1101,6 +1101,22 @@ before those decisions. The existing focused long-audio/video/composition set
 passes 84 tests; no runtime, public API, provider, dependency, media, output,
 legacy compatibility, or frozen-boundary change occurred.
 
+#246 refreshes, but does not close, #239's normal installed `[video]` gate.
+Exact clean commit `1e9cd8754eb3d0584bf7fce230aae9c09033f2c1` built into one
+259,383-byte, 238-member wheel (SHA-256
+`16953a16036ac4dfc2cf4d2f0dd6863d0a30b670fff1d6a4f854165074cc1690`).
+Its base dependency set remains empty, its video extra still declares only
+`imageio-ffmpeg>=0.6,<0.7` and `opencv-python>=4.13,<4.14`, and the package plus
+`py.typed` are present. One bounded ordinary pip installation into a clean
+external virtual environment stopped after about 44 seconds while downloading
+the 31.2 MB imageio-ffmpeg 0.6.0 wheel: `files.pythonhosted.org` timed out. No
+second installer or retry ran, and the proof correctly stopped before installed
+imports or real-MP4 calls. The disposable root was removed. This remains an
+external dependency-delivery gap, not a reproduced metadata or runtime defect;
+do not repin, vendor, add an installer abstraction, or claim installed-video
+proof until one normal install actually completes. The current source-tree
+video set passes 127 tests after the later preflight/facade changes.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
