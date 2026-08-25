@@ -4109,3 +4109,17 @@ Atomic task — Iteration #200: verify the shipped video frame-output path again
 **真实主动检查。** 当前机器注册表 `LongPathsEnabled=0`。轻量任务在仓库外的唯一 `D:\ocrllm-i200-*` disposable root 生成一个小型真实 MP4；成功创建 247 UTF-16 units 的 `output_dir`。归一化最终目录为 254 units，第一张 `frame-00000000.jpg` 会达到 280 units，UUID staging 中对应 JPEG 约 324 units；没有人为加入 `\\?\`。公开 `extract_video_frames()` 返回 `OutputError(code="OUTPUT_PATH_INVALID")`，最终目录、JPEG、staging 都不存在；整个临时根（包括源 MP4）成功删除，证明没有遗留文件锁。第一次 controller 命令在执行前因 PowerShell 引号错误产生 `SyntaxError`，没有创建任何东西；改用 stdin 后唯一有效检查得到上述结果。无 provider、网络、凭据、安装或仓库文件。
 
 **结论、验证与过度设计复查。** 结果证明的是“本机诚实拒绝”，不是“library 支持任意 Windows 长路径”。已有两个近边界成功测试重跑为 **2 passed in 0.23s**。当前确实会在完成 provider-free inspection/selection 后才发现 staging 不可创建，对长视频有本地时间浪费；但读取注册表并不能完整代表 Python/文件系统能力，路径长度预计算仍不能消除发布竞态，提前创建探针目录又增加可见副作用和生命周期。没有假成功、provider 浪费或残留证据时，为优化这一极端失败增加平台策略层属于过度设计。本轮只补准确产品说明和权威证据，不改 runtime/API/dependency/output layout、legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。
+
+## #201 — 2026-08-25：静音是媒体结果，不是放松 audio config 的模式
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #201: verify that the combined-video facade does not make a silent MP4 depend on an unusable or unavailable audio provider configuration, while preserving full preflight before any branch dispatch when audio is actually present. Success means reconciling authority and diary, tracing `recognize_video()` validation order, running one real silent MP4 with a valid image provider and deliberately unusable audio settings, deciding from the current public contract whether frame-only completion or zero-call rejection is correct, and fixing only a reproduced mismatch without weakening provider separation. This matters because image/audio separation should let a video with no audio track remain an ordinary frame-recognition job; forcing an irrelevant audio backend would make the Python package less composable.
+```
+
+**初始疑问、两条路线与改判。** 初始问题是：既然静音视频最终只识别图片，是否应该忽略无效 audio config。逐行检查 `recognize_video()`、#126/#173 以及 README 后，答案是否定的。路线 A 是把 `audio_config` 改成可选，先读媒体、确认音轨后再决定是否验证；路线 B 是保持组合入口的两套配置完整预检，并把文档关系说清。选择 B。公开签名本来就要求独立 image/audio config，静音只有在本地 extraction 时才能知道；为了猜测媒体内容而延后验证，会破坏“任何输出和 dispatch 前拒绝确定性配置错误”的合同，还制造第二种条件模式。只想识别画面的 caller 已有 `extract_video_frames()` 与 `recognize_video_frames()`，不需要扩大 combined facade。
+
+**真实静音检查与回归。** 轻量任务在仓库外生成 OpenCV 4.13.0 的真实静音 MP4，以 recording image provider 和故意错误的 `Config(provider=image_provider)` 作为 audio config 调用公开 facade。结果是 `ConfigError(code="CONFIG_INVALID")`，image call count 为 0，output_dir 不存在，无 final/staging artifacts；源文件可删，唯一 temp root 已删除。第一次 shell controller 因字符串引号丢失在探针执行前 `SyntaxError`，没有创建内容；修正编码后的唯一有效检查得到上述结果。维护中的“有效配置 + 静音 => frame-only complete”和“无效 audio config => 零输出/零 dispatch”两条测试重跑为 **2 passed in 0.34s**。
+
+**结论与过度设计复查。** README 现在明确：silent audio 是媒体 outcome，不是 relaxed config mode；只有两套配置都通过预检，缺音轨才结算为 frame-only。没有把 `audio_config` 变成 Optional、没有先探测音轨再二次验证、没有新增 frame-only flag/facade，也没有为静音构造假的 audio result。这保留了强制输入筛选和 provider 分离，同时避免组合入口继续长出模式分支。本轮不改 runtime/API/dependency/output layout，不使用 provider/network/credential，不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。

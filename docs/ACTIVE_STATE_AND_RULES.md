@@ -2091,6 +2091,27 @@ race with actual publication, and complicate a provider-free path that does not
 report false success. No runtime, API, dependency, output layout, legacy
 compatibility, frozen boundary, or open #127/#149/#152 choice changed.
 
+#201 resolves one combined-video configuration ambiguity in favor of the
+already-shipped strict facade contract. `recognize_video()` requires independent
+image and audio `Config` values and validates both before inspecting the MP4,
+creating retained media, or dispatching either branch. A silent track is only
+discoverable during media extraction; it is an outcome state, not permission to
+pass unusable audio settings. Callers that do not want an audio configuration
+already have the public `extract_video_frames()` plus
+`recognize_video_frames()` path. Making `audio_config` optional or validating it
+after extraction would create a second conditional mode and weaken #126/#173's
+complete zero-I/O preflight.
+
+One bounded external probe generated a real silent MP4 with OpenCV 4.13.0 and
+called the public facade with a recording image provider plus deliberately
+invalid audio settings. It raised `ConfigError(code="CONFIG_INVALID")`, made
+zero image calls, created no output directory/final/staging artifacts, and left
+the source and exact disposable root removable. The two maintained regressions
+for valid silent frame-only settlement and invalid-audio zero-output preflight
+pass. No provider, network, credential, dependency installation, runtime, API,
+output layout, legacy compatibility, frozen boundary, or open #127/#149/#152
+choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

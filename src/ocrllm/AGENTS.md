@@ -146,6 +146,11 @@ extended-path support. A caller-selected deep parent may fail with typed
 `OUTPUT_PATH_INVALID` and no residue when the host disables long paths. Keep
 source-stem capping, but do not add registry checks, `\\?\` rewriting, or probe
 directories merely to reject the path before provider-free scanning.
+#201 confirms that silent video does not make the combined facade's required
+audio `Config` optional. Both configs remain deterministic zero-I/O preflight;
+only a validly configured call can later settle missing audio as frame-only.
+Do not add content-dependent config validation or a second frame-only mode to
+`recognize_video()`; use the existing frame extraction/recognition functions.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

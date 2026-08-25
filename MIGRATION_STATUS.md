@@ -585,6 +585,11 @@ The following directions remain traceable but are not current work:
   and was rejected as `OUTPUT_PATH_INVALID` with no target, staging artifact,
   or locked disposable root. This is honest bounded failure, not extended-path
   support; no registry-aware preflight or path-rewriting layer was added.
+  #201 resolves a documentation ambiguity without changing the facade: a real
+  silent MP4 plus invalid audio settings raises `CONFIG_INVALID` before source
+  inspection, output creation, or image dispatch. Silent audio becomes a
+  frame-only outcome only after both required configs pass zero-I/O preflight;
+  callers wanting no audio config use the existing frame-only public functions.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate
