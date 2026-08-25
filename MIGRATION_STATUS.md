@@ -648,6 +648,11 @@ The following directions remain traceable but are not current work:
   branch-cancellation exits removes that hidden MP4 and releases its in-process
   output claim. The tests accept either future #127 cancellation contract and
   therefore do not freeze the current asymmetry; no runtime code changed.
+  #213 proves that exact commit `2d49959` ships both new video lifecycle modules
+  and `py.typed` in a 246,802-byte clean-archive wheel. A no-index/no-dependency
+  external install resolves the public video callables and distribution metadata
+  from the installed target without loading heavy media, provider, HTTP, or
+  legacy modules. No package manifest or runtime change was required.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

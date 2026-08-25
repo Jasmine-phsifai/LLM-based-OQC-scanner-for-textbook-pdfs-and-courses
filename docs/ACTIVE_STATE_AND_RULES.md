@@ -2440,6 +2440,20 @@ No runtime, public API, retained-asset behavior, cancellation choice, provider,
 dependency, or frozen boundary changed. Do not add a cleanup transaction or
 freeze the current image/audio cancellation asymmetry from this lifecycle proof.
 
+#213 closes #211's installed-distribution evidence gap without changing the
+package. A clean archive of exact commit `2d49959` was built once with the
+already-installed Hatchling 1.31.0 through uv 0.11.7 using `--offline`,
+`--no-python-downloads`, and `--no-build-isolation`. The resulting 246,802-byte
+wheel (SHA-256
+`c967cb8914f8a60bc442ed384326efbca9c4d0541792e0b83c578b7fa5f48786`)
+contains `prepare_video_media.py`, `snapshot_video_source.py`, and `py.typed`.
+Installed with no index and no dependencies into a disposable external target,
+both public video callables and distribution metadata resolved from that target,
+while heavy media, provider SDK, HTTP, and legacy modules remained unloaded.
+The proof root was removed. This proves distribution membership and import
+isolation; it does not replace #211's full source tests or claim another media or
+provider run.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

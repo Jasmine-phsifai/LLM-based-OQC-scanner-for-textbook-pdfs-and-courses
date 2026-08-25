@@ -93,6 +93,10 @@ open; do not implement it until the maintainer chooses.
 cancellation, and propagated-cancellation exits: no `.ocrllm-video-source-*`
 path or in-process output claim may survive. Preserve that invariant without
 turning the current #127 asymmetry into an accepted cancellation contract.
+#213 proves the clean installed wheel contains both #211 lifecycle modules and
+keeps the public video facade import-light. Preserve whole-package selection in
+the Hatch wheel; do not add a per-module manifest, build wrapper, or eager import
+for this internal implementation.
 #166 makes source order a constructor invariant for every public video outcome:
 retained frame indices are strictly increasing and timestamps never move backward.
 Do not add path-identity, timestamp-uniqueness, or generic ordering machinery.

@@ -311,7 +311,9 @@ available as one typed orchestration facade over retained-frame extraction and
 recognition plus independently configured extracted-audio recognition.
 Provider-free composition and atomic final Markdown publication are separate
 public steps. Video branch resume, long-audio routing, and worker routing remain
-unavailable. Local user
+unavailable. The request-owned video snapshot implementation is present in a
+clean externally installed wheel and does not make plain package import load
+heavy media or provider modules. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 
