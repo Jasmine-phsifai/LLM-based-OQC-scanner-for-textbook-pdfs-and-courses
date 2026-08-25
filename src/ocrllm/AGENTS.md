@@ -571,6 +571,14 @@ with verified 5,214/231 token usage, no retry/fallback/model switch, leak, or
 residue. Treat this as a capped Google video proof only; it is not evidence for
 long load, other providers, provider fallback, or long-audio behavior, and it
 does not justify a generic stress/provider framework.
+#289 makes one later unchanged clean-gate attempt from exact `f674dab`. The
+pre-armed run exited 1 after 1,220,452.865 ms at the maintained 1,200-second
+archive dependency/pytest stage while uv reported media dependency downloads;
+pytest never emitted `test session starts`, so wheel, profiles, and installed
+combined-video execution did not begin. Treat this only as external delivery
+evidence. The ordinary installed proof remains open; do not immediately replay
+or change dependencies, pins, index, mirror, cache, retries, timeouts, installer,
+or product code from it.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

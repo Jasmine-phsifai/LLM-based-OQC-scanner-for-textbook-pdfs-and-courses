@@ -4937,6 +4937,33 @@ or the deferred long-audio route. Future robustness runs must remain separate,
 single-question and capped; do not turn this evidence into a generic stress or
 provider framework.
 
+## Iteration 289: installed combined-video proof remains delivery-blocked
+
+Four intervening iterations after #284, one later unchanged execution of the
+maintained clean gate started from exact clean commit `f674dab`. Its outer
+3,600-second deadline was armed before launch. A direct .NET Process controller
+preserved exact terminal evidence: exit 1 after 1,220,452.865 ms without
+reaching the outer deadline. The maintained archive stage emitted its start and
+1,200-second timeout markers; uv reported download progress for
+imageio-ffmpeg, NumPy, and OpenCV, but pytest's `test session starts` marker
+never appeared.
+
+Consequently archived tests, wheel construction, base import, optional-profile
+installation, and the installed public combined-video smoke did not begin. No
+provider or credential path was involved. The gate removed its own proof root;
+the direct child and descendants exited, and the one-use wrapper root was
+removed after primary inspection. This is another bounded external dependency-
+delivery result, not evidence of a source-test, dependency declaration, wheel,
+OpenCV runtime, or public video defect. The ordinary installed
+`[video,audio,image]` proof therefore remains open.
+
+Do not replay this gate immediately or change dependency ranges, pins, index,
+mirror, cache, retry, timeouts, installer, or product code from this result.
+Repeated progress lines in captured uv output do not prove separate attempts;
+the wrapper launched exactly one gate and no retry was requested. A future
+attempt remains one atomic ordinary-install gate after new time or delivery
+evidence, not a stress test or a reason to create a second installation path.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

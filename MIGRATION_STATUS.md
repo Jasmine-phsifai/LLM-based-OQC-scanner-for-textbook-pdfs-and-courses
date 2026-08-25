@@ -921,6 +921,15 @@ The following directions remain traceable but are not current work:
   residue. This proves only the capped two-group Google path with separate
   image/audio configs; it does not establish long-load, other-provider, retry,
   fallback, or long-audio behavior and changes no runtime or public API.
+  #289 makes one later unchanged run of the still-open ordinary installed
+  combined-video gate from exact `f674dab`. A pre-armed outer deadline and
+  direct .NET Process controller retained exact exit 1 after 1,220,452.865 ms.
+  The maintained archive stage reached its 1,200-second timeout while uv
+  reported imageio-ffmpeg, NumPy, and OpenCV downloads; pytest never emitted
+  `test session starts`, so wheel construction, profiles, and installed public
+  video execution did not begin. This remains bounded external delivery
+  evidence, not a package/runtime defect. No retry, policy change, provider
+  call, or residue followed, and the installed combined-video proof stays open.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The
