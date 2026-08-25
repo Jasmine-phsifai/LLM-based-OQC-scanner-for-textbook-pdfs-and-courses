@@ -157,6 +157,16 @@ is often accepted.
   own duration ceiling or its file-size, transport-envelope, and token limits.
 - Preflight all applicable limits before dispatch. A duration-valid file is not
   automatically valid for a particular provider request.
+- #208 found a concrete gap in that target: the shipped A2a path currently
+  preflights Google's provider-wide 9.5-hour duration and 2 GB file limits, but
+  not the selected model's input-token limit. [Google's audio documentation](https://ai.google.dev/gemini-api/docs/audio)
+  states 32 audio tokens per second, so 9.5 hours is 1,094,400 audio tokens
+  before the prompt; the [`gemini-2.5-flash` model page](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash)
+  currently documents a 1,048,576-token input limit. Treat
+  the current A2a ceiling as a transport envelope, not a guarantee for every
+  served model. SDK catalog rows expose optional `input_token_limit`, but do not
+  invent a prompt reserve, a hardcoded model table, or another provider request
+  until the narrow preflight contract is specified.
 - #150 made the first long-audio order concrete, and #151 completed its live
   gate. A2a is one standalone native Google Files lifecycle for an MP3 longer than 300
   seconds: upload once, wait within a bound, generate once, and manually delete
@@ -181,6 +191,14 @@ is often accepted.
   quota and requires a fixed overlap policy. Keep the existing A2a entry as the
   explicit one-shot option either way; do not add a configurable/adaptive
   threshold before this choice is made.
+- **Recommended complete #152 answer.** Choose B, require the caller's original
+  MP3 to remain available and strongly unchanged during resume instead of
+  storing a second long-lived full copy, and begin with the legacy-evidenced
+  fixed 1,800-second logical windows plus 30 seconds of boundary context. Ask
+  the model to emit only the logical range; do not add programmatic transcript
+  similarity/deduplication in the first slice. This one yes/no decision freezes
+  chunk scope, source ownership, and overlap handling without creating public
+  chunk controls or a generic checkpoint system.
 
 ## PDF verification scale
 

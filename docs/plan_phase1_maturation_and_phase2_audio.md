@@ -430,6 +430,21 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   one-shot operation and use fixed ordered chunks for every persisted long-MP3
   run, so ordinary lecture failures can resume without replay. Do not invent a
   configurable threshold or adaptive chunk policy while this choice is open.
+- #208 narrows the recommended B contract further: resume depends on the
+  caller's original MP3 remaining present with a strong matching identity, so
+  the library does not retain another potentially 2 GB source copy. Start with
+  fixed 1,800-second logical windows and 30 seconds of context, and ask the
+  model to return only the logical range. Do not add programmatic transcript
+  deduplication in the first slice. This remains unimplemented until the
+  maintainer accepts the combined chunk/source/overlap contract.
+- The A2a 9.5-hour duration check is not complete selected-model preflight:
+  Google's documented 32 audio tokens per second makes the full duration
+  1,094,400 audio tokens before the prompt, above the current documented
+  1,048,576 input limit of the live-proven `gemini-2.5-flash`. SDK model-list
+  rows expose optional `input_token_limit`, but the active name-only parser
+  discards it. Specify a narrow model-aware rule separately; do not hide this
+  gap with a hardcoded model table, guessed prompt reserve, or automatic chunk
+  policy.
 - A2b uses its own versioned audio state and a strong source/request/segment
   identity. It may reuse generic fingerprint and atomic-write behavior, but it
   must not generalize or import image slot semantics. The first slice remains

@@ -2349,6 +2349,29 @@ Route B addresses the observed unstable-provider recovery need but consumes more
 per-request quota and requires an explicit overlap policy. The maintainer must
 choose A or B before chunk extraction or checkpoint code is added.
 
+#208 found that #152 also needs an explicit source-lifetime and overlap choice,
+and that the current A2a duration check is not a complete selected-model
+preflight near its upper edge. Google's current audio documentation states both
+32 input tokens per second and 9.5 hours per prompt. That full duration is
+1,094,400 audio tokens before the transcription prompt, while the live-proven
+`gemini-2.5-flash` currently documents a 1,048,576-token input limit. The native
+SDK's model rows expose optional `input_token_limit`, but the active catalog
+parser intentionally returns names only. Therefore A2a's 9.5-hour check is a
+provider-wide duration envelope, not proof that every catalog model can accept
+every admitted file. No guessed reserve, hardcoded per-model table, extra model
+lookup, or post-upload token-count request was added in this iteration.
+
+The recommended smallest answer to #152 is one combined contract: choose Route
+B; require the caller's original MP3 to remain present and strongly unchanged
+for resume instead of retaining another potentially 2 GB source copy; and use
+the legacy-proven 1,800-second logical windows with 30 seconds of context while
+letting the prompt restrict each result to its logical range. The first slice
+does not add text-similarity deduplication. This remains a maintainer choice, not
+an implemented contract. Once chosen, the fixed short segments also keep the
+ordinary persisted route far from model context ceilings; the explicit A2a
+one-shot route still needs a separate, narrowly specified selected-model
+preflight correction rather than claiming the 9.5-hour duration check is enough.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

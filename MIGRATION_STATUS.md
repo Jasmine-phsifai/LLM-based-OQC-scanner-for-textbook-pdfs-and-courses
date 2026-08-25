@@ -107,7 +107,7 @@ Phase 1 maturation is offline implementation-complete:
   its MP3. A2a is one standalone native Google Files upload, bounded readiness
   wait, generation, and remote deletion for an MP3 longer than 300 seconds.
   #151 ships public `recognize_long_mp3()` with chunked source snapshotting,
-  bounded-memory full decode, the Google 9.5-hour/2 GB single-request ceilings,
+  bounded-memory full decode, the Google 9.5-hour/2 GB transport ceilings,
   typed cleanup evidence, and no eager SDK/media imports. Its generated
   307.98-second live input discovered 37 models, made one
   `gemini-2.5-flash` generation, reported usage 9,893/25, deleted the remote
@@ -116,7 +116,13 @@ Phase 1 maturation is offline implementation-complete:
   confirms A2b needs an audio-specific versioned sidecar rather than generalized
   image state, but leaves one maintainer choice: chunk only above 9.5 hours, or
   use fixed chunks for every persisted long-MP3 run so ordinary lectures can
-  resume without replay. #153 corrects the frozen capability registry's stale
+  resume without replay. #208 further records that the 9.5-hour check is only a
+  provider transport ceiling: at Google's documented 32 audio tokens per second,
+  it exceeds the selected-model input limit of live-proven `gemini-2.5-flash`.
+  The recommended complete A2b contract is fixed chunks for every persisted run,
+  caller-retained strongly matching source, and prompt-only 1,800/30 overlap
+  handling; it remains unimplemented pending maintainer approval. #153 corrects
+  the frozen capability registry's stale
   long-MP3 reason to name this direct live-proven API while preserving its
   `deferred` worker-registration status;
 - implemented and live-proven: the first PDFium vision slice. One PDF
