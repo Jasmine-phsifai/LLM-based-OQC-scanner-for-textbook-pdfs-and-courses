@@ -2,10 +2,11 @@
 
 from typing import TYPE_CHECKING
 
-# Bind the lightweight video facade functions before callers can import
-# their same-named submodules and replace these public package attributes.
+# Bind lightweight facade functions before callers can import their same-named
+# submodules and replace these public package attributes.
 from .compose_video_result import compose_video_result as compose_video_result
 from .publish_video_result import publish_video_result as publish_video_result
+from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
 from .recognize_video import recognize_video as recognize_video
 from .recognize_video_frames import recognize_video_frames as recognize_video_frames
 

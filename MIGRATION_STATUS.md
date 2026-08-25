@@ -732,6 +732,12 @@ The following directions remain traceable but are not current work:
   and is no longer rebound inside `recognize_video()`. No public contract,
   import graph, provider/media behavior, or package boundary changed; the audit
   rejected broader mechanical cleanup without an equally explicit reason.
+  #230 keeps the standalone long-MP3 public API stable under ordinary Python
+  import order. Explicitly importing `ocrllm.recognize_long_mp3` no longer
+  replaces the root callable with a module; only the lightweight facade is
+  package-bound, while decoding and Google Files execution stay lazy. A real
+  301-second MP3 and injected one-call lifecycle verified snapshot ownership
+  and cleanup without adding legacy compatibility or A2b behavior.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

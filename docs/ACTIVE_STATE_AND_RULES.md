@@ -2705,6 +2705,17 @@ Fifty-eight focused facade/video/result/publication tests and the complete
 module-scope annotation types, the static export map, or other deferred imports;
 those retain present consumers and documented responsibilities.
 
+#230 fixes one ordinary Python-package collision in the shipped standalone
+long-MP3 surface. After an explicit import of `ocrllm.recognize_long_mp3`,
+Python previously replaced the root `recognize_long_mp3` callable with the
+same-named module. Package initialization now binds only that lightweight
+facade; its processor, MP3 decoder, Google SDK, and Files lifecycle remain
+deferred until invocation. A real 301-second MP3 plus an injected Files
+lifecycle completed catalog/upload/generate/delete/close and removed its owned
+snapshot. Do not generalize this proven collision into eager recognition
+imports, a package proxy/import hook, A2b chunking, or a provider lifecycle
+framework.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

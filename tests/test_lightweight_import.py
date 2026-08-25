@@ -224,6 +224,37 @@ def test_public_video_callables_support_standard_runtime_type_hints():
     assert completed.returncode == 0, completed.stderr
 
 
+def test_public_long_mp3_callable_survives_explicit_submodule_import():
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = (
+        "import importlib, sys, typing; "
+        "sys.path.insert(0, sys.argv[1]); "
+        "import ocrllm; "
+        "module=importlib.import_module('ocrllm.recognize_long_mp3'); "
+        "from ocrllm import recognize_long_mp3; "
+        "assert callable(recognize_long_mp3), type(recognize_long_mp3); "
+        "assert recognize_long_mp3 is module.recognize_long_mp3; "
+        "hints=typing.get_type_hints(recognize_long_mp3); "
+        "from ocrllm import Config, RecognitionResult; "
+        "assert hints['config'] == Config | None; "
+        "assert hints['return'] is RecognitionResult; "
+        "loaded={name.split('.')[0] for name in sys.modules}; "
+        "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
+        "assert not loaded & forbidden, loaded & forbidden; "
+        "assert 'ocrllm.processors.recognize_long_mp3' not in sys.modules"
+    )
+
+    completed = subprocess.run(
+        [sys.executable, "-I", "-c", probe, str(source_root)],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
 @pytest.mark.parametrize(
     "submodule_name",
     ("ocrllm.compose_video_result", "ocrllm.publish_video_result"),

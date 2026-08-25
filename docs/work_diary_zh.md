@@ -4523,3 +4523,17 @@ Atomic task — Iteration #229: reduce one proven maintenance burden in the alre
 **两条路线和修改。** 路线 A 保留重复行，行为正确但让冷读代码的人怀疑局部导入是否有隐含生命周期；路线 B 只删除函数内一行，构造时直接使用 #219 明确要求的模块级类型。选择 B。没有重排其他函数内依赖、合并文件、创建 import helper、删除 TYPE_CHECKING/static export、改变 facade 提前绑定或顺手清理小型 assert/path coercion；独立审计也没有找到第二个足够有价值的删除对象。
 
 **验证与过度设计复查。** lightweight import、运行时类型提示、真实视频编排、outcome、composition 和 publication 聚焦集合为 **58 passed in 5.90s**；`compileall -q src tests tools` 通过。只为完整测试进程临时前置机器已有 Node 路径后，离线全套为 **1,495 passed in 62.50s**。没有网络、provider call、credential、依赖安装、API、类型签名、import graph、图片/音频配置分离、媒体结果、package manifest、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。#228 已证明当前安装包且本轮没有改变 manifest、模块成员或实际加载集合，因此不机械重复 wheel 或 Google gate。真正的过度设计不是删除这一条有历史证据的重复 import，而是把它扩成全仓“unused”清扫、通用 import 管理器，或删除那些暂时冻结但仍有公开/类型消费者的结构。
+
+## #230 — 2026-08-25：显式导入长音频子模块不能破坏根包公开函数
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #230: audit the shipped standalone `recognize_long_mp3()` A2a facade for one ordinary-use false success, data-loss, or public-package defect that can be fixed without deciding A2b chunking or video cancellation. Success means rereading and reconciling current authority, recent Chinese diary, entry guidance, and package rules; tracing source validation, snapshot ownership, selected-model input preflight, upload/generate/delete/client-close lifecycle, result construction, and lazy imports; exercising one real local MP3 plus injected provider lifecycle evidence before changing code; comparing a local correction against leaving the proven A2a contract unchanged; preserving the one-request Google Files boundary, provider-call honesty, lightweight import, frozen directories, and dirty worktree; running focused and full offline tests if runtime changes; updating Chinese/current-state records; then committing and pushing one coherent iteration. This matters because long-audio video routing is blocked by #127/#152, but its already-shipped standalone foundation must remain mature independently and should not be neglected merely because the next feature choice is open.
+```
+
+**真实缺陷与两条路线。** 提交态先 `import ocrllm`，再显式导入公开子模块 `ocrllm.recognize_long_mp3` 后，Python 会把同名子模块写到根包属性；后续 `from ocrllm import recognize_long_mp3` 得到 module，`callable=False`，根包的 lazy `__getattr__` 已没有机会修复。路线 A 是建立 package proxy、import hook 或统一处理全部同名模块，范围大且难以冷读；路线 B 只像已有四个视频 facade 一样，在包初始化时绑定这个已经证明冲突的轻量函数。选择 B。`recognize_long_mp3.py` 的模块级依赖只有标准库和纯 Python 公开类型，processor、miniaudio、Google SDK 与 Files adapter 仍在调用时加载；没有改变 A2a 输入、输出或 provider 行为，也没有机械推广到其他尚未复现的 facade。
+
+**真实媒体与生命周期复核。** 轻量任务使用既有 `OCRLLM` 环境和 FFmpeg 生成一段真实 **301.0 秒、301,436 bytes** 的 MP3，通过公开 `recognize_long_mp3()`、真实 snapshot/完整流式解码与注入 Google SDK 运行。结果为 complete，精确事件为 `catalog → upload → generate → delete → close`，provider call count 为 1；上传路径与调用者源不同，上传时 snapshot 存在，返回后 snapshot 已删除，原 MP3 未变化。普通 `import ocrllm` 没有加载 miniaudio、Google GenAI、长音频 processor 或 adapter。探针不用 credential、没有真实网络调用，精确临时根已删除并确认不存在。
+
+**验证、环境误判与过度设计复查。** 新回归在旧实现稳定以 module 红灯失败；修复后 lightweight import、公开导入、真实/注入 Files 生命周期与 long-MP3 probe 为 **44 passed in 0.83s**，`compileall -q src tests tools` 通过。第一次全套误用 `STA` Python；该环境缺少 openai、miniaudio、OpenCV 与 imageio-ffmpeg，得到 **74 failed, 1,412 passed, 10 skipped**，失败均为缺依赖，不能算产品红灯。切回权威命令指定的 `D:\Anaconda\envs\OCRLLM\python.exe` 后完整离线套件为 **1,496 passed in 63.63s**。没有 legacy 格式兼容、A2b 分块/resume、视频取消、重试、fallback、provider superclass、manifest、dependency 或 frozen `contracts/worker` 变化。最明显的过度设计是把一次确定的 Python 属性覆盖扩成通用导入魔法，或借 A2a 审计提前实现视频长音频路由；本轮停在一个绑定和一个精确回归。

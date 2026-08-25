@@ -257,6 +257,12 @@ binding. Runtime type hints, lazy imports, separate configs, and execution are
 unchanged. This is a narrow readability reduction, not authority for mechanical
 unused-code deletion.
 
+#230 keeps the standalone `recognize_long_mp3` root API callable after an
+explicit import of its same-named submodule. Only its lightweight facade is
+bound during package initialization; decoder, processor, Google SDK, and Files
+work remain invocation-lazy. A real 301-second MP3 with an injected lifecycle
+completed once and removed its owned snapshot.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed

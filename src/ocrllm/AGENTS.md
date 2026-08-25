@@ -274,6 +274,11 @@ video filesystem defense pass.
 Do not restore a duplicate function-local import, and do not use this one-line
 cleanup to remove annotation types, static exports, or genuinely deferred
 execution imports.
+#230 binds only the lightweight `recognize_long_mp3` facade at package
+initialization so importing its same-named submodule cannot replace the root
+callable. Keep the processor, decoder, Google SDK, and Files lifecycle lazy;
+do not generalize this proven collision into eager recognition imports or
+package import machinery.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
