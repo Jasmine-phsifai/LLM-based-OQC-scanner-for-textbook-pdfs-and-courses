@@ -800,6 +800,12 @@ The following directions remain traceable but are not current work:
   partial child status instead of reporting false complete. The full offline
   suite passes 1,517; no public API, dependency, provider framework, retry,
   fallback, legacy format, or frozen-boundary change was made.
+  #250 proves the same image cleanup partial through two ordered successful
+  video frame groups and final publication using one real multiscene MP4. The
+  first group is partial, the second and audio are complete, while ordered
+  Markdown, ten JPEGs, MP3, one warning, three calls, and per-model tokens all
+  survive. Runtime was already correct and remains unchanged; the full offline
+  suite passes 1,518.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

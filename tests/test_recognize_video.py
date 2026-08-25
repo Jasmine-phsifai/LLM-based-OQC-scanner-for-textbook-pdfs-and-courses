@@ -296,7 +296,7 @@ def _install_fake_google_image(
     monkeypatch: pytest.MonkeyPatch,
     *,
     fail_on_call: int | None = None,
-    client_closed: bool = True,
+    client_close_failure_on_call: int | None = None,
 ) -> list[tuple[Path, ...]]:
     observed: list[tuple[Path, ...]] = []
 
@@ -308,7 +308,7 @@ def _install_fake_google_image(
             markdown="# Frames\n",
             input_tokens=11,
             output_tokens=3,
-            client_closed=client_closed,
+            client_closed=len(observed) != client_close_failure_on_call,
         )
 
     adapter = __import__(
@@ -587,7 +587,7 @@ def test_video_keeps_successful_frames_after_image_client_close_failure(
     source = _write_mp4(tmp_path / "lecture.mp4")
     observed_images = _install_fake_google_image(
         monkeypatch,
-        client_closed=False,
+        client_close_failure_on_call=1,
     )
     observed_audio = _install_fake_audio(monkeypatch)
 
@@ -637,6 +637,74 @@ def test_video_keeps_successful_frames_after_image_client_close_failure(
             "output_tokens": 2,
         },
     )
+
+
+def test_video_publishes_mixed_partial_and_complete_frame_groups(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_multiscene_mp4(tmp_path / "lecture.mp4")
+    observed_images = _install_fake_google_image(
+        monkeypatch,
+        client_close_failure_on_call=1,
+    )
+    observed_audio = _install_fake_audio(monkeypatch)
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(
+            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            vision_model=VisionModelSettings(name="test-image-model"),
+            temp_dir=tmp_path / "image-snapshots",
+        ),
+        audio_config=_audio_config(tmp_path),
+    )
+
+    assert [len(call) for call in observed_images] == [8, 2]
+    assert len(observed_audio) == 1
+    assert tuple(
+        item.result.status if item.result is not None else None
+        for item in outcome.frame_outcomes
+    ) == ("partial", "complete")
+    assert outcome.status == "partial"
+    assert all(frame.path.is_file() for frame in outcome.retained_frames)
+    assert outcome.audio_artifact is not None
+    assert outcome.audio_artifact.is_file()
+
+    target = tmp_path / "reports" / "lecture.md"
+    published = publish_video_result(outcome, target)
+
+    assert published.status == "partial"
+    assert published.output_path == target
+    assert target.read_text(encoding="utf-8") == published.markdown
+    first_group = published.markdown.index("## Retained frame group 1")
+    second_group = published.markdown.index("## Retained frame group 2")
+    assert first_group < second_group
+    assert published.markdown.count("# Frames") == 2
+    assert "# Audio" in published.markdown
+    assert published.warnings == (
+        "The Google GenAI client could not be closed after recognition.",
+    )
+    assert published.assets == tuple(
+        frame.path for frame in outcome.retained_frames
+    ) + (outcome.audio_artifact,)
+    assert published.metadata["successful_video_frame_group_count"] == 2
+    assert published.metadata["failed_video_frame_group_count"] == 0
+    assert published.metadata["current_run_provider_call_count"] == 3
+    assert published.metadata["current_model_token_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_tokens": 22,
+            "output_tokens": 6,
+        },
+        {
+            "model": "test-audio-model",
+            "input_tokens": 7,
+            "output_tokens": 2,
+        },
+    )
+    assert not list(target.parent.glob(".ocrllm-*.tmp"))
 
 
 def test_recognize_video_preserves_settled_work_after_later_group_failure(

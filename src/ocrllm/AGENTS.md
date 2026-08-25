@@ -331,6 +331,11 @@ provider/parse error primary. Preserve partial status through PDF and video
 consumers. Do not use the shared internal cleanup bit to invent a public
 provider response protocol, lifecycle superclass, transaction, retry, or
 fallback layer.
+#250 proves mixed successful video groups need no additional runtime state. A
+partial frame result is still a successful usable `BatchItemOutcome`, while
+the enclosing outcome/publication remains partial. Keep ordered bodies,
+warnings, assets, calls, and token aggregation; do not add a partial outcome
+variant, partial-group counter, nested branch ledger, or transaction layer.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

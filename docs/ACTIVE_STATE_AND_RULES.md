@@ -1179,6 +1179,24 @@ state, transaction, retry/fallback policy, provider superclass, legacy format,
 or import-time dependency. Image/PDF/video neighbors pass 166 tests and the
 complete offline suite passes 1,517.
 
+#250 closes the remaining multi-group consumer evidence gap created by #249
+without changing runtime behavior. One real multiscene MP4 produces ten retained
+JPEGs split into the normal ordered eight-plus-two frame groups. The first
+successful group carries the Google cleanup partial state while the second is
+complete, and the independent audio branch completes. Outcome, composition,
+and atomic publication remain partial while preserving both ordered frame
+sections, one cleanup warning, every JPEG plus MP3, exact three-call accounting,
+and image-model token aggregation separate from the audio model.
+
+`successful_video_frame_group_count=2` is truthful in this case: both groups
+produced usable recognition results; it is not a claim that both were complete.
+The child outcome retains the detailed cleanup metadata, while the published
+result carries the existing partial status and warning. Do not add a partial
+`BatchItemOutcome` variant, partial-group counter, nested branch ledger, or
+transaction system. Video neighbors pass 112 tests and the complete offline
+suite passes 1,518; no runtime, API, dependency, provider, media-selection,
+legacy, cancellation, or frozen-boundary behavior changed.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
