@@ -1022,6 +1022,13 @@ The following directions remain traceable but are not current work:
   stdout reading with `ReadToEnd()` and discarded exit/JSON; image calls and
   outcome remain unknown and were not replayed. No product/runner change follows
   from that operator-evidence failure. All 1,545 offline tests still pass.
+  #282 fixes the same proven one-shot consumption pattern at the shared Google
+  response parser. Candidate safety inspection previously exhausted a valid
+  iterator before candidate-part text fallback, producing a false
+  `missing_text` provider failure. One local tuple snapshot now serves both
+  reads; missing/unreadable candidates retain the prior safe failure. No generic
+  iterable layer or provider-policy change was added. The causal regression
+  failed before the fix; 144 Google neighbors and all 1,546 offline tests pass.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

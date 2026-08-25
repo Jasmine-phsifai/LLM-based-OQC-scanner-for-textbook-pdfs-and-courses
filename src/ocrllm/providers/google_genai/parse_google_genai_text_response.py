@@ -15,8 +15,10 @@ def parse_google_genai_text_response(
     text = _safe_attribute(response, "text")
     usage = _safe_attribute(response, "usage_metadata")
     prompt_feedback = _safe_attribute(response, "prompt_feedback")
-    candidates = _safe_attribute(response, "candidates")
-    if candidates is None:
+    candidate_source = _safe_attribute(response, "candidates")
+    try:
+        candidates = tuple(candidate_source) if candidate_source is not None else ()
+    except Exception:
         candidates = ()
     if _prompt_was_blocked(prompt_feedback) or _candidate_was_blocked(candidates):
         raise ProviderContentBlocked(

@@ -504,6 +504,12 @@ started and ended, but a one-use wrapper mixed asynchronous stdout reading with
 Do not infer a product defect or replay it for a green result. A future bounded
 image refresh must use one stdout-read mode and persist exact exit plus safe
 JSON before cleanup.
+#282 snapshots `response.candidates` once inside the shared Google text parser.
+Safety-block inspection and candidate-part text fallback must read that same
+tuple so a valid one-shot SDK iterable cannot become a false `missing_text`
+failure. Keep missing/unreadable candidates on the existing safe failure path;
+do not generalize this into an iterable framework or change the independent
+exact top-level batch tuple contract.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

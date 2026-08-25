@@ -4727,6 +4727,26 @@ image/audio snapshot residue were zero; three unrelated `ocrllm-audio-repro-*`
 directories created about nine hours earlier were left untouched. The full
 offline suite remains 1,545 passed.
 
+## Iteration 282: Google candidate fallback preserves one-shot responses
+
+The concrete #280 double-consumption shape was searched only in active,
+non-frozen code. Both the primary review and a bounded independent audit found
+one additional maintained defect and no justified second candidate. The shared
+Google text parser first traversed `response.candidates` to detect a safety
+block and, when top-level `response.text` was unavailable, traversed the same
+object again to recover text from candidate parts. Ordinary SDK lists hid the
+problem; a valid one-shot candidate iterator was exhausted by the first pass
+and incorrectly became `PROVIDER_RESPONSE_INVALID` with `reason=missing_text`.
+
+The parser now snapshots the candidate source into one tuple immediately after
+reading the safe response attribute, then uses that same tuple for both safety
+classification and text fallback. A missing or unreadable candidate collection
+still follows the existing safe missing-text path. No generic iterable helper,
+SDK shape hierarchy, retry, or provider policy was added, and #071's exact
+top-level batch tuple contract is unrelated. The public causal regression failed
+before the change; Google image, short/long audio, live-runner, and video
+neighbors pass 144 tests, and the full offline suite passes 1,546.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
