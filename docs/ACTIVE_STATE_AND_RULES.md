@@ -2692,6 +2692,19 @@ excluded speculative integrity/path/provider expansion. No runtime, manifest,
 dependency, API, or provider behavior changed; do not repeat this wheel proof
 until the relevant runtime/package boundary changes again.
 
+#229 removes one exact maintenance residue left by the #218/#219 facade repair.
+`recognize_video.py` already imports `VideoRecognitionOutcome` at module scope,
+as #219 requires for standard runtime type-hint evaluation, but still repeated
+the identical import inside `recognize_video()`. The inner binding had no
+separate consumer, cycle-breaking role, or lazy-import effect: the module and
+class were already loaded before the function could run. Removing only that
+line preserves public signatures, class identity, explicit-submodule import
+order, lightweight import, recognition behavior, and provider separation.
+Fifty-eight focused facade/video/result/publication tests and the complete
+1,495-test offline suite pass. Do not generalize this into removal of the
+module-scope annotation types, the static export map, or other deferred imports;
+those retain present consumers and documented responsibilities.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

@@ -727,6 +727,11 @@ The following directions remain traceable but are not current work:
   with exact `SOURCE_INVALID`. A separate 108-test bounded audit found no next
   justified runtime defect inside the settled video scope, so no speculative
   lock, hash, snapshot, provider framework, or decision-bound code was added.
+  #229 removes the sole exact duplicate import found by a bounded reduction
+  audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
+  and is no longer rebound inside `recognize_video()`. No public contract,
+  import graph, provider/media behavior, or package boundary changed; the audit
+  rejected broader mechanical cleanup without an equally explicit reason.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

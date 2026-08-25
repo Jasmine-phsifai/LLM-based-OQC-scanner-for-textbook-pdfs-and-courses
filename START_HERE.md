@@ -251,6 +251,12 @@ real two-MP4 overwrite with exact `SOURCE_INVALID`; the wheel included the
 inspector and `py.typed`. This is distribution evidence, not a new integrity
 mechanism or permission to reopen #127/#152.
 
+#229 removes one duplicate `VideoRecognitionOutcome` import left inside the
+video facade after #219 had already made that type a required module-scope
+binding. Runtime type hints, lazy imports, separate configs, and execution are
+unchanged. This is a narrow readability reduction, not authority for mechanical
+unused-code deletion.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed

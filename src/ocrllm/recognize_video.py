@@ -28,7 +28,6 @@ def recognize_video(
         _extract_video_audio_from_stable_source,
     )
     from .video.prepare_video_media import prepare_video_media
-    from .video_recognition_outcome import VideoRecognitionOutcome
 
     validated_image_config = validate_config(image_config)
     _reject_image_persistence(validated_image_config)

@@ -4509,3 +4509,17 @@ Atomic task — Iteration #228: select and close the next highest-value proven g
 **安装包证据。** 使用机器已有 Hatchling、无网络、无下载，从 clean `git archive` 只构建一个 `ocrllm-0.1.0-py3-none-any.whl`：**247,991 bytes**、**235 members**，SHA-256 为 `c80833d9ef842bbccdc9c782ae8a6d8724d9ff4a950ae126870bce7d5e1b5c84`；成员明确包含 `ocrllm/video/inspect_video.py` 和 `ocrllm/py.typed`。以 `--no-index --no-deps --target` 安装到仓库外后，package 与 distribution metadata 都来自该 target。普通 import 加公开 `inspect_video` 解析没有加载 OpenCV、NumPy、imageio-ffmpeg、miniaudio、Google/OpenAI SDK、HTTPX、legacy、`recognize` 或 `recognize_batch`。随后仅借用机器已有媒体依赖生成两个真实 MP4，在容器时长读取前直接覆盖调用者路径；安装包公开函数精确抛 `InvalidSource(code="SOURCE_INVALID")`，没有返回虚假的 `VideoInfo`。
 
 **工具事实、清理和过度设计复查。** 首次隔离探针因 `-I` 忽略 `PYTHONPATH` 而误进旧环境安装，在证明前即被判无效；改为新进程显式把外部 target 放到 `sys.path` 才得到上述有效证据。轻量任务和主代理的两次原生 PowerShell 递归删除都在启动前被策略拒绝；主代理随后只读确认唯一 proof root 位于系统 TEMP、名称精确、1,130 个文件与 81 个子目录全部在根内且无 reparse point，再由单个 Python 进程重新枚举、逐项非递归删除，最终确认根不存在。仓库没有 runtime/test/API/manifest/dependency/provider/credential/legacy/social/frozen boundary 变化，仍只保留两项用户未跟踪文件。最明显的过度设计是为了下一条迭代硬造防御性缺陷、复制整套 release runner 或固化第二套 wheel harness；本轮只记录一次与 #227 直接相关的安装事实，并把重复门禁条件重新收紧到相关边界再次变化。
+
+## #229 — 2026-08-25：删重复代码也必须证明它没有承担隐藏责任
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #229: reduce one proven maintenance burden in the already-shipped Python-library surface, or record that no safe reduction exists, without reopening video edge scans or inferring #127/#152. Success means rereading the authoritative queue, recent Chinese diary, entry guidance, and package-local rules; examining current active-library modules for duplicated responsibility, obsolete compatibility layers, or imports made redundant by later facade work; requiring an exact present consumer and behavior trace before deleting anything; comparing a narrow deletion against leaving the code unchanged; running focused import/type/runtime tests for any edit; preserving the public API, separate video configs, lightweight import, frozen directories, and dirty worktree; documenting why each removed line is truly redundant rather than a frozen future feature; then committing and pushing one coherent result. This matters because maturity includes lowering future reading cost, but mechanical “unused code” cleanup can erase intentionally deferred capabilities and create more documentation than value.
+```
+
+**候选、历史和独立复核。** 主代理没有按未引用字段列表机械删除，而是沿 #218/#219 的真实历史检查四个公开视频 facade。唯一值得动的候选在 `recognize_video.py`：#218 为延迟执行把运行时依赖移入函数，#219 又为了标准 `typing.get_type_hints()` 把 `Path`、`Config`、`VideoRecognitionOutcome` 恢复为模块级纯 Python 类型；当时函数内 `Path` 已删除，却漏下了同一个 `VideoRecognitionOutcome` 的第二次导入。轻量只读审计独立确认两次导入解析为 `sys.modules` 中同一个 class，函数内绑定没有循环导入、延迟加载、consumer、monkeypatch contract 或行为差异；模块在公开 facade 初始化时已经加载。另一个表面候选 `_PUBLIC_IMPORTS` 仍承担公开导出与静态类型一致性，不可因四个函数已提前绑定就删。
+
+**两条路线和修改。** 路线 A 保留重复行，行为正确但让冷读代码的人怀疑局部导入是否有隐含生命周期；路线 B 只删除函数内一行，构造时直接使用 #219 明确要求的模块级类型。选择 B。没有重排其他函数内依赖、合并文件、创建 import helper、删除 TYPE_CHECKING/static export、改变 facade 提前绑定或顺手清理小型 assert/path coercion；独立审计也没有找到第二个足够有价值的删除对象。
+
+**验证与过度设计复查。** lightweight import、运行时类型提示、真实视频编排、outcome、composition 和 publication 聚焦集合为 **58 passed in 5.90s**；`compileall -q src tests tools` 通过。只为完整测试进程临时前置机器已有 Node 路径后，离线全套为 **1,495 passed in 62.50s**。没有网络、provider call、credential、依赖安装、API、类型签名、import graph、图片/音频配置分离、媒体结果、package manifest、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。#228 已证明当前安装包且本轮没有改变 manifest、模块成员或实际加载集合，因此不机械重复 wheel 或 Google gate。真正的过度设计不是删除这一条有历史证据的重复 import，而是把它扩成全仓“unused”清扫、通用 import 管理器，或删除那些暂时冻结但仍有公开/类型消费者的结构。

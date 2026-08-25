@@ -269,6 +269,11 @@ and unchanged lazy imports. Do not repeat that package proof or add another
 build harness unless the relevant inspector, manifest, dependency, or import
 boundary changes again. The adjacent 108-test audit found no reason for another
 video filesystem defense pass.
+#229 keeps `VideoRecognitionOutcome` imported once at module scope in
+`recognize_video.py`; that binding serves runtime type hints and construction.
+Do not restore a duplicate function-local import, and do not use this one-line
+cleanup to remove annotation types, static exports, or genuinely deferred
+execution imports.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
