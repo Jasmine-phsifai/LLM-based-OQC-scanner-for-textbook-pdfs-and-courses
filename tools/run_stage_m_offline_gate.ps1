@@ -307,8 +307,8 @@ print(sorted(declared_extras))
             'google' = 67108864
             'audio,google' = 67108864
             'pdf-vision' = 36700160
-            'video' = 230686720
-            'video,audio,image' = 265289728
+            'video' = 272629760
+            'video,audio,image' = 307232768
         }
         $expectedDistributions = @{
             'audio' = @('miniaudio')

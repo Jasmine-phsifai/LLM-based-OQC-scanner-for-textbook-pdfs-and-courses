@@ -637,7 +637,12 @@ OpenCV candidates at the video profile. #308 live catalog evidence confirms
 4.13.0.90 and 4.13.0.92 still provide compatible Windows ABI3 wheels, and a
 no-cache dry resolution selects 4.13.0.92 plus NumPy 2.2.6 through the active
 proxy. The pin remains correct; the installed combined-video gate remains open
-for one clean replay after that materially different index response.
+for one clean replay after that materially different index response. #309
+pre-fetched the exact current media wheels through that proxy and the unchanged
+gate installed and smoked the video profile, proving the dependency set works.
+Its 254,451,578-byte installed delta exceeded the unproven 220 MiB estimate.
+#310 inspects the exact wheel payloads and refreshes video to 260 MiB and the
+existing sum-of-profile combined ceiling to 293 MiB; no dependency changes.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

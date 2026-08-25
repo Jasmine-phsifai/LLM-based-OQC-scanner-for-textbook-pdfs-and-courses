@@ -5485,6 +5485,36 @@ widening, hardcoding a wheel, adding a mirror, or changing the tested
 condition, so one clean delegated gate replay is allowed. If that replay fails,
 record its exact resolver/transport evidence rather than cycling versions.
 
+## Iteration 309: staged media wheels prove video installation and smoke
+
+A delegated one-use wheelhouse downloaded the exact current binary set through
+the verified proxy and recorded each byte size and SHA-256 without extraction.
+The unchanged clean gate from `1a517ad322c6debfbd604888f8b6c7b14eecdd84`
+then passed 1,572 archived tests with one expected skip, wheel/base/import, the
+first six profiles, and video installation plus its real media smoke. It stopped
+only because the measured video delta of 254,451,578 bytes exceeded the original
+230,686,720-byte ceiling. Combined video did not start.
+
+The wheelhouse contains imageio-ffmpeg 0.6.0 (31,246,824 bytes), NumPy 2.2.6
+(12,904,620), OpenCV 4.13.0.92 (40,212,062), and Pillow 12.3.0 (7,226,887).
+The delegated cleanup was denied by execution policy, so its exact disposable
+TEMP root remains recorded rather than being removed through another shell.
+
+## Iteration 310: video disk ceilings follow the proven native payload
+
+Zip metadata shows expected uncompressed payloads of 87,682,173 bytes for
+imageio-ffmpeg, 43,344,960 for NumPy, and 114,072,536 for OpenCV. Their 245.1 MB
+total plus normal metadata and bytecode accounts for the measured 254.45 MB;
+there is no duplicate or unrelated distribution. The old 220 MiB value was an
+unproven estimate created before a video extra ever installed successfully.
+
+The video ceiling is now 260 MiB. The combined ceiling retains its original
+sum-of-profile rule and becomes 293 MiB: video 260 + audio 8 + image 25. This
+leaves the exact package set bounded without changing dependency versions,
+profile membership, runtime code, or import behavior. The failing-first
+controller regression and complete controller set pass 9 tests, and PowerShell
+parses with zero AST errors. One wheelhouse-backed clean gate remains required.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

@@ -194,7 +194,8 @@ def test_combined_video_profile_uses_bounded_install_and_public_pipeline() -> No
 
     script = GATE_SCRIPT.read_text(encoding="utf-8")
 
-    assert "'video,audio,image' = 265289728" in script
+    assert "'video' = 272629760" in script
+    assert "'video,audio,image' = 307232768" in script
     assert "'video,audio,image' = @(" in script
     for distribution in (
         "'Pillow'",

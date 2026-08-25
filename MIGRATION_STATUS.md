@@ -1240,6 +1240,13 @@ The following directions remain traceable but are not current work:
   4.13.0.92 remain compatible with Windows CPython 3.10 and that 4.13.0.92 plus
   NumPy 2.2.6 resolves through the active proxy. The tested bounded pin is not
   changed for one transient empty candidate response.
+  #309 then stages the exact media wheels once through the proxy; video installs
+  and its media smoke passes, proving the pin and runtime, before the measured
+  254,451,578-byte delta exceeds the original unproven 220 MiB estimate. #310
+  confirms 245.1 MB of expected uncompressed OpenCV, NumPy, and bundled
+  imageio-ffmpeg payload, raises video to 260 MiB, and preserves the existing
+  sum rule by raising combined video+audio+image to 293 MiB. No dependency,
+  runtime, or profile membership changes.
 
 ## Obsolete Prose Kept For Trace
 

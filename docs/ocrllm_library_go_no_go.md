@@ -2054,7 +2054,8 @@ unmeasured cold-cache claim. The actual hard budgets are:
 | PDF vision | Clean installed delta <= 35 MiB | pypdfium2 and Pillow remain lazy. |
 | PDF vision + DashScope | Clean installed delta <= 96 MiB | Same lazy-import rule; no second vision client. |
 | Audio | Clean installed delta <= 8 MiB | miniaudio remains lazy; ffmpeg is not bundled or required. |
-| Video | Python installed delta <= 64 MiB | Reuses audio; ffmpeg is not bundled. |
+| Video | Clean installed delta <= 260 MiB | OpenCV, NumPy, and imageio-ffmpeg remain lazy; the latter carries its own optional FFmpeg executable payload. |
+| Video + audio + image | Clean installed delta <= 293 MiB | Exact sum of the maintained 260 MiB video, 8 MiB audio, and 25 MiB image ceilings; no Google SDK is installed. |
 
 The self-contained Electron worker bundle has no proven size budget yet. Phase
 6 is NO-GO until a packaging spike records its runtime, provider, and image

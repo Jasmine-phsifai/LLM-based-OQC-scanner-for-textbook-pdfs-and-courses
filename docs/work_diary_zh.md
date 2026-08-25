@@ -5729,3 +5729,29 @@ Atomic task — Iteration #308: establish whether the video extra’s OpenCV con
 **轻量 catalog 任务。** 执行者确认 WinINET `127.0.0.1:10080`、TCP 与显式代理官方 PyPI；当前没有 `PIP_INDEX_URL`、`PIP_EXTRA_INDEX_URL`、`UV_INDEX_URL` 或 `UV_DEFAULT_INDEX` 覆盖。逐版本 JSON 显示 **4.13.0.90 / 4.13.0.92** 都有未 yanked 的 `cp37-abi3-win_amd64` wheel、`Requires-Python >=3.6`，兼容 CPython 3.10 x64。`uv 0.11.7 pip install --dry-run --no-cache --reinstall --index https://pypi.org/simple 'opencv-python>=4.13,<4.14'` 在 **9.62s / exit 0** 解析为 4.13.0.92 + NumPy 2.2.6，没有安装、下载 wheel body 或改缓存。大 JSON 总接口曾传输停顿，执行者改为逐版本 endpoint；没有循环重试。
 
 **决定与过度设计复查。** 路线 A 是因为单次 fresh pip 空候选就降到 4.12、放宽上界或内置 wheel；路线 B 是保留已经实测且当前可解析的窄 pin，并在 catalog 实质刷新后允许一次 clean gate，选 B。没有版本修改、mirror/cache 管理器、fallback installer 或版本轮询。若下一次仍失败，必须按精确 resolver/transport 证据分类，不能继续机械换版本。本轮只改当前事实文档，不改 runtime、依赖或测试。
+
+**提交后 clean replay。** 精确 `1a517ad322c6debfbd604888f8b6c7b14eecdd84` 的唯一门禁再次通过 archive **1,572 passed, 1 skipped**、wheel/base/import 和前六个 profiles，但从头下载 31.2 MB `imageio-ffmpeg==0.6.0` 达到 profile 的 1,200 秒上限。gate 自己终止进程树并清理临时根；这次明确是大 wheel 传输超时，不再误称版本不存在，也没有重试或改 timeout。
+
+## #309 — 2026-08-26：一次性预取打通 video 安装与媒体 smoke
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #309: stage the currently resolved large media wheels through the verified proxy in one disposable wheelhouse, then run the unchanged clean-installed gate once with that wheelhouse available. Context: #308 proved the OpenCV pin is valid and the gate repeatedly passes all earlier stages, but a 31.2 MB imageio-ffmpeg transfer cannot finish inside the per-profile bound. Success means a lightweight agent owns one bounded prefetch of exact currently resolved video/audio/image wheels, verifies filenames and hashes without exposing credentials, runs the unchanged gate once from exact clean commit with `PIP_FIND_LINKS` plus the normal official index and proxy, reports every profile and combined-video outcome, and safely removes its owned wheelhouse if permitted. This matters because reliable package delivery should not repeatedly discard large verified downloads, but the repository must not grow a cache manager or bundled binary policy.
+```
+
+**委派预取。** 轻量执行者确认代理后一次下载四个实际需要的大 wheel，不解包、不执行：imageio-ffmpeg 0.6.0 **31,246,824 bytes / SHA-256 02FA47...FFC0A**，NumPy 2.2.6 **12,904,620 / F0FD63...703F3**，OpenCV 4.13.0.92 **40,212,062 / 423D93...706F5**，Pillow 12.3.0 **7,226,887 / 300557...EB0EB**。miniaudio 没有留在 wheelhouse，但 gate 的 audio profile 仍从普通索引成功安装；不能虚构第五个预取文件。
+
+**唯一 gate 与结论。** 原 gate 只执行一次：archive **1,572 passed, 1 skipped**，wheel/base/import、audio、image、image+DashScope、Google、audio+Google、PDF vision 全过；video 成功安装并完成媒体基础 smoke。最终 measured delta **254,451,578 bytes** 超过旧 **230,686,720** ceiling，exit 1；combined video 未开始。它已经证明网络、pin、安装和视频运行，不证明预算或组合 profile。执行者停止自己的预取进程；精确 TEMP root 的删除被执行策略拒绝，未绕过，路径记录在委派证据中。
+
+## #310 — 2026-08-26：用已安装 native payload 修正 video 体积预算
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #310: explain the installed video profile’s 254,451,578-byte delta and change its disk budget only if the exact prefetched wheels contain the expected runtime payload. Context: #309 eliminated network ambiguity, installed the selected OpenCV/NumPy/imageio-ffmpeg set, and passed the video media smoke before the old 220 MiB ceiling stopped the gate. Success means comparing wheel compressed/uncompressed contents and historical budget evidence, ruling out duplicate or unrelated packages, choosing package reduction versus a bounded budget refresh, adding a failing controller regression, running focused/full tests, documenting, committing/pushing, and then one delegated wheelhouse-backed full gate. This matters because native media wheels are legitimately large, but raising limits without inspecting their contents would hide dependency mistakes.
+```
+
+**精确内容与历史依据。** 直接读 wheel zip metadata，不解包：imageio-ffmpeg 展开 **87,682,173 bytes / 13 entries**，OpenCV **114,072,536 / 88**，NumPy **43,344,960 / 1,121**，合计约 245.1 MB；主要目录分别就是 `imageio_ffmpeg`、`cv2`、`numpy`/`numpy.libs`。加 metadata 和正常 `.pyc` 后与 254.45 MB 实测一致，没有重复包或 unrelated payload。Git blame 显示旧 220 MiB 在视频 extra 首次建立时写入，而当时三次 fresh install 都卡在 OpenCV 下载，从未得到成功安装数字；combined 253 MiB 只是旧 video 220 + audio 8 + image 25 的和。
+
+**失败优先、修正与过度设计复查。** controller 测试先因仍看到旧数字失败。video ceiling 调到 **260 MiB / 272,629,760 bytes**，对当前实测留约 17.3 MiB；combined 继续用原来的相加原则，调到 **293 MiB / 307,232,768 bytes**。没有改依赖、删 native 文件、排除 `.pyc`、增加 headless 替代品或扩大到 OpenCV 4.14/5。定向 controller **9 passed in 2.03s**，PowerShell AST error 0。完整 suite、提交与 wheelhouse-backed gate 尚需完成后才能收口。
