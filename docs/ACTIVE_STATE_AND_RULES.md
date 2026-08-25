@@ -1626,6 +1626,27 @@ or video-runtime defect; do not immediately replay, widen timeouts, inject a
 cache/mirror, repin, add retry, or create another installer. Stress/robustness
 work still follows a successful relevant basic installed/live flow.
 
+#274 makes the existing archived-source gate stage diagnostically honest without
+changing how it resolves, installs, runs, or times out. The three maintained
+attempts #265/#268/#271 all stopped in the combined `uv run --isolated --with`
+stage, but its quiet pytest mode supplied no positive boundary between dependency
+preparation and a started test session. The gate now runs the same full pytest
+command with `-ra` instead of `-q`; once uv has prepared the environment and
+started Python, pytest immediately reports its session, interpreter, root, and
+collection count. A future timeout before that header is preparation evidence;
+a timeout after it is test-execution evidence. A bounded local comparison proved
+that `-q` omitted and `-ra` emitted the boundary, then the new gate regression
+failed before the one-token runtime change. Gate-control tests pass 5, PowerShell
+parsing and compileall pass, and the complete offline suite passes 1,542.
+
+No clean gate or download ran in #274. The single uv process, one 1,200-second
+total stage bound, exact dependencies/ranges, resolver, cache/index behavior,
+retry behavior, cleanup, later profile installs, and product code are unchanged.
+Do not replace this observation fix with a named venv, two installation stages,
+shared-deadline controller, timeout increase, cache/mirror injection, pin, or
+retry without new terminal evidence. The ordinary installed combined-video gate
+remains open, and stress/robustness work still follows its successful basic flow.
+
 #272 fixes one provider-specific paid-response loss without creating a shared
 lifecycle layer. A built-in DashScope image request could return valid parsed
 Markdown and then fail only while closing its OpenAI-compatible client; the

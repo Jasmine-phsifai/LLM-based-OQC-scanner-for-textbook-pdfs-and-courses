@@ -429,6 +429,12 @@ Keep this as external delivery evidence only. Do not raise `UV_HTTP_TIMEOUT`,
 change the index/mirror, inject cache, repin, retry automatically, or split out
 another dependency-preparation workflow from one event. The combined gate is
 still open; a later atomic iteration may make one ordinary bounded attempt.
+#274 keeps that gate as one `uv run --isolated --with` process under the same
+1,200-second total stage bound, but replaces quiet pytest output with `-ra` so
+the session header positively distinguishes environment preparation from test
+execution. Do not split it into a named venv and two independently bounded
+stages, add a shared-deadline controller, or change dependency/network policy
+without new terminal evidence. The installed combined-video gate remains open.
 #266 proves the public video facade's legacy Windows long-path failure boundary.
 Keep source-stem normalization distinct from total-path capability. If creating
 the request-owned snapshot fails, propagate its typed output error before image

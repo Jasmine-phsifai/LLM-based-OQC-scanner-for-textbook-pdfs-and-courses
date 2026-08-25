@@ -961,6 +961,13 @@ The following directions remain traceable but are not current work:
   Explicit candidates, injected providers, catalog/configuration failures, public
   APIs, and provider policy are unchanged; 113 related and all 1,542 offline tests
   pass.
+  #274 makes the maintained archived-source gate stage observable without
+  replaying it: pytest now uses `-ra` rather than `-q`, so its session header
+  positively marks that uv dependency preparation completed and test execution
+  began. The single uv process, 1,200-second total bound, requirements, resolver,
+  network/cache/retry behavior, and cleanup are unchanged. Gate-control tests
+  pass 5 and all 1,542 offline tests pass. No download or clean gate ran; the
+  ordinary installed combined-video proof and later stress gate remain open.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

@@ -121,12 +121,14 @@ Invoke-BoundedProcess `
 
 
 def test_archive_and_profile_installs_use_the_existing_process_bound() -> None:
-    """Network-bearing gate stages share one readable process controller."""
+    """Network stages are bounded and archived pytest startup stays visible."""
 
     script = GATE_SCRIPT.read_text(encoding="utf-8")
 
     assert script.count("Invoke-BoundedProcess `") == 2
     assert "archived-source dependency preparation and pytest" in script
+    assert "'python', '-m', 'pytest', '-ra', '-p', 'no:cacheprovider'" in script
+    assert "'python', '-m', 'pytest', '-q', '-p', 'no:cacheprovider'" not in script
     assert "[int]$ArchivedSourceTestTimeoutSeconds = 1200" in script
     assert "[ValidateRange(30, 3600)]" in script
     assert "[int]$OptionalProfileInstallTimeoutSeconds = 1200" in script

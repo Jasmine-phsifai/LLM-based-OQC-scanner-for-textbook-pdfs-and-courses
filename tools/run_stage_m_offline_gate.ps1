@@ -200,7 +200,7 @@ try {
         '--with', 'opencv-python>=4.13,<4.14',
         '--with', 'imageio-ffmpeg>=0.6,<0.7',
         '--python', ('"' + $python + '"'),
-        'python', '-m', 'pytest', '-q', '-p', 'no:cacheprovider'
+        'python', '-m', 'pytest', '-ra', '-p', 'no:cacheprovider'
     )
     Invoke-BoundedProcess `
         -StageName 'archived-source dependency preparation and pytest' `
