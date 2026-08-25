@@ -6023,7 +6023,27 @@ public-error regression covers the neutral default; the focused shared-error
 and resume set passes 81 tests, and the complete offline source suite passes
 1,693 tests. Compilation, lightweight import, frozen `contracts/worker`, and
 diff checks pass. This is a one-line correction, not a new exception family or
-wording framework. Exact committed installed proof is still required.
+wording framework.
+
+Exact commit `0b415f2` passes the complete installed gate: 1,692 archived
+tests pass with one expected skip; the wheel is 258,616 bytes, leaving 3,528
+bytes under 256 KiB; every installed profile and local
+audio/PDF/video/combined smoke passes without cloud I/O; and all gate-owned
+roots and processes are removed. The configured proxy was enabled and TCP
+reachable, but two separate pre-gate PyPI HTTPS probes timed out. The gate used
+the verified unchanged four-file wheelhouse and needed no download. Therefore
+the release proof is valid, while an independent proxied PyPI HTTP 200 is not
+claimed for this iteration. #324 is release-proven.
+
+Personal review rejects the previously suggested extra start-gate wrapper:
+path planning, ownership preflight, state loading, and exact reuse already have
+clear individual contracts, and no runtime consumer exists yet. The next
+feature slice should instead make the existing public whole-file
+`recognize_long_mp3()` path the first real persistence/resume consumer. It must
+remain one coherent vertical slice and must not silently introduce interval
+configuration, overwrite, repair, provider fallback, or a generic transaction
+framework. Interval public configuration and dispatch remain a later explicit
+slice of the already selected two-mode product.
 
 ## Documentation Rules
 

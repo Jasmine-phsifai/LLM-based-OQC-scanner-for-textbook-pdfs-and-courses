@@ -774,15 +774,18 @@ parse state, enumerate unrelated siblings, dispatch, overwrite, auto-rename,
 lock across processes, repair, or become public. Result/state filenames live
 only in `long_audio_output_paths.py`. The 1,692-test source suite passes; exact
 commit `782220d` passes the complete installed gate with a 258,617-byte wheel;
-every profile and local media smoke passes without cloud I/O. The next atomic
-fix is the stale image-specific `ResumeStateError.default_message`, not another
-audio feature or an error-hierarchy redesign.
+every profile and local media smoke passes without cloud I/O. #323 identified
+the stale image-specific `ResumeStateError.default_message`; #324 fixes it.
 
 #324 corrects only `ResumeStateError.default_message` to the media-neutral saved
 recognition state wording. Keep its code, retryability, hierarchy, redaction,
 and explicit caller messages unchanged; do not split media-specific exception
 classes. The focused error/resume set passes 81 tests and the complete source
-suite passes 1,693 tests; exact installed proof is pending.
+suite passes 1,693 tests. Exact commit `0b415f2` passes the complete installed
+gate with a 258,616-byte wheel; every profile and local media smoke passes
+without cloud I/O. Do not add an unconsumed wrapper around the four audio state
+primitives; the next feature consumer is the existing public whole-file
+long-MP3 persistence/resume route.
 
 ## When Porting Legacy Behavior
 

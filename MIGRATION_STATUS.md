@@ -1368,7 +1368,12 @@ The following directions remain traceable but are not current work:
   #324 corrects that one shared default to media-neutral saved recognition
   state wording. Codes, retryability, hierarchy, and explicit caller messages
   do not change. The focused error/resume set passes 81 tests and all 1,693
-  source tests pass; exact installed proof remains open.
+  source tests pass. Exact commit `0b415f2` passes the clean installed gate with
+  1,692 archived tests and one expected skip, a 258,616-byte wheel, every
+  profile and local media smoke green, no cloud I/O, and complete cleanup.
+  Proxy TCP passed but pre-gate proxied PyPI HTTPS probes timed out; the
+  unchanged wheelhouse required no download. The next consumer is the existing
+  public whole-file long-MP3 route, not a new orchestration wrapper.
 
 ## Obsolete Prose Kept For Trace
 

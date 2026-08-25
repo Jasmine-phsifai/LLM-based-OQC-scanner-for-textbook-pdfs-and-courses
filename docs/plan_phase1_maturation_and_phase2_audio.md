@@ -584,8 +584,13 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
 - #324 fixes the already-built shared `ResumeStateError` default before more
   audio work. It now names saved recognition state rather than image; no code,
   retryability, hierarchy, or explicit caller wording changes. All 1,693 source
-  tests pass. Exact installed proof remains the exit condition, after which the
-  next feature slice may resume the serial start-gate composition above.
+  tests pass. Exact clean installed commit `0b415f2` passes with a 258,616-byte
+  wheel, every installed profile and local media smoke green, no cloud I/O, and
+  complete cleanup. Do not add the previously suggested wrapper around four
+  unconsumed primitives. The next feature slice should wire the existing public
+  whole-file long-MP3 path as their first persistence/resume consumer; interval
+  configuration/dispatch, overwrite, repair, and generic transactions remain
+  separate.
 
 ### Stage A exit gate
 

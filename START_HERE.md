@@ -778,8 +778,12 @@ despite serving image, PDF, and audio; do not redesign the hierarchy.
 #324 completes that correction. The default is now the neutral "saved
 recognition state" while the stable code and every explicit caller message stay
 unchanged. The focused error/resume set passes 81 tests and all 1,693 source
-tests pass; exact installed proof is pending. The queue may return to the
-long-audio start-gate composition after this release check.
+tests pass. Exact commit `0b415f2` passes with 1,692 archived tests and one
+expected skip, a 258,616-byte wheel, all profiles and local media smokes green,
+no cloud I/O, and complete cleanup. Proxy TCP passed but the separate proxied
+PyPI HTTPS probes timed out; the unchanged wheelhouse supplied the gate, so no
+HTTP 200 is claimed. The next feature slice is public whole-file persistence
+and resume, not an otherwise unconsumed start-gate wrapper.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
