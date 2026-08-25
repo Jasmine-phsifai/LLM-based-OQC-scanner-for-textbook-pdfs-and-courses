@@ -733,8 +733,10 @@ explicit caller path. It preserves an old target until complete
 write/flush/fsync/close, bounds actual reads to 16 MiB plus one probe byte, and
 keeps cleanup failures from replacing an earlier primary. All 1,650 source
 tests pass. No filename policy, resume dispatcher, provider call, repair path,
-final publication, or success deletion is claimed; exact clean installed proof
-is pending.
+final publication, or success deletion is claimed. Exact clean installed commit
+`a601555` passes with 1,649 archived tests and one expected skip, a 255,474-byte
+wheel, all installed profiles and local media smokes green, no cloud I/O, and
+complete cleanup.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

@@ -1330,7 +1330,9 @@ The following directions remain traceable but are not current work:
   preserves old state and primary-error precedence, including process-control
   cleanup, and has one bounded near-260-character Windows regression. It does
   not add filename policy, dispatch, repair, final output, or public API. All
-  1,650 source tests pass; exact clean installed proof remains pending.
+  1,650 source tests pass. Exact commit `a601555` passes the clean installed
+  gate with 1,649 archived tests and one expected skip, a 255,474-byte wheel,
+  all profiles and local media smokes green, no cloud I/O, and complete cleanup.
 
 ## Obsolete Prose Kept For Trace
 

@@ -5872,7 +5872,17 @@ parse repair text, publish final Markdown, or delete state after success. The
 focused state/identity/planner/prompt/materializer set passes **85 tests in 0.51
 seconds**; the full source suite passes **1,650 tests in 65.96 seconds**.
 Compilation, lightweight import, diff, and frozen `contracts/worker` checks
-pass. Exact clean installed proof remains the #319 exit gate.
+pass.
+
+Exact clean commit `a601555` passes the maintained gate with exit 0 in 255.42
+seconds. The archive reports **1,649 passed, 1 skipped in 68.82 seconds**; the
+wheel is **255,474 bytes**, leaving **6,670 bytes** under 256 KiB, and base is
+1,289,535 bytes. Installed deltas are: audio 91,184,066; image 16,984,350;
+image+DashScope 41,559,856; Google 41,702,121; audio+Google 130,312,019; PDF
+vision 25,182,831; video 254,476,187; and combined 272,347,749 bytes. Interval,
+audio+Google, two-page PDF, video, and combined `2 1 1` smokes pass without
+cloud I/O. The delegated runner verified proxy, official PyPI, and wheelhouse,
+then removed every gate root and left no gate process. #319 is release-proven.
 
 ## Documentation Rules
 

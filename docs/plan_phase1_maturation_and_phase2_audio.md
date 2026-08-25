@@ -541,7 +541,9 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
   connect one serial checkpoint consumer only after defining who owns the state
   path and when successful output removes it; do not add generic transactions,
   locks, backup rotation, repair coupling, or provider fallback here. All 1,650
-  source tests pass; exact clean installed proof remains pending.
+  source tests pass. Exact clean installed commit `a601555` passes with a
+  255,474-byte wheel, every installed profile and local media smoke green, no
+  cloud I/O, and complete cleanup.
 
 ### Stage A exit gate
 

@@ -743,7 +743,9 @@ actual-read bound, complete write/flush/fsync/close-before-replace ordering,
 old-target preservation, and primary-error precedence. Do not turn these into
 filename selection, directory creation, locking, backup rotation, dispatch,
 repair, final publication, or public exports. The 1,650-test source suite
-passes; exact installed proof is pending.
+passes. Exact commit `a601555` passes the complete installed gate with a
+255,474-byte wheel; every profile and local media smoke passes without cloud
+I/O.
 
 ## When Porting Legacy Behavior
 
