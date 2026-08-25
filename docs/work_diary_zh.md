@@ -5549,3 +5549,21 @@ Atomic task — Iteration #297: select one evidenced, non-A2b active-library mat
 **真实绿灯、回归与主审。** 同一真实 301 秒 MP4 修后通过：一次 MP3 snapshot probe、short adapter 零次、Files adapter 一次，音频 metadata 为 `google_files`，图片 provider 独立完成，retained MP3 留给调用者，请求 snapshot 在返回前删除。所有既有短视频测试都显式让误入 Files 抛错。0—300、300 秒以上和 9.5 小时上边界另有离线 probe 回归。主审又补上 provider 已成功而音频 snapshot 删除失败的生命周期：图片和公开 MP3 仍保留，音频分支诚实返回 `OUTPUT_WRITE_FAILED` 和一次调用证据，测试最后清理故意保留的目录；相邻短/长 Google adapter、probe 和视频集合为 **88 passed in 13.04s**。第一次完整套件因本人错误加入不存在的 `C:\Program Files\nodejs` 路径，在 frozen Node harness 得到 2 failures / 736 passed；这不是产品失败。只读发现本机已有 `D:\Anaconda\envs\STA\node.exe` 后，加入生命周期回归的最终完整离线套件为 **1,557 passed in 65.89s**。`compileall -q src tests tools`、`git diff --check` 通过；plain import 约 **0.0281 秒 / 122 modules**，未加载 Pillow、OpenCV、NumPy、imageio-ffmpeg、miniaudio、Google、OpenAI 或 HTTPX。
 
 **边界与过度设计复查。** 新 seam 只覆盖已经 live-proven 的两条 Google 路径；`recognize()` 仍不自动路由，9.5—10 小时、持久化恢复和 repair 仍属于 #152，overlap 未被猜测。没有把独立 adapter 抽成 provider 基类，也没有为了未来 DashScope/FileTrans、OpenAI-compatible 或 API pool 建通用音频路由。第一次多文档 patch 因维护者决定文件上下文不匹配而整体拒绝，没有产生部分文档状态；随后按真实位置拆分。普通 clean-installed combined-video 门禁未运行且仍开放。
+
+## #298 — 2026-08-26：长视频真实门禁补齐 Files 证据，但外层仍丢终态
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #298: prove the newly shipped #297 video long-audio route with one bounded real Google Files request and real image branch. Success means using a synthetic 301-second MP4, verifying and propagating the active proxy, isolating the legacy-QSettings credential to one child, discovering the current catalog, calling public recognize_video() without retry/model switch/fallback, proving Files transport plus remote/client cleanup, recording only redacted terminal evidence, and changing runtime only for a reproduced product defect. This matters because #297 is offline-proven, while real provider lifecycle remains the difficult product boundary.
+```
+
+**假设、两条路线与主审修正。** 当前权威已记录维护者的两个选择：#127 用 A，单分支取消进入已有 outcome；#152 用 B，未来恢复路线保留显式整段式和可开启的 interval 切片式，interval 只接受整数分钟，mode/interval 只在可恢复期间暂存，repair 仅从失败文字取得具体时间范围。overlap 仍未选择，因此本轮不写 A2b。真实门禁可选 A：图片用 fake、只隔离 Files 音频；B：图片和音频都走真实 Google。维护者要求全量打通，选 B。固定下载、生成、代理检查和等待交给轻量执行者，本人同时审查 runner 与 library metadata。
+
+主审发现旧 runner 只确认音频成功一次，无法证明 301 秒音频确实走 Files，也不报告远端文件删除和 client 关闭。依赖日志猜 transport 不可接受；于是给现有 runner 增加必填 `--expected-audio-transport`，不新增第二个 runner。inline 成功必须有正时长和已关闭 client；Files 成功还必须大于 300 秒、明确 `google_files`、远端文件已删除。安全 JSON 只增加这些既有 metadata，不包含 transcript、路径、远端 URI、raw response 或 key。两项因果回归分别证明 Files 绿灯和“期望 Files 却得到 inline”红灯。
+
+**两次委派的诚实结果。** 第一次先证明 `127.0.0.1:10080` TCP 与代理 HTTPS 均可用，QSettings key 只确认非空，并生成 **1,898,414 bytes / 301.0 秒**的 16×16、1fps、16 kHz 正弦音频 MP4；但执行参数错误地预期 2 个图片组，恒定蓝色视频实际只有 1 组。runner 在 `video_preflight` 返回 `CONFIG_INVALID`、`provider_calls_attempted=0`、exit 1、stderr 0，catalog 和 provider 均未开始，临时根已清理。
+
+runner 修正并离线通过后，第二次使用正确的 `google_files`、1 个图片组、明确 `gemini-2.5-flash`、120 秒请求上限启动；代理与凭据隔离前提再次满足，没有 retry、换模或 fallback。但轻量执行者的外层工具约 30 秒后没有返回 numeric exit、stdout 或 stderr。相关进程已结束且本地临时根不存在，但无法知道 provider 是否调用、远端文件是否删除，也不能把它包装成成功或失败。本轮不做第三次盲跑。下一次真实调用前，执行者必须先用纯本地 yielded process 证明会取得终态；这不是再建一个控制器，而是正确使用已有 session/write-stdin 生命周期。
+
+**验证与过度设计复查。** runner 定向及相邻视频/长音频集合为 **83 passed in 12.91s**；带既有 Node 路径的完整离线套件为 **1,559 passed in 65.04s**，`compileall -q src tests tools` 与 `git diff --check` 通过。library runtime、API、provider 调度、依赖、分片、resume、repair、legacy/social 和 frozen `contracts/worker` 均未改变。新增一个通用 provider 测试框架、持久日志系统、自动重试或第三套进程控制器都会过度设计；但把已有安全 metadata 加入 live 判定是必要证据，不是防御性扩张。当前卡点是委派工具没有把已启动进程跟到终态，而不是网络、Google 或 #297 已被证明失败。

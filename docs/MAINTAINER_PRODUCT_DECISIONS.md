@@ -309,6 +309,13 @@ is often accepted.
   catalog, error codes, retry/switch behavior, and terminal outcomes. Do not
   install a generic policy such as "retry six times". Retry decisions must be
   supported by evidence for the specific provider and error scope.
+- The combined Google video live runner must declare whether inline or Files
+  audio is expected. A Files gate is valid only when its safe evidence confirms
+  duration above 300 seconds, Files transport, remote-file deletion, and client
+  closure; generic one-call success is insufficient. A delegated launch whose
+  outer tool loses exit/stdout/stderr is indeterminate, even when its local
+  process and temporary directory disappear. Prove terminal capture on a local
+  yielded process before another provider launch rather than blindly replaying.
 - **Deferred provider-extension target.** After the core OCRLLM product paths
   are stable, provider integration should become additive: adding a provider
   should primarily mean adding one independently readable provider class (and

@@ -50,6 +50,11 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image-model", required=True)
     parser.add_argument("--audio-model", required=True)
+    parser.add_argument(
+        "--expected-audio-transport",
+        required=True,
+        choices=("google_inline", "google_files"),
+    )
     parser.add_argument("--video", required=True, type=Path)
     parser.add_argument(
         "--expected-frame-groups",
@@ -123,6 +128,7 @@ def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, obj
                 outcome,
                 image_model=arguments.image_model,
                 audio_model=arguments.audio_model,
+                expected_audio_transport=arguments.expected_audio_transport,
                 catalog_count=len(models),
                 preflight_retained_count=preflight_retained_count,
                 expected_frame_group_count=arguments.expected_frame_group_count,
@@ -156,6 +162,7 @@ def _safe_video_summary(
     *,
     image_model: str,
     audio_model: str,
+    expected_audio_transport: str,
     catalog_count: int,
     preflight_retained_count: int,
     expected_frame_group_count: int,
@@ -168,7 +175,11 @@ def _safe_video_summary(
     _validate_owned_artifacts(outcome)
 
     frames = _safe_frame_summary(outcome, image_model)
-    audio = _safe_audio_summary(outcome, audio_model)
+    audio = _safe_audio_summary(
+        outcome,
+        audio_model,
+        expected_audio_transport,
+    )
     composition = _safe_composition_summary(
         outcome,
         expected_models=(image_model, audio_model),
@@ -181,6 +192,12 @@ def _safe_video_summary(
         and frames["provider_calls_attempted"] == expected_frame_group_count
         and audio["status"] == "recognized"
         and audio["provider_calls_attempted"] == 1
+        and audio["transport"] == expected_audio_transport
+        and audio["provider_client_closed"] is True
+        and (
+            expected_audio_transport != "google_files"
+            or audio["remote_file_deleted"] is True
+        )
         and composition["status"] == "complete"
     )
     return {
@@ -258,13 +275,50 @@ def _safe_frame_summary(
 def _safe_audio_summary(
     outcome: VideoRecognitionOutcome,
     model: str,
+    expected_transport: str,
 ) -> dict[str, object]:
     if outcome.audio_result is not None:
         count = _result_call_count(outcome.audio_result, "audio", model)
+        metadata = outcome.audio_result.metadata
+        duration_seconds = metadata.get("duration_seconds")
+        client_closed = metadata.get("provider_client_closed")
+        transport = metadata.get("transport")
+        if (
+            isinstance(duration_seconds, bool)
+            or not isinstance(duration_seconds, (int, float))
+            or duration_seconds <= 0
+            or type(client_closed) is not bool
+        ):
+            raise ConfigError(
+                "Google video smoke returned invalid audio lifecycle evidence.",
+                code="CONFIG_INVALID",
+            ) from None
+        if expected_transport == "google_files":
+            remote_file_deleted = metadata.get("remote_file_deleted")
+            if (
+                transport != "google_files"
+                or duration_seconds <= 300
+                or type(remote_file_deleted) is not bool
+            ):
+                raise ConfigError(
+                    "Google video smoke returned unexpected Files audio evidence.",
+                    code="CONFIG_INVALID",
+                ) from None
+        else:
+            remote_file_deleted = None
+            if transport is not None or duration_seconds > 300:
+                raise ConfigError(
+                    "Google video smoke returned unexpected inline audio evidence.",
+                    code="CONFIG_INVALID",
+                ) from None
         return {
             "status": "recognized",
             "artifact_present": True,
             "provider_calls_attempted": count,
+            "transport": expected_transport,
+            "duration_seconds": float(duration_seconds),
+            "remote_file_deleted": remote_file_deleted,
+            "provider_client_closed": client_closed,
             "error": None,
         }
 

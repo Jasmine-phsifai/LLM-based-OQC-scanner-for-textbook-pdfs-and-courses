@@ -54,12 +54,23 @@ def _audio_result(
     output_path: Path | None = None,
     include_usage: bool = False,
     model: str = AUDIO_MODEL,
+    transport: str = "google_inline",
 ) -> RecognitionResult:
     metadata: dict[str, object] = {
         "provider": "google",
         "model": model,
         "provider_call_count": 1,
+        "duration_seconds": 1.0,
+        "provider_client_closed": True,
     }
+    if transport == "google_files":
+        metadata.update(
+            {
+                "transport": "google_files",
+                "duration_seconds": 301.0,
+                "remote_file_deleted": True,
+            }
+        )
     if include_usage:
         metadata["current_model_token_usage"] = (
             {"model": model, "input_tokens": 20, "output_tokens": 4},
@@ -86,6 +97,7 @@ def _build_outcome(
     audio_model: str = AUDIO_MODEL,
     retained_count: int = 1,
     frame_group_count: int = 1,
+    audio_transport: str = "google_inline",
 ) -> VideoRecognitionOutcome:
     output_root = output_dir / "video"
     frames_dir = output_root / "frames"
@@ -143,6 +155,7 @@ def _build_outcome(
                 output_path=audio_output_path,
                 include_usage=include_usage,
                 model=audio_model,
+                transport=audio_transport,
             )
             if audio_error is None
             else None
@@ -156,6 +169,7 @@ def _arguments(
     image_model: str = IMAGE_MODEL,
     audio_model: str = AUDIO_MODEL,
     expected_frame_group_count: int = 1,
+    expected_audio_transport: str = "google_inline",
 ) -> argparse.Namespace:
     return argparse.Namespace(
         image_model=image_model,
@@ -163,6 +177,7 @@ def _arguments(
         video=Path("private-video-name.mp4"),
         timeout=9.0,
         expected_frame_group_count=expected_frame_group_count,
+        expected_audio_transport=expected_audio_transport,
     )
 
 
@@ -191,6 +206,8 @@ def test_video_smoke_parses_only_bounded_expected_group_counts(
             IMAGE_MODEL,
             "--audio-model",
             AUDIO_MODEL,
+            "--expected-audio-transport",
+            "google_inline",
             "--video",
             "controlled.mp4",
             "--expected-frame-groups",
@@ -212,6 +229,8 @@ def test_video_smoke_rejects_unbounded_expected_group_counts(
                 IMAGE_MODEL,
                 "--audio-model",
                 AUDIO_MODEL,
+                "--expected-audio-transport",
+                "google_inline",
                 "--video",
                 "controlled.mp4",
                 "--expected-frame-groups",
@@ -269,6 +288,10 @@ def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
             "status": "recognized",
             "artifact_present": True,
             "provider_calls_attempted": 1,
+            "transport": "google_inline",
+            "duration_seconds": 1.0,
+            "remote_file_deleted": None,
+            "provider_client_closed": True,
             "error": None,
         },
         "composition": {
@@ -282,6 +305,60 @@ def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(
     assert private_markdown not in raw
     assert str(_arguments().video) not in raw
     assert observed_roots and all(not root.exists() for root in observed_roots)
+
+
+def test_video_smoke_proves_files_transport_and_cleanup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_catalog(monkeypatch)
+    monkeypatch.setattr(
+        smoke,
+        "recognize_video",
+        lambda source, **kwargs: _build_outcome(
+            Path(kwargs["output_dir"]),
+            private_markdown="PRIVATE LONG AUDIO",
+            audio_transport="google_files",
+        ),
+    )
+
+    summary = smoke.run_google_genai_video_smoke(
+        _arguments(expected_audio_transport="google_files")
+    )
+
+    assert summary["status"] == "passed"
+    assert summary["audio"] == {
+        "status": "recognized",
+        "artifact_present": True,
+        "provider_calls_attempted": 1,
+        "transport": "google_files",
+        "duration_seconds": 301.0,
+        "remote_file_deleted": True,
+        "provider_client_closed": True,
+        "error": None,
+    }
+
+
+def test_video_smoke_rejects_inline_audio_when_files_is_expected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_catalog(monkeypatch)
+    monkeypatch.setattr(
+        smoke,
+        "recognize_video",
+        lambda source, **kwargs: _build_outcome(
+            Path(kwargs["output_dir"]),
+            private_markdown="PRIVATE INLINE AUDIO",
+        ),
+    )
+
+    with pytest.raises(smoke._LiveSmokeFailure) as failure:
+        smoke.run_google_genai_video_smoke(
+            _arguments(expected_audio_transport="google_files")
+        )
+
+    assert failure.value.stage == "video_orchestration"
+    assert failure.value.error is not None
+    assert failure.value.error.code == "CONFIG_INVALID"
 
 
 def test_video_smoke_preflight_counts_groups_and_cleans_frames(
@@ -835,6 +912,8 @@ def test_video_smoke_main_redacts_unexpected_failure(
                 IMAGE_MODEL,
                 "--audio-model",
                 AUDIO_MODEL,
+                "--expected-audio-transport",
+                "google_inline",
                 "--video",
                 "private-name.mp4",
                 "--expected-frame-groups",

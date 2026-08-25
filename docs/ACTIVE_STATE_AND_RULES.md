@@ -5169,6 +5169,30 @@ the unresolved overlap rule. The private 9.5-to-10-hour range and persisted
 lecture recovery remain behind #152. The ordinary installed combined-video gate
 also remains open and was not replayed in this iteration.
 
+## Iteration 298: long-video live evidence is stricter but still open
+
+The maintained Google video runner now requires an explicit expected audio
+transport. A successful inline result must disclose a positive duration and
+closed client; a successful Files result must additionally prove a duration
+above 300 seconds, `transport="google_files"`, remote-file deletion, and client
+closure. Its safe JSON includes those lifecycle facts without transcript,
+credential, source path, remote URI, or raw provider response. Two focused
+regressions prove the Files success shape and reject an inline result when Files
+was requested. This changes the evidence runner only, not library runtime,
+provider routing, retry, fallback, chunking, resume, or repair.
+
+The delegated live gate did not close. Its first synthetic 301-second run used
+the wrong expected frame-group count and stopped at local video preflight with
+`CONFIG_INVALID` and zero provider calls. After the runner correction, one
+properly parameterized delegated start used the verified active proxy and
+credential-isolating environment, but its outer tool returned no numeric exit,
+stdout, or stderr. The process ended and left no local temporary residue, but
+provider calls and remote cleanup are unknown; do not call that attempt success
+or failure and do not replay it blindly. Before another live start, the delegated
+executor must demonstrate that it follows a yielded local process to terminal
+output. The strengthened runner and adjacent video/long-audio set pass 83 tests;
+the complete offline suite passes 1,559 tests.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
