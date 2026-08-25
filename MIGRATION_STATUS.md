@@ -916,6 +916,16 @@ The following directions remain traceable but are not current work:
   1,536; because the clean gate was not run in this iteration, installed
   combined-video delivery remains an open gate. A later bounded run may be
   followed by separately scoped, capped robustness stress tests.
+  #265 executes that maintained gate once from exact commit `7ff38c4` under a
+  3,600-second outer watchdog and the existing stage bounds. It reaches only
+  archived-source dependency preparation: uv exits 1 after failing to
+  download/extract `opencv-python==4.13.0.92`, naming an extraction I/O failure,
+  a network timeout, and its current 30-second HTTP timeout. No tests, wheel,
+  profile, combined-video proof, or provider call follows. The process, gate
+  root, and wrapper logs are clean, while the local gate regressions pass 5
+  tests and compileall succeeds. Treat this as one terminal delivery failure,
+  not justification for timeout/index/cache/pin/retry changes; the installed
+  combined-video gate remains open.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

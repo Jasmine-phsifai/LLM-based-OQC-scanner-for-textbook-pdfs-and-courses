@@ -423,6 +423,12 @@ snapshot/probe cleanup, while the injected image seam must receive valid
 ordered JPEG snapshots. The gate remains open until this profile actually runs
 to terminal exit. Later stress testing is permitted only as a separate,
 question-driven, capped run after the basic installed flow is established.
+#265 records one maintained-gate run that stopped before tests when uv timed
+out downloading/extracting OpenCV under its reported 30-second HTTP timeout.
+Keep this as external delivery evidence only. Do not raise `UV_HTTP_TIMEOUT`,
+change the index/mirror, inject cache, repin, retry automatically, or split out
+another dependency-preparation workflow from one event. The combined gate is
+still open; a later atomic iteration may make one ordinary bounded attempt.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
