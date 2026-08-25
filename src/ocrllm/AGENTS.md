@@ -214,6 +214,10 @@ automatic chunking, and do not claim every smaller audio-plus-prompt request fit
 closed the client. No Files, generation, token-count, model-get, retry, or
 fallback call occurred. Treat the count as dated evidence, not a hardcoded
 catalog or proof that catalog membership implies audio support.
+#216 requires Google Files remote-delete process control to preserve the exact
+`KeyboardInterrupt`/`SystemExit` while still attempting client close and local
+snapshot cleanup. Keep the nested provider-specific `try/finally`; do not map
+the signal, add retry, or create a general lifecycle manager.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

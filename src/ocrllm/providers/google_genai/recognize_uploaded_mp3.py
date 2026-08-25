@@ -120,30 +120,31 @@ def recognize_uploaded_mp3(
         except Exception as error:
             public_error = map_google_genai_error(error, model=model)
     finally:
-        if uploaded is not None:
-            if uploaded_name is None:
-                provider_file_cleanup_failed = True
-            else:
-                try:
-                    client.files.delete(name=uploaded_name)
-                    remote_file_deleted = True
-                except Exception:
+        try:
+            if uploaded is not None:
+                if uploaded_name is None:
                     provider_file_cleanup_failed = True
-
-        close_error = close_google_genai_client(client)
-        client_closed = close_error is None
-        if public_error is not None:
-            if provider_file_cleanup_failed:
-                public_error._add_safe_detail(
-                    "provider_file_cleanup_failed",
-                    True,
-                )
-            if close_error is not None:
-                public_error._add_safe_detail(
-                    "provider_client_cleanup_failed",
-                    True,
-                )
-        del api_key
+                else:
+                    try:
+                        client.files.delete(name=uploaded_name)
+                        remote_file_deleted = True
+                    except Exception:
+                        provider_file_cleanup_failed = True
+        finally:
+            close_error = close_google_genai_client(client)
+            client_closed = close_error is None
+            if public_error is not None:
+                if provider_file_cleanup_failed:
+                    public_error._add_safe_detail(
+                        "provider_file_cleanup_failed",
+                        True,
+                    )
+                if close_error is not None:
+                    public_error._add_safe_detail(
+                        "provider_client_cleanup_failed",
+                        True,
+                    )
+            del api_key
 
     if public_error is not None:
         if "provider_calls_attempted" not in public_error.details:

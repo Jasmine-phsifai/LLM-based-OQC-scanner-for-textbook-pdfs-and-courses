@@ -43,7 +43,7 @@ class _Files:
         initial_state: str = "ACTIVE",
         get_states: tuple[str, ...] = (),
         upload_error: Exception | None = None,
-        delete_error: Exception | None = None,
+        delete_error: BaseException | None = None,
     ) -> None:
         self.events = events
         self.initial_state = initial_state
@@ -151,7 +151,7 @@ class _FakeGoogleModule:
         input_token_limit: object = None,
         upload_error: Exception | None = None,
         generate_error: Exception | None = None,
-        delete_error: Exception | None = None,
+        delete_error: BaseException | None = None,
         close_error: Exception | None = None,
     ) -> None:
         self.events: list[str] = []
@@ -387,6 +387,43 @@ def test_generation_failure_preserves_primary_when_delete_also_fails(
     assert "PRIVATE" not in str(caught.value)
     assert fake.files.delete_calls == ["files/owned-test-file"]
     assert fake.clients[0].closed is True
+
+
+@pytest.mark.parametrize("signal_type", (KeyboardInterrupt, SystemExit))
+def test_remote_delete_process_control_still_closes_client_and_snapshot(
+    monkeypatch,
+    signal_type,
+) -> None:
+    signal = signal_type("test-only cleanup stop")
+    fake = _FakeGoogleModule(delete_error=signal)
+    processor = importlib.import_module("ocrllm.processors.recognize_long_mp3")
+    snapshot_events: list[str] = []
+
+    @contextmanager
+    def observed_snapshot(_source, *, temp_dir):
+        assert temp_dir is None
+        snapshot_events.append("enter")
+        try:
+            yield SimpleNamespace(
+                path=SOURCE,
+                byte_size=12345,
+                duration_seconds=301.0,
+            )
+        finally:
+            snapshot_events.append("cleanup")
+
+    monkeypatch.setattr(processor, "snapshot_long_mp3", observed_snapshot)
+    _install_fake_sdk(monkeypatch, fake)
+
+    with pytest.raises(signal_type) as caught:
+        recognize_long_mp3(SOURCE, config=_config())
+
+    assert caught.value is signal
+    assert fake.events == ["catalog", "upload", "generate", "delete", "close"]
+    assert fake.files.delete_calls == ["files/owned-test-file"]
+    assert len(fake.models.generate_calls) == 1
+    assert fake.clients[0].closed is True
+    assert snapshot_events == ["enter", "cleanup"]
 
 
 def test_processing_timeout_deletes_upload_without_generation(monkeypatch) -> None:

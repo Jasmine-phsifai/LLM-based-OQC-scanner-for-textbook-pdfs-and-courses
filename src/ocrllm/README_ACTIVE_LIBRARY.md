@@ -196,7 +196,9 @@ result = recognize_long_mp3(
   model row's advertised input limit; absent optional metadata preserves the
   provider path, and this does not claim the prompt also fits;
 - uploads once, waits only within `timeout_seconds`, generates once, then deletes
-  the remote file and closes the client;
+  the remote file and closes the client; client close is still attempted if
+  remote deletion is interrupted by `KeyboardInterrupt` or `SystemExit`, while
+  that exact process-control exception continues to propagate;
 - returns an in-memory audio result with exact model/usage/source facts and
   explicit cleanup state; a successful transcript becomes `partial` with a
   warning if remote or client cleanup fails;

@@ -2481,6 +2481,21 @@ Do not freeze arbitrary suffixes in a regression or add MIME/extension machinery
 Mandatory `.md` would be a caller-visible breaking product choice and requires
 separate maintainer authority; it is not inferred from #214.
 
+#216 closes one provider-specific A2a cleanup gap before long-audio lifecycle
+reuse. After a successful Google Files generation, `files.delete()` could raise
+`KeyboardInterrupt` or `SystemExit`; the adapter propagated that exact signal
+but skipped the subsequent client close because both operations were sequential
+inside one `finally`. Remote deletion now has a nested `try/finally` whose sole
+extra guarantee is that the existing client close is attempted afterward. Both
+process-control objects still propagate unchanged, generation remains exactly
+one attempted provider call internally, and the outer long-MP3 snapshot still
+cleans up. The two red regressions now pass; the focused lifecycle passes 22,
+the adjacent Google/audio/import surface passes 101, and the complete offline
+suite passes 1,488. Ordinary cleanup failures, partial warnings, typed error
+mapping, A2b scope, video routing, retry, fallback, and frozen boundaries are
+unchanged. Do not turn this local ordering fix into a generic provider resource
+manager or catch process-control exceptions as provider failures.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist
