@@ -5590,9 +5590,19 @@ The real focused test produces and decodes a two-second interval, verifies mono
 length owned path above 260 characters. An ordinary unprefixed test path first
 failed during directory creation before library code ran; no universal path
 normalizer was added. Error and cleanup regressions plus the complete offline
-suite pass, with 1,582 tests in the maintained environment. Clean wheel/profile
-evidence must still be recorded before this iteration claims its revised audio
-installation boundary is release-proven.
+suite pass, with 1,582 tests in the maintained environment.
+
+The clean gate from exact commit
+`a9dc6e68b26493694fbcca44ca2cff4f2b0d9bdc` exits 0 with no provider API call or
+retry. Its archive has 1,581 passing tests and one expected skip; the wheel is
+259,814 bytes and the base target is 1,280,349 bytes. Installed audio measures
+91,174,290 bytes and audio+Google 130,218,489 bytes. The audio smoke reports a
+0.5-second window at index 0 and removes its temporary segment. Every other
+profile also passes; combined video+audio+image is 272,337,853 bytes and again
+completes the public recognize/compose/publish smoke with two retained frames,
+one image call, and one audio observation. The gate removes its own root and
+leaves no process. This release-proves the revised audio installation boundary;
+serial interval dispatch and resumable paid-result state remain unimplemented.
 
 ## Documentation Rules
 

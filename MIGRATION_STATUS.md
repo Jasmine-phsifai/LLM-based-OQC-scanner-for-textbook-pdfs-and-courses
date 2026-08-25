@@ -1265,7 +1265,10 @@ The following directions remain traceable but are not current work:
   pinned lazy imageio-ffmpeg dependency. Its isolated size ceiling becomes
   100 MiB and audio+Google becomes 140 MiB; combined video+audio+image remains
   293 MiB because the same FFmpeg distribution was already in that dependency
-  union. Source tests pass, while clean installed-profile proof remains pending.
+  union. The exact `a9dc6e6` clean gate exits 0: audio is 91,174,290 bytes,
+  audio+Google is 130,218,489 bytes, its installed interval smoke cleans the
+  temporary segment, and every existing profile plus combined video remains
+  green without a provider call.
 
 ## Obsolete Prose Kept For Trace
 

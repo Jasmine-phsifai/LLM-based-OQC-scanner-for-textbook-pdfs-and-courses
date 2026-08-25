@@ -658,6 +658,10 @@ repair/checkpoint coupling. `ocrllm[audio]` consequently includes lazy
 `imageio-ffmpeg` as well as `miniaudio`; plain package import remains
 dependency-free. The next slice is serial window consumption and paid-result
 persistence, not another media abstraction or provider-class hierarchy.
+The exact `a9dc6e6` clean gate passes with exit 0: installed audio is
+91,174,290 bytes, audio+Google is 130,218,489 bytes, the installed interval
+smoke materializes and removes one segment, and all existing profiles plus the
+combined video workflow remain green. No provider API is called.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

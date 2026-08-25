@@ -675,6 +675,10 @@ which is removed after use. The `audio` extra now includes lazy
 `imageio-ffmpeg` as well as `miniaudio`; base import stays dependency-free. Do
 not widen this into a public cutter, parallel splitter, generic subprocess
 framework, provider fallback, repair parser, or second checkpoint system.
+Exact commit `a9dc6e6` passes the maintained clean gate, including installed
+audio materialization and cleanup; audio measures 91,174,290 bytes and
+audio+Google 130,218,489 bytes. This proves the backend and dependency boundary,
+not serial dispatch, resume state, or repair.
 
 ## When Porting Legacy Behavior
 
