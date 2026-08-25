@@ -167,6 +167,7 @@ def test_base_install_budget_keeps_real_disk_measurement_with_bounded_headroom()
     [
         (("ocrllm/__init__.py", "ocrllm/py.typed"), True),
         (("ocrllm/__init__.py", "ocrllm/AGENTS.md"), False),
+        (("ocrllm/__init__.py", "ocrllm/README_ACTIVE_LIBRARY.md"), False),
     ],
 )
 def test_built_wheel_checker_enforces_package_contents(

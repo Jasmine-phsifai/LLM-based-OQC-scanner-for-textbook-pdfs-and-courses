@@ -684,6 +684,16 @@ the wheel is 261,349 bytes—795 bytes below its current ceiling. Inspect for
 real package reduction before adding the next runtime slice; do not raise the
 limit or damage file responsibilities mechanically.
 
+#315 performs that audit rather than raising the cap. The exact #314 wheel has
+no accidental runtime payload; its only justified reduction is the 36,679-byte
+repository/source package README, because standard METADATA already carries the
+root README and no runtime resource consumer reads the detailed file. It remains
+in Git and sdist but is explicitly excluded from wheels and guarded by the
+maintained checker. A worktree build measures 247,533 bytes, restoring 14,611
+bytes of headroom; the full 1,587-test source suite passes. Exact clean installed
+proof remains pending. A real 169,681-byte sdist retains both README files and
+excludes tests/legacy, proving this is wheel-only reduction.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

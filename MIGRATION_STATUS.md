@@ -1289,6 +1289,14 @@ The following directions remain traceable but are not current work:
   Its 261,349-byte wheel is only 795 bytes below the maintained ceiling, so the
   next runtime slice must first inspect real distributable reduction rather
   than automatically raising the budget or merging clear responsibilities.
+  #315 audits all 247 wheel members and finds no removable runtime module or
+  accidental payload. It excludes only `README_ACTIVE_LIBRARY.md` from wheels,
+  while retaining it in Git/sdist, because METADATA already contains the root
+  README and no resource consumer reads the detailed source document. The root
+  README's stale short-only video sentence is corrected. One worktree wheel is
+  247,533 bytes with 14,611 bytes of headroom; all 1,587 source tests pass.
+  A 169,681-byte worktree sdist retains the detailed README and excludes
+  tests/legacy. Exact committed clean-install proof remains pending.
 
 ## Obsolete Prose Kept For Trace
 

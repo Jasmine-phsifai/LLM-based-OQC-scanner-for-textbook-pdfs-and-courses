@@ -219,11 +219,12 @@ The image and audio configurations are independent; the example intentionally
 uses different built-in providers. Set `OCRLLM_GOOGLE_AUDIO_MODEL` only after
 checking current IDs with `list_google_genai_models()` and proving audio support
 with a small request: catalog membership alone does not prove that a model
-accepts audio. The current combined-video audio branch is the native-Google
-short-MP3 path and rejects more than 300 decoded seconds. Automatic long-audio
-video routing is not implemented. `recognize_video()` retains media and returns
-typed branch evidence; only a complete or partial outcome can be composed or
-published as final Markdown.
+accepts audio. The current combined-video audio branch selects native Google
+inline transport through 300 decoded seconds and the existing Files transport
+above 300 seconds, subject to the selected model and current single-request
+limits. Recoverable interval dispatch and resume are not implemented.
+`recognize_video()` retains media and returns typed branch evidence; only a
+complete or partial outcome can be composed or published as final Markdown.
 
 ### Built-in DashScope example
 

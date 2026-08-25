@@ -8,7 +8,7 @@ import zipfile
 
 
 def check_built_wheel(wheel_path: Path) -> None:
-    """Reject a wheel missing library markers or containing repo instructions."""
+    """Reject a wheel missing markers or containing repository-only documents."""
     with zipfile.ZipFile(wheel_path) as wheel:
         names = set(wheel.namelist())
 
@@ -18,6 +18,8 @@ def check_built_wheel(wheel_path: Path) -> None:
         raise ValueError("wheel is missing py.typed")
     if "ocrllm/AGENTS.md" in names:
         raise ValueError("wheel contains repository-only instructions")
+    if "ocrllm/README_ACTIVE_LIBRARY.md" in names:
+        raise ValueError("wheel contains repository-only package documentation")
 
 
 def main(argv: list[str]) -> int:

@@ -700,6 +700,13 @@ leaving 795 bytes under its ceiling. Before adding runtime files, inspect the
 wheel for real removable content; do not automatically raise the cap or merge
 clear responsibilities merely to reduce file overhead.
 
+#315 proves the wheel has no accidental runtime payload and excludes this
+repository/source README from the runtime wheel while retaining it in Git and
+sdist. Standard METADATA still contains the corrected root README. The measured
+worktree wheel is 247,533 bytes with 14,611 bytes below the unchanged cap; do
+not reinclude repository documents, delete active modules, or collapse files
+merely for wheel size.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

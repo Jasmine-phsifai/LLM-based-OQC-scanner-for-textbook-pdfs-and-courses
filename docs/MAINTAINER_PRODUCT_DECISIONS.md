@@ -263,6 +263,12 @@ is often accepted.
   context only, requests no timestamps/markers, and retains the existing
   no-speech sentinel for the requested range. Do not port the legacy localized
   HTML marker format or claim the prompt itself validates model output times.
+- **#315 wheel-document boundary.** Keep `README_ACTIVE_LIBRARY.md` as detailed
+  repository/source documentation and in the sdist, but do not install it as a
+  nonstandard wheel resource. Standard wheel METADATA already carries the root
+  README and no runtime consumer reads the detailed file. Enforce both this and
+  the existing AGENTS exclusion in the wheel checker; do not delete active code,
+  merge clear files, minify text, or raise the size ceiling to avoid this audit.
 - **#245 video-integration ordering clarification.** Long Files results already
   fit `VideoRecognitionOutcome`; do not add a second outcome or audio-result
   type. The low-level public functions can be manually composed, but they copy

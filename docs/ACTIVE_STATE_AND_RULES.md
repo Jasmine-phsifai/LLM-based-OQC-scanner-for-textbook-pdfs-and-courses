@@ -5683,6 +5683,44 @@ runtime slice, inspect distributable contents for evidence-backed reduction;
 do not silently raise the wheel ceiling or collapse clear responsibilities only
 to recover bytes.
 
+## Iteration 315: remove repository documentation from the runtime wheel
+
+The exact #314 wheel was audited member by member before adding more runtime
+code. It contains 247 members, 713,641 uncompressed payload bytes, no tests,
+caches, binaries, agent instructions, or unexpected assets. Its largest Python
+members are active image, provider, config, error, audio, video, and frozen
+worker implementations with real consumers. There is no evidence-backed code
+deletion candidate.
+
+One non-runtime payload is both large and unnecessary in the wheel:
+`ocrllm/README_ACTIVE_LIBRARY.md` uses 36,679 uncompressed and 13,649 compressed
+member bytes. No package code, test, tool, or resource API reads it. The wheel's
+standard `METADATA` already carries the root README as its long description.
+The detailed file remains tracked and remains in the sdist for repository/source
+users, but the wheel now explicitly excludes it beside `ocrllm/AGENTS.md`.
+`check_built_wheel.py` and focused regressions reject either repository-only
+document if a build-backend default later reintroduces it.
+
+This revises #307's earlier keep decision using stronger current evidence. The
+document itself and its source-navigation role remain; only the unsupported
+claim that it needs to be an installed package resource is withdrawn. The root
+README's adjacent stale statement was also corrected: combined video now uses
+inline Google audio through 300 seconds and Files above 300 seconds, while
+recoverable interval dispatch/resume remains unavailable.
+
+A single post-edit worktree build produces a **247,533-byte / 246-member** wheel,
+recovering 13,816 bytes and leaving 14,611 bytes under the unchanged 256 KiB
+ceiling. It retains `py.typed`; its METADATA retains the corrected inline/Files
+description; the maintained wheel checker passes. Focused packaging/import
+tests pass 30, compile/diff/frozen checks pass, and the complete source suite
+passes **1,587 tests in 64.30 seconds**. No dependency download, provider call,
+public/runtime behavior, sdist content, frozen boundary, or size ceiling changed.
+A separate single worktree sdist build is 169,681 bytes / 249 members and
+confirms the detailed README, root README, and `pyproject.toml` remain present,
+while tests and legacy remain absent. Existing source-distribution inclusion of
+`src/ocrllm/AGENTS.md` is unchanged. Clean installed proof from the exact commit
+remains the exit gate.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
