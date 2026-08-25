@@ -86,8 +86,10 @@ length is configurable only in integer minutes and belongs to temporary resume
 state. #304 closes the last identity choice: interval chunks use a private fixed
 30 seconds of context on each side of an interior logical interval, while exact
 logical and actual windows live only in temporary resumable state. No public
-overlap parameter or text-similarity deduplication is planned. Chunk/checkpoint
-implementation has not started.
+overlap parameter or text-similarity deduplication is planned. #305 implements
+the first internal piece: deterministic ordered logical/actual window planning
+with strict integer-minute validation. It does not cut media, dispatch a
+provider, persist state, expose a public facade, or implement repair.
 #153 also corrects the frozen capability registry's long-MP3 reason: it now
 names the direct live-proven Files facade but remains `deferred` because no
 shared worker route was added.

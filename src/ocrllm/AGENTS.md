@@ -98,6 +98,11 @@ windows in temporary resumable identity, with no public overlap parameter or
 text-similarity deduplication. Repair stays a narrow failed-time-range side path
 and must not depend on retained mode/interval state or become a second recovery
 system.
+#305 implements only `audio/build_long_audio_interval_windows.py`: an internal
+pure planner returning ordered immutable logical/actual windows from a positive
+finite duration and an exact positive integer-minute interval. Keep the
+30-second context private. Do not make this internal planner a public facade or
+mix media cutting, provider calls, persistence, or repair into it.
 #212 makes cleanup an explicit invariant on normal, invalid-media, returned-
 cancellation, and terminal dual-cancellation exits: no
 `.ocrllm-video-source-*` path or in-process output claim may survive. Preserve

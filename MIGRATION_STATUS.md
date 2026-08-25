@@ -1220,7 +1220,10 @@ The following directions remain traceable but are not current work:
   General `recognize()` routing, A2b chunks/resume/repair, and the private
   9.5-to-10-hour range remain unchanged. #304 subsequently closed the A2b
   overlap choice at a private fixed 30 seconds per side without implementing
-  chunking.
+  chunking. #305 adds only the internal deterministic interval planner: exact
+  integer-minute logical windows, clamped 30-second physical context, tuple
+  order, and immutable identity fields. Media cutting, provider dispatch,
+  temporary persistence, public routing, and repair remain later slices.
 
 ## Obsolete Prose Kept For Trace
 

@@ -5391,6 +5391,32 @@ dependency changed in this decision iteration. A generalized provider-class or
 multi-provider-pool refactor remains deferred until the current media and
 recovery paths are stable.
 
+## Iteration 305: deterministic A2b interval identity is implemented
+
+`audio/build_long_audio_interval_windows.py` is the first bounded A2b runtime
+piece. It accepts one positive finite duration and one exact positive integer
+number of minutes, then returns an ordered tuple of frozen windows. Logical
+ranges cover the source once in caller order. Physical ranges add the selected
+private 30-second context on each available side and clamp to the source bounds;
+a source fitting one interval is not padded.
+
+This module performs no media cutting, I/O, provider dispatch, persistence,
+resume matching, repair parsing, publication, public-facade routing, or
+provider generalization. Those remain separate gates. Failing-first collection
+proved the module absent; the implemented regression and adjacent long-audio
+set pass 39 tests. The complete source suite passes 1,569 tests when the existing
+Node executable is explicitly restored to the verification process PATH. The
+first unmodified full run passed 1,567 tests and failed only the two Node harness
+tests because `node.exe` was absent from PATH; no product code was changed for
+that environment condition.
+
+The delegated clean-archive gate from exact `efa7069` independently passed
+1,558 archived tests with one expected skip and built the wheel, then exposed a
+gate defect: its base wheel-selection check attempted to open the literal path
+`is`. Base installation, optional profiles, and installed combined video did
+not start. This is no longer a dependency-download or proxy failure. Repair the
+selector as a separate atomic iteration before replaying the clean gate.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

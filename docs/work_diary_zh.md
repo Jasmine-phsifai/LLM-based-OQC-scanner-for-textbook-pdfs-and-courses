@@ -5667,3 +5667,19 @@ Atomic task — Iteration #304: record and reconcile the maintainer's final A2b 
 **委派门禁事实与过度设计复查。** 第一个执行者确认 `127.0.0.1:10080` 和经代理 PyPI HTTP 200，但漏写 `-ExecutionPolicy Bypass`，脚本被系统策略拒绝，未进入 gate。第二个执行者纠正命令，却碰到本人正在写决策文档，clean-worktree 前置检查按设计拒绝，同样未进入任何 stage。两次都不是下载、依赖或产品失败，也没有被算作全量证明。先独立提交本轮文档，再从干净提交委派真正门禁，避免为操作错误改脚本、放宽 clean 检查或制造第二套安装器。
 
 **变更范围。** 本轮仅更新当前权威、维护者决策、导航、迁移状态与库内规则；没有 runtime、公开 API、依赖、provider 层次、checkpoint、repair parser、重试、fallback、legacy/social 或 frozen worker/contracts 变化。下一原子实现应先落“整数分钟 logical windows + 每侧固定 30 秒 actual windows”的纯规划层，然后才接临时 resume 状态和真实 provider；不要把 repair 提前混入主路径。
+
+## #305 — 2026-08-26：只实现可恢复长音频的确定性窗口规划
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #305: implement the smallest pure long-audio interval planner now that A2b identity is settled, while a delegated clean-install gate owns all mechanical download waiting. Context: the public product direction requires explicit whole-file and integer-minute interval modes, private 30-second context per interior side, and temporary exact logical/actual identity; no A2b runtime exists yet. Success means first proving a failing offline contract for exact tuple-ordered windows and strict integer-minute rejection, then adding one responsibility-named module with no provider, checkpoint, repair, or public-facade expansion; verifying focused and full offline tests; recording the Chinese diary; committing and pushing. This matters because resume and provider dispatch need deterministic chunk identity, but building them before the window math is stable would couple too many failure modes.
+```
+
+**失败优先与实现。** 新测试最初在 collection 阶段以 `ModuleNotFoundError` 失败，证明库中确实没有窗口规划模块。随后只增加 `audio/build_long_audio_interval_windows.py`：一个冻结窗口值对象和一个同名纯函数。190 秒、1 分钟配置稳定生成四个 tuple-ordered logical windows；实际输入在可用一侧加固定 30 秒并夹紧源边界。90.5 秒落在单一两分钟逻辑窗口时不扩展。分钟参数只收 exact positive `int`，所以 `True`、`1.0`、0 和负数直接拒绝；duration 必须有限且为正。
+
+**本人复核与减法。** 路线 A 是一次写媒体切割、checkpoint、resume、provider 和 repair；路线 B 是先冻结纯窗口身份，选 B。本人删除了测试原先要求的 `as_identity()` 便利方法，因为没有生产消费者，单为测试增加方法属于过度设计。没有公开 export、第二种窗口类型、可调 overlap、浮点分钟、自适应切片、文字去重、文件 I/O 或 provider 分支。
+
+**验证。** 新回归加相邻 probe/Google long-audio adapter 为 **39 passed in 0.12s**，compileall 与 diff check 通过。第一次完整回归为 **1,567 passed, 2 failed**，两项都明确因为当前 PATH 找不到 Node，而非本轮代码；本机已有 `D:\Anaconda\envs\STA\node.exe`。只对验证子进程临时补 PATH 后，Node 定向 **2 passed in 0.82s**，完整套件 **1,569 passed in 64.20s**。没有安装或修改 Node。
+
+**并行全安装门禁。** 轻量执行者从精确干净提交 `efa7069` 验证 WinINET `127.0.0.1:10080`、TCP 与经代理 PyPI HTTP 200，显式传递大小写代理变量并只启动一次维护 gate。archive 测试 **1,558 passed, 1 skipped in 79.24s**，wheel 构建成功；之后 base wheel selector 把输出单词 `is` 当作路径并报 `FileNotFoundError`。base install、optional profiles 和 installed combined video 未开始，临时根与进程均清理。它证明下载已经打通，也证明下一原子任务应修 gate selector；不应再调整代理、cache、mirror、pin 或 timeout。
