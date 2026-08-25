@@ -686,6 +686,11 @@ The following directions remain traceable but are not current work:
   and publication. Their functions are initialization-safe and root-bound,
   while composition, result-building, atomic output, recognition, and optional
   dependency implementations remain lazy. No package-wide proxy was added.
+  #221 proves that complete four-function repair from exact clean commit
+  `fbcca0c` as a wheel installed outside the repository. Both root-first and
+  explicit-submodule-first imports preserve callable identity and exact runtime
+  type hints, while recognition/output execution and every optional backend or
+  provider remain unloaded. No packaging or runtime correction was required.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

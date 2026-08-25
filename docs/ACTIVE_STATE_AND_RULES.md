@@ -2563,6 +2563,24 @@ suite passes 1,493. This is not a package-wide import framework: do not apply it
 to unproven names or the frozen worker collision, and do not add a module proxy
 or import hook.
 
+#221 proves the complete #218--#220 video facade repair from an exact clean
+archive of commit `fbcca0c`, rather than inferring installed behavior from the
+source tree. Existing local Hatchling built one 255,079-byte
+`ocrllm-0.1.0-py3-none-any.whl` (SHA-256
+`09603DEFAD71A5E89621D76070FCC6A959450C20B9B9E78231810F3FA2C07B0C`)
+without network access. The wheel contains `py.typed`, package initialization,
+and all four same-named video facade modules; a `--no-index --no-deps`
+installation outside the repository resolved every loaded `ocrllm` module from
+that target. Root-first and explicit-submodule-first imports preserved callable
+identity for `recognize_video`, `recognize_video_frames`,
+`compose_video_result`, and `publish_video_result`, and ordinary
+`typing.get_type_hints()` resolved all four. Plain installed import still left
+recognition execution, result-building, atomic-write code, all optional media
+backends/provider SDKs, HTTPX, and legacy unloaded. The disposable proof root
+was removed. No runtime, test, manifest, dependency, provider, media, or public
+API change was needed; do not repeat this wheel proof without a later package
+layout or import-boundary change.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

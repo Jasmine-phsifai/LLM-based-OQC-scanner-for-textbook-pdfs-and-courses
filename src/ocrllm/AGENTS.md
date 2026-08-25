@@ -233,6 +233,10 @@ hook, and do not use it to change the frozen worker collision.
 `publish_video_result`: keep their public types at module scope, execution
 imports inside the functions/helpers, and both root callables bound at package
 initialization. Do not generalize without another proven collision.
+#221 proves that all four functions and their runtime annotations survive a
+clean installed wheel in both root-first and explicit-submodule-first orders.
+Do not add another build harness or repeat that gate unless package layout,
+facade initialization, or their import boundary changes.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
