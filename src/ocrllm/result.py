@@ -35,9 +35,11 @@ class RecognitionResult:
             raise ValueError("RecognitionResult.profile must be nonempty text when set")
         if self.status not in {"complete", "partial"}:
             raise ValueError("RecognitionResult.status must be 'complete' or 'partial'")
-        if any(not isinstance(value, str) for value in self.hotwords):
+        hotwords = tuple(self.hotwords)
+        warnings = tuple(self.warnings)
+        if any(not isinstance(value, str) for value in hotwords):
             raise TypeError("RecognitionResult.hotwords must contain only text")
-        if any(not isinstance(value, str) for value in self.warnings):
+        if any(not isinstance(value, str) for value in warnings):
             raise TypeError("RecognitionResult.warnings must contain only text")
 
         frozen_metadata = freeze_json_value(self.metadata)
@@ -46,6 +48,6 @@ class RecognitionResult:
 
         object.__setattr__(self, "output_path", Path(self.output_path) if self.output_path else None)
         object.__setattr__(self, "assets", tuple(Path(path) for path in self.assets))
-        object.__setattr__(self, "hotwords", tuple(self.hotwords))
-        object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(self, "hotwords", hotwords)
+        object.__setattr__(self, "warnings", warnings)
         object.__setattr__(self, "metadata", frozen_metadata)

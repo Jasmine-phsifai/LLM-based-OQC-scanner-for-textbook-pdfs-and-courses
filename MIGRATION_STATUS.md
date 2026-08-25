@@ -1007,6 +1007,14 @@ The following directions remain traceable but are not current work:
   a package failure; the installed combined-video gate remains open and later
   bounded pressure robustness tests still follow valid basic installed/live
   proof.
+  #280 fixes silent annotation loss at the existing result boundary. Both
+  `RecognitionResult` and `ProcessorOutput` previously validated one-shot
+  `hotwords`/`warnings` iterables and then converted the exhausted values to
+  empty tuples. They now snapshot once, validate, and store that same tuple,
+  preserving the existing normalization behavior without changing batch tuple
+  policy or adding an abstraction. Two causal regressions failed before the
+  fix; 74 adjacent tests and all 1,545 offline tests pass afterward. A bounded
+  re-audit found no justified additional video composition/publication change.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

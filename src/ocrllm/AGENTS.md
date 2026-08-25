@@ -490,6 +490,12 @@ execution. Do not infer a package defect or alter the gate/dependency policy
 from that invalid evidence. No replay was made and its exact temporary wrapper
 root was removed. The ordinary installed combined-video proof remains open;
 later pressure robustness work still follows valid basic installed/live proof.
+#280 preserves one-shot `hotwords` and `warnings` at the two existing result
+boundaries. `RecognitionResult` and `ProcessorOutput` must snapshot each value
+once, validate that snapshot, and store the same tuple; do not validate an
+iterator and then consume it again. This does not relax or reinterpret
+`recognize_batch()`'s separate exact top-level tuple contract, and it does not
+justify a shared collection-normalization abstraction.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

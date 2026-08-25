@@ -34,9 +34,11 @@ class ProcessorOutput:
             raise ValueError("ProcessorOutput.profile must be nonempty text when set")
         if self.status not in {"complete", "partial"}:
             raise ValueError("ProcessorOutput.status must be 'complete' or 'partial'")
-        if any(not isinstance(value, str) for value in self.hotwords):
+        hotwords = tuple(self.hotwords)
+        warnings = tuple(self.warnings)
+        if any(not isinstance(value, str) for value in hotwords):
             raise TypeError("ProcessorOutput.hotwords must contain only text")
-        if any(not isinstance(value, str) for value in self.warnings):
+        if any(not isinstance(value, str) for value in warnings):
             raise TypeError("ProcessorOutput.warnings must contain only text")
 
         frozen_metadata = freeze_json_value(self.metadata)
@@ -44,6 +46,6 @@ class ProcessorOutput:
             raise TypeError("ProcessorOutput.metadata must be a JSON object")
 
         object.__setattr__(self, "assets", tuple(Path(path) for path in self.assets))
-        object.__setattr__(self, "hotwords", tuple(self.hotwords))
-        object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(self, "hotwords", hotwords)
+        object.__setattr__(self, "warnings", warnings)
         object.__setattr__(self, "metadata", frozen_metadata)

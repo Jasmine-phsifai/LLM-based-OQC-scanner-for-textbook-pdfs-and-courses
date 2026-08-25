@@ -66,3 +66,15 @@ def test_result_rejects_board_as_a_transport_media_type():
 def test_result_constructor_is_keyword_only_to_avoid_positional_field_rebinding():
     with pytest.raises(TypeError):
         RecognitionResult("# Board\n", "image", None)  # type: ignore[misc]
+
+
+def test_result_preserves_one_shot_hotwords_and_warnings():
+    result = RecognitionResult(
+        markdown="# Board\n",
+        source_type="image",
+        hotwords=iter(("gene", "protein")),  # type: ignore[arg-type]
+        warnings=iter(("faint", "cropped")),  # type: ignore[arg-type]
+    )
+
+    assert result.hotwords == ("gene", "protein")
+    assert result.warnings == ("faint", "cropped")

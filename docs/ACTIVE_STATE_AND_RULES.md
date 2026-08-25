@@ -4680,6 +4680,28 @@ remained. The ordinary installed combined-video proof therefore stays open.
 Later pressure/robustness tests remain authorized only after the corresponding
 basic installed/live flow has valid evidence, as separate bounded atomic gates.
 
+## Iteration 280: one-shot result annotations are preserved
+
+The active video outcome/composition/publication path was re-audited after
+#279. A proposed reserved-media alias through a not-yet-created directory was
+rejected by the existing public API without creating that directory or changing
+the retained frame, and an independent bounded audit found no second justified
+video-path defect. Do not add more video path graphs, cross-process asset
+transactions, or speculative cleanup machinery from that disproved candidate.
+
+The adjacent shared result boundary did contain a reproducible data-loss bug.
+Both public `RecognitionResult` and internal `ProcessorOutput` validated
+`hotwords` and `warnings` by iterating them, then later converted the already
+consumed values to tuples. A caller-supplied one-shot iterable containing only
+valid strings therefore silently became an empty tuple. Each class now takes
+one local tuple snapshot after its ordinary scalar validation, validates that
+snapshot, and stores the same snapshot. This preserves the existing iterable
+normalization behavior and all tuple callers; it does not broaden the exact
+top-level tuple contract of `recognize_batch()` or introduce a collection
+normalization layer. The two causal tests failed before the change, adjacent
+result/video/PDF/worker/resume tests pass 74, and the full offline suite passes
+1,545.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
