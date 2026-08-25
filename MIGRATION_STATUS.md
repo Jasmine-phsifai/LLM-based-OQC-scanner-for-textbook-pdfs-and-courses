@@ -721,6 +721,12 @@ The following directions remain traceable but are not current work:
   hashing the whole video, and container duration remains authoritative for
   VFR input; this is bounded ordinary-change detection, not an adversarial
   integrity guarantee.
+  #228 proves that exact #227 runtime from a clean, externally installed wheel.
+  The 247,991-byte wheel contains the inspector and `py.typed`; its public
+  function remains import-light and rejects a real two-MP4 caller-path overwrite
+  with exact `SOURCE_INVALID`. A separate 108-test bounded audit found no next
+  justified runtime defect inside the settled video scope, so no speculative
+  lock, hash, snapshot, provider framework, or decision-bound code was added.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

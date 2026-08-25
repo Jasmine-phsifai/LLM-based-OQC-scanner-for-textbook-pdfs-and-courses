@@ -264,6 +264,11 @@ change between its OpenCV metadata read and container-duration read. Preserve
 the pre/post validated identity check and typed `SOURCE_INVALID`, but do not
 turn this no-output API into a whole-video snapshot, content-hash system, or
 adversarial integrity claim. Container duration remains required for VFR.
+#228 proves #227 from a clean installed wheel with real MP4 overwrite evidence
+and unchanged lazy imports. Do not repeat that package proof or add another
+build harness unless the relevant inspector, manifest, dependency, or import
+boundary changes again. The adjacent 108-test audit found no reason for another
+video filesystem defense pass.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

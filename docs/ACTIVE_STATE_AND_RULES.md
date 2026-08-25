@@ -2675,6 +2675,23 @@ evade the check. The public no-output inspector does not copy multi-hour input
 merely to defend against that unproven case. The focused adjacent set passes
 51 tests and the complete offline suite passes 1,495.
 
+#228 proves that #227 is present and executable as an ordinary installed Python
+package rather than only in the source checkout. A clean archive of exact
+commit `9497175` built one 247,991-byte wheel with SHA-256
+`c80833d9ef842bbccdc9c782ae8a6d8724d9ff4a950ae126870bce7d5e1b5c84`
+and 235 members, including `ocrllm/video/inspect_video.py` and `py.typed`.
+After a no-index, no-dependency install outside the repository, package and
+distribution metadata both resolved from that target. Plain import plus public
+`inspect_video` resolution loaded no optional media backend, provider SDK,
+HTTP client, legacy application, or recognition execution module. Two real
+MP4s then reproduced the caller-path overwrite timing through the installed
+public function, which raised exact `InvalidSource(code="SOURCE_INVALID")`
+without returning `VideoInfo`. A separate bounded audit ran 108 video tests and
+found no justified new defect outside the open #127/#152 choices and expressly
+excluded speculative integrity/path/provider expansion. No runtime, manifest,
+dependency, API, or provider behavior changed; do not repeat this wheel proof
+until the relevant runtime/package boundary changes again.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

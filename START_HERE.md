@@ -245,6 +245,12 @@ change with typed `SOURCE_INVALID`, instead of returning mixed metadata. It
 does not copy or hash the entire video and does not claim protection against a
 deliberate same-metadata overwrite-and-restore race.
 
+#228 proves that exact behavior from a clean wheel installed outside the
+repository. The installed public function remained lightweight and rejected a
+real two-MP4 overwrite with exact `SOURCE_INVALID`; the wheel included the
+inspector and `py.typed`. This is distribution evidence, not a new integrity
+mechanism or permission to reopen #127/#152.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed

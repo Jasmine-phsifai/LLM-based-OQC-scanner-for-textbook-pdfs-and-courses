@@ -4493,3 +4493,19 @@ Atomic task — Iteration #227: prove whether standalone `inspect_video()` can m
 **两条路线和最小修复。** 路线 A 像 #211/#224 一样为 `inspect_video()` 复制整段输入，能获得严格单版本视图，但这个 API 不写输出、没有自然的调用者临时目录，而且公开上限允许多小时视频；只为一次元数据读取复制整段文件会改变它的成本。路线 B 保留 OpenCV 加容器时长的现行责任，在入口验证普通文件时记录设备、inode、大小、mtime 与 ctime，读取容器时长后再次验证并比较；普通覆盖或替换就抛 `InvalidSource(code="SOURCE_INVALID")`。选择 B。不能改成 `frame_count / FPS`，因为 #183 已证明 VFR 的容器时长不能由恒定帧率公式代替；也没有新增 snapshot、缓存、哈希、锁、事务或公开参数。
 
 **验证、诚实边界与过度设计复查。** 修复后 `test_inspect_video.py` 为 **8 passed in 0.32s**；抽帧、抽音频、组合视频识别和轻量导入相邻集合为 **51 passed in 8.11s**；`compileall -q src tests tools` 通过。只在当前测试进程临时加入仓库既有 Node 所在目录后，完整离线套件为 **1,495 passed in 64.42s**。没有网络、provider call、credential、依赖安装、输出格式、provider 分离、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。这个检查只承诺发现普通文件身份变化；若对抗性写入者刻意恢复完全相同的身份字段，仍可能绕过。为这个尚未发生的对抗场景复制或哈希数小时视频、建立文件监控或锁协议，会比当前缺陷更重，也会让未来维护者误以为存在跨进程事务保证，因此明确不做。
+
+## #228 — 2026-08-25：刚修好的公开视频检查必须存在于真正安装的 Python 包里
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #228: select and close the next highest-value proven gap in the shipped video-library surface after #227, without extending cancellation, long-audio routing, provider orchestration, or legacy compatibility by inference. Success means rereading and reconciling the current authority, Chinese diary, entry-point guidance, and package-local rules; deriving the next task from the open defect/decision queue rather than inventing an edge case; tracing one public video behavior end to end; reproducing a caller-visible defect with real local media before editing runtime code; choosing between at least two bounded remedies; preserving separate image/audio configs, negative-feedback frame selection, lightweight imports, frozen directories, and the dirty worktree; running proportional tests and the full offline gate if runtime changes; updating the Chinese diary and authority; then committing and pushing one coherent change. This matters because maturity now depends on closing demonstrated product gaps in priority order, not accumulating defensive machinery around already-stable seams.
+```
+
+**先找缺陷，不强迫代码变化。** 主代理重读当前 P1-e、#127、#152、入口文档和包内规则，并复核 inspect、snapshot、负反馈扫描/选择、JPEG/MP3 留取、两个识别分支、outcome、composition 与 publication。独立轻量审计也逐条检查同一条公开视频链，并运行含真实 MP4 的相邻 **108 passed in 9.02s**。三个最强怀疑都被现有证据排除：跨阶段源漂移已有 #211/#224 的单快照和 #227 的独立身份检查；VFR、seek 与显示旋转已有真实容器、PTS 和 JPEG 内容回归；部分失败、资产保留和 reserved path 已由结果构造与发布测试覆盖。剩余方向只能走向未决的 #127/#152、对抗性同身份改写、通用锁/哈希/provider 框架或任意长路径，因此不制造 runtime patch。
+
+**两条可行路线与选择。** #227 刚改变了公开视频解析 runtime，且用户强调它必须是实际可安装的 Python library。路线 A 重跑完整 clean-archive release gate 和所有 extras，能证明更宽范围但会重复与本次变化无关的安装矩阵；路线 B 从 exact commit `9497175` 构建一个 clean wheel，在仓库外无依赖安装，只证明修复模块、`py.typed`、lazy import 和真实覆盖拒绝。选择 B。固定 archive/build/install/主动探针交给轻量任务；主代理亲自确认 Hatch wheel 只打包 `src/ocrllm`、base dependencies 仍为空，并复核精确提交中的实现和类型标记。
+
+**安装包证据。** 使用机器已有 Hatchling、无网络、无下载，从 clean `git archive` 只构建一个 `ocrllm-0.1.0-py3-none-any.whl`：**247,991 bytes**、**235 members**，SHA-256 为 `c80833d9ef842bbccdc9c782ae8a6d8724d9ff4a950ae126870bce7d5e1b5c84`；成员明确包含 `ocrllm/video/inspect_video.py` 和 `ocrllm/py.typed`。以 `--no-index --no-deps --target` 安装到仓库外后，package 与 distribution metadata 都来自该 target。普通 import 加公开 `inspect_video` 解析没有加载 OpenCV、NumPy、imageio-ffmpeg、miniaudio、Google/OpenAI SDK、HTTPX、legacy、`recognize` 或 `recognize_batch`。随后仅借用机器已有媒体依赖生成两个真实 MP4，在容器时长读取前直接覆盖调用者路径；安装包公开函数精确抛 `InvalidSource(code="SOURCE_INVALID")`，没有返回虚假的 `VideoInfo`。
+
+**工具事实、清理和过度设计复查。** 首次隔离探针因 `-I` 忽略 `PYTHONPATH` 而误进旧环境安装，在证明前即被判无效；改为新进程显式把外部 target 放到 `sys.path` 才得到上述有效证据。轻量任务和主代理的两次原生 PowerShell 递归删除都在启动前被策略拒绝；主代理随后只读确认唯一 proof root 位于系统 TEMP、名称精确、1,130 个文件与 81 个子目录全部在根内且无 reparse point，再由单个 Python 进程重新枚举、逐项非递归删除，最终确认根不存在。仓库没有 runtime/test/API/manifest/dependency/provider/credential/legacy/social/frozen boundary 变化，仍只保留两项用户未跟踪文件。最明显的过度设计是为了下一条迭代硬造防御性缺陷、复制整套 release runner 或固化第二套 wheel harness；本轮只记录一次与 #227 直接相关的安装事实，并把重复门禁条件重新收紧到相关边界再次变化。
