@@ -543,6 +543,14 @@ Composition/publication retain both branches, media, call/token evidence, add
 provider errors still follow their existing paths. Do not replace this with a
 generic lifecycle protocol, cleanup retry, public snapshot path, or by assigning
 the cleanup error to an unrelated image/audio branch.
+#286 closes #281's missing current Google image evidence from exact `074c287`:
+the maintained runner discovered 37 models and completed one
+`gemini-2.5-flash` request with one provider call, usage 595/414, exit 0,
+empty stderr, no credential/source-path leak, and no owned residue. Direct .NET
+Process APIs preserved the numeric exit without adding a controller to the
+repository. Later pressure robustness work is permitted only as separate,
+single-question, capped and cleanup-verified gates after the corresponding
+basic live flow; do not add a generic load/provider framework.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

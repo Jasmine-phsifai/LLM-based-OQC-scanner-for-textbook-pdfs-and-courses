@@ -1066,6 +1066,17 @@ The following directions remain traceable but are not current work:
   failed first, video neighbors pass 117, result/import neighbors pass 39, and
   all 1,548 offline tests pass. No generic lifecycle layer, cleanup retry,
   resume/provider policy, #127/#152, legacy/social, or frozen boundary changed.
+  #286 closes the invalid #281 image refresh with one valid terminal run from
+  exact clean commit `074c287`. The maintained routine runner discovered 37
+  current models, completed one `gemini-2.5-flash` image request in 21,785 ms,
+  and reported one provider call plus usage 595/414 before exiting 0 with empty
+  stderr. Primary review found no exact credential, credential pattern, source
+  path, live process, new image snapshot root, or wrapper residue. Direct .NET
+  Process APIs fixed only the one-use exit-evidence path; runtime, runner,
+  dependencies, public API, retries/fallback, and provider policy did not
+  change. Later pressure robustness tests may exercise this live-proven flow as
+  separate single-question, capped, deadline-controlled and cleanup-verified
+  gates, not as a generic load framework.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

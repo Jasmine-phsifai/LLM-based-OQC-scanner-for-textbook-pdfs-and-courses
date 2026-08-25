@@ -4837,6 +4837,35 @@ cleanup error was rejected because it would still discard paid recognition;
 putting the cleanup failure into the image or audio branch was rejected as
 misclassification.
 
+## Iteration 286: current Google image flow has valid terminal evidence
+
+One bounded free-tier refresh from exact clean commit `074c287` used the
+maintained image runner, live catalog discovery, the committed 269,337-byte
+`bilingual_printed_slide.png`, explicit `gemini-2.5-flash`, and exactly one
+recognition request. The current catalog contained 37 models. Recognition
+exited 0 after 21,785 ms with provider-reported usage 595 input / 414 output
+tokens, one provider call, one 173-byte JSON object on stdout, and empty
+stderr. No retry, model switch, fallback, dependency installation, or stress
+load occurred.
+
+The one-use controller used direct .NET `ProcessStartInfo`/`Process` and only
+`ReadToEndAsync()` for each redirected stream; a preceding zero-network child
+proved that this form preserved numeric exit 7 on the current host. The Google
+credential moved from legacy QSettings only into the child environment and was
+never printed. Primary review found neither the exact credential, an `AIza`
+pattern, nor the source path in the retained logs. The runner process, newly
+created image snapshot roots, and exact wrapper root were all absent after
+review and cleanup. The complete offline suite passes 1,548 when the already
+installed Node executable is added only to the test process PATH.
+
+This closes #281's missing current image terminal evidence; it does not change
+the runtime, runner, public API, provider policy, or the separate open installed
+combined-video gate. The maintainer confirms that later pressure robustness
+work may now be added for a corresponding live-proven flow, but each run must
+remain a separate single-question gate with capped input scale, provider calls,
+deadline, honest failure checks, and owned cleanup. Do not turn this into a
+generic load framework or indefinite provider pressure.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
