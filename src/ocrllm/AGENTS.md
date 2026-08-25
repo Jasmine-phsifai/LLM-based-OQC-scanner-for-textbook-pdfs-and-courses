@@ -412,6 +412,17 @@ process controller for maintained installs, and require one-off operators to do
 the same. A child still running when its operator returns is incomplete evidence,
 not a terminal install failure. Terminate only the exact owned process tree,
 verify no partial commit, and remove the exact owned root before reporting.
+#264 assigns the ordinary combined install proof to the existing clean gate.
+Keep `video,audio,image` as an exact profile assembled from the three declared
+extras, with the same bounded installer and one installed public video
+recognition/composition/publication proof. Keep `[video]` provider-free. Do not
+create a combined extra, second installer, smoke DSL, Google dependency, live
+provider call, provider hierarchy, retry, or fallback merely for packaging.
+The credential-free deterministic audio seam must still exercise real MP3
+snapshot/probe cleanup, while the injected image seam must receive valid
+ordered JPEG snapshots. The gate remains open until this profile actually runs
+to terminal exit. Later stress testing is permitted only as a separate,
+question-driven, capped run after the basic installed flow is established.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

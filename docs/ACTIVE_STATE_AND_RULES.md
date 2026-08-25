@@ -1444,6 +1444,36 @@ and enforce its caller-visible overall deadline before starting the child;
 planning to poll or terminate later is not a bound. Do not retry immediately,
 repin, change index/mirror, inject cache, or add another installer from #263.
 
+#264 makes the maintained clean-package gate own the exact combined
+`[video,audio,image]` installation path that #260 and #263 attempted ad hoc.
+This is a profile inside the existing bounded installer, not a new declared
+extra: it installs the union of the existing video, audio, and image extras,
+expects only Pillow, miniaudio, OpenCV, NumPy, and imageio-ffmpeg, and uses a
+253 MiB installed-size ceiling derived from the three existing profile ceilings.
+The provider-free `[video]` profile remains narrow and does not acquire image or
+audio recognition dependencies.
+
+After the shared real-MP4 inspection, negative-feedback frame selection, and
+MP3 extraction checks, the combined profile now calls the installed public
+`recognize_video()`, `compose_video_result()`, and `publish_video_result()`
+facades. It proves separate image and audio Configs, ordered retained JPEG
+groups, one independently settled audio call, exact combined call/token
+accounting, durable assets, atomic Markdown publication, and request-temporary
+cleanup. The image seam is injected; the audio seam returns a deterministic
+typed response behind a credential-free `GoogleGenAISettings()`. The profile
+asserts that `google-genai` is neither installed nor imported, so this remains
+an offline packaging proof rather than a hidden live-provider test.
+
+The new gate regression first failed because this combined profile was absent.
+After the change, the package/video neighbor set passes 80 tests and the full
+offline suite passes 1,536. The clean gate itself was not executed in #264, so
+the ordinary installed combined-video gate remains open until a later bounded
+run reaches terminal exit. Later question-driven stress and robustness tests
+are allowed after the basic flow is proven; keep them capped, cleanup-verified,
+and separate from ordinary installation evidence. Do not add a second
+installer, combined extra, smoke-test framework, Google dependency, live call,
+provider hierarchy, retry, or fallback for this gate.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

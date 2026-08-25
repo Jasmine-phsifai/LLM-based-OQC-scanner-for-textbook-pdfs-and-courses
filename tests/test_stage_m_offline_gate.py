@@ -135,3 +135,35 @@ def test_archive_and_profile_installs_use_the_existing_process_bound() -> None:
     assert "'--retries', '0'," in script
     assert "'--timeout', '30'," in script
     assert "-TimeoutSeconds $OptionalProfileInstallTimeoutSeconds" in script
+
+
+def test_combined_video_profile_uses_bounded_install_and_public_pipeline() -> None:
+    """The user-facing video workflow is proven from one combined profile."""
+
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+
+    assert "'video,audio,image' = 265289728" in script
+    assert "'video,audio,image' = @(" in script
+    for distribution in (
+        "'Pillow'",
+        "'imageio-ffmpeg'",
+        "'miniaudio'",
+        "'numpy'",
+        "'opencv-python'",
+    ):
+        assert distribution in script
+    assert "if ($profile -eq 'video,audio,image')" in script
+    assert "recognize_video(" in script
+    assert "compose_video_result(outcome)" in script
+    assert "publish_video_result(outcome, published_path)" in script
+    assert "processor.recognize_short_mp3 = fake_google_audio" in script
+    assert "provider=GoogleGenAISettings()," in script
+    assert "distribution('google-genai')" in script
+    assert "assert 'google' not in sys.modules" in script
+    assert "assert image_provider.calls == 1" in script
+    assert "assert image_provider.calls == len(outcome.frame_outcomes)" in script
+    assert "assert len(observed_audio_snapshots) == 1" in script
+    assert "glob('ocrllm-images-*')" in script
+    assert "glob('ocrllm-audio-*')" in script
+    assert "assert result.metadata['current_run_provider_call_count'] == 2" in script
+    assert "assert result.metadata['current_model_token_usage'] == (" in script

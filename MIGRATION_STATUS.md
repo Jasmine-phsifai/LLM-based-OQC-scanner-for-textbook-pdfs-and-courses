@@ -903,6 +903,19 @@ The following directions remain traceable but are not current work:
   and its root removed; no distribution or partial `cv2` artifact was committed.
   Treat this as incomplete operator evidence, not a product or dependency
   failure. Future download tasks must enforce their bound before launch.
+  #264 moves that exact combined proof into the maintained clean gate instead
+  of repeating one-off operators. The gate now has a `video,audio,image`
+  profile that reuses the existing bounded installer, installs only the union
+  of declared extras, and runs the installed public video recognition,
+  composition, and publication path on a real generated MP4 with independent
+  image/audio Configs and deterministic offline provider seams. It verifies
+  retained JPEG ordering, MP3 validation, call/token accounting, assets,
+  publication, and temporary cleanup while proving the Google SDK is absent.
+  The individual `[video]` profile and package metadata are unchanged. The
+  package/video neighbor set passes 80 tests and the full offline suite passes
+  1,536; because the clean gate was not run in this iteration, installed
+  combined-video delivery remains an open gate. A later bounded run may be
+  followed by separately scoped, capped robustness stress tests.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
