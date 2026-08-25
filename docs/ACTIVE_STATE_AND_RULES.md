@@ -5848,6 +5848,32 @@ formula, LaTeX, Mermaid, SVG/code, and reasoning evidence, but must not use the
 largest flagship merely because it is available or retain models clearly worse
 than RapidOCR for ordinary OCR.
 
+## Iteration 319: long-audio partial state has bounded atomic file I/O
+
+The validated #318 bytes can now be saved to and loaded from one explicit
+caller-provided `Path`. Save writes one UUID-named sibling with exclusive
+creation, requires every byte, flushes and fsyncs, closes the stream, and only
+then atomically replaces the target. Any failure before replacement preserves
+an existing state. Load returns `None` for an absent path, requires a regular
+file, preflights size, then reads at most one byte beyond the same **16 MiB**
+limit so post-stat growth cannot cause an unbounded read. Strict #318 parsing
+remains the only schema boundary.
+
+Expected filesystem failures are typed and redacted. Stream and temporary-file
+cleanup cannot replace an earlier typed, ordinary, or process-control failure;
+a cleanup-only process-control exception still propagates. One controlled
+Windows regression proves the explicit state and its short sibling temporary
+name remain usable immediately below the simulated legacy 260-character open
+limit. This does not add extended-path conversion or filename shortening.
+
+This iteration does not choose a state filename, create directories, lock
+processes, rotate backups, connect provider dispatch, implement resume routing,
+parse repair text, publish final Markdown, or delete state after success. The
+focused state/identity/planner/prompt/materializer set passes **85 tests in 0.51
+seconds**; the full source suite passes **1,650 tests in 65.96 seconds**.
+Compilation, lightweight import, diff, and frozen `contracts/worker` checks
+pass. Exact clean installed proof remains the #319 exit gate.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

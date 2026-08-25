@@ -737,6 +737,14 @@ exports. The 1,629-test source suite passes. Exact commit `3724dc3` passes the
 complete installed gate with a 252,828-byte wheel; every profile and local
 media smoke passes without cloud I/O.
 
+#319 adds audio-owned `save_long_audio_partial_state_atomically()` and
+`load_long_audio_partial_state()` at an explicit caller path. Keep the 16 MiB
+actual-read bound, complete write/flush/fsync/close-before-replace ordering,
+old-target preservation, and primary-error precedence. Do not turn these into
+filename selection, directory creation, locking, backup rotation, dispatch,
+repair, final publication, or public exports. The 1,650-test source suite
+passes; exact installed proof is pending.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

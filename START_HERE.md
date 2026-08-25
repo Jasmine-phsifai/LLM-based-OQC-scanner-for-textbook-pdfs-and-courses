@@ -728,6 +728,14 @@ Exact commit `3724dc3` passes the clean installed gate: 1,628 archived tests
 pass with one expected skip, the wheel is 252,828 bytes, all installed profiles
 and local media smokes pass, no cloud I/O occurs, and cleanup is complete.
 
+#319 adds audio-owned bounded atomic save/load for that strict state at one
+explicit caller path. It preserves an old target until complete
+write/flush/fsync/close, bounds actual reads to 16 MiB plus one probe byte, and
+keeps cleanup failures from replacing an earlier primary. All 1,650 source
+tests pass. No filename policy, resume dispatcher, provider call, repair path,
+final publication, or success deletion is claimed; exact clean installed proof
+is pending.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

@@ -1325,6 +1325,12 @@ The following directions remain traceable but are not current work:
   `3724dc3` passes the clean installed gate with 1,628 archived tests and one
   expected skip, a 252,828-byte wheel, all profiles and local media smokes
   green, no cloud I/O, and complete cleanup.
+  #319 adds only caller-path audio state file I/O: bounded actual reads and a
+  complete sibling write/flush/fsync/close before atomic replacement. It
+  preserves old state and primary-error precedence, including process-control
+  cleanup, and has one bounded near-260-character Windows regression. It does
+  not add filename policy, dispatch, repair, final output, or public API. All
+  1,650 source tests pass; exact clean installed proof remains pending.
 
 ## Obsolete Prose Kept For Trace
 

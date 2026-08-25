@@ -535,6 +535,14 @@ evidence should prefer capable smaller OCR/reasoning candidates around the
 requested 27B class for formulas and structured/code output; do not select the
 largest flagship by default or preserve clearly inferior ordinary-OCR models.
 
+- #319 adds the next persistence primitive only: audio-owned bounded load and
+  atomic save at an explicit caller `Path`. The 16 MiB limit protects memory
+  from corrupt sidecars and is not an audio/provider limit. The next slice may
+  connect one serial checkpoint consumer only after defining who owns the state
+  path and when successful output removes it; do not add generic transactions,
+  locks, backup rotation, repair coupling, or provider fallback here. All 1,650
+  source tests pass; exact clean installed proof remains pending.
+
 ### Stage A exit gate
 
 - A1 and each A2 provider slice have their own full-suite, import, capability,
