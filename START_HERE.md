@@ -621,14 +621,15 @@ Before reporting completion, run the maintained clean-archive gate:
 & .\tools\run_stage_m_offline_gate.ps1
 ```
 
-The latest delegated run (#295, exact commit `bfdc877`) first proved and
-propagated the active `127.0.0.1:10080` proxy, but its one-use PowerShell
-wrapper did not retain stdout, stderr, or a numeric exit code. Its roughly
-20-minute termination is not an install result. The installed combined-video
-gate remains open; do not immediately replay it or infer a dependency defect.
-Before a later run, prove the wrapper's status/log channel with a local child.
+The latest delegated run (#305, exact commit `efa7069`) proved and propagated
+the active `127.0.0.1:10080` proxy, passed 1,558 archived tests with one skip,
+and built the wheel. It then exposed a Windows PowerShell argument bug in the
+gate's multiline wheel-content probe before any install profile began. #306
+moves those three checks into `tools/check_built_wheel.py`; focused and full
+offline regressions pass. The installed combined-video gate remains open until
+the corrected script is rerun from the clean #306 commit.
 
-#296 completes only that local prerequisite. Python standard-library
+#296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact
 Windows process-tree termination after an outer timeout. The gate's own five

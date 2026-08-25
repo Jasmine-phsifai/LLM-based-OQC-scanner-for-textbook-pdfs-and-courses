@@ -1223,7 +1223,11 @@ The following directions remain traceable but are not current work:
   chunking. #305 adds only the internal deterministic interval planner: exact
   integer-minute logical windows, clamped 30-second physical context, tuple
   order, and immutable identity fields. Media cutting, provider dispatch,
-  temporary persistence, public routing, and repair remain later slices.
+  temporary persistence, public routing, and repair remain later slices. #306
+  repairs the clean gate's first post-build check: Windows PowerShell had split
+  multiline `python -c` source and supplied `is` as the apparent wheel path.
+  The three wheel-content assertions now live in the single-purpose
+  `tools/check_built_wheel.py`; no package runtime or install policy changed.
 
 ## Obsolete Prose Kept For Trace
 

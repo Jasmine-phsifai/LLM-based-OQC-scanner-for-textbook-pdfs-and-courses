@@ -229,17 +229,8 @@ try {
         throw "base wheel exceeds 256 KiB: $($wheel.Length)"
     }
 
-    $wheelFileProbe = @'
-import sys
-import zipfile
-
-with zipfile.ZipFile(sys.argv[1]) as wheel:
-    names = set(wheel.namelist())
-assert "ocrllm/__init__.py" in names, "wheel is missing the package"
-assert "ocrllm/py.typed" in names, "wheel is missing py.typed"
-assert "ocrllm/AGENTS.md" not in names, "wheel contains repository-only instructions"
-'@
-    & $python -I -c $wheelFileProbe $wheel.FullName
+    $wheelChecker = Join-Path $sourceRoot 'tools\check_built_wheel.py'
+    & $python -I $wheelChecker $wheel.FullName
     Assert-LastExitCode 'base wheel file-selection check failed'
 
     & $python -m pip install --no-deps --target $targetDir $wheel.FullName

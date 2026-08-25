@@ -5417,6 +5417,24 @@ gate defect: its base wheel-selection check attempted to open the literal path
 not start. This is no longer a dependency-download or proxy failure. Repair the
 selector as a separate atomic iteration before replaying the clean gate.
 
+## Iteration 306: the clean gate passes its wheel path without multiline parsing
+
+The #305 gate failure is reproduced as a Windows PowerShell native-argument
+boundary defect. The inline multiline `python -c` source was split so Python
+received the assertion word `is` where the wheel path should have been. The
+three existing wheel-content checks now live in the single-purpose
+`tools/check_built_wheel.py`, and the PowerShell gate passes only the checker
+path and wheel path. Required package and typing markers and the forbidden
+repository-only `AGENTS.md` retain the same policy.
+
+No cache, mirror, dependency, timeout, package runtime, public API, media route,
+or provider behavior changed. The failing-first selector regression now passes;
+the checker covers one valid and one invalid archive, the focused gate/window
+set passes 18 tests, PowerShell parses with zero AST errors, and the complete
+offline suite passes 1,572 tests. The corrected full installed gate must still
+run from the clean #306 commit before its optional profiles or combined-video
+result can be called proven.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

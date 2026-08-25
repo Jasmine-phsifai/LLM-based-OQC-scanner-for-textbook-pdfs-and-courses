@@ -5,12 +5,15 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
+import zipfile
 
 import pytest
 
 
 GATE_SCRIPT = Path(__file__).parents[1] / "tools" / "run_stage_m_offline_gate.ps1"
+WHEEL_CHECKER = Path(__file__).parents[1] / "tools" / "check_built_wheel.py"
 
 
 def _run_bounded_process(tmp_path: Path, invocation: str) -> subprocess.CompletedProcess:
@@ -137,6 +140,43 @@ def test_archive_and_profile_installs_use_the_existing_process_bound() -> None:
     assert "'--retries', '0'," in script
     assert "'--timeout', '30'," in script
     assert "-TimeoutSeconds $OptionalProfileInstallTimeoutSeconds" in script
+
+
+def test_base_wheel_check_uses_a_python_file_instead_of_multiline_c() -> None:
+    """Windows PowerShell must not split multiline Python source into argv."""
+
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+
+    assert WHEEL_CHECKER.is_file()
+    assert "$wheelFileProbe = @'" not in script
+    assert "tools\\check_built_wheel.py" in script
+
+
+@pytest.mark.parametrize(
+    ("names", "succeeds"),
+    [
+        (("ocrllm/__init__.py", "ocrllm/py.typed"), True),
+        (("ocrllm/__init__.py", "ocrllm/AGENTS.md"), False),
+    ],
+)
+def test_built_wheel_checker_enforces_package_contents(
+    tmp_path: Path,
+    names: tuple[str, ...],
+    succeeds: bool,
+) -> None:
+    wheel = tmp_path / "ocrllm.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        for name in names:
+            archive.writestr(name, b"")
+
+    completed = subprocess.run(
+        [sys.executable, "-I", str(WHEEL_CHECKER), str(wheel)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert (completed.returncode == 0) is succeeds
 
 
 def test_combined_video_profile_uses_bounded_install_and_public_pipeline() -> None:

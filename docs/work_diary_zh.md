@@ -5683,3 +5683,17 @@ Atomic task — Iteration #305: implement the smallest pure long-audio interval 
 **验证。** 新回归加相邻 probe/Google long-audio adapter 为 **39 passed in 0.12s**，compileall 与 diff check 通过。第一次完整回归为 **1,567 passed, 2 failed**，两项都明确因为当前 PATH 找不到 Node，而非本轮代码；本机已有 `D:\Anaconda\envs\STA\node.exe`。只对验证子进程临时补 PATH 后，Node 定向 **2 passed in 0.82s**，完整套件 **1,569 passed in 64.20s**。没有安装或修改 Node。
 
 **并行全安装门禁。** 轻量执行者从精确干净提交 `efa7069` 验证 WinINET `127.0.0.1:10080`、TCP 与经代理 PyPI HTTP 200，显式传递大小写代理变量并只启动一次维护 gate。archive 测试 **1,558 passed, 1 skipped in 79.24s**，wheel 构建成功；之后 base wheel selector 把输出单词 `is` 当作路径并报 `FileNotFoundError`。base install、optional profiles 和 installed combined video 未开始，临时根与进程均清理。它证明下载已经打通，也证明下一原子任务应修 gate selector；不应再调整代理、cache、mirror、pin 或 timeout。
+
+## #306 — 2026-08-26：修复 clean gate 把 `is` 当成 wheel 路径
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #306: reproduce and repair the maintained clean gate’s wheel-selection parser that treated the word `is` as a path, then re-run the same full gate from a clean commit through the delegated proxy workflow. Context: #305 proved dependency delivery, archived tests, and wheel construction; the first post-build check failed before installation because the controller misread its helper’s output. Success means a focused failing regression from the exact captured shape, the smallest parser/output-contract correction, personal code review, focused and full offline verification, documentation, commit and push, followed by one delegated end-to-end gate with no retry or distribution changes. This matters because the remaining product proof is blocked by our own release harness, not by the package or network.
+```
+
+**复现与根因。** 失败优先测试先以 `WHEEL_CHECKER.is_file() == False` 失败。本人逐行复核 gate 后确认 `$wheel` 枚举正确；真正问题是 Windows PowerShell 5 调用原生 Python 时拆分了 here-string 形式的多行 `-c` 源码，导致 Python 把断言句中的 `is` 收进 `sys.argv[1]`。因此 `zipfile.ZipFile()` 报的不是随机 wheel 名，而是跨语言参数边界的确定性错误。
+
+**最小修复与过度设计复查。** 路线 A 是继续在 PowerShell 中堆引号转义；路线 B 是把已有三条内容断言放进单职责 Python 文件，选 B。新增 `tools/check_built_wheel.py`，gate 只传 checker 路径和 `$wheel.FullName`。它仍只验证 `ocrllm/__init__.py`、`ocrllm/py.typed` 必须存在且 `ocrllm/AGENTS.md` 必须缺席。没有 JSON 协议、新 controller、通用 probe framework，也没有趁机重写其他能工作的内联探针。
+
+**验证。** 新回归覆盖一份合格 wheel 和一份缺少 typing marker/带仓库说明的坏 wheel；门禁控制器加窗口定向集 **18 passed in 2.01s**，PowerShell AST error **0**，compileall/diff check 通过。临时补入本机已有 Node 路径后的完整离线套件为 **1,572 passed in 63.57s**。没有安装依赖或修改系统 PATH。修正后的全安装门禁必须从本轮干净提交再由轻量执行者运行，结果不能提前声明。
