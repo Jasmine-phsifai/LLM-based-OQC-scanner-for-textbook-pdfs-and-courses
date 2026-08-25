@@ -668,6 +668,9 @@ existing streamed MP3 snapshot copy now computes SHA-256 in the same 1 MiB loop
 and carries it through short, long, and video-selected snapshot facts. There is
 no second source scan, public digest, provider change, sidecar, or resume claim.
 The next slice can build audio request/window identity from real byte evidence.
+The exact `b9ae0c9` clean gate exits 0 with 1,581 archived tests passing and one
+expected skip, a 259,949-byte wheel, every optional profile green, and both the
+installed interval and combined-video smokes complete without a provider call.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

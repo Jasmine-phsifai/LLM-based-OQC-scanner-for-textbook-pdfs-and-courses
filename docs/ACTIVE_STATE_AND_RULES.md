@@ -5626,8 +5626,21 @@ digest. The source-mutation regression now proves the yielded digest belongs to
 the owned original bytes even when the caller path is replaced before yield;
 the committed real MP3 and long wrapper prove the same field. Adjacent
 audio/video/provider regressions pass 120 tests and the complete maintained
-suite passes 1,582. Clean wheel/import/profile evidence remains to be recorded
-before this internal package change is release-proven.
+suite passes 1,582.
+
+The exact clean commit `b9ae0c908b5e4d331e382ed22f3fdebeaeb29a22`
+passes the maintained gate with exit 0. The delegated runner first verified the
+enabled WinINET proxy at `127.0.0.1:10080`, TCP reachability, an explicit HTTPS
+response through that proxy, and the retained wheelhouse hashes. The archive
+reports **1,581 passed, 1 skipped**; the wheel is **259,949 bytes** and the base
+target is **1,281,000 bytes**. Installed profile deltas are: audio 91,174,290;
+image 16,974,574; image+DashScope 41,549,980; Google 41,609,350;
+audio+Google 130,219,140; PDF vision 25,173,656; video 254,467,062; and
+combined video+audio+image 272,338,504 bytes. The interval smoke materializes
+and removes its 0.5-second segment; combined recognition/composition/publication
+retains two frames, makes one fake image call, observes one audio snapshot, and
+cleans up. No provider API, retry, owned gate root, or process remains. This
+release-proves the fingerprint propagation only; it does not implement resume.
 
 ## Documentation Rules
 

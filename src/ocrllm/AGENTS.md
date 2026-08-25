@@ -685,6 +685,9 @@ the digest through short, long, and video-selected internal snapshots. Keep this
 one-pass and internal. Do not add a second source scan, public fingerprint
 metadata, image-slot coupling, or claim resume until an audio-specific state has
 its own validated request/window identity and atomic per-result persistence.
+Exact commit `b9ae0c9` passes the maintained clean gate: 1,581 archived tests
+pass with one expected skip, the wheel is 259,949 bytes, and every installed
+profile plus the interval and combined-video smokes passes without provider I/O.
 
 ## When Porting Legacy Behavior
 

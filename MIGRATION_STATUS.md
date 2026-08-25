@@ -1273,8 +1273,11 @@ The following directions remain traceable but are not current work:
   bounded MP3 snapshot copy hashes each completely written chunk and propagates
   the canonical SHA-256 through short, long, and video route wrappers. It adds
   no second scan, provider work, public metadata, state file, or image-slot
-  dependency. Source and adjacent media/provider tests pass; clean installed
-  package proof remains pending.
+  dependency. Source and adjacent media/provider tests pass. The exact
+  `b9ae0c9` clean gate exits 0: 1,581 archived tests pass with one expected
+  skip, the wheel is 259,949 bytes, all optional profiles pass, and the
+  installed interval plus combined-video smokes clean up without a provider
+  call.
 
 ## Obsolete Prose Kept For Trace
 
