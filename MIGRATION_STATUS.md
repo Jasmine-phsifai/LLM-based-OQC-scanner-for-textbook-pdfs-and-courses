@@ -749,6 +749,13 @@ The following directions remain traceable but are not current work:
   execution, media, and provider work remain invocation-lazy. Recognition
   behavior and media/provider separation are unchanged; installed-wheel proof
   follows as a separate bounded gate because the import boundary changed.
+  #233 completes that gate from exact commit `79ad5d0`: one clean wheel installed
+  outside the repository preserves callable identity and runtime type hints for
+  the two primary, long-MP3, and four video facades under both import orders.
+  Package/distribution origins are external, while preflight, output claims,
+  validation, processors, adapters, and optional dependencies remain lazy.
+  No runtime, API, manifest, dependency, provider, media, or legacy behavior
+  changed.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

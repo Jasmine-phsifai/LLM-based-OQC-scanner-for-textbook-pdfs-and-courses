@@ -2740,6 +2740,16 @@ into a package proxy, callable modules, eager provider/media imports, or a core
 recognition rewrite. The changed package boundary requires one clean-wheel
 proof before it is treated as installed-distribution evidence.
 
+#233 supplies that installed-distribution evidence from exact commit `79ad5d0`.
+One clean, dependency-free external wheel installation preserves callable
+identity and standard runtime type hints for `recognize`, `recognize_batch`,
+`recognize_long_mp3`, and all four video facades under both root-first and
+explicit-submodule-first imports. Package/distribution origins stay external;
+batch preflight, output claims, configuration validation, processors, adapters,
+and optional media/provider dependencies remain unloaded. Repeat this narrow
+wheel proof only after another facade-initialization, package-layout, manifest,
+or relevant import-boundary change.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

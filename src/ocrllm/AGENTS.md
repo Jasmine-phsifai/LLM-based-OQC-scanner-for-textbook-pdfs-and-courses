@@ -287,6 +287,10 @@ initialization, package layout, manifest, or this import boundary changes.
 batch preflight and execution helpers back to invocation time. Keep their root
 callable identity and standard runtime type hints, but do not eagerly import
 media/provider execution or restore the obsolete paired `__getattr__` branch.
+#233 proves all seven currently bound recognition/video facades from a clean
+external wheel of exact commit `79ad5d0`, in both ordinary import orders. The
+installed package remains dependency-free and execution-lazy. Do not repeat
+this gate until its named package boundary changes again.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

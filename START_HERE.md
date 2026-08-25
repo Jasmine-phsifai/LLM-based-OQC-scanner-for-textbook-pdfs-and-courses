@@ -277,6 +277,13 @@ configuration validation, recognition execution, media, and providers remain
 lazy. A clean-wheel refresh is the next proportional package gate because this
 iteration changed facade initialization again.
 
+#233 completes that refresh from a clean wheel of exact commit `79ad5d0`.
+All seven bound primary, long-MP3, and video facades remain callable,
+identity-stable, and runtime-type-hintable under both import orders from an
+external no-dependency installation. Batch execution and optional media/provider
+modules remain unloaded, so the result is still a real lightweight Python
+library rather than an application-shaped import.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed
