@@ -89,6 +89,10 @@ extraction must keep consuming that exact path until request cleanup. Do not add
 a public video-temp option, separate branch snapshots, whole-video memory, a
 generic media cache, or legacy format support. #152 keeps long-audio chunk scope
 open; do not implement it until the maintainer chooses.
+#212 makes cleanup an explicit invariant on normal, invalid-media, returned-
+cancellation, and propagated-cancellation exits: no `.ocrllm-video-source-*`
+path or in-process output claim may survive. Preserve that invariant without
+turning the current #127 asymmetry into an accepted cancellation contract.
 #166 makes source order a constructor invariant for every public video outcome:
 retained frame indices are strictly increasing and timestamps never move backward.
 Do not add path-identity, timestamp-uniqueness, or generic ordering machinery.

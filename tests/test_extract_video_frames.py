@@ -386,6 +386,36 @@ def test_video_frame_scan_counts_the_final_frame_before_decoding() -> None:
     assert captured.value.details["maximum_candidate_count"] == 10_000
 
 
+def test_extract_video_frames_removes_snapshot_after_invalid_video(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot_module = __import__(
+        "ocrllm.video.snapshot_video_source",
+        fromlist=["unused"],
+    )
+    source = tmp_path / "invalid.mp4"
+    source.write_bytes(b"not-an-mp4")
+    output_parent = tmp_path / "output"
+    deleted_roots: list[Path] = []
+    real_delete = snapshot_module._delete_video_snapshot
+
+    def observe_delete(snapshot_root: Path) -> None:
+        deleted_roots.append(snapshot_root)
+        real_delete(snapshot_root)
+
+    monkeypatch.setattr(snapshot_module, "_delete_video_snapshot", observe_delete)
+
+    with pytest.raises(VideoError) as captured:
+        extract_video_frames(source, output_dir=output_parent)
+
+    assert captured.value.code == "VIDEO_INVALID"
+    assert len(deleted_roots) == 1
+    assert not deleted_roots[0].exists()
+    assert not (output_parent / "invalid").exists()
+    assert not list(output_parent.glob(".ocrllm-video-source-*"))
+
+
 def test_extract_video_frames_rejects_existing_video_directory_without_changes(
     tmp_path: Path,
 ) -> None:

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import os
 import subprocess
 from pathlib import Path
+from threading import Event
 
 import pytest
 
@@ -303,6 +305,111 @@ def _install_fake_google_image(
     )
     monkeypatch.setattr(adapter, "recognize_images", fake_google_image)
     return observed
+
+
+def _observe_request_owned_video_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[Path]:
+    import importlib
+
+    prepare = importlib.import_module("ocrllm.video.prepare_video_media")
+    real_snapshot = prepare.snapshot_video_source
+    observed: list[Path] = []
+
+    @contextmanager
+    def observe_snapshot(source_path, *, snapshot_parent):
+        with real_snapshot(
+            source_path,
+            snapshot_parent=snapshot_parent,
+        ) as snapshot_path:
+            assert snapshot_path.is_file()
+            observed.append(snapshot_path)
+            yield snapshot_path
+
+    monkeypatch.setattr(prepare, "snapshot_video_source", observe_snapshot)
+    return observed
+
+
+def test_image_cancellation_exit_removes_video_snapshot_and_releases_claim(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ocrllm.output.claim_output_target import claim_output_target
+
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    cancellation = Event()
+    cancellation.set()
+    image_provider = _ImageProvider()
+    _install_fake_audio(monkeypatch)
+    video_snapshots = _observe_request_owned_video_snapshot(monkeypatch)
+    outcome = None
+    cancellation_raised = False
+
+    try:
+        outcome = recognize_video(
+            source,
+            output_dir=tmp_path / "output",
+            image_config=Config(
+                provider=image_provider,
+                cancellation=cancellation,
+            ),
+            audio_config=_audio_config(tmp_path),
+        )
+    except Cancelled:
+        cancellation_raised = True
+
+    cancellation_returned = outcome is not None and any(
+        isinstance(item.error, Cancelled) for item in outcome.frame_outcomes
+    )
+    assert cancellation_raised or cancellation_returned
+    assert image_provider.calls == []
+    assert len(video_snapshots) == 1
+    assert not video_snapshots[0].exists()
+    assert not list((tmp_path / "output").glob(".ocrllm-video-source-*"))
+    with claim_output_target(tmp_path / "output" / "lecture"):
+        pass
+
+
+def test_audio_cancellation_exit_removes_video_snapshot_and_releases_claim(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ocrllm.output.claim_output_target import claim_output_target
+
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    cancellation = Event()
+    cancellation.set()
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch)
+    video_snapshots = _observe_request_owned_video_snapshot(monkeypatch)
+    outcome = None
+    cancellation_raised = False
+
+    try:
+        outcome = recognize_video(
+            source,
+            output_dir=tmp_path / "output",
+            image_config=Config(provider=image_provider),
+            audio_config=Config(
+                provider=GoogleGenAISettings(api_key="test-only-google-key"),
+                audio_model=AudioModelSettings(name="test-audio-model"),
+                temp_dir=tmp_path / "audio-snapshots",
+                cancellation=cancellation,
+            ),
+        )
+    except Cancelled:
+        cancellation_raised = True
+
+    cancellation_returned = (
+        outcome is not None and isinstance(outcome.audio_error, Cancelled)
+    )
+    assert cancellation_raised or cancellation_returned
+    assert observed_audio == []
+    assert len(video_snapshots) == 1
+    assert not video_snapshots[0].exists()
+    assert not list((tmp_path / "output").glob(".ocrllm-video-source-*"))
+    with claim_output_target(tmp_path / "output" / "lecture"):
+        pass
 
 
 def test_recognize_video_runs_real_media_and_keeps_providers_separate(

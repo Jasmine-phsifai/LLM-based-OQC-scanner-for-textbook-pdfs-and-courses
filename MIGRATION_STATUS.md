@@ -644,6 +644,10 @@ The following directions remain traceable but are not current work:
   under `output_dir` feeds inspection, comparison, retained decode, and combined
   audio extraction, then is removed. No public temp parameter, legacy format,
   whole-video memory copy, or generic media cache was added.
+  #212 proves that cleanup on a corrupt post-snapshot parse and both pre-set
+  branch-cancellation exits removes that hidden MP4 and releases its in-process
+  output claim. The tests accept either future #127 cancellation contract and
+  therefore do not freeze the current asymmetry; no runtime code changed.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

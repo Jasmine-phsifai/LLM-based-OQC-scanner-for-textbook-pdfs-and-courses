@@ -2425,6 +2425,21 @@ local metadata preparation because the selected existing environment lacks
 empty fixed temporary root was removed. Do not describe that environmental
 non-run as either package success or a runtime regression.
 
+#212 closes the request-owned video snapshot's untested abnormal-exit surface
+without choosing #127. Two real audible-MP4 regressions pre-set the image and
+audio cancellation signals separately. Each test accepts either of the two
+still-valid public cancellation contracts—returned branch `Cancelled` or
+propagated `Cancelled`—but requires that the signal is observed, the cancelled
+provider makes zero calls, the exact hidden MP4 path is gone, and the in-process
+output claim can be reacquired. A third real local regression snapshots one
+nonempty corrupt `.mp4`, reaches `inspect_video(snapshot_path)`, returns typed
+`VIDEO_INVALID`, and proves the observed snapshot root, final target, and hidden
+sibling are absent afterward. These three exits pass together; the adjacent
+video parsing/recognition/composition/publication/import surface passes 94.
+No runtime, public API, retained-asset behavior, cancellation choice, provider,
+dependency, or frozen boundary changed. Do not add a cleanup transaction or
+freeze the current image/audio cancellation asymmetry from this lifecycle proof.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist
