@@ -1355,6 +1355,12 @@ The following directions remain traceable but are not current work:
   All 1,675 source tests pass. Exact commit `a9fb1d0` passes the clean installed
   gate with 1,674 archived tests and one expected skip, a 257,558-byte wheel,
   all profiles and local media smokes green, no cloud I/O, and complete cleanup.
+  #323 adds the explicit new-run/resume ownership preflight. New work rejects
+  any existing root; resume requires the directory and fixed regular sidecar
+  and rejects an existing final result. It writes and parses nothing, ignores
+  unrelated sibling entries, and keeps overwrite/repair/dispatch separate.
+  Fixed filenames now have one source of truth. All 1,692 source tests pass;
+  exact installed proof remains open.
 
 ## Obsolete Prose Kept For Trace
 

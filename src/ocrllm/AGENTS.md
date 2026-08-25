@@ -767,6 +767,14 @@ repair, or public exports here. The 1,675-test source suite passes; exact
 commit `a9fb1d0` passes the complete installed gate with a 257,558-byte wheel;
 every profile and local media smoke passes without cloud I/O.
 
+#323 adds internal `preflight_long_audio_output_ownership()`. Keep its two modes
+literal: new work rejects any existing root; resume requires the directory and
+fixed regular sidecar and rejects an existing final result. It must not write,
+parse state, enumerate unrelated siblings, dispatch, overwrite, auto-rename,
+lock across processes, repair, or become public. Result/state filenames live
+only in `long_audio_output_paths.py`. The 1,692-test source suite passes; exact
+installed proof is pending.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

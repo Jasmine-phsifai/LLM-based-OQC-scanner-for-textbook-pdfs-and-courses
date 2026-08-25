@@ -5982,6 +5982,33 @@ wheel is 257,558 bytes, leaving 4,586 bytes under 256 KiB; every installed
 profile and local audio/PDF/video/combined smoke passes without cloud I/O; and
 all gate-owned roots and processes are removed. #322 is release-proven.
 
+## Iteration 323: new-run and resume ownership are explicit
+
+`preflight_long_audio_output_ownership()` now consumes one exact canonical
+`LongAudioOutputPaths` and an exact boolean `resume` mode. A new run succeeds
+only when the same-name job root does not exist; any file, directory, or broken
+target at that root is `OUTPUT_EXISTS`. Resume requires the job root to be a
+directory, the fixed `.ocrllm-long-audio-resume.json` to be a regular file, and
+`result.md` to be absent. Missing or malformed resume shape is
+`RESUME_STATE_INVALID`; an already published final result is `OUTPUT_EXISTS`.
+The check creates, writes, deletes, parses, or dispatches nothing.
+
+Unrelated sibling entries are intentionally outside this ownership check. A
+crash may leave diagnostic or temporary material, and enumerating, validating,
+or deleting it would turn this narrow gate into cleanup/repair policy. The
+fixed state loader validates bytes in the next boundary. Fixed result and state
+names now have one source of truth in `long_audio_output_paths.py`, preventing
+planner/preflight drift. There is no mode enum, overwrite, auto-rename,
+cross-process lock, directory claim, provider call, repair parser, or public
+facade change.
+
+The ownership/planner/state focused set passes 36 tests; the complete offline
+source suite passes 1,692 tests. Compilation, lightweight import, frozen
+`contracts/worker`, and diff checks pass. A delegated worktree build produces a
+258,617-byte wheel with 258 members and 3,527 bytes of cap headroom; it contains
+the three intended audio modules, no tests/docs, and unchanged dependency
+metadata. Exact committed installed proof is still required.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

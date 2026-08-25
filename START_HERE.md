@@ -764,6 +764,13 @@ installed gate with 1,674 archived tests and one expected skip, a 257,558-byte
 wheel, all profiles and local media smokes green, no cloud I/O, and complete
 cleanup.
 
+#323 adds the lifecycle ownership check. New work rejects any existing job
+root; resume requires the existing directory and fixed regular state sidecar,
+and rejects an already published `result.md`. It performs no writes or state
+parsing and does not inspect unrelated siblings. Fixed result/state names now
+have one source of truth. All 1,692 source tests pass; exact installed proof is
+pending.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

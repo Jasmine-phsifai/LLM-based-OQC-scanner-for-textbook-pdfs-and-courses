@@ -570,6 +570,13 @@ largest flagship by default or preserve clearly inferior ordinary-OCR models.
   media smoke green, no cloud I/O, and complete cleanup. The next slice is one
   explicit new-run/resume ownership preflight; no overwrite, auto-rename,
   locking, dispatch, repair, or generic transaction belongs in it.
+- #323 adds that ownership preflight without writes. New work rejects any
+  existing job root; resume requires the directory and fixed regular sidecar,
+  rejects an already published result, and leaves unrelated siblings alone.
+  Fixed filenames now have one source of truth. All 1,692 source tests pass.
+  The next slice may combine plan, ownership check, state load, and exact plan
+  reuse for one serial resume start gate; it must still stop before provider
+  dispatch, directory creation, final publication, overwrite, or repair.
 
 ### Stage A exit gate
 

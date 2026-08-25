@@ -7,12 +7,14 @@ from pathlib import Path
 
 from ..errors import OutputError
 from ..output.normalize_output_stem import normalize_output_stem
-from .long_audio_output_paths import LongAudioOutputPaths
+from .long_audio_output_paths import (
+    LONG_AUDIO_RESULT_NAME,
+    LONG_AUDIO_RESUME_STATE_NAME,
+    LongAudioOutputPaths,
+)
 
 
 _MAX_LEGACY_WINDOWS_PATH_UNITS = 259
-_RESULT_NAME = "result.md"
-_RESUME_STATE_NAME = ".ocrllm-long-audio-resume.json"
 
 
 def plan_long_audio_output_paths(
@@ -29,8 +31,8 @@ def plan_long_audio_output_paths(
     root = output_dir / normalize_output_stem(source_path.stem)
     paths = LongAudioOutputPaths(
         root=root,
-        result=root / _RESULT_NAME,
-        resume_state=root / _RESUME_STATE_NAME,
+        result=root / LONG_AUDIO_RESULT_NAME,
+        resume_state=root / LONG_AUDIO_RESUME_STATE_NAME,
     )
 
     try:
