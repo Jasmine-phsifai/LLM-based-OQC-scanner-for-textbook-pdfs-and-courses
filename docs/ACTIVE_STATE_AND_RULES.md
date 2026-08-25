@@ -4591,6 +4591,34 @@ adds the stronger operating-system termination proof. The current offline gate
 results are recorded in the Stage M status above. No paid live call was made.
 `worker/` and `contracts/` are unchanged.
 
+## Iteration 276: Google live refresh attempt is invalid evidence
+
+The intended bounded refresh was one current-catalog Google image request and
+one short-audio request through the maintained public runners. The delegated
+wrapper terminated after 27,589 ms without its watchdog firing and reported no
+credential pattern, but it did not retain the child exit code or either
+runner's safe JSON. It also omitted the requested `PYTHONPATH=src`. Therefore
+runner invocation, provider-call count, and both recognition outcomes are
+unknown: this attempt is **not** a live gate and proves neither success nor a
+provider failure. The owned temporary root was removed, no retry or model
+switch was made, and the repository was unchanged.
+
+A separate zero-network `python -I` probe still resolved `ocrllm` to this
+workspace at version `0.1.0`, so the omitted environment setting did not
+reproduce a stale-package import on this machine. The maintained runner and
+adapter regressions pass 93 tests, and the complete offline suite passes 1,542.
+Do not change library behavior from this operator-evidence failure and do not
+replay provider calls merely to obtain a green result. The next bounded live
+attempt must record workspace-source provenance, exact child exit, and each
+runner's redacted terminal JSON; failure to retain any one of these invalidates
+the attempt.
+
+Stress robustness testing remains authorized later, after the relevant basic
+installed/live flow has valid evidence. Keep it in a separate atomic iteration
+with one explicit product question, request/input limits, a total deadline,
+honest failure criteria, and owned local/remote cleanup. It is not an ongoing
+load test or permission to build a generic provider benchmark framework.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

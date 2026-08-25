@@ -973,6 +973,16 @@ The following directions remain traceable but are not current work:
   persistence fails, and the typed ledger names the pinned baseline with exactly
   one call and no fabricated token usage. No final Markdown, state, or temporary
   file survives; 92 related and all 1,542 offline tests pass.
+  #276's intended one-image/one-short-audio Google refresh produced no valid live
+  evidence because its delegated wrapper retained neither exact child exit nor
+  either runner's safe terminal JSON; runner invocation, call counts, and
+  outcomes remain unknown. Cleanup and secret scanning passed, no replay was
+  made, and a zero-network isolated import still resolved this workspace. No
+  product change follows from the operator failure. The maintained Google
+  runner/adapter set passes 93 tests and the full offline suite passes 1,542.
+  Future stress robustness tests remain separate atomic gates after valid basic
+  installed/live proof, with explicit question, scale/call bounds, deadline,
+  failure criteria, and cleanup rather than a general provider load framework.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

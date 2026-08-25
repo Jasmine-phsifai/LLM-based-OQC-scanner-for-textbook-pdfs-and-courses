@@ -5207,3 +5207,19 @@ Atomic task — Iteration #275: prove the remaining untested #273 branch through
 **实现与验证。** 只给既有回归增加 `model_attempts` 精确断言：唯一条目是 baseline `qwen3.7-plus-2026-05-26`、`OUTPUT_WRITE_FAILED`、一次 provider call，并断言没有伪造的 `settled_model_usage`。当前 #273 runtime 直接通过 **1 passed in 0.16s**，因此没有为了形式制造 failing-first，也没有改产品代码。image resume、DashScope adapter、candidate maturation、M2 slot 和 output 相邻集为 **92 passed in 2.85s**；`compileall -q src tests` 与 `git diff --check` 通过；带既有 Node 路径的完整离线套件为 **1,542 passed in 57.58s**。
 
 **过度设计复查。** 新增重复 fake client、给内部 `OutputError` 建共享 ledger helper、把 token 字段强制塞进不报告 usage 的 DashScope response，或修改 checkpoint schema 都不能增加当前真实保证，只会提高理解成本，明确不做。本轮无 runtime、API、provider、credential、网络/live/付费、依赖、断点格式、retry/fallback、legacy/social、#127/#152 或 frozen `contracts/worker` 变化；普通 installed/live 和后续压力性鲁棒门禁的顺序不变。
+
+## #276 — 2026-08-25：Google 图片与短音频刷新因执行证据丢失而作废
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #276: refresh the real free-tier Google image and short-audio public flows on the exact current commit with one bounded request per modality, using the maintained credential-safe runners and current live model discovery rather than a hardcoded support claim. Success means reconciling current authority, the latest Chinese diary, package rules, the last maintained Google image/audio gates, current runner code, credential resolution, model catalog selection, request/call/token/error evidence, deadlines, and cleanup before launch; delegating the fixed execution/poll workflow to a lightweight agent while personally auditing the runners and independently checking offline invariants; accepting either two honest terminal outcomes or a precisely classified provider/environment failure; changing runtime only for a reproduced library defect; preserving private credentials and outputs, no stress load, retry, model switch, fallback, provider framework, dependency installation, legacy/social behavior, #127/#152, or frozen boundaries; then updating records, committing, and pushing. This matters because offline tests cannot prove that today’s Google catalog, image request, audio request, SDK lifecycle, and error mapping still work together in the importable package.
+```
+
+**假设、两条路线与执行前检查。** 假设是当前维护的两个 runner 已经具备足够的脱敏、模型目录发现、单次调用和清理边界，本轮未知只应是今天的 Google 服务是否仍能完成一张图片和一段 0.5 秒 MP3，而不是再设计 provider 层。本人检查后确认：图片 fixture 为有效 PNG、269,337 bytes；音频 fixture 为有效 0.5 秒单声道 44.1 kHz MP3、2,376 bytes；OCRLLM 环境已有 `google-genai` 和 `miniaudio`，无需下载；注册表中 Google credential 非空，只检查布尔状态，没有输出 key、长度或摘要。两个 runner 都先实时列模型、校验显式 `gemini-2.5-flash`，再最多派发一次，并且 JSON 不包含正文、路径、credential 或原始 provider 文本。路线一是主进程自己重复调用和轮询；路线二是按既定规则把固定执行交给轻量执行者，同时本人审查 runner 和离线边界；选择路线二。
+
+**无效 live 证据与停止决定。** 执行者的外层 child 从启动到结束为 **27,589 ms**，watchdog 未触发，stderr 非空，credential pattern 扫描为 false，owned temp root 已删除且不存在，也没有 retry 或 model switch。但是 wrapper 没有保存 child 的精确退出码、没有得到任一 runner 的安全 JSON，也不能确认两个 runner 是否实际进入；因此 provider 调用次数不是 0，而是 **unknown**，图片和音频 outcome 也都是 **unknown**。执行者还漏设了明确要求的 `PYTHONPATH=src`。这整次尝试作废，不能算 live gate，不能声称 Google 成功、失败或零调用。路线一是立刻重放一次来求绿色；路线二是停止真实调用并保留红色操作证据；选择路线二，避免用第二次调用掩盖第一次证据链断裂。
+
+**独立判断、验证与过度设计复查。** 为判断漏设路径是否真的导入旧包，本人只做零网络 `python -I` 探针；结果仍解析到当前 workspace source，版本 `0.1.0`，所以本机没有复现 stale-package divergence，也没有产品 import 缺陷证据。Google image/audio runner 与 adapter 离线集合为 **93 passed in 2.51s**；带既有 Node 路径的完整离线套件为 **1,542 passed in 57.30s**。本轮没有产品代码、测试、依赖、API、provider 策略、credential 持久化、retry/fallback、legacy/social、#127/#152 或 frozen `contracts/worker` 变化。下次有界 live 只有在保存 workspace provenance、精确退出码和每个 runner 的脱敏终态 JSON 后才可计为证据；这不需要新建通用控制器。本轮最可能的过度设计是因一次 wrapper 失误改 runner、自动补跑、建立 provider benchmark 或把基础刷新扩大成压力测试，全部拒绝。
+
+**后续压力性鲁棒测试。** 维护者再次确认以后可以补。现有规则保持而不重复造计划：先为相关 installed/live 基本流程取得有效证据，再开独立原子轮次，每次只回答一个产品问题，预先写明输入规模、调用上限、总时限、失败判定和本地/远端清理；不做长期压测，也不把压力测试与日常一图一音频的“能跑起来”证明混为一谈。

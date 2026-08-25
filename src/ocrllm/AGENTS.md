@@ -461,6 +461,16 @@ one attempted call, and the draft workflow pass while publishing no output,
 state, or temporary file. Do not invent token evidence when the adapter reported
 none, duplicate the same lifecycle fixture, or change runtime/checkpoint format
 for this characterization.
+#276 attempted one bounded Google image/audio refresh, but the delegated wrapper
+did not retain exact exit or either runner's redacted terminal JSON. Treat the
+whole attempt as invalid: runner invocation, provider calls, and outcomes are
+unknown even though the owned temp root was cleaned and no secret pattern was
+reported. A zero-network isolated probe still imported this workspace, so do
+not infer a product/import defect or replay calls to force a result. A later
+live run must capture workspace provenance, exact exit, and per-runner safe JSON
+before it can count as evidence. Later stress robustness work remains separate,
+bounded, question-driven, deadline-controlled, and cleanup-verified after the
+corresponding basic installed/live flow is validly proven.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
