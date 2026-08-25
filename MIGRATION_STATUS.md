@@ -729,6 +729,12 @@ The following directions remain traceable but are not current work:
   with exact `SOURCE_INVALID`. A separate 108-test bounded audit found no next
   justified runtime defect inside the settled video scope, so no speculative
   lock, hash, snapshot, provider framework, or decision-bound code was added.
+  #238 later supplies new contradictory real-media evidence: a valid one-second
+  video stream with twelve-second AAC was rejected because the frame grid used
+  the longer container duration. Coarse frame seeks are now bounded by the
+  decoded stream's frame-count/FPS estimate; public container duration, exact
+  final-frame PTS, VFR behavior, selector density, and provider behavior remain
+  unchanged.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

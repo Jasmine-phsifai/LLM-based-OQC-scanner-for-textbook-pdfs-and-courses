@@ -973,6 +973,16 @@ Markdown or infer state from legacy files. Full audio/video recovery waits for
 #152 to define stable long-audio units as well as #127. This investigation is
 ordering evidence, not authority to add a schema, resume API, or repair parser.
 
+#238 fixes an independent ordinary-container parsing defect without entering
+either decision. A valid MP4 may have a shorter video stream than its audio
+stream; its container duration then extends beyond visual EOF. The five-second
+frame grid now bounds only its seek schedule by the smaller of container time
+and `frame_count / frames_per_second`, while `VideoInfo.duration_seconds` keeps
+reporting container duration and the exact final frame/PTS is still mandatory.
+A real two-frame/one-second video plus twelve-second AAC previously failed at
+the five-second seek and now retains its final JPEG. VFR, rotation, selector
+density, provider separation, and cancellation behavior are unchanged.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

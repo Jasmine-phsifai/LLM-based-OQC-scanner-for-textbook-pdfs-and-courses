@@ -254,6 +254,13 @@ real two-MP4 overwrite with exact `SOURCE_INVALID`; the wheel included the
 inspector and `py.typed`. This is distribution evidence, not a new integrity
 mechanism or permission to reopen #127/#152.
 
+#238 corrects one later real-media counterexample without reopening those
+choices. An MP4 with a one-second video stream and twelve-second audio stream
+keeps its twelve-second public container duration, but the frame sampler no
+longer seeks at five and ten seconds beyond visual EOF. It bounds only the
+coarse grid by the frame-count/FPS estimate and still requires the exact final
+frame. No selector, provider, cancellation, resume, or public API changed.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

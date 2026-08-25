@@ -211,6 +211,42 @@ def _write_rotated_display_mp4(path: Path) -> Path:
     return path
 
 
+def _write_long_audio_short_video_mp4(path: Path) -> Path:
+    import imageio_ffmpeg
+
+    completed = subprocess.run(
+        (
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=blue:s=64x48:r=2:d=1",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=16000:duration=12",
+            "-c:v",
+            "mpeg4",
+            "-c:a",
+            "aac",
+            str(path),
+        ),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=30,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    assert completed.returncode == 0
+    return path
+
+
 def _windows_path_units(path: Path) -> int:
     return len(str(path).encode("utf-16-le")) // 2
 
@@ -364,6 +400,27 @@ def test_extract_video_frames_applies_mp4_display_rotation(tmp_path: Path) -> No
     assert retained.shape[:2] == (96, 64)
     assert retained[12, 52, 0] > 220
     assert retained[84, 12, 2] > 220
+
+
+def test_extract_video_frames_does_not_seek_past_shorter_visual_stream(
+    tmp_path: Path,
+) -> None:
+    import cv2
+
+    source = _write_long_audio_short_video_mp4(tmp_path / "long-audio.mp4")
+    output_parent = tmp_path / "output"
+
+    info = inspect_video(source)
+    frames = extract_video_frames(source, output_dir=output_parent)
+
+    assert info.frame_count == 2
+    assert info.frames_per_second == pytest.approx(2.0)
+    assert info.duration_seconds == pytest.approx(12.0)
+    assert [frame.frame_index for frame in frames] == [1]
+    assert frames[0].timestamp_seconds == pytest.approx(0.5)
+    assert frames[0].path.is_file()
+    assert cv2.imread(str(frames[0].path)) is not None
+    assert not list(output_parent.glob(".ocrllm-video-*"))
 
 
 def test_video_frame_scan_counts_the_final_frame_before_decoding() -> None:

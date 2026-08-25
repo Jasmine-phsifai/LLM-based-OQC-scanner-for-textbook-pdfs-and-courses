@@ -25,8 +25,12 @@ def scan_video_frame_candidates(
     cv2: Any,
 ) -> tuple[VideoFrameCandidate, ...]:
     """Return ordered five-second thumbnails without retaining full frames."""
+    visual_duration_estimate = min(
+        video_info.duration_seconds,
+        video_info.frame_count / video_info.frames_per_second,
+    )
     coarse_sample_count = math.ceil(
-        video_info.duration_seconds / _COARSE_INTERVAL_SECONDS
+        visual_duration_estimate / _COARSE_INTERVAL_SECONDS
     )
     final_frame_index = video_info.frame_count - 1
     candidate_count = coarse_sample_count + 1
