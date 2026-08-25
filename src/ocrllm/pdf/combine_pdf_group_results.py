@@ -62,7 +62,11 @@ def combine_pdf_group_results(
         media_type="pdf",
         markdown="\n\n".join(sections) + "\n",
         profile=profile,
-        status="complete",
+        status=(
+            "partial"
+            if any(result.status == "partial" for result in results)
+            else "complete"
+        ),
         hotwords=tuple(hotwords),
         warnings=tuple(warnings),
         metadata=metadata,

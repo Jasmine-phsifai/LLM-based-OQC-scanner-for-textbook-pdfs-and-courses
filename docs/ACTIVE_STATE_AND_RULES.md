@@ -1158,6 +1158,27 @@ pass 190 tests and the complete offline suite passes 1,513. No public signature,
 provider dispatch, retry, fallback, dependency, cancellation, long-audio route,
 legacy, or frozen-boundary behavior changed.
 
+#249 applies that same already-proven result-preservation rule to the native
+Google image adapter without creating a shared provider lifecycle abstraction.
+After a successful `generate_content()` and parsed Markdown response, an SDK
+client-close failure now leaves the response usable and projects it as a public
+partial image result with one cleanup warning, exact call/token evidence, and
+`provider_client_closed=False`. An earlier provider or parse failure remains
+primary and gains only `provider_client_cleanup_failed=True`. The internal
+`VisionProviderResponse` carries the default-true cleanup bit through the one
+existing Markdown-validation reconstruction seam; it is still not a public
+injected-provider contract.
+
+A real-MP4 regression proves separate provider settlement: the partial image
+child retains selected JPEGs and frame Markdown while the independent audio
+provider still runs successfully; composition retains both media branches,
+their warnings, and the exact two-call/per-model usage evidence. PDF aggregation
+now preserves a partial image-group status instead of hard-coding the combined
+result back to complete. This is a narrow honesty correction, not a new error
+state, transaction, retry/fallback policy, provider superclass, legacy format,
+or import-time dependency. Image/PDF/video neighbors pass 166 tests and the
+complete offline suite passes 1,517.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

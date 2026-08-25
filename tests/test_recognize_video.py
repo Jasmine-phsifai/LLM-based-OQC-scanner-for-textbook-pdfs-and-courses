@@ -296,6 +296,7 @@ def _install_fake_google_image(
     monkeypatch: pytest.MonkeyPatch,
     *,
     fail_on_call: int | None = None,
+    client_closed: bool = True,
 ) -> list[tuple[Path, ...]]:
     observed: list[tuple[Path, ...]] = []
 
@@ -307,6 +308,7 @@ def _install_fake_google_image(
             markdown="# Frames\n",
             input_tokens=11,
             output_tokens=3,
+            client_closed=client_closed,
         )
 
     adapter = __import__(
@@ -569,6 +571,65 @@ def test_recognize_video_keeps_real_multigroup_order_and_separate_audio(
             "model": "test-image-model",
             "input_tokens": 22,
             "output_tokens": 6,
+        },
+        {
+            "model": "test-audio-model",
+            "input_tokens": 7,
+            "output_tokens": 2,
+        },
+    )
+
+
+def test_video_keeps_successful_frames_after_image_client_close_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    observed_images = _install_fake_google_image(
+        monkeypatch,
+        client_closed=False,
+    )
+    observed_audio = _install_fake_audio(monkeypatch)
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(
+            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            vision_model=VisionModelSettings(name="test-image-model"),
+            temp_dir=tmp_path / "image-snapshots",
+        ),
+        audio_config=_audio_config(tmp_path),
+    )
+    composed = compose_video_result(outcome)
+
+    assert outcome.status == "partial"
+    assert len(observed_images) == 1
+    assert outcome.audio_error is None, repr(outcome.audio_error)
+    assert len(observed_audio) == 1
+    assert outcome.frame_outcomes[0].result is not None
+    assert outcome.frame_outcomes[0].result.status == "partial"
+    assert (
+        outcome.frame_outcomes[0].result.metadata["provider_client_closed"]
+        is False
+    )
+    assert outcome.audio_result is not None
+    assert outcome.audio_result.status == "complete"
+    assert all(frame.path.is_file() for frame in outcome.retained_frames)
+    assert outcome.audio_artifact is not None
+    assert outcome.audio_artifact.is_file()
+    assert composed.status == "partial"
+    assert "# Frames" in composed.markdown
+    assert "# Audio" in composed.markdown
+    assert composed.warnings == (
+        "The Google GenAI client could not be closed after recognition.",
+    )
+    assert composed.metadata["current_run_provider_call_count"] == 2
+    assert composed.metadata["current_model_token_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_tokens": 11,
+            "output_tokens": 3,
         },
         {
             "model": "test-audio-model",

@@ -152,6 +152,11 @@ queried only by explicit Google operations, not by import or shared capability
 reporting. Public failures distinguish zero recognition calls before
 `generate_content()` from one call after entering it; catalog discovery itself
 is not counted as a recognition call.
+A successfully parsed Google image response is preserved as `partial`, with an
+explicit warning and `provider_client_closed=False`, if only SDK client cleanup
+fails. An earlier provider or parse error remains primary and records the
+cleanup failure. This does not add retry, fallback, or a public structured
+provider-response contract.
 
 The experimental direct Google short-audio facade:
 

@@ -96,6 +96,7 @@ def call_vision_provider(
             markdown=markdown,
             input_tokens=provider_value.input_tokens,
             output_tokens=provider_value.output_tokens,
+            client_closed=provider_value.client_closed,
         )
     return markdown
 

@@ -26,7 +26,9 @@ from ocrllm import (
     recognize_batch,
 )
 from ocrllm.errors import ProviderError
+from ocrllm.pdf.combine_pdf_group_results import combine_pdf_group_results
 from ocrllm.pdf.snapshot_pdf import MAX_PDF_SOURCE_BYTES
+from ocrllm.result import RecognitionResult
 
 from write_test_image import write_test_image
 
@@ -235,6 +237,29 @@ def test_public_pdf_uses_two_ordered_bounded_image_groups(
     assert result.metadata["page_count"] == 16
     assert result.metadata["pdf_group_count"] == 2
     assert result.metadata["current_run_provider_call_count"] == 2
+
+
+def test_pdf_group_combination_preserves_partial_image_status() -> None:
+    warning = "The Google GenAI client could not be closed after recognition."
+    combined = combine_pdf_group_results(
+        (
+            RecognitionResult(
+                markdown="first",
+                source_type="image",
+                status="partial",
+                warnings=(warning,),
+            ),
+            RecognitionResult(
+                markdown="second",
+                source_type="image",
+            ),
+        ),
+        ((1, 8), (9, 16)),
+        profile="board",
+    )
+
+    assert combined.status == "partial"
+    assert combined.warnings == (warning,)
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows junction regression")

@@ -792,6 +792,14 @@ The following directions remain traceable but are not current work:
   cleanup state; primary provider errors retain precedence. The complete
   offline suite passes 1,513. The analogous image close-only loss is recorded
   for a later atomic correction; no shared lifecycle framework was added.
+  #249 fixes that native-image analogue locally. A parsed image response now
+  survives SDK client-close failure as a partial result with warning, explicit
+  cleanup state, and unchanged call/token evidence; primary errors still win.
+  Real-MP4 coverage proves the independent audio provider still settles and
+  final composition retains both branches. PDF combination also preserves a
+  partial child status instead of reporting false complete. The full offline
+  suite passes 1,517; no public API, dependency, provider framework, retry,
+  fallback, legacy format, or frozen-boundary change was made.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

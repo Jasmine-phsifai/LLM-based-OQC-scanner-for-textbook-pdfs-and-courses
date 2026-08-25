@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 
 from ...config import Config
@@ -63,6 +64,7 @@ def recognize_images(
     client = None
     response: VisionProviderResponse | None = None
     public_error: OCRLLMError | None = None
+    client_closed = True
     try:
         try:
             client = google_module.Client(
@@ -97,10 +99,9 @@ def recognize_images(
             public_error = map_google_genai_error(error, model=model)
     finally:
         close_error = close_google_genai_client(client)
+        client_closed = close_error is None
         if close_error is not None:
-            if public_error is None:
-                public_error = close_error
-            else:
+            if public_error is not None:
                 public_error._add_safe_detail("provider_client_cleanup_failed", True)
         del api_key
 
@@ -118,9 +119,10 @@ def recognize_images(
                 "provider": "google",
                 "model": model,
                 "provider_calls_attempted": provider_calls_attempted,
+                "provider_client_cleanup_failed": not client_closed,
             },
         ) from None
-    return response
+    return replace(response, client_closed=client_closed)
 
 
 def _sdk_contents(google_module: object, contents: tuple[object, ...]) -> list[object]:

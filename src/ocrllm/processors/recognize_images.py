@@ -258,6 +258,7 @@ def _recognize_images_once(
     )
 
     calls_dispatched = 0
+    provider_clients_closed = True
     slot_ledger: list[dict[str, str | int | bool | None]] = []
     current_model_usage: dict[str, dict[str, int | None]] = {}
 
@@ -297,7 +298,7 @@ def _recognize_images_once(
         prompt: str,
     ) -> str:
         """Reuse, or pay for and persist, one workflow pass."""
-        nonlocal calls_dispatched
+        nonlocal calls_dispatched, provider_clients_closed
         if slot_checkpoint is not None:
             persisted = slot_checkpoint.reusable_slot(
                 slot_id,
@@ -345,6 +346,9 @@ def _recognize_images_once(
         calls_dispatched += 1
         if type(provider_response) is VisionProviderResponse:
             markdown = provider_response.markdown
+            provider_clients_closed = (
+                provider_clients_closed and provider_response.client_closed
+            )
             if resolved.model is not None:
                 usage = current_model_usage.get(resolved.model)
                 if usage is None:
@@ -539,10 +543,19 @@ def _recognize_images_once(
         )
     if resolved_provider.name == "google":
         metadata["current_model_token_usage"] = current_model_token_usage()
+        metadata["provider_client_closed"] = provider_clients_closed
+
+    warnings: tuple[str, ...] = ()
+    if not provider_clients_closed:
+        warnings = (
+            "The Google GenAI client could not be closed after recognition.",
+        )
 
     return ProcessorOutput(
         media_type="image",
         profile=profile,
         markdown=markdown,
+        status="partial" if warnings else "complete",
+        warnings=warnings,
         metadata=metadata,
     )

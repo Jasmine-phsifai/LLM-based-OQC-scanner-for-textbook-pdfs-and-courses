@@ -324,6 +324,13 @@ client close fails: return partial with one cleanup warning and explicit
 only annotate its cleanup failure. The native image adapter has the same proven
 close-only response-loss shape; fix it separately rather than generalizing a
 provider lifecycle framework.
+#249 completes that separate native-image correction. Keep a parsed Google
+image response as partial when only client close fails, with the same warning,
+call/token evidence, and `provider_client_closed=False`; keep an earlier
+provider/parse error primary. Preserve partial status through PDF and video
+consumers. Do not use the shared internal cleanup bit to invent a public
+provider response protocol, lifecycle superclass, transaction, retry, or
+fallback layer.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

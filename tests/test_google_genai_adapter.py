@@ -85,12 +85,20 @@ class _Models:
 
 
 class _Client:
-    def __init__(self, models: _Models) -> None:
+    def __init__(
+        self,
+        models: _Models,
+        *,
+        close_error: Exception | None = None,
+    ) -> None:
         self.models = models
         self.closed = False
+        self.close_error = close_error
 
     def close(self) -> None:
         self.closed = True
+        if self.close_error is not None:
+            raise self.close_error
 
 
 class _HostileCatalogRow:
@@ -104,14 +112,15 @@ class _HostileCatalogRow:
 class _FakeGoogleModule:
     types = SimpleNamespace(HttpOptions=_HttpOptions, Part=_Part)
 
-    def __init__(self) -> None:
+    def __init__(self, *, close_error: Exception | None = None) -> None:
         self.models = _Models()
         self.clients: list[_Client] = []
         self.client_kwargs: list[dict[str, object]] = []
+        self.close_error = close_error
 
     def Client(self, **kwargs):
         self.client_kwargs.append(kwargs)
-        client = _Client(self.models)
+        client = _Client(self.models, close_error=self.close_error)
         self.clients.append(client)
         return client
 
@@ -521,6 +530,90 @@ def test_public_google_recognition_reports_model_call_and_token_usage(tmp_path, 
     assert len(fake.models.generate_calls) == 1
     assert len(fake.clients) == 1
     assert all(client.closed for client in fake.clients)
+
+
+def test_successful_google_image_discloses_client_close_failure(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+    fake = _FakeGoogleModule(close_error=RuntimeError("PRIVATE CLOSE BODY"))
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+    image = write_test_image(tmp_path / "source.png")
+
+    result = recognize_public(
+        image,
+        config=Config(
+            provider=_google_settings(),
+            vision_model=VisionModelSettings(name=MODEL),
+        ),
+    )
+
+    assert result.status == "partial"
+    assert result.markdown == "# recognized\n"
+    assert result.warnings == (
+        "The Google GenAI client could not be closed after recognition.",
+    )
+    assert result.metadata["provider_call_count"] == 1
+    assert result.metadata["provider_client_closed"] is False
+    assert tuple(dict(item) for item in result.metadata["model_attempts"]) == (
+        {
+            "model": MODEL,
+            "outcome": "success",
+            "provider_calls_attempted": 1,
+        },
+    )
+    assert tuple(dict(item) for item in result.metadata["workflow_slots"]) == (
+        {
+            "slot_id": "draft",
+            "workflow_pass": "draft",
+            "provider": "google",
+            "model": MODEL,
+            "reused": False,
+            "provider_calls_attempted": 1,
+        },
+    )
+    assert result.metadata["current_model_token_usage"] == (
+        {
+            "model": MODEL,
+            "input_tokens": 123,
+            "output_tokens": 45,
+        },
+    )
+    assert len(fake.models.generate_calls) == 1
+    assert fake.clients[0].closed is True
+
+
+def test_google_image_primary_error_survives_client_close_failure(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+    fake = _FakeGoogleModule(close_error=RuntimeError("PRIVATE CLOSE BODY"))
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    def fail_generation(**_kwargs):
+        raise ProviderError(
+            "Primary image failure.",
+            code="PROVIDER_RESPONSE_INVALID",
+        )
+
+    monkeypatch.setattr(fake.models, "generate_content", fail_generation)
+    image = write_test_image(tmp_path / "source.png")
+
+    with pytest.raises(ProviderError, match="Primary image failure") as caught:
+        recognize_public(
+            image,
+            config=Config(
+                provider=_google_settings(),
+                vision_model=VisionModelSettings(name=MODEL),
+            ),
+        )
+
+    assert caught.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert caught.value.details["provider_calls_attempted"] == 1
+    assert caught.value.details["provider_client_cleanup_failed"] is True
+    assert fake.clients[0].closed is True
 
 
 def test_public_google_missing_model_reports_zero_recognition_calls(
