@@ -1301,6 +1301,12 @@ The following directions remain traceable but are not current work:
   call. Its wheel/base measure 247,533/1,249,562 bytes. The first wrapper never
   launched a child because Windows rejected duplicate-case proxy variables;
   the corrected uppercase-only environment passes.
+  #316 adds the audio-specific, secret-free request fingerprint needed before
+  paid interval results can be persisted. It covers the owned source SHA-256,
+  explicit whole/interval mode, provider/model, prompt version, and exact
+  interval identity without adding a sidecar, dispatcher, repair parser, or
+  public API. The full source suite passes 1,605 tests; installed proof remains
+  pending.
 
 ## Obsolete Prose Kept For Trace
 

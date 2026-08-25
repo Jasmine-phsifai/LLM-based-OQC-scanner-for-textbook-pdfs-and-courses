@@ -499,6 +499,12 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   without resubmission. Do not copy the legacy stat-only fingerprint,
   deterministic temporary name, localized recovery regex, or automatic
   protocol fallback.
+- #316 implements only the audio request-identity prerequisite. The canonical
+  digest binds source content, whole/interval mode, provider/model, the relevant
+  prompt version, and every exact interval coordinate/index. It contains no
+  secret or path and adds no state or provider work. The next slice may define
+  the minimum audio-owned partial state consumed by serial persistence; do not
+  import image slot types or combine state, dispatch, resume, and repair at once.
 
 ### Stage A exit gate
 

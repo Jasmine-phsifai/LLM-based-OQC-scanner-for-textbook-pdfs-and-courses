@@ -5740,6 +5740,26 @@ target **1,249,562 bytes**. Profile deltas are: audio 91,143,621; image
 recognize/compose/publish smokes pass; no cloud API is called. The gate removes
 its root and leaves no process. #315 is release-proven.
 
+## Iteration 316: long-audio request identity is deterministic and internal
+
+One secret-free standard-library fingerprint now binds the exact owned source
+SHA-256, explicit `whole` or `interval` mode, provider name, model name, prompt
+version, and—for interval mode—the complete validated logical/actual window and
+index. Whole-file requests reject a window; interval requests require one. The
+identity does not include credentials, paths, temporary filenames, or retained
+state policy. The existing whole-file prompt is now explicitly versioned as
+`audio.transcription.v1`; interval work continues to use
+`audio.long.interval.v1`.
+
+This is an internal prerequisite, not resume support. It creates no sidecar,
+slot/result type, provider dispatch, retry, repair parser, public API, or generic
+checkpoint framework. Equivalent inputs produce one canonical lowercase
+SHA-256, while every settled output-affecting field is covered by regressions.
+The focused planner/prompt/materializer/identity set passes 40 tests; the full
+source suite passes **1,605 tests in 65.82 seconds**. Compilation, diff,
+lightweight import, and frozen `contracts/worker` checks pass without media,
+provider, or network work. Exact clean installed proof remains the exit gate.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

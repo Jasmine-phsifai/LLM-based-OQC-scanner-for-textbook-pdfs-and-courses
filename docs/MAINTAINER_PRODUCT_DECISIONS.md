@@ -42,6 +42,13 @@ or independently reorder it.
   maintained gate is proven with uppercase `HTTP_PROXY`, `HTTPS_PROXY`, and
   `ALL_PROXY`; do not add product-side environment normalization for this
   operator boundary.
+- For bounded DashScope quality trials, prefer live-discovered capable smaller
+  models around the maintainer's intended 27B class, including an OCR-tuned or
+  general reasoning candidate when currently served. Evaluate formulas, LaTeX,
+  Mermaid, future SVG/code, and reasoning—the gaps not already served by
+  RapidOCR. Do not hardcode example model names, spend calls on candidates
+  clearly worse than RapidOCR for ordinary OCR, or select the current largest
+  flagship merely because it is newest.
 - When a maintained release command has concrete evidence of hanging, give that
   exact stage a visible start message and a hard failure bound. Do not turn one
   stalled dependency preparation into a downloader, cache manager, retry

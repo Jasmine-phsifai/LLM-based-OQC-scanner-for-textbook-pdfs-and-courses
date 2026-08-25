@@ -699,6 +699,13 @@ and media smoke green without cloud I/O. A pre-child wrapper failure also proves
 Windows `Start-Process` parents must not receive duplicate upper/lowercase proxy
 names; the corrected gate used uppercase only.
 
+#316 adds only the internal long-audio request fingerprint. It binds the owned
+source digest, whole/interval mode, provider, model, versioned prompt, and the
+complete interval window when present. Whole prompt version
+`audio.transcription.v1` now complements `audio.long.interval.v1`. The complete
+1,605-test source suite passes; no state, dispatch, resume, repair, public API,
+or provider call is claimed. Exact clean installed proof remains pending.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

@@ -711,6 +711,12 @@ wheel and 1,249,562-byte base target; all profiles and media smokes pass without
 cloud I/O. For this Windows gate, an external wrapper must supply one proxy-name
 casing only because its internal `Start-Process` rejects duplicate-case keys.
 
+#316 adds one internal standard-library long-audio request fingerprint. It
+binds owned source SHA-256, explicit whole/interval mode, provider/model, prompt
+version, and the exact validated interval window when present. Keep it free of
+credentials, paths, state lifetime, dispatch, repair parsing, and image-resume
+types. Whole and interval modes are separate; do not infer one from file size.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:
