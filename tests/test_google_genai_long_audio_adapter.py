@@ -19,6 +19,7 @@ from ocrllm import (
 from ocrllm.errors import (
     Cancelled,
     ConfigError,
+    InvalidSource,
     OutputError,
     ProviderError,
     ProviderUnavailable,
@@ -80,18 +81,22 @@ class _Models:
         events: list[str],
         *,
         served_models: tuple[str, ...] = (MODEL,),
+        input_token_limit: object = None,
         generate_error: Exception | None = None,
     ) -> None:
         self.events = events
         self.served_models = served_models
+        self.input_token_limit = input_token_limit
         self.generate_error = generate_error
         self.generate_calls: list[dict[str, object]] = []
 
     def list(self):
         self.events.append("catalog")
-        return tuple(
+        return (
             SimpleNamespace(
-                name=f"models/{model}", supported_actions=["generateContent"]
+                name=f"models/{model}",
+                supported_actions=["generateContent"],
+                input_token_limit=self.input_token_limit,
             )
             for model in self.served_models
         )
@@ -143,6 +148,7 @@ class _FakeGoogleModule:
         initial_state: str = "ACTIVE",
         get_states: tuple[str, ...] = (),
         served_models: tuple[str, ...] = (MODEL,),
+        input_token_limit: object = None,
         upload_error: Exception | None = None,
         generate_error: Exception | None = None,
         delete_error: Exception | None = None,
@@ -159,6 +165,7 @@ class _FakeGoogleModule:
         self.models = _Models(
             self.events,
             served_models=served_models,
+            input_token_limit=input_token_limit,
             generate_error=generate_error,
         )
         self.close_error = close_error
@@ -261,6 +268,69 @@ def test_missing_model_stops_before_upload(monkeypatch) -> None:
     with pytest.raises(ProviderUnavailable) as caught:
         recognize_long_mp3(SOURCE, config=_config())
 
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert fake.files.upload_calls == []
+    assert fake.models.generate_calls == []
+    assert fake.events == ["catalog", "close"]
+
+
+def test_audio_that_fills_model_input_limit_stops_before_upload(monkeypatch) -> None:
+    fake = _FakeGoogleModule(input_token_limit=9_633)
+    _install_fake_snapshot(monkeypatch, duration_seconds=301.01)
+    _install_fake_sdk(monkeypatch, fake)
+
+    with pytest.raises(InvalidSource) as caught:
+        recognize_long_mp3(SOURCE, config=_config())
+
+    assert caught.value.code == "SOURCE_TOO_LARGE"
+    assert caught.value.details["model"] == MODEL
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert caught.value.details["maximum_audio_only_duration_seconds"] == (
+        9_632 / 32
+    )
+    assert fake.files.upload_calls == []
+    assert fake.models.generate_calls == []
+    assert fake.events == ["catalog", "close"]
+
+
+def test_audio_below_advertised_model_input_limit_keeps_lifecycle(monkeypatch) -> None:
+    fake = _FakeGoogleModule(input_token_limit=9_634)
+    _install_fake_snapshot(monkeypatch, duration_seconds=301.01)
+    _install_fake_sdk(monkeypatch, fake)
+
+    result = recognize_long_mp3(SOURCE, config=_config())
+
+    assert result.status == "complete"
+    assert fake.events == ["catalog", "upload", "generate", "delete", "close"]
+
+
+def test_missing_model_input_limit_preserves_one_request_lifecycle(monkeypatch) -> None:
+    fake = _FakeGoogleModule(input_token_limit=None)
+    _install_fake_snapshot(monkeypatch, duration_seconds=32_768.0)
+    _install_fake_sdk(monkeypatch, fake)
+
+    result = recognize_long_mp3(SOURCE, config=_config())
+
+    assert result.status == "complete"
+    assert fake.events == ["catalog", "upload", "generate", "delete", "close"]
+
+
+@pytest.mark.parametrize("input_token_limit", (True, 0, -1, 1.0, "1048576"))
+def test_invalid_model_input_limit_stops_before_upload(
+    monkeypatch,
+    input_token_limit,
+) -> None:
+    fake = _FakeGoogleModule(input_token_limit=input_token_limit)
+    _install_fake_snapshot(monkeypatch)
+    _install_fake_sdk(monkeypatch, fake)
+
+    with pytest.raises(ProviderError) as caught:
+        recognize_long_mp3(SOURCE, config=_config())
+
+    assert caught.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert caught.value.details["provider"] == "google"
+    assert caught.value.details["model"] == MODEL
+    assert caught.value.details["failure_scope"] == "response"
     assert caught.value.details["provider_calls_attempted"] == 0
     assert fake.files.upload_calls == []
     assert fake.models.generate_calls == []

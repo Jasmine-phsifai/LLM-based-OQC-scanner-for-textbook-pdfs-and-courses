@@ -445,6 +445,13 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   discards it. Specify a narrow model-aware rule separately; do not hide this
   gap with a hardcoded model table, guessed prompt reserve, or automatic chunk
   policy.
+- #209 adds the narrow model-aware rule that needs no guessed reserve: consume
+  the existing catalog pager once and reject before upload only when
+  `ceil(decoded_seconds * 32)` already meets or exceeds the selected row's
+  advertised positive input limit. Missing optional metadata preserves the
+  current provider path; malformed selected metadata is a typed provider
+  response failure. Do not reinterpret this audio-only rejection as proof that
+  every smaller audio-plus-prompt request fits.
 - A2b uses its own versioned audio state and a strong source/request/segment
   identity. It may reuse generic fingerprint and atomic-write behavior, but it
   must not generalize or import image slot semantics. The first slice remains

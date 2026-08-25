@@ -191,9 +191,12 @@ result = recognize_long_mp3(
   current Google single-prompt limit of 9.5 hours;
 - snapshots through bounded chunked disk I/O, with a 2 GB Files limit, and does
   not load the complete audio or decoded PCM into Python memory;
-- discovers the live `generateContent` catalog, uploads once, waits only within
-  `timeout_seconds`, generates once, then deletes the remote file and closes the
-  client;
+- discovers the live `generateContent` catalog and rejects before upload when
+  the documented 32 audio tokens per second alone meet or exceed the selected
+  model row's advertised input limit; absent optional metadata preserves the
+  provider path, and this does not claim the prompt also fits;
+- uploads once, waits only within `timeout_seconds`, generates once, then deletes
+  the remote file and closes the client;
 - returns an in-memory audio result with exact model/usage/source facts and
   explicit cleanup state; a successful transcript becomes `partial` with a
   warning if remote or client cleanup fails;

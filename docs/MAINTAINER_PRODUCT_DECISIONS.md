@@ -167,6 +167,13 @@ is often accepted.
   served model. SDK catalog rows expose optional `input_token_limit`, but do not
   invent a prompt reserve, a hardcoded model table, or another provider request
   until the narrow preflight contract is specified.
+- #209 implements only the certain subset: reuse the single catalog response,
+  and reject before Files upload when `ceil(decoded_seconds * 32)` alone meets
+  or exceeds the selected row's advertised positive input limit. Missing
+  optional metadata preserves the existing request; malformed present metadata
+  is rejected as an invalid provider response. This is not a promise that a
+  smaller audio-plus-prompt request fits. No extra lookup, token-count request,
+  fixed reserve, model table, or automatic chunking was added.
 - #150 made the first long-audio order concrete, and #151 completed its live
   gate. A2a is one standalone native Google Files lifecycle for an MP3 longer than 300
   seconds: upload once, wait within a bound, generate once, and manually delete

@@ -2372,6 +2372,20 @@ ordinary persisted route far from model context ceilings; the explicit A2a
 one-shot route still needs a separate, narrowly specified selected-model
 preflight correction rather than claiming the 9.5-hour duration check is enough.
 
+#209 closes the mathematically certain part of that A2a defect without claiming
+complete context-fit prediction. The long-audio adapter materializes the one
+existing catalog response once, keeps the public catalog parser name-only, and
+reads only the selected row's optional positive `input_token_limit`. Before any
+Files upload it computes `ceil(decoded_seconds * 32)`; when audio alone meets or
+exceeds the advertised input limit, it raises typed `SOURCE_TOO_LARGE` with zero
+upload and zero generation. An absent optional limit preserves the prior honest
+provider path. A present boolean, non-integer, zero, or negative selected-model
+limit is an invalid provider response and also stops before upload. This adds no
+catalog request, `models.get`, `count_tokens`, guessed prompt reserve, model
+table, cache, fallback, automatic chunking, or public setting. A request below
+the audio-only bound can still exceed context after its prompt; #209 explicitly
+does not describe that request as guaranteed valid.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

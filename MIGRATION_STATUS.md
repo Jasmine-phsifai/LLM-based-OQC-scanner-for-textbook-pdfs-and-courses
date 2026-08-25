@@ -121,7 +121,11 @@ Phase 1 maturation is offline implementation-complete:
   it exceeds the selected-model input limit of live-proven `gemini-2.5-flash`.
   The recommended complete A2b contract is fixed chunks for every persisted run,
   caller-retained strongly matching source, and prompt-only 1,800/30 overlap
-  handling; it remains unimplemented pending maintainer approval. #153 corrects
+  handling; it remains unimplemented pending maintainer approval. #209 now
+  reuses the one catalog response to reject before upload when audio alone, at
+  the documented 32 tokens per second, meets or exceeds the selected model's
+  advertised input limit. It adds no lookup or guessed prompt reserve and does
+  not claim that every smaller request fits. #153 corrects
   the frozen capability registry's stale
   long-MP3 reason to name this direct live-proven API while preserving its
   `deferred` worker-registration status;

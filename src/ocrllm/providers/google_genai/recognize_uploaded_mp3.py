@@ -14,12 +14,18 @@ from .google_client_options import google_client_options
 from .google_genai_uploaded_audio_response import (
     GoogleGenAIUploadedAudioResponse,
 )
+from .get_google_genai_model_input_limit import (
+    get_google_genai_model_input_limit,
+)
 from .load_google_genai import load_google_genai
 from .map_google_genai_error import map_google_genai_error
 from .parse_google_genai_audio_response import parse_google_genai_audio_response
 from .parse_google_genai_model_catalog import parse_google_genai_model_catalog
 from .provider_settings import GoogleGenAISettings
 from .resolve_google_genai_credential import resolve_google_genai_credential
+from .validate_google_genai_long_mp3_input_limit import (
+    validate_google_genai_long_mp3_input_limit,
+)
 
 
 POLL_INTERVAL_SECONDS = 1.0
@@ -68,7 +74,8 @@ def recognize_uploaded_mp3(
                     timeout_seconds=config.timeout_seconds,
                 ),
             )
-            served_models = parse_google_genai_model_catalog(client.models.list())
+            catalog_rows = tuple(client.models.list())
+            served_models = parse_google_genai_model_catalog(catalog_rows)
             if model not in served_models:
                 public_error = ProviderUnavailable(
                     "The selected Google GenAI model is not currently served.",
@@ -79,6 +86,15 @@ def recognize_uploaded_mp3(
                     },
                 )
             else:
+                input_token_limit = get_google_genai_model_input_limit(
+                    catalog_rows,
+                    model=model,
+                )
+                validate_google_genai_long_mp3_input_limit(
+                    duration_seconds=snapshot.duration_seconds,
+                    input_token_limit=input_token_limit,
+                    model=model,
+                )
                 raise_if_cancelled(config.cancellation)
                 uploaded = client.files.upload(file=snapshot.path)
                 uploaded_name = _remote_file_name(uploaded)

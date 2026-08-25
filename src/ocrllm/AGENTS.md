@@ -182,6 +182,13 @@ fallback, or a capability allowlist from it.
 successful audio body/usage, and both retained assets. Keep later undispatched
 frame groups as `Cancelled`; do not invent provider failures or add a generic
 partial-result graph.
+#209 makes the standalone Google Files long-MP3 route reject a mathematically
+impossible selected-model request before upload when audio alone, at the
+documented 32 tokens per second, meets or exceeds that catalog row's advertised
+input limit. Missing optional metadata preserves the existing provider path;
+malformed present metadata is a typed provider-response failure. Do not add a
+model table, guessed prompt reserve, extra catalog/model/token request, cache, or
+automatic chunking, and do not claim every smaller audio-plus-prompt request fits.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
