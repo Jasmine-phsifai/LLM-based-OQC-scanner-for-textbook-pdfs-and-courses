@@ -263,6 +263,12 @@ bound during package initialization; decoder, processor, Google SDK, and Files
 work remain invocation-lazy. A real 301-second MP3 with an injected lifecycle
 completed once and removed its owned snapshot.
 
+#231 proves that #230 package boundary from a clean wheel of exact commit
+`9f515ad`. All five bound long-MP3/video functions remain callable,
+identity-stable, and runtime-type-hintable in root-first and explicit-submodule-
+first imports from an external no-dependency install; optional recognition,
+media, provider, HTTP, and legacy modules stay unloaded.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed

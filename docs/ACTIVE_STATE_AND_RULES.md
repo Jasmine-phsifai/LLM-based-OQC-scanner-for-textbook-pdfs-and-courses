@@ -2716,6 +2716,18 @@ snapshot. Do not generalize this proven collision into eager recognition
 imports, a package proxy/import hook, A2b chunking, or a provider lifecycle
 framework.
 
+#231 proves #230 and the four already-bound video facades from a clean wheel of
+exact commit `9f515ad`. The 247,988-byte wheel has 235 members and SHA-256
+`b688bddcc2f6129ebc2e8cae63a0e4c60d5a33d9ff8ab02641c01aa7a1df2e50`;
+it contains the five facade modules and `py.typed`. After an offline,
+no-dependency install outside the repository, root-first and explicit-submodule-
+first imports kept all five root functions callable, identity-stable, and
+runtime-type-hintable. Every loaded package module and distribution metadata
+came from the external target, while optional media/provider dependencies and
+recognition processors/adapters remained unloaded. Do not repeat this package
+proof unless facade initialization, package layout, manifest, or the relevant
+import boundary changes again.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

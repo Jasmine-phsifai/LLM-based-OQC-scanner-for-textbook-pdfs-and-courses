@@ -279,6 +279,10 @@ initialization so importing its same-named submodule cannot replace the root
 callable. Keep the processor, decoder, Google SDK, and Files lifecycle lazy;
 do not generalize this proven collision into eager recognition imports or
 package import machinery.
+#231 proves that facade plus all four bound video facades from a clean external
+wheel in root-first and submodule-first orders, with runtime type hints and
+lazy optional dependencies intact. Do not repeat the wheel gate unless facade
+initialization, package layout, manifest, or this import boundary changes.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

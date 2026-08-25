@@ -738,6 +738,11 @@ The following directions remain traceable but are not current work:
   package-bound, while decoding and Google Files execution stay lazy. A real
   301-second MP3 and injected one-call lifecycle verified snapshot ownership
   and cleanup without adding legacy compatibility or A2b behavior.
+  #231 proves that changed import boundary from a clean, externally installed
+  wheel of exact commit `9f515ad`. The long-MP3 facade and all four bound video
+  facades retain callable identity and standard runtime type hints under both
+  import orders, while optional recognition/media/provider dependencies remain
+  lazy. No runtime, manifest, dependency, provider, or legacy behavior changed.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the
