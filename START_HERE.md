@@ -269,6 +269,14 @@ identity-stable, and runtime-type-hintable in root-first and explicit-submodule-
 first imports from an external no-dependency install; optional recognition,
 media, provider, HTTP, and legacy modules stay unloaded.
 
+#232 applies the same exact package rule to the primary `recognize()` and
+`recognize_batch()` facades. Explicit same-named submodule imports cannot turn
+the root names into modules, and standard runtime type hints resolve. Only the
+thin facade definitions are package-bound; batch preflight, output ownership,
+configuration validation, recognition execution, media, and providers remain
+lazy. A clean-wheel refresh is the next proportional package gate because this
+iteration changed facade initialization again.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed

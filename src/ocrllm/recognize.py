@@ -11,10 +11,10 @@ from .config import Config
 from .errors import OCRLLMError, OutputError, ResumeStateError
 from .providers.dashscope.provider_settings import DashScopeSettings
 from .providers.google_genai.provider_settings import GoogleGenAISettings
+from .result import RecognitionResult
 
 if TYPE_CHECKING:
     from .output.output_target_claims import OutputTargetClaims
-    from .result import RecognitionResult
 
 
 def recognize(

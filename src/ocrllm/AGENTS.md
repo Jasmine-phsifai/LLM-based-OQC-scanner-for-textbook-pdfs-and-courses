@@ -283,6 +283,10 @@ package import machinery.
 wheel in root-first and submodule-first orders, with runtime type hints and
 lazy optional dependencies intact. Do not repeat the wheel gate unless facade
 initialization, package layout, manifest, or this import boundary changes.
+#232 binds the two primary `recognize` / `recognize_batch` facades after moving
+batch preflight and execution helpers back to invocation time. Keep their root
+callable identity and standard runtime type hints, but do not eagerly import
+media/provider execution or restore the obsolete paired `__getattr__` branch.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

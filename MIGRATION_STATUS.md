@@ -743,6 +743,12 @@ The following directions remain traceable but are not current work:
   facades retain callable identity and standard runtime type hints under both
   import orders, while optional recognition/media/provider dependencies remain
   lazy. No runtime, manifest, dependency, provider, or legacy behavior changed.
+  #232 fixes the same ordinary import collision for the primary `recognize`
+  and `recognize_batch` APIs. Both root functions are now initialization-bound
+  and runtime-type-hintable, while batch preflight, output claims, validation,
+  execution, media, and provider work remain invocation-lazy. Recognition
+  behavior and media/provider separation are unchanged; installed-wheel proof
+  follows as a separate bounded gate because the import boundary changed.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

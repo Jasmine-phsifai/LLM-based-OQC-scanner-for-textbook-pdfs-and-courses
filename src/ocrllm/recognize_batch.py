@@ -7,17 +7,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .batch_item_outcome import BatchItemOutcome
-from .clear_public_error import clear_public_error
 from .config import Config
 from .errors import Cancelled, OCRLLMError
-from .output.output_target_claims import OutputTargetClaims
-from .recognize import _recognize
-from .preflight_recognition_batch import preflight_recognition_batch
-from .validate_config import validate_config
 
 if TYPE_CHECKING:
     from concurrent.futures import Future, ThreadPoolExecutor
 
+    from .output.output_target_claims import OutputTargetClaims
     from .providers.provider_request_start_gate import ProviderRequestStartGate
     from .result import RecognitionResult
 
@@ -39,10 +35,13 @@ def recognize_batch(
     the caller alongside the failure. The complete tuple is validated before
     any item is dispatched.
     """
+    from .output.output_target_claims import OutputTargetClaims
+    from .preflight_recognition_batch import preflight_recognition_batch
     from .providers.provider_request_start_gate import (
         ProviderRequestStartGate,
         activate_provider_request_start_gate,
     )
+    from .validate_config import validate_config
 
     cfg = validate_config(config)
     normalized_sources = preflight_recognition_batch(sources, config=cfg)
@@ -74,6 +73,9 @@ def _recognize_batch_serially(
     output_claims: OutputTargetClaims,
 ) -> list[BatchItemOutcome]:
     """Recognize one source at a time, stopping after the first failure."""
+    from .clear_public_error import clear_public_error
+    from .recognize import _recognize
+
     outcomes: list[BatchItemOutcome] = []
     for index, source in enumerate(sources):
         try:
@@ -105,6 +107,8 @@ def _recognize_batch_in_parallel(
 ) -> list[BatchItemOutcome]:
     """Recognize with a bounded worker pool, settling every dispatched item."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    from .clear_public_error import clear_public_error
 
     outcomes: list[BatchItemOutcome | None] = []
     failed = False
@@ -214,6 +218,7 @@ def _recognize_batch_item(
     from .providers.provider_request_start_gate import (
         activate_provider_request_start_gate,
     )
+    from .recognize import _recognize
 
     with activate_provider_request_start_gate(gate):
         return _recognize(
@@ -229,6 +234,8 @@ def _settle_dispatched_outcomes(
 ) -> None:
     """Settle calls that were already dispatched, and therefore already paid for."""
     from concurrent.futures import CancelledError
+
+    from .clear_public_error import clear_public_error
 
     for future, result_index in future_indexes.items():
         try:

@@ -31,21 +31,25 @@ def test_plain_import_does_not_load_optional_image_or_provider_packages():
     assert completed.returncode == 0, completed.stderr
 
 
-def test_plain_import_defers_recognition_execution_modules_until_accessed():
+def test_plain_import_binds_recognition_facades_but_defers_execution_helpers():
     source_root = Path(__file__).resolve().parents[1] / "src"
     probe = (
         "import sys; "
         "sys.path.insert(0, sys.argv[1]); "
         "import ocrllm; "
-        "assert 'ocrllm.recognize' not in sys.modules; "
-        "assert 'ocrllm.recognize_batch' not in sys.modules; "
+        "assert 'ocrllm.recognize' in sys.modules; "
+        "assert 'ocrllm.recognize_batch' in sys.modules; "
+        "assert 'ocrllm.preflight_recognition_batch' not in sys.modules; "
+        "assert 'ocrllm.output.output_target_claims' not in sys.modules; "
+        "assert 'ocrllm.validate_config' not in sys.modules; "
         "assert 'Config' in dir(ocrllm); "
         "Config=ocrllm.Config; "
         "assert Config.__module__ == 'ocrllm.config'; "
         "assert 'ocrllm.config' in sys.modules; "
         "assert ocrllm.Config is Config; "
-        "assert 'ocrllm.recognize' not in sys.modules; "
-        "assert 'ocrllm.recognize_batch' not in sys.modules"
+        "assert 'ocrllm.preflight_recognition_batch' not in sys.modules; "
+        "assert 'ocrllm.output.output_target_claims' not in sys.modules; "
+        "assert 'ocrllm.validate_config' not in sys.modules"
     )
 
     completed = subprocess.run(
@@ -149,6 +153,62 @@ def test_public_recognition_callables_survive_either_lazy_import_order(
 
 
 @pytest.mark.parametrize(
+    "submodule_name,public_name",
+    (
+        ("ocrllm.recognize", "recognize"),
+        ("ocrllm.recognize_batch", "recognize_batch"),
+    ),
+)
+def test_public_recognition_callables_survive_explicit_submodule_import(
+    submodule_name,
+    public_name,
+):
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = (
+        "import importlib, sys, typing; "
+        "sys.path.insert(0, sys.argv[1]); "
+        "import ocrllm; "
+        "importlib.import_module(sys.argv[2]); "
+        "assert callable(getattr(ocrllm, sys.argv[3])), "
+        "type(getattr(ocrllm, sys.argv[3])); "
+        "from ocrllm import recognize, recognize_batch; "
+        "assert callable(recognize), type(recognize); "
+        "assert callable(recognize_batch), type(recognize_batch); "
+        "assert recognize is importlib.import_module('ocrllm.recognize').recognize; "
+        "assert recognize_batch is importlib.import_module("
+        "'ocrllm.recognize_batch').recognize_batch; "
+        "recognize_hints=typing.get_type_hints(recognize); "
+        "batch_hints=typing.get_type_hints(recognize_batch); "
+        "from ocrllm import BatchItemOutcome, Config, RecognitionResult; "
+        "assert recognize_hints['config'] == Config | None; "
+        "assert recognize_hints['return'] is RecognitionResult; "
+        "assert batch_hints['config'] == Config | None; "
+        "assert batch_hints['return'] == list[BatchItemOutcome]; "
+        "loaded={name.split('.')[0] for name in sys.modules}; "
+        "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
+        "assert not loaded & forbidden, loaded & forbidden"
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            probe,
+            str(source_root),
+            submodule_name,
+            public_name,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.parametrize(
     "submodule_name",
     ("ocrllm.recognize_video", "ocrllm.recognize_video_frames"),
 )
@@ -209,8 +269,9 @@ def test_public_video_callables_support_standard_runtime_type_hints():
         "loaded={name.split('.')[0] for name in sys.modules}; "
         "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
         "assert not loaded & forbidden, loaded & forbidden; "
-        "assert 'ocrllm.recognize' not in sys.modules; "
-        "assert 'ocrllm.recognize_batch' not in sys.modules"
+        "assert 'ocrllm.preflight_recognition_batch' not in sys.modules; "
+        "assert 'ocrllm.output.output_target_claims' not in sys.modules; "
+        "assert 'ocrllm.validate_config' not in sys.modules"
     )
 
     completed = subprocess.run(
@@ -282,8 +343,9 @@ def test_public_video_output_callables_survive_explicit_submodule_import(
         "loaded={name.split('.')[0] for name in sys.modules}; "
         "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
         "assert not loaded & forbidden, loaded & forbidden; "
-        "assert 'ocrllm.recognize' not in sys.modules; "
-        "assert 'ocrllm.recognize_batch' not in sys.modules"
+        "assert 'ocrllm.preflight_recognition_batch' not in sys.modules; "
+        "assert 'ocrllm.output.output_target_claims' not in sys.modules; "
+        "assert 'ocrllm.validate_config' not in sys.modules"
     )
 
     completed = subprocess.run(

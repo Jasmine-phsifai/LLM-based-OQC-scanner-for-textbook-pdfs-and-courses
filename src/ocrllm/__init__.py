@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 # submodules and replace these public package attributes.
 from .compose_video_result import compose_video_result as compose_video_result
 from .publish_video_result import publish_video_result as publish_video_result
+from .recognize import recognize as recognize
+from .recognize_batch import recognize_batch as recognize_batch
 from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
 from .recognize_video import recognize_video as recognize_video
 from .recognize_video_frames import recognize_video_frames as recognize_video_frames
@@ -264,16 +266,6 @@ def __getattr__(name: str):
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
 
     from importlib import import_module
-
-    if name in {"recognize", "recognize_batch"}:
-        recognize_value = getattr(import_module(".recognize", __name__), "recognize")
-        batch_value = getattr(
-            import_module(".recognize_batch", __name__),
-            "recognize_batch",
-        )
-        globals()["recognize"] = recognize_value
-        globals()["recognize_batch"] = batch_value
-        return globals()[name]
 
     value = getattr(import_module(module_name, __name__), attribute_name)
     globals()[name] = value

@@ -2728,6 +2728,18 @@ recognition processors/adapters remained unloaded. Do not repeat this package
 proof unless facade initialization, package layout, manifest, or the relevant
 import boundary changes again.
 
+#232 closes the same proven collision for the two primary public facades.
+Explicitly importing `ocrllm.recognize` or `ocrllm.recognize_batch` no longer
+replaces either root callable with a module, and ordinary
+`typing.get_type_hints(recognize)` now resolves its exact public result type.
+Both facade functions are bound during package initialization; batch preflight,
+output claims, configuration validation, execution helpers, media backends, and
+providers remain invocation-lazy. The obsolete paired `__getattr__` repair was
+removed rather than retained as dead import machinery. Do not generalize this
+into a package proxy, callable modules, eager provider/media imports, or a core
+recognition rewrite. The changed package boundary requires one clean-wheel
+proof before it is treated as installed-distribution evidence.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist
