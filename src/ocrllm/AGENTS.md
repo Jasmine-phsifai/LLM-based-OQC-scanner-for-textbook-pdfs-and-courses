@@ -336,6 +336,12 @@ partial frame result is still a successful usable `BatchItemOutcome`, while
 the enclosing outcome/publication remains partial. Keep ordered bodies,
 warnings, assets, calls, and token aggregation; do not add a partial outcome
 variant, partial-group counter, nested branch ledger, or transaction layer.
+#251 leaves the normal installed-video gate open after a single pip attempt did
+not commit and its proof wrapper lost final process diagnostics. The exact
+wheel manifest and metadata remain healthy, but do not claim installed runtime
+proof or a dependency-specific failure. A future bounded gate must retain and
+poll its original session; do not loop retries, repin, vendor, borrow another
+environment, or add an installer abstraction.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

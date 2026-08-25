@@ -1197,6 +1197,29 @@ transaction system. Video neighbors pass 112 tests and the complete offline
 suite passes 1,518; no runtime, API, dependency, provider, media-selection,
 legacy, cancellation, or frozen-boundary behavior changed.
 
+#251 rechecks the open normal-install gate from exact commit `20c9fd4` and
+leaves it open. One clean Git archive built exactly one 250,405-byte,
+237-member wheel with SHA-256
+`075793d03ce4b75b9214c21d0e0f9a039b0c1d83175b21fa3337f50fbfe74dab`.
+The base dependency set is empty; the declared extras are exactly the current
+eight; `[video]` still declares only `imageio-ffmpeg>=0.6,<0.7` and
+`opencv-python>=4.13,<4.14`; package files and `py.typed` are present; no native
+DLL/PYD/SO/DYLIB/EXE payload is bundled.
+
+The single permitted ordinary pip attempt used a fresh Python 3.10.20 venv,
+the exact wheel's `[video,audio,image]` extras, the normal PyPI index,
+`--retries 0`, and a bounded network timeout. It reached cached miniaudio and
+began downloading the 31.2 MB imageio-ffmpeg wheel. The execution wrapper then
+lost the still-running session identifier at its observation boundary; the
+same pip child was monitored without retry and exited after about 68.3 seconds,
+but its final exit code and terminal stderr were unrecoverable. The fresh venv
+contained only pip/setuptools, so installation did not commit. This is a proof-
+tool diagnostic failure, not evidence of an OCRLLM or a particular dependency
+failure. No installed import or real-MP4 claim follows. The verified disposable
+root was removed after all owned processes exited. Keep the gate open; do not
+retry within the same bounded iteration, change pins, vendor binaries, borrow
+an existing environment, or add another installer framework.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

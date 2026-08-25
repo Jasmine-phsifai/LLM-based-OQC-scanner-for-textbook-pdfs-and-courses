@@ -806,6 +806,13 @@ The following directions remain traceable but are not current work:
   Markdown, ten JPEGs, MP3, one warning, three calls, and per-model tokens all
   survive. Runtime was already correct and remains unchanged; the full offline
   suite passes 1,518.
+  #251 truthfully leaves the normal installed-video gate open. Exact commit
+  `20c9fd4` produced one 250,405-byte, 237-member wheel with correct empty base,
+  extras/video requirements, package files, `py.typed`, and no native payload.
+  The only fresh `[video,audio,image]` pip attempt did not commit, while its
+  wrapper lost the original process's final exit diagnostics. No installed
+  import/media claim or package/dependency failure is inferred; no retry, pin,
+  installer, runtime, or API change was made.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

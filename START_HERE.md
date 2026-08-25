@@ -316,6 +316,16 @@ cleaned its disposable root, and did not retry or change pins. Treat this as an
 open external delivery gate, not a package defect or permission to add another
 installer.
 
+#251 built the exact current `20c9fd4` archive into one structurally valid
+250,405-byte wheel and reconfirmed its empty base, extras, video dependency
+ranges, package contents, `py.typed`, and absence of bundled native payloads.
+Its only ordinary
+`[video,audio,image]` install did not commit, while the proof wrapper lost the
+original process's final exit diagnostics. Therefore no dependency-specific or
+OCRLLM failure is claimed and no installed MP4 proof exists. The external gate
+remains open; do not treat this diagnostic gap as permission to retry in a
+loop, repin, vendor, or borrow an existing environment.
+
 #247 adds the missing public consumer proof for the opposite partial-video
 direction. A real MP4 whose frames succeed and whose audio provider fails once
 now continues through atomic `publish_video_result()` while retaining frame
