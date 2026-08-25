@@ -274,8 +274,8 @@ media, provider, HTTP, and legacy modules stay unloaded.
 the root names into modules, and standard runtime type hints resolve. Only the
 thin facade definitions are package-bound; batch preflight, output ownership,
 configuration validation, recognition execution, media, and providers remain
-lazy. A clean-wheel refresh is the next proportional package gate because this
-iteration changed facade initialization again.
+lazy. #233 below is the resulting proportional clean-wheel gate for that facade
+initialization change.
 
 #233 completes that refresh from a clean wheel of exact commit `79ad5d0`.
 All seven bound primary, long-MP3, and video facades remain callable,
