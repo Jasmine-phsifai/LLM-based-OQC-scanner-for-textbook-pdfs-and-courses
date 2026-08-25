@@ -406,6 +406,12 @@ paths, or recognition content through a live report. `missing_text` means only
 that no text could be extracted; do not split SDK getter/candidate-shape failures
 into a diagnostic state machine. Legacy empty-response retry/model switching is
 application policy and must not be inferred from these reasons.
+#263 proves that delegating download polling is insufficient unless the original
+child has an explicit overall deadline before launch. Keep the existing bounded
+process controller for maintained installs, and require one-off operators to do
+the same. A child still running when its operator returns is incomplete evidence,
+not a terminal install failure. Terminate only the exact owned process tree,
+verify no partial commit, and remove the exact owned root before reporting.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

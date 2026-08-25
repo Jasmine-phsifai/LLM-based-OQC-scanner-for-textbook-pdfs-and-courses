@@ -895,6 +895,14 @@ The following directions remain traceable but are not current work:
   detail stays redacted. #261 itself remains unclassified beyond its recorded
   error code. Legacy retry/model switching was not ported, no live call or
   public API changed, and the complete offline suite passes 1,535 tests.
+  #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
+  One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
+  HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The
+  delegated operator had omitted an explicit overall deadline and returned
+  before terminal exit, so the owned process tree was subsequently terminated
+  and its root removed; no distribution or partial `cv2` artifact was committed.
+  Treat this as incomplete operator evidence, not a product or dependency
+  failure. Future download tasks must enforce their bound before launch.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

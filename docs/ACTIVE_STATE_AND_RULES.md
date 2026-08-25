@@ -1422,6 +1422,28 @@ after the change; the Google/video/error-policy neighbor set passes 138 tests,
 the complete offline suite passes 1,535, and compileall succeeds. No provider
 call, retry, fallback, new error code, or public API was added.
 
+#263 does not close or narrow the ordinary installed `[video,audio,image]`
+gate because its sole clean attempt lacked a valid terminal bound. The exact
+`a83205a` archive built a 250,833-byte, 237-member wheel with the expected
+extras. A fresh 64-bit CPython 3.10.20 venv used pip 23.0.1, advertised leading
+`cp310-cp310-win_amd64` compatibility, and had no detected `PIP_*` overrides.
+Its one normal pip command reached `files.pythonhosted.org` with HTTP 200 and
+selected the 40.2 MB `opencv-python` 4.13.0.92 wheel, but recorded no progress
+after the download line.
+
+The delegated operator had not established an explicit overall deadline before
+launch and incorrectly returned while its owned pip/log process tree was still
+alive. A follow-up terminated only that exact tree and confirmed that neither
+OCRLLM nor any dependency had been committed, no partial `cv2` artifact existed,
+and the owned root was removed. Exact elapsed time was not retained. Therefore
+this is incomplete operator evidence, not a pip terminal failure, a package
+dependency defect, or an installed-media result. The 94 source-level package,
+video, composition, publication, and gate-control neighbors pass, but cannot
+substitute for external installation. Future delegated network work must set
+and enforce its caller-visible overall deadline before starting the child;
+planning to poll or terminate later is not a bound. Do not retry immediately,
+repin, change index/mirror, inject cache, or add another installer from #263.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
