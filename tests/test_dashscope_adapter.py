@@ -13,6 +13,8 @@ from ocrllm import (
     Cancelled,
     Config,
     ConfigError,
+    DashScopeCredential,
+    DashScopeCredentialPool,
     DashScopeSettings,
     InvalidSource,
     ProviderError,
@@ -469,6 +471,104 @@ def test_scout_quota_failure_is_not_attributed_to_the_primary_candidate(
         "qwen3.7-plus",
         "qwen-vl-max",
     ]
+
+
+def test_builtin_candidate_chain_advances_on_message_only_free_tier_quota(
+    tmp_path,
+    monkeypatch,
+):
+    first_model = "first-free-model"
+    second_model = "second-serving-model"
+    private_error = "DASHSCOPE_PRIVATE_ERROR_4f6a"
+    private_key = "pool-secret-key-candidate-test"
+
+    class MessageQuotaThenSuccessClient(FakeClient):
+        def __init__(self):
+            super().__init__()
+            self.close_calls = 0
+
+        def create(self, **kwargs):
+            self.calls.append(kwargs)
+            if kwargs["model"] == first_model:
+                error = FakeOpenAIModule.PermissionDeniedError(
+                    f"{private_error}: AllocationQuota.FreeTierOnly"
+                )
+                error.status_code = 403
+                raise error
+            response = _response(
+                content="# Recovered through explicit candidate\n",
+                model=kwargs["model"],
+            )
+            return SimpleNamespace(headers={}, parse=lambda: response)
+
+        def close(self):
+            self.close_calls += 1
+
+    source = write_test_image(tmp_path / "board.png", size=(12, 13))
+    client = MessageQuotaThenSuccessClient()
+    fake_openai = _install_fake_openai(monkeypatch, client)
+    _serve_model_catalog(monkeypatch, first_model, second_model)
+    pool = DashScopeCredentialPool(
+        region="ap-southeast-1",
+        credentials=(
+            DashScopeCredential(
+                credential_id="candidate-credential",
+                api_key=private_key,
+            ),
+        ),
+    )
+    ordinary = _settings(api_key=None)
+    settings = DashScopeSettings(
+        region=ordinary.region,
+        base_url=ordinary.base_url,
+        credential_pool=pool,
+    )
+
+    result = recognize(
+        source,
+        config=Config(
+            provider=settings,
+            vision_model=VisionModelSettings(
+                name=first_model,
+                candidate_models=(second_model,),
+            ),
+        ),
+    )
+
+    assert result.markdown == "# Recovered through explicit candidate\n"
+    assert [call["model"] for call in client.calls] == [first_model, second_model]
+    assert len(fake_openai.constructor_calls) == 2
+    assert all(call["max_retries"] == 0 for call in fake_openai.constructor_calls)
+    assert client.close_calls == 2
+    assert result.metadata["model"] == second_model
+    assert result.metadata["provider_call_count"] == 1
+    assert result.metadata["current_run_provider_call_count"] == 2
+    assert [dict(attempt) for attempt in result.metadata["model_attempts"]] == [
+        {
+            "model": first_model,
+            "outcome": "PROVIDER_QUOTA_EXHAUSTED",
+            "disposition": "stop",
+            "provider_calls_attempted": 1,
+        },
+        {
+            "model": second_model,
+            "outcome": "success",
+            "provider_calls_attempted": 1,
+        },
+    ]
+
+    report = pool.snapshot()
+    assert report.account_state == "available"
+    assert dict(report.model_blocks) == {
+        first_model: "PROVIDER_QUOTA_EXHAUSTED"
+    }
+    assert report.slots[0].state == "available"
+    assert report.slots[0].selection_count == 2
+    assert report.slots[0].failure_count == 1
+    assert report.slots[0].success_count == 1
+    assert private_error not in repr(result)
+    assert private_key not in repr(result.metadata)
+    assert private_key not in repr(report)
 
 
 def test_unserved_scout_model_discloses_prior_primary_spend(

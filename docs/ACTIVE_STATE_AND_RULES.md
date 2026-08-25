@@ -1557,6 +1557,24 @@ ordinary installed combined-video gate remains open. Do not immediately replay
 the run, widen timeouts, inject cache or mirrors, repin, add retry, or reinterpret
 this pre-test delivery timeout as a source, wheel, or video-runtime failure.
 
+#269 closes the public-workflow evidence gap left by #267 without another
+runtime change. One built-in DashScope regression calls top-level `recognize()`
+with an explicit two-model tuple and one credential-pool slot. The first model
+raises a 403 whose private exception text contains
+`AllocationQuota.FreeTierOnly` but has no structured provider code; the second
+returns valid Markdown. The test proves exact call order, one no-retry request
+per model, two attempted calls in the invocation ledger, the second model as
+the actual result, two client closes, and no private error or key disclosure.
+The pool remains account-available, keeps the credential available, and blocks
+only the exhausted first model.
+
+The new test passes the #267 runtime directly; the causal pre-fix red evidence
+remains #267's two mapper failures, so this record does not invent a second
+runtime defect. DashScope mapper/adapter/pool, candidate maturation, and
+disposition neighbors pass 135 tests; the complete offline suite passes 1,540.
+No network, live provider, retry, automatic queue, key rotation, fallback,
+provider framework, or frozen-boundary change was made.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

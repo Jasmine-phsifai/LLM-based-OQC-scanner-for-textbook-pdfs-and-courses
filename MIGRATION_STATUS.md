@@ -939,6 +939,13 @@ The following directions remain traceable but are not current work:
   bound is not claimed. All owned processes and temporary roots are gone. This
   remains external pre-test delivery evidence and does not justify immediate
   replay or dependency/installer changes; the combined installed gate stays open.
+  #269 adds the missing public built-in DashScope proof for #267: an explicit
+  two-model tuple makes one 403 message-only free-quota call on the first model
+  and one successful call on the second. The final ledger reports both calls,
+  both clients close, and a one-slot credential pool blocks only the first model
+  while remaining account- and credential-available. Private error/key text is
+  absent. Runtime and provider policy are unchanged; the full offline suite
+  passes 1,540.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
