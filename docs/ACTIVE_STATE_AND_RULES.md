@@ -5102,6 +5102,26 @@ and propagate the active proxy before diagnosing network failure, and that
 DashScope robustness selection should use live-discovered smaller models aimed
 at formula/code/reasoning gaps rather than oversized flagship models.
 
+## Iteration 295: proxy is proven; installed combined-video proof is still open
+
+One unchanged clean-archive gate was delegated from exact clean commit
+`bfdc877018890ca486d7873656ffa623919184f2`. Before launch, the delegated
+process proved that the active WinINET proxy at `127.0.0.1:10080` was reachable
+and returned HTTP 200 from PyPI, then explicitly propagated that proxy through
+upper- and lower-case process environment variables. The old `127.0.0.1:7890`
+endpoint was not used.
+
+The gate process ended after about 20 minutes and removed its own temporary
+root, but the one-use PowerShell wrapper returned no stdout, stderr, or reliable
+numeric exit code. Therefore there is no evidence that archived pytest, wheel
+construction, optional-profile installation, or the installed public combined
+video smoke ran. Do not report this attempt as a package failure or success.
+The ordinary installed `[video,audio,image]` proof remains open. Do not replay
+it immediately, change dependencies, inject a mirror/cache, or build another
+installer/controller from this evidence-capture failure. A later attempt must
+use one small status channel whose exit and logs are proven locally before any
+download begins.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

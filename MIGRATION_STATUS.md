@@ -1192,6 +1192,15 @@ The following directions remain traceable but are not current work:
   and completed one local video through separate injected image and fake-audio
   calls plus provider-free composition. Package examples now guard fully
   failed outcomes before that composition step.
+  #295 does not supersede that historical slice or close the current all-extra
+  gate. From exact clean commit `bfdc877`, the active `127.0.0.1:10080` proxy
+  reached PyPI and was explicitly propagated to one unchanged maintained gate,
+  but the one-use wrapper lost stdout, stderr, and numeric exit evidence after
+  about 20 minutes. The gate cleaned its temporary root. Archived tests, wheel,
+  optional profiles, and installed combined-video execution are therefore all
+  unknown, not failed or passed. No library boundary, dependency, or runtime
+  changed; the next attempt must first prove its local status channel and must
+  not immediately replay this download workflow.
 
 ## Obsolete Prose Kept For Trace
 

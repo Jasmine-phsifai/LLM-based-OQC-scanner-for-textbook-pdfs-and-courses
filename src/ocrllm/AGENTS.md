@@ -647,6 +647,16 @@ second scene detector, or premature provider generalization.
 - Trusting a capability claim in prose. Verify against code and tests;
   documentation in this repo is known to lag.
 
+## Current delivery evidence
+
+#295 proves that the active `127.0.0.1:10080` proxy can reach PyPI and was
+propagated to one clean-archive gate process. The disposable PowerShell wrapper
+did not retain logs or a numeric exit, so it proves neither archived tests nor
+the installed `[video,audio,image]` public flow. Keep that gate open. Before a
+later delegated run, locally prove the small status/log channel; do not add a
+second installer, retry immediately, or change package dependencies from this
+operator-evidence failure.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

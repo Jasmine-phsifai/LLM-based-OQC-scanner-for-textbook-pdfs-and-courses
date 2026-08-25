@@ -5503,3 +5503,19 @@ Atomic task — Iteration #294: implement the maintainer-selected Route A cancel
 **代理与安装门事实。** 按维护者要求，下载/安装交给轻量执行者，主线没有机械轮询。执行者先验证 Windows WinINET 代理启用在 `127.0.0.1:10080`，该端口可达且通过它访问 PyPI HTTPS 成功；旧 `127.0.0.1:7890` 不可达。它只启动一次 maintained clean gate，但 gate 在自身 clean-tracked-tree 前置检查发现本轮正在修改 `tests/test_recognize_video.py`，因此正确停止；archive、下载、安装和组合 profile 均未开始，不能算网络失败或安装证据。执行者没有改代理、缓存、依赖或仓库，并清理了自有临时根。提交本轮后，下一次由轻量执行者在 clean tracked tree 上显式传递已验证代理再跑，而不是绕开 clean gate。
 
 **过度设计复查。** 最危险的两条扩张是为 Route B 新建 outcome-carrying exception，以及趁 #152 决定一起实现 chunk/resume/repair；两者均未做。本轮新增四个测试只覆盖维护者刚选择的公开矩阵，没有扩展为通用 cancellation state machine 或中途终止 FFmpeg/OpenCV。文档记录 #152 的已定部分和唯一未定 overlap，没有自行猜测。最终工作树再次运行完整离线套件为 **1,551 passed in 65.01s**；`compileall -q src tests tools` 与 `git diff --check` 通过。受保护未跟踪文件、legacy/social、frozen `contracts/worker` 均未触碰。
+
+## #295 — 2026-08-26：代理已明确透传，但普通安装门禁丢失终态证据
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #295: execute the unchanged maintained clean-archive gate once from clean commit `bfdc877`, with the verified active proxy explicitly propagated to the delegated process, and correct at most one gate defect only if terminal evidence proves the gate itself is wrong. Success means a pre-armed bounded run reaches a numeric terminal result; records exact archive, dependency, test, wheel, optional-profile, installed combined-video, import, and cleanup stages actually reached; leaves no owned process or temporary residue; does not retry, repin, inject a cache/mirror, or alter product code to force green; and updates the current records, commits, and pushes only after primary review. This matters because repeated earlier “network” failures did not first prove that the active Windows proxy reached the child, so the ordinary installed-library claim remains open on weak evidence.
+```
+
+**假设、路线和委派边界。** 基线为 `HEAD == origin/master == bfdc877018890ca486d7873656ffa623919184f2`，tracked tree 干净，只有两份受保护未跟踪文件。路线 A 是不改维护脚本，只在唯一 gate 子进程环境中显式加入当前代理；路线 B 是先修改 gate，让它自行读取 WinINET。选择 A，因为先证明现有脚本在正确网络前提下的真实结果，不把一次运行前提扩成长期配置功能。下载、安装和等待交给一个轻量执行者；主线只审查脚本合同并整理分批报告，没有启动第二个任务。
+
+**代理与唯一运行事实。** 执行者确认 WinINET 代理 `127.0.0.1:10080` TCP 可达，经它访问 `https://pypi.org/` 返回 HTTP 200；随后只在 gate 进程内显式设置大小写 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY`。旧 `127.0.0.1:7890` 不参与。未修改的 `tools/run_stage_m_offline_gate.ps1` 只启动一次，约 20 分钟后结束并自行清理临时根；仓库仍在精确基线且 tracked tree 干净。
+
+**为什么仍不能判定门禁。** 一次性 PowerShell wrapper 没有返回 stdout、stderr 或可靠 numeric exit，因此无法知道 archive 依赖阶段是否完成，也不能声称 pytest、wheel、八个 optional profile 或 installed combined-video smoke 已经开始。这个结果既不是 package success，也不是 package failure，只证明代理前提已修正而证据通道失败。本轮不重跑、不改 pin/index/mirror/cache/retry/timeout，不从 20 分钟时长猜测故障阶段，也不改产品、测试、依赖或维护 gate。普通安装组合视频证明继续开放；以后再运行前，应先用纯本地子进程验证一个小型明确的退出码和日志通道。
+
+**主审、报告核对和过度设计复查。** 本人逐段复核维护 gate：精确 Git archive、归档 suite、wheel/base import、八个独立 extra、安装后组合视频 smoke 和各 1,200 秒内部边界仍在；没有证据要求改 gate 本体。本人确认 `bfdc877`、tracked clean、两份受保护未跟踪文件仍在且 gate 临时根已清理。本轮还根据既有日记逐段核对 #121—#293 的后两批汇报：真实 VFR、旋转、等亮度变色、Unicode/长路径、长音频生命周期、provider 分离、partial outcome 与批次竞态都是有实际输入或因果回归支撑的产品工作；反复运行普通安装门禁并多次因 wrapper、执行策略、代理或下载证据失败，才是最明显的过程性过度展开。后续应把这种机械工作压成一次预先验证控制通道的有界委派，而不是删除已证明的媒体边界处理，也不新建通用安装编排框架。

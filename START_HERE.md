@@ -613,6 +613,13 @@ Before reporting completion, run the maintained clean-archive gate:
 & .\tools\run_stage_m_offline_gate.ps1
 ```
 
+The latest delegated run (#295, exact commit `bfdc877`) first proved and
+propagated the active `127.0.0.1:10080` proxy, but its one-use PowerShell
+wrapper did not retain stdout, stderr, or a numeric exit code. Its roughly
+20-minute termination is not an install result. The installed combined-video
+gate remains open; do not immediately replay it or infer a dependency defect.
+Before a later run, prove the wrapper's status/log channel with a local child.
+
 Its implementation and budgets are defined in
 `docs/ocrllm_library_go_no_go.md`. Do not run the DashScope live gate until a
 recognized credential and explicit paid-call budget exist, the exact
