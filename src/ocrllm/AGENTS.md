@@ -318,6 +318,12 @@ Keep successful frame work, retained JPEG/MP3 assets, typed audio failure, and
 reliable call evidence when the short-audio branch fails. Do not add another
 outcome type or use the standalone long-Files cleanup partial as evidence that
 video long-audio routing already exists.
+#248 requires native short audio to preserve a parsed transcript when only SDK
+client close fails: return partial with one cleanup warning and explicit
+`provider_client_closed=False`. Keep an earlier provider/parse error primary and
+only annotate its cleanup failure. The native image adapter has the same proven
+close-only response-loss shape; fix it separately rather than generalizing a
+provider lifecycle framework.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

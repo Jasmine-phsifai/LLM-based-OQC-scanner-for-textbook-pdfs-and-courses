@@ -82,23 +82,33 @@ class _Models:
 
 
 class _Client:
-    def __init__(self, models: _Models) -> None:
+    def __init__(self, models: _Models, *, close_error: Exception | None) -> None:
         self.models = models
+        self.close_error = close_error
         self.closed = False
 
     def close(self) -> None:
+        if self.close_error is not None:
+            raise self.close_error
         self.closed = True
 
 
 class _FakeGoogleModule:
     types = SimpleNamespace(Part=_Part, HttpOptions=_HttpOptions)
 
-    def __init__(self, *, text: str = "synthetic speech", error: Exception | None = None):
+    def __init__(
+        self,
+        *,
+        text: str = "synthetic speech",
+        error: Exception | None = None,
+        close_error: Exception | None = None,
+    ):
         self.models = _Models(text=text, error=error)
+        self.close_error = close_error
         self.clients: list[_Client] = []
 
     def Client(self, **_kwargs):
-        client = _Client(self.models)
+        client = _Client(self.models, close_error=self.close_error)
         self.clients.append(client)
         return client
 
@@ -289,6 +299,31 @@ def test_public_google_audio_result_usage_order_and_snapshot_cleanup(
     assert list(temp_dir.glob("ocrllm-audio-*")) == []
 
 
+def test_successful_short_audio_discloses_client_close_failure(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    fake = _FakeGoogleModule(close_error=RuntimeError("PRIVATE CLOSE BODY"))
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    result = recognize(FIXTURE, config=_config(temp_dir=tmp_path / "snapshots"))
+
+    assert result.status == "partial"
+    assert result.markdown == "synthetic speech"
+    assert result.warnings == (
+        "The Google GenAI client could not be closed after recognition.",
+    )
+    assert result.metadata["provider_call_count"] == 1
+    assert result.metadata["provider_client_closed"] is False
+    assert result.metadata["current_model_token_usage"] == (
+        {"model": MODEL, "input_tokens": 17, "output_tokens": 5},
+    )
+    assert list((tmp_path / "snapshots").glob("ocrllm-audio-*")) == []
+
+
 def test_google_audio_reports_completed_call_when_snapshot_cleanup_fails(
     tmp_path, monkeypatch
 ) -> None:
@@ -374,6 +409,7 @@ def test_google_audio_response_keeps_missing_usage_unknown() -> None:
 
     assert parsed.input_tokens is None
     assert parsed.output_tokens is None
+    assert parsed.client_closed is True
 
 
 def test_google_audio_provider_error_closes_client_and_snapshot(tmp_path, monkeypatch) -> None:
@@ -391,6 +427,32 @@ def test_google_audio_provider_error_closes_client_and_snapshot(tmp_path, monkey
     assert caught.value.details["provider_calls_attempted"] == 1
     assert "PRIVATE PROVIDER BODY" not in str(caught.value)
     assert fake.clients[0].closed is True
+    assert list(temp_dir.glob("ocrllm-audio-*")) == []
+
+
+def test_google_audio_primary_error_survives_client_close_failure(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    fake = _FakeGoogleModule(
+        error=ConnectionError("PRIVATE PROVIDER BODY"),
+        close_error=RuntimeError("PRIVATE CLOSE BODY"),
+    )
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+    temp_dir = tmp_path / "snapshots"
+
+    with pytest.raises(ProviderError) as caught:
+        recognize(FIXTURE, config=_config(temp_dir=temp_dir))
+
+    assert caught.value.code == "PROVIDER_NETWORK"
+    assert caught.value.details["provider_calls_attempted"] == 1
+    assert caught.value.details["provider_client_cleanup_failed"] is True
+    assert "PRIVATE PROVIDER BODY" not in str(caught.value)
+    assert "PRIVATE CLOSE BODY" not in str(caught.value)
+    assert fake.clients[0].closed is False
     assert list(temp_dir.glob("ocrllm-audio-*")) == []
 
 

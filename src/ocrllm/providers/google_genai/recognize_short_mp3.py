@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from ...audio.snapshot_short_mp3 import ShortMP3Snapshot
 from ...config import Config
 from ...errors import ConfigError, OCRLLMError, ProviderError, ProviderUnavailable
@@ -52,6 +54,7 @@ def recognize_short_mp3(
     response: GoogleGenAIAudioResponse | None = None
     public_error: OCRLLMError | None = None
     provider_calls_attempted = 0
+    client_closed = True
     try:
         try:
             google_module = load_google_genai()
@@ -88,10 +91,9 @@ def recognize_short_mp3(
             public_error = map_google_genai_error(error, model=model)
     finally:
         close_error = close_google_genai_client(client)
+        client_closed = close_error is None
         if close_error is not None:
-            if public_error is None:
-                public_error = close_error
-            else:
+            if public_error is not None:
                 public_error._add_safe_detail("provider_client_cleanup_failed", True)
         del api_key
 
@@ -109,9 +111,10 @@ def recognize_short_mp3(
                 "provider": "google",
                 "model": model,
                 "provider_calls_attempted": provider_calls_attempted,
+                "provider_client_cleanup_failed": not client_closed,
             },
         ) from None
-    return response
+    return replace(response, client_closed=client_closed)
 
 
 def _sdk_contents(google_module: object, contents: tuple[object, ...]) -> list[object]:

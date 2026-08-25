@@ -266,6 +266,7 @@ def _install_fake_audio(
     monkeypatch: pytest.MonkeyPatch,
     *,
     fail: bool = False,
+    client_closed: bool = True,
 ) -> list[Path]:
     observed: list[Path] = []
 
@@ -280,6 +281,7 @@ def _install_fake_audio(
             markdown="# Audio\n",
             input_tokens=7,
             output_tokens=2,
+            client_closed=client_closed,
         )
 
     processor = __import__(
@@ -756,6 +758,42 @@ def test_video_publication_preserves_frames_and_audio_artifact_on_audio_failure(
     assert published.metadata["audio_error_code"] == "PROVIDER_RESPONSE_INVALID"
     assert published.metadata["current_run_provider_call_count"] == 2
     assert not list(target.parent.glob(".ocrllm-*.tmp"))
+
+
+def test_video_keeps_successful_audio_after_client_close_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    image_provider = _ImageProvider()
+    observed_audio = _install_fake_audio(monkeypatch, client_closed=False)
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=_audio_config(tmp_path),
+    )
+    composed = compose_video_result(outcome)
+
+    assert outcome.status == "partial"
+    assert outcome.audio_state == "recognized"
+    assert outcome.audio_error is None
+    assert outcome.audio_result is not None
+    assert outcome.audio_result.status == "partial"
+    assert outcome.audio_result.warnings == (
+        "The Google GenAI client could not be closed after recognition.",
+    )
+    assert outcome.audio_result.metadata["provider_client_closed"] is False
+    assert len(observed_audio) == 1
+    assert outcome.audio_artifact is not None
+    assert outcome.audio_artifact.is_file()
+    assert composed.status == "partial"
+    assert "# Audio" in composed.markdown
+    assert composed.metadata["current_run_provider_call_count"] == 2
+    assert composed.assets == tuple(
+        frame.path for frame in outcome.retained_frames
+    ) + (outcome.audio_artifact,)
 
 
 def test_recognize_video_keeps_image_branch_when_audio_is_corrupt(

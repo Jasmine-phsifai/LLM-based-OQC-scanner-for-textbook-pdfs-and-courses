@@ -27,9 +27,16 @@ def recognize_validated_short_mp3(source_path: Path, *, config: Config) -> Proce
             provider_call_completed = True
             model = config.audio_model.name
             assert type(model) is str
+            warnings: tuple[str, ...] = ()
+            if not response.client_closed:
+                warnings = (
+                    "The Google GenAI client could not be closed after recognition.",
+                )
             return ProcessorOutput(
                 media_type="audio",
                 markdown=response.markdown,
+                status="partial" if warnings else "complete",
+                warnings=warnings,
                 metadata={
                     "provider": "google",
                     "model": model,
@@ -43,6 +50,7 @@ def recognize_validated_short_mp3(source_path: Path, *, config: Config) -> Proce
                     ),
                     "duration_seconds": snapshot.duration_seconds,
                     "byte_size": snapshot.byte_size,
+                    "provider_client_closed": response.client_closed,
                 },
             )
     except OutputError as error:

@@ -7,11 +7,12 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class GoogleGenAIAudioResponse:
-    """Carry transcript Markdown plus provider-reported usage."""
+    """Carry transcript, usage, and the settled local-client cleanup state."""
 
     markdown: str
     input_tokens: int | None = None
     output_tokens: int | None = None
+    client_closed: bool = True
 
     def __post_init__(self) -> None:
         for value in (self.input_tokens, self.output_tokens):

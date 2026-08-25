@@ -1134,6 +1134,30 @@ before the ordered #127/#152 gate. The 127-test video set and compilation pass;
 no runtime, API, provider, dependency, retry, routing, cancellation, legacy, or
 frozen-boundary behavior changed.
 
+#248 fixes one proven post-response loss in the native short-Google-audio
+lifecycle. After `generate_content()` and response parsing had both succeeded,
+a later SDK client-close failure previously replaced the parsed transcript and
+token usage with `PROVIDER_RESPONSE_INVALID`; the paid result was unavailable to
+standalone and video callers. The internal audio response now carries the
+settled `client_closed` boolean. A close-only failure returns the same transcript
+as a public partial audio `RecognitionResult`, with one explicit warning,
+`provider_client_closed=False`, the exact one-call count, and parsed per-model
+usage. An earlier generation/parse error remains the primary typed error and
+only gains `provider_client_cleanup_failed=True`; private exception text stays
+redacted. Local MP3 snapshot cleanup retains #108's stricter typed-error policy
+and is not silently downgraded.
+
+One real-MP4 regression proves the combined facade now keeps that usable partial
+audio child beside successful frames: `audio_state` is recognized, overall and
+composed status are partial, both media assets and the two-call total survive.
+The analogous native Google image adapter still replaces a successfully parsed
+image response when only client close fails. That code path is now a concrete
+adjacent warning, not authority to fold two adapters into a lifecycle framework;
+address it as a separate atomic slice. Audio/long-audio/video/import neighbors
+pass 190 tests and the complete offline suite passes 1,513. No public signature,
+provider dispatch, retry, fallback, dependency, cancellation, long-audio route,
+legacy, or frozen-boundary behavior changed.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

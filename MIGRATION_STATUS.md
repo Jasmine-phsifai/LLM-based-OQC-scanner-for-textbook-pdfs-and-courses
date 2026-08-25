@@ -786,6 +786,12 @@ The following directions remain traceable but are not current work:
   retaining frame text, JPEGs, MP3, stable error, and exact call accounting.
   This is test evidence only; runtime, provider policy, dependencies, #127, and
   #152 are unchanged, and the 127-test video set passes.
+  #248 preserves a successfully parsed native short-audio response when only
+  Google client close fails. Standalone and combined-video callers now receive
+  a partial result with transcript, warning, call/token evidence, and explicit
+  cleanup state; primary provider errors retain precedence. The complete
+  offline suite passes 1,513. The analogous image close-only loss is recorded
+  for a later atomic correction; no shared lifecycle framework was added.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

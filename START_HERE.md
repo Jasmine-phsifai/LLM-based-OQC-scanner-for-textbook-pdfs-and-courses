@@ -323,6 +323,14 @@ text, JPEGs, the extracted MP3, the audio error, partial status, and an exact
 two-call total. Runtime and providers did not change; long-audio cleanup partials
 remain outside video until the ordered #127/#152 work.
 
+#248 stops a post-response short-audio client-close error from discarding a
+valid paid transcript. The public audio result is now partial with an explicit
+cleanup warning and `provider_client_closed=False`, while call/token evidence
+survives; a primary provider error still wins and carries only a cleanup flag.
+Combined video keeps this usable audio result and its retained media. The same
+close-only response-loss shape remains registered for the native image adapter
+as a separate atomic defect, not a reason for a generic lifecycle layer.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

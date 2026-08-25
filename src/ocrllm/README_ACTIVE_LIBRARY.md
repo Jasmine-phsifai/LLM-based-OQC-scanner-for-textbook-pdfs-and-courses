@@ -167,6 +167,9 @@ The experimental direct Google short-audio facade:
 - returns an in-memory `RecognitionResult` with `source_type="audio"`, exact
   provider/model/call metadata, duration and byte size, and nullable per-model
   input/output token usage;
+- preserves a successfully parsed transcript as `partial`, with an explicit
+  warning and `provider_client_closed=False`, if only SDK client cleanup fails;
+  an earlier provider error remains primary and records the cleanup failure;
 - rejects output persistence, `resume=True`, `overwrite=True`, groups, MP3s
   longer than 300 seconds, and false no-speech/refusal success;
 - performs no internal retry, model switching, Files upload, cache, fallback,

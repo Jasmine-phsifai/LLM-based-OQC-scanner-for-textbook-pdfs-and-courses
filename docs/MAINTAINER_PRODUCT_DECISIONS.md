@@ -81,6 +81,12 @@ is often accepted.
 - Preserve already completed paid outcomes when an execution-time item failure
   happens. Do not convert `KeyboardInterrupt`, `SystemExit`, or an unexpected
   programming error into a fabricated item-level source error.
+- #248 applies the same principle to native short audio after a successful
+  response: a later SDK client-close failure makes the result partial with an
+  explicit warning instead of discarding its transcript and token evidence.
+  An earlier provider error stays primary and receives only a cleanup flag.
+  Apply the analogous proven image fix atomically; do not introduce a generic
+  provider lifecycle abstraction merely because both adapters share the bug.
 - Normal product layout follows the legacy convention of creating a same-named
   folder beside the source. Cross-media name collisions are therefore unusual.
   Prefer simple duplicate rejection and normal active-call protection over a
