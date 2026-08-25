@@ -228,3 +228,13 @@ def test_combined_video_profile_uses_bounded_install_and_public_pipeline() -> No
     assert "glob('ocrllm-audio-*')" in script
     assert "assert result.metadata['current_run_provider_call_count'] == 2" in script
     assert "assert result.metadata['current_model_token_usage'] == (" in script
+
+
+def test_audio_profiles_include_the_interval_backend_and_bounded_smoke() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+
+    assert "'audio' = 104857600" in script
+    assert "'audio,google' = 146800640" in script
+    assert "'audio' = @('miniaudio', 'imageio-ffmpeg')" in script
+    assert "'audio,google' = @('miniaudio', 'imageio-ffmpeg', 'google-genai')" in script
+    assert "materialize_long_audio_interval" in script

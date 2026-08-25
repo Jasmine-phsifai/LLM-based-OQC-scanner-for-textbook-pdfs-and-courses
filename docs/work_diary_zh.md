@@ -5775,3 +5775,21 @@ Atomic task — Iteration #311: identify the exact installed combined-video smok
 **完整离线与最终 clean gate。** 本轮完整 suite **1,573 passed in 63.26s**，compileall/diff/PowerShell AST 均通过；提交并推送为 `d80170f639ae40307e412d1aad1d2eb9baa093f0`。轻量执行者再次核验代理和 i309 四个 wheel 的精确 size/hash，只运行一次 unchanged gate：archive **1,572 passed, 1 skipped in 67.84s**；wheel **257,084 bytes**，base target **1,265,634**，两套 import budget 通过。七个单独 profile 全过，video **254,451,578 bytes**；combined `[video,audio,image]` **272,322,996 bytes**，public recognize→compose→publish 全部断言通过，终端 `2 1 1` 表示两张 retained frames、一次 image provider、一个 audio snapshot。最终打印 `Stage M offline gate passed`，exit **0**；gate 临时根与进程为 0。普通 clean-installed combined-video delivery gate 至此关闭。
 
 **wheelhouse 清理。** 所有证明完成后，原执行者重新确认 i309 精确 TEMP 根只含它创建的 `venv`、`wheelhouse` 和 `root.txt`，且无进程占用；唯一一次原生 PowerShell 递归删除仍被执行策略拒绝。没有用 Python、cmd 或其他 shell 绕过。该约 91.6 MB 可丢弃目录仍需人工删除，路径已在 #309 委派证据与当前 authority 留存。
+
+## #312 — 2026-08-26：把一个长音频窗口真正落成一个临时 MP3
+
+**本轮英文原子任务。**
+
+```text
+Iteration #312 self-prompt: Determine and implement the narrowest maintainable lifecycle that materializes one temporary MP3 segment from one library-owned MP3 and one validated long-audio window. Success means the backend and dependency boundary are chosen from current code and legacy evidence, one segment is produced without whole-file buffering, ownership and cleanup are explicit, focused and full regressions pass, and the Chinese diary plus authority documents are updated. This matters because interval-mode recognition cannot become a real, resumable library workflow until slicing is proven, but bundling dispatch, checkpointing, or repair here would over-design the iteration.
+```
+
+**起点、假设和两条路线。** 同步 `origin/master` 后，tracked tree 干净，只有两份受保护未跟踪文件。起初假设 miniaudio 不适合 MP3 编码，而 video 已有的 imageio-ffmpeg 最可能承担流式切片。路线 A 是让现有 `audio` extra 同时提供 miniaudio 和 imageio-ffmpeg；路线 B 是新建 `audio-interval` extra 或要求用户另配系统 FFmpeg。复核包边界后选 A：分段识别本来就是 audio 能力，已有版本 pin 和 clean video 安装证明；再造 extra 会让安装契约更难懂。base requirements 仍为空，普通 import 仍不加载两个后端。
+
+**legacy 和 active 双审计。** 两个轻量只读任务分别查 legacy 切片与 active 依赖 seam，本人随后逐行复核。legacy Google 实际不是 stream copy，而是 `-ss/-t` 后重编码为 mono、16 kHz、64 kbps MP3；repair 和普通切片是同形的 32 kbps。值得迁移的是准确 physical window 和磁盘流式重编码。明确不迁移的是 stem 派生且长期残留的 chunk 目录、直接写最终文件、最多六/八路并发、provider/model 队列和 repair manifest。active video FFmpeg runner 带 `VideoError`、MP4 inspection/audio-stream probe 和公开原子输出语义，不能从 audio 私下复用；本轮保留一个小而明确的 audio loader，没有提前抽 generic media/process framework。
+
+**失败优先与实现。** 新测试先在 collection 因 `ocrllm.audio.materialize_long_audio_interval` 不存在而失败。新增同名文件与 `load_audio_ffmpeg_executable.py`：只接受 exact `LongAudioIntervalWindow`，在 backend 加载前暴力拒绝负 index、非有限数和不一致的 logical/actual 边界。函数要求源已经归本请求所有，在源同目录用随机固定前缀创建一个临时 MP3，调用无 shell、无 stdin、无 stderr 泄露和 Windows 隐藏窗口的 FFmpeg；timeout 沿用 legacy 的至少 600 秒并按物理窗口时长加 300 秒。return code 非零为 typed source failure，超时/空输出/临时文件失败不伪装成功；yield 结束、消费者抛错和 backend 抛错都删除 segment，且不删除源。没有第二次完整 decode：真实消费者下一步本来还会 snapshot/probe，重复 decode 是没有必要的防御。
+
+**真实媒体、长路径与门禁变更。** 真实测试生成四秒 MP3，截取 1~3 秒后实际解码约两秒，并确认 mono/16 kHz；命令测试确认实际区间、64 kbps 和 libmp3lame。普通未加前缀的 >260 字符测试路径在创建目录时先复现 WinError 3，尚未进入库；改用 Windows 明确的 `\\?\` extended path 后，同一真实 FFmpeg materialize/decode/cleanup 全部通过。库没有因此增加通用 path normalizer、stem sanitizer 或格式兼容层。维护 gate 的 audio smoke 现在也必须从 installed wheel 实际 materialize、probe、cleanup；audio 期望 distribution 增加 imageio-ffmpeg。根据已经测得的 87,682,173-byte 解压 payload，audio ceiling 为 100 MiB，audio+Google 为 140 MiB；combined 仍是 293 MiB，因为 video 已经安装同一个 distribution，不会重复落盘。
+
+**验证、工具事实和过度设计复查。** 第一次定向命令误写了不存在的 `tests/test_snapshot_long_mp3.py`，pytest 在执行前诚实停止；改为真实文件后 45 项通过。新 materializer/gate 精确集 **9 passed**，PowerShell AST error 0；临时补已有 Node PATH 后完整套件 **1,582 passed in 63.91s**。本人首次 wheel 命令发现 OCRLLM 环境没有 `build`，构建前退出，并创建了一个空 TEMP 根；精确原生删除被执行策略拒绝，没有换 shell 绕过。轻量机械任务按用户规则确认 10080 代理后，向 OCRLLM 环境安装 build/Hatchling，再以 `--no-isolation` 构建一次当前 worktree wheel：**259,730 bytes / 245 members**，仍低于 256 KiB 上限；METADATA 的 audio extra 精确含 miniaudio 和 imageio-ffmpeg。其唯一 owned TEMP root 删除同样被策略拒绝。最接近过度设计的是抽通用 FFmpeg runner、增加 AudioError 代码族、第二次 decode、segment 公共 API、并行分片和现在就写 checkpoint；全部拒绝。本轮只关闭“一窗口能真实变成一份有生命周期的媒体”这一点；serial dispatch 和已付结果持久化仍是下一独立工作。

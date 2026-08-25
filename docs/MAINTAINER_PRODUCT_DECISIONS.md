@@ -241,6 +241,16 @@ is often accepted.
   and resubmit those ranges without depending on retained mode/interval state.
   It does not accept legacy formats, perform broad fuzzy recovery, or justify a
   second checkpoint architecture.
+- **#312 A2b media backend boundary.** The first interval materializer uses the
+  same FFmpeg re-encode shape proven by legacy Google audio: exact physical
+  window, mono 16 kHz, 64 kbps MP3. `ocrllm[audio]` includes the already pinned
+  lazy `imageio-ffmpeg` distribution as well as `miniaudio`; do not create a
+  second `audio-interval` extra or require an independently configured system
+  executable. This is an audio capability and does not change base import.
+  Materialized segments live only beside an already request-owned source and
+  are context-managed. Do not port legacy persistent stem-derived directories,
+  parallel splitting, direct final-path writes, provider/model queues, or repair
+  state as part of this backend seam.
 - **#245 video-integration ordering clarification.** Long Files results already
   fit `VideoRecognitionOutcome`; do not add a second outcome or audio-result
   type. The low-level public functions can be manually composed, but they copy

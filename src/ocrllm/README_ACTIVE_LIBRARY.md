@@ -90,8 +90,11 @@ request through lazy `ocrllm[google]`. This path remains experimental and
 memory-only despite its successful #069 public-result gate. Stage A2a
 standalone Google Files long-MP3 recognition is also implemented and
 live-proven. `recognize_video()` selects inline audio through 300 seconds or
-Files above 300 seconds through the current 9.5-hour single-request ceiling;
-A2b chunk/resume and the remaining private 9.5-to-10-hour range remain unavailable.
+Files above 300 seconds through the current 9.5-hour single-request ceiling.
+A2b now has an internal exact-window planner and one-window temporary MP3
+materializer, but public chunk dispatch, resume, and the remaining private
+9.5-to-10-hour range remain unavailable. Install `ocrllm[audio]` for both its
+lazy MP3 decoder and interval FFmpeg backend; neither loads during plain import.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
 legacy-Markdown repair, so ordinary image-sidecar resume remains its recovery
 path.

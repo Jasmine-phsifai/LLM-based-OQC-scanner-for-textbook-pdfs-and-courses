@@ -663,22 +663,18 @@ second scene detector, or premature provider generalization.
 
 ## Current delivery evidence
 
-#295 proves that the active `127.0.0.1:10080` proxy can reach PyPI and was
-propagated to one clean-archive gate process. The disposable PowerShell wrapper
-did not retain logs or a numeric exit, so it proves neither archived tests nor
-the installed `[video,audio,image]` public flow. Keep that gate open. Before a
-later delegated run, locally prove the small status/log channel; do not add a
-second installer, retry immediately, or change package dependencies from this
-operator-evidence failure.
+#311 closes the ordinary clean-installed combined-video gate. Exact commit
+`d80170f` passes archived tests, wheel/base/import checks, all seven individual
+profiles, and installed `[video,audio,image]` public recognize/compose/publish
+without loading Google or calling a provider API. Keep the one maintained gate;
+do not add a second installer or compatibility seam.
 
-#296 proves the approved channel locally: Python standard-library
-`subprocess.run()` preserves exact child exit, stdout, stderr, and timeout
-output here; a separate local parent/descendant probe proves owned Windows tree
-termination when an outer bound fires, and the maintained gate's own
-bounded-process tests pass. Reuse that standard-library channel and exact
-owned-tree cleanup for a later delegated run with explicit proxy environment.
-Do not put another `Start-Process` wrapper around it or treat this local proof as
-an installed-package result.
+#312 adds only internal A2b one-window materialization. An exact planned window
+and an already-owned MP3 yield one temporary mono 16 kHz / 64 kbps segment,
+which is removed after use. The `audio` extra now includes lazy
+`imageio-ffmpeg` as well as `miniaudio`; base import stays dependency-free. Do
+not widen this into a public cutter, parallel splitter, generic subprocess
+framework, provider fallback, repair parser, or second checkpoint system.
 
 ## When Porting Legacy Behavior
 

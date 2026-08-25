@@ -2028,19 +2028,19 @@ ocrllm[image]          Phase 0: Pillow>=10.4,<13 for lazy decode validation.
 ocrllm[pdf-text]       pypdfium2>=5.11.0,<5.12 only.
 ocrllm[pdf-vision]     pypdfium2>=5.11.0,<5.12 plus Pillow>=10.4,<13.
 ocrllm[dashscope]      Phase 1 vision starts with lazy openai>=2.30,<3.
-ocrllm[audio]          Stage A1: lazy miniaudio>=1.71,<2 for the local MP3
-                       probe; ffmpeg stays outside the runtime.
-ocrllm[video]          Not created until Phase 5; it includes approved audio
-                       requirements and does not bundle ffmpeg.
+ocrllm[audio]          Lazy miniaudio>=1.71,<2 for MP3 probing plus lazy
+                       imageio-ffmpeg>=0.6,<0.7 for A2b interval materialization.
+ocrllm[video]          Lazy imageio-ffmpeg>=0.6,<0.7 and
+                       opencv-python>=4.13,<4.14; no binary is bundled by OCRLLM.
 ocrllm[all]            Only after every included extra is individually GO.
 ocrllm[dev]            Tests, build, lint, and fixture tools.
 ```
 
 The current metadata declares exactly `audio`, `dashscope`, `dev`, `google`,
-`image`, `ocr`, and `pdf-vision`. The base distribution has no runtime
-requirements. The audio extra carries the lazy A1 runtime dependency;
-`dev` also includes that small dependency because the public short-audio
-adapter tests execute the real MP3 probe rather than skipping the shipped path.
+`image`, `ocr`, `pdf-vision`, and `video`. The base distribution has no runtime
+requirements. The audio extra carries both lazy audio backends; `dev` also
+includes them because the public tests execute the real MP3 probe and interval
+materializer rather than skipping shipped local paths.
 
 The base target uses fresh-process imports after two discarded warm-ups, not an
 unmeasured cold-cache claim. The actual hard budgets are:
@@ -2053,9 +2053,10 @@ unmeasured cold-cache claim. The actual hard budgets are:
 | PDF text | Clean installed delta <= 12 MiB | pypdfium2 remains lazy; Pillow is absent. |
 | PDF vision | Clean installed delta <= 35 MiB | pypdfium2 and Pillow remain lazy. |
 | PDF vision + DashScope | Clean installed delta <= 96 MiB | Same lazy-import rule; no second vision client. |
-| Audio | Clean installed delta <= 8 MiB | miniaudio remains lazy; ffmpeg is not bundled or required. |
+| Audio | Clean installed delta <= 100 MiB | miniaudio and imageio-ffmpeg remain lazy; OCRLLM does not bundle the executable. |
+| Audio + Google | Clean installed delta <= 140 MiB | Audio plus the native Google SDK; no provider request is made by the install smoke. |
 | Video | Clean installed delta <= 260 MiB | OpenCV, NumPy, and imageio-ffmpeg remain lazy; the latter carries its own optional FFmpeg executable payload. |
-| Video + audio + image | Clean installed delta <= 293 MiB | Exact sum of the maintained 260 MiB video, 8 MiB audio, and 25 MiB image ceilings; no Google SDK is installed. |
+| Video + audio + image | Clean installed delta <= 293 MiB | The unique dependency union shares imageio-ffmpeg between video and audio; no Google SDK is installed. |
 
 The self-contained Electron worker bundle has no proven size budget yet. Phase
 6 is NO-GO until a packaging spike records its runtime, provider, and image

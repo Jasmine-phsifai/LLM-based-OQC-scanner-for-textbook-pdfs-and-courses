@@ -649,6 +649,16 @@ the actual `recognize_video_mp3` seam; no library compatibility shim was added.
 The final exact `d80170f` clean gate passes all eight profiles and the installed
 combined recognize/compose/publish workflow with exit 0.
 
+#312 begins executable A2b interval work without adding the public chunked
+recognition route. One exact planner window can now materialize one temporary
+mono 16 kHz / 64 kbps MP3 beside an already-owned source and remove it after
+use. The implementation follows the legacy Google re-encode shape but rejects
+legacy persistent chunk directories, parallel splitting, provider queues, and
+repair/checkpoint coupling. `ocrllm[audio]` consequently includes lazy
+`imageio-ffmpeg` as well as `miniaudio`; plain package import remains
+dependency-free. The next slice is serial window consumption and paid-result
+persistence, not another media abstraction or provider-class hierarchy.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

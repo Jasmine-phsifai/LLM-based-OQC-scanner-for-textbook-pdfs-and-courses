@@ -424,19 +424,22 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 - A2b may add the smallest evidence-driven Google chunk/checkpoint route after
   A2a succeeds. Duration remains the routing input toward the private ten-hour
   product ceiling, subject to current provider size and duration limits.
-- #152 leaves one explicit maintainer choice before A2b code: (A) split only
-  above Google's single-prompt ceiling, minimizing calls but providing recovery
-  only for the 9.5-to-10-hour tail; or (B, recommended) keep A2a as the explicit
-  one-shot operation and use fixed ordered chunks for every persisted long-MP3
-  run, so ordinary lecture failures can resume without replay. Do not invent a
-  configurable threshold or adaptive chunk policy while this choice is open.
-- #208 narrows the recommended B contract further: resume depends on the
-  caller's original MP3 remaining present with a strong matching identity, so
-  the library does not retain another potentially 2 GB source copy. Start with
-  fixed 1,800-second logical windows and 30 seconds of context, and ask the
-  model to return only the logical range. Do not add programmatic transcript
-  deduplication in the first slice. This remains unimplemented until the
-  maintainer accepts the combined chunk/source/overlap contract.
+- #152 selects Route B: A2a remains the explicit one-shot operation and the
+  recoverable route uses fixed ordered intervals for every persisted long-MP3
+  run. Interval length is caller-configured as an exact positive integer number
+  of minutes; no fractional, adaptive, provider-selected threshold is accepted.
+- #208/#304 narrow that contract further: resume depends on the caller's
+  original MP3 remaining present with a strong matching identity, so the
+  library does not retain another potentially 2 GB source copy. Each interior
+  logical interval receives a private fixed 30 seconds of context on each side,
+  and the model is asked to return only the logical range. There is no public
+  overlap option or programmatic transcript deduplication.
+- #305 implements the pure exact-window planner. #312 implements one internal
+  context-managed FFmpeg materialization from one already-owned MP3 and one
+  planned window. It re-encodes mono 16 kHz / 64 kbps to disk and removes the
+  temporary segment after use. Serial provider dispatch, source/request/window
+  state identity, per-paid-result persistence, final assembly, and repair remain
+  later independent slices.
 - The A2a 9.5-hour duration check is not complete selected-model preflight:
   Google's documented 32 audio tokens per second makes the full duration
   1,094,400 audio tokens before the prompt, above the current documented

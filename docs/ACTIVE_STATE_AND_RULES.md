@@ -82,10 +82,12 @@ requirements remain outside the A1 runtime. The probe rejects malformed or
 undecodable audio, zero decoded frames, and declared/decoded frame mismatch; it
 does not claim that every frame-aligned MP3 truncation can be distinguished
 from an intentionally shorter valid file.
-The independent `audio` extra remains the user-facing A1 runtime profile. The
-`dev` extra also includes `miniaudio` because the shipped short-audio adapter
-tests execute that real probe rather than treating its dependency as an
-expected skip; this does not make audio a base requirement.
+The independent `audio` extra is the user-facing audio runtime profile. It now
+contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
+first A2b interval materializer. The short and whole-file routes still import
+only the dependencies they use. The `dev` extra carries both dependencies so
+the shipped audio tests execute their real local backends rather than treating
+them as expected skips; this does not make audio a base requirement.
 #111 corrected two stale Stage A1 reasons in the frozen 20-entry shared
 capability/worker registry. The MP3 entry remains `deferred` there because that
 status describes worker support, but its reason now names the separately
@@ -5554,6 +5556,43 @@ publishes Markdown, and cleans request-owned media/staging paths. No provider
 API is called and `google-genai` is absent from that profile. The gate removes
 its own temporary root and leaves no process. This closes the ordinary
 clean-installed combined-video delivery gate.
+
+## Iteration 312: one planned long-audio window owns one temporary MP3
+
+`audio/materialize_long_audio_interval.py` is the second bounded A2b runtime
+piece. It accepts an already request-owned MP3 plus an exact
+`LongAudioIntervalWindow`, rejects inconsistent window identity before loading
+the backend, and uses the legacy-proven Google split shape: seek to the physical
+start, stream-reencode only the physical duration as mono 16 kHz / 64 kbps MP3,
+and discard metadata. The output receives a random fixed-prefix name beside the
+owned source, is nonempty before it is yielded, and is removed when the context
+ends or either FFmpeg or its consumer fails. It never derives a directory name
+from the caller filename.
+
+The `audio` extra now includes the already pinned
+`imageio-ffmpeg>=0.6,<0.7`. This does not bundle an executable in the OCRLLM
+wheel or make base import heavy; it makes the executable available only to an
+installed audio capability. The isolated audio profile ceiling is 100 MiB and
+audio+Google is 140 MiB, derived from the already measured 87,682,173-byte
+uncompressed FFmpeg payload plus the previously measured profiles. Combined
+video+audio+image stays at 293 MiB because it already installed the identical
+FFmpeg distribution through `video`; dependency union does not duplicate it.
+
+The materializer is internal and serial. It does not expose a public cutter,
+build a generic subprocess or media framework, dispatch a provider, choose
+short versus Files transport, create resumable state, parse repair Markdown,
+split multiple windows, add retry/model fallback, or modify frozen contracts or
+workers. The next A2b slice must consume windows and this lifecycle serially;
+state identity and paid-result persistence remain separate work.
+
+The real focused test produces and decodes a two-second interval, verifies mono
+16 kHz output and cleanup, and repeats through a Windows explicit extended-
+length owned path above 260 characters. An ordinary unprefixed test path first
+failed during directory creation before library code ran; no universal path
+normalizer was added. Error and cleanup regressions plus the complete offline
+suite pass, with 1,582 tests in the maintained environment. Clean wheel/profile
+evidence must still be recorded before this iteration claims its revised audio
+installation boundary is release-proven.
 
 ## Documentation Rules
 

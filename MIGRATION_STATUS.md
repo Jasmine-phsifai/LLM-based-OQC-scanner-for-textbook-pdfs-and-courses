@@ -1255,6 +1255,17 @@ The following directions remain traceable but are not current work:
   clean gate passes all eight profiles; combined video+audio+image measures
   272,322,996 bytes and its installed public recognize/compose/publish smoke
   completes with two retained frames, one image call, and one audio snapshot.
+  #312 adds the next internal A2b seam without exposing chunked recognition:
+  one validated interval window materializes one request-owned temporary MP3
+  beside an already-owned source, using the legacy-proven Google shape of mono
+  16 kHz / 64 kbps FFmpeg re-encoding. The context manager removes the segment
+  after success, consumer failure, or backend failure; it does not retain
+  legacy chunk directories or add parallel splitting, dispatch, resume, repair,
+  retry, or provider generalization. The `audio` extra now includes the existing
+  pinned lazy imageio-ffmpeg dependency. Its isolated size ceiling becomes
+  100 MiB and audio+Google becomes 140 MiB; combined video+audio+image remains
+  293 MiB because the same FFmpeg distribution was already in that dependency
+  union. Source tests pass, while clean installed-profile proof remains pending.
 
 ## Obsolete Prose Kept For Trace
 

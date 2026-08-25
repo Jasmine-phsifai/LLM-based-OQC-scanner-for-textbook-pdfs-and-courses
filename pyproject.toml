@@ -26,7 +26,10 @@ dev = [
     "pytest>=8.0",
 ]
 image = ["Pillow>=10.4,<13"]
-audio = ["miniaudio>=1.71,<2"]
+audio = [
+    "miniaudio>=1.71,<2",
+    "imageio-ffmpeg>=0.6,<0.7",
+]
 video = [
     "imageio-ffmpeg>=0.6,<0.7",
     "opencv-python>=4.13,<4.14",

@@ -301,21 +301,21 @@ print(sorted(declared_extras))
 
     if (-not $SkipOptionalProfiles) {
         $profileLimits = @{
-            'audio' = 8388608
+            'audio' = 104857600
             'image' = 26214400
             'image,dashscope' = 67108864
             'google' = 67108864
-            'audio,google' = 67108864
+            'audio,google' = 146800640
             'pdf-vision' = 36700160
             'video' = 272629760
             'video,audio,image' = 307232768
         }
         $expectedDistributions = @{
-            'audio' = @('miniaudio')
+            'audio' = @('miniaudio', 'imageio-ffmpeg')
             'image' = @('Pillow')
             'image,dashscope' = @('Pillow', 'openai')
             'google' = @('google-genai')
-            'audio,google' = @('miniaudio', 'google-genai')
+            'audio,google' = @('miniaudio', 'imageio-ffmpeg', 'google-genai')
             'pdf-vision' = @('pypdfium2', 'Pillow')
             'video' = @('opencv-python', 'numpy', 'imageio-ffmpeg')
             'video,audio,image' = @(
@@ -421,12 +421,27 @@ print(result.status)
 from pathlib import Path
 import sys
 
+from ocrllm.audio.build_long_audio_interval_windows import (
+    build_long_audio_interval_windows,
+)
+from ocrllm.audio.materialize_long_audio_interval import (
+    materialize_long_audio_interval,
+)
+from ocrllm.audio.probe_short_mp3 import probe_short_mp3
 from ocrllm.audio.snapshot_short_mp3 import snapshot_short_mp3
 
 with snapshot_short_mp3(Path(sys.argv[1]), temp_dir=Path(sys.argv[2])) as snapshot:
     assert snapshot.path.name == 'source.mp3', snapshot.path
     assert snapshot.duration_seconds == 0.5, snapshot.duration_seconds
-    print(snapshot.duration_seconds)
+    window = build_long_audio_interval_windows(
+        duration_seconds=snapshot.duration_seconds,
+        interval_minutes=1,
+    )[0]
+    with materialize_long_audio_interval(snapshot.path, window=window) as segment:
+        assert probe_short_mp3(segment) > 0.0
+        segment_path = segment
+    assert not segment_path.exists(), segment_path
+    print(snapshot.duration_seconds, window.index)
 '@
                 $audioSmoke | & $profilePython -I - $audioFixture $profileVenv
                 Assert-LastExitCode 'MP3 probe package smoke failed'
