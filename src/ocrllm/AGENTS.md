@@ -551,6 +551,17 @@ Process APIs preserved the numeric exit without adding a controller to the
 repository. Later pressure robustness work is permitted only as separate,
 single-question, capped and cleanup-verified gates after the corresponding
 basic live flow; do not add a generic load/provider framework.
+#287 classifies the current bounded two-frame-group Google video failure. A
+provider-free preflight retained ten frames as 8+2. In the sole live runner,
+the first image group made one call and returned
+`PROVIDER_RESPONSE_INVALID/missing_text`, the undispatched second group stayed
+`CANCELLED` with unknown calls, and the pure-tone audio branch made one call and
+returned `invalid_no_speech_marker`. The result was honestly failed with no
+composition, assets, invented usage, leak, or residue. This grayscale/no-speech
+fixture proves failure settlement, not content-bearing success and not #282
+causality. Do not add retry/model switching or replay it to force green; a later
+success-path stress question needs a separately authorized content-bearing
+synthetic fixture.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

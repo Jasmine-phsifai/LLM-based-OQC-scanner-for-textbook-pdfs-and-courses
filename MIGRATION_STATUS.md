@@ -897,6 +897,19 @@ The following directions remain traceable but are not current work:
   detail stays redacted. #261 itself remains unclassified beyond its recorded
   error code. Legacy retry/model switching was not ported, no live call or
   public API changed, and the complete offline suite passes 1,535 tests.
+  #287 uses the first permitted post-basic bounded stress gate to classify the
+  current two-frame-group failure after #262/#282. Two provider-free public
+  preflights retained the same ten grayscale frames as ordered 8+2 groups, and
+  audio extraction produced a nonempty MP3. One current-catalog runner made one
+  first-group image call (`PROVIDER_RESPONSE_INVALID/missing_text`) and one
+  independent pure-tone audio call (`invalid_no_speech_marker`); fail-fast left
+  the second image group undispatched with unknown call evidence. Outcome was
+  failed, composition did not start, and no asset/token evidence was invented.
+  Exit was 1 after 12,742.019 ms with one safe JSON, empty stderr, no leak, and
+  no residue. This content-free fixture proves honest failure settlement, not a
+  two-group success path or causality from #282. No runtime, runner, API,
+  dependency, retry/fallback, provider policy, legacy/social, #127/#152, or
+  frozen boundary changed; the full offline suite remains 1,548 passed.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The

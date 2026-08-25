@@ -4866,6 +4866,47 @@ remain a separate single-question gate with capped input scale, provider calls,
 deadline, honest failure checks, and owned cleanup. Do not turn this into a
 generic load framework or indefinite provider pressure.
 
+## Iteration 287: bounded two-frame-group video failure is now classified
+
+The first permitted post-basic stress gate revisited #261's unclassified
+two-frame-group Google video result after #262 added safe reasons and #282
+changed the shared Google candidate parser. This was one question-driven run,
+not a general load test. A generated 534,392-byte, 60-second MP4 contained 60
+one-FPS 64x48 grayscale frames in twelve scenes plus a 440 Hz tone. Two
+provider-free public preflights both retained the same ten frames at indices
+0, 5, 10, 20, 25, 30, 35, 45, 50, and 59, forming ordered 8+2 groups. Public
+audio extraction independently produced a nonempty 240,560-byte MP3.
+
+The sole maintained-runner invocation discovered 37 current models and used
+explicit `gemini-2.5-flash` for the separately configured image and audio
+branches. The first image group made one call and returned
+`PROVIDER_RESPONSE_INVALID` with safe reason `missing_text`; fail-fast left the
+second group as undispatched `CANCELLED` with deliberately unknown call count.
+The pure-tone audio branch independently made one call and returned
+`PROVIDER_RESPONSE_INVALID` with `invalid_no_speech_marker`. The overall outcome
+was honestly failed, composition did not start, assets were zero, and no token
+usage was invented. This classifies the current response boundary but does not
+prove that #282 caused #261, or that a content-bearing two-group video cannot
+succeed: the stress fixture deliberately contains neither visible text nor
+speech.
+
+The direct .NET controller exited 1 after 12,742.019 ms without reaching its
+420-second deadline. Stdout was one 848-byte safe JSON object and stderr was
+empty. Primary review found no exact credential, `AIza` pattern, source path,
+or recognition content; all runner processes, preflight/smoke directories,
+video/image snapshots, and the exact wrapper root were absent after review and
+cleanup. There was no retry, second runner, fallback, model switch, invalid-key
+probe, dependency change, product edit, or provider call outside the one
+runner. The complete offline suite remains 1,548 passed.
+
+No runtime fix follows: rejecting absent image text and a mixed no-speech
+sentinel is the existing honest contract. Do not reinterpret the undispatched
+second group as zero calls, add automatic retry/model switching, or build a
+stress/provider framework. If a later independent stress gate asks whether the
+two-group success path works, use a deterministic synthetic fixture with
+visible text and authorized speech; do not immediately replay this request or
+silently change this failure-oriented fixture.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
