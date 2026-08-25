@@ -237,6 +237,12 @@ initialization. Do not generalize without another proven collision.
 clean installed wheel in both root-first and explicit-submodule-first orders.
 Do not add another build harness or repeat that gate unless package layout,
 facade initialization, or their import boundary changes.
+#222 confirms that sub-five-second videos already use the same five-second grid
+plus exact final frame: stable clips retain the final representative and a
+changed ending retains both sides. An interior-only transient remains the
+documented fine-gap limit. Do not add a short-clip cadence, midpoint scan, or
+legacy refine/pHash machinery without a separate product decision and balanced
+quality evidence.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

@@ -4409,3 +4409,17 @@ Atomic task — Iteration #221: prove that the post-#218–#220 video facade imp
 **离线安装证据。** 轻量任务使用已有 Hatchling、零网络和零下载，从 exact commit `fbcca0cfc15362ba14355f48772f32b1bfe4066d` 构建唯一成功 wheel `ocrllm-0.1.0-py3-none-any.whl`：**255,079 bytes**，SHA-256 `09603DEFAD71A5E89621D76070FCC6A959450C20B9B9E78231810F3FA2C07B0C`，共 **236** 个成员。wheel 明确包含 `ocrllm/__init__.py`、四个视频 facade 模块和 `ocrllm/py.typed`；以 `--no-index --no-deps --target` 安装到仓库外后，所有已加载 `ocrllm` 模块都来自该 target。新鲜进程中，根包优先和显式子模块优先两种顺序下，四个公开名称都可调用并与子模块函数保持同一身份；四份 `typing.get_type_hints()` 均成功。OpenCV、NumPy、imageio-ffmpeg、miniaudio、Google/OpenAI SDK、HTTPX、legacy、recognition execution、result builder 和 atomic writer 都没有提前加载。
 
 **工具失败、清理与过度设计复查。** 第一次尝试把二进制 tar 归档通过 PowerShell 管道传递，管道破坏了字节流；Hatchling 随后虽然输出过 wheel 路径，但输入不是有效 clean archive，整条流程被判无效，不能算产品红灯或有效产物，所属临时目录已定点删除。改用 `git archive --output` 后才得到上述唯一有效的 clean-build wheel。最终唯一 proof root 删除并确认不存在，仓库仍只有两项受保护的既有未跟踪文件。没有 runtime、test、manifest、dependency、provider、credential、network、媒体识别、public API、#127/#152、legacy/social 或 frozen boundary 变化，因此不机械重跑 1,493 项源码全套。最可能的过度设计是把一次安装证明固化为第二套长期 build harness，或者安装所有 extras 再重复真实视频/provider 测试；本轮只记录一次直接证据，并规定除非以后再次改变包布局或 import 边界，否则不重复该 gate。
+
+## #222 — 2026-08-25：短于五秒的视频不应诱发一套新的选帧系统
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #222: audit the shipped provider-free negative-feedback frame selector at the shortest-video boundary, without retuning thresholds or reopening provider orchestration. Success means rereading and reconciling current authority, diary, and package rules; tracing inspection, five-second candidate generation, accumulated negative feedback, exact-final-frame handling, and JPEG publication for videos shorter than one sampling interval; using one bounded independent audit plus personal code review; reproducing any suspected false success with a real local MP4; adding the smallest regression and correction only if a concrete defect exists; preserving provider separation, lightweight imports, frozen boundaries, and the dirty worktree; running proportional video/import tests; updating Chinese records; and committing/pushing one coherent iteration. This matters because a video library must handle ordinary short clips honestly, while threshold expansion or a second detector would be overdesign without evidence.
+```
+
+**先纠正假设，再看真实短片。** 本轮开始时假设“短片至少应保留首尾两帧”；读完 `scan_video_frame_candidates()` 与 `select_video_frame_candidates()` 后立即纠正：选择器的公开形态是每个稳定片段保留末端代表，恒定短片只留末帧是有意行为，不是首帧丢失。主代理用真实 MP4 覆盖 1 帧/0.25 秒、2 帧/0.5 秒和 4 帧/1 秒：单帧返回 `[0]`，恒定 2/4 帧返回 `[1]`/`[3]`，末帧变亮则返回 `[0,1]`/`[0,3]`；时间戳分别来自实际解码位置，JPEG 均可解码且明暗内容正确，五个输出父目录都没有隐藏视频 snapshot 残留。独立审计另测 0.1、0.5、1.0、4.0 秒，结论一致。
+
+**发现的限制与 legacy 对照。** 四秒视频若只在中间短暂出现新场景，结尾又恢复成开头，当前只比较开头和 exact final，因而只保留末帧。这个结果看起来值得警惕，但它正是 #170 已经公开的 five-second fine-gap 限制，不是假成功、错误帧身份或资源泄漏。legacy 更弱：`frame_interval=5.0` 的 coarse range 对短于五秒的片段只生成 frame 0；`refine_interval=2.0` 只在至少两个 coarse candidate 之间补帧；pHash 只去重，不创造候选。没有 legacy 测试或事故证明短片中点应被保留。因此给新库加中点、一秒网格、逐帧扫描、refine/pHash 或第二 detector 都会超过 parent，而不是修复继承风险；并且任意固定中点仍不能保证抓住所有瞬时内容。
+
+**验证与过度设计复查。** 轻量审计独立运行 frame extraction 文件为 **16 passed**；主代理运行 extraction、inspection 和 lightweight import 相邻集合为 **33 passed in 1.82s**。临时真实媒体由一次性目录持有并清理，没有网络、provider、credential、dependency install、runtime、test、API、manifest、threshold、sampling interval、output、#127/#152、legacy/social 或 frozen `contracts/worker` 修改，所以不机械重跑全套或 wheel。最容易过度设计的是把一个已诚实公开的 sampling limit 当成 bug，再补一套短片专用扫描逻辑；本轮只把新的短片实测和 legacy 差异写清，保留未来在有正反质量样本和明确产品授权时重新考虑的空间。

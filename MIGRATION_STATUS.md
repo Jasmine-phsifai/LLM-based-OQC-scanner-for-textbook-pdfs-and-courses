@@ -691,6 +691,11 @@ The following directions remain traceable but are not current work:
   explicit-submodule-first imports preserve callable identity and exact runtime
   type hints, while recognition/output execution and every optional backend or
   provider remain unloaded. No packaging or runtime correction was required.
+  #222 rechecks valid sub-five-second MP4s and confirms the current selector
+  honestly returns one stable representative or opening/final changed frames.
+  Interior scenes that both appear and disappear between those samples remain
+  the documented #170 fine-gap limit; legacy samples even less at this seam, so
+  no special short-clip sampler or refinement port was added.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

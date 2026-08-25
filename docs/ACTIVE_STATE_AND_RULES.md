@@ -2581,6 +2581,22 @@ was removed. No runtime, test, manifest, dependency, provider, media, or public
 API change was needed; do not repeat this wheel proof without a later package
 layout or import-boundary change.
 
+#222 rechecks the provider-free selector specifically below its five-second
+coarse interval and finds no defect inside the published contract. Real local
+MP4s with one frame, constant two/four-frame content, and a distinct final frame
+returned respectively the sole frame, the final stable representative, and the
+ordered opening/final representatives, with decoded JPEG content and no source-
+snapshot residue. A transient scene that appears and disappears between the
+opening and final samples remains invisible; this is the already-disclosed
+#170 fine-gap limitation, not a new false success. The legacy parent is weaker
+at this seam: a sub-five-second clip produces only frame zero, its two-second
+refinement requires at least two coarse candidates, and pHash only deduplicates
+existing candidates. Adding a special short-clip cadence, midpoint, per-frame
+scan, refine pass, or second detector would therefore be a new product choice,
+not a legacy repair. Preserve the current five-second grid plus exact final
+frame until balanced quality evidence and maintainer authority justify changing
+the sampling contract.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist
