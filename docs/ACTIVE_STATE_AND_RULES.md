@@ -1401,6 +1401,27 @@ tests and compileall succeeds. Preserve the existing exact-or-unknown rule:
 an undispatched batch suffix has no provider-call evidence and must not be
 rewritten as a confirmed zero merely to make aggregate accounting look exact.
 
+#262 closes the diagnostic gap exposed by #261 without replaying a live call.
+The native Google parser already distinguishes safety blocks, visible empty
+output, refusal text, invalid UTF-8, and structured SDK status failures. It now
+also gives `PROVIDER_RESPONSE_INVALID` the fixed safe reason `missing_text` when
+neither the response text property nor candidate parts yield text. The existing
+mixed audio sentinel failure now carries `invalid_no_speech_marker`. These
+reasons describe parser observations only; `missing_text` deliberately does not
+guess whether the provider returned an empty candidate, malformed candidate
+structure, or an unreadable SDK property.
+
+The maintained video runner now preserves only five fixed reasons: `empty`,
+`invalid_encoding`, `missing_text`, `invalid_no_speech_marker`, and `refusal`.
+Unknown or arbitrary detail remains redacted with the raw response, exception
+text, recognition content, and source path. This cannot retrospectively classify
+#261 because its safe capture omitted the reason. Legacy evidence also labels
+empty Google responses separately, but its retry/model-switch controller is an
+application policy and was not ported. Three failing-first regressions passed
+after the change; the Google/video/error-policy neighbor set passes 138 tests,
+the complete offline suite passes 1,535, and compileall succeeds. No provider
+call, retry, fallback, new error code, or public API was added.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

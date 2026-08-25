@@ -28,7 +28,11 @@ def parse_google_genai_audio_response(
         raise ProviderError(
             "Google GenAI returned an invalid no-speech marker.",
             code="PROVIDER_RESPONSE_INVALID",
-            details={"provider": "google", "model": model},
+            details={
+                "provider": "google",
+                "model": model,
+                "reason": "invalid_no_speech_marker",
+            },
         ) from None
     try:
         markdown = validate_provider_markdown(parsed.text)

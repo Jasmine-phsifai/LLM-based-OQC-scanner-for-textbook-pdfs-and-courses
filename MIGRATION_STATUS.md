@@ -887,6 +887,14 @@ The following directions remain traceable but are not current work:
   retry, fallback, model switch, token invention, or residue followed. This is
   runner-only robustness evidence, not a public planner or product API change;
   the complete offline suite passes 1,532 tests.
+  #262 makes future failed Google video probes diagnostically useful without
+  repeating #261. Missing response/candidate text now carries the fixed safe
+  reason `missing_text`, and a mixed audio no-speech sentinel carries
+  `invalid_no_speech_marker`. The maintained runner forwards only those plus
+  the existing `empty`, `invalid_encoding`, and `refusal` reasons; arbitrary
+  detail stays redacted. #261 itself remains unclassified beyond its recorded
+  error code. Legacy retry/model switching was not ported, no live call or
+  public API changed, and the complete offline suite passes 1,535 tests.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

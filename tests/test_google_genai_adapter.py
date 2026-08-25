@@ -326,6 +326,26 @@ def test_google_response_falls_back_to_candidate_parts_and_maps_safety_block():
         parser.parse_google_genai_response(candidate_blocked, model=MODEL)
 
 
+def test_google_response_without_text_reports_safe_missing_text_reason():
+    parser = importlib.import_module(
+        "ocrllm.providers.google_genai.parse_google_genai_response"
+    )
+
+    with pytest.raises(ProviderError) as captured:
+        parser.parse_google_genai_response(
+            SimpleNamespace(
+                text=None,
+                prompt_feedback=None,
+                candidates=(),
+                usage_metadata=None,
+            ),
+            model=MODEL,
+        )
+
+    assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.details["reason"] == "missing_text"
+
+
 @pytest.mark.parametrize(
     ("code", "status", "message", "expected_type", "failure_scope", "error_code"),
     [

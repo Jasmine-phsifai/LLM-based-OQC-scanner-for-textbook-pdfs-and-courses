@@ -552,6 +552,11 @@ Every JSON object is discriminated before its shared pass/fail status:
 `report_type="video_outcome"` means the media branches settled, while
 `report_type="runner_failure"` means catalog/model/orchestration did not produce
 a settled outcome.
+For settled branch failures, the runner may also print one fixed safe `reason`:
+`empty`, `invalid_encoding`, `missing_text`, `invalid_no_speech_marker`, or
+`refusal`. Arbitrary provider detail is never forwarded. A missing reason means
+the library cannot safely classify the response more narrowly; it is not proof
+of any one provider failure shape.
 For a settled outcome to pass, its retained count must match the preflight and
 its image group/call count must match the explicit expectation. This extra
 local frame pass is a runner safety check, not part of `recognize_video()` and

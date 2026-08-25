@@ -488,6 +488,20 @@ def test_google_audio_never_accepts_no_speech_empty_or_refusal(
         assert caught.value.details["model"] == MODEL
 
 
+def test_google_audio_mixed_no_speech_marker_reports_safe_reason(monkeypatch) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    fake = _FakeGoogleModule(text="transcript NOSPEECH4OCRLLM")
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    with pytest.raises(ProviderError) as caught:
+        recognize(FIXTURE, config=_config())
+
+    assert caught.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert caught.value.details["reason"] == "invalid_no_speech_marker"
+
+
 def test_google_audio_rejects_groups_and_persistence_options_before_sdk(monkeypatch) -> None:
     adapter = importlib.import_module(
         "ocrllm.providers.google_genai.recognize_short_mp3"

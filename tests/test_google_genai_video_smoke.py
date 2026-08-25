@@ -516,6 +516,56 @@ def test_video_smoke_preserves_audio_provider_failure_call_count(
     assert observed_roots and all(not root.exists() for root in observed_roots)
 
 
+def test_video_smoke_reports_only_canonical_safe_provider_failure_reasons(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_catalog(monkeypatch)
+    private_text = "PRIVATE PROVIDER RESPONSE DETAIL"
+    monkeypatch.setattr(
+        smoke,
+        "recognize_video",
+        lambda source, **kwargs: _build_outcome(
+            Path(kwargs["output_dir"]),
+            private_markdown=private_text,
+            frame_error=ProviderError(
+                private_text,
+                code="PROVIDER_RESPONSE_INVALID",
+                details={
+                    "provider_calls_attempted": 1,
+                    "reason": "missing_text",
+                    "raw_response": private_text,
+                },
+            ),
+            audio_error=ProviderError(
+                private_text,
+                code="PROVIDER_RESPONSE_INVALID",
+                details={
+                    "provider_calls_attempted": 1,
+                    "reason": "invalid_no_speech_marker",
+                    "raw_response": private_text,
+                },
+            ),
+        ),
+    )
+
+    summary = smoke.run_google_genai_video_smoke(_arguments())
+
+    assert summary["frames"]["errors"][0]["reason"] == "missing_text"
+    assert summary["audio"]["error"]["reason"] == "invalid_no_speech_marker"
+    assert private_text not in json.dumps(summary, sort_keys=True)
+
+    unsafe = smoke._safe_error(
+        ProviderError(
+            private_text,
+            details={"reason": private_text},
+        ),
+        "frame_recognition",
+        1,
+    )
+    assert "reason" not in unsafe
+    assert private_text not in json.dumps(unsafe, sort_keys=True)
+
+
 def test_video_smoke_keeps_missing_audio_call_evidence_unknown(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

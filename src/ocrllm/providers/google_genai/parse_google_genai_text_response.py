@@ -33,7 +33,11 @@ def parse_google_genai_text_response(
         raise ProviderError(
             "Google GenAI returned no recognition text.",
             code="PROVIDER_RESPONSE_INVALID",
-            details={"provider": "google", "model": model},
+            details={
+                "provider": "google",
+                "model": model,
+                "reason": "missing_text",
+            },
         ) from None
     return GoogleGenAITextResponse(
         text=text,

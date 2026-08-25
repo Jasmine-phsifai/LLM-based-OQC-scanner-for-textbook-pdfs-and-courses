@@ -25,6 +25,17 @@ from ocrllm.errors import ConfigError, OCRLLMError, VideoError
 from ocrllm.recognize_video_frames import _VIDEO_FRAME_GROUP_LIMIT
 
 
+_SAFE_PROVIDER_FAILURE_REASONS = frozenset(
+    {
+        "empty",
+        "invalid_encoding",
+        "invalid_no_speech_marker",
+        "missing_text",
+        "refusal",
+    }
+)
+
+
 class _LiveSmokeFailure(Exception):
     """Keep a runner stage beside, not inside, a public product error."""
 
@@ -220,12 +231,12 @@ def _safe_frame_summary(
             assert item.error is not None
             count = _error_call_count(item.error)
             call_counts.append(count)
-            errors.append(_safe_error(item.error.code, "frame_recognition", count))
+            errors.append(_safe_error(item.error, "frame_recognition", count))
     if outcome.frame_error is not None:
         count = _error_call_count(outcome.frame_error)
         call_counts.append(count)
         errors.append(
-            _safe_error(outcome.frame_error.code, "frame_recognition", count)
+            _safe_error(outcome.frame_error, "frame_recognition", count)
         )
 
     if successful_groups == len(outcome.frame_outcomes) and successful_groups:
@@ -273,7 +284,7 @@ def _safe_audio_summary(
         "status": outcome.audio_state,
         "artifact_present": outcome.audio_artifact is not None,
         "provider_calls_attempted": count,
-        "error": _safe_error(outcome.audio_error.code, stage, count),
+        "error": _safe_error(outcome.audio_error, stage, count),
     }
 
 
@@ -307,7 +318,7 @@ def _safe_composition_summary(
         return {
             "status": "failed",
             "asset_count": 0,
-            "error": _safe_error(error.code, "composition", 0),
+            "error": _safe_error(error, "composition", 0),
         }
     except Exception:
         return {
@@ -394,12 +405,22 @@ def _sum_known_call_counts(counts: list[int | None]) -> int | None:
     return sum(count for count in counts if count is not None)
 
 
-def _safe_error(code: str, stage: str, calls: int | None) -> dict[str, object]:
-    return {
+def _safe_error(
+    error: OCRLLMError | str,
+    stage: str,
+    calls: int | None,
+) -> dict[str, object]:
+    code = error.code if isinstance(error, OCRLLMError) else error
+    summary: dict[str, object] = {
         "code": code,
         "stage": stage,
         "provider_calls_attempted": calls,
     }
+    if isinstance(error, OCRLLMError):
+        reason = error.details.get("reason")
+        if type(reason) is str and reason in _SAFE_PROVIDER_FAILURE_REASONS:
+            summary["reason"] = reason
+    return summary
 
 
 def main(argv: Sequence[str] | None = None) -> int:

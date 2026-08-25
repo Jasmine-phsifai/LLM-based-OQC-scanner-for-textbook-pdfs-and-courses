@@ -399,6 +399,13 @@ do not add a public planner, source-hash transaction, or generalized stress
 framework. A later batch suffix cancelled because an earlier group failed is
 undispatched and deliberately carries no provider-call evidence. Preserve that
 exact-or-unknown contract instead of rewriting the suffix as a confirmed zero.
+#262 allows that runner to retain only the fixed safe response reasons `empty`,
+`invalid_encoding`, `missing_text`, `invalid_no_speech_marker`, and `refusal`.
+Do not pass arbitrary `details["reason"]`, raw responses, exception text, source
+paths, or recognition content through a live report. `missing_text` means only
+that no text could be extracted; do not split SDK getter/candidate-shape failures
+into a diagnostic state machine. Legacy empty-response retry/model switching is
+application policy and must not be inferred from these reasons.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
