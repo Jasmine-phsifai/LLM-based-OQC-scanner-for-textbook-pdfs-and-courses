@@ -389,6 +389,22 @@ def test_generation_failure_preserves_primary_when_delete_also_fails(
     assert fake.clients[0].closed is True
 
 
+def test_generation_failure_reports_successful_owned_cleanup(monkeypatch) -> None:
+    fake = _FakeGoogleModule(
+        generate_error=ProviderError(code="PROVIDER_RESPONSE_INVALID"),
+    )
+    _install_fake_snapshot(monkeypatch)
+    _install_fake_sdk(monkeypatch, fake)
+
+    with pytest.raises(ProviderError) as caught:
+        recognize_long_mp3(SOURCE, config=_config())
+
+    assert caught.value.details["provider_calls_attempted"] == 1
+    assert caught.value.details["remote_file_deleted"] is True
+    assert caught.value.details["provider_client_closed"] is True
+    assert fake.events == ["catalog", "upload", "generate", "delete", "close"]
+
+
 @pytest.mark.parametrize("signal_type", (KeyboardInterrupt, SystemExit))
 def test_remote_delete_process_control_still_closes_client_and_snapshot(
     monkeypatch,

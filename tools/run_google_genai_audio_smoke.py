@@ -18,7 +18,8 @@ from ocrllm import (
     recognize,
     recognize_long_mp3,
 )
-from ocrllm.errors import ConfigError, OCRLLMError
+from ocrllm.errors import ConfigError, OCRLLMError, ProviderError
+from ocrllm.provider_error_disposition import get_provider_error_disposition
 
 
 class _LiveSmokeFailure(Exception):
@@ -189,10 +190,19 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
+    scope = error.details.get("failure_scope")
+    if scope is None and isinstance(error, ProviderError):
+        scope = get_provider_error_disposition(error).scope
+    cleanup = {
+        name: error.details[name]
+        for name in ("remote_file_deleted", "provider_client_closed")
+        if type(error.details.get(name)) is bool
+    }
     return _report_failure(
         code=error.code,
-        scope=error.details.get("failure_scope"),
+        scope=scope,
         stage=stage,
+        cleanup=cleanup or None,
     )
 
 
@@ -201,20 +211,30 @@ def _report_unexpected_failure(stage: str | None) -> int:
         code="UNEXPECTED_SAFE_FAILURE",
         scope=None,
         stage=stage,
+        cleanup=None,
     )
 
 
-def _report_failure(*, code: str, scope: object, stage: str | None) -> int:
+def _report_failure(
+    *,
+    code: str,
+    scope: object,
+    stage: str | None,
+    cleanup: dict[str, bool] | None,
+) -> int:
+    summary: dict[str, object] = {
+        "status": "failed",
+        "error": {
+            "code": code,
+            "scope": scope,
+            "stage": stage,
+        },
+    }
+    if cleanup is not None:
+        summary["cleanup"] = cleanup
     print(
         json.dumps(
-            {
-                "status": "failed",
-                "error": {
-                    "code": code,
-                    "scope": scope,
-                    "stage": stage,
-                },
-            },
+            summary,
             sort_keys=True,
             separators=(",", ":"),
         )

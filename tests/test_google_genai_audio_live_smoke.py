@@ -215,6 +215,43 @@ def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
     assert source not in raw
 
 
+def test_audio_live_smoke_reports_default_disposition_and_cleanup(
+    monkeypatch, capsys
+):
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda settings, timeout_seconds: (MODEL,),
+    )
+
+    def fail_after_owned_cleanup(actual_source, *, config):
+        raise ProviderError(
+            code="PROVIDER_RESPONSE_INVALID",
+            details={
+                "remote_file_deleted": True,
+                "provider_client_closed": True,
+            },
+        )
+
+    monkeypatch.setattr(smoke, "recognize_long_mp3", fail_after_owned_cleanup)
+
+    assert smoke.main(
+        ["--model", MODEL, "--audio", "private.mp3", "--long"]
+    ) == 1
+    assert json.loads(capsys.readouterr().out) == {
+        "cleanup": {
+            "provider_client_closed": True,
+            "remote_file_deleted": True,
+        },
+        "error": {
+            "code": "PROVIDER_RESPONSE_INVALID",
+            "scope": "request",
+            "stage": "recognition",
+        },
+        "status": "failed",
+    }
+
+
 def test_audio_live_smoke_reports_missing_model_selection_stage(monkeypatch, capsys):
     monkeypatch.setattr(
         smoke,

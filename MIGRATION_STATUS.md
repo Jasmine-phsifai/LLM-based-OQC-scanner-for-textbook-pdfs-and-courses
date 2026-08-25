@@ -842,6 +842,14 @@ The following directions remain traceable but are not current work:
   snapshots were removed. Full decode remains because it catches metadata/frame
   mismatch. No probe, API, dependency, Files lifecycle, chunking, video routing,
   #127, or #152 change was made.
+  #256 runs one real one-hour MP3 through the public Google Files facade. The
+  current 37-model catalog served `gemini-2.5-flash`; recognition ended honestly
+  as `PROVIDER_RESPONSE_INVALID` after 32.203 seconds with no retry or fallback,
+  and all local owned files were removed. The exposed diagnostics gap is fixed:
+  future provider failures report a default disposition scope plus positive
+  remote-file/client cleanup booleans when those resources existed. This does
+  not claim the failed call's previously undisclosed remote-delete result or
+  add retry, model switching, chunking, video routing, #127, or #152 behavior.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

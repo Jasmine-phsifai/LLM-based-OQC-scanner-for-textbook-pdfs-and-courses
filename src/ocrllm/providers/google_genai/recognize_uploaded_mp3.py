@@ -134,6 +134,16 @@ def recognize_uploaded_mp3(
             close_error = close_google_genai_client(client)
             client_closed = close_error is None
             if public_error is not None:
+                if uploaded is not None:
+                    public_error._add_safe_detail(
+                        "remote_file_deleted",
+                        remote_file_deleted,
+                    )
+                if client is not None:
+                    public_error._add_safe_detail(
+                        "provider_client_closed",
+                        client_closed,
+                    )
                 if provider_file_cleanup_failed:
                     public_error._add_safe_detail(
                         "provider_file_cleanup_failed",

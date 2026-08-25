@@ -1299,6 +1299,31 @@ Google Files lifecycle, 9.5-hour A2a ceiling, token-limit preflight, and lazy
 imports remain unchanged; no provider call, chunking, video routing, #127, or
 #152 behavior follows. Long/short audio neighbors pass 102 tests.
 
+#256 exercises the public A2a facade with one real one-hour synthetic MP3
+through the maintained credential-safe Google runner. The current live catalog
+contained 37 models and `gemini-2.5-flash` was selected. The 3,600-second,
+14,400,512-byte source returned a typed `PROVIDER_RESPONSE_INVALID` from the
+recognition stage after 32.203 seconds; it was not retried and no fallback,
+second model, or second credential was used. This is an honest failed live
+result, not a successful transcription or a provider-quality claim. The prior
+runner exposed neither a default disposition scope nor positive cleanup facts
+on such a failure, so that exact observed diagnostics gap is corrected: a
+provider error with no explicit scope now reports its stable disposition scope,
+and an uploaded-file/client failure carries safe booleans for remote deletion
+and client close. The completed call predates those positive fields, so remote
+deletion is not retroactively claimed; local snapshot residue was zero and the
+owned source/capture root was removed. Long-audio and runner neighbors pass 67
+tests; the complete offline suite passes 1,521, compileall succeeds, and plain
+`import ocrllm` loads no Pillow, OpenCV, NumPy, miniaudio, or Google SDK module.
+Do not repeat the request merely to turn the gate green, and do not add
+retry, fallback, model switching, chunking, or #152 behavior from this result.
+
+Future stress and robustness tests are permitted only after the relevant basic
+flow is live-proven. Each is a separate bounded iteration with one stated
+question, capped scale and provider calls, honest failure and owned-resource
+cleanup checks, and a declared stop gate. This does not authorize indefinite
+API pressure or a generic cross-provider benchmark.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

@@ -144,6 +144,12 @@ is often accepted.
   success.
 - Do not run long-lived stress tests by default. Use synthetic, committed, or
   explicitly authorized data and never publish credentials or private inputs.
+- After a basic media/provider flow is live-proven, later iterations may add
+  bounded stress and robustness tests. Each run must answer one stated product
+  question, cap input scale and provider calls, verify honest failure and owned
+  resource cleanup, and stop at its declared gate. This authorizes deliberate
+  scale-up evidence, not indefinite API hammering or a generic provider
+  benchmark suite.
 - A live resume exercise should prove that completed checkpoint slots are not
   paid for again and only missing work is dispatched after `resume=True`.
 - Before live provider work, audit the roughly two months of legacy Google,

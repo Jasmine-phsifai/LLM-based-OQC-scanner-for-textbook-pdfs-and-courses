@@ -364,6 +364,14 @@ near 35.4 MiB for 301-second, one-hour, and 9.5-hour files. Keep full streaming
 decode and metadata/frame-count validation; do not replace them with metadata-
 only probing, another decoder, or generic streaming machinery. The 2 GB bound,
 Files lifecycle, video routing, #127, and #152 remain unchanged.
+#256 records one bounded real one-hour Google Files failure and fixes only the
+diagnostics it exposed. On provider failure after resource creation, preserve
+safe positive `remote_file_deleted` and `provider_client_closed` evidence, and
+let the live runner fill a missing scope from the stable provider disposition.
+Do not repeat a failed live call to force success or infer retry, fallback,
+model switching, chunking, #127, or #152 policy from it. Later stress tests must
+remain question-driven, capped, cleanup-verified, and separate from basic-flow
+gates.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
