@@ -2386,6 +2386,20 @@ table, cache, fallback, automatic chunking, or public setting. A request below
 the audio-only bound can still exceed context after its prompt; #209 explicitly
 does not describe that request as guaranteed valid.
 
+#210 live-verifies the exact optional metadata seam used by #209 without making
+a recognition request. One repository-external credential-isolating controller
+performed exactly one fully materialized `client.models.list()` against the
+current Google endpoint. The catalog contained 50 models; the explicit
+`gemini-2.5-flash` row was present, supported `generateContent`, and advertised
+present positive-integer input and output limits. The safe report intentionally
+did not publish either limit value or the catalog names. Client close, empty
+stderr, credential-pattern scan, parent/child credential cleanup, and disposable
+root cleanup all passed in 1,625 ms. No Files operation, generation,
+`count_tokens`, `models.get`, retry, fallback, dependency install, or repository
+runtime change occurred. This proves the current endpoint populates #209's
+selected-model input field; it does not turn catalog membership into a general
+audio-capability guarantee or prove that prompt-plus-audio fits below the bound.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

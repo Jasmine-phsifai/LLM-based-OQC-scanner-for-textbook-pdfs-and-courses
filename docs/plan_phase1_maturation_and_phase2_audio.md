@@ -452,6 +452,12 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   current provider path; malformed selected metadata is a typed provider
   response failure. Do not reinterpret this audio-only rejection as proof that
   every smaller audio-plus-prompt request fits.
+- #210 live-confirms the current endpoint supplies that optional field for the
+  explicit live-proven `gemini-2.5-flash` row. One catalog-only operation found
+  50 current models and a positive-integer input limit, then closed the client;
+  it made no Files, generation, token-count, model-get, retry, or fallback call.
+  Keep this as transport evidence, not a hardcoded catalog snapshot or a claim
+  that every catalog model accepts audio.
 - A2b uses its own versioned audio state and a strong source/request/segment
   identity. It may reuse generic fingerprint and atomic-write behavior, but it
   must not generalize or import image slot semantics. The first slice remains

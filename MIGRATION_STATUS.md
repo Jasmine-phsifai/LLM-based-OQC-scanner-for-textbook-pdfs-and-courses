@@ -125,7 +125,10 @@ Phase 1 maturation is offline implementation-complete:
   reuses the one catalog response to reject before upload when audio alone, at
   the documented 32 tokens per second, meets or exceeds the selected model's
   advertised input limit. It adds no lookup or guessed prompt reserve and does
-  not claim that every smaller request fits. #153 corrects
+  not claim that every smaller request fits. #210 live-confirms that the current
+  50-model catalog populates a positive-integer input limit on the explicit
+  `gemini-2.5-flash` row through exactly one catalog-only operation, with no
+  Files upload or generation. #153 corrects
   the frozen capability registry's stale
   long-MP3 reason to name this direct live-proven API while preserving its
   `deferred` worker-registration status;

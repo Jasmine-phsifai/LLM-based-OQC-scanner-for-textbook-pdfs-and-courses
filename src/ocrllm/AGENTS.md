@@ -189,6 +189,11 @@ input limit. Missing optional metadata preserves the existing provider path;
 malformed present metadata is a typed provider-response failure. Do not add a
 model table, guessed prompt reserve, extra catalog/model/token request, cache, or
 automatic chunking, and do not claim every smaller audio-plus-prompt request fits.
+#210 live-confirms the exact #209 seam: one current catalog-only operation found
+50 models and a present positive-integer input limit on `gemini-2.5-flash`, then
+closed the client. No Files, generation, token-count, model-get, retry, or
+fallback call occurred. Treat the count as dated evidence, not a hardcoded
+catalog or proof that catalog membership implies audio support.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
