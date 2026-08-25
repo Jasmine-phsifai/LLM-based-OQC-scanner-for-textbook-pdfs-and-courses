@@ -5604,6 +5604,31 @@ one image call, and one audio observation. The gate removes its own root and
 leaves no process. This release-proves the revised audio installation boundary;
 serial interval dispatch and resumable paid-result state remain unimplemented.
 
+## Iteration 313: MP3 snapshots retain a strong one-pass byte identity
+
+Every request-owned MP3 snapshot now carries a canonical lowercase SHA-256 of
+the exact bytes copied to `source.mp3`. The digest is updated inside the existing
+fixed 1 MiB copy loop only after each complete destination write, so short,
+standalone long, and video-selected audio gain the same identity without a
+second source scan, another full-file allocation, or a changed provider call.
+Short and long wrapper snapshots propagate the digest; the video route preserves
+it when constructing the already existing short or Files snapshot type.
+
+This is internal resume groundwork, not a public fingerprint, result-metadata
+field, sidecar schema, dispatch mode, or claim that A2b can resume. The next
+audio-state slice may combine the original resolved file URI with this byte size
+and digest, then bind exact windows plus prompt/provider/model identity. It must
+still remain independent of image slot semantics and frozen worker/contracts
+implementation.
+
+Failing-first tests proved that neither short nor long snapshots exposed a
+digest. The source-mutation regression now proves the yielded digest belongs to
+the owned original bytes even when the caller path is replaced before yield;
+the committed real MP3 and long wrapper prove the same field. Adjacent
+audio/video/provider regressions pass 120 tests and the complete maintained
+suite passes 1,582. Clean wheel/import/profile evidence remains to be recorded
+before this internal package change is release-proven.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

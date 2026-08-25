@@ -440,6 +440,11 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
   temporary segment after use. Serial provider dispatch, source/request/window
   state identity, per-paid-result persistence, final assembly, and repair remain
   later independent slices.
+- #313 computes the strong source SHA-256 while the existing bounded snapshot
+  copy is already streaming the original MP3. Short, long, and video-selected
+  snapshot facts retain that digest without another source read. Use it with
+  the original resolved URI and byte size in the future A2b request identity;
+  do not publish it as result metadata or treat it alone as a complete state.
 - The A2a 9.5-hour duration check is not complete selected-model preflight:
   Google's documented 32 audio tokens per second makes the full duration
   1,094,400 audio tokens before the prompt, above the current documented

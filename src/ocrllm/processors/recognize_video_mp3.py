@@ -29,6 +29,7 @@ def recognize_video_mp3(source_path: Path, *, config: Config) -> ProcessorOutput
                 short_snapshot = ShortMP3Snapshot(
                     path=snapshot.path,
                     byte_size=snapshot.byte_size,
+                    sha256=snapshot.sha256,
                     duration_seconds=snapshot.duration_seconds,
                 )
                 response = recognize_short_mp3(
@@ -45,6 +46,7 @@ def recognize_video_mp3(source_path: Path, *, config: Config) -> ProcessorOutput
                 long_snapshot = LongMP3Snapshot(
                     path=snapshot.path,
                     byte_size=snapshot.byte_size,
+                    sha256=snapshot.sha256,
                     duration_seconds=snapshot.duration_seconds,
                 )
                 response = recognize_uploaded_mp3(

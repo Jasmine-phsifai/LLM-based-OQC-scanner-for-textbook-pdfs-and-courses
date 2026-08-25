@@ -663,6 +663,12 @@ The exact `a9dc6e6` clean gate passes with exit 0: installed audio is
 smoke materializes and removes one segment, and all existing profiles plus the
 combined video workflow remain green. No provider API is called.
 
+#313 supplies the next A2b prerequisite without inventing state early. The
+existing streamed MP3 snapshot copy now computes SHA-256 in the same 1 MiB loop
+and carries it through short, long, and video-selected snapshot facts. There is
+no second source scan, public digest, provider change, sidecar, or resume claim.
+The next slice can build audio request/window identity from real byte evidence.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

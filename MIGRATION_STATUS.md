@@ -1269,6 +1269,12 @@ The following directions remain traceable but are not current work:
   audio+Google is 130,218,489 bytes, its installed interval smoke cleans the
   temporary segment, and every existing profile plus combined video remains
   green without a provider call.
+  #313 adds the missing strong source fact for that future state. The existing
+  bounded MP3 snapshot copy hashes each completely written chunk and propagates
+  the canonical SHA-256 through short, long, and video route wrappers. It adds
+  no second scan, provider work, public metadata, state file, or image-slot
+  dependency. Source and adjacent media/provider tests pass; clean installed
+  package proof remains pending.
 
 ## Obsolete Prose Kept For Trace
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 from pathlib import Path
 from types import SimpleNamespace
@@ -95,6 +96,7 @@ def test_snapshot_long_mp3_owns_compact_bytes_and_cleans_up(
         assert snapshot.path.name == "source.mp3"
         assert snapshot.path.read_bytes() == b"long-audio-bytes"
         assert snapshot.byte_size == len(b"long-audio-bytes")
+        assert snapshot.sha256 == hashlib.sha256(b"long-audio-bytes").hexdigest()
         assert snapshot.duration_seconds == 301.0
         owned_root = snapshot.path.parent
 

@@ -20,6 +20,7 @@ class LongMP3Snapshot:
 
     path: Path
     byte_size: int
+    sha256: str
     duration_seconds: float
 
 
@@ -39,5 +40,6 @@ def snapshot_long_mp3(
         yield LongMP3Snapshot(
             path=snapshot.path,
             byte_size=snapshot.byte_size,
+            sha256=snapshot.sha256,
             duration_seconds=snapshot.duration_seconds,
         )

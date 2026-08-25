@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib
 import os
 import shutil
@@ -87,6 +88,7 @@ def test_snapshot_short_mp3_owns_compact_validated_bytes_and_cleans_up(
         assert source.name not in str(snapshot.path)
         assert snapshot.path.read_bytes() == original_bytes
         assert snapshot.byte_size == len(original_bytes)
+        assert snapshot.sha256 == hashlib.sha256(original_bytes).hexdigest()
         assert snapshot.duration_seconds == 0.5
 
     assert observed_snapshot_bytes == [original_bytes]
@@ -102,6 +104,7 @@ def test_snapshot_short_mp3_runs_real_probe_on_committed_fixture(tmp_path) -> No
         temp_dir=tmp_path,
     ) as snapshot:
         assert snapshot.byte_size == FIXTURE.stat().st_size
+        assert snapshot.sha256 == hashlib.sha256(FIXTURE.read_bytes()).hexdigest()
         assert snapshot.duration_seconds == 0.5
 
 
@@ -412,7 +415,11 @@ def test_snapshot_short_mp3_preserves_primary_when_stream_close_fails(
         def fail_copy(*_args, **_kwargs):
             raise primary
 
-        monkeypatch.setattr(generic_snapshot_module, "_copy_open_source", fail_copy)
+        monkeypatch.setattr(
+            generic_snapshot_module,
+            "_copy_and_hash_open_source",
+            fail_copy,
+        )
     monkeypatch.setattr(
         snapshot_module,
         "probe_short_mp3",

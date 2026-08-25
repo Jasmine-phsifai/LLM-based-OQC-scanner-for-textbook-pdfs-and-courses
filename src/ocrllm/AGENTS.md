@@ -680,6 +680,12 @@ audio materialization and cleanup; audio measures 91,174,290 bytes and
 audio+Google 130,218,489 bytes. This proves the backend and dependency boundary,
 not serial dispatch, resume state, or repair.
 
+#313 hashes MP3 bytes inside the existing bounded snapshot-copy loop and carries
+the digest through short, long, and video-selected internal snapshots. Keep this
+one-pass and internal. Do not add a second source scan, public fingerprint
+metadata, image-slot coupling, or claim resume until an audio-specific state has
+its own validated request/window identity and atomic per-result persistence.
+
 ## When Porting Legacy Behavior
 
 Port one vertical slice at a time:

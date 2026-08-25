@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import atexit
+import hashlib
 import os
 import shutil
 import stat
@@ -30,6 +31,7 @@ class MP3Snapshot:
 
     path: Path
     byte_size: int
+    sha256: str
     duration_seconds: float
 
 
@@ -67,7 +69,7 @@ def snapshot_mp3(
                 ) from error
 
             snapshot_path = snapshot_root / "source.mp3"
-            copied_size = _copy_open_source(
+            copied_size, source_sha256 = _copy_and_hash_open_source(
                 source_stream,
                 snapshot_path,
                 expected_size=source_size,
@@ -81,6 +83,7 @@ def snapshot_mp3(
         yield MP3Snapshot(
             path=snapshot_path,
             byte_size=copied_size,
+            sha256=source_sha256,
             duration_seconds=duration_seconds,
         )
     except BaseException as error:
@@ -210,12 +213,12 @@ def _prepare_temporary_parent(configured_parent: str | Path | None) -> Path | No
     return parent
 
 
-def _copy_open_source(
+def _copy_and_hash_open_source(
     source_stream,
     snapshot_path: Path,
     *,
     expected_size: int,
-) -> int:
+) -> tuple[int, str]:
     try:
         snapshot_stream = snapshot_path.open("xb")
     except (OSError, ValueError) as error:
@@ -225,6 +228,7 @@ def _copy_open_source(
         ) from error
 
     copied_size = 0
+    digest = hashlib.sha256()
     primary_error: BaseException | None = None
     try:
         while copied_size < expected_size:
@@ -253,6 +257,7 @@ def _copy_open_source(
                     "A temporary audio snapshot could not be written completely.",
                     code="OUTPUT_WRITE_FAILED",
                 ) from None
+            digest.update(chunk)
 
         try:
             if source_stream.read(1):
@@ -276,7 +281,7 @@ def _copy_open_source(
         raise
     finally:
         _close_snapshot_stream(snapshot_stream, primary_error=primary_error)
-    return copied_size
+    return copied_size, digest.hexdigest()
 
 
 def _close_source_stream(source_stream, *, primary_error: BaseException | None) -> None:

@@ -251,6 +251,12 @@ is often accepted.
   are context-managed. Do not port legacy persistent stem-derived directories,
   parallel splitting, direct final-path writes, provider/model queues, or repair
   state as part of this backend seam.
+- **#313 strong source identity groundwork.** Compute SHA-256 during the one
+  existing request-owned MP3 copy and retain it in internal snapshot facts.
+  Do not scan a potentially 2 GB source a second time, hash a transient interval
+  instead of the original owned bytes, or expose the digest in ordinary result
+  metadata. A future audio sidecar must pair this digest and byte size with the
+  original file URI and request/window identity; this field alone is not resume.
 - **#245 video-integration ordering clarification.** Long Files results already
   fit `VideoRecognitionOutcome`; do not add a second outcome or audio-result
   type. The low-level public functions can be manually composed, but they copy
