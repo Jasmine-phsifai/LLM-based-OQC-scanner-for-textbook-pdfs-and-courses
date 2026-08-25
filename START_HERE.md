@@ -269,6 +269,13 @@ OpenCV wheel payload. No pin or runtime was changed to hide that delivery gap;
 repeat the installed real-MP4 gate only when the declared wheels can actually be
 obtained, rather than adding another installer or dependency abstraction.
 
+#240 then rechecks the changed parser/selector/JPEG path with the maintained
+ordinary-MP4 matrix and finds no new reproducible runtime defect. The focused
+inspection, extraction, and lightweight-import set passes 38 tests. Do not add
+a parser or retune selection from an exploratory file whose own duration and
+final PTS disagree; proceed only with a valid red case, the pending installed
+extra gate, or the maintainer's #127 cancellation decision.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

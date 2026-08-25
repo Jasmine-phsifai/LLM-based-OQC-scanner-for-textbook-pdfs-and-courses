@@ -999,6 +999,21 @@ package defect: do not repin, vendor dependencies, add another installer path,
 or claim the video extra is clean-install-proven from these runs. The exact
 temporary roots and only the two owned stalled installer processes were cleaned.
 
+#240 re-audits the provider-free parser-to-retained-JPEG boundary after #238
+and finds no further reproduced ordinary-MP4 defect. The current real-media
+matrix covers constant and sectioned clips, a changed exact final frame, VFR,
+display rotation, color-only changes, a shorter video stream than its audio,
+candidate limits, Unicode and near-limit Windows paths, invalid media, failed
+publication, density feedback, and long-segment partitioning. The focused
+inspection/extraction/import set passes 38 tests, and plain `import ocrllm`
+loads none of OpenCV, NumPy, imageio-ffmpeg, miniaudio, provider SDKs, HTTPX, or
+legacy. One exploratory VFR artifact reported container duration earlier than
+its own final frame PTS; because the generated container metadata was itself
+inconsistent, it is not recorded as a library failure. Do not retune selection,
+add another parser, or manufacture a regression from that artifact. The next
+video gates remain the real installed `[video]` proof from #239 and the explicit
+#127 cancellation choice; neither authorizes runtime work here.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
