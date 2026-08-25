@@ -34,7 +34,7 @@ def _ffmpeg_executable() -> Path:
     return Path(imageio_ffmpeg.get_ffmpeg_exe())
 
 
-def _write_mp4_with_audio(path: Path) -> Path:
+def _write_mp4_with_audio(path: Path, *, frequency_hz: int = 440) -> Path:
     completed = subprocess.run(
         [
             str(_ffmpeg_executable()),
@@ -50,7 +50,7 @@ def _write_mp4_with_audio(path: Path) -> Path:
             "-f",
             "lavfi",
             "-i",
-            "sine=frequency=440:sample_rate=16000:duration=1",
+            f"sine=frequency={frequency_hz}:sample_rate=16000:duration=1",
             "-shortest",
             "-c:v",
             "mpeg4",
@@ -67,6 +67,27 @@ def _write_mp4_with_audio(path: Path) -> Path:
     )
     assert completed.returncode == 0
     return path
+
+
+def _estimate_mp3_frequency(path: Path) -> float:
+    import miniaudio
+
+    decoded = miniaudio.decode_file(
+        str(path),
+        output_format=miniaudio.SampleFormat.SIGNED16,
+        nchannels=1,
+        sample_rate=16000,
+    )
+    samples = decoded.samples
+    start = min(1600, len(samples))
+    stop = min(14400, len(samples))
+    assert stop > start
+    crossings = sum(
+        (samples[index - 1] <= 0 < samples[index])
+        or (samples[index - 1] >= 0 > samples[index])
+        for index in range(start + 1, stop)
+    )
+    return crossings * 16000.0 / (2.0 * (stop - start))
 
 
 def _write_silent_mp4(path: Path) -> Path:
@@ -107,6 +128,48 @@ def test_extract_video_audio_publishes_valid_mono_mp3_atomically(
     info = miniaudio.mp3_get_file_info(str(extracted))
     assert info.nchannels == 1
     assert info.sample_rate == 16000
+    assert not list(output_parent.glob(".ocrllm-audio-*"))
+
+
+def test_extract_video_audio_uses_one_snapshot_if_caller_path_is_replaced(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_mp4_with_audio(
+        tmp_path / "source.mp4",
+        frequency_hz=440,
+    )
+    original_bytes = source.read_bytes()
+    replacement = _write_mp4_with_audio(
+        tmp_path / "replacement.mp4",
+        frequency_hz=880,
+    )
+    replacement_bytes = replacement.read_bytes()
+    output_parent = tmp_path / "output"
+    output_parent.mkdir()
+    output_path = output_parent / "audio.mp3"
+    module = __import__("ocrllm.video.extract_video_audio", fromlist=["unused"])
+    real_inspect = module.inspect_video
+    inspected_paths: list[Path] = []
+
+    def inspect_then_replace(snapshot_path: Path):
+        info = real_inspect(snapshot_path)
+        inspected_paths.append(snapshot_path)
+        assert snapshot_path.read_bytes() == original_bytes
+        replacement.replace(source)
+        return info
+
+    monkeypatch.setattr(module, "inspect_video", inspect_then_replace)
+
+    extracted = extract_video_audio(source, output_path=output_path)
+
+    assert extracted == output_path
+    assert source.read_bytes() == replacement_bytes
+    assert len(inspected_paths) == 1
+    assert inspected_paths[0] != source
+    assert not inspected_paths[0].exists()
+    assert _estimate_mp3_frequency(extracted) == pytest.approx(440.0, abs=10.0)
+    assert not list(output_parent.glob(".ocrllm-video-source-*"))
     assert not list(output_parent.glob(".ocrllm-audio-*"))
 
 

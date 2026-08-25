@@ -248,6 +248,12 @@ quality evidence.
 through their nested `ocrllm.video.*` implementation modules. Do not eagerly
 bind or split them: unlike the four root-level same-named modules, nested video
 modules cannot overwrite these root package attributes.
+#224 requires standalone `extract_video_audio()` to inspect, probe, extract,
+and validate one request-owned source snapshot rather than reopening the
+caller's mutable MP4. Combined `recognize_video()` must pass its existing #211
+snapshot to the narrow stable-source helper, not create a second whole-video
+copy. Preserve cleanup on every exit without adding a generic media cache,
+public temporary-path option, or new cancellation semantics.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

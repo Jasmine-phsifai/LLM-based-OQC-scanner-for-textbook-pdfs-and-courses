@@ -376,20 +376,22 @@ retained-asset format. The existing image preflight still owns file existence
 and JPEG byte validation; the value object does not add another decoder or path
 resolution policy.
 `extract_video_audio()` requires the output parent
-to exist, rejects an existing target, and atomically publishes a fully decoded
-mono 16 kHz / 32 kbps MP3. Extraction itself has no duration ceiling. The
+to exist, rejects an existing target, streams the caller MP4 into one hidden
+request-owned snapshot there, and atomically publishes a fully decoded mono
+16 kHz / 32 kbps MP3. Extraction itself has no duration ceiling. The
 function raises `VideoError(code="VIDEO_NO_AUDIO_STREAM")` when the MP4 is
 valid but has no audio stream; present-but-corrupt or undecodable audio remains
 `VIDEO_INVALID`, so callers do not have to parse FFmpeg text. The
 current audio recognizer remains the separately installed `audio,google`
 short-MP3 slice (maximum 300 decoded seconds and 25 MiB), so longer extracted
 tracks fail honestly at recognition. Image and audio providers are selected by
-the two separate `Config` objects. Both frame extraction and combined video
-recognition stream the caller MP4 into one hidden request-owned snapshot under
-`output_dir`; inspection, negative-feedback comparison, retained-JPEG decode,
-and combined audio extraction consume that same path, which is removed before
-the call exits. The snapshot is never a public asset or legacy compatibility
-format. `recognize_video()` validates both configs
+the two separate `Config` objects. Standalone frame extraction and standalone
+audio extraction each own one hidden snapshot under their output parent.
+Combined video recognition instead owns one shared snapshot under `output_dir`:
+inspection, negative-feedback comparison, retained-JPEG decode, and audio
+extraction consume that same path without copying the video twice. Every owned
+snapshot is removed before its call exits and is never a public asset or legacy
+compatibility format. `recognize_video()` validates both configs
 before reading the source, creating retained media, or dispatching either
 provider. It then uses those same proven boundaries and returns a
 `VideoRecognitionOutcome`: retained media, ordered

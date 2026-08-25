@@ -24,7 +24,9 @@ def recognize_video(
     from .recognize_video_frames import recognize_video_frames
     from .validate_config import validate_config
     from .validate_google_mp3_options import validate_google_mp3_options
-    from .video.extract_video_audio import extract_video_audio
+    from .video.extract_video_audio import (
+        _extract_video_audio_from_stable_source,
+    )
     from .video.prepare_video_media import prepare_video_media
     from .video_recognition_outcome import VideoRecognitionOutcome
 
@@ -46,7 +48,7 @@ def recognize_video(
         audio_result = None
         audio_error: OCRLLMError | None = None
         try:
-            audio_artifact = extract_video_audio(
+            audio_artifact = _extract_video_audio_from_stable_source(
                 snapshot_path,
                 output_path=output_root / "audio.mp3",
             )

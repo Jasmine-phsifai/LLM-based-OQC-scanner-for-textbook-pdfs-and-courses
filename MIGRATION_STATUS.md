@@ -701,6 +701,13 @@ The following directions remain traceable but are not current work:
   isolation in both root-first and implementation-module-first imports. Their
   nested modules cannot overwrite root attributes, so #218's eager-binding fix
   was intentionally not generalized.
+  #224 fixes standalone video-audio source drift: the public extractor now
+  owns one streamed MP4 snapshot for inspection, probing, extraction, and
+  validation. Combined video reuses its existing #211 snapshot through one
+  narrow private stable-source helper, avoiding a second whole-video copy.
+  Real 440/880 Hz same-path replacement coverage proves output remains tied to
+  the inspected bytes and all hidden source/staging paths are cleaned. No
+  public API, provider, dependency, cancellation, or legacy format changed.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

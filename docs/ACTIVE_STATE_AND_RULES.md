@@ -2611,6 +2611,23 @@ the four-function eager-binding rule to these names, split their readable helper
 imports merely to minimize an on-demand module count, or build another wheel
 gate without a real package-boundary change.
 
+#224 closes a reproduced source-version drift in standalone
+`extract_video_audio()`. The former path inspected the caller MP4 with OpenCV,
+then reopened that mutable path for FFmpeg stream probing, extraction, and
+validation. A real 440 Hz source replaced after inspection by a same-path
+880 Hz MP4 returned success with approximately 879.4 Hz output: metadata from
+one file version had authorized audio from another. The public extractor now
+streams the caller MP4 into one hidden request-owned snapshot under the output
+parent and performs all inspection and FFmpeg work on that stable path. The
+combined `recognize_video()` path calls the narrow private stable-source helper
+with its existing #211 snapshot, so it still copies the whole video only once.
+Both standalone and combined exits remove their snapshot/staging files. The
+real replacement regression now publishes approximately 440.4 Hz, the focused
+video/import set passes 85, and the complete offline suite passes 1,494. No
+public signature, dependency, provider selection, cancellation contract, or
+legacy format changed. Do not add a generic media cache, public temporary-path
+option, compatibility wrapper, or a second snapshot inside combined video.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist

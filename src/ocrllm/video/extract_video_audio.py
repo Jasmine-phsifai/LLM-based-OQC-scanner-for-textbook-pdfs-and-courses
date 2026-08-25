@@ -12,6 +12,7 @@ from ..errors import OCRLLMError, OutputError, OutputExists, VideoError
 from ..output.claim_output_target import claim_output_target
 from .inspect_video import inspect_video
 from .load_imageio_ffmpeg import load_imageio_ffmpeg_executable
+from .snapshot_video_source import snapshot_video_source
 
 
 _FFMPEG_TIMEOUT_SECONDS = 600
@@ -24,6 +25,25 @@ def extract_video_audio(
 ) -> Path:
     """Atomically publish one mono 16 kHz MP3 without recognizing it."""
     source_path = Path(source)
+    target = Path(output_path)
+    _preflight_audio_output(target)
+
+    with snapshot_video_source(
+        source_path,
+        snapshot_parent=target.parent,
+    ) as snapshot_path:
+        return _extract_video_audio_from_stable_source(
+            snapshot_path,
+            output_path=target,
+        )
+
+
+def _extract_video_audio_from_stable_source(
+    source_path: Path,
+    *,
+    output_path: Path,
+) -> Path:
+    """Extract from request-owned bytes without taking another video snapshot."""
     target = Path(output_path)
     _preflight_audio_output(target)
 

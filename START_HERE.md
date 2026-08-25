@@ -221,6 +221,14 @@ No public video-temp parameter or legacy format was added. The queue still
 stops further proactive
 filesystem/accounting edge scans.
 
+#224 separately proves that standalone `extract_video_audio()` had the same
+mutable-caller-path risk between inspection and FFmpeg extraction. It now owns
+one streamed snapshot under the output parent. Combined recognition calls the
+narrow stable-source implementation with its existing #211 snapshot, so the
+shared video is not copied twice. A real same-path 440/880 Hz replacement test
+keeps the published MP3 tied to the inspected 440 Hz bytes and leaves no hidden
+source or staging file.
+
 #150 additionally exercises an audible 301.056-second MP4 through the public
 video facade without network. The image branch retained five frames and made
 one injected call; the audio branch made zero provider calls and returned typed

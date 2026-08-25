@@ -36,8 +36,9 @@ As of 2026-08-25:
   publication. `recognize_video_frames()` feeds
   the exact ordered retained-frame tuple through the existing image path in
   groups of at most eight and returns honest batch outcomes. It is memory-only;
-  `extract_video_audio()` now atomically publishes a fully decoded mono MP3
-  through the lazy video extra. Frame and audio recognition use separate
+  `extract_video_audio()` now reads one request-owned MP4 snapshot and
+  atomically publishes a fully decoded mono MP3 through the lazy video extra.
+  Frame and audio recognition use separate
   `Config` objects, so their providers can differ. `recognize_video()` now
   settles both branches into a typed `VideoRecognitionOutcome`; an outcome
   cannot claim that the audio stream is absent while retaining an MP3 artifact,
@@ -100,8 +101,10 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   library `RetainedVideoFrame` values; it reuses image preflight and recognition
   in ordered groups of at most eight and creates no video-specific provider.
 - exposes `extract_video_audio()` for one explicit `.mp3` target under an
-  existing plain directory; it stages, fully decodes, and atomically publishes
-  the first audio track without imposing the short recognizer's duration limit.
+  existing plain directory; it streams the caller MP4 into a hidden snapshot,
+  stages and fully decodes the first audio track, atomically publishes it, and
+  removes request-owned files without imposing the short recognizer's duration
+  limit.
 - keeps exact frame indices and timestamps on every settled video-frame group,
   including typed failures and undispatched cancellation, so callers do not
   have to reconstruct group membership after recognition. A public video

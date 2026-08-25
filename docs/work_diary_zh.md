@@ -4437,3 +4437,17 @@ Atomic task — Iteration #223: verify the remaining public provider-free video 
 **为什么这里不需要 #218 修法。** 四个已修函数的实现文件直接位于根包，Python 导入同名子模块时会覆盖根属性；这三个实现文件位于 `ocrllm.video.*`，显式导入只给 `ocrllm.video` 安装子模块属性，不会碰 `ocrllm.inspect_video` 等根属性。根访问按现有 `_PUBLIC_IMPORTS` 懒解析已经足够。访问 frame extraction 会按责任加载 snapshot、candidate、selection、writer 等纯 Python 帮助模块，audio extraction 会加载标准库 subprocess/output helpers；这属于选择该功能后的可读执行图，不是基础 `import ocrllm` 成本。三个入口及显式实现模块都没有加载 cv2、NumPy、imageio-ffmpeg、miniaudio、Google/OpenAI SDK、HTTPX、legacy 或 recognition execution。
 
 **验证与过度设计复查。** 主代理运行 lightweight import、public import、inspection、frame extraction 和 audio extraction 为 **48 passed in 2.95s**；独立 fresh-process 审计同样全绿。没有 runtime、test、API、manifest、dependency、media/provider behavior、network、credential、#127/#152、legacy/social 或 frozen `contracts/worker` 变化，因此不重跑全套，也遵守 #221 不在 package layout 未变时重复 wheel。最明显的过度设计是为了表面一致把三个正常 lazy entry 也提前绑定，再把它们的纯 Python helper imports 全部搬进函数；那既没有修复对象，又会增加基础 import 或后续阅读成本。本轮只冻结实际差异，避免未来维护者机械复制最近的补丁模式。
+
+## #224 — 2026-08-25：独立音频提取不能检查一个视频、再从另一个同名视频取音频
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #224: prove and, if reproduced, close standalone `extract_video_audio()` source-version drift without changing its public signature or duplicating snapshots inside combined video recognition. Success means reconciling authority, diary, and package rules; tracing every open of the caller MP4 across inspection, stream probing, extraction, and validation; independently auditing whether replacing the source after inspection can produce a successful MP3 from different bytes; reproducing the issue with two real same-path MP4s carrying distinguishable audio; choosing between library-owned snapshot reuse and a narrowly factored stable-source helper; adding a red regression before the smallest readable fix; preserving `recognize_video()`'s existing single request-owned snapshot, output atomicity, provider separation, lightweight imports, frozen boundaries, and dirty worktree; running focused real-media/import tests plus the full offline suite if runtime changes; updating Chinese records; and committing/pushing one coherent iteration. This matters because a provider-free library operation must not validate one file version and silently publish audio from another.
+```
+
+**真实红灯与原因。** 旧的独立入口先用 OpenCV 检查调用者路径，随后又让 FFmpeg 从同一路径探测音轨、抽取和验证。主代理生成带 440 Hz 音频的原视频和带 880 Hz 音频的替换视频，并在第一次检查结束后替换同名源文件；旧代码仍返回成功，但输出频率约 **879.4 Hz**。这不是假想竞态：程序让 A 文件的检查结果授权了 B 文件的音频。独立轻量审计也复现了同一生命周期问题。新增精确回归在旧实现先以“检查路径仍是调用者路径”失败，随后直接频率探针补足了错误输出证据。
+
+**两条路线与最小修复。** 路线 A 为各种媒体建立通用缓存、事务或可配置临时目录；路线 B 沿用 #211 已经证明的单请求 snapshot 边界，并只拆出“输入已经稳定”的私有音频助手。选择 B。公开 `extract_video_audio()` 在输出父目录预检后，以有界磁盘流复制一个隐藏 MP4 snapshot；检查、音轨探测、FFmpeg 抽取和输出验证都只读它。`recognize_video()` 已经为图片选择和音频分支持有一个 #211 snapshot，因此直接调用私有 stable-source 助手，避免第二次复制整段视频。公开签名、输出原子性、图片/音频 provider 分离和 lazy import 均未改变。
+
+**验证、工具偏差与过度设计复查。** 修复后的独立真实替换探针输出约 **440.4 Hz**，调用者路径仍被 880 Hz 文件替换；隐藏视频 snapshot 与 `.ocrllm-audio-*` staging 均无残留。主代理与独立审计都确认组合流程仍只持有一次视频 snapshot。第一次 focused 命令写错一条测试名，pytest 收集 0 项，立即纠正后两条核心回归为 **2 passed in 0.68s**；音频提取、组合识别、选帧、结果组合/发布和轻量导入相邻集合为 **85 passed in 8.49s**。第一次完整套件在当前 shell 找不到 Node，得到 **1,492 passed, 2 failed**；两项 frozen Node harness 都在产品代码运行前失败。找到仓库既有文档指向的 `D:\Anaconda\envs\STA\node.exe`，仅为当前进程补 PATH 后，完整离线套件为 **1,494 passed in 62.88s**。`compileall`、diff、冻结目录检查通过。没有网络、credential、provider call、依赖安装、wheel 布局、#127/#152、legacy/social 或 frozen `contracts/worker` 变化。最容易过度设计的是建立通用临时媒体系统，或让独立入口和组合入口各复制一次整段视频；本轮停在一个公开拥有者和一个窄私有稳定输入助手。
