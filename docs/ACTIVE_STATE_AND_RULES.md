@@ -1075,6 +1075,32 @@ generic path protocol, cwd fallback, long-path policy, sandbox, public signature
 provider/media behavior, dependency, legacy compatibility, #127/#152 choice,
 or frozen-boundary change was introduced.
 
+#245 fixes the execution order for future long-audio video integration without
+adding a router. The existing `VideoRecognitionOutcome` and composition path
+already accept the exact audio `RecognitionResult`, call count, token usage,
+partial cleanup status, and retained `audio.mp3` produced by
+`recognize_long_mp3()`; result typing is not a blocker. The public low-level
+functions can be manually combined today, but frame and audio extraction then
+take two independent whole-MP4 snapshots and force the caller to own branch
+settlement and exact outcome construction. Do not present that as the mature
+combined path. Likewise, do not implement automatic routing by first trying
+short recognition and falling back on `SOURCE_TOO_LARGE`, or by probing then
+calling the current facade: those shapes repeat a full MP3 copy/decode for a
+long lecture and turn a typed size error into hidden routing policy.
+
+The smallest future combined gate is therefore ordered. First resolve #127 so
+audio cancellation has a public branch outcome. Then add one internal,
+duration-driven ownership seam over the already retained `audio.mp3`: one MP4
+snapshot, one extraction, one MP3 copy/decode, and exactly one selected short
+or long Google adapter, while preserving the two existing configs and exact
+provider evidence. The 300-second-to-current-selected-model limit can use the
+live-proven one-shot Files lifecycle without #152; the 9.5-to-10-hour product
+remainder and recoverable ordinary lectures still require #152. Do not add the
+seam, a second video entry, manual-outcome convenience API, or chunk machinery
+before those decisions. The existing focused long-audio/video/composition set
+passes 84 tests; no runtime, public API, provider, dependency, media, output,
+legacy compatibility, or frozen-boundary change occurred.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,

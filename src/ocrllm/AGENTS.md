@@ -302,6 +302,12 @@ exceptions and strict-boolean validation from an actual `is_set()` call.
 exact string or `Path` for `output_dir`, with typed rejection before source
 access. Do not restore empty-string cwd fallback, accept arbitrary `PathLike`,
 or grow this narrow coercion into a generic path framework or long-path policy.
+#245 confirms long-MP3 results already fit the video outcome/composer. Do not
+integrate them by catching short-route size failure, probing and then probing
+again, documenting manual two-snapshot composition as the mature route, or
+adding another video/result API. Resolve #127 first; then one retained-audio
+ownership seam may select exactly one adapter. #152 still owns 9.5-to-10-hour
+audio and persisted recovery.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

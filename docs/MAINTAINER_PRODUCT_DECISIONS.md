@@ -206,6 +206,16 @@ is often accepted.
   similarity/deduplication in the first slice. This one yes/no decision freezes
   chunk scope, source ownership, and overlap handling without creating public
   chunk controls or a generic checkpoint system.
+- **#245 video-integration ordering clarification.** Long Files results already
+  fit `VideoRecognitionOutcome`; do not add a second outcome or audio-result
+  type. The low-level public functions can be manually composed, but they copy
+  the MP4 twice and expose branch settlement to the caller, so this is not the
+  mature combined route. Do not route by trying short recognition and catching
+  `SOURCE_TOO_LARGE`, or by doing a separate full probe before a facade that
+  probes again. Resolve #127 first, then add one retained-MP3 ownership seam
+  that decodes once and selects exactly one adapter. The existing one-shot
+  300-second-to-model-limit range does not require #152; full 10-hour coverage
+  and persisted lecture recovery do.
 
 ## PDF verification scale
 

@@ -301,6 +301,13 @@ or `Path`. Empty/whitespace strings, bytes, arbitrary objects, and custom
 instead of writing relative retained assets or leaking `TypeError`. This is one
 shared video-input check, not a generic filesystem abstraction.
 
+#245 confirms that standalone long-MP3 results already fit the video outcome
+and composer, but automatic duration routing must not be implemented as
+short-route failure fallback or repeated whole-audio probing. Resolve #127
+first, then use one retained-MP3 ownership seam to choose exactly one adapter.
+One-shot 300-second-to-model-limit integration is independent of #152; the
+9.5-to-10-hour ceiling and persisted recovery remain blocked on #152.
+
 #229 removes one duplicate `VideoRecognitionOutcome` import left inside the
 video facade after #219 had already made that type a required module-scope
 binding. Runtime type hints, lazy imports, separate configs, and execution are

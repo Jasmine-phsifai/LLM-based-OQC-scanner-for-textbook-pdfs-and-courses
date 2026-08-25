@@ -767,6 +767,13 @@ The following directions remain traceable but are not current work:
   `OUTPUT_PATH_INVALID` before source/media work. The full offline suite passes
   1,510 without adding a generic path layer, long-path policy, dependency, or
   provider/media change.
+  #245 verifies that `recognize_long_mp3()` results already satisfy the video
+  outcome/composition contract, but rejects two premature integration shapes:
+  manual low-level construction as the mature facade, and short-recognition
+  failure as an automatic duration router. The ordered implementation gate is
+  #127 first, then one-copy/one-decode selection of exactly one short or Files
+  adapter; #152 remains required for 9.5-to-10-hour audio and persisted recovery.
+  No runtime or public boundary changed; 84 focused tests pass.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
