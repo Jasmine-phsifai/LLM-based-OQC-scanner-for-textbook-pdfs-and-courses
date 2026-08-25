@@ -4311,3 +4311,17 @@ Atomic task — Iteration #214: identify and close one evidence-backed caller-vi
 **两条路线、最小修复与真实媒体。** 路线 A 只把 exact `output_root/audio.mp3` 加进 video publication 的保留路径；路线 B 禁止整个 `output_root` 或 `frames` 内发布，或建立通用路径注册系统。选择 A。内部函数改名为诚实的 reserved-media 检查，继续保护所有现有 retained assets，并额外保护固定音频位置；没有增加目录 sandbox、symlink 策略、manifest 或通用媒体 abstraction。最终回归没有保留第二套 placeholder fixture，而是增强既有真实静音 MP4：公开 `recognize_video()` 仍返回 complete、audio absent、图片 provider 一次成功；随后发布到保留音频位置得到 `OUTPUT_PATH_INVALID`，目标不存在，全部 JPEG 字节不变，且无 `.ocrllm-*.tmp`。
 
 **验证与过度设计复查。** publication/composition/outcome 加真实静音路径为 **35 passed in 0.62s**；视频 inspection、负反馈留图、音频抽取、帧组识别、outcome、组合、发布、Google smoke 与轻量 import 相邻集合为 **119 passed in 8.49s**；随后完整离线套件为 **1,486 passed in 59.35s**。`compileall -q src tests`、`git diff --check` 和 frozen `contracts/worker` diff 均通过。完整绿色只作补充，没有替代真实静音 MP4 的失败优先证明。#213 已证明 whole-package wheel 选择，本轮没有 manifest、依赖或惰性导入变化，因此不机械重建 wheel。没有网络、provider API、credential、安装、legacy compatibility、social、#127 取消选择或 #152 长音频选择。最接近过度设计的是顺势禁止整个媒体根、解析所有路径别名、加入文件 hash/manifest 或建立媒体名称 registry；真实缺陷只需要一个精确保留路径，全部拒绝扩大。
+
+## #215 — 2026-08-25：不把 `audio.mp3` 修复机械扩大成后缀白名单
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #215: test whether final video publication preserves its “Markdown is Markdown” contract for caller-supplied filenames, without reopening #214 into a general filesystem policy. Success means reconciling authority and diary; checking public documentation and sibling output conventions; independently auditing whether `publish_video_result()` can create misleading non-Markdown files during an otherwise normal settled call; reproducing the behavior through a real local video only if it contradicts the package’s own format contract; choosing between an exact `.md` preflight and leaving explicit paths unrestricted; implementing only the evidence-supported route; verifying zero provider/network activity, retained-media safety, adjacent behavior, and lightweight import; updating the Chinese diary/current state; and committing/pushing one coherent result. This matters because a Python library should reject a mislabeled final artifact at its public boundary rather than successfully placing Markdown bytes behind an unrelated media extension.
+```
+
+**复现并不等于缺陷。** 主代理用公开值构造一个有效 complete/absent outcome，把它发布到临时 `final.mp3`：调用成功，文件存在，内容以 `# Video frames` 开头，临时根随后自动删除。初看这像 #214 的延伸；但重读 #144 authority、维护者决定、README、实现历史和 tracked callers 后，初始假设被推翻。公开合同一直是 caller 提供完整 explicit path，库保证写入 Markdown、原子性和媒体安全，从未声明 suffix whitelist。普通 `recognize()` 总是派生 `.md`，是因为调用者只给目录；`extract_video_audio()` 的 `.mp3` 和 `RetainedVideoFrame` 的 `.jpg` 则是必须由解码器解释的库有媒体格式，不能机械套到 caller-owned 文本文件名。
+
+**两条路线与选择。** 路线 A 保持现行行为，明确内容永远是 UTF-8 Markdown、`.md` 只是推荐后缀；路线 B 新增 exact `.md` 拒绝。B 会直接破坏当前可成功的 `.txt`、无后缀或调用者管理的报告路径，还必须继续决定 `.markdown`、`.MD` 等白名单范围。这是新的 breaking product decision，不是已写承诺的修复。选择 A；#214 的真实问题是 Markdown 占用了库自身固定的 `output_root/audio.mp3`，并不证明任意位置的非 `.md` 都是库的假成功。轻量只读审计独立得到相同结论，并确认初始实现就采用这一措辞，不是后来丢了校验。
+
+**变化、验证与过度设计复查。** 本轮只把当前边界补进 root/package README、authority、migration 与 package AGENTS：caller 完整控制文件名，`.md` 推荐但不强制；未来若维护者选择强制，必须作为公开不兼容决策处理。没有增加“任意后缀必须成功”的回归，避免冻结未来选择；也没有 runtime、test、public signature、manifest、dependency、provider、credential、network、legacy、social、frozen `contracts/worker`、#127 或 #152 变化。实测 probe exit 0 且临时目录由 `TemporaryDirectory` 清除；最终只需文档一致性与 diff 检查。建立 MIME detector、通用 suffix registry、格式白名单或把媒体扩展规则抽象到所有输出，都会把一个审美/产品选择扩成维护负担，全部拒绝。

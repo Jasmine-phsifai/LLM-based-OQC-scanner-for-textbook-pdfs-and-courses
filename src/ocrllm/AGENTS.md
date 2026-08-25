@@ -101,6 +101,10 @@ for this internal implementation.
 for silent video. Preserve this lexical media-layout invariant; do not turn it
 into a ban on publishing elsewhere under `output_root`, a path sandbox, or a
 general media-name registry.
+#215 confirms `.md` is recommended rather than mandatory for the caller-owned
+final publication path. Do not infer a suffix validator from media-artifact
+extensions or freeze arbitrary suffixes in tests; such a breaking restriction
+needs an explicit maintainer product decision.
 #166 makes source order a constructor invariant for every public video outcome:
 retained frame indices are strictly increasing and timestamps never move backward.
 Do not add path-identity, timestamp-uniqueness, or generic ordering machinery.

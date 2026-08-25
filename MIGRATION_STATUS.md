@@ -658,6 +658,10 @@ The following directions remain traceable but are not current work:
   now gets typed `OUTPUT_PATH_INVALID` instead of a Markdown file disguised at
   the audio path, while retained JPEG bytes and cleanup remain intact. No wider
   output-directory policy or provider contract changed.
+  #215 confirms #214 is not a general filename-extension policy. Final video
+  publication writes UTF-8 Markdown to the complete caller-owned path; `.md` is
+  recommended but not enforced. A mandatory suffix would be a new breaking
+  product decision, not migration compatibility or a proven runtime defect.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

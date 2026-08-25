@@ -441,7 +441,10 @@ Markdown publication cannot make an absent-audio outcome look like an MP3. Its
 returned standard video result preserves the composition and has the verified
 output path. It does not
 recognize again, derive a legacy filename, create resume state, or publish a
-fully failed outcome. Automatic fallback, resume, and worker routing remain
+fully failed outcome. The caller owns the complete filename: publication always
+writes UTF-8 Markdown and `.md` is the recommended suffix, but suffixes are not
+validated. This is distinct from the exact library-owned media paths above.
+Automatic fallback, resume, and worker routing remain
 unavailable. Plain
 `import ocrllm` does not import OpenCV, NumPy, or imageio-ffmpeg.
 Local user screenshots are uncommitted

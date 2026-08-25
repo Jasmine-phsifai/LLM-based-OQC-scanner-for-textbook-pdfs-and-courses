@@ -2467,6 +2467,20 @@ The complete offline suite passes 1,486 tests.
 No whole-output-root ban, path sandbox, alias graph, manifest, provider behavior,
 cancellation choice, or long-audio decision was added.
 
+#215 audits whether #214 should be generalized into mandatory `.md` filenames
+and rejects that expansion under the current contract. Since #144,
+`publish_video_result()` has accepted one complete caller-owned path and has
+promised Markdown content, atomic publication, and retained-media safety—not a
+suffix whitelist. The ordinary recognition path derives `.md`, but it accepts
+only an output directory; MP3/JPEG suffix checks protect library-owned media
+formats and are not direct precedent for a caller-named text report. A bounded
+public-value probe confirms that an unrelated `final.mp3` receives UTF-8
+Markdown and returns successfully, while all tracked callers use the recommended
+`.md`. This is documented behavior, not a false success under the current API.
+Do not freeze arbitrary suffixes in a regression or add MIME/extension machinery.
+Mandatory `.md` would be a caller-visible breaking product choice and requires
+separate maintainer authority; it is not inferred from #214.
+
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,
 but do not reuse or generalize the image-specific resume schema/classes. Persist
