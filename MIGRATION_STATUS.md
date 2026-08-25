@@ -1251,7 +1251,10 @@ The following directions remain traceable but are not current work:
   standalone short-audio processor, so the audio branch honestly settles an
   error and `outcome.status` is not complete. #311 changes only the gate seam to
   `processors.recognize_video_mp3.recognize_short_mp3`, matching shipped #297;
-  no public/runtime compatibility wrapper is added.
+  no public/runtime compatibility wrapper is added. The final exact `d80170f`
+  clean gate passes all eight profiles; combined video+audio+image measures
+  272,322,996 bytes and its installed public recognize/compose/publish smoke
+  completes with two retained frames, one image call, and one audio snapshot.
 
 ## Obsolete Prose Kept For Trace
 

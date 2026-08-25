@@ -5771,3 +5771,7 @@ Atomic task — Iteration #311: identify the exact installed combined-video smok
 **失败优先和最小修复。** 精确 controller 回归先因脚本找不到 `importlib.import_module('ocrllm.processors.recognize_video_mp3')` 失败。修复只把 embedded probe 的模块目标从旧 standalone processor 改为当前 video processor，仍 patch 其 `recognize_short_mp3`；两秒 fixture 必然走 short route。路线 A 是给库增加旧模块兼容转发，路线 B 是修测试 seam，选 B。没有 runtime、public API、provider fallback、第二个 fake framework 或长音频行为变化。
 
 **验证。** gate controller + `recognize_video` 集 **36 passed in 14.66s**，PowerShell AST error 0，diff check 通过。完整 suite、提交与最后一次 wheelhouse-backed clean gate 尚需完成；在 compose、publish、combined delta 全到达前仍不能叫发行门禁通过。
+
+**完整离线与最终 clean gate。** 本轮完整 suite **1,573 passed in 63.26s**，compileall/diff/PowerShell AST 均通过；提交并推送为 `d80170f639ae40307e412d1aad1d2eb9baa093f0`。轻量执行者再次核验代理和 i309 四个 wheel 的精确 size/hash，只运行一次 unchanged gate：archive **1,572 passed, 1 skipped in 67.84s**；wheel **257,084 bytes**，base target **1,265,634**，两套 import budget 通过。七个单独 profile 全过，video **254,451,578 bytes**；combined `[video,audio,image]` **272,322,996 bytes**，public recognize→compose→publish 全部断言通过，终端 `2 1 1` 表示两张 retained frames、一次 image provider、一个 audio snapshot。最终打印 `Stage M offline gate passed`，exit **0**；gate 临时根与进程为 0。普通 clean-installed combined-video delivery gate 至此关闭。
+
+**wheelhouse 清理。** 所有证明完成后，原执行者重新确认 i309 精确 TEMP 根只含它创建的 `venv`、`wheelhouse` 和 `root.txt`，且无进程占用；唯一一次原生 PowerShell 递归删除仍被执行策略拒绝。没有用 Python、cmd 或其他 shell 绕过。该约 91.6 MB 可丢弃目录仍需人工删除，路径已在 #309 委派证据与当前 authority 留存。

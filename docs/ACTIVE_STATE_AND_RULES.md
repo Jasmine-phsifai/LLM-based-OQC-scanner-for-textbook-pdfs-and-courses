@@ -5538,6 +5538,23 @@ fallback, or production monkeypatch. A failing-first exact-module regression
 now passes; the gate plus video set passes 36 tests, PowerShell has zero AST
 errors, and the final installed gate remains required.
 
+The final clean gate from exact commit
+`d80170f639ae40307e412d1aad1d2eb9baa093f0` passes with exit 0. Its archive has
+1,572 passing tests and one expected RapidOCR skip. The wheel is 257,084 bytes;
+the base target is 1,265,634 bytes; both maintained import-budget interpreters
+pass. All individual profile deltas pass: audio 3,450,056; image 16,959,741;
+image+DashScope 41,535,127; Google 41,593,864; audio+Google 42,494,199;
+PDF-vision 25,158,162; and video 254,451,578 bytes.
+
+The installed combined `[video,audio,image]` profile is 272,322,996 bytes and
+completes the public `recognize_video()` -> `compose_video_result()` ->
+`publish_video_result()` smoke. It retains two frames, calls the injected image
+provider once, uses one short-audio snapshot, preserves the audio artifact,
+publishes Markdown, and cleans request-owned media/staging paths. No provider
+API is called and `google-genai` is absent from that profile. The gate removes
+its own temporary root and leaves no process. This closes the ordinary
+clean-installed combined-video delivery gate.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

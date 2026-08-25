@@ -646,6 +646,8 @@ existing sum-of-profile combined ceiling to 293 MiB; no dependency changes.
 Its clean gate installed the combined profile, then #311 found the final smoke
 still patched the pre-#297 short-audio processor module. The gate now patches
 the actual `recognize_video_mp3` seam; no library compatibility shim was added.
+The final exact `d80170f` clean gate passes all eight profiles and the installed
+combined recognize/compose/publish workflow with exit 0.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
