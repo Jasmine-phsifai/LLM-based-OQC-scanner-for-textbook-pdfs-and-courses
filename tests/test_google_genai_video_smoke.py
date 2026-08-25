@@ -567,6 +567,8 @@ def test_video_smoke_preserves_audio_provider_failure_call_count(
                 details={
                     "provider_calls_attempted": 1,
                     "failure_scope": "request",
+                    "http_status": 429,
+                    "provider_status": "RESOURCE_EXHAUSTED",
                     "remote_file_deleted": True,
                     "provider_file_cleanup_failed": False,
                     "provider_client_closed": True,
@@ -591,6 +593,8 @@ def test_video_smoke_preserves_audio_provider_failure_call_count(
             "stage": "audio_recognition",
             "provider_calls_attempted": 1,
             "failure_scope": "request",
+            "http_status": 429,
+            "provider_status": "RESOURCE_EXHAUSTED",
             "remote_file_deleted": True,
             "provider_file_cleanup_failed": False,
             "provider_client_closed": True,
@@ -657,6 +661,8 @@ def test_video_smoke_reports_only_canonical_safe_provider_failure_reasons(
             private_text,
             details={
                 "failure_scope": private_text,
+                "http_status": 999,
+                "provider_status": private_text,
                 "remote_file_deleted": 1,
                 "provider_client_closed": "yes",
             },
@@ -665,6 +671,8 @@ def test_video_smoke_reports_only_canonical_safe_provider_failure_reasons(
         0,
     )
     assert "failure_scope" not in malformed_lifecycle
+    assert "http_status" not in malformed_lifecycle
+    assert "provider_status" not in malformed_lifecycle
     assert "remote_file_deleted" not in malformed_lifecycle
     assert "provider_client_closed" not in malformed_lifecycle
     assert private_text not in json.dumps(malformed_lifecycle, sort_keys=True)

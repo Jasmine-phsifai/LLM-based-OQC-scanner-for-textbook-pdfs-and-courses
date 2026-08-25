@@ -5232,6 +5232,44 @@ must use one synthetic video with visible OCR text and intelligible speech, then
 run once through this stronger reporter. The focused runner/video/long-audio set
 passes 83 tests.
 
+## Iteration 300: semantic long video reaches both generations; provider rejects
+
+One disposable, reviewed local script replaced the content-free fixture with a
+nonprivate 301-second MP4. It used a 960x540 high-contrast slide containing
+large OCR/formula/LaTeX/Mermaid test text and a 6.899-second Windows TTS phrase
+looped across the full duration. Before credential access, public inspection and
+extraction proved a 2,528,868-byte MP4, 301.0-second video duration, five retained
+frames in one group, and a 1,204,784-byte / 301.056-second decoded MP3. The
+temporary generator and its slide/WAV/preflight artifacts were removed; only the
+exact task-owned MP4 remained.
+
+Immediately before the live start, direct curl through the active proxy reached
+the Google API host with HTTP 404 and exit 0. One credential-isolated runner then
+discovered 37 models and used explicit `gemini-2.5-flash` for both branches with
+expected Files transport. It terminated after about 172 seconds with exit 1 and
+empty stderr. There was no retry, second runner, model switch, fallback, invalid-
+credential probe, download, or dependency change.
+
+Both recognition generations were attempted exactly once. The audio branch
+returned provider-scoped `PROVIDER_RATE_LIMITED`; the uploaded remote file was
+deleted and the client closed. This is an honest transient Google outcome, not a
+false success or a reason for adapter-internal retry. The image branch returned
+`PROVIDER_RESPONSE_INVALID` with request scope after one generation. The safe
+report did not yet include any existing mapped HTTP/status fields, so this
+attempt cannot prove whether that branch saw a standard SDK status or an
+otherwise invalid response. Composition correctly did not start because neither
+branch produced usable text.
+
+The runner now additionally exposes only exact HTTP status integers in 100-599
+and a finite allowlist of standard Google RPC status names. Arbitrary strings,
+messages, response bodies, paths, remote IDs, and credentials remain hidden.
+This changes evidence only; no runtime mapper, retry, model selection, provider
+fallback, API, or media behavior changed. The focused Google adapter, runner,
+video, and long-audio set passes 121 tests. A later single gate may use the same
+frozen semantic fixture after the provider window refreshes; it must use the
+stronger runner and decide from the returned typed status rather than blindly
+looping.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

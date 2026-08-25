@@ -327,6 +327,12 @@ is often accepted.
   pre-generation Files failure without retaining provider text, remote IDs,
   source paths, or credentials. Do not infer a provider mapping change when an
   earlier runner omitted those safe details.
+- Standard numeric HTTP status and canonical Google RPC status names are also
+  acceptable live-run evidence when already present on a typed error. Restrict
+  the latter to a finite protocol-status allowlist; never forward arbitrary SDK
+  status strings, exception messages, or response bodies. A provider-scoped
+  rate limit with successful Files/client cleanup is a valid transient outcome,
+  not authority for an adapter-internal retry or immediate model switch.
 - **Deferred provider-extension target.** After the core OCRLLM product paths
   are stable, provider integration should become additive: adding a provider
   should primarily mean adding one independently readable provider class (and

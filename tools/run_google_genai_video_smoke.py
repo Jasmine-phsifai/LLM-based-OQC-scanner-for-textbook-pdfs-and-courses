@@ -37,6 +37,26 @@ _SAFE_PROVIDER_FAILURE_REASONS = frozenset(
 _SAFE_FAILURE_SCOPES = frozenset(
     {"credential", "model", "provider", "request", "response"}
 )
+_SAFE_PROVIDER_STATUSES = frozenset(
+    {
+        "ABORTED",
+        "ALREADY_EXISTS",
+        "CANCELLED",
+        "DATA_LOSS",
+        "DEADLINE_EXCEEDED",
+        "FAILED_PRECONDITION",
+        "INTERNAL",
+        "INVALID_ARGUMENT",
+        "NOT_FOUND",
+        "OUT_OF_RANGE",
+        "PERMISSION_DENIED",
+        "RESOURCE_EXHAUSTED",
+        "UNAUTHENTICATED",
+        "UNAVAILABLE",
+        "UNIMPLEMENTED",
+        "UNKNOWN",
+    }
+)
 _SAFE_LIFECYCLE_DETAIL_NAMES = (
     "remote_file_deleted",
     "provider_file_cleanup_failed",
@@ -486,6 +506,15 @@ def _safe_error(
         failure_scope = error.details.get("failure_scope")
         if type(failure_scope) is str and failure_scope in _SAFE_FAILURE_SCOPES:
             summary["failure_scope"] = failure_scope
+        http_status = error.details.get("http_status")
+        if type(http_status) is int and 100 <= http_status <= 599:
+            summary["http_status"] = http_status
+        provider_status = error.details.get("provider_status")
+        if (
+            type(provider_status) is str
+            and provider_status in _SAFE_PROVIDER_STATUSES
+        ):
+            summary["provider_status"] = provider_status
         for detail_name in _SAFE_LIFECYCLE_DETAIL_NAMES:
             detail_value = error.details.get(detail_name)
             if type(detail_value) is bool:
