@@ -1599,6 +1599,33 @@ boundary changed. The previously recorded stress/robustness authority remains
 unchanged: later tests follow the relevant basic installed/live proof and stay
 separate, bounded, question-driven, and cleanup-verified.
 
+#271 makes the one later unchanged execution permitted after #268, from exact
+commit `0cdce0b`. A 3,600-second outer deadline was armed at
+`2026-08-25T11:02:19.9343153Z`, before the actual gate started at
+`11:02:19.9497211Z`; the maintained archived-source stage retained its own
+1,200-second bound. The gate ended at `11:22:31.9207898Z` after
+1,211,971.0687 ms. Its terminal output is again narrowly conclusive:
+`archived-source dependency preparation and pytest` started, reported downloads
+for NumPy, imageio-ffmpeg, and OpenCV, then emitted both `stage timeout` and
+`stage exceeded 1200s`. It did not reach pytest, fixture/compile checks, wheel
+construction, any optional profile, combined-video execution, or a provider.
+
+One pre-launch wrapper command had quoted the repository path incorrectly and
+was rejected before the gate script started; it emitted no `stage started` and
+does not count as a gate attempt. The corrected wrapper pre-armed its deadline
+and launched exactly one actual gate. Its cached `Start-Process` object did not
+yield a final numeric exit code because the wrapper omitted a final
+`WaitForExit()`/`Refresh()`, so no exit number is claimed; the maintained gate's
+own terminal timeout text and vanished process tree remain direct evidence.
+The exact wrapper root and gate root were removed, related process count is
+zero, `HEAD == origin/master`, and only the two protected untracked files
+remain. Gate-control, wheel, public-video, composition, publication, typing,
+and import neighbors pass 86 tests. The ordinary installed combined-video gate
+therefore remains open. Do not infer a source, wheel, dependency declaration,
+or video-runtime defect; do not immediately replay, widen timeouts, inject a
+cache/mirror, repin, add retry, or create another installer. Stress/robustness
+work still follows a successful relevant basic installed/live flow.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
