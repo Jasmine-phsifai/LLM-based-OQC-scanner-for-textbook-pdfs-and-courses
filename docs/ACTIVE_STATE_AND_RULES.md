@@ -2140,6 +2140,33 @@ were removed. No provider, network, credential, dependency installation,
 runtime, API, output layout, legacy compatibility, frozen boundary, or open
 #127/#149/#152 choice changed.
 
+#203 carries the identical untuned #202 transient-text fixture through one
+authorized real Google provider boundary. A credential-isolating external
+controller loaded the existing QSettings key only in memory and injected it
+into one OCRLLM child environment; the key was absent from arguments, files,
+repository state, logs, and the safe report. Live catalog discovery returned 37
+models and selected the present `gemini-2.5-flash`. Public
+`recognize_video()` retained indices 0/5/19 and settled complete. The three
+frames formed one successful image group with exactly one provider call. Silent
+audio settled `absent` with `VIDEO_NO_AUDIO_STREAM` and zero provider calls.
+Provider-free composition completed with three JPEG assets. Safe in-child
+checks confirmed the recognized Markdown contained both distinctive tokens
+`IMPORTANT` and `42` without emitting the Markdown itself. Validated current-
+model usage was 1,111 input and 55 output tokens; child elapsed time was
+4,642.762 ms.
+
+The controller's credential, disposable-path, and exact-content scans of child
+stdout/stderr were all false. The exact external root was removed with zero
+residue, and repository state remained unchanged. One initial controller-only
+attempt contained an invalid Windows drive raw-string literal and stopped at
+`SyntaxError` before directory creation, child launch, catalog request, or live
+call. Only that literal was corrected: totals were two controller starts, one
+child, and one recognition invocation, with no retry, fallback, model switch,
+invalid-key probe, or second request. This live success does not justify a new
+quality-score API, persistent harness, threshold change, or broader provider
+framework. No runtime, API, dependency, output layout, legacy compatibility,
+frozen boundary, or open #127/#149/#152 choice changed.
+
 #150 proves that the separate audio branch is real but still too narrow for an
 ordinary lecture video. A generated, audible 301.056-second MP4 passed the
 public `recognize_video()` facade with an injected image provider and a guarded

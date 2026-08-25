@@ -157,6 +157,10 @@ thresholds, import legacy refine/pHash machinery, or freeze another large
 fixture from that positive probe. Changes below the effective threshold remain
 an honest quality limit until balanced positive and nuisance-motion evidence
 exists.
+#203 live-proves that exact transient-text shape through one current Google
+image call: retained 0/5/19, both distinctive tokens recognized, silent audio
+zero-call, complete composition, and no residue. Do not rerun for green or add
+a content-exposing live harness; future live work needs a new runtime reason.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

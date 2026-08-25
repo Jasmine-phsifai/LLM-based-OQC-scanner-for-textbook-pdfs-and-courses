@@ -349,7 +349,10 @@ detector: content that appears entirely between two coarse samples can be
 absent from the retained tuple. Sampled edits below the calibrated changed-pixel
 threshold are likewise not guaranteed, although a real short-lived high-contrast
 text line affecting about 2.29% of the comparison thumbnail is retained by the
-current accumulated-drift rule. `recognize_video_frames()` accepts only the exact
+current accumulated-drift rule. One bounded live Google run then sent retained
+frames 0/5/19 in a single image group and confirmed the model output contained
+both distinctive `IMPORTANT` and `42` content; silent audio made no provider
+call. `recognize_video_frames()` accepts only the exact
 ordered tuple returned by this library and reuses ordinary image recognition
 in groups of at most eight. It is memory-only and returns one existing
 `BatchItemOutcome` per group. Every successful result carries exact

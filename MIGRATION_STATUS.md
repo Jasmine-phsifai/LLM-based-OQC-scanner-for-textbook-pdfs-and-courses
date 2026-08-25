@@ -595,6 +595,11 @@ The following directions remain traceable but are not current work:
   2.29% of the thumbnail clears accumulated drift and survives as the middle of
   retained frames 0/5/19. Legacy offers no stronger guarantee below roughly 2%,
   so no refine/pHash port, threshold change, or tuned regression was added.
+  #203 sends that identical untuned transient-text MP4 through one authorized
+  live Google call. Catalog discovery found 37 models; `gemini-2.5-flash`
+  recognized both distinctive tokens from retained frames 0/5/19 in one image
+  group, while silent audio made zero calls and composition completed with
+  three assets. Usage was 1111 input / 55 output tokens; no residue or leak.
   #149 finds no further ordinary-content selector defect, then proves the next
   parsing-lifecycle gap with two real same-shape MP4s: replacing the source
   after coarse scan makes retained JPEGs come from new bytes while candidate

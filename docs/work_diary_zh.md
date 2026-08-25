@@ -4137,3 +4137,17 @@ Atomic task — Iteration #202: test the negative-feedback video selector agains
 **真实视频结果改变了结论。** 固定 fixture 为 640×360、1 fps、20 秒、47,246 bytes：白底 lecture slide 的主体始终不变，只在 5–9 秒加入清晰高对比文字 `IMPORTANT: x = 42`，之后恢复。五秒采样为索引/时间 `[0,5,10,15,19]` / `[0,5,10,15,19]`。base→edit 与 edit→base 的 luminance changed fraction 都是 **0.02294921875**，color 为 **0.0224609375**。它没超过最低 sensitivity 下 0.03 的 adjacent cutoff，却超过约 0.02 的 accumulated-drift cutoff；内部 selector 和公开 `extract_video_frames()` 都返回 `[0,5,19]`。JPEG ROI 中第 5 帧有 4,309 个深色像素，第 0/19 帧均为 0，证明新增行真实进入了 provider 将消费的图片。第一次诊断序列化误用 `VideoInfo.width`，fixture 已清理；第二次只改为正确的 `width_pixels`，使用完全相同、未调参的 fixture。两个根均删除，无仓库残留。
 
 **结论与过度设计复查。** 本轮是正向证据，不是缺陷。不能继续缩小字体直到刻意得到失败，再据此调阈值；那会只优化一个正例而没有“光标、字幕、压缩噪声不应爆增帧”的反例。README 只诚实写明：约 2.29% 的这条清晰短暂文本已被累计漂移保留，低于有效阈值的 sampled edit 仍不保证。没有新增大型 fixture、第二 detector、文本/轮廓规则、阈值设置、legacy refine/pHash 或质量配置。本轮不改 runtime/API/dependency/output layout，不使用 provider/network/credential，不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。
+
+## #203 — 2026-08-25：同一短暂文本视频通过一次真实 Google 图片识别
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #203: run one bounded authorized live Google image-recognition gate on the exact transient-text video shape proven in #202, using the public combined-video facade with independent valid image/audio configs and a silent track. Success means reconciling authority and diary, generating the same untuned before/edit/after MP4, discovering the current Google catalog, making exactly one image-group provider call and zero audio calls, proving the settled outcome and whether the recognized Markdown contains the distinctive `IMPORTANT` and `42` content without exposing raw model output or credentials, cleaning every local snapshot/artifact, and changing code only for a reproduced library defect. This matters because retaining the correct JPEG is necessary but not sufficient; the mature library must deliver it through the real provider boundary, and Google is the authorized robustness source for this exact end-to-end proof.
+```
+
+**范围与安全路线。** 现有 maintained video smoke 把 audio recognized 写入 pass 条件，静音 fixture 会被误判；路线 A 是给 runner 增加 silent/expected-text 模式，路线 B 是一次性仓库外 controller，只输出安全布尔值和计数。选择 B，避免为了单个质量检查扩张 runner 协议。controller 从 legacy QSettings 仅在内存读取 key，只向一个 OCRLLM 子进程环境注入 `GOOGLE_API_KEY`；key 不进入 argv、脚本、文件、仓库、日志或报告。fixture 与 #202 完全相同，不调整字体、时长、采样或阈值。
+
+**唯一 live 结果。** 实时 catalog 为 **37**，指定且存在的模型为 `gemini-2.5-flash`。公开 `recognize_video()` 返回 complete，保留 `[0,5,19]`；三张图组成一组，成功一组，图片 provider 精确 **1 call**。静音 audio state 为 absent，错误码 `VIDEO_NO_AUDIO_STREAM`，音频 **0 call**。`compose_video_result()` complete，assets 为三张 JPEG。子进程不输出 Markdown，只在内部检查 distinctive content：`contains_IMPORTANT=true`、`contains_42=true`。验证后的模型 usage 为 **1111 input / 55 output tokens**，子进程耗时 **4642.762 ms**。
+
+**失败记录、清理与过度设计复查。** 第一次 controller 在创建目录、启动 child、请求 catalog 或 live call 前，因为 Windows drive raw-string 字面量错误而 `SyntaxError`；它没有产生外部动作。只修正 controller 字面量后启动唯一 child 和唯一 recognition：合计 controller starts 2、child 1、live invocation 1，无 retry/fallback/model switch/invalid-key probe。child stdout/stderr 的 credential、disposable path、exact content 扫描均为 false；唯一外部根已删除，residue 0；仓库仍只有两个既有未跟踪文件。结果已经证明 retained JPEG→真实 provider→目标文字，不新增 content-exposing harness、质量评分、阈值规则或 provider framework，也不重发请求追求更多绿色结果。本轮不改 runtime/API/dependency/output layout，不触碰 legacy compatibility、frozen `contracts/worker` 或 #127/#149/#152 决策。
