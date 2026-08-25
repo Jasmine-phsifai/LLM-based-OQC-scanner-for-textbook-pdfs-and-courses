@@ -930,6 +930,15 @@ The following directions remain traceable but are not current work:
   video execution did not begin. This remains bounded external delivery
   evidence, not a package/runtime defect. No retry, policy change, provider
   call, or residue followed, and the installed combined-video proof stays open.
+  #290 compares the legacy parent's Google failure evidence with all three
+  active native adapters. Recorded refusal, empty/no-speech, 429 quota/window,
+  503 high-demand, ordinary unavailable, model, authentication, permission, and
+  request-invalid shapes are already typed and redacted; no runtime change is
+  justified. A separate 400/`FAILED_PRECONDITION` payment example differs—
+  active maps it request-invalid while legacy called it billing—but its source
+  is explicitly code-only rather than a real incident. It remains frozen until
+  native SDK evidence confirms the exact shape; no speculative payment marker,
+  retry/fallback policy, billing layer, or provider abstraction was added.
   #263 leaves the ordinary combined `[video,audio,image]` installed gate open.
   One clean `a83205a` wheel and fresh CPython 3.10.20/pip 23.0.1 venv reached an
   HTTP-200 40.2 MB OpenCV wheel download, then recorded no progress. The

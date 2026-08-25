@@ -579,6 +579,14 @@ combined-video execution did not begin. Treat this only as external delivery
 evidence. The ordinary installed proof remains open; do not immediately replay
 or change dependencies, pins, index, mirror, cache, retries, timeouts, installer,
 or product code from it.
+#290 finds no unhandled production-observed Google error shape in the active
+native image/short-audio/long-audio routes. Refusal, empty/no-speech, quota
+versus rate-window, high-demand, unavailable, model, credential, permission,
+and request failures remain typed and redacted. A code-only legacy 400/
+`FAILED_PRECONDITION` payment example would currently be request-invalid rather
+than account-suspended; do not add payment-text matching until real native SDK
+evidence confirms that exact shape. No billing layer, retry/fallback, or provider
+hierarchy follows from this frozen candidate.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

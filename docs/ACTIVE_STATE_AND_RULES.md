@@ -4964,6 +4964,30 @@ the wrapper launched exactly one gate and no retry was requested. A future
 attempt remains one atomic ordinary-install gate after new time or delivery
 evidence, not a stress test or a reason to create a second installation path.
 
+## Iteration 290: Google legacy-error audit stops at the evidence boundary
+
+A bounded comparison of legacy Google failure records against the native active
+image, short-audio, and long-audio paths found no remaining production-observed
+false-success or wire-error divergence. The public image path still validates
+native Google text through the shared refusal detector, including the recorded
+short Chinese and English denial shapes. Both audio routes additionally reject
+the exact no-speech sentinel, mixed sentinel text, empty text, and refusals.
+The active mapper already preserves the observed 429 window-versus-spent-quota
+distinction and the 503 high-demand distinction without retrying or switching
+models internally.
+
+One different offline-only legacy test shape remains deliberately unported: a
+400 / `FAILED_PRECONDITION` payment message is currently a request-scoped
+`PROVIDER_REQUEST_INVALID` in the active mapper, while the legacy classifier
+called it billing. The repository's legacy evidence table labels genuine
+billing as code-only, not an incident or live observation. The active result is
+non-retryable and redacted, so this is a semantic classification candidate, not
+a false success or unsafe action. Do not add payment-text matching or change it
+to `PROVIDER_ACCOUNT_SUSPENDED` until a real native Google SDK failure confirms
+the status/message shape. That later change, if evidenced, should be one narrow
+mapper branch and regression, not a billing subsystem, retry policy, or provider
+hierarchy.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
