@@ -372,6 +372,12 @@ Do not repeat a failed live call to force success or infer retry, fallback,
 model switching, chunking, #127, or #152 policy from it. Later stress tests must
 remain question-driven, capped, cleanup-verified, and separate from basic-flow
 gates.
+#257 makes wheel file selection explicit across supported Hatchling behavior:
+`src/ocrllm/AGENTS.md` stays tracked for maintainers but must not ship as
+`ocrllm/AGENTS.md`. Keep the clean gate's actual zip-member assertion. Do not
+exclude the active package README, pin a backend solely to hide metadata-byte
+variation, or add a general manifest framework without another concrete file-
+selection defect. The ordinary installed-video dependency gate remains open.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

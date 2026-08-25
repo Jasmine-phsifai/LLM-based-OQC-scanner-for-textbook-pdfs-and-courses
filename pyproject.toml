@@ -48,6 +48,7 @@ path = "src/ocrllm/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ocrllm"]
+exclude = ["/src/ocrllm/AGENTS.md"]
 
 [tool.hatch.build.targets.sdist]
 include = [

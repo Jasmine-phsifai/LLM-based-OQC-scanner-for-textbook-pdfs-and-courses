@@ -850,6 +850,14 @@ The following directions remain traceable but are not current work:
   remote-file/client cleanup booleans when those resources existed. This does
   not claim the failed call's previously undisclosed remote-delete result or
   add retry, model switching, chunking, video routing, #127, or #152 behavior.
+  #257 leaves ordinary installed-video execution open after the sole clean
+  `[video,audio,image]` pip attempt timed out fetching imageio-ffmpeg. Its wheel
+  audit reproduced a real backend-dependent manifest drift: Hatchling 1.31.0
+  included repository-only `ocrllm/AGENTS.md`, while 1.32.0 omitted it. The
+  wheel now explicitly excludes that one file and the maintained gate checks
+  the actual member set. Both backends produce 237-member, approximately
+  250.4-KiB wheels without the instructions; no dependency, runtime, API, or
+  installed-media claim changed.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

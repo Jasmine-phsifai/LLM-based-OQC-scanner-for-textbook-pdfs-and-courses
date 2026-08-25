@@ -1324,6 +1324,29 @@ question, capped scale and provider calls, honest failure and owned-resource
 cleanup checks, and a declared stop gate. This does not authorize indefinite
 API pressure or a generic cross-provider benchmark.
 
+#257 leaves the ordinary installed-video gate open after one further exact-
+commit attempt, but fixes a package-manifest defect exposed by that audit. A
+clean archive of `bda6d6e` built with Hatchling 1.31.0 produced a 261,597-byte,
+238-member wheel, then the only normal `[video,audio,image]` pip attempt exited
+2 after 117.758 seconds because `files.pythonhosted.org` timed out while serving
+`imageio-ffmpeg`. The fresh venv retained only pip/setuptools; no installed
+import or media claim follows, and the owned root was removed.
+
+The unexpected wheel member was `ocrllm/AGENTS.md`, a repository-only agent
+instruction file. An independent exact reproduction proved that Hatchling
+1.31.0 includes it while 1.32.0 implicitly excludes it under the same prior
+configuration. The wheel target now explicitly excludes only
+`/src/ocrllm/AGENTS.md`, and the maintained clean gate inspects the real archive
+to require the package and `py.typed` while rejecting that instruction file.
+Offline builds through both backends now contain 237 members, omit `AGENTS.md`,
+and measure 250,431/250,432 bytes. Their one-byte/hash difference means this is
+stable file selection, not a claim of byte-identical builds across backend
+versions. Dependencies, runtime, public API, and the retained package README do
+not change. The complete offline suite passes 1,522, compileall succeeds, and
+plain import remains lightweight. Do not retry-loop the open delivery gate,
+pin Hatchling merely to hide metadata variation, or generalize this one explicit
+exclusion into a packaging framework.
+
 As shipped by #126 this was a Python orchestration result, not final video
 content. That iteration added no combined Markdown, legacy format, cleanup
 transaction, resume/checkpoint, audio/frame alignment, shared hotwords,
