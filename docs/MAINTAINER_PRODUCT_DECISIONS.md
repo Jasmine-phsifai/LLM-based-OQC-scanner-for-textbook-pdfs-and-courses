@@ -222,6 +222,21 @@ is often accepted.
   or use no overlap. Do not implement chunks until this identity-affecting
   detail is explicit; do not add programmatic transcript similarity/deduplication
   in the first slice.
+- **#302 overlap evidence and recommendation; decision still open.** The legacy
+  name `audio_overlap_seconds=30` means 30 seconds of context on *each* side of
+  an interior logical interval. Adjacent physical inputs therefore share 60
+  seconds, not 30. The model prompt tells each request to return only its logical
+  interval and final assembly concatenates results; there is no deterministic
+  text deduplication. Average extra submitted duration is consequently about
+  100% for one-minute intervals, 20% for five-minute intervals, and 3.3% for
+  30-minute intervals. Focused legacy window/checkpoint/repair tests prove this
+  shape but provide no live quality comparison. The smallest evidence-backed
+  recommendation is to preserve the parent exactly: fixed 30 seconds per side
+  as a private constant, no public overlap parameter, exact actual/logical
+  windows in resumable identity, and no text-similarity layer. This recommendation
+  is not authority to implement: the maintainer must explicitly accept the
+  one-minute cost or select zero overlap. Do not invent a third duration without
+  real comparative evidence.
 - **#152 repair boundary.** Repair is a small side path, not the production
   recovery mechanism. It may parse failed-slice text for concrete time ranges
   and resubmit those ranges without depending on retained mode/interval state.

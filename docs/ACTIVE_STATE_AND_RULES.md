@@ -3112,6 +3112,24 @@ whether interval chunks retain the previously recommended fixed 30 seconds of
 boundary context, use another fixed overlap, or use no overlap. Do not implement
 chunk extraction/checkpoints until that identity-affecting detail is answered.
 
+#302 makes that open choice precise. In the legacy parent,
+`audio_overlap_seconds=30` pads every interior logical interval by 30 seconds on
+both its left and right. Two adjacent physical inputs therefore share 60 seconds,
+not 30. The prompt asks the model to emit only the logical interval and final
+assembly directly concatenates returned text; there is no deterministic trimming
+or similarity deduplication. For a long source, the approximate extra submitted
+duration is 100% at one-minute intervals, 20% at five-minute intervals, and 3.3%
+at 30-minute intervals. The focused legacy Google-window and repair set passes
+38 tests, proving window and saved-range behavior but not transcription quality.
+
+The current recommendation is the smallest parent-proven option: keep a private
+fixed 30 seconds on each side, record exact actual and logical windows in temporary
+resume identity, let repair derive the same context from a failed logical range,
+and add neither a public overlap setting nor programmatic transcript deduplication.
+This is still a recommendation, not implementation authority. The maintainer must
+explicitly accept the one-minute doubling cost or choose zero overlap; there is no
+evidence for inventing another fixed duration.
+
 #208 found that #152 also needs an explicit source-lifetime and overlap choice,
 and that the current A2a duration check is not a complete selected-model
 preflight near its upper edge. Google's current audio documentation states both

@@ -5617,3 +5617,19 @@ Atomic task — Iteration #301: replay the frozen semantic 301-second Google vid
 **清理事实。** 轻量执行者再次核对精确 TEMP 父目录只有该 fixture，大小与 hash 不变；非递归 `Remove-Item -LiteralPath` 被执行安全策略拒绝，于是按约定停止，没有用 Python、cmd、递归删除或其他方式绕过。父目录和 2.53 MB MP4 仍是已知可丢弃 residue，不能报告为已清理。
 
 **验证。** 本人重新取得完整终态：全套离线测试 **1,559 passed in 65.57s**，`compileall -q src tests tools` 与 `git diff --check` 均为 exit 0。此前有一次全量测试进程跑完但输出 session 未被保留，因此没有把那次算作证据；另一次定向命令先写错不存在的测试文件名并零测试退出，随后用真实文件名重跑为 **118 passed**。这两项都是证据通道/命令错误，不是产品失败，也没有被隐去。
+
+## #302 — 2026-08-26：活动视频无新缺陷，长音频 overlap 被收紧为一个明确决策
+
+**本轮英文原子任务。**
+
+```text
+Atomic task — Iteration #302: identify and close one proven active-library defect or unnecessary complexity from the current authoritative queue without replaying the inconclusive Google gate. Context: #301 left the real long-video success gate open but produced no typed condition that justifies retry or runtime changes. Success means reconciling the current authority, diary, start guide, Git state, and open defects; comparing at least two bounded next slices; selecting one with concrete code/test evidence; implementing only that slice; verifying it proportionately; updating the Chinese diary and current-state records; then committing and pushing. This matters because maturity advances through evidence-backed product corrections, not repeated provider calls or speculative diagnostics.
+```
+
+**起始路线与中途改向。** 基线为 `HEAD == origin/master == 628350575ad0a0cf375927d3b2df3584a1bd68c3`，tracked tree 干净，两份受保护未跟踪文件仍在。路线 A 是再跑普通安装后的组合视频门禁；它过去多次卡在下载或证据通道。路线 B 是先审计已建视频组合/发布和媒体生命周期；选 B。两个只读轻量执行者分别审查 composition/publication 与 snapshot/frame/audio/cancellation，前者本人复跑的 23 项定向测试通过，后者覆盖的代码与既有回归也没有给出新失败。本人逐段复核公开 facade、outcome、原子发布、视频/MP3 snapshot 和长短音频路由，同样没有可诚实写成 failing test 的产品缺陷。因此没有为了“必须改代码”而制造防御；本轮转向当前真正阻止 #152 A2b 的 overlap 产品歧义。
+
+**legacy 的实际含义。** `build_google_audio_windows()` 把 `audio_overlap_seconds=30` 当作每个逻辑区间左、右各 30 秒 context。相邻内部 physical windows 因而重叠 **60 秒**，不是总共 30 秒。模型 prompt 要求只输出 logical range，最终程序直接拼接各段文本，没有程序化裁剪或相似度去重。checkpoint 同时保存 actual/logical 四个边界，repair 也按保存的 actual range 重新物化输入，而不是用当前配置重切。本人在 `PYTHONPATH=legacy_app` 下运行 Google audio routing + audio repair 集为 **38 passed in 6.65s**，并用 1/5/30 分钟窗口探针核对范围；这些只证明代码行为，不证明 30 秒的真实识别质量。
+
+**成本、建议与待决问题。** 长音频内部片段最多比逻辑区间多 60 秒，因此长期平均额外提交量约为：1 分钟 interval **100%**、5 分钟 **20%**、30 分钟 **3.3%**。首版最小、最有父项目证据的建议是保留每侧固定 30 秒，把它作为 private constant；resume identity 保存 exact actual/logical windows；repair 从失败 logical range 派生同样 context；不增加公开 overlap 参数，不做文本相似度去重。这仍不是实现授权：维护者必须明确接受 1 分钟 interval 可能翻倍，或选择 **零 overlap**。没有 A/B 证据支持凭空发明第三个秒数。
+
+**过度设计复查。** 本轮拒绝了四种扩张：没有为两次无状态 Google 错误新增通用 telemetry；没有继续机械重放 API；没有给 overlap 做自适应比例或公开配置；没有因只读审计全绿而制造无失败用例的 runtime 修改。调查只把原来含糊的“30 秒 overlap”拆成可决定的“每侧 30 秒、相邻共享 60 秒”及其量化成本，直接服务 #152 下一步。
