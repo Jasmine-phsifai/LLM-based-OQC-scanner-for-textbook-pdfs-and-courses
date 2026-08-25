@@ -31,19 +31,21 @@ def test_plain_import_does_not_load_optional_image_or_provider_packages():
     assert completed.returncode == 0, completed.stderr
 
 
-def test_plain_import_defers_public_implementation_modules_until_accessed():
+def test_plain_import_defers_recognition_execution_modules_until_accessed():
     source_root = Path(__file__).resolve().parents[1] / "src"
     probe = (
         "import sys; "
         "sys.path.insert(0, sys.argv[1]); "
         "import ocrllm; "
-        "assert 'ocrllm.config' not in sys.modules; "
-        "assert 'ocrllm.errors' not in sys.modules; "
+        "assert 'ocrllm.recognize' not in sys.modules; "
+        "assert 'ocrllm.recognize_batch' not in sys.modules; "
         "assert 'Config' in dir(ocrllm); "
         "Config=ocrllm.Config; "
         "assert Config.__module__ == 'ocrllm.config'; "
         "assert 'ocrllm.config' in sys.modules; "
-        "assert ocrllm.Config is Config"
+        "assert ocrllm.Config is Config; "
+        "assert 'ocrllm.recognize' not in sys.modules; "
+        "assert 'ocrllm.recognize_batch' not in sys.modules"
     )
 
     completed = subprocess.run(
@@ -178,6 +180,41 @@ def test_public_video_callables_survive_explicit_submodule_import(submodule_name
             str(source_root),
             submodule_name,
         ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_public_video_callables_support_standard_runtime_type_hints():
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = (
+        "import importlib, sys, typing; "
+        "sys.path.insert(0, sys.argv[1]); "
+        "importlib.import_module('ocrllm.recognize_video'); "
+        "from ocrllm import recognize_video, recognize_video_frames; "
+        "video_hints=typing.get_type_hints(recognize_video); "
+        "frame_hints=typing.get_type_hints(recognize_video_frames); "
+        "from ocrllm import Config, RetainedVideoFrame, VideoRecognitionOutcome; "
+        "from ocrllm.batch_item_outcome import BatchItemOutcome; "
+        "assert video_hints['image_config'] is Config; "
+        "assert video_hints['audio_config'] is Config; "
+        "assert video_hints['return'] is VideoRecognitionOutcome; "
+        "assert frame_hints['config'] == Config | None; "
+        "assert frame_hints['frames'] == tuple[RetainedVideoFrame, ...]; "
+        "assert frame_hints['return'] == list[BatchItemOutcome]; "
+        "loaded={name.split('.')[0] for name in sys.modules}; "
+        "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
+        "assert not loaded & forbidden, loaded & forbidden; "
+        "assert 'ocrllm.recognize' not in sys.modules; "
+        "assert 'ocrllm.recognize_batch' not in sys.modules"
+    )
+
+    completed = subprocess.run(
+        [sys.executable, "-I", "-c", probe, str(source_root)],
         check=False,
         capture_output=True,
         text=True,

@@ -4367,3 +4367,17 @@ Atomic task — Iteration #218: harden the public Python import boundary for the
 **两条路线、修复与结构。** 路线 A 使用可调用 module、自定义 `ModuleType`、包级 `__getattribute__` 或 import hook；路线 B 只让两个同名视频 facade 文件在导入阶段保持极薄，并由根包初始化时绑定它们的函数。选择 B。直接提前加载旧实现的基线约为 44 ms、69 个 `ocrllm` 模块，虽然没有重依赖，仍会破坏明确的完全懒实现边界；因此把两个函数的运行依赖移动到调用阶段，类型依赖保留在 `TYPE_CHECKING`，函数仍留在诚实的同名文件中。根包只提前加载这两个定义，删除已经不可达的视频专用 `__getattr__` 分支。第一次相邻回归暴露一条测试 monkeypatch 旧模块别名；测试改为 patch 真正负责音频提取的 `video.extract_video_audio` 模块，原有同一视频 snapshot 证明没有减弱。
 
 **验证与过度设计复查。** 修复后的新鲜进程基础导入约 **7.2 ms**、只加载三个 `ocrllm` 模块；Config/error 实现和 `cv2`、NumPy、imageio-ffmpeg、miniaudio、Google/OpenAI SDK、HTTPX、legacy 均未加载。公开类型/import、combined video、frame grouping 和 smoke 相邻集合为 **61 passed in 6.34s**；完整离线套件为 **1,490 passed in 59.41s**；`compileall -q src tests`、diff 与 frozen boundary 检查通过。没有网络、credential、provider call、视频媒体语义、#127/#152、legacy/social 或 frozen `contracts/worker` 变化。最明显的过度设计是为两个确定名称建立通用 import interception；局部薄 facade 既修复真实 Python 行为，又比魔法代理更容易让下一位维护者从冷启动读懂。
+
+## #219 — 2026-08-25：视频 facade 的标准运行时类型反射不能因轻量导入失效
+
+**本轮英文自我任务。**
+
+```text
+Atomic task — Iteration #219: verify that #218’s thin, import-order-safe video facades still behave as mature typed Python callables under runtime introspection, without undoing lightweight import or widening the fix to every facade. Success means reconciling authority and diary; checking `inspect.signature`, `typing.get_type_hints`, `__module__`, and callable identity for both video functions in fresh source and explicit-submodule import orders; independently auditing whether `TYPE_CHECKING`-only names created a reproducible introspection regression; adding one focused red test and the smallest readable correction only if proven; keeping Config/error implementations and all optional media/provider dependencies deferred during plain import; preserving runtime video behavior and frozen boundaries; running proportional import/type/video tests; updating Chinese records; and committing/pushing one coherent iteration. This matters because preserving callability while breaking standard Python introspection would merely exchange one library defect for another.
+```
+
+**红灯与重新权衡。** `inspect.signature()`、`__module__`、callable identity 和两种导入顺序都正常，但主代理与轻量独立审计均证明 `typing.get_type_hints()` 在两个函数上失败：combined facade 首先缺少运行时 `Path`，frame facade 首先缺少 `RetainedVideoFrame`。新增精确类型回归后，旧 #218 代码为 **1 failed**。原因不是 Pyright 或 `.pyi`，而是 `from __future__ import annotations` 保存的字符串需要在函数 module globals 中解析，而 #218 把全部公开签名类型都移进了 `TYPE_CHECKING`。
+
+**两条路线与选择。** 路线 A 把标准反射写成“不支持”，或建立 lazy type proxy、自定义注解解析器；路线 B 只把公开签名真正需要的纯 Python 类型恢复为 module-scope import，识别执行依赖仍留在调用阶段。独立审计推荐 A 以保持最窄导入面；主代理在测量后选择 B。B 的预估基线约 27.6 ms/25 个包内模块，最终实测更低；没有可选依赖。把一个已能复现、#218 之前正常的标准库行为永久列为不支持，不符合成熟 Python library，类型代理则明显过度设计。`Path`、`Config`、`VideoRecognitionOutcome`、`RetainedVideoFrame`、`BatchItemOutcome` 现在都是普通全局类型；运行逻辑仍按函数内 import 延迟。原“Config/error 模块完全不加载”的测试改成更有产品意义的边界：`recognize`/`recognize_batch` 执行模块在基础 import 和访问 Config 后都不加载。
+
+**验证与过度设计复查。** 新鲜进程中两份 `get_type_hints()` 返回全部精确类型；基础导入约 **20.9 ms**、25 个 `ocrllm` 模块，`recognize`/`recognize_batch` 为未加载，`cv2`、NumPy、imageio-ffmpeg、miniaudio、Google/OpenAI SDK、HTTPX、legacy 均未加载。公开类型/import/video/smoke 相邻集合为 **62 passed in 6.40s**；完整离线套件为 **1,491 passed in 61.75s**；`compileall -q src tests`、diff 和 frozen boundary 通过。没有网络、credential、provider call、媒体行为、#127/#152、legacy/social 或 frozen `contracts/worker` 变化。本轮最可能被认为过度设计的是为了反射加一层 lazy typing 系统；最终只用了普通 import，并明确接受约 14 ms 的纯 Python 初始化增加，换取可调用、静态类型和标准运行时反射三者同时成立。

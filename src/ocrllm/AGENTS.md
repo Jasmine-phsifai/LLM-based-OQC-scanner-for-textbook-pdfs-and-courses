@@ -224,7 +224,9 @@ video config, provider superclass, routing registry, or legacy format adapter
 without a new concrete consumer and maintainer decision.
 #218 binds only the two thin video facade functions at package initialization.
 Keep their runtime imports inside the same-named function modules so plain
-`import ocrllm` continues to defer Config/errors, media backends, and providers.
+`import ocrllm` continues to defer recognition execution, media backends, and
+providers. #219 requires their pure-Python public annotation types at module
+scope so ordinary `typing.get_type_hints()` remains exact.
 Do not replace this bounded fix with a callable module, package proxy, or import
 hook, and do not use it to change the frozen worker collision.
 Keep the result a lightweight Python

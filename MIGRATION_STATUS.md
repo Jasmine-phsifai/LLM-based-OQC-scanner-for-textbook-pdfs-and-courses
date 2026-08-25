@@ -675,9 +675,13 @@ The following directions remain traceable but are not current work:
   #218 fixes the active video facade's explicit-submodule import order. The two
   same-named function modules are now tiny initialization-safe definitions and
   the package binds their functions once, so a submodule-first import cannot
-  replace the root callable with a module. Config/error implementations, heavy
-  video/audio backends, provider SDKs, and legacy remain deferred; the frozen
-  worker collision is unchanged.
+  replace the root callable with a module. Heavy video/audio backends, provider
+  SDKs, recognition execution, and legacy remain deferred; the frozen worker
+  collision is unchanged.
+  #219 restores standard runtime type evaluation after #218's `TYPE_CHECKING`-
+  only names made `typing.get_type_hints()` fail. Only the pure-Python public
+  signature types load with the thin video facades; recognition execution and
+  every optional dependency remain lazy.
   #150 then proves the next consumer gap with a real 301.056-second local video:
   separate providers and partial outcomes behave honestly, but the current
   five-minute audio adapter rejects before dispatch. #151 completes the

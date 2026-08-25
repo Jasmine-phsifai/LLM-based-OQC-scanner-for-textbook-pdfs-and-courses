@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pathlib import Path
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from .config import Config
-    from .video_recognition_outcome import VideoRecognitionOutcome
+from .config import Config
+from .video_recognition_outcome import VideoRecognitionOutcome
 
 
 def recognize_video(
@@ -19,8 +16,6 @@ def recognize_video(
     audio_config: Config,
 ) -> VideoRecognitionOutcome:
     """Settle independent frame and audio recognition for one local MP4."""
-    from pathlib import Path
-
     from .errors import Cancelled, OCRLLMError
     from .providers.validate_vision_provider_config import (
         validate_vision_provider_config,

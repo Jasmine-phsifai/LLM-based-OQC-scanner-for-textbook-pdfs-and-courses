@@ -2519,14 +2519,32 @@ a non-callable module. The two same-named facade modules now contain only typed
 function definitions at import time, defer their runtime dependencies until
 the function is called, and are bound once during package initialization.
 Explicit submodule-first and root-first orders now return the identical two
-public functions. Plain import still defers Config/error implementations and
-loads none of OpenCV, NumPy, imageio-ffmpeg, miniaudio, Google/OpenAI SDKs,
-HTTPX, or legacy; a measured fresh process loaded only three `ocrllm` modules.
+public functions. At #218, plain import still deferred Config/error
+implementations and loaded none of OpenCV, NumPy, imageio-ffmpeg, miniaudio,
+Google/OpenAI SDKs,
+HTTPX, or legacy; #219 below narrows that first claim while preserving every
+optional-dependency and recognition-execution boundary.
 The focused public type/import/video surface passes 61 and the complete offline
 suite passes 1,490. This is limited to the active video facade: do not infer an
 unfreeze or fix for the separately documented worker collision, and do not add
 a callable-module class, custom package proxy, import hook, or eager runtime
 graph.
+
+#219 corrects one runtime-typing regression introduced by #218 instead of
+declaring standard introspection unsupported. Moving all signature types behind
+`TYPE_CHECKING` kept the facade extremely thin, but ordinary
+`typing.get_type_hints()` raised `NameError` for `Path` and
+`RetainedVideoFrame`; before #218 those exact public functions resolved their
+annotations. The two facade modules now import only the pure-Python public
+types present in their signatures while recognition execution imports remain
+inside the functions. Root-first and explicit-submodule-first calls both expose
+the exact `Path`, `Config`, `VideoRecognitionOutcome`, `RetainedVideoFrame`, and
+`BatchItemOutcome` types. A fresh process measured about 20.9 ms and 25 package
+modules; `ocrllm.recognize`, `ocrllm.recognize_batch`, every optional media
+backend, provider SDK, HTTPX, and legacy remained unloaded. The focused
+type/import/video surface passes 62 and the complete offline suite passes 1,491.
+Do not replace these ordinary public type imports with lazy type proxies or
+weaken runtime annotations to `Any` merely to minimize internal module count.
 
 The smallest maintainable state is audio-specific and versioned. Reuse the
 existing strong source-fingerprint shape and generic atomic Markdown writer,

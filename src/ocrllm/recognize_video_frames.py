@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .batch_item_outcome import BatchItemOutcome
-    from .config import Config
-    from .retained_video_frame import RetainedVideoFrame
+from .batch_item_outcome import BatchItemOutcome
+from .config import Config
+from .retained_video_frame import RetainedVideoFrame
 
 
 _VIDEO_FRAME_GROUP_LIMIT = 8
@@ -65,8 +62,6 @@ def _attach_video_frame_group_identity(
 ) -> BatchItemOutcome:
     from dataclasses import replace
 
-    from .batch_item_outcome import BatchItemOutcome
-
     frame_indices = tuple(frame.frame_index for frame in frames)
     frame_timestamps = tuple(frame.timestamp_seconds for frame in frames)
     if outcome.result is not None:
@@ -100,7 +95,6 @@ def _reject_video_persistence(config: Config) -> None:
 
 def _validate_retained_frame_tuple(frames: object) -> None:
     from .errors import InvalidSource
-    from .retained_video_frame import RetainedVideoFrame
 
     if type(frames) is not tuple or not frames:
         raise InvalidSource(
