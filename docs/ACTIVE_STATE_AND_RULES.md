@@ -4640,6 +4640,27 @@ retaining the image result, JPEG assets, exact extraction detail, partial
 composition, and call accounting. Video neighbors pass 105 tests and the full
 offline suite passes 1,542.
 
+## Iteration 278: token aggregation rejects impossible negative counts
+
+The standalone short- and long-audio success results intentionally retain
+`provider_call_count=1`: neither route has resume or multiple generation calls,
+and video composition already consumes that field as the audio branch's exact
+current count. Adding a duplicate `current_run_provider_call_count` would not
+improve evidence, while replacing the existing field would break maintained
+runners and callers. Keep the three existing scopes distinct: successful
+single-result count, combined current-run count, and failure-attempt count.
+
+The same audit found a real composition defect instead. A caller-created public
+audio `RecognitionResult` could carry a negative input/output token count in its
+JSON metadata; `aggregate_current_model_token_usage()` accepted the integer and
+the composed video then published impossible negative model usage. The
+aggregator now ignores a usage row if either supplied token count is negative,
+matching its existing treatment of malformed optional usage rather than failing
+otherwise usable recognition. `None` remains unknown, zero remains valid, and
+nonnegative counts still sum independently by model. The public regression
+failed only on the negative usage before the change. Audio/image/PDF/video
+neighbors pass 140 tests and the full offline suite passes 1,543.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

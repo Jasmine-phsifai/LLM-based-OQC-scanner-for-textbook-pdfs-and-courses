@@ -63,6 +63,10 @@ def _merge_one(
         return
     if type(output_tokens) is not int and output_tokens is not None:
         return
+    if (type(input_tokens) is int and input_tokens < 0) or (
+        type(output_tokens) is int and output_tokens < 0
+    ):
+        return
     previous = totals.get(model)
     if previous is None:
         totals[model] = {

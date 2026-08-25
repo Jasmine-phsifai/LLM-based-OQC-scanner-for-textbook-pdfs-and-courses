@@ -258,6 +258,50 @@ def test_compose_video_result_describes_silent_video_without_fake_transcript(
     )
 
 
+def test_compose_video_result_does_not_publish_negative_audio_token_usage(
+    tmp_path: Path,
+) -> None:
+    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    audio = tmp_path / "video" / "audio.mp3"
+    audio.write_bytes(b"mp3-placeholder")
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(frame,),
+        frame_outcomes=(
+            BatchItemOutcome(
+                index=0,
+                result=_frame_result(
+                    markdown="Board content.",
+                    indices=(0,),
+                    timestamps=(0.0,),
+                ),
+            ),
+        ),
+        audio_artifact=audio,
+        audio_result=RecognitionResult(
+            markdown="Audio transcript.",
+            source_type="audio",
+            metadata={
+                "provider_call_count": 1,
+                "current_model_token_usage": (
+                    {
+                        "model": "audio-model",
+                        "input_tokens": -1,
+                        "output_tokens": 2,
+                    },
+                ),
+            },
+        ),
+    )
+
+    result = compose_video_result(outcome)
+
+    assert result.metadata["current_run_provider_call_count"] == 2
+    assert result.metadata["current_model_token_usage"] == (
+        {"model": "vision-model", "input_tokens": 10, "output_tokens": 2},
+    )
+
+
 def test_compose_video_result_keeps_whole_frame_branch_failure(
     tmp_path: Path,
 ) -> None:

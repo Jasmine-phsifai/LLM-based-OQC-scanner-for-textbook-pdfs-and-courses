@@ -477,6 +477,12 @@ audio errors while retaining the same objects, typed details, retryability,
 call evidence, sibling successes, and artifacts. Do not turn this into a broad
 video exception wrapper: errors propagated instead of settled, and #127's
 cancellation return-versus-raise choice, are unchanged.
+#278 keeps audio call accounting simple: standalone short/long success uses its
+existing exact `provider_call_count`, combined video reports
+`current_run_provider_call_count`, and failures use `provider_calls_attempted`.
+Do not duplicate the current-run field on a one-call audio result without a new
+consumer. Optional token aggregation must ignore any row containing a negative
+count; keep `None` as unknown, zero as valid, and sum valid counts per model.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.

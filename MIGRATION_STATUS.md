@@ -990,6 +990,14 @@ The following directions remain traceable but are not current work:
   flattening error facts, changing calls/assets, or selecting #127 cancellation
   semantics. The causal regression failed before the change; 105 video
   neighbors and all 1,542 offline tests pass afterward.
+  #278 rejects impossible negative token counts at the existing shared
+  aggregation boundary. A public caller-created audio result previously made a
+  composed video publish negative per-model usage; the invalid optional row is
+  now omitted while `None`, zero, and nonnegative per-model accumulation retain
+  their existing meanings. The audit separately confirmed that standalone
+  audio's one-call `provider_call_count` and the composer's compatibility read
+  are intentional, so no duplicate current-run field was added. The causal
+  regression failed before the change; 140 neighbors and all 1,543 tests pass.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,
