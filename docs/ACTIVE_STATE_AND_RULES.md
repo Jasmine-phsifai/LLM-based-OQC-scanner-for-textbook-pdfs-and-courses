@@ -4747,6 +4747,34 @@ top-level batch tuple contract is unrelated. The public causal regression failed
 before the change; Google image, short/long audio, live-runner, and video
 neighbors pass 144 tests, and the full offline suite passes 1,546.
 
+## Iteration 283: the clean gate was blocked by child execution policy
+
+One later attempt launched an encoded child PowerShell from exact clean commit
+`8a97dce`, with a 3,600-second outer deadline and the maintained 1,200-second
+stage/profile bounds. The child was created, but its default Windows execution
+policy rejected `tools/run_stage_m_offline_gate.ps1` before the script entered:
+stdout was empty, the 905-byte CLIXML stderr contained only
+`PSSecurityException` / `UnauthorizedAccess`, and no gate stage, download,
+pytest, archive, wheel, installed-video, credential, or provider call began.
+The one-use wrapper also failed to retain a numeric child exit or elapsed time,
+so this is invalid operator evidence rather than a package or gate failure.
+There was no replay. This was also a repeated operator mistake rather than a
+new environment discovery: the working diary already recorded that newly
+spawned PowerShell gate children on this machine require process-only
+`-ExecutionPolicy Bypass`. The launch checklist fixed #279's path quoting but
+failed to carry that known prerequisite forward.
+
+The original logs were inspected before cleanup; no related process or
+`ocrllm-stage-m-offline-gate-*` root remained. A future single attempt may set
+`-ExecutionPolicy Bypass` only on its disposable child PowerShell command and
+must persist numeric exit and timing before cleanup. Do not change machine or
+user execution policy, the maintained script, dependencies, pins, index,
+mirror, cache, retries, or timeouts from this event. The ordinary installed
+combined-video proof remains open. The maintainer again confirms that later
+stress robustness work is allowed, but only after the corresponding basic
+installed/live flow is proven and only as separate question-driven, capped,
+deadline-controlled, cleanup-verified iterations rather than long-lived load.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

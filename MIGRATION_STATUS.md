@@ -1029,6 +1029,18 @@ The following directions remain traceable but are not current work:
   reads; missing/unreadable candidates retain the prior safe failure. No generic
   iterable layer or provider-policy change was added. The causal regression
   failed before the fix; 144 Google neighbors and all 1,546 offline tests pass.
+  #283 attempted one later terminal run of the maintained clean gate from exact
+  commit `8a97dce`, but the encoded child PowerShell's default execution policy
+  rejected the `.ps1` before the first stage. Empty stdout and a 905-byte
+  policy-error stderr prove that no archive, download, pytest, wheel,
+  installed-video, credential, or provider work began. Numeric exit and elapsed
+  were not retained, so this remains invalid operator evidence and was not
+  replayed; no package or gate defect is inferred. This repeated an already
+  recorded local launch prerequisite: a future disposable child must use
+  process-only `-ExecutionPolicy Bypass` while retaining exit/timing,
+  without changing machine policy or delivery settings. The ordinary combined
+  install proof remains open; later capped stress robustness tests still follow
+  valid basic installed/live proof.
   #229 removes the sole exact duplicate import found by a bounded reduction
   audit: `VideoRecognitionOutcome` remains module-bound for runtime type hints
   and is no longer rebound inside `recognize_video()`. No public contract,

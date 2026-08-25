@@ -510,6 +510,18 @@ tuple so a valid one-shot SDK iterable cannot become a false `missing_text`
 failure. Keep missing/unreadable candidates on the existing safe failure path;
 do not generalize this into an iterable framework or change the independent
 exact top-level batch tuple contract.
+#283 did not enter the maintained clean gate. The encoded child PowerShell was
+created, but its default execution policy rejected the `.ps1` before any stage,
+download, pytest, wheel, installed-video, credential, or provider action. The
+wrapper retained empty stdout and the exact policy error but not numeric exit
+or elapsed time, so this is invalid operator evidence and was not replayed.
+This repeated a prerequisite already present in the working diary: new gate
+children on this machine require process-only execution-policy bypass. A
+future disposable child must carry that prerequisite and
+persist exit/timing; do not modify machine/user policy, the gate, dependencies,
+pins, index, mirror, cache, retry, or timeout settings. The ordinary installed
+combined-video proof stays open. Later stress robustness tests remain separate,
+capped gates after valid basic installed/live proof.
 Keep the result a lightweight Python
 package; do not copy the legacy five-phase controller, GUI, social downloader,
 second scene detector, or premature provider generalization.
