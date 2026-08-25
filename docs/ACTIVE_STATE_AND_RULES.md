@@ -1486,8 +1486,10 @@ time was 970 seconds; the wrapper did not retain an exact elapsed value.
 
 This is terminal external delivery evidence, not a source-test, package,
 OpenCV-runtime, or combined-video failure. No profile installation or provider
-call occurred. The exact gate process exited, its GUID temporary root and the
-wrapper's two temporary logs were removed, and the tracked tree stayed clean.
+call occurred. The exact gate process exited and its GUID temporary root was
+removed. The operator removed the actual-run logs; a post-commit primary check
+then found and removed two small logs from the earlier pre-gate launch error.
+No gate or wrapper residue remains, and the tracked tree stayed clean.
 The local gate regressions still pass 5 tests and compileall succeeds. Do not
 increase `UV_HTTP_TIMEOUT`, inject a cache or mirror, repin OpenCV, add retries,
 or create a second dependency-preparation path from this single network event.
