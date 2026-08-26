@@ -565,7 +565,7 @@ def test_pre_set_cancellation_stops_before_snapshot(monkeypatch) -> None:
     assert snapshot_started is False
 
 
-def test_long_mp3_rejects_persistence_before_snapshot(monkeypatch, tmp_path) -> None:
+def test_long_mp3_rejects_overwrite_before_snapshot(monkeypatch, tmp_path) -> None:
     processor = importlib.import_module("ocrllm.processors.recognize_long_mp3")
     snapshot_started = False
 
@@ -577,6 +577,9 @@ def test_long_mp3_rejects_persistence_before_snapshot(monkeypatch, tmp_path) -> 
     monkeypatch.setattr(processor, "snapshot_long_mp3", fail_snapshot)
 
     with pytest.raises(ConfigError):
-        recognize_long_mp3(SOURCE, config=_config(output_dir=tmp_path))
+        recognize_long_mp3(
+            SOURCE,
+            config=_config(output_dir=tmp_path, overwrite=True),
+        )
 
     assert snapshot_started is False

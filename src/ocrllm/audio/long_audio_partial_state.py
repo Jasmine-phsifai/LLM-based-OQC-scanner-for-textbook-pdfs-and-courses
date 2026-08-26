@@ -9,7 +9,7 @@ from .fingerprint_long_audio_request import LONG_AUDIO_REQUEST_IDENTITY_VERSION
 from .long_audio_settled_slot import LongAudioSettledSlot
 
 
-LONG_AUDIO_PARTIAL_STATE_VERSION = "ocrllm.long-audio-partial.v1"
+LONG_AUDIO_PARTIAL_STATE_VERSION = "ocrllm.long-audio-partial.v2"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
 

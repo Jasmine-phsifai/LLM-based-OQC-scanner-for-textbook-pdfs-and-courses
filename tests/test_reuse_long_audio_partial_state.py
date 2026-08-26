@@ -37,11 +37,14 @@ def _state(*, with_slot: bool = True) -> LongAudioPartialState:
                 ).hexdigest(),
                 provider="google",
                 model="gemini-2.5-flash",
+                transport="google_files",
                 provider_calls_attempted=2,
                 input_tokens=None,
                 output_tokens=41,
                 status="partial",
                 warnings=("The provider client could not be closed.",),
+                provider_file_cleanup_succeeded=True,
+                provider_client_cleanup_succeeded=False,
             ),
         )
     return LongAudioPartialState(

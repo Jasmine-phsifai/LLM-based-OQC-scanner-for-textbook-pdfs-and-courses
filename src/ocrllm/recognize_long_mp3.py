@@ -49,12 +49,16 @@ def _recognize_long_mp3(
             "recognize_long_mp3() requires one MP3 source.",
             code="SOURCE_INVALID",
         ) from None
-    validate_google_mp3_options(source_paths, config=cfg)
+    validate_google_mp3_options(
+        source_paths,
+        config=cfg,
+        allow_persistence=True,
+    )
     with reuse_or_create_provider_request_start_gate(
         cfg.execution.provider_request_start_interval_seconds
     ):
-        processor_output = recognize_validated_long_mp3(
+        processor_output, output_path = recognize_validated_long_mp3(
             source_paths[0],
             config=cfg,
         )
-    return build_recognition_result(processor_output, output_path=None)
+    return build_recognition_result(processor_output, output_path=output_path)

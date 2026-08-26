@@ -33,6 +33,7 @@ def _interval_fingerprint(**changes: object) -> str:
         "mode": "interval",
         "provider": "google-genai",
         "model": "gemini-2.5-flash",
+        "transport": "google_files",
         "window": _window(),
     }
     arguments.update(changes)
@@ -43,7 +44,7 @@ def test_equivalent_interval_requests_have_one_canonical_identity() -> None:
     first = _interval_fingerprint()
     second = _interval_fingerprint()
 
-    assert LONG_AUDIO_REQUEST_IDENTITY_VERSION == "ocrllm.long-audio-request.v1"
+    assert LONG_AUDIO_REQUEST_IDENTITY_VERSION == "ocrllm.long-audio-request.v2"
     assert first == second
     assert len(first) == 64
     assert set(first) <= set("0123456789abcdef")
@@ -55,6 +56,7 @@ def test_equivalent_interval_requests_have_one_canonical_identity() -> None:
         {"source_sha256": "2" * 64},
         {"provider": "another-provider"},
         {"model": "another-model"},
+        {"transport": "another-transport"},
         {"window": replace(_window(), index=2)},
         {"window": replace(_window(), logical_start_seconds=61.0)},
         {"window": replace(_window(), logical_end_seconds=119.0)},
@@ -72,6 +74,7 @@ def test_whole_file_identity_is_distinct_and_requires_no_window() -> None:
         mode="whole",
         provider="google-genai",
         model="gemini-2.5-flash",
+        transport="google_files",
     )
 
     assert whole != _interval_fingerprint()
@@ -91,6 +94,7 @@ def test_relevant_prompt_version_changes_each_mode_identity(monkeypatch) -> None
         "mode": "whole",
         "provider": "google-genai",
         "model": "gemini-2.5-flash",
+        "transport": "google_files",
     }
     whole = fingerprint_long_audio_request(**whole_arguments)
     monkeypatch.setattr(
@@ -108,6 +112,7 @@ def test_relevant_prompt_version_changes_each_mode_identity(monkeypatch) -> None
         ({"mode": "other"}, ValueError),
         ({"provider": " google-genai"}, ValueError),
         ({"model": ""}, ValueError),
+        ({"transport": ""}, ValueError),
         ({"window": object()}, TypeError),
     ],
 )
@@ -126,6 +131,7 @@ def test_whole_file_identity_rejects_an_interval_window() -> None:
             mode="whole",
             provider="google-genai",
             model="gemini-2.5-flash",
+            transport="google_files",
             window=_window(),
         )
 
@@ -137,4 +143,5 @@ def test_interval_identity_requires_a_window() -> None:
             mode="interval",
             provider="google-genai",
             model="gemini-2.5-flash",
+            transport="google_files",
         )

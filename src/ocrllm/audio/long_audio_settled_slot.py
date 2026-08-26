@@ -21,11 +21,14 @@ class LongAudioSettledSlot:
     markdown_sha256: str
     provider: str
     model: str
+    transport: str
     provider_calls_attempted: int
     input_tokens: int | None
     output_tokens: int | None
     status: Literal["complete", "partial"]
     warnings: tuple[str, ...]
+    provider_file_cleanup_succeeded: bool | None
+    provider_client_cleanup_succeeded: bool | None
 
     def __post_init__(self) -> None:
         if type(self.window_index) is not int or self.window_index < 0:
@@ -47,6 +50,7 @@ class LongAudioSettledSlot:
         for field_name, value in (
             ("provider", self.provider),
             ("model", self.model),
+            ("transport", self.transport),
         ):
             if type(value) is not str or not value or value != value.strip():
                 raise ValueError(f"long-audio slot {field_name} is invalid") from None
@@ -72,3 +76,9 @@ class LongAudioSettledSlot:
             raise ValueError(
                 "long-audio slot status and warnings are inconsistent"
             ) from None
+        for field_name, value in (
+            ("provider file cleanup", self.provider_file_cleanup_succeeded),
+            ("provider client cleanup", self.provider_client_cleanup_succeeded),
+        ):
+            if value is not None and type(value) is not bool:
+                raise ValueError(f"long-audio slot {field_name} is invalid") from None

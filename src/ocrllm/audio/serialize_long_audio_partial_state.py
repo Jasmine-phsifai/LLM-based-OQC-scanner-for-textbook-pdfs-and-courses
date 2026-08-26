@@ -23,11 +23,14 @@ def serialize_long_audio_partial_state(state: LongAudioPartialState) -> bytes:
                 "markdown_sha256": slot.markdown_sha256,
                 "provider": slot.provider,
                 "model": slot.model,
+                "transport": slot.transport,
                 "provider_calls_attempted": slot.provider_calls_attempted,
                 "input_tokens": slot.input_tokens,
                 "output_tokens": slot.output_tokens,
                 "status": slot.status,
                 "warnings": list(slot.warnings),
+                "provider_file_cleanup_succeeded": slot.provider_file_cleanup_succeeded,
+                "provider_client_cleanup_succeeded": slot.provider_client_cleanup_succeeded,
             }
             for slot in state.slots
         ],

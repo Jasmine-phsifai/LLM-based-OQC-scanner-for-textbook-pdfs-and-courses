@@ -12,7 +12,7 @@ from .transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT_VERSION
 from .validate_long_audio_interval_window import validate_long_audio_interval_window
 
 
-LONG_AUDIO_REQUEST_IDENTITY_VERSION = "ocrllm.long-audio-request.v1"
+LONG_AUDIO_REQUEST_IDENTITY_VERSION = "ocrllm.long-audio-request.v2"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
@@ -22,6 +22,7 @@ def fingerprint_long_audio_request(
     mode: str,
     provider: str,
     model: str,
+    transport: str,
     window: LongAudioIntervalWindow | None = None,
 ) -> str:
     """Hash every settled output-affecting fact for one audio request."""
@@ -29,6 +30,7 @@ def fingerprint_long_audio_request(
         raise ValueError("source_sha256 must be canonical lowercase SHA-256") from None
     _validate_identity_text(provider, field_name="provider")
     _validate_identity_text(model, field_name="model")
+    _validate_identity_text(transport, field_name="transport")
 
     if type(mode) is not str or mode not in ("whole", "interval"):
         raise ValueError("mode must be exactly 'whole' or 'interval'") from None
@@ -56,6 +58,7 @@ def fingerprint_long_audio_request(
         "mode": mode,
         "provider": provider,
         "model": model,
+        "transport": transport,
         "prompt_version": prompt_version,
         "window": window_document,
     }

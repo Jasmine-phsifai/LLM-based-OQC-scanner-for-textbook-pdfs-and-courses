@@ -36,11 +36,14 @@ def _slot() -> LongAudioSettledSlot:
         markdown_sha256=hashlib.sha256(markdown.encode("utf-8")).hexdigest(),
         provider="google",
         model="gemini-2.5-flash",
+        transport="google_files",
         provider_calls_attempted=1,
         input_tokens=None,
         output_tokens=None,
         status="partial",
         warnings=("The provider client could not be closed.",),
+        provider_file_cleanup_succeeded=True,
+        provider_client_cleanup_succeeded=False,
     )
 
 
@@ -90,9 +93,12 @@ def test_serialized_schema_contains_only_the_settled_state_fields() -> None:
         "output_tokens",
         "provider",
         "provider_calls_attempted",
+        "provider_client_cleanup_succeeded",
+        "provider_file_cleanup_succeeded",
         "request_fingerprint",
         "status",
         "warnings",
+        "transport",
         "window_index",
     }
     assert "path" not in _json_text(document)
@@ -127,9 +133,9 @@ def test_parser_rejects_schema_drift_and_invalid_slot_facts(mutate) -> None:
 def test_parser_rejects_duplicate_keys_and_nonfinite_numbers() -> None:
     valid = serialize_long_audio_partial_state(_state()).decode("utf-8").rstrip()
     duplicate = valid.replace(
-        '"state_version":"ocrllm.long-audio-partial.v1"',
-        '"state_version":"ocrllm.long-audio-partial.v1",'
-        '"state_version":"ocrllm.long-audio-partial.v1"',
+        '"state_version":"ocrllm.long-audio-partial.v2"',
+        '"state_version":"ocrllm.long-audio-partial.v2",'
+        '"state_version":"ocrllm.long-audio-partial.v2"',
         1,
     )
 

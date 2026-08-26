@@ -36,11 +36,14 @@ def _slot(
         markdown_sha256=hashlib.sha256(markdown.encode("utf-8")).hexdigest(),
         provider="google",
         model="gemini-2.5-flash",
+        transport="google_files",
         provider_calls_attempted=1,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         status=status,
         warnings=warnings,
+        provider_file_cleanup_succeeded=True,
+        provider_client_cleanup_succeeded=True,
     )
 
 
@@ -56,7 +59,7 @@ def _state(*, slots: tuple[LongAudioSettledSlot, ...] = ()) -> LongAudioPartialS
 def test_empty_state_binds_the_complete_ordered_request_plan() -> None:
     state = _state()
 
-    assert LONG_AUDIO_PARTIAL_STATE_VERSION == "ocrllm.long-audio-partial.v1"
+    assert LONG_AUDIO_PARTIAL_STATE_VERSION == "ocrllm.long-audio-partial.v2"
     assert state.request_fingerprints == REQUESTS
     assert state.slots == ()
 
@@ -116,6 +119,8 @@ def test_state_rejects_duplicate_plan_fingerprints() -> None:
         {"output_tokens": True},
         {"status": "complete", "warnings": ("cleanup failed",)},
         {"status": "partial", "warnings": ()},
+        {"provider_file_cleanup_succeeded": 1},
+        {"provider_client_cleanup_succeeded": "yes"},
     ],
 )
 def test_slot_rejects_inconsistent_paid_result_facts(
@@ -128,11 +133,14 @@ def test_slot_rejects_inconsistent_paid_result_facts(
         "markdown_sha256": hashlib.sha256(b"settled speech").hexdigest(),
         "provider": "google",
         "model": "gemini-2.5-flash",
+        "transport": "google_files",
         "provider_calls_attempted": 1,
         "input_tokens": 101,
         "output_tokens": 17,
         "status": "complete",
         "warnings": (),
+        "provider_file_cleanup_succeeded": True,
+        "provider_client_cleanup_succeeded": True,
     }
     arguments.update(changes)
 
