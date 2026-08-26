@@ -1849,6 +1849,18 @@ image/PDF/batch/local-OCR coverage passes 151 tests and the complete offline
 suite passes all 1,868 tests. High-level video has a separately reproduced
 post-settlement cancellation gap queued next.
 
+#416 closes that high-level video gap at the single settlement/finalization
+boundary shared by fresh and resumed jobs. Cancellation arriving during the
+last successful image or audio call now raises before composition, final
+Markdown publication, or journal removal, while preserving every durably
+settled branch and exact current call, model-token, and failed client-cleanup
+fact. Clearing the signal resumes with zero provider replay and no historical
+usage counted as current. Image cancellation remains first in the explicit
+signal order. No public signature, journal schema, provider behavior, retry,
+rollback, transaction, or cancellation framework changed. Focused video
+coverage passes 106 tests and the complete offline suite passes all 1,870
+tests. The previously reproduced queue is empty again.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

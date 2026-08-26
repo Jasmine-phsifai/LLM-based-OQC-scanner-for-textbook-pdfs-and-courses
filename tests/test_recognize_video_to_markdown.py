@@ -1757,3 +1757,213 @@ def test_one_pre_cancelled_branch_preserves_other_branch_settlement_for_resume(
     assert (output_root / "frames" / "frame-00000000.jpg").is_file()
     assert (output_root / "audio.mp3").is_file()
     assert _root_journals(output_root) == ()
+
+
+def test_cancellation_during_settled_frame_stops_finalization_and_resumes_zero_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "cancelled-during-frame.mp4"
+    source.write_bytes(b"stable-video-cancelled-during-frame")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    media_calls = _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=False,
+    )
+    cancellation = Event()
+
+    class CancellingImageProvider:
+        resume_identity = "video-cancelled-during-frame-v1"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            cancellation.set()
+            return VisionProviderResponse(
+                markdown="# Paid frame\n",
+                input_tokens=13,
+                output_tokens=3,
+                client_closed=True,
+            )
+
+    image_provider = CancellingImageProvider()
+    image_config = Config(
+        provider=image_provider,
+        vision_model=VisionModelSettings(name="test-image-model"),
+        cancellation=cancellation,
+    )
+    audio_config = _audio_config(tmp_path)
+
+    with pytest.raises(Cancelled) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+        )
+
+    assert type(captured.value) is Cancelled
+    assert captured.value.code == "CANCELLED"
+    assert str(captured.value) == "Recognition was cancelled."
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_count": 13,
+            "output_count": 3,
+            "unit": "tokens",
+        },
+    )
+    assert image_provider.calls == 1
+    assert media_calls == {"prepare": 1, "extract": 1}
+    assert source.read_bytes() == b"stable-video-cancelled-during-frame"
+    assert (output_root / "frames" / "frame-00000000.jpg").is_file()
+    assert not (output_root / "audio.mp3").exists()
+    assert not (output_root / "result.md").exists()
+    journals = _root_journals(output_root)
+    assert len(journals) == 1
+    saved = load_video_job_state(journals[0])
+    assert saved.frame_groups[0].image_state is not None
+    assert saved.frame_groups[0].image_state.markdown == "# Paid frame\n"
+    assert saved.audio.state == "absent"
+
+    cancellation.clear()
+    result = _public_facade()(
+        source,
+        output_dir=output_parent,
+        image_config=image_config,
+        audio_config=audio_config,
+        resume=True,
+    )
+
+    assert result.metadata["current_run_provider_call_count"] == 0
+    assert "current_model_token_usage" not in result.metadata
+    assert result.output_path == output_root / "result.md"
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert image_provider.calls == 1
+    assert media_calls == {"prepare": 1, "extract": 1}
+    assert source.read_bytes() == b"stable-video-cancelled-during-frame"
+    assert _root_journals(output_root) == ()
+
+
+def test_cancellation_during_settled_audio_stops_finalization_and_resumes_zero_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "cancelled-during-audio.mp4"
+    source.write_bytes(b"stable-video-cancelled-during-audio")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    media_calls = _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=True,
+    )
+    job_audio = __import__(
+        "ocrllm.recognize_video_job_audio",
+        fromlist=["recognize_video_job_audio"],
+    )
+    cancellation = Event()
+    audio_calls = 0
+
+    class UsageImageProvider:
+        resume_identity = "video-cancelled-during-audio-v1"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            return VisionProviderResponse(
+                markdown="# Paid frame\n",
+                input_tokens=13,
+                output_tokens=3,
+                client_closed=True,
+            )
+
+    def recognize_audio(_snapshot, *, prompt, config):
+        nonlocal audio_calls
+        audio_calls += 1
+        cancellation.set()
+        return GoogleGenAIAudioResponse(
+            markdown="# Paid audio\n",
+            input_tokens=17,
+            output_tokens=5,
+            client_closed=False,
+        )
+
+    monkeypatch.setattr(job_audio, "recognize_short_mp3", recognize_audio)
+    image_provider = UsageImageProvider()
+    image_config = Config(
+        provider=image_provider,
+        vision_model=VisionModelSettings(name="test-image-model"),
+    )
+    audio_config = _audio_config(tmp_path, cancellation=cancellation)
+
+    with pytest.raises(Cancelled) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+        )
+
+    assert type(captured.value) is Cancelled
+    assert captured.value.code == "CANCELLED"
+    assert str(captured.value) == "Recognition was cancelled."
+    assert captured.value.details["provider_calls_attempted"] == 2
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_count": 13,
+            "output_count": 3,
+            "unit": "tokens",
+        },
+        {
+            "model": "test-audio-model",
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        },
+    )
+    assert captured.value.details["provider_client_closed"] is False
+    assert image_provider.calls == audio_calls == 1
+    assert media_calls == {"prepare": 1, "extract": 1}
+    assert source.read_bytes() == b"stable-video-cancelled-during-audio"
+    assert (output_root / "frames" / "frame-00000000.jpg").is_file()
+    assert (output_root / "audio.mp3").is_file()
+    assert not (output_root / "result.md").exists()
+    journals = _root_journals(output_root)
+    assert len(journals) == 1
+    saved = load_video_job_state(journals[0])
+    assert saved.frame_groups[0].image_state is not None
+    assert saved.frame_groups[0].image_state.markdown == "# Paid frame\n"
+    assert saved.audio.short_state is not None
+    assert saved.audio.short_state.markdown == "# Paid audio\n"
+    assert saved.audio.short_state.metadata["provider_client_closed"] is False
+
+    cancellation.clear()
+    result = _public_facade()(
+        source,
+        output_dir=output_parent,
+        image_config=image_config,
+        audio_config=audio_config,
+        resume=True,
+    )
+
+    assert result.status == "partial"
+    assert result.metadata["current_run_provider_call_count"] == 0
+    assert "current_model_token_usage" not in result.metadata
+    assert result.metadata["audio_provider_client_closed"] is False
+    assert result.output_path == output_root / "result.md"
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert image_provider.calls == audio_calls == 1
+    assert media_calls == {"prepare": 1, "extract": 1}
+    assert source.read_bytes() == b"stable-video-cancelled-during-audio"
+    assert _root_journals(output_root) == ()

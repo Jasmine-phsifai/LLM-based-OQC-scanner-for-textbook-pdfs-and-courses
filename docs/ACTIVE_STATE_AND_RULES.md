@@ -7997,3 +7997,29 @@ coverage passes 151 tests; all cancellation-focused tests pass 22; independent
 review closes its message-honesty finding; and the complete offline suite passes
 all 1,868 tests with zero failures or skips. A separately reproduced high-level
 video post-settlement cancellation gap is next; keep it atomic.
+
+## Current working update: #416 stops video finalization after late cancellation
+
+The high-level resumable video facade now checks both independent cancellation
+signals after its frame and audio branches have durably settled, but before
+composition, `result.md` publication, or journal deletion. The image signal is
+read first; the audio signal is read only when the image side remains clear.
+An already-raised branch failure keeps its existing precedence because it
+already prevents final publication.
+
+Provider-free public regressions cover both directions. A cancellation set by
+the final image response preserves its one 13/3-token call and completed frame
+slot. A cancellation set by the successful short-audio response preserves the
+ordered image 13/3 and audio 17/5 usage, two calls, exact failed audio-client
+cleanup, and both completed journal branches. Neither attempt publishes
+`result.md`; after the caller clears the signal, explicit resume makes zero
+new provider calls, excludes historical usage from current-run metadata,
+publishes once, and removes the journal.
+
+The correction reuses the existing video evidence merger at one shared
+fresh/resume settlement boundary. It adds no provider interruption, state
+field, rollback, transaction, cancellation coordinator, retry, or fallback.
+Focused video lifecycle coverage passes 106 tests, independent review finds no
+issue, and the complete provider-free suite passes all 1,870 tests with zero
+failures or skips. The reproduced high-level video cancellation gap is closed;
+the next iteration must return to a fresh bounded active-library audit.

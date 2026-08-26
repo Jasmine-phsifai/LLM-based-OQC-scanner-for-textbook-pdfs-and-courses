@@ -444,7 +444,7 @@ def _settle_video_job(
         )
         raise audio_error from None
     assert (audio_result is None) != (audio_error is None)
-    return VideoRecognitionOutcome(
+    outcome = VideoRecognitionOutcome(
         output_root=output_root,
         retained_frames=frames,
         frame_outcomes=frame_outcomes,
@@ -456,6 +456,28 @@ def _settle_video_job(
         audio_result=audio_result,
         audio_error=audio_error,
     )
+    late_cancellation = _read_cancellation(image_config)
+    if late_cancellation is None:
+        late_cancellation = _read_cancellation(audio_config)
+    if late_cancellation is not None:
+        branch_evidence = tuple(
+            item.result if item.result is not None else item.error
+            for item in frame_outcomes
+        )
+        audio_evidence = (
+            outcome.audio_result
+            if outcome.audio_result is not None
+            else outcome.audio_error
+        )
+        assert all(item is not None for item in branch_evidence)
+        assert audio_evidence is not None
+        attach_current_video_evidence_to_error(
+            late_cancellation,
+            before=(*branch_evidence, audio_evidence),
+            primary_provider_calls_attempted=0,
+        )
+        raise late_cancellation from None
+    return outcome
 
 
 def _preflight_resume_root(output_root: Path) -> None:
