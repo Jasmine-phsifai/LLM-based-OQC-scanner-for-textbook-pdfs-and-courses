@@ -62,10 +62,11 @@ catalog checks, atomic file-backed image state, an opt-in candidate queue, and
 slot-indexed intra-request checkpoints with an explicit v1-to-v2 resume
 identity migration, complete attempt-spend disclosure, disposition-gated
 recovery, model-aware pool behavior, and correct scout-failure attribution.
-Its DashScope live exit smoke remains open. A legacy-UI credential is now
-authorized for one declared, bounded atomic trial with live catalog discovery
-and a fixed call cap; this is not permission for an unlimited paid run. The
-canonical Beijing endpoint is already confirmed. The former standalone Stage 2
+Its DashScope live exit is closed by #339: one credential-isolated run discovered
+241 current models and completed public formula-board recognition on explicit
+`qwen3.5-ocr` with runner exit 0, no retry, switch, fallback, or content/secret
+publication. This is connectivity/lifecycle proof, not formula-quality or broad
+quota evidence. The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
 `miniaudio>=1.71,<2` local MP3 probe, deterministic validation corpus, bounded

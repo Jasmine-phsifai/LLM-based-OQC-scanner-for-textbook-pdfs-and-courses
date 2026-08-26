@@ -67,10 +67,11 @@ Phase 1 maturation is offline implementation-complete:
   passes, preserving missing values as unknown; all no-cost exit criteria pass at product checkpoint
   `700cc05` through the clean-archive evidence recorded by `5d966e1` (root 1203
   passed; exact archive 1193 passed and 10 expected skips);
-- open: the Stage M DashScope live exit smoke and live re-verification of
-  provider account/model quota semantics. #104 confirmed the canonical Beijing
-  endpoint but found no nonempty built-in DashScope credential in the current
-  Process/User/Machine environment or legacy QSettings, so no request was made;
+- closed by #339: the Stage M DashScope live exit. A credential-isolated current
+  catalog returned 241 models and one explicit `qwen3.5-ocr` public formula-board
+  recognition passed through the maintained one-call runner. Historical quota
+  categories were not deliberately triggered and remain bounded robustness
+  evidence, not a reason to keep the basic exit open;
 - replanned, in progress: the standalone Stage 2 vision/audio scaffold was
   removed; its audio-specific configuration boundary now lands with executable
   Stage A1 short-MP3 recognition, followed by provider-specific Stage A2 long
@@ -255,8 +256,9 @@ separate later directions.
 
 The defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,
-F1-F4, and G1-G10 are closed in offline code and tests; the paid Stage M exit
-gate remains open. Do not create a second defect list in this file.
+F1-F4, and G1-G10 are closed in offline code and tests; #339 closes the Stage M
+live exit without claiming a broad model-quality or quota sweep. Do not create a
+second defect list in this file.
 
 ## Read Order
 
@@ -304,10 +306,10 @@ Run from the repository root with the maintained environment:
 The clean Git-archive wheel, isolated install, outside-repository import, and
 heavy-module guard are defined in
 [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md). A
-DashScope live gate requires a nonempty recognized credential and explicit
-maintainer budget; the Beijing region/endpoint is already confirmed. Bounded
-Google image/audio robustness tests are already authorized without a separate
-budget request.
+The bounded DashScope live gate used the approved Beijing endpoint and closed in
+#339 with one explicit model and one recognition call. Future DashScope quality,
+quota, or error-category probes remain separately bounded. Google image/audio
+robustness tests are authorized without a separate budget request.
 
 ## History Trace
 

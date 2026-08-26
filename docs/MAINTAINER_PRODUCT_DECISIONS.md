@@ -654,8 +654,9 @@ is often accepted.
   under the current serial fail-fast loop; #102 narrowed the remaining decision
   to historical explicitly marked Markdown compatibility. #120 answered no.
   #338 reconfirms that image/audio provider separation is already shipped
-  through two independent video configs. The current order is one bounded Stage
-  M DashScope live exit, then the next P1-e consumer: reuse the proven
+  through two independent video configs. #339 closes the bounded Stage M
+  DashScope live exit with one current-catalog `qwen3.5-ocr` call. The current
+  order therefore advances to the next P1-e consumer: reuse the proven
   whole/interval long-audio processors in video without nesting the standalone
   audio publication or creating provider generalization. Repair remains a later
   narrow side path.

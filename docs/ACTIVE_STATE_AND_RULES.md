@@ -58,12 +58,13 @@ things:
 
 Phase 1 is consequently reopened for maturation. "Phase 1 is GO" means the image
 path was proven once under trial constraints; it does not mean the image path is
-finished. Stage M is **offline implementation-complete**: model catalog
+finished. Stage M is **implementation-complete and live-exit-proven**: model catalog
 discovery, file-backed state sidecars, opt-in disposition-gated candidate
 queues, slot-indexed intra-request checkpoints, spend disclosure, and
-model-aware credential blocking have shipped. Its exit gate remains open until
-an explicitly authorized DashScope live smoke with a nonempty DashScope
-credential verifies current provider behavior. The former
+model-aware credential blocking have shipped. #339's explicitly authorized
+DashScope smoke discovered 241 current models and completed one public
+`qwen3.5-ocr` formula-board recognition with no retry or model switch. The
+former
 standalone Stage 2 vision/audio scaffold was replanned on 2026-08-23: the
 working image configuration stayed unchanged and the audio-specific boundary
 landed with the bounded Stage A1 short-MP3 recognition slice. That direct,
@@ -91,11 +92,11 @@ real failure as upload `ReadTimeout` without exposing SDK text. #337 maps that
 family to retryable `PROVIDER_TIMEOUT`; one bounded caller-owned resume then
 reused the settled prefix, made exactly one missing generation call, published
 the final result, and removed temporary state. The Google interval live gate is
-closed. The route does not alter A1 or route video. The current execution order
-is now explicit: first close the already-built Stage M DashScope live gate with
-one bounded catalog-driven trial; then connect the proven whole/interval
-long-audio processors to the existing video audio branch without changing its
-independent image configuration. Bounded Google image and audio live tests are
+closed. The route does not alter A1 or route video. #339 has now closed the
+already-built Stage M DashScope live gate. The current execution order advances
+to connecting the proven whole/interval long-audio processors to the existing
+video audio branch without changing its independent image configuration.
+Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
 the active library must not read legacy UI state itself. Discover the current
@@ -232,9 +233,9 @@ Google short-audio path for one MP3 of at most 300 seconds. Its PDF vision slice
 is proven offline, in an installed wheel, and live through Google; it renders all
 pages through PDFium and reuses the image/resume path in serial groups of eight.
 Content repair is not implemented; #120 selected ordinary resume and explicitly
-rejected legacy-Markdown compatibility. After the bounded Stage M DashScope
-live exit, the queue advances to the next video-library consumer: preserve the
-existing separate image/audio configs while allowing a long video's audio
+rejected legacy-Markdown compatibility. With the Stage M DashScope live exit
+closed by #339, the queue now advances to the next video-library consumer:
+preserve the existing separate image/audio configs while allowing a long video's audio
 branch to select the already-proven whole or exact-integer-minute interval path.
 The Google adapters report per-model
 input/output token usage when the endpoint supplies it. Public injected providers
@@ -1560,7 +1561,7 @@ candidate switching, key rotation, fallback, or a provider framework.
 The focused DashScope boundary suite passes 62 tests and its adapter, credential
 pool, and disposition neighbors pass 57 tests. The complete offline result is
 recorded in the matching diary entry. No live or paid provider call was made;
-the Stage M DashScope live exit gate remains open. The maintainer's permission
+at #267 the Stage M DashScope live exit gate remained open. The maintainer's permission
 for later pressure-oriented robustness testing is already recorded above: it
 starts only after the relevant basic installed/live flow succeeds and remains a
 separate, question-driven, bounded, cleanup-verified iteration.
@@ -3890,10 +3891,10 @@ snapshot isolation are the two strongest parts of this codebase; build on them.
 
 Severity is impact on a real user, not implementation effort. D1-D7 are closed,
 including the residual D4 limitation (closed 2026-08-22 by `cd7429c`). Of the
-Stage M findings G1-G10 are closed in offline code and tests. The Stage M exit
-gate is still open because its paid live smoke has not run and the current
-workspace has no recognized DashScope credential; closing a code finding does
-not imply that current provider-account behavior was live-proven.
+Stage M findings G1-G10 are closed in offline code and tests. #339 closes the
+Stage M live exit with one current-catalog, one-call public DashScope success.
+It does not re-prove every historical quota/error category or model quality;
+those remain separate bounded robustness questions rather than an open exit gate.
 Do not close an entry without a test that fails before the fix.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
@@ -4269,16 +4270,18 @@ generated-image smoke, and offline DashScope construction passed. No provider
 request ran. Earlier `271d96d` evidence remains historical. `worker/` and
 `contracts/` are unchanged and frozen.
 
-The Stage M exit gate has **not** passed because its DashScope live catalog and
-end-to-end smoke still require both a nonempty recognized credential and an
-explicit maintainer budget. #104 safely checked the current Process/User/Machine
+At that checkpoint the Stage M exit gate had **not** passed because its DashScope
+live catalog and end-to-end smoke still required both a nonempty recognized
+credential and an explicit maintainer budget. #104 safely checked the then-current Process/User/Machine
 environment plus legacy QSettings: the canonical Beijing endpoint is present,
 but every built-in DashScope credential source is empty. The populated generic
 vision credential belongs to a separate OpenAI-compatible path and cannot be
 silently reused. Bounded Google image/audio robustness calls are separately
 pre-authorized. No DashScope provider request occurred in either the offline gate
 or #104. Do not convert this no-cost proof into a claim about current
-provider-account or model-quota semantics.
+provider-account or model-quota semantics. #339 supersedes only that open basic
+exit with one current-catalog, one-call success; it does not rewrite #104's
+historical credential facts or claim broad quota coverage.
 
 ### Stage M Findings
 
@@ -6412,8 +6415,20 @@ legacy UI 的外部隔离控制器已只读确认 `QSettings("OCRLLM", "QCR")` �
 WinINET 为 `ProxyEnable=1`、`127.0.0.1:10080`，外部控制器只把凭据和大写 proxy
 变量注入 child。108 项 DashScope runner/adapter/catalog/error 相邻测试通过；带既定
 Node PATH 的完整离线套件为 1,738 项通过，compileall、轻量 `import ocrllm`、diff
-check 和冻结边界检查通过。真实 formula-board 调用尚未执行，因此 Stage M live exit
-此刻仍开放；最终事实只在 delegated runner 返回后补录。
+check 和冻结边界检查通过。精确提交 `4e7c3b41d2e26a4a58fd8758ce05ad96d5ce1681`
+随后由轻量执行者完成唯一一次真实调用：代理前检通过，当前 catalog 为 241 个模型，
+显式 `qwen3.5-ocr` 对 repo-owned formula board 返回 runner `passed`、numeric exit 0，
+耗时 3.203 秒，stderr 0 bytes；没有 retry、模型切换、fallback、invalid-key probe、
+下载或第二个 runner。凭据、源内容和源绝对路径泄漏扫描均为 false，进程为零，除原始
+fixture 外没有 runner residue。
+
+证据限制：外层 controller 没有保留原始 stdout 或完整解析 payload，因此不能把嵌套的
+call/client 字段当作独立采集值重述。不过 exact committed runner 只有在 public result
+为 complete、provider/model/region 正确、`provider_call_count == 1`、一个 successful
+model attempt、一个 fresh draft workflow slot 且 client closed 时才会返回 `passed` / 0。
+这足以关闭 connectivity/lifecycle exit，但不证明公式质量或全部 quota/error taxonomy。
+DashScope adapter 仍不公开 input/output token usage，runner 因而只会诚实输出 null；
+这是下一轮应先审计的已建 provider 计量缺口，不能从这次未保留的 SDK response 猜值。
 
 过度设计复查：没有自动 catalog 评分、模型循环、13-call quality replay、provider
 hierarchy、pool、retry、fallback 或 runtime token parser。双 ledger 校验分别排除模型
