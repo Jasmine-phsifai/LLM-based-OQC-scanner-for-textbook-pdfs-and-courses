@@ -6920,3 +6920,22 @@ regressions produced the exact old 0/missing evidence; standalone whole,
 interval, video settlement, public video, and native long-audio neighbors now
 pass 82 tests. Independent cleanup/media audits found no second concrete defect
 and did not add path, VFR, or lifecycle defenses already covered elsewhere.
+
+## Current working update: #358 retained PDF state is not cleanup failure
+
+The first PDF image group may complete one provider call and atomically save its
+ordinary image sidecar before child Markdown publication fails. At that point
+the outer PDF result has no settled child `RecognitionResult` yet, so it tries
+to remove the newly created state directory. The directory is intentionally
+nonempty with reusable paid work; the previous broad exception handler falsely
+added `pdf_state_cleanup_failed=True` to the real publication error.
+
+The cleanup attempt remains an atomic `rmdir()`. Only `ENOTEMPTY` and `EEXIST`
+mean expected retained state and are no longer labeled as cleanup failures;
+every other `OSError` and `ValueError` remains disclosed. The public regression
+proves one provider call, one retained sidecar, no child or final Markdown, and
+no false cleanup marker. No provider dispatch, sidecar schema, resume, retry,
+repair, output layout, or frozen boundary changes. The complete active suite
+collects 1,774 tests: 1,772 pass, while the same two Node-harness tests stop
+before execution because this environment has no Node executable. Compilation,
+diff validation, and the frozen boundaries pass.

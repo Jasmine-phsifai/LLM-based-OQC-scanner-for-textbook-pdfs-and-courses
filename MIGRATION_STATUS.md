@@ -1540,6 +1540,14 @@ regression preserves aspect ratio and both outer edges. Full-frame resizing,
 video time-point selection, and complete-page PDF rendering remain; none is a
 blackboard crop.
 
+#358 corrects active PDF cleanup evidence without changing recovery. A first
+group can finish its provider call and save an image sidecar before its child
+Markdown publication fails. The resulting nonempty state directory is
+intentional paid-work retention, not `pdf_state_cleanup_failed`. Only the
+standard nonempty-directory errors are ignored; every other `rmdir()` failure
+remains reported. The public regression preserves exact one-call accounting,
+one reusable sidecar, and absence of child/final Markdown.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

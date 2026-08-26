@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import os
 from collections.abc import Sequence
 from dataclasses import replace
@@ -109,7 +110,10 @@ def recognize_pdf(
         ):
             try:
                 state_directory.rmdir()
-            except (OSError, ValueError):
+            except OSError as cleanup_error:
+                if cleanup_error.errno not in {errno.ENOTEMPTY, errno.EEXIST}:
+                    error._add_safe_detail("pdf_state_cleanup_failed", True)
+            except ValueError:
                 error._add_safe_detail("pdf_state_cleanup_failed", True)
         attach_pdf_settled_work(error, settled_results)
         raise

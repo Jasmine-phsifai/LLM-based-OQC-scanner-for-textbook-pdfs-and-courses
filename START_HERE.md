@@ -235,6 +235,14 @@ renames misleading “crop and resize” progress/docs to complete-frame resize.
 The active video writer still re-encodes the decoded full frame at identical
 dimensions, and PDF rendering still scales the complete page uniformly.
 
+#358 fixes one PDF failure-reporting defect. If the first image group completed
+and saved its reusable sidecar but child Markdown publication failed, the
+intentionally nonempty state directory was falsely labeled as a cleanup
+failure. `rmdir()` now treats only `ENOTEMPTY`/`EEXIST` as expected retained
+state; permission, path, and other cleanup errors remain disclosed. Provider
+calls, sidecar content, resume, final publication, and repair behavior do not
+change.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes

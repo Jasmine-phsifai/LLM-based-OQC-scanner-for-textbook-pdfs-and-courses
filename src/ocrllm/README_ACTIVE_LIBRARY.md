@@ -272,6 +272,8 @@ The PDF vision facade:
 - renders one page at a time and at most eight PNGs per ordinary image request;
 - uses the image facade and its sidecars unchanged, so resume reuses settled
   groups without another provider call;
+- retains a first-group sidecar when child Markdown publication fails without
+  misreporting the intentionally nonempty state directory as a cleanup failure;
 - requires a pre-existing same-named state path to be an ordinary directory;
   symlinks and Windows junctions fail before rendering or provider dispatch;
 - publishes stable `ocrllm:pdf-pages` range markers in source order and removes

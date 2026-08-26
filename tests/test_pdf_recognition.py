@@ -664,6 +664,46 @@ def test_pre_provider_render_failure_removes_new_empty_pdf_state_directory(
     assert not state_directory.exists()
 
 
+def test_first_pdf_group_publication_failure_retains_state_without_cleanup_error(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=8)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    state_directory = output_dir / "book_board"
+    provider = _RecordingProvider()
+    writer = importlib.import_module(
+        "ocrllm.output.write_markdown_atomically"
+    )
+
+    def fail_child_publication(*_args, **_kwargs):
+        raise OutputError("test-only child publication failure")
+
+    monkeypatch.setattr(
+        writer,
+        "write_markdown_atomically",
+        fail_child_publication,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=_pdf_config(provider, output_dir=output_dir),
+        )
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["settled_pdf_group_count"] == 0
+    assert "pdf_state_cleanup_failed" not in captured.value.details
+    assert provider.calls == [
+        tuple(f"page-{page_number:06d}.png" for page_number in range(1, 9))
+    ]
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 1
+    assert not tuple(state_directory.glob("*.md"))
+    assert not (output_dir / "book_board.md").exists()
+
+
 def test_generated_pdf_png_decode_failure_is_local_after_settled_group(
     tmp_path: Path,
     monkeypatch,
