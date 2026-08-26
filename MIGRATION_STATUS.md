@@ -2043,3 +2043,15 @@ The shared request-only validator is also called by the full resume validator;
 source, frame, image, audio-artifact, and long-prefix identity remain byte-backed
 and are not moved early. Journal bytes, public API, state schema, provider
 policy, and frozen worker/contracts are unchanged.
+
+#442 moves the corresponding image-request configuration rejection ahead of
+avoidable media work. Each saved frame group already contains the ordered
+source fingerprints accepted by the canonical `fingerprint_image_request()`
+function, so high-level resume can compare the current resolved image request
+with the journal before credential resolution or source snapshotting. Changed
+image configuration now raises the existing `RESUME_STATE_MISMATCH` with zero
+new snapshot or provider calls. The full validator still hashes the current
+video, restores and hashes retained frames, replans groups, and validates saved
+image state; journal facts are not misrepresented as current-byte proof. No
+public API, state schema, second identity algorithm, cache, retry/fallback,
+provider framework, or frozen worker/contracts change was made.

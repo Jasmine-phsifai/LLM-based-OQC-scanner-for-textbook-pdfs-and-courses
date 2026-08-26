@@ -263,6 +263,9 @@ def _resume_video_job(
         validate_video_job_finalization_state,
         validate_video_job_resume,
     )
+    from .validate_video_job_resume_image_requests import (
+        validate_video_job_resume_image_requests,
+    )
     from .validate_video_job_resume_request import (
         validate_video_job_resume_request,
     )
@@ -286,6 +289,10 @@ def _resume_video_job(
         journal.state,
         audio_config=audio_config,
         audio_interval_minutes=interval_minutes,
+    )
+    validate_video_job_resume_image_requests(
+        journal.state,
+        image_config=image_config,
     )
     if video_audio_requires_credential_preflight(journal.state.audio):
         if audio_cancelled is None:

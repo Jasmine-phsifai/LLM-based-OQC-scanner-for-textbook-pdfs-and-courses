@@ -268,6 +268,17 @@ settled whole/interval and ready-unsettled short/whole/interval, plus explicit
 interval mismatch, now performs no new snapshot, decode, materialization, or
 provider work and leaves the journal byte-for-byte unchanged. No public API,
 state schema, retry/fallback, or broader preflight coordinator was added.
+#442 closes the matching image-request configuration ordering defect. Every
+saved video frame group already carries the ordered source fingerprints needed
+by the existing canonical image-request identity function, so resume now
+recomputes exactly that identity from the journal and current image config
+before credential resolution or source snapshotting. A changed image request
+therefore raises the existing `RESUME_STATE_MISMATCH` with no snapshot or
+provider work. This early equality is not treated as byte proof: the later
+source hash, retained-frame restoration, group replanning, and saved image-state
+validation remain unchanged. No second fingerprint algorithm, identity cache,
+public API, state schema, retry/fallback, or generalized preflight framework was
+added.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4275,6 +4286,14 @@ Post-register findings are ordered by demonstrated user impact:
   journal bytes; byte-dependent source/frame/artifact checks intentionally stay
   in the full validator. Focused adjacent coverage passes 104 tests, independent
   review passes 38 resume tests, and the complete provider-free suite passes all
+  1,888 tests.
+- #442 moves only the saved video image-request configuration comparison ahead
+  of credential resolution and source snapshotting. A failure-first public
+  regression proved the old image-config path reached snapshotting while four
+  byte-dependent mismatch controls did not change. The existing canonical
+  fingerprint is recomputed from each saved group's ordered source facts; full
+  source/frame/group/image-state validation stays byte-backed. Video-resume
+  coverage passes 50 tests, and the complete provider-free suite passes all
   1,888 tests.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of

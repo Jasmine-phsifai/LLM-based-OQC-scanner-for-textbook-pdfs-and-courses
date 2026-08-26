@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import importlib
 from pathlib import Path
 import shutil
 
@@ -232,6 +233,24 @@ def test_resume_rejects_changed_identity_before_either_provider_dispatch(
 
     resumed_audio_calls = _patch_audio(monkeypatch, fail=False)
     image_calls_before_resume = provider.call_count
+    snapshot_calls = 0
+    if changed_fact == "image_config":
+        snapshot_module = importlib.import_module(
+            "ocrllm.video.snapshot_video_source"
+        )
+
+        @contextmanager
+        def reject_snapshot(*args, **kwargs):
+            nonlocal snapshot_calls
+            snapshot_calls += 1
+            raise AssertionError("changed image request reached source snapshot")
+            yield  # pragma: no cover
+
+        monkeypatch.setattr(
+            snapshot_module,
+            "snapshot_video_source",
+            reject_snapshot,
+        )
 
     with pytest.raises(ResumeStateError) as rejected:
         ocrllm.recognize_video_to_markdown(
@@ -243,6 +262,8 @@ def test_resume_rejects_changed_identity_before_either_provider_dispatch(
         )
 
     assert rejected.value.code == "RESUME_STATE_MISMATCH"
+    if changed_fact == "image_config":
+        assert snapshot_calls == 0
     assert provider.call_count == image_calls_before_resume
     assert resumed_audio_calls == []
     assert not (output_root / "result.md").exists()
