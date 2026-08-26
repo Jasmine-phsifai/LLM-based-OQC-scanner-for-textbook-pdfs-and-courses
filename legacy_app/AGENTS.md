@@ -998,3 +998,27 @@ maintainer's protected untracked test; the active suite passed 1,782/1,782.
 **Carry-forward judgement. WARNING FOR src/ocrllm.** No analogous active-library
 config, export, or implementation exists. Keep temporal frame selection and
 full-page/full-frame scaling distinct from rejected spatial cropping.
+
+## 2026-08-27: stale migration prose still listed board-region extraction
+
+**Observed and fixed.** A legacy migration note still listed “board-region
+extraction” as a model-independent capability worth retaining. The executable
+crop/perspective module, configuration, GUI/CLI controls, and video ROI path had
+already been deleted, so this prose could encourage a future maintainer to
+rebuild a deliberately rejected operation. It now names only complete-image
+aspect-preserving resize and format conversion, explicitly without board
+localization, crop, or perspective correction.
+
+The historical repair-manifest `skip_preprocess` reader remains intentionally
+read-only: it cannot select image behavior, and every repair uses the current
+full-frame preparation path. Removing that compatibility token would break old
+legacy repair records without deleting any executable crop behavior.
+
+**Verification.** The current legacy full-frame regression passed 4/4 and a
+fresh runtime-symbol/call-chain audit found no corner, ROI, crop, homography, or
+perspective operation. The only remaining Canny use classifies complete blank
+frames for temporal selection and does not change recognition pixels.
+
+**Carry-forward judgement. WARNING FOR src/ocrllm.** The active library has no
+analogous operation. Keep full-frame comparison thumbnails, uniform full-page
+rendering, and aspect-preserving limits distinct from forbidden spatial crop.

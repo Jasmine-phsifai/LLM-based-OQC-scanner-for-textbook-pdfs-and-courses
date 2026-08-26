@@ -640,9 +640,11 @@ src/ocrllm/processors/recognize_images.py
     return ProcessorOutput. Never write final output.
 ```
 
-Do not port automatic crop, perspective correction, contrast, or HEIC behavior
-until a failing representative fixture proves it is required. Then extract only
-the needed operation into its own named file.
+Never port automatic board-corner detection, spatial crop, ROI inference, or
+perspective correction. Separated boards, sliding boards, and mixed
+board/projector scenes make that geometry lossy and unreliable. Contrast or
+HEIC behavior still requires a failing representative fixture; if proven,
+extract only the needed non-cropping operation into its own named file.
 
 Initial image safety limits are 25 MiB per source, 24,000,000 decoded pixels per
 image, 10 images per same-context group, 100 MiB aggregate source bytes, and
