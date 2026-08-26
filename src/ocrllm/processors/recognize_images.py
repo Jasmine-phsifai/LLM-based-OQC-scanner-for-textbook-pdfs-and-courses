@@ -8,6 +8,10 @@ from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from ..aggregate_current_model_token_usage import (
+    aggregate_current_model_token_usage,
+)
+from ..aggregate_model_token_usage import aggregate_model_token_usage
 from ..config import Config
 from ..errors import (
     AllCandidatesExhausted,
@@ -91,7 +95,28 @@ def recognize_images(
         ordered_models = [config.vision_model.name]
 
     attempts: list[dict[str, str | int | None]] = []
+    settled_candidate_usage: list[dict[str, str | int | None]] = []
     total_calls_attempted = 0
+
+    def attach_complete_candidate_usage(error: OCRLLMError) -> None:
+        current_usage = aggregate_current_model_token_usage((), (error,))
+        complete_usage = aggregate_model_token_usage(
+            (*settled_candidate_usage, *current_usage)
+        )
+        if complete_usage:
+            error._add_safe_detail(
+                "settled_model_usage",
+                tuple(
+                    {
+                        "model": item["model"],
+                        "input_count": item["input_tokens"],
+                        "output_count": item["output_tokens"],
+                        "unit": "tokens",
+                    }
+                    for item in complete_usage
+                ),
+            )
+
     for candidate_index, model in enumerate(ordered_models):
         candidate_config = config
         if model is not None:
@@ -141,6 +166,7 @@ def recognize_images(
                 }
             )
             total_calls_attempted += local_calls_attempted
+            attach_complete_candidate_usage(error)
             error._add_safe_detail(
                 "provider_calls_attempted",
                 total_calls_attempted,
@@ -177,7 +203,11 @@ def recognize_images(
                 and not is_last
                 and _may_advance_candidate(error, disposition)
             ):
+                settled_candidate_usage.extend(
+                    aggregate_current_model_token_usage((), (error,))
+                )
                 continue
+            attach_complete_candidate_usage(error)
             error._add_safe_detail(
                 "provider_calls_attempted",
                 total_calls_attempted,
@@ -217,6 +247,7 @@ def recognize_images(
                 }
             )
             total_calls_attempted += local_calls_attempted
+            attach_complete_candidate_usage(error)
             error._add_safe_detail(
                 "provider_calls_attempted",
                 total_calls_attempted,
@@ -233,6 +264,13 @@ def recognize_images(
         )
         metadata = dict(output.metadata)
         metadata["model_attempts"] = attempts
+        if settled_candidate_usage:
+            current_usage = metadata.get("current_model_token_usage", ())
+            if type(current_usage) is not tuple:
+                current_usage = ()
+            metadata["current_model_token_usage"] = aggregate_model_token_usage(
+                (*settled_candidate_usage, *current_usage)
+            )
         return replace(output, metadata=metadata)
 
     raise AssertionError("the model candidate loop must return or raise")

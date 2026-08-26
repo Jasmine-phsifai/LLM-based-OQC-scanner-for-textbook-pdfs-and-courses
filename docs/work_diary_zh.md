@@ -6297,3 +6297,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **最小修复与个人复核。** 路线 A 为 whole 新增 no-speech 字段或第二种 state；路线 B 直接复用 interval 已有且已验证的 `LongAudioSettledSlot` sentinel，选 B。whole 现在会在返回 typed no-speech 前原子保存唯一 slot；resume 识别该 slot 为已结算结果，以 `provider_calls_attempted=0` 重放同一 typed 错误。内部 sentinel 始终不会成为 `result.md`，state 保留供下次精确 resume。第一次和恢复后均没有最终 Markdown，provider 列表始终只有首次的一次调用。
 
 **验证、新发现与过度设计复查。** 直接失败回归修复后为 **1 passed**；whole/interval/state/Google audio/video 结算邻近集合 **78 passed in 1.56s**。轻量执行者用现有 `D:\Anaconda\envs\STA\node.exe` 只补入子进程 PATH，完整全量为 **1,775 passed in 87.30s**；明确排除 Node harness 的集合为 **1,773 passed in 87.03s**，没有功能失败。compileall、`git diff --check` 和冻结 `contracts/worker` 边界均通过。image 审计另外复现：候选模型切换后，总调用数正确，但前一模型已结算的 token 用量从最终 metadata 丢失；这是下一个独立候选，本轮只登记而不混改。本修复没有新 schema、retry、fallback、provider 基类、billing ledger、repair 或 video resume API；它只让 whole 与 interval 遵守同一个已有结算规则。
+
+## #362 — 2026-08-26：候选模型切换不再丢失前一模型的 token 用量
+
+**本轮英文原子任务。** `Atomic task — Iteration #362: finish the already-started correction that preserves token usage from every model actually called when opt-in candidate recovery advances to a later model. Context: public fallback already preserves call counts, but the first model’s settled usage can disappear from the final result; the failing-first regression and narrow implementation exist in the worktree and have independent review approval. Success means personally revalidating the aggregation boundary, completing current-state and Chinese diary records, passing the full offline gate, committing one coherent change, and pushing it to origin. This matters because usage reporting must describe all real provider work without becoming a billing subsystem.`
+
+**失败优先证据与路线。** 公共回归让 `model-a` 的 draft 成功并报告 10/2 tokens，review 因 model-scope quota 切换到 `model-b`，后者两次成功各报告 3/1。旧实现虽然如实记录四次调用，却只返回 `model-b` 的 6/2；新测试先精确失败。路线 A 只在成功结果末尾临时拼接，路线 B 抽出既有“已校验行”的单一聚合函数，并让最终成功与最终 typed error 共用；选择 B，因为候选链最终失败时已付费使用同样不能消失，但没有建立账单对象或扩大 provider 合同。
+
+**实现与个人复核。** 新的 `aggregate_model_token_usage()` 只接收规范化行，按模型首次出现顺序分别累加 input/output；任一分量未知时继续保持 `None`，非法、负数和布尔计数仍被忽略。原有 result/error adapter 改为只负责提取和规范化，再调用该函数，删除重复校验逻辑。图片候选循环只在真正前进到下一模型时保存当前 typed error 已携带的结算用量；后来成功时与终端模型合并，后来失败时写回既有 `settled_model_usage`。调用数、模型尝试顺序、可切换错误范围、checkpoint 和 provider 行为均未改变。个人补充了“两个模型都在 review 耗尽”的公共终止回归，证明四次调用及 10/2、3/1 两行仍完整保留。
+
+**验证与过度设计复查。** 聚合、候选切换、Stage M、PDF 与视频聚合定向集合 **58 passed in 3.54s**。轻量执行者在测试子进程中补入仓库已知 Node 路径后，最终完整全量 **1,778 passed in 85.54s**；明确排除 Node 的集合 **1,776 passed in 87.14s**。compileall、diff check、新文件行尾检查和冻结 `contracts/worker` 边界均通过；没有 provider 调用、安装或下载。没有新增 billing ledger、usage 持久化、模型 fallback 策略、retry、provider 基类或第二套计数结构；抽出的函数有两个当前消费者，并替代了原有重复逻辑，不是为假想未来搭架子。

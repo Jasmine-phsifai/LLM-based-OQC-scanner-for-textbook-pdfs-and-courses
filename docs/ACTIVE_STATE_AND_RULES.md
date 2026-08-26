@@ -6980,10 +6980,26 @@ Node executable is supplied only to the test subprocess; the explicit non-Node
 suite passes 1,773 tests. Compileall, diff validation, and frozen-boundary
 checks pass without provider calls.
 
-The same bounded audit proved one separate active defect that remains open for
-the next atomic correction: when model-candidate recovery advances after an
-earlier model has already produced a successful workflow pass, final
-`current_model_token_usage` contains only the terminal successful model and
-omits the earlier model's settled reported usage. Total provider-call counting
-remains correct. Do not add a billing subsystem; carry forward only the already
-validated per-model usage attached to the advancing typed error.
+## Current working update: #362 candidate recovery retains every model's usage
+
+Model-candidate recovery no longer drops usage from a model that completed one
+or more workflow passes before a model-scoped error advanced the request. One
+shared ordered aggregator now handles only already-normalized per-model rows:
+it preserves first-seen model order, sums input and output independently, and
+keeps an unknown component as `None` rather than inventing zero. The existing
+result/error adapter delegates to that helper, so validation is not duplicated.
+
+On a later success, `current_model_token_usage` contains every advanced model's
+settled usage followed by the terminal model's usage. If the configured chain
+instead ends with a typed error, its canonical `settled_model_usage` retains the
+same complete accounting. The public regressions prove both outcomes across
+four injected-provider dispatch attempts while leaving `provider_calls_attempted`,
+model attempt order, recovery eligibility, checkpoint identity, and provider
+behavior unchanged.
+
+Focused aggregation, fallback, PDF, and video tests pass 58 tests. The complete
+offline suite passes all 1,778 tests when the repository's known Node executable
+is supplied only to the test subprocess; the explicit non-Node suite passes
+1,776 tests. Compileall, diff validation, and frozen-boundary checks pass with
+no provider calls. This is not a billing ledger, persistence format, retry
+engine, or provider abstraction.

@@ -257,9 +257,12 @@ uses the existing no-speech slot already proven by interval mode, saves it
 before returning the typed error, and a later resume repeats that error with
 zero provider calls. It never publishes the internal no-speech sentinel and
 does not change the state schema, retry, provider, or video-resume boundary.
-One adjacent active defect is now recorded for the next atomic correction:
-model-candidate recovery currently omits token usage already settled by an
-earlier model before advancing, even though total call accounting is correct.
+#362 closes the adjacent candidate-model accounting defect. When opt-in
+recovery advances after an earlier model has already completed a paid workflow
+pass, the final success or terminal typed error now retains that model's
+validated token usage as well as later models' usage. First-seen model order and
+unknown `None` counts remain honest; call totals, recovery policy, persistence,
+and provider behavior are unchanged. No billing subsystem was added.
 
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install

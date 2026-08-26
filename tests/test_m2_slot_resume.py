@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import pytest
 
 from ocrllm import (
+    AllCandidatesExhausted,
     Config,
     DashScopeSettings,
     OutputError,
@@ -21,6 +22,7 @@ from ocrllm import (
     VisionModelSettings,
     recognize,
 )
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
 from write_test_image import write_test_image
 
@@ -311,7 +313,10 @@ def test_fallback_does_not_reuse_or_discard_other_models_paid_slots(
                 name="quota-model",
                 candidate_models=("recovery-model",),
             ),
-            preferences=RecognitionPreferences(draft_candidates=1, review_passes=1),
+            preferences=RecognitionPreferences(
+                draft_candidates=1,
+                review_passes=1,
+            ),
         ),
     )
 
@@ -338,6 +343,124 @@ def test_fallback_does_not_reuse_or_discard_other_models_paid_slots(
 
     persisted = _state_document(output_dir)
     assert {slot["model"] for slot in persisted["slots"]} == {"recovery-model"}
+
+
+def test_fallback_preserves_settled_token_usage_from_every_model(
+    tmp_path: Path,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+
+    class Provider:
+        resume_identity = "m2-token-fallback-provider-v1"
+
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            model = config.vision_model.name
+            self.calls.append(model)
+            if model == "model-a" and self.calls.count(model) == 2:
+                raise QuotaExhausted(
+                    "per-model quota spent",
+                    details={"failure_scope": "model"},
+                )
+            input_tokens, output_tokens = (
+                (10, 2) if model == "model-a" else (3, 1)
+            )
+            return VisionProviderResponse(
+                markdown=f"# {model} response {self.calls.count(model)}\n",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
+    provider = Provider()
+    result = recognize(
+        source,
+        config=Config(
+            provider=provider,
+            output_dir=output_dir,
+            vision_model=VisionModelSettings(
+                name="model-a",
+                candidate_models=("model-b",),
+            ),
+            preferences=RecognitionPreferences(draft_candidates=1, review_passes=1),
+        ),
+    )
+
+    assert provider.calls == ["model-a", "model-a", "model-b", "model-b"]
+    assert result.metadata["current_run_provider_call_count"] == 4
+    assert tuple(
+        dict(usage) for usage in result.metadata["current_model_token_usage"]
+    ) == (
+        {"model": "model-a", "input_tokens": 10, "output_tokens": 2},
+        {"model": "model-b", "input_tokens": 6, "output_tokens": 2},
+    )
+
+
+def test_exhausted_fallback_preserves_settled_token_usage_from_every_model(
+    tmp_path: Path,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+
+    class Provider:
+        resume_identity = "m2-token-exhaustion-provider-v1"
+
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            model = config.vision_model.name
+            self.calls.append(model)
+            if self.calls.count(model) == 2:
+                raise QuotaExhausted(
+                    "per-model quota spent",
+                    details={"failure_scope": "model"},
+                )
+            input_tokens, output_tokens = (
+                (10, 2) if model == "model-a" else (3, 1)
+            )
+            return VisionProviderResponse(
+                markdown=f"# {model} draft\n",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
+    provider = Provider()
+    with pytest.raises(AllCandidatesExhausted) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(
+                    name="model-a",
+                    candidate_models=("model-b",),
+                ),
+                preferences=RecognitionPreferences(
+                    draft_candidates=1,
+                    review_passes=1,
+                ),
+            ),
+        )
+
+    assert provider.calls == ["model-a", "model-a", "model-b", "model-b"]
+    assert captured.value.details["provider_calls_attempted"] == 4
+    assert tuple(
+        dict(usage) for usage in captured.value.details["settled_model_usage"]
+    ) == (
+        {
+            "model": "model-a",
+            "input_count": 10,
+            "output_count": 2,
+            "unit": "tokens",
+        },
+        {
+            "model": "model-b",
+            "input_count": 3,
+            "output_count": 1,
+            "unit": "tokens",
+        },
+    )
 
 
 def test_fallback_checkpoint_failure_counts_every_model_attempt(

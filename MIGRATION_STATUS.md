@@ -1557,9 +1557,14 @@ published from the saved sidecar. No runtime change was needed.
 #361 closes the standalone whole-audio no-speech persistence gap without a new
 state format. Whole mode now saves the existing settled no-speech slot before
 raising `NO_SPEECH_DETECTED`; exact resume reuses it, makes zero provider calls,
-and raises the same typed result without publishing the sentinel. The adjacent
-candidate-model token-usage loss discovered during this audit remains an open
-active-library defect for a separate atomic fix.
+and raises the same typed result without publishing the sentinel.
+
+#362 preserves provider-reported token usage across the complete opt-in image
+model-candidate chain. Usage from a successful pass on an abandoned model is
+carried into either the later successful result or the terminal typed error,
+while first-seen model order and independently unknown counts remain intact.
+The implementation reuses one normalized-row aggregator and changes no model
+selection, call accounting, state, retry, or provider contract.
 
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
