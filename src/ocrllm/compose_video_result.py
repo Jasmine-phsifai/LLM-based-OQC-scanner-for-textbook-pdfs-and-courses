@@ -31,6 +31,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     provider_call_counts: list[int | None] = []
     warnings: list[str] = []
     hotwords: list[str] = []
+    image_provider_client_cleanup_failed = False
 
     for item in outcome.frame_outcomes:
         indices, timestamps = read_video_frame_group_identity(item)
@@ -49,6 +50,8 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
             provider_call_counts.append(_result_provider_calls(item.result))
             warnings.extend(item.result.warnings)
             hotwords.extend(item.result.hotwords)
+            if item.result.metadata.get("provider_client_closed") is False:
+                image_provider_client_cleanup_failed = True
         else:
             assert item.error is not None
             settled_usage_rows.extend(
@@ -80,6 +83,8 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         ),
         "audio_state": outcome.audio_state,
     }
+    if image_provider_client_cleanup_failed:
+        metadata["image_provider_client_closed"] = False
     if outcome.snapshot_cleanup_error is not None:
         metadata["video_cleanup_error_code"] = (
             outcome.snapshot_cleanup_error.code

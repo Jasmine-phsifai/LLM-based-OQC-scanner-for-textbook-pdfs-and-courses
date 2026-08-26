@@ -7943,3 +7943,28 @@ tests; the superseding complete offline suite passes all 1,867 tests with zero
 failures or skips. The next reproduced item remains the lower-priority
 composite-video omission of `image_provider_client_closed=False` after a
 successful image branch.
+
+## Current working update: #414 exposes image cleanup failure after video resume
+
+A provider-free public high-level regression now settles one image frame group
+with exact 13/3 token usage and `provider_client_closed=False`, then forces the
+completed-state journal save to fail. The typed output error already preserves
+the call, token, and cleanup facts; a later resume reuses the durable paid slot
+with zero image calls, publishes the partial `result.md`, and removes the
+journal. Previously that final result kept the fixed warning but omitted the
+only machine-readable image cleanup boolean.
+
+`compose_video_result()` now promotes only an exact false cleanup value from a
+successful frame result into `image_provider_client_closed=False`. Any false
+successful group dominates; true, missing, null, numeric zero, and malformed
+values remain omitted. Failed frame errors and the independently scoped
+`audio_provider_client_closed` field are unchanged, as are status, warnings,
+frame ordering, provider calls, current token accounting, assets, publication,
+and resume behavior.
+
+No generic lifecycle merger, tri-state schema, warning parser, retry, fallback,
+transaction, or new public API was added. Focused composition, three-step and
+high-level video, publication, outcome, and long-audio video coverage passes
+104 tests; independent review finds no correctness issue; the complete offline
+suite passes all 1,867 tests with zero failures or skips. The queued disclosure
+gap is closed; return to a fresh bounded active-library audit.

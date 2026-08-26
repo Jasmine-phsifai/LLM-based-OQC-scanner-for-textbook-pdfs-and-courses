@@ -907,7 +907,7 @@ def test_completed_frame_state_save_failure_reports_paid_work_and_resumes_zero_c
                 markdown="# Paid frame\n",
                 input_tokens=13,
                 output_tokens=3,
-                client_closed=True,
+                client_closed=False,
             )
 
     real_persist_image_state = (
@@ -957,6 +957,7 @@ def test_completed_frame_state_save_failure_reports_paid_work_and_resumes_zero_c
             "unit": "tokens",
         },
     )
+    assert captured.value.details["provider_client_closed"] is False
     journals = _root_journals(output_root)
     assert len(journals) == 1
     saved_image = load_video_job_state(journals[0]).frame_groups[0].image_state
@@ -973,8 +974,14 @@ def test_completed_frame_state_save_failure_reports_paid_work_and_resumes_zero_c
         resume=True,
     )
 
+    assert result.status == "partial"
     assert result.metadata["current_run_provider_call_count"] == 0
     assert "current_model_token_usage" not in result.metadata
+    assert result.metadata["image_provider_client_closed"] is False
+    assert "audio_provider_client_closed" not in result.metadata
+    assert result.warnings == (
+        "The vision provider client could not be closed after recognition.",
+    )
     assert result.output_path == output_root / "result.md"
     assert "# Paid frame" in result.markdown
     assert result.output_path.read_text(encoding="utf-8") == result.markdown

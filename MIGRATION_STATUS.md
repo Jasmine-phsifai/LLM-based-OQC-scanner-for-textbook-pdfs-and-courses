@@ -1829,6 +1829,15 @@ atomic publication are unchanged. The focused image/output/resume/batch set
 passes 127 tests and the complete offline suite passes all 1,848 tests. The
 bounded reproduced queue is empty again; the next task requires a fresh audit.
 
+#414 closes the high-level video image-cleanup disclosure gap. A successful
+frame result carrying exact `provider_client_closed=False` now makes the final
+composite metadata expose `image_provider_client_closed=False`, including after
+zero-call journal resume and final publication. True or unknown image cleanup
+values remain omitted, and the audio-scoped field stays independent. No public
+signature, state format, provider, retry, fallback, or transaction changed.
+Focused video coverage passes 104 tests and the complete offline suite passes
+all 1,867 tests.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
