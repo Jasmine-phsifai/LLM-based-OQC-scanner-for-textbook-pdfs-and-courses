@@ -264,6 +264,13 @@ validated token usage as well as later models' usage. First-seen model order and
 unknown `None` counts remain honest; call totals, recovery policy, persistence,
 and provider behavior are unchanged. No billing subsystem was added.
 
+#363 preserves that first-seen rule through video composition. Interleaved
+successful and failed frame groups now contribute their validated usage in
+settled group order before the audio branch, instead of grouping all successes
+ahead of all errors. No result content, status, calls, provider, or publication
+behavior changed. A separately reproduced lexical alias around the reserved
+silent-video `audio.mp3` path remains the next atomic publication defect.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes

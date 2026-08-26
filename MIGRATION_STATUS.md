@@ -1566,6 +1566,13 @@ while first-seen model order and independently unknown counts remain intact.
 The implementation reuses one normalized-row aggregator and changes no model
 selection, call accounting, state, retry, or provider contract.
 
+#363 keeps that ordering contract when settled video frame groups interleave
+results and errors. Composition now gathers each group's validated token rows
+in caller order and performs one final model merge, so success A, failure B,
+success C remains A, B, C rather than A, C, B. The independently reproduced
+nonexistent reserved-audio lexical-alias publication bug remains open for the
+next atomic fix.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

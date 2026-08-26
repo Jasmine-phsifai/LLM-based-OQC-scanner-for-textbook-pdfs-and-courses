@@ -12,6 +12,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     from .aggregate_current_model_token_usage import (
         aggregate_current_model_token_usage,
     )
+    from .aggregate_model_token_usage import aggregate_model_token_usage
     from .build_recognition_result import build_recognition_result
     from .errors import VideoError
     from .processor_output import ProcessorOutput
@@ -25,8 +26,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         raise ValueError("cannot compose a fully failed video outcome") from None
 
     sections = ["# Video frames"]
-    successful_results: list[RecognitionResult] = []
-    settled_errors: list[OCRLLMError] = []
+    settled_usage_rows: list[dict[str, str | int | None]] = []
     frame_failures: list[dict[str, object]] = []
     provider_call_counts: list[int | None] = []
     warnings: list[str] = []
@@ -43,13 +43,17 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         ]
         if item.result is not None:
             body.append(item.result.markdown.strip())
-            successful_results.append(item.result)
+            settled_usage_rows.extend(
+                aggregate_current_model_token_usage((item.result,))
+            )
             provider_call_counts.append(_result_provider_calls(item.result))
             warnings.extend(item.result.warnings)
             hotwords.extend(item.result.hotwords)
         else:
             assert item.error is not None
-            settled_errors.append(item.error)
+            settled_usage_rows.extend(
+                aggregate_current_model_token_usage((), (item.error,))
+            )
             body.append(f"Recognition error: `{item.error.code}`")
             provider_call_counts.append(_error_provider_calls(item.error))
             warnings.append(
@@ -87,7 +91,9 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     if frame_failures:
         metadata["video_frame_group_errors"] = tuple(frame_failures)
     if outcome.frame_error is not None:
-        settled_errors.append(outcome.frame_error)
+        settled_usage_rows.extend(
+            aggregate_current_model_token_usage((), (outcome.frame_error,))
+        )
         sections.append(
             "## Frame recognition branch\n\n"
             f"Recognition error: `{outcome.frame_error.code}`"
@@ -101,7 +107,9 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     sections.append("# Video audio")
     if outcome.audio_result is not None:
         sections.append(outcome.audio_result.markdown.strip())
-        successful_results.append(outcome.audio_result)
+        settled_usage_rows.extend(
+            aggregate_current_model_token_usage((outcome.audio_result,))
+        )
         provider_call_counts.append(_result_provider_calls(outcome.audio_result))
         warnings.extend(outcome.audio_result.warnings)
         hotwords.extend(outcome.audio_result.hotwords)
@@ -118,7 +126,9 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         if outcome.audio_state == "absent":
             sections.append("No audio stream was present.")
         else:
-            settled_errors.append(outcome.audio_error)
+            settled_usage_rows.extend(
+                aggregate_current_model_token_usage((), (outcome.audio_error,))
+            )
             sections.append(f"Recognition error: `{outcome.audio_error.code}`")
             metadata["audio_error_code"] = outcome.audio_error.code
             warnings.append(
@@ -133,10 +143,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         if len(known_provider_call_counts) == len(provider_call_counts)
         else None
     )
-    token_usage = aggregate_current_model_token_usage(
-        successful_results,
-        settled_errors,
-    )
+    token_usage = aggregate_model_token_usage(settled_usage_rows)
     if token_usage:
         metadata["current_model_token_usage"] = token_usage
 

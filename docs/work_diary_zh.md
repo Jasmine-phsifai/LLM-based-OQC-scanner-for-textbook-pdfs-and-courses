@@ -6307,3 +6307,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **实现与个人复核。** 新的 `aggregate_model_token_usage()` 只接收规范化行，按模型首次出现顺序分别累加 input/output；任一分量未知时继续保持 `None`，非法、负数和布尔计数仍被忽略。原有 result/error adapter 改为只负责提取和规范化，再调用该函数，删除重复校验逻辑。图片候选循环只在真正前进到下一模型时保存当前 typed error 已携带的结算用量；后来成功时与终端模型合并，后来失败时写回既有 `settled_model_usage`。调用数、模型尝试顺序、可切换错误范围、checkpoint 和 provider 行为均未改变。个人补充了“两个模型都在 review 耗尽”的公共终止回归，证明四次调用及 10/2、3/1 两行仍完整保留。
 
 **验证与过度设计复查。** 聚合、候选切换、Stage M、PDF 与视频聚合定向集合 **58 passed in 3.54s**。轻量执行者在测试子进程中补入仓库已知 Node 路径后，最终完整全量 **1,778 passed in 85.54s**；明确排除 Node 的集合 **1,776 passed in 87.14s**。compileall、diff check、新文件行尾检查和冻结 `contracts/worker` 边界均通过；没有 provider 调用、安装或下载。没有新增 billing ledger、usage 持久化、模型 fallback 策略、retry、provider 基类或第二套计数结构；抽出的函数有两个当前消费者，并替代了原有重复逻辑，不是为假想未来搭架子。
+
+## #363 — 2026-08-26：视频组合保持成功与失败帧组的真实 token 顺序
+
+**本轮英文原子任务。** `Atomic task — Iteration #363: audit the already-shipped video result composition and publication boundary for one concrete loss of settled branch evidence, then fix only a publicly reproducible defect. Context: image candidate accounting is now complete, full-frame fidelity is settled, and the future resumable video job still has unresolved product semantics that must not be guessed. Success means reconciling the authoritative queue, exercising complete/partial/failed video outcomes through the current public compose-and-publish path, preserving every valid branch result/error/call/usage fact, and either landing one failing-first correction or recording that this boundary is sound and selecting the next proven defect. This matters because the current importable library must be trustworthy before a larger video journal is introduced.`
+
+**并行审计与缺陷选择。** 两名轻量执行者分别只读检查 compose 与 publish。compose 审计复现：三个帧组按“model-a 成功、model-b 失败但有已结算 usage、model-c 成功”排列时，旧实现先收集全部成功结果、再收集全部错误，最终 token 模型顺序错误变成 A、C、B，尽管三次调用和总量正确。publish 审计另行复现：无音频视频保留但尚不存在的 `output_root/audio.mp3` 可由 `frames/../audio.mp3` 绕过并写入 Markdown。本轮只选前者，因为它直接延续 #362 的排序合同；路径所有权缺陷明确登记为下一轮，不混入同一提交。
+
+**失败优先、实现与自我纠错。** 新公共组合回归先精确得到 A、C、B。实现删除按成功/错误分开的两个列表，在遍历每个有序 frame outcome 时立即通过现有适配器提取已校验行，音频分支随后加入，最后只调用一次 #362 的模型聚合器。第一版把错误适配器调用写成只传 `errors=`，漏掉必需的空 `results` 参数，邻近集合立即暴露 13 项失败；修正后新回归又发现测试把默认 provider error code 写死，随即改为读取错误对象自身 code。没有隐藏这两次未提交反馈，也没有为此改变公共签名或新建 helper。
+
+**验证与过度设计复查。** 视频 compose/publish/recognize、模型聚合和候选切换集合最终为 **70 passed in 25.84s**。轻量执行者在测试子进程中补入现有 Node 路径后，完整全量 **1,779 passed in 86.47s**；明确排除 Node 的集合 **1,777 passed in 86.12s**。compileall、diff check 和冻结 `contracts/worker` 边界均通过；没有 provider 调用、安装或下载。实现没有改变 Markdown、error code、status、assets、warnings、hotwords、调用总数、unknown 语义、provider 或发布行为；没有触碰高层 video journal、resume、repair、路径框架或冻结目录。路径别名缺陷不在本轮顺手修复，防止把两个独立所有权问题合并成模糊“大修”。

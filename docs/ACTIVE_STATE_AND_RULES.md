@@ -7003,3 +7003,33 @@ is supplied only to the test subprocess; the explicit non-Node suite passes
 1,776 tests. Compileall, diff validation, and frozen-boundary checks pass with
 no provider calls. This is not a billing ledger, persistence format, retry
 engine, or provider abstraction.
+
+## Current working update: #363 video usage follows settled branch order
+
+`compose_video_result()` previously separated every successful child result
+from every typed child error before aggregating token usage. For interleaved
+frame outcomes such as success on model A, failure with settled usage on model
+B, then success on model C, the composed metadata therefore reported A, C, B.
+Totals and call counts were intact, but the first-seen model order established
+by #362 no longer matched the video's settled frame-group order.
+
+Composition now extracts each child's already-validated usage while traversing
+the existing ordered frame groups, followed by the audio branch, and performs
+one final exact-model merge. The old success/error collection lists are removed.
+Markdown ordering, error codes, status, assets, warnings, hotwords, call totals,
+unknown-count behavior, provider execution, and publication are unchanged. A
+public regression proves A, B, C metadata order, three calls, and unchanged
+success/error/success Markdown order.
+
+The focused compose, publish, video, aggregation, and candidate set passes 70
+tests. The complete offline suite passes all 1,779 tests with the known Node
+executable supplied only to the test subprocess; the explicit non-Node suite
+passes 1,777 tests. Compileall, diff validation, and frozen-boundary checks pass
+without provider calls.
+
+One separate publication defect remains open for the next atomic correction:
+for a silent video, the reserved but nonexistent `output_root/audio.mp3` can be
+reached through a lexical alias such as `frames/../audio.mp3`. The current
+nonexistent-target fast path returns before filesystem alias comparison and can
+publish Markdown at that reserved media name. Fix path identity narrowly; do
+not add a generalized path or ownership framework.

@@ -229,6 +229,68 @@ def test_compose_video_result_marks_partial_failures_without_hiding_success(
     )
 
 
+def test_compose_video_result_keeps_interleaved_model_usage_order(
+    tmp_path: Path,
+) -> None:
+    first = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    second = _frame(tmp_path / "video" / "frames" / "frame-2.jpg", 10, 5.0)
+    third = _frame(tmp_path / "video" / "frames" / "frame-3.jpg", 20, 10.0)
+    failed = ProviderError(
+        "Second frame group failed.",
+        details={
+            "video_frame_indices": (10,),
+            "video_frame_timestamps_seconds": (5.0,),
+            "provider_calls_attempted": 1,
+            "settled_model_usage": (
+                {
+                    "model": "model-b",
+                    "input_count": 4,
+                    "output_count": 1,
+                    "unit": "tokens",
+                },
+            ),
+        },
+    )
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(first, second, third),
+        frame_outcomes=(
+            BatchItemOutcome(
+                index=0,
+                result=_frame_result(
+                    markdown="First board.",
+                    indices=(0,),
+                    timestamps=(0.0,),
+                    model="model-a",
+                ),
+            ),
+            BatchItemOutcome(index=1, error=failed),
+            BatchItemOutcome(
+                index=2,
+                result=_frame_result(
+                    markdown="Third board.",
+                    indices=(20,),
+                    timestamps=(10.0,),
+                    model="model-c",
+                ),
+            ),
+        ),
+        audio_error=VideoError("No stream.", code="VIDEO_NO_AUDIO_STREAM"),
+    )
+
+    result = compose_video_result(outcome)
+
+    assert result.metadata["current_run_provider_call_count"] == 3
+    assert result.metadata["current_model_token_usage"] == (
+        {"model": "model-a", "input_tokens": 10, "output_tokens": 2},
+        {"model": "model-b", "input_tokens": 4, "output_tokens": 1},
+        {"model": "model-c", "input_tokens": 10, "output_tokens": 2},
+    )
+    assert result.markdown.index("First board.") < result.markdown.index(
+        f"Recognition error: `{failed.code}`"
+    ) < result.markdown.index("Third board.")
+
+
 def test_compose_video_result_describes_silent_video_without_fake_transcript(
     tmp_path: Path,
 ) -> None:
