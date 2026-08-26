@@ -188,6 +188,78 @@ def test_interval_run_saves_each_paid_prefix_then_publishes_ordered_markdown(
     assert not (output_dir / "lecture" / ".ocrllm-long-audio-resume.json").exists()
 
 
+def test_interval_publication_failure_reports_saved_settlement(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    _interval_processor, materialized, provider_calls = _install_interval_fakes(
+        monkeypatch,
+        tmp_path,
+        ["first", "second", "third"],
+    )
+    processor = __import__(
+        "ocrllm.processors.recognize_long_mp3",
+        fromlist=["recognize_long_mp3"],
+    )
+    write_markdown_atomically = processor.write_markdown_atomically
+
+    def fail_publication(*_args, **_kwargs):
+        raise OutputError(
+            "The requested Markdown output could not be written atomically.",
+            code="OUTPUT_WRITE_FAILED",
+        )
+
+    monkeypatch.setattr(
+        processor,
+        "write_markdown_atomically",
+        fail_publication,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir),
+            interval_minutes=5,
+        )
+
+    assert captured.value.details["provider_calls_attempted"] == 3
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 303,
+            "output_count": 33,
+            "unit": "tokens",
+        },
+    )
+    assert captured.value.details["remote_file_deleted"] is True
+    assert captured.value.details["provider_client_closed"] is True
+    assert materialized == [0, 1, 2]
+    assert provider_calls == [0, 1, 2]
+    assert (
+        output_dir / "lecture" / ".ocrllm-long-audio-resume.json"
+    ).is_file()
+    assert not (output_dir / "lecture" / "result.md").exists()
+
+    monkeypatch.setattr(
+        processor,
+        "write_markdown_atomically",
+        write_markdown_atomically,
+    )
+    resumed = recognize_long_mp3(
+        tmp_path / "lecture.mp3",
+        config=_config(output_dir, resume=True),
+    )
+
+    assert resumed.markdown == "first\n\nsecond\n\nthird"
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert materialized == [0, 1, 2]
+    assert provider_calls == [0, 1, 2]
+    assert not (
+        output_dir / "lecture" / ".ocrllm-long-audio-resume.json"
+    ).exists()
+
+
 def test_interval_failure_preserves_prefix_and_resume_uses_saved_parameters(
     tmp_path: Path,
     monkeypatch,

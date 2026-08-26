@@ -301,6 +301,14 @@ the public error now carries that current run's validated per-model token usage
 alongside its existing call and attempt evidence. Historical resume usage is
 not relabeled as current, and PDF state/repair behavior is unchanged.
 
+#369 closes the same evidence gap at standalone long-audio's deliberately
+separate publication boundary. Whole and interval results still save reusable
+state before writing `result.md`; if that write fails, the typed error now
+retains current-run per-model token usage and exact remote/client cleanup facts.
+Public regressions also prove the retained interval state resumes with zero new
+provider calls. State format, lifecycle, retry, repair, and provider behavior
+are unchanged.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes

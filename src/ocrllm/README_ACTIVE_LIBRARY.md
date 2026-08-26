@@ -257,7 +257,9 @@ original choice.
   atomically publishes `<output_dir>/<audio stem>/result.md`, and then removes
   the temporary state; if the whole-file state save itself fails after the one
   provider call completed, the typed error still reports that one attempted
-  call;
+  call; if final Markdown publication fails after whole or interval settlement,
+  the typed error also retains current-run per-model token usage and exact
+  remote-file/client-cleanup facts while the reusable state remains in place;
 - records a paid whole-file no-speech outcome in the same temporary state;
   explicit resume then raises the same typed no-speech result with zero new
   provider calls, and the internal sentinel is never published as Markdown;

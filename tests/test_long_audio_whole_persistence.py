@@ -170,6 +170,16 @@ def test_failed_publication_preserves_paid_state_for_zero_call_resume(
         )
 
     assert first_error.value.details["provider_calls_attempted"] == 1
+    assert first_error.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 101,
+            "output_count": 17,
+            "unit": "tokens",
+        },
+    )
+    assert first_error.value.details["remote_file_deleted"] is True
+    assert first_error.value.details["provider_client_closed"] is True
     assert provider_calls == [MODEL]
     assert _state_path(output_dir).is_file()
     assert not (_root(output_dir) / "result.md").exists()

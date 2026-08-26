@@ -7119,3 +7119,27 @@ The focused publication and usage set passes 90 tests. The complete offline
 suite passes all 1,783 tests with the known Node executable supplied only to the
 test subprocess; the explicit non-Node suite passes 1,781 tests. Compileall,
 diff validation, and frozen-boundary checks pass without provider calls.
+
+## Current working update: #369 long-audio publication failures retain settlement evidence
+
+Standalone whole and interval long-audio flows save their reusable paid state
+before publishing `result.md`, but their separate final-publication catch only
+retained the current call count. If the local Markdown write failed, the typed
+error omitted already-validated per-model token usage and the exact remote-file
+and client-cleanup facts even though the sidecar remained reusable.
+
+The long-audio catch now attaches only the settled `ProcessorOutput`'s nonempty
+current-run usage and exact cleanup booleans. The token conversion shared with
+ordinary image/PDF publication is extracted into one exact-purpose helper now
+that it has two real consumers. Existing error details remain primary;
+pre-settlement errors attach nothing, and completed resume keeps historical
+usage separate from the empty current run. Public whole and interval
+regressions prove the preserved evidence, retained sidecar, absent failed
+publication, and exact zero-call resume.
+
+No state field, serializer, provider behavior, retry, repair, transaction,
+publication abstraction, or lifecycle order changed. The focused neighboring
+set passes 125 tests. The complete offline suite passes all 1,784 tests with the
+known Node executable supplied only to the test subprocess; the explicit
+non-Node suite passes 1,782 tests. Compileall, diff validation, and
+frozen-boundary checks pass without provider calls.

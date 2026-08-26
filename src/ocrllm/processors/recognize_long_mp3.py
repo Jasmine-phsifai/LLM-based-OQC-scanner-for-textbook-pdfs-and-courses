@@ -43,6 +43,7 @@ def recognize_validated_long_mp3(
         preflight_long_audio_output_ownership(paths, resume=config.resume)
         created_root = False
         current_run_calls = 0
+        processor_output: ProcessorOutput | None = None
         try:
             if not config.resume:
                 _create_output_root(paths.root)
@@ -106,6 +107,19 @@ def recognize_validated_long_mp3(
         except OCRLLMError as error:
             if "provider_calls_attempted" not in error.details:
                 error._add_safe_detail("provider_calls_attempted", current_run_calls)
+            if processor_output is not None:
+                from ..attach_current_model_token_usage_to_error import (
+                    attach_current_model_token_usage_to_error,
+                )
+
+                attach_current_model_token_usage_to_error(
+                    error,
+                    processor_output.metadata.get("current_model_token_usage"),
+                )
+                for key in ("remote_file_deleted", "provider_client_closed"):
+                    value = processor_output.metadata.get(key)
+                    if type(value) is bool and key not in error.details:
+                        error._add_safe_detail(key, value)
             _remove_empty_new_root(paths.root, created=created_root)
             raise
 

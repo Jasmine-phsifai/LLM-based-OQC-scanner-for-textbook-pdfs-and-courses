@@ -1602,6 +1602,14 @@ the public typed error. Existing settled details are not overwritten, completed
 resume cannot expose historical usage as current, and no PDF state, repair,
 provider, retry, video, or long-audio behavior changed.
 
+#369 applies that already-proven error evidence rule to standalone whole and
+interval long audio without merging its lifecycle into the shared image/PDF
+publisher. A final `result.md` write failure now retains current-run per-model
+usage plus exact remote-file and client-cleanup facts from the already-settled
+audio result. Its saved sidecar remains reusable and public interval coverage
+proves zero-call resume. No state format, retry, repair, provider, transaction,
+or publication abstraction was added.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
