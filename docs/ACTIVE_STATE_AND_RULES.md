@@ -7846,9 +7846,29 @@ the journal.
 No generic cleanup ledger, result schema, state field, retry, fallback, or
 transaction was added. The focused video/image set passes 108 tests;
 independent review finds no high- or medium-severity issue; the frozen-worktree
-complete offline rerun passes all 1,864 tests with zero failures. A separate
-low-priority consistency gap remains: a successful recognized-audio result with
-failed client cleanup keeps its partial status and warning through composition,
-but the composite video metadata does not expose the audio-scoped false boolean.
-Compare that bounded disclosure gap against stronger fresh defects before
-selecting the next iteration.
+complete offline rerun passes all 1,864 tests with zero failures. At #408 close,
+a separate low-priority consistency gap remained: a successful recognized-audio
+result with failed client cleanup kept its partial status and warning through
+composition, but the composite video metadata omitted the audio-scoped false
+boolean. #409 below closes that bounded disclosure gap.
+
+## Current working update: #409 exposes recognized-audio cleanup failure
+
+The #408 public video regression now also proves its zero-audio-call resume
+result exposes `audio_provider_client_closed=False`. Previously the recognized
+short-audio state remained partial and kept its fixed cleanup warning, but the
+composite video's machine-readable metadata omitted the exact false boolean;
+the equivalent `NoSpeechDetected` branch already exposed that field.
+
+`compose_video_result()` now promotes only an exact false value from a
+successful `audio_result` into the existing audio-scoped metadata key. True,
+missing, null, numeric zero, and malformed values remain omitted. Error
+composition, warnings, status, call/token accounting, assets, provider
+separation, journal persistence, and resume dispatch are unchanged.
+
+This is a two-line correction plus one assertion in an existing public test.
+No generic lifecycle merger, metadata schema, warning parser, retry, fallback,
+or transaction was added. Focused video composition/lifecycle coverage passes
+80 tests; independent review passes 18 tests and finds no correctness issue;
+the complete offline suite passes all 1,864 tests with zero failures. The
+recorded low-priority #408 asymmetry is closed; return to a fresh bounded audit.

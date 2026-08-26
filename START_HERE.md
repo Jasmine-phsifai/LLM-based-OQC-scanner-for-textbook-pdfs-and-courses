@@ -1220,5 +1220,13 @@ audio have settled, the original error now includes the audio branch's exact
 token evidence. Resume reuses both settled branches and dispatches only the
 missing frame group. This is false-only propagation in the existing video
 evidence merger, not a generic lifecycle ledger. The complete offline suite
-passes all 1,864 tests. A separate low-priority composite-result metadata
-asymmetry remains recorded in the authority file.
+passes all 1,864 tests. Its then-open low-priority composite-result metadata
+asymmetry is closed by #409 below.
+
+#409 closes that composite-result metadata asymmetry. A recognized audio result
+whose exact client cleanup failed now contributes
+`audio_provider_client_closed=False` to the composed video metadata, including
+after zero-audio-call journal resume. Its partial status and warning were
+already preserved. True, unknown, and malformed values remain unpromoted. The
+change adds no lifecycle abstraction or state field, and the complete offline
+suite remains 1,864 tests.

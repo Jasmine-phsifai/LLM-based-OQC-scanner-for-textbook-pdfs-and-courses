@@ -613,6 +613,7 @@ def test_later_frame_failure_reports_earlier_frames_and_settled_audio(
     assert result.output_path == output_root / "result.md"
     assert result.output_path.read_text(encoding="utf-8") == result.markdown
     assert result.metadata["current_run_provider_call_count"] == 1
+    assert result.metadata["audio_provider_client_closed"] is False
     assert any("client could not be closed" in item for item in result.warnings)
     assert audio_calls == 1
     assert [len(group) for group in image_groups] == [8, 1, 1]

@@ -113,6 +113,8 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         provider_call_counts.append(_result_provider_calls(outcome.audio_result))
         warnings.extend(outcome.audio_result.warnings)
         hotwords.extend(outcome.audio_result.hotwords)
+        if outcome.audio_result.metadata.get("provider_client_closed") is False:
+            metadata["audio_provider_client_closed"] = False
     else:
         assert outcome.audio_error is not None
         audio_provider_calls = _error_provider_calls(outcome.audio_error)
