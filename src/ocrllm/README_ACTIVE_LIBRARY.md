@@ -256,6 +256,9 @@ original choice.
   the temporary state; if the whole-file state save itself fails after the one
   provider call completed, the typed error still reports that one attempted
   call;
+- records a paid whole-file no-speech outcome in the same temporary state;
+  explicit resume then raises the same typed no-speech result with zero new
+  provider calls, and the internal sentinel is never published as Markdown;
 - accepts `resume=True` only with that fixed state present and an unpublished
   final result; an exact whole-file or interval prefix is reused with zero calls
   for settled work, while source/model/prompt/transport/interval drift is rejected;

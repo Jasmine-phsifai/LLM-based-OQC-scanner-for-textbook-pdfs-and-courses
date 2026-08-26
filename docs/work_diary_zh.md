@@ -6287,3 +6287,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **保留的必要行为。** legacy `prepare_board_image()` 只做完整画面的原样复制、格式转换或等比例缩小；视频候选比较的缩略图不会送给识别，被选中帧会重新解码并按完整 shape 保存；新旧 PDF 都只用一个统一比例渲染整页。legacy 中唯一剩下的 `cv2.Canny` 只统计整帧边缘数量来拒绝空白时间点；pHash 的矩阵切片只是比较指纹。两者都不定位黑板、不改变识别像素。
 
 **验证与过度设计复查。** active 图片/视频/PDF 定向集合 **75 passed in 5.08s**；legacy 完整画面与 PDF 渲染集合 **5 passed in 4.56s**。既有视频回归核对保留帧原尺寸和外缘像素；PDF 测试替身只允许整页 `render(scale=...)`，若代码传入裁剪区域会直接失败。本轮没有运行时修改：删除 `prepare_board_image.py`、缩略图比较或整页渲染反而会破坏现有正常能力；新增反裁剪扫描器、运行时守卫或第二套图像抽象同样是无证据的过度设计。
+
+## #361 — 2026-08-26：whole 长音频的已付费无语音结果可零调用恢复
+
+**本轮英文原子任务。** `Atomic task — Iteration #361: identify and close one concrete correctness gap in an already-shipped active-library recognition path, without beginning the unresolved high-level video-resume design. Context: full-frame fidelity is now settled and #359 proves retained PDF work can resume without replay; the next maturity step should come from current executable behavior, not another speculative subsystem. Success means reconciling the authoritative queue and defect register, reproducing one user-visible defect through the public API, applying the smallest readable fix, and proving it with focused and full offline tests. This matters because mature recovery behavior must remain honest at every failure and publication boundary.`
+
+**审计选择与失败优先证据。** 未来高层 video journal 的必要单元缺正文终点仍由维护者决定，冻结 `worker/` 中的已知导入覆盖缺陷也不能越界，因此本轮并行只读审计已发布的 batch、image 和 standalone long-audio。batch 定向 **23 passed** 且没有新缺陷。long-audio 审计定位到明确不一致：interval 遇到已付费 `NoSpeechDetected` 会保存 no-speech slot，whole 却在建立 slot 之前直接抛错；新建输出目录因此被当成空目录删除。公共失败回归精确得到 **1 failed**：首次错误如实说明 1 次 provider 调用，但 sidecar 不存在，显式 resume 只能报 `RESUME_STATE_INVALID`。
+
+**最小修复与个人复核。** 路线 A 为 whole 新增 no-speech 字段或第二种 state；路线 B 直接复用 interval 已有且已验证的 `LongAudioSettledSlot` sentinel，选 B。whole 现在会在返回 typed no-speech 前原子保存唯一 slot；resume 识别该 slot 为已结算结果，以 `provider_calls_attempted=0` 重放同一 typed 错误。内部 sentinel 始终不会成为 `result.md`，state 保留供下次精确 resume。第一次和恢复后均没有最终 Markdown，provider 列表始终只有首次的一次调用。
+
+**验证、新发现与过度设计复查。** 直接失败回归修复后为 **1 passed**；whole/interval/state/Google audio/video 结算邻近集合 **78 passed in 1.56s**。轻量执行者用现有 `D:\Anaconda\envs\STA\node.exe` 只补入子进程 PATH，完整全量为 **1,775 passed in 87.30s**；明确排除 Node harness 的集合为 **1,773 passed in 87.03s**，没有功能失败。compileall、`git diff --check` 和冻结 `contracts/worker` 边界均通过。image 审计另外复现：候选模型切换后，总调用数正确，但前一模型已结算的 token 用量从最终 metadata 丢失；这是下一个独立候选，本轮只登记而不混改。本修复没有新 schema、retry、fallback、provider 基类、billing ledger、repair 或 video resume API；它只让 whole 与 interval 遵守同一个已有结算规则。

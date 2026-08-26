@@ -6954,3 +6954,36 @@ The existing runtime already passed this stronger consumer proof, so #359 makes
 no production change. It adds no PDF state, repair parser, retry, alternate
 publication path, provider behavior, or API. The focused PDF suite passes 25
 tests without network access.
+
+## Current working update: #361 whole no-speech is a reusable settlement
+
+Whole-file and interval long-audio modes previously disagreed after a paid
+Google Files request returned typed no-speech. Interval mode saved an existing
+no-speech slot and could replay the same typed result on resume with zero new
+calls. Whole mode let the error escape before building any slot; its newly
+created output root was then empty and removed, so `resume=True` failed with
+`RESUME_STATE_INVALID` even though the provider call had completed.
+
+Whole mode now reuses the existing `LongAudioSettledSlot` no-speech encoding.
+It saves that one slot before re-raising the provider's typed result. Exact
+resume recognizes the saved sentinel as an outcome, raises
+`NO_SPEECH_DETECTED` with zero current-run provider calls, retains the state,
+and never publishes the sentinel as Markdown. The failing-first public
+regression proved the old missing state and now proves one historical call,
+zero replay calls, no `result.md`, and a retained state after both attempts.
+No state version, provider behavior, retry, fallback, repair, worker, or future
+video-journal contract changed.
+
+The whole/interval/Google audio and video settlement neighbors pass 78 tests.
+The complete offline suite passes all 1,775 tests when the repository's known
+Node executable is supplied only to the test subprocess; the explicit non-Node
+suite passes 1,773 tests. Compileall, diff validation, and frozen-boundary
+checks pass without provider calls.
+
+The same bounded audit proved one separate active defect that remains open for
+the next atomic correction: when model-candidate recovery advances after an
+earlier model has already produced a successful workflow pass, final
+`current_model_token_usage` contains only the terminal successful model and
+omits the earlier model's settled reported usage. Total provider-call counting
+remains correct. Do not add a billing subsystem; carry forward only the already
+validated per-model usage attached to the advancing typed error.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from ..audio.build_long_audio_no_speech_slot import build_long_audio_no_speech_slot
 from ..audio.build_long_audio_settled_slot import build_long_audio_settled_slot
 from ..audio.fingerprint_long_audio_request import (
     LONG_AUDIO_REQUEST_IDENTITY_VERSION,
@@ -18,9 +19,12 @@ from ..audio.reuse_long_audio_partial_state import reuse_long_audio_partial_stat
 from ..audio.save_long_audio_partial_state_atomically import (
     save_long_audio_partial_state_atomically,
 )
-from ..audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT
+from ..audio.transcription_prompt import (
+    AUDIO_TRANSCRIPTION_PROMPT,
+    NO_SPEECH_SENTINEL,
+)
 from ..config import Config
-from ..errors import OCRLLMError
+from ..errors import NoSpeechDetected, OCRLLMError
 from ..processor_output import ProcessorOutput
 from ..providers.google_genai.recognize_uploaded_mp3 import recognize_uploaded_mp3
 from .build_long_mp3_processor_output import build_long_mp3_processor_output
@@ -48,23 +52,50 @@ def recognize_long_mp3_whole(
     if saved_state is not None:
         slots = reuse_long_audio_partial_state(saved_state, request_plan)
     if slots:
+        if slots[0].markdown == NO_SPEECH_SENTINEL:
+            raise NoSpeechDetected(
+                details={
+                    "provider": slots[0].provider,
+                    "model": slots[0].model,
+                    "provider_calls_attempted": 0,
+                    "remote_file_deleted": (
+                        slots[0].provider_file_cleanup_succeeded
+                    ),
+                    "provider_client_closed": (
+                        slots[0].provider_client_cleanup_succeeded
+                    ),
+                }
+            ) from None
         return _build_reused_output(snapshot, slots[0]), 0
 
-    response = recognize_uploaded_mp3(
-        snapshot,
-        prompt=AUDIO_TRANSCRIPTION_PROMPT,
-        config=config,
-    )
+    no_speech_error = None
     try:
-        output = _with_current_run_count(
-            build_long_mp3_processor_output(snapshot, response, config=config),
-            count=1,
+        response = recognize_uploaded_mp3(
+            snapshot,
+            prompt=AUDIO_TRANSCRIPTION_PROMPT,
+            config=config,
         )
-        slot = build_long_audio_settled_slot(
-            output,
-            window_index=0,
-            request_fingerprint=request_fingerprint,
-        )
+    except NoSpeechDetected as error:
+        no_speech_error = error
+        response = None
+    try:
+        if no_speech_error is None:
+            output = _with_current_run_count(
+                build_long_mp3_processor_output(snapshot, response, config=config),
+                count=1,
+            )
+            slot = build_long_audio_settled_slot(
+                output,
+                window_index=0,
+                request_fingerprint=request_fingerprint,
+            )
+        else:
+            slot = build_long_audio_no_speech_slot(
+                window_index=0,
+                request_fingerprint=request_fingerprint,
+                model=model,
+                error=no_speech_error,
+            )
         save_long_audio_partial_state_atomically(
             state_path,
             LongAudioPartialState(
@@ -80,6 +111,8 @@ def recognize_long_mp3_whole(
         if "provider_calls_attempted" not in error.details:
             error._add_safe_detail("provider_calls_attempted", 1)
         raise
+    if no_speech_error is not None:
+        raise no_speech_error
     return output, 1
 
 

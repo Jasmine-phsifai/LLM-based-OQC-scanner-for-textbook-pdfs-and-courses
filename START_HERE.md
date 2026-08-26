@@ -250,6 +250,17 @@ sidecar with zero new provider calls, publishes the child Markdown and final
 range-marked PDF Markdown, and reports zero current-run calls. Runtime was
 already correct; this adds no state, retry, repair, or API behavior.
 
+#361 fixes a whole-file long-audio settlement mismatch. A paid Google Files
+request that returned typed no-speech previously left no state, so explicit
+resume failed as missing instead of reusing the settled outcome. Whole mode now
+uses the existing no-speech slot already proven by interval mode, saves it
+before returning the typed error, and a later resume repeats that error with
+zero provider calls. It never publishes the internal no-speech sentinel and
+does not change the state schema, retry, provider, or video-resume boundary.
+One adjacent active defect is now recorded for the next atomic correction:
+model-candidate recovery currently omits token usage already settled by an
+earlier model before advancing, even though total call accounting is correct.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes

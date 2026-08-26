@@ -9,7 +9,12 @@ from types import SimpleNamespace
 import pytest
 
 from ocrllm import AudioModelSettings, Config, GoogleGenAISettings, recognize_long_mp3
-from ocrllm.errors import OutputError, OutputExists, ResumeStateError
+from ocrllm.errors import (
+    NoSpeechDetected,
+    OutputError,
+    OutputExists,
+    ResumeStateError,
+)
 
 
 MODEL = "gemini-test-whole-audio"
@@ -191,6 +196,57 @@ def test_failed_publication_preserves_paid_state_for_zero_call_resume(
     assert result.metadata["provider_client_closed"] is True
     assert result.output_path is not None and result.output_path.is_file()
     assert not _state_path(output_dir).exists()
+
+
+def test_whole_no_speech_is_settled_and_replayed_without_provider_call(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    provider_calls: list[str] = []
+    _processor, whole_processor = _install_fakes(monkeypatch, provider_calls)
+
+    def no_speech_provider(_snapshot, *, prompt, config):
+        provider_calls.append(config.audio_model.name)
+        raise NoSpeechDetected(
+            details={
+                "provider": "google",
+                "model": MODEL,
+                "provider_calls_attempted": 1,
+                "remote_file_deleted": True,
+                "provider_client_closed": True,
+            }
+        )
+
+    monkeypatch.setattr(
+        whole_processor,
+        "recognize_uploaded_mp3",
+        no_speech_provider,
+    )
+
+    with pytest.raises(NoSpeechDetected) as first_error:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir),
+        )
+
+    assert first_error.value.details["provider_calls_attempted"] == 1
+    assert provider_calls == [MODEL]
+    assert _state_path(output_dir).is_file()
+    assert not (_root(output_dir) / "result.md").exists()
+
+    with pytest.raises(NoSpeechDetected) as resumed_error:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir, resume=True),
+        )
+
+    assert resumed_error.value.details["provider_calls_attempted"] == 0
+    assert resumed_error.value.details["remote_file_deleted"] is True
+    assert resumed_error.value.details["provider_client_closed"] is True
+    assert provider_calls == [MODEL]
+    assert _state_path(output_dir).is_file()
+    assert not (_root(output_dir) / "result.md").exists()
 
 
 def test_whole_state_save_failure_reports_the_completed_provider_call(

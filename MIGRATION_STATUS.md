@@ -1554,6 +1554,13 @@ resume=True)`: the provider remains at exactly one historical call, the resumed
 PDF reports zero current-run calls, and both child and final Markdown are
 published from the saved sidecar. No runtime change was needed.
 
+#361 closes the standalone whole-audio no-speech persistence gap without a new
+state format. Whole mode now saves the existing settled no-speech slot before
+raising `NO_SPEECH_DETECTED`; exact resume reuses it, makes zero provider calls,
+and raises the same typed result without publishing the sentinel. The adjacent
+candidate-model token-usage loss discovered during this audit remains an open
+active-library defect for a separate atomic fix.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
