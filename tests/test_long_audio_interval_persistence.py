@@ -99,6 +99,77 @@ def _install_interval_fakes(monkeypatch, tmp_path: Path, responses: list[object]
     return interval_processor, materialized, provider_calls
 
 
+def test_interval_post_parse_rejection_preserves_usage_and_cleanup(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    interval_processor, materialized, _provider_calls = _install_interval_fakes(
+        monkeypatch,
+        tmp_path,
+        [],
+    )
+    parser = __import__(
+        "ocrllm.providers.google_genai.parse_google_genai_audio_response",
+        fromlist=["parse_google_genai_audio_response"],
+    )
+    provider_calls: list[int] = []
+
+    def reject_after_parsing(_snapshot, *, prompt, config):
+        provider_calls.append(0)
+        response = SimpleNamespace(
+            text="transcript NOSPEECH4OCRLLM",
+            candidates=(),
+            prompt_feedback=None,
+            usage_metadata=SimpleNamespace(
+                prompt_token_count=17,
+                candidates_token_count=5,
+            ),
+        )
+        try:
+            parser.parse_google_genai_audio_response(response, model=MODEL)
+        except ProviderError as error:
+            error._add_safe_detail("provider_calls_attempted", 1)
+            error._add_safe_detail("remote_file_deleted", True)
+            error._add_safe_detail("provider_client_closed", True)
+            raise
+
+    monkeypatch.setattr(
+        interval_processor,
+        "recognize_uploaded_mp3",
+        reject_after_parsing,
+    )
+
+    with pytest.raises(ProviderError) as caught:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir),
+            interval_minutes=5,
+        )
+
+    assert type(caught.value) is ProviderError
+    assert caught.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert caught.value.retryable is False
+    assert caught.value.details["provider"] == "google"
+    assert caught.value.details["model"] == MODEL
+    assert caught.value.details["reason"] == "invalid_no_speech_marker"
+    assert caught.value.details["provider_calls_attempted"] == 1
+    assert caught.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        },
+    )
+    assert caught.value.details["remote_file_deleted"] is True
+    assert caught.value.details["provider_client_closed"] is True
+    assert caught.value.details["persisted_interval_count"] == 0
+    assert materialized == [0]
+    assert provider_calls == [0]
+    assert list(output_dir.iterdir()) == []
+
+
 @pytest.mark.parametrize("value", (True, 0, -1, 1.5, "5"))
 def test_interval_minutes_rejects_non_positive_exact_integers_before_snapshot(
     tmp_path: Path,

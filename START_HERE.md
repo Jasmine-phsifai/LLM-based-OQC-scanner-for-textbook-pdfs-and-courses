@@ -1178,3 +1178,11 @@ error. Normal returns and persisted whole/interval paths are unchanged. No
 general lifecycle helper or new state was added. The next bounded correction is
 Google audio usage that is reported by the provider but lost during response
 content validation.
+
+#403 closes that final recorded paid-evidence item. Once the Google text parser
+has produced token counts, every later audio-only typed rejection—exact or mixed
+no-speech, invisible content, refusal, or invalid UTF-8—retains the settled usage
+on the original error. Short, whole Files, and interval public paths preserve it
+without changing cleanup, call count, persistence, or publication. Shared text
+and image parsing remain untouched. The bounded #400 queue is closed; resume
+with a fresh public-lifecycle audit rather than broader parser hardening.

@@ -431,6 +431,60 @@ def test_google_audio_response_keeps_missing_usage_unknown() -> None:
     assert parsed.client_closed is True
 
 
+@pytest.mark.parametrize(
+    ("text", "expected_code", "expected_reason"),
+    (
+        (
+            "transcript NOSPEECH4OCRLLM",
+            "PROVIDER_RESPONSE_INVALID",
+            "invalid_no_speech_marker",
+        ),
+        (" \n<!-- hidden -->\n", "PROVIDER_RESPONSE_INVALID", "empty"),
+        (
+            "I'm sorry, I cannot transcribe this.",
+            "PROVIDER_REFUSED_RECOGNITION",
+            "refusal",
+        ),
+        ("# Transcript\n\ud800\n", "PROVIDER_RESPONSE_INVALID", "invalid_encoding"),
+    ),
+)
+def test_google_audio_post_parse_rejection_preserves_settled_usage(
+    text,
+    expected_code,
+    expected_reason,
+) -> None:
+    parser = importlib.import_module(
+        "ocrllm.providers.google_genai.parse_google_genai_audio_response"
+    )
+    response = SimpleNamespace(
+        text=text,
+        candidates=(),
+        prompt_feedback=None,
+        usage_metadata=SimpleNamespace(
+            prompt_token_count=17,
+            candidates_token_count=5,
+        ),
+    )
+
+    with pytest.raises(ProviderError) as caught:
+        parser.parse_google_genai_audio_response(response, model=MODEL)
+
+    assert type(caught.value) is ProviderError
+    assert caught.value.code == expected_code
+    assert caught.value.retryable is False
+    assert caught.value.details["provider"] == "google"
+    assert caught.value.details["model"] == MODEL
+    assert caught.value.details["reason"] == expected_reason
+    assert caught.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        },
+    )
+
+
 def test_google_audio_provider_error_closes_client_and_snapshot(tmp_path, monkeypatch) -> None:
     adapter = importlib.import_module(
         "ocrllm.providers.google_genai.recognize_short_mp3"
@@ -562,8 +616,23 @@ def test_google_audio_mixed_no_speech_marker_reports_safe_reason(monkeypatch) ->
     with pytest.raises(ProviderError) as caught:
         recognize(FIXTURE, config=_config())
 
+    assert type(caught.value) is ProviderError
     assert caught.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert caught.value.retryable is False
+    assert caught.value.details["provider"] == "google"
+    assert caught.value.details["model"] == MODEL
     assert caught.value.details["reason"] == "invalid_no_speech_marker"
+    assert caught.value.details["provider_calls_attempted"] == 1
+    assert "provider_client_cleanup_failed" not in caught.value.details
+    assert caught.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        },
+    )
+    assert fake.clients[0].closed is True
 
 
 def test_google_audio_rejects_groups_and_persistence_options_before_sdk(monkeypatch) -> None:

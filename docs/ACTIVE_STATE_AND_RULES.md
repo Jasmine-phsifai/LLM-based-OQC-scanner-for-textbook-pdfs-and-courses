@@ -7725,3 +7725,29 @@ The focused audio lifecycle set passes 120 tests; independent adapter,
 persistence, and lightweight-import reviews pass 57, 27, and 19 tests; the
 complete offline suite passes all 1,856 tests with zero skips. The next bounded
 item is the separately reproduced Google audio response-validation usage loss.
+
+## Current working update: #403 preserves rejected audio-response usage
+
+Provider-free regressions now cover every typed audio content rejection after
+Google text parsing has already produced exact token usage: a mixed no-speech
+marker, invisible/comment-only Markdown, refusal text, and invalid UTF-8. Public
+short inline, whole Google Files, and interval consumers prove the same evidence
+survives their call-count, cleanup, persistence, and publication boundaries.
+Previously all seven cases retained their original error facts but omitted
+`settled_model_usage`.
+
+The audio parser now builds one current-usage row immediately after the shared
+text parser succeeds, then uses one audio-only `OCRLLMError` boundary for exact
+no-speech and all later content validation. It conditionally supplies provider
+and model, attaches usage through the existing helper, and bare-raises the same
+error. Exact no-speech loses its duplicate attachment branch but keeps its prior
+class, code, details, and unknown-token behavior. Missing-text and blocked
+responses remain outside this boundary; shared text and image parsing are
+unchanged.
+
+No provider behavior, acceptance rule, retry/fallback, state schema, telemetry
+abstraction, or generic response wrapper was added. The focused audio/video set
+passes 159 tests; independent Google-adapter and long-audio reviews pass 118 and
+53 tests; the complete offline suite passes all 1,862 tests with zero skips.
+The high-priority paid-evidence queue recorded by #400 is now closed. Return to
+a fresh public-lifecycle audit rather than extending this parser defensively.

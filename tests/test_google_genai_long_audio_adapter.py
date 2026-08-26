@@ -287,6 +287,34 @@ def test_files_no_speech_preserves_usage_and_cleanup(monkeypatch) -> None:
     assert fake.events == ["catalog", "upload", "generate", "delete", "close"]
 
 
+def test_files_post_parse_rejection_preserves_usage_and_cleanup(monkeypatch) -> None:
+    fake = _FakeGoogleModule(text="transcript NOSPEECH4OCRLLM")
+    _install_fake_snapshot(monkeypatch)
+    _install_fake_sdk(monkeypatch, fake)
+
+    with pytest.raises(ProviderError) as caught:
+        recognize_long_mp3(SOURCE, config=_config())
+
+    assert type(caught.value) is ProviderError
+    assert caught.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert caught.value.retryable is False
+    assert caught.value.details["provider"] == "google"
+    assert caught.value.details["model"] == MODEL
+    assert caught.value.details["reason"] == "invalid_no_speech_marker"
+    assert caught.value.details["provider_calls_attempted"] == 1
+    assert caught.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 101,
+            "output_count": 17,
+            "unit": "tokens",
+        },
+    )
+    assert caught.value.details["remote_file_deleted"] is True
+    assert caught.value.details["provider_client_closed"] is True
+    assert fake.events == ["catalog", "upload", "generate", "delete", "close"]
+
+
 def test_files_workflow_waits_at_active_start_gate_before_sdk(monkeypatch) -> None:
     fake = _FakeGoogleModule()
     _install_fake_snapshot(monkeypatch)
