@@ -60,7 +60,8 @@ def test_video_interval_snapshot_cleanup_failure_keeps_state_and_exact_call_coun
     state_path = tmp_path / ".ocrllm-video-audio-resume.json"
 
     @contextmanager
-    def failing_snapshot(*_args, **_kwargs):
+    def failing_snapshot(*_args, **kwargs):
+        assert kwargs["interval_mode"] is True
         yield _snapshot(tmp_path)
         raise OutputError(
             "The validated audio snapshot could not be removed after use.",

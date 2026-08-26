@@ -43,7 +43,8 @@ def _install_interval_fakes(monkeypatch, tmp_path: Path, responses: list[object]
     provider_calls: list[int] = []
 
     @contextmanager
-    def fake_snapshot(_source: Path, *, temp_dir):
+    def fake_snapshot(_source: Path, *, temp_dir, interval_mode=False):
+        assert interval_mode is True
         yield SimpleNamespace(
             path=tmp_path / "owned-source.mp3",
             byte_size=50_000,

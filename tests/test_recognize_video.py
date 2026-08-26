@@ -644,9 +644,10 @@ def test_recognize_video_routes_real_long_audio_to_google_files_once(
     real_probe = video_snapshot.probe_video_mp3
     probe_calls: list[Path] = []
 
-    def observe_probe(snapshot_path: Path) -> float:
+    def observe_probe(snapshot_path: Path, *, interval_mode: bool = False) -> float:
+        assert interval_mode is False
         probe_calls.append(snapshot_path)
-        return real_probe(snapshot_path)
+        return real_probe(snapshot_path, interval_mode=interval_mode)
 
     def reject_short_audio(*_args, **_kwargs):
         raise AssertionError("long video audio reached the short adapter")

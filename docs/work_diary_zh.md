@@ -6139,3 +6139,15 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **两条路线与决定。** A 是从 `recognize_video_mp3()` 抽走 state unlink，建立 outcome 后只在 complete 删除；B 是等维护者回答 #345 的高层固定发布 vs 三段式 finalize/discard，在彼时同一轮决定 state 真正终点。选 B。A 只改善“音频成功+图片失败”，仍在 caller publication 前删 complete state；而且没有图片/短音频 state、source/root resume 和公开消费者。这会产生一份无消费者的完整音频 state，却不解决 crash-before-publish，是半修复。
 
 **当前合同与过度设计复查。** 现在的 `recognize_video()` 仍明确非恢复，因此音频分支成功后删自有临时 state 不是当前假成功；它是下一 resumable job 必须整体改变的设计点。本轮没有 state flag/outcome field、cleanup manager、atexit、定时回收、隐式 finalize 或无消费者持久化。无 runtime/tests/provider 改动，不重复 #343 已验证的同一源码。
+
+## #347 — 2026-08-26：按识别模式补齐私有十小时音频边界
+
+**本轮英文原子任务。** `Atomic task — Iteration #347: reconcile the new maintainer decisions into the authoritative queue, then implement only the route-aware 10-hour audio boundary if the existing call flow supports it cleanly. Context: choice A selects one high-level resumable video job; choice B keeps whole-audio and interval-audio as explicit modes, with integer-minute configuration and only temporary resume state. Success means recording these decisions without expanding repair, proving whole mode retains its provider ceiling while interval mode admits the private 10-hour product ceiling, and delegating the complete gate. This matters because later resume work must build on an unambiguous lifecycle rather than another partial persistence layer.`
+
+**决策落地。** #345 的终点选择已关闭为路线 A：当前 `recognize/compose/publish` 三段接口继续保持不可恢复，未来由一个高层视频任务统一拥有固定 `result.md` 和单一临时 journal；不往旧接口增加 `finalize/discard`。音频继续明确支持整段和 interval 两种模式，interval 参数只接受正整数分钟。模式、分钟数和窗口身份只为恢复暂存，最终结果原子发布后删除。repair 仍从失败切片文字提取时间范围，不依赖这份 state，也不承担日常恢复主流程。
+
+**发现与修复。** 现有 interval 已经能切片、结算和恢复，但 standalone 与 video 都在切片前复用了 Google 整段请求的 9.5 小时限制，因此 9.5 到 10 小时会被错误拒绝。路线 A 是把共同上限直接抬到 10 小时，会让整段请求越过已知 provider 边界；路线 B 是让 probe 感知已明确选择的 interval，整段保留 9.5 小时、interval 使用私有 10 小时产品上限；按维护者选择采用 B。旧代码上的新测试先得到 **4 failed, 10 passed**。实现后，standalone 和 video probe 都验证“整段 9.5 小时不变、interval 恰好 10 小时通过、超过 10 小时拒绝”；两个处理器也把实际选择传入 snapshot。standalone resume 在 snapshot 前读取已保存模式，因此调用者省略分钟数时仍能恢复 interval，而不会误走整段上限。
+
+**当前证据。** probe、standalone whole/interval、Google long-audio adapter、video settlement 和完整 video 邻近集合共 **93 passed in 23.52s**。完整源码、wheel 和真实 provider gate 已交给轻量执行者，当前尚未完成，不能把 93 个离线回归写成全量或 live 成功。代理只读预检已确认 WinINET 开启、`127.0.0.1:10080` TCP 可达、经代理访问 PyPI 为 HTTP 200；以后下载失败应先查代理是否被意外关闭或没有传给子进程。
+
+**DashScope 与过度设计复查。** 决策文档补充了实时 catalog 后可优先考察 `qwen3.5-ocr` 类 OCR 模型或约 27B 的通用推理候选，但它们只是兴趣样例，不是永久 allowlist；不得用明显弱于 RapidOCR 的普通 OCR 小模型，也不得选择最新超大旗舰。代码没有新增公开 mode enum、第二套 state、repair parser、provider 基类、retry/fallback、自动选模或十小时整段承诺。新增的内部 `interval_mode` 只回答已经存在的两条路线应使用哪个上限；这是修复已实现功能被错误前置拒绝，不是扩展供应商能力。

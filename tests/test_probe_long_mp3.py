@@ -80,6 +80,42 @@ def test_probe_long_mp3_rejects_short_or_over_provider_limit(
     assert caught.value.code == expected_code
 
 
+def test_probe_long_mp3_allows_private_ten_hour_ceiling_only_for_intervals(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        probe_module,
+        "load_miniaudio",
+        lambda: _FakeMiniaudio(frames=360000),
+    )
+
+    assert (
+        probe_module.probe_long_mp3(Path("owned.mp3"), interval_mode=True)
+        == 36000.0
+    )
+    with pytest.raises(InvalidSource) as caught:
+        probe_module.probe_long_mp3(Path("owned.mp3"))
+
+    assert caught.value.code == "SOURCE_TOO_LARGE"
+    assert caught.value.details["maximum_duration_seconds"] == 34200.0
+
+
+def test_probe_long_mp3_rejects_interval_above_private_ten_hour_ceiling(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        probe_module,
+        "load_miniaudio",
+        lambda: _FakeMiniaudio(frames=360001),
+    )
+
+    with pytest.raises(InvalidSource) as caught:
+        probe_module.probe_long_mp3(Path("owned.mp3"), interval_mode=True)
+
+    assert caught.value.code == "SOURCE_TOO_LARGE"
+    assert caught.value.details["maximum_duration_seconds"] == 36000.0
+
+
 def test_snapshot_long_mp3_owns_compact_bytes_and_cleans_up(
     tmp_path,
     monkeypatch,
@@ -87,7 +123,11 @@ def test_snapshot_long_mp3_owns_compact_bytes_and_cleans_up(
     source = tmp_path / "lecture.mp3"
     source.write_bytes(b"long-audio-bytes")
     temporary_parent = tmp_path / "snapshots"
-    monkeypatch.setattr(snapshot_module, "probe_long_mp3", lambda _path: 301.0)
+    monkeypatch.setattr(
+        snapshot_module,
+        "probe_long_mp3",
+        lambda _path: 301.0,
+    )
 
     with snapshot_module.snapshot_long_mp3(
         source,

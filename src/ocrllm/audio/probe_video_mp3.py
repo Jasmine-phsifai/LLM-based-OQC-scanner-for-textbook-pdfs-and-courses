@@ -7,24 +7,30 @@ from pathlib import Path
 from ..errors import InvalidSource
 from .decode_mp3_duration import decode_mp3_duration
 from .load_miniaudio import load_miniaudio
-from .probe_long_mp3 import MAX_GOOGLE_FILES_AUDIO_DURATION_SECONDS
+from .probe_long_mp3 import (
+    MAX_GOOGLE_FILES_AUDIO_DURATION_SECONDS,
+    MAX_PRODUCT_AUDIO_DURATION_SECONDS,
+)
 
 
-def probe_video_mp3(snapshot_path: Path) -> float:
-    """Return decoded seconds inside the current single-request video range."""
+def probe_video_mp3(snapshot_path: Path, *, interval_mode: bool = False) -> float:
+    """Return decoded seconds inside the selected video-audio route."""
     duration_seconds = decode_mp3_duration(
         snapshot_path,
         backend=load_miniaudio(),
     )
-    if duration_seconds > MAX_GOOGLE_FILES_AUDIO_DURATION_SECONDS:
+    maximum_duration_seconds = (
+        MAX_PRODUCT_AUDIO_DURATION_SECONDS
+        if interval_mode
+        else MAX_GOOGLE_FILES_AUDIO_DURATION_SECONDS
+    )
+    if duration_seconds > maximum_duration_seconds:
         raise InvalidSource(
-            "The video MP3 exceeds the Google single-prompt audio limit.",
+            "The video MP3 exceeds the selected audio-route limit.",
             code="SOURCE_TOO_LARGE",
             details={
                 "decoded_duration_seconds": duration_seconds,
-                "maximum_duration_seconds": (
-                    MAX_GOOGLE_FILES_AUDIO_DURATION_SECONDS
-                ),
+                "maximum_duration_seconds": maximum_duration_seconds,
             },
         ) from None
     return duration_seconds

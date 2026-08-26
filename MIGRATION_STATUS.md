@@ -1475,9 +1475,13 @@ The following directions remain traceable but are not current work:
   complete interval success gate remain open.
   #345 defers an audio-only video resume after proving it would replay paid
   image groups and lacks short-audio/source/finalization state. The maintainer
-  must choose a high-level fixed-result resumable job (recommended) or preserve
-  the three-step API with explicit finalize/discard before a video journal or
-  durable frame-group unit gains an authorized consumer.
+  selected the high-level fixed-result resumable job in #347; the current
+  three-step API stays non-resumable and does not gain finalize/discard.
+  #347 also separates the audio duration gates already implied by A2b: whole
+  Google Files requests retain the 9.5-hour ceiling, while exact-integer-minute
+  interval mode accepts a source through the private 10-hour product ceiling.
+  Mode and interval identity remain temporary resume data and repair remains an
+  independent failed-range text side path.
 
 ## Obsolete Prose Kept For Trace
 

@@ -34,7 +34,16 @@ def recognize_video_mp3(
     processor_output: ProcessorOutput | None = None
     long_audio_settled = False
     try:
-        with snapshot_video_mp3(source_path, temp_dir=config.temp_dir) as snapshot:
+        snapshot_context = (
+            snapshot_video_mp3(
+                source_path,
+                temp_dir=config.temp_dir,
+                interval_mode=True,
+            )
+            if interval_minutes is not None
+            else snapshot_video_mp3(source_path, temp_dir=config.temp_dir)
+        )
+        with snapshot_context as snapshot:
             if (
                 snapshot.duration_seconds <= MAX_SHORT_MP3_DURATION_SECONDS
                 and interval_minutes is None

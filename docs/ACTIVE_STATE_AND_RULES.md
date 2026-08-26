@@ -99,7 +99,13 @@ the default; exact positive integer `audio_interval_minutes` enables serial
 intervals. Video owns one temporary sidecar directly under its output root,
 retains paid prefixes on failure, removes it after clean audio/snapshot success,
 and never nests the standalone audio publication. Public video resume is not yet
-available.
+available. #347 closes the former terminal choice in favor of a later high-level
+resumable video job owning fixed `result.md` publication and one temporary
+journal; the current three-step API remains non-resumable. It also corrects the
+private duration boundary: whole Google Files requests still stop at 9.5 hours,
+while explicitly selected integer-minute interval mode admits sources through
+the product's 10-hour ceiling. Temporary mode and interval identity remain only
+until final publication; repair stays a small failed-range text side path.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -6714,3 +6720,24 @@ Credentials for live work are stored by the legacy GUI under
 `HKCU\Software\OCRLLM\QCR\ui`. Read them from the registry; never hardcode a key
 and never print one. Do not run a paid gate without an explicit budget or the
 narrow one-atomic-trial authorization recorded above.
+
+## Current working update: #347 route-aware private audio ceiling
+
+The maintainer selected the high-level fixed-result Route A for future video
+resume and confirmed explicit whole versus integer-minute interval audio modes.
+The current three-step video API remains non-resumable; a later high-level job
+will own one temporary video journal and remove it only after atomic final
+publication. Repair remains a small side path that derives failed time ranges
+from failure text and does not depend on retained interval parameters.
+
+The implemented interval route had one concrete boundary defect: both
+standalone and video snapshots rejected above Google's 9.5-hour whole-request
+ceiling before interval materialization could run. The probes are now
+route-aware. Whole mode still rejects above 9.5 hours; explicit interval mode
+accepts exactly 10 hours and rejects anything longer before dispatch. Standalone
+resume resolves its saved mode and integer-minute interval before snapshotting,
+so omitting the interval on a valid resume does not regress to the whole limit.
+Focused failing-first evidence was four failures against the old probes; the
+implemented focused set passes 93 tests. Complete source, wheel, and bounded
+live-video evidence are pending the delegated clean gate and must not be inferred
+from those offline regressions.

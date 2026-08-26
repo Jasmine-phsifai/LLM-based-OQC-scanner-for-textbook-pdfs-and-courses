@@ -100,9 +100,13 @@ still requiring complete outcomes to remove state. #344 live-proves corrected
 provider failures remain auditable `video_outcome` reports, although model quota
 stopped the first audio interval before any state settled. #345 proves public
 video resume cannot honestly be audio-only: paid frame groups, short audio, source
-identity, and one terminal state-cleanup owner are missing. Its high-level fixed-
-result job versus three-step finalize/discard decision remains open. Public video
-resume is not yet exposed.
+identity, and one terminal state-cleanup owner are missing. #347 selects the
+high-level fixed-result Route A: current recognize/compose/publish calls remain
+non-resumable, and a later single video job will own one temporary journal plus
+atomic `result.md` publication. Public video resume is not yet exposed. The same
+iteration makes duration validation route-aware: whole Google Files remains
+limited to 9.5 hours, while explicitly selected integer-minute interval mode
+accepts the private product ceiling of 10 hours.
 Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval

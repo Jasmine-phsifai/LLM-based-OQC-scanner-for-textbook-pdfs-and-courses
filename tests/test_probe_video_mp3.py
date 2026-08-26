@@ -71,3 +71,38 @@ def test_probe_video_mp3_rejects_above_single_request_limit(
 
     assert caught.value.code == "SOURCE_TOO_LARGE"
     assert caught.value.details["maximum_duration_seconds"] == 34200.0
+
+
+def test_probe_video_mp3_allows_private_ten_hour_ceiling_only_for_intervals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        probe_module,
+        "load_miniaudio",
+        lambda: _FakeMiniaudio(frames=360000),
+    )
+
+    assert (
+        probe_module.probe_video_mp3(Path("owned.mp3"), interval_mode=True)
+        == 36000.0
+    )
+    with pytest.raises(InvalidSource) as caught:
+        probe_module.probe_video_mp3(Path("owned.mp3"))
+
+    assert caught.value.details["maximum_duration_seconds"] == 34200.0
+
+
+def test_probe_video_mp3_rejects_interval_above_private_ten_hour_ceiling(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        probe_module,
+        "load_miniaudio",
+        lambda: _FakeMiniaudio(frames=360001),
+    )
+
+    with pytest.raises(InvalidSource) as caught:
+        probe_module.probe_video_mp3(Path("owned.mp3"), interval_mode=True)
+
+    assert caught.value.code == "SOURCE_TOO_LARGE"
+    assert caught.value.details["maximum_duration_seconds"] == 36000.0

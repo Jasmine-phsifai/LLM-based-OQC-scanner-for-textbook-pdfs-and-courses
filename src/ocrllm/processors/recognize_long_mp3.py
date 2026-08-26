@@ -47,28 +47,37 @@ def recognize_validated_long_mp3(
             if not config.resume:
                 _create_output_root(paths.root)
                 created_root = True
-            with snapshot_long_mp3(source_path, temp_dir=config.temp_dir) as snapshot:
+            saved_state = None
+            if config.resume:
+                saved_state = load_long_audio_partial_state(paths.resume_state)
+                if saved_state is None:
+                    raise ResumeStateError(
+                        "The long-audio resume state is missing or invalid.",
+                        code="RESUME_STATE_INVALID",
+                    ) from None
+                if interval_minutes is None:
+                    interval_minutes = saved_state.interval_minutes
+            mode = "interval" if interval_minutes is not None else "whole"
+            if saved_state is not None and (
+                saved_state.mode != mode
+                or saved_state.interval_minutes != interval_minutes
+            ):
+                raise ResumeStateError(
+                    "The long-audio partial state belongs to a different mode.",
+                    code="RESUME_STATE_MISMATCH",
+                ) from None
+            snapshot_context = (
+                snapshot_long_mp3(
+                    source_path,
+                    temp_dir=config.temp_dir,
+                    interval_mode=True,
+                )
+                if interval_minutes is not None
+                else snapshot_long_mp3(source_path, temp_dir=config.temp_dir)
+            )
+            with snapshot_context as snapshot:
                 model = config.audio_model.name
                 assert type(model) is str
-                saved_state = None
-                if config.resume:
-                    saved_state = load_long_audio_partial_state(paths.resume_state)
-                    if saved_state is None:
-                        raise ResumeStateError(
-                            "The long-audio resume state is missing or invalid.",
-                            code="RESUME_STATE_INVALID",
-                        ) from None
-                    if interval_minutes is None:
-                        interval_minutes = saved_state.interval_minutes
-                mode = "interval" if interval_minutes is not None else "whole"
-                if saved_state is not None and (
-                    saved_state.mode != mode
-                    or saved_state.interval_minutes != interval_minutes
-                ):
-                    raise ResumeStateError(
-                        "The long-audio partial state belongs to a different mode.",
-                        code="RESUME_STATE_MISMATCH",
-                    ) from None
                 if interval_minutes is not None:
                     processor_output, current_run_calls = recognize_long_mp3_intervals(
                         snapshot,

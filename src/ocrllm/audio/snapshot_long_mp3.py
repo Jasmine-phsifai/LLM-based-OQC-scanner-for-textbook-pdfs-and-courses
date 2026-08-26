@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 
 from .probe_long_mp3 import probe_long_mp3
@@ -29,13 +30,19 @@ def snapshot_long_mp3(
     source_path: Path,
     *,
     temp_dir: str | Path | None,
+    interval_mode: bool = False,
 ) -> Iterator[LongMP3Snapshot]:
-    """Yield one fully decoded snapshot inside the Google A2a limits."""
+    """Yield one fully decoded snapshot inside the selected route limits."""
+    selected_probe = (
+        partial(probe_long_mp3, interval_mode=True)
+        if interval_mode
+        else probe_long_mp3
+    )
     with snapshot_mp3(
         source_path,
         temp_dir=temp_dir,
         maximum_source_bytes=MAX_GOOGLE_FILES_SOURCE_BYTES,
-        probe=probe_long_mp3,
+        probe=selected_probe,
     ) as snapshot:
         yield LongMP3Snapshot(
             path=snapshot.path,

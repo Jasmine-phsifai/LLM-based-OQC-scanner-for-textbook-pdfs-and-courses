@@ -28,10 +28,12 @@ or independently reorder it.
   to a lightweight subagent. While that workflow runs, the primary agent should
   advance an independent read-only audit, focused regression, or documentation
   task instead of polling or repeating the same procedure.
-- Treat the maintainer's proxy as the normal external-download path. Before
-  diagnosing package delivery as a network failure, verify that the current
-  proxy endpoint is reachable and explicitly propagate proxy variables to the
-  delegated child when its tool does not inherit Windows settings. On
+- Treat the maintainer's proxy as always enabled and as the normal
+  external-download path. A reported network failure should first trigger a
+  check that the proxy was not accidentally disabled or dropped from the child
+  environment. Verify that the current endpoint is reachable and explicitly
+  propagate proxy variables to the delegated child when its tool does not
+  inherit Windows settings. On
   2026-08-26 WinINET and a real PyPI HTTPS probe verified `127.0.0.1:10080`;
   the older `127.0.0.1:7890` endpoint was stale. Recheck rather than hardcoding
   this machine fact into product runtime.
@@ -49,6 +51,12 @@ or independently reorder it.
   RapidOCR. Do not hardcode example model names, spend calls on candidates
   clearly worse than RapidOCR for ordinary OCR, or select the current largest
   flagship merely because it is newest.
+- After live catalog discovery, `qwen3.5-ocr`-class OCR models and roughly 27B
+  general reasoning models such as a currently served Qwen 3.8 candidate are
+  maintainer-interest examples, not a permanent allowlist. Prefer the smallest
+  currently served candidate that can test formula, LaTeX, Mermaid, SVG/code,
+  and reasoning quality; do not turn model evaluation into indefinite
+  per-model repair.
 - The credential stored by the legacy UI is authorized for one explicitly
   scoped atomic DashScope trial at a time. Discover models before selection and
   cap calls in the task announcement. Reuse permission is not an unlimited
@@ -445,20 +453,15 @@ is often accepted.
 
 ## Video recognition direction
 
-- **Open video-resume terminal decision (#345).** Do not add an audio-only
+- **Resolved video-resume terminal decision (#345/#347): Route A.** Do not add an audio-only
   `resume=True` to `recognize_video()`: current video state cannot preserve paid
   image groups, short audio, source identity, or a terminal cleanup boundary.
-  Choose one product endpoint before authorizing a schema or API:
-
-  1. recommended: keep the current recognize/compose/publish calls low-level and
-     non-resumable, and later add one high-level resumable video job owning a
-     fixed `result.md` plus one video journal; atomic final publication removes
-     its temporary state;
-  2. keep the current three-step lifecycle resumable, but add explicit
-     finalize/discard operations and make callers own crash-before-publish and
-     stale-state cleanup semantics.
-  Until the maintainer selects one, public video resume is deferred and no
-  durable frame-group schema is implemented without a consumer.
+  Keep the current recognize/compose/publish calls low-level and non-resumable.
+  Later add one high-level resumable video job owning a fixed `result.md` plus
+  one video journal; atomic final publication removes its temporary state.
+  Do not add finalize/discard to the current three-step API. Public video resume
+  remains deferred until that high-level consumer is implemented, so no durable
+  frame-group schema is added in advance.
 
 - Video is the next active library line. Start with local parsing, then migrate
   the main legacy negative-feedback frame comparison and retained-image
