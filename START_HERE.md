@@ -66,7 +66,10 @@ Its DashScope live exit is closed by #339: one credential-isolated run discovere
 241 current models and completed public formula-board recognition on explicit
 `qwen3.5-ocr` with runner exit 0, no retry, switch, fallback, or content/secret
 publication. This is connectivity/lifecycle proof, not formula-quality or broad
-quota evidence. The former standalone Stage 2
+quota evidence. #340 makes later DashScope calls preserve compatible-endpoint
+`prompt_tokens` / `completion_tokens` through the existing per-model metadata;
+missing or invalid counts remain unknown without discarding recognized text.
+The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
 `miniaudio>=1.71,<2` local MP3 probe, deterministic validation corpus, bounded

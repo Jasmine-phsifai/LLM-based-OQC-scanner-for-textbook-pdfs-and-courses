@@ -62,9 +62,10 @@ Phase 1 maturation is offline implementation-complete:
   batch outcomes preserve those structured item-local errors, while shared-gate
   cancellation before callable entry reports zero rather than a fabricated
   paid attempt and provider-raised cancellation after entry remains one;
-  this is call/attempt disclosure; the native Google image adapter additionally
-  accumulates provider-reported per-model input/output usage for fresh successful
-  passes, preserving missing values as unknown; all no-cost exit criteria pass at product checkpoint
+  this is call/attempt disclosure; the native Google and OpenAI-compatible
+  DashScope image adapters additionally accumulate provider-reported per-model
+  input/output usage for fresh successful passes, preserving missing values as
+  unknown; all no-cost exit criteria pass at product checkpoint
   `700cc05` through the clean-archive evidence recorded by `5d966e1` (root 1203
   passed; exact archive 1193 passed and 10 expected skips);
 - closed by #339: the Stage M DashScope live exit. A credential-isolated current

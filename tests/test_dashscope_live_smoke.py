@@ -23,6 +23,9 @@ def _metadata(**updates):
         "model": MODEL,
         "provider_region": "cn-beijing",
         "provider_call_count": 1,
+        "current_model_token_usage": (
+            {"model": MODEL, "input_tokens": 11, "output_tokens": 7},
+        ),
         "model_attempts": (
             {
                 "model": MODEL,
@@ -111,9 +114,9 @@ def test_dashscope_live_smoke_emits_only_safe_one_call_summary(monkeypatch, caps
         "model": MODEL,
         "recognition": {
             "client_closed": True,
-            "input_tokens": None,
+            "input_tokens": 11,
             "model": MODEL,
-            "output_tokens": None,
+            "output_tokens": 7,
             "provider_call_count": 1,
         },
         "status": "passed",
@@ -193,6 +196,15 @@ def test_dashscope_live_smoke_sanitizes_provider_failures(
         ("complete", {"model_attempts": ()}),
         ("complete", {"workflow_slots": ()}),
         ("complete", {"provider_client_closed": False}),
+        ("complete", {"current_model_token_usage": ()}),
+        (
+            "complete",
+            {
+                "current_model_token_usage": (
+                    {"model": "wrong-model", "input_tokens": 1, "output_tokens": 1},
+                )
+            },
+        ),
     ),
 )
 def test_dashscope_live_smoke_rejects_unproven_success(status, updates):

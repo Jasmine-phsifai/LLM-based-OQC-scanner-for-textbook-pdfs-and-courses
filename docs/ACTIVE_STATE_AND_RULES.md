@@ -237,8 +237,8 @@ rejected legacy-Markdown compatibility. With the Stage M DashScope live exit
 closed by #339, the queue now advances to the next video-library consumer:
 preserve the existing separate image/audio configs while allowing a long video's audio
 branch to select the already-proven whole or exact-integer-minute interval path.
-The Google adapters report per-model
-input/output token usage when the endpoint supplies it. Public injected providers
+The built-in Google and DashScope adapters report per-model input/output token
+usage when their endpoint supplies it. Public injected providers
 return Markdown strings and make no token-usage claim. Existing attempt disclosure
 counts provider
 calls and model/workflow attempts separately from tokens. Resume is the primary
@@ -6404,7 +6404,7 @@ repair parser 或 worker 变更。最危险的两条过度设计路线分别是�
 `/models` catalog，模型缺失时以零识别调用退出，存在时只调用一次公共 `recognize()`。
 
 成功摘要只保留 status、catalog count、model、exact one call、client closed，以及
-当前 DashScope adapter 尚未公开的 input/output token 为 `null`；它不读取 SDK 原始
+当时 DashScope adapter 尚未公开的 input/output token 为 `null`；它不读取 SDK 原始
 usage 来绕过产品契约。成功必须同时有一个 successful `model_attempt` 和一个 fresh
 DashScope draft `workflow_slot`，所以候选切换、review/scout 或第二次 provider call
 不能冒充本门槛。失败只输出稳定 code、allowlisted scope 和 catalog/model-selection/
@@ -6427,12 +6427,41 @@ call/client 字段当作独立采集值重述。不过 exact committed runner �
 为 complete、provider/model/region 正确、`provider_call_count == 1`、一个 successful
 model attempt、一个 fresh draft workflow slot 且 client closed 时才会返回 `passed` / 0。
 这足以关闭 connectivity/lifecycle exit，但不证明公式质量或全部 quota/error taxonomy。
-DashScope adapter 仍不公开 input/output token usage，runner 因而只会诚实输出 null；
-这是下一轮应先审计的已建 provider 计量缺口，不能从这次未保留的 SDK response 猜值。
+在 #339 结束时 DashScope adapter 仍不公开 input/output token usage，runner 因而只会
+诚实输出 null；#340 修复后续调用，不能从这次未保留的 SDK response 追溯猜值。
 
 过度设计复查：没有自动 catalog 评分、模型循环、13-call quality replay、provider
 hierarchy、pool、retry、fallback 或 runtime token parser。双 ledger 校验分别排除模型
 候选和 workflow 扩张，是当前 one-call gate 的直接证明，不是未来框架。
+
+## Iteration 340：DashScope 不再丢弃兼容端点 token usage
+
+#339 暴露了一个已建功能缺口：OpenAI-compatible DashScope completion 已有标准
+`usage.prompt_tokens` / `usage.completion_tokens`，现有 parser 却只返回 Markdown 字符串；
+共享 image processor 已实现按 model 累加 `VisionProviderResponse` usage，但又只为
+Google 发布结果。两处组合后，DashScope 的真实计量永久变成 unknown。
+
+失败优先回归先得到 11 个预期失败。最终没有增加 parser 模块或通用 provider 计量层：
+现有 `parse_dashscope_image_response()` 现在返回已有 `VisionProviderResponse`，只读取
+当前兼容端点的 prompt/completion 两个字段；缺失、不可读、bool、负数、字符串、浮点
+或 native `input_tokens/output_tokens` 都各自保留为 `None`，不由 `total_tokens` 反推，
+也不因计量坏掉丢弃已付费正文。adapter 在 client close 失败时同时保留 Markdown、
+两个 usage 和 `client_closed=False`。共享 processor 只在确实收到结构化 usage 时发布
+`current_model_token_usage`，不再硬编码 provider 名；公开 injected Markdown provider
+仍没有 usage 契约。
+
+两次同模型 DashScope draft/review 的 3/2 usage 现累计为 6/4；真实 OpenAI SDK mock
+transport 的 1/1 也进入公共 metadata。runner 不再硬编码 null，而是验证 exact-model
+单条 nullable usage 后安全输出。相邻 DashScope/Google/image/resume/video 集 201 项
+通过。没有第二次 live 调用；#339 未保留的 response usage 仍不可追溯，本轮只保证
+未来调用不再丢失。完整源码 **1,746 passed in 63.95s**；compileall、轻量
+import、diff check 和 frozen `contracts/worker` 检查均通过。worktree wheel 为
+**267,421 bytes / 264 members**，三份变更 runtime 均已打包，tests/tools 均未进入；
+wheel checker 和临时根目录清理通过。
+
+过度设计复查：没有共享 usage parser、provider 基类、billing ledger、价格表、token
+估算、native/compatible 双 schema、retry、fallback 或 API pool。直接复用现有
+`VisionProviderResponse` 和 per-model accumulator；这是修通已有消费者，不是新框架。
 
 ## Documentation Rules
 

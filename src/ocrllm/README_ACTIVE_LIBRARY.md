@@ -148,6 +148,10 @@ no retry; both independent full-corpus runs passed. Run B repaired exactly one
 missing handwriting sign through generic two-of-three omission consensus; no
 handwriting route or model split exists. The committed Git-archive wheel then
 passed base, `image`, and `image,dashscope` clean profiles.
+Compatible-endpoint `prompt_tokens` and `completion_tokens` are preserved as
+nullable input/output counts and accumulated by exact model across fresh
+draft/review/scout calls. Missing or malformed usage remains unknown and cannot
+discard otherwise valid recognized Markdown.
 `get_capabilities()` reports every entry in the frozen shared
 capability/worker registry without a network call or optional import. With an
 explicit config, it reports that exact registered workflow's proven status

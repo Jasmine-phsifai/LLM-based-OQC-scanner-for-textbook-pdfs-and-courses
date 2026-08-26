@@ -110,11 +110,15 @@ def _safe_recognition_summary(result: Any, model: str) -> dict[str, object]:
             "DashScope live recognition did not close its provider client.",
             code="CONFIG_INVALID",
         ) from None
+    input_tokens, output_tokens = _require_model_usage(
+        metadata.get("current_model_token_usage"),
+        model=model,
+    )
     return {
         "provider_call_count": provider_call_count,
         "model": model,
-        "input_tokens": None,
-        "output_tokens": None,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
         "client_closed": True,
     }
 
@@ -144,6 +148,29 @@ def _require_one_draft_slot(value: object, *, model: str) -> None:
         or slot.get("provider_calls_attempted") != 1
     ):
         raise _invalid_attempt_evidence()
+
+
+def _require_model_usage(
+    value: object,
+    *,
+    model: str,
+) -> tuple[int | None, int | None]:
+    if type(value) is not tuple or len(value) != 1 or not isinstance(value[0], Mapping):
+        raise _invalid_attempt_evidence()
+    usage = value[0]
+    input_tokens = usage.get("input_tokens")
+    output_tokens = usage.get("output_tokens")
+    if (
+        usage.get("model") != model
+        or not _is_optional_token_count(input_tokens)
+        or not _is_optional_token_count(output_tokens)
+    ):
+        raise _invalid_attempt_evidence()
+    return input_tokens, output_tokens
+
+
+def _is_optional_token_count(value: object) -> bool:
+    return value is None or (type(value) is int and value >= 0)
 
 
 def _invalid_attempt_evidence() -> ConfigError:

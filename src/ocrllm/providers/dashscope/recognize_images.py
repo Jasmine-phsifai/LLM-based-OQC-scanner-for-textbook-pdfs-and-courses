@@ -63,7 +63,7 @@ def recognize_images(
 
     openai_module: object | None = None
     client: object | None = None
-    markdown: str | None = None
+    provider_response: VisionProviderResponse | None = None
     public_error: OCRLLMError | None = None
     client_closed = True
     try:
@@ -107,7 +107,10 @@ def recognize_images(
                     client.chat.completions.with_raw_response.create(**request.kwargs)
                 )
                 completion = parse_dashscope_raw_response(raw_response, model=model)
-                markdown = parse_dashscope_image_response(completion, model=model)
+                provider_response = parse_dashscope_image_response(
+                    completion,
+                    model=model,
+                )
             except OCRLLMError as error:
                 public_error = error
             except Exception as error:
@@ -129,7 +132,7 @@ def recognize_images(
             try:
                 credential_lease._finish(
                     pool_error,
-                    succeeded=public_error is None and markdown is not None,
+                    succeeded=public_error is None and provider_response is not None,
                 )
             except Exception:
                 if public_error is None:
@@ -147,18 +150,20 @@ def recognize_images(
 
     if public_error is not None:
         raise public_error from None
-    if markdown is None:  # Defensive invariant; no provider content can exist.
+    if provider_response is None:  # Defensive invariant; no provider content can exist.
         raise ProviderError(
             "DashScope returned no image-recognition response.",
             code="PROVIDER_RESPONSE_INVALID",
             details={"provider": "dashscope", "model": model},
         ) from None
-    if not client_closed:
-        return VisionProviderResponse(
-            markdown=markdown,
-            client_closed=False,
-        )
-    return markdown
+    if client_closed:
+        return provider_response
+    return VisionProviderResponse(
+        markdown=provider_response.markdown,
+        input_tokens=provider_response.input_tokens,
+        output_tokens=provider_response.output_tokens,
+        client_closed=False,
+    )
 
 
 def _close_client(client: object | None) -> ProviderError | None:

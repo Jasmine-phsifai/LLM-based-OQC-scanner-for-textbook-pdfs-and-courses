@@ -548,7 +548,7 @@ def _recognize_images_once(
                 ),
             }
         )
-    if resolved_provider.name == "google":
+    if current_model_usage:
         metadata["current_model_token_usage"] = current_model_token_usage()
     if resolved_provider.name == "google" or not provider_clients_closed:
         metadata["provider_client_closed"] = provider_clients_closed

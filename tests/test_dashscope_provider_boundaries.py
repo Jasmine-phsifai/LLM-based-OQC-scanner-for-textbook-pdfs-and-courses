@@ -34,6 +34,7 @@ from ocrllm.providers.dashscope.parse_dashscope_raw_response import (
 from ocrllm.providers.dashscope.resolve_dashscope_credential import (
     resolve_dashscope_credential,
 )
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 from ocrllm.raise_if_cancelled import raise_if_cancelled
 
 
@@ -207,14 +208,56 @@ def _response(
     finish_reason="stop",
     refusal=None,
     model=MODEL,
+    usage=None,
 ):
     message = SimpleNamespace(content=content, refusal=refusal, role="assistant")
     choice = SimpleNamespace(message=message, finish_reason=finish_reason, index=0)
-    return SimpleNamespace(choices=[choice], model=model)
+    return SimpleNamespace(choices=[choice], model=model, usage=usage)
 
 
-def test_dashscope_response_parser_returns_exact_text():
-    assert parse_dashscope_image_response(_response(), model=MODEL) == "# Board\n"
+def test_dashscope_response_parser_returns_text_and_compatible_usage():
+    parsed = parse_dashscope_image_response(
+        _response(
+            usage=SimpleNamespace(prompt_tokens=22, completion_tokens=16),
+        ),
+        model=MODEL,
+    )
+
+    assert parsed == VisionProviderResponse(
+        markdown="# Board\n",
+        input_tokens=22,
+        output_tokens=16,
+    )
+
+
+@pytest.mark.parametrize(
+    "usage",
+    (
+        None,
+        object(),
+        SimpleNamespace(prompt_tokens=True, completion_tokens=-1),
+        SimpleNamespace(prompt_tokens="22", completion_tokens=16.0),
+        SimpleNamespace(input_tokens=22, output_tokens=16, total_tokens=38),
+    ),
+)
+def test_dashscope_response_parser_keeps_missing_or_invalid_usage_unknown(usage):
+    parsed = parse_dashscope_image_response(_response(usage=usage), model=MODEL)
+
+    assert parsed.markdown == "# Board\n"
+    assert parsed.input_tokens is None
+    assert parsed.output_tokens is None
+
+
+def test_dashscope_response_parser_preserves_each_valid_usage_side_independently():
+    parsed = parse_dashscope_image_response(
+        _response(
+            usage=SimpleNamespace(prompt_tokens=22, completion_tokens="unknown"),
+        ),
+        model=MODEL,
+    )
+
+    assert parsed.input_tokens == 22
+    assert parsed.output_tokens is None
 
 
 @pytest.mark.parametrize(

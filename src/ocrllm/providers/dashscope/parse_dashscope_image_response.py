@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 from ...errors import ProviderError
+from ..vision_provider_response import VisionProviderResponse
 
 
-def parse_dashscope_image_response(response: object, *, model: str) -> str:
-    """Return complete Markdown text or reject a malformed/truncated response."""
+def parse_dashscope_image_response(
+    response: object,
+    *,
+    model: str,
+) -> VisionProviderResponse:
+    """Return complete Markdown and optional compatible-endpoint token usage."""
     details = {"provider": "dashscope", "model": model}
     try:
         choices = getattr(response, "choices")
@@ -67,4 +72,23 @@ def parse_dashscope_image_response(response: object, *, model: str) -> str:
             code="PROVIDER_RESPONSE_INVALID",
             details=details,
         ) from None
-    return content
+    usage = _safe_attribute(response, "usage")
+    return VisionProviderResponse(
+        markdown=content,
+        input_tokens=_optional_token_count(usage, "prompt_tokens"),
+        output_tokens=_optional_token_count(usage, "completion_tokens"),
+    )
+
+
+def _optional_token_count(usage: object | None, name: str) -> int | None:
+    if usage is None:
+        return None
+    value = _safe_attribute(usage, name)
+    return value if type(value) is int and value >= 0 else None
+
+
+def _safe_attribute(value: object, name: str) -> object | None:
+    try:
+        return getattr(value, name, None)
+    except Exception:
+        return None

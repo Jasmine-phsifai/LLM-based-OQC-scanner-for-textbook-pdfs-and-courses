@@ -98,10 +98,11 @@ def _response(
     *,
     finish_reason="stop",
     model="qwen3.7-plus-2026-05-26",
+    usage=None,
 ):
     message = SimpleNamespace(content=content, refusal=None, role="assistant")
     choice = SimpleNamespace(message=message, finish_reason=finish_reason, index=0)
-    return SimpleNamespace(choices=[choice], model=model)
+    return SimpleNamespace(choices=[choice], model=model, usage=usage)
 
 
 def _settings(*, api_key: str | None = "test-key") -> DashScopeSettings:
@@ -251,7 +252,12 @@ def test_builtin_review_pass_makes_two_no_retry_requests_and_returns_review(
     monkeypatch,
 ):
     source = write_test_image(tmp_path / "board.png", size=(12, 13))
-    client = FakeClient(response=_response(content="# Reviewed board\n"))
+    client = FakeClient(
+        response=_response(
+            content="# Reviewed board\n",
+            usage=SimpleNamespace(prompt_tokens=3, completion_tokens=2),
+        )
+    )
     fake_openai = _install_fake_openai(monkeypatch, client)
 
     result = recognize(
@@ -266,6 +272,13 @@ def test_builtin_review_pass_makes_two_no_retry_requests_and_returns_review(
     assert result.metadata["provider_call_count"] == 2
     assert result.metadata["draft_candidates"] == 1
     assert result.metadata["review_passes"] == 1
+    assert result.metadata["current_model_token_usage"] == (
+        {
+            "model": "qwen3.7-plus-2026-05-26",
+            "input_tokens": 6,
+            "output_tokens": 4,
+        },
+    )
     assert len(fake_openai.constructor_calls) == 2
     assert len(client.calls) == 2
     first_prompt = client.calls[0]["messages"][0]["content"][-1]["text"]
@@ -983,7 +996,12 @@ def test_successful_dashscope_image_discloses_client_close_failure(
     source = write_test_image(tmp_path / "board.png", size=(11, 11))
     private_close_text = "PRIVATE DASHSCOPE CLOSE BODY"
     private_key = "dashscope-private-close-test-key"
-    cleanup_client = FakeClient(close_error=RuntimeError(private_close_text))
+    cleanup_client = FakeClient(
+        response=_response(
+            usage=SimpleNamespace(prompt_tokens=31, completion_tokens=17),
+        ),
+        close_error=RuntimeError(private_close_text),
+    )
     _install_fake_openai(monkeypatch, cleanup_client)
     pool = DashScopeCredentialPool(
         region="ap-southeast-1",
@@ -1019,6 +1037,13 @@ def test_successful_dashscope_image_discloses_client_close_failure(
     assert result.metadata["provider_call_count"] == 1
     assert result.metadata["current_run_provider_call_count"] == 1
     assert result.metadata["provider_client_closed"] is False
+    assert result.metadata["current_model_token_usage"] == (
+        {
+            "model": "qwen3.7-plus-2026-05-26",
+            "input_tokens": 31,
+            "output_tokens": 17,
+        },
+    )
     assert tuple(dict(item) for item in result.metadata["model_attempts"]) == (
         {
             "model": "qwen3.7-plus-2026-05-26",
@@ -1191,5 +1216,12 @@ def test_real_openai_mock_transport_enforces_raw_response_boundary(
     else:
         result = recognize(source, config=config)
         assert result.markdown == "# Real SDK boundary\n"
+        assert result.metadata["current_model_token_usage"] == (
+            {
+                "model": "qwen3.7-plus-2026-05-26",
+                "input_tokens": 1,
+                "output_tokens": 1,
+            },
+        )
 
     assert len(captured_requests) == 1
