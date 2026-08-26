@@ -255,6 +255,19 @@ defines whether a final journal is fully settled, removing the only duplicate
 classification without changing the state schema or public API. Pre-cancelled,
 absent, no-speech, recognized short, and complete whole/interval resumes remain
 credential-free.
+#441 closes the adjacent journal/config request-mismatch ordering defect. A
+changed audio model or explicit interval was already deterministically invalid
+after strict journal load, but resume took and hashed a new source snapshot
+before reporting `RESUME_STATE_MISMATCH`; ready-unsettled state could instead
+expose a missing credential first. One request-only validator now compares
+exactly the saved model and interval after finalization-state validation and
+before credential preflight or snapshotting. The full resume validator reuses
+the same function, while source, retained-frame, image-state, audio-artifact,
+and long-prefix checks remain at their byte-backed positions. Model mismatch in
+settled whole/interval and ready-unsettled short/whole/interval, plus explicit
+interval mismatch, now performs no new snapshot, decode, materialization, or
+provider work and leaves the journal byte-for-byte unchanged. No public API,
+state schema, retry/fallback, or broader preflight coordinator was added.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4255,6 +4268,13 @@ Post-register findings are ordered by demonstrated user impact:
   coherent controlled duration, so the early-failure tripwire cannot hide an
   identity mismatch. Focused adjacent coverage passes 137 tests, independent
   state review passes 23 tests, and the complete provider-free suite passes all
+  1,888 tests.
+- #441 moves only the saved audio model/interval comparison ahead of credential
+  resolution and source snapshotting. Public settled and unsettled regressions
+  prove `RESUME_STATE_MISMATCH`, zero new snapshot/provider work, and unchanged
+  journal bytes; byte-dependent source/frame/artifact checks intentionally stay
+  in the full validator. Focused adjacent coverage passes 104 tests, independent
+  review passes 38 resume tests, and the complete provider-free suite passes all
   1,888 tests.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of

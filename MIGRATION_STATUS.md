@@ -2032,3 +2032,14 @@ artifact bytes, and exact zero-call evidence. The predicate also replaces the
 duplicate final-settlement classification. Public signatures, state schema,
 provider policy, retry/fallback behavior, and frozen worker/contracts remain
 unchanged.
+
+#441 moves the next deterministic resume rejection ahead of avoidable media
+work. Once a high-level video journal is strictly loaded, its saved audio model
+and interval can be compared with the validated caller configuration without
+reading the source. A changed value now raises the existing
+`RESUME_STATE_MISMATCH` before credential resolution, source snapshotting,
+hashing, retained-audio decode, interval materialization, or provider dispatch.
+The shared request-only validator is also called by the full resume validator;
+source, frame, image, audio-artifact, and long-prefix identity remain byte-backed
+and are not moved early. Journal bytes, public API, state schema, provider
+policy, and frozen worker/contracts are unchanged.

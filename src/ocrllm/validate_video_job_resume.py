@@ -16,6 +16,7 @@ from .restore_video_job_frames import restore_video_job_frames
 from .retained_video_frame import RetainedVideoFrame
 from .reuse_image_resume_state import reuse_image_resume_state
 from .validate_image_resume_identity import validate_image_resume_identity
+from .validate_video_job_resume_request import validate_video_job_resume_request
 from .video_job_state import VideoJobState
 
 
@@ -57,6 +58,11 @@ def validate_video_job_resume(
     audio_interval_minutes: int | None,
 ) -> tuple[RetainedVideoFrame, ...]:
     """Return verified frames only after source, plan, and audio all match."""
+    validate_video_job_resume_request(
+        state,
+        audio_config=audio_config,
+        audio_interval_minutes=audio_interval_minutes,
+    )
     byte_size, sha256 = hash_video_snapshot(snapshot_path)
     current_source = build_owned_media_fingerprint(
         source_path,
@@ -65,12 +71,6 @@ def validate_video_job_resume(
     )
     if current_source != state.source:
         raise _mismatch("The video source no longer matches the journal.")
-    if (
-        state.audio.model != audio_config.audio_model.name
-        or state.audio.interval_minutes != audio_interval_minutes
-    ):
-        raise _mismatch("The video audio request no longer matches the journal.")
-
     frames = restore_video_job_frames(state, output_root=output_root)
     current_groups = plan_video_frame_groups(frames, config=image_config)
     saved_plan = tuple(

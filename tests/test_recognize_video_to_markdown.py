@@ -1413,6 +1413,10 @@ def test_long_audio_modes_resume_from_the_single_video_journal_after_publish_fai
         "ocrllm.validate_video_job_resume",
         fromlist=["prepare_video_job_audio_state"],
     )
+    source_snapshot = __import__(
+        "ocrllm.video.snapshot_video_source",
+        fromlist=["snapshot_video_source"],
+    )
     job_audio = __import__(
         "ocrllm.recognize_video_job_audio",
         fromlist=["recognize_video_job_audio"],
@@ -1583,7 +1587,9 @@ def test_long_audio_modes_resume_from_the_single_video_journal_after_publish_fai
     calls_after_settlement = provider_calls
     assert processor_calls == publication_calls == 1
     assert media_calls == {"prepare": 1, "extract": 1}
-    assert len(_root_journals(output_root)) == 1
+    journals = _root_journals(output_root)
+    assert len(journals) == 1
+    saved_journal_bytes = journals[0].read_bytes()
     assert not (output_root / "result.md").exists()
     assert not tuple(output_root.rglob(".ocrllm-long-audio-resume.json"))
     assert not tuple(output_root.rglob(".ocrllm-video-audio-resume.json"))
@@ -1594,20 +1600,62 @@ def test_long_audio_modes_resume_from_the_single_video_journal_after_publish_fai
         audio_model=AudioModelSettings(name="test-audio-model"),
         temp_dir=tmp_path / "audio-snapshots",
     )
+    resume_snapshot_calls = 0
 
-    if interval_minutes is not None:
-        with pytest.raises(ResumeStateError) as mismatch:
+    @contextmanager
+    def reject_resume_snapshot(*_args, **_kwargs):
+        nonlocal resume_snapshot_calls
+        resume_snapshot_calls += 1
+        raise AssertionError("resume request mismatch reached source snapshot")
+        yield  # pragma: no cover - makes this an explicit context manager
+
+    mismatched_audio_config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="different-audio-model"),
+        temp_dir=tmp_path / "audio-snapshots",
+    )
+    with monkeypatch.context() as mismatch_patch:
+        mismatch_patch.setattr(
+            source_snapshot,
+            "snapshot_video_source",
+            reject_resume_snapshot,
+        )
+        with pytest.raises(ResumeStateError) as model_mismatch:
             _public_facade()(
                 source,
                 output_dir=output_parent,
                 image_config=Config(provider=image_provider),
-                audio_config=resume_audio_config,
-                audio_interval_minutes=interval_minutes + 1,
+                audio_config=mismatched_audio_config,
                 resume=True,
+                **kwargs,
             )
+    assert model_mismatch.value.code == "RESUME_STATE_MISMATCH"
+    assert resume_snapshot_calls == 0
+    assert provider_calls == calls_after_settlement
+    assert processor_calls == publication_calls == 1
+    assert journals[0].read_bytes() == saved_journal_bytes
+
+    if interval_minutes is not None:
+        with monkeypatch.context() as mismatch_patch:
+            mismatch_patch.setattr(
+                source_snapshot,
+                "snapshot_video_source",
+                reject_resume_snapshot,
+            )
+            with pytest.raises(ResumeStateError) as mismatch:
+                _public_facade()(
+                    source,
+                    output_dir=output_parent,
+                    image_config=Config(provider=image_provider),
+                    audio_config=resume_audio_config,
+                    audio_interval_minutes=interval_minutes + 1,
+                    resume=True,
+                )
         assert mismatch.value.code == "RESUME_STATE_MISMATCH"
+        assert resume_snapshot_calls == 0
         assert provider_calls == calls_after_settlement
         assert processor_calls == publication_calls == 1
+        assert journals[0].read_bytes() == saved_journal_bytes
 
     result = _public_facade()(
         source,
@@ -2109,6 +2157,23 @@ def test_ready_unsettled_audio_resume_rejects_missing_credential_before_new_work
 
     monkeypatch.setattr(snapshot_module, "snapshot_video_source", reject_snapshot)
     cancellation.clear()
+
+    mismatched_audio_config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="different-audio-model"),
+        temp_dir=tmp_path / "audio-snapshots",
+    )
+    with pytest.raises(ResumeStateError) as request_mismatch:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=mismatched_audio_config,
+            resume=True,
+            **interval_kwargs,
+        )
+    assert request_mismatch.value.code == "RESUME_STATE_MISMATCH"
+    assert snapshot_calls == 0
 
     with pytest.raises(ConfigError) as captured:
         _public_facade()(
