@@ -6347,3 +6347,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **失败优先与最小修复。** 现有 all-no-speech 公共 resume 回归改成携带两个不同 cleanup failure；旧代码精确在 `remote_file_deleted` 断言处报 **KeyError**。原因是 `compose_long_audio_interval_output()` 在普通结果的 `_aggregate_cleanup()` 之前提前抛 `NoSpeechDetected`。实现把两个现有 tri-state 汇总提前一次计算：有正文时仍写入原 metadata；全静音时写入原 typed error details。首次三次付费调用与 resume 零调用都报告 `False/False`，没有发布 sentinel 或最终 Markdown。
 
 **验证与过度设计复查。** interval、whole、video settlement 与公共 video 邻近集合 **57 passed in 24.76s**；门禁另跑核心 long-audio 集合 **23 passed in 0.23s**。轻量执行者确认前后收集稳定为 1,782/1,780，Node 完整全量 **1,782 passed in 85.56s**，明确排除 Node 为 **1,780 passed in 86.55s**。compileall、diff check 和冻结 `contracts/worker` 边界均通过；没有 provider 调用、安装或下载。没有新增状态字段、serializer、错误类型、cleanup 动作、retry、fallback 或生命周期抽象；只让无正文分支复用普通结果已经使用的两个布尔汇总。
+
+## #367 — 2026-08-26：清除已删除黑板裁剪模块的最后残余入口
+
+**本轮英文原子任务。** `Atomic task — Iteration #367: re-audit and remove every remaining automatic blackboard-corner, ROI-crop, or perspective-correction path from both legacy_app and the importable ocrllm library. Context: multi-board, sliding-board, and board-plus-projector scenes make spatial alignment lossy, while temporal frame selection and full-field scaling remain valid. Success means proving all public image/video/PDF paths preserve the complete field of view, deleting any real residual implementation/config/reference, adding one failure-first regression for each reachable defect, and avoiding a replacement preprocessing abstraction. This matters because silent spatial loss is worse than rejecting an input honestly.`
+
+**复核后的事实与路线。** 三名只读执行者分别审计 legacy 调用链、active library 和删除门禁。真正的自动四角、轮廓、ROI 与透视模块已由 `3c09cde` 删除，死配置和误导命名大部已由 `efa256e` 清理；active library 从未有该工序。图片走完整快照，视频的 128/32 像素缩略图只做负反馈选帧，选中后重新解码并写出完整帧；PDFium 只用统一 scale 渲染完整页。路线 A 是只再次记录“没有执行代码”，路线 B 是继续检查配置、符号和现行图；选择 B，因为它发现了三个真实残余，但不删除正常的时间选择、全帧缩放和整页渲染。
+
+**失败优先与最小删除。** `_SECTION_NAMES` 仍错误接受已不存在的 `imaging` section。新增断言先精确复现 `AppConfig().with_updates(imaging={})` 抛出 `AttributeError`；删除该单行后，入口在配置边界按既有规则抛 `TypeError`。同时删除无人引用的 `STEP_FRAME_PREPROCESS` 名称，并把 legacy 架构图中已删除的 `preprocess.py` 节点改成当前 `prepare_board_image.py` 完整图片准备，视频箭头不再经过不存在的预处理。稳定 phase 3 数字仍代表完整帧缩放；旧 repair manifest 的 `skip_preprocess` 只读校验不能触发裁剪，为保住既有 repair 数据而保留。
+
+**验证与过度设计复查。** legacy 完整图片、完整视频候选和 PDF 渲染为 **5 passed in 4.31s**；active 完整视频尺寸/旋转与两组完整 PDF 页公共路径为 **3 passed in 0.69s**。轻量执行者随后完成含 Node harness 的 active 全量 **1,782 passed in 85.19s**；legacy 排除三项明确延期的社交下载 E2E 和受保护未跟踪测试后为 **266 passed、1 skipped in 34.31s**。`compileall -q src legacy_app/OCRLLM tests legacy_app/tests`、EOL-aware diff check 和冻结 `contracts/worker` 边界通过。没有新增反裁剪运行时守卫、源码禁词测试、PDF 图像比较框架或第二套预处理抽象，也没有误删全帧 Canny 空白判断、pHash、缩略图比较、完整画面等比例缩小和完整页渲染。模块本体早已删除；本轮只清除会导致真实 API 崩溃或诱导未来复活它的残余。

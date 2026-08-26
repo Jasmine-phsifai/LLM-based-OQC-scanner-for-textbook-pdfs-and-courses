@@ -465,6 +465,8 @@ is often accepted.
   corrected remaining runtime/documentation wording that called full-frame
   resizing a crop. Stable legacy phase keys remain only for checkpoint layout;
   they do not select a geometry-changing operation.
+  #367 removed the final stale `imaging` config whitelist entry, unused
+  preprocessing-named constant, and diagram reference to the deleted module.
 
 - **Resolved video-resume terminal decision (#345/#347): Route A.** Do not add an audio-only
   `resume=True` to `recognize_video()`: current video state cannot preserve paid

@@ -976,3 +976,25 @@ contains no such config or executable geometry-changing stage. Keep it that way:
 comparison thumbnails may be resized privately, and full pages/frames may be
 uniformly bounded, but never expose corner, contour, ROI, or perspective options
 for recognition inputs.
+
+## 2026-08-26: deleted imaging section remained in config update whitelist
+
+**Observed and fixed.** `AppConfig.imaging` and the executable crop module were
+already gone, but `_SECTION_NAMES` still accepted `imaging`. An API
+`config_overrides` request could therefore pass the section-name check and then
+crash with `AttributeError` while reading a field that no longer exists. The
+stale name is deleted, and the full-frame regression now requires the override
+to be rejected with `TypeError` at the configuration boundary.
+
+The unused `STEP_FRAME_PREPROCESS` constant and the architecture-diagram node
+for deleted `preprocess.py` were also removed. Stable numeric phase 3 remains,
+because current checkpoints use it for complete-frame resizing. The historical
+repair-manifest `skip_preprocess` reader remains read-only and cannot select any
+crop behavior. Focused legacy full-frame/PDF tests passed 5/5; active video/PDF
+full-frame tests passed 3/3. The bounded legacy suite passed 266 tests with one
+expected skip after excluding three deferred social-download E2E files and the
+maintainer's protected untracked test; the active suite passed 1,782/1,782.
+
+**Carry-forward judgement. WARNING FOR src/ocrllm.** No analogous active-library
+config, export, or implementation exists. Keep temporal frame selection and
+full-page/full-frame scaling distinct from rejected spatial cropping.

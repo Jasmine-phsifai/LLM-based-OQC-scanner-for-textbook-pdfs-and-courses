@@ -1540,6 +1540,11 @@ regression preserves aspect ratio and both outer edges. Full-frame resizing,
 video time-point selection, and complete-page PDF rendering remain; none is a
 blackboard crop.
 
+#367 removes the remaining stale legacy `imaging` config whitelist entry, an
+unused preprocessing-named phase constant, and the architecture-diagram node
+for the already-deleted module. Invalid `imaging` overrides now fail at the
+configuration boundary with `TypeError`; no active-library behavior changed.
+
 #358 corrects active PDF cleanup evidence without changing recovery. A first
 group can finish its provider call and save an image sidecar before its child
 Markdown publication fails. The resulting nonempty state directory is

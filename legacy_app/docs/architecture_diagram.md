@@ -48,7 +48,7 @@ graph TB
     subgraph "成像层 — imaging/"
         OCR["ocr_engine.py<br/>RapidOCR ONNX"]
         PDF_RENDER["pdf_renderer.py<br/>PyMuPDF 渲染"]
-        PREPROCESS["preprocess.py<br/>图像预处理"]
+        PREPARE_IMAGE["prepare_board_image.py<br/>完整图片准备"]
         TBPU["tbpu.py<br/>GapTree 排版排序"]
         SCAN_DET["scan_detector.py<br/>扫描页检测"]
         AUDIO_EXT["audio_extractor.py<br/>ffmpeg 音频提取"]
@@ -73,8 +73,8 @@ graph TB
     VIDEO_PROC --> VP
 
     PDF_PROC --> LLM & OCR & PDF_RENDER & TBPU & CKPT & INC_WRITER & SCAN_DET
-    VIDEO_PROC --> LLM & PREPROCESS & AUDIO_EXT & MERGE & CKPT
-    BOARD_PROC --> LLM & PREPROCESS
+    VIDEO_PROC --> LLM & AUDIO_EXT & MERGE & CKPT
+    BOARD_PROC --> LLM & PREPARE_IMAGE
     AUDIO_PROC --> LLM
 
     LLM --> API_POOL

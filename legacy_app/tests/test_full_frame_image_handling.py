@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import cv2
 import numpy as np
+import pytest
 from PIL import Image
 
 from OCRLLM.config import AppConfig
@@ -62,6 +63,8 @@ def test_prepare_board_image_downscales_without_cropping_edges(tmp_path) -> None
 
 def test_deleted_crop_configuration_is_not_exposed() -> None:
     assert not hasattr(AppConfig(), "imaging")
+    with pytest.raises(TypeError, match="imaging"):
+        AppConfig().with_updates(imaging={})
 
 
 def test_video_candidate_publishes_the_complete_frame(tmp_path) -> None:

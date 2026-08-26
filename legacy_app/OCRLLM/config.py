@@ -462,7 +462,6 @@ _SECTION_NAMES = {
     "concurrency",
     "paths",
     "video",
-    "imaging",
     "social",
     "shot_detection",
 }

@@ -235,6 +235,12 @@ renames misleading “crop and resize” progress/docs to complete-frame resize.
 The active video writer still re-encodes the decoded full frame at identical
 dimensions, and PDF rendering still scales the complete page uniformly.
 
+#367 removes three final non-executable remnants: the legacy config updater no
+longer accepts the deleted `imaging` section, the unused
+`STEP_FRAME_PREPROCESS` name is gone, and the legacy architecture diagram no
+longer points at the deleted module. Temporal frame selection, full-frame
+resizing, and the historical repair-manifest reader remain intentionally.
+
 #358 fixes one PDF failure-reporting defect. If the first image group completed
 and saved its reusable sidecar but child Markdown publication failed, the
 intentionally nonempty state directory was falsely labeled as a cleanup
