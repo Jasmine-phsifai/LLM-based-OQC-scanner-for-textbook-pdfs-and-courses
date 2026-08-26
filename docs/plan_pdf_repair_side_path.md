@@ -2,6 +2,12 @@
 
 Status: **product choice required; no runtime implementation is authorized.**
 
+Iteration #451 rechecked the decision chronology. The maintainer's earlier
+"first A, second B" response belongs to the older video-cancellation and
+long-audio decisions. It does not answer this later PDF-specific artifact
+choice. The routes below therefore remain open until one is selected
+explicitly for PDF repair.
+
 ## Problem
 
 The active PDF facade is serial and fail-fast. It recognizes complete page

@@ -148,6 +148,15 @@ repair stays unavailable pending the explicit Route A/Route B output-artifact
 choice in `docs/MAINTAINER_PRODUCT_DECISIONS.md`; no legacy compatibility,
 partial producer, parser, public API, worker route, retry, or second checkpoint
 was added.
+#451 confirms that this is still a real product choice, not stale documentation.
+The maintainer's earlier Route A and Route B selections belong to video branch
+cancellation and long-audio recovery respectively; #422 introduced the later,
+PDF-specific route names. Current code and focused lifecycle evidence still
+prove that a failed PDF publishes neither canonical nor partial aggregate
+Markdown; completed child-group Markdown and image sidecars remain available
+only for ordinary resume. No PDF repair runtime work begins until the
+maintainer explicitly selects the separate source-bound partial artifact
+(Route A) or no partial artifact/manual repair (Route B).
 #425 fixes only that proven legacy producer/parser contradiction. A partially
 successful range repair now emits one existing single-page marker for each
 remaining failure, in page order, so the next legacy repair pass can discover

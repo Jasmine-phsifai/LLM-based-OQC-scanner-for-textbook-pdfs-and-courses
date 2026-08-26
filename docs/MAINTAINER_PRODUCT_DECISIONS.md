@@ -774,3 +774,12 @@ is often accepted.
   [`plan_pdf_repair_side_path.md`](plan_pdf_repair_side_path.md).
 - This is a material output-contract choice. No runtime implementation begins
   until the maintainer selects Route A or Route B.
+- **#451 decision-attribution clarification.** The maintainer's earlier
+  "first A, second B" answer selected Route A for video branch cancellation
+  and Route B for recoverable long-audio whole/interval behavior. Those
+  decisions predate this #422 PDF-specific artifact choice and do not select
+  either route here. The remaining question is exactly: should failed active
+  PDF recognition publish the separate source-bound partial artifact defined
+  by Route A, or should Route B preserve no partial aggregate Markdown and keep
+  manual PDF repair unavailable? Do not infer an answer from another feature's
+  reused route letters.

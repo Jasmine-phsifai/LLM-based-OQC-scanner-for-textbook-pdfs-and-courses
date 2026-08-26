@@ -2090,3 +2090,15 @@ distribution imports without loading OpenCV, NumPy, Google, PDFium, or RapidOCR.
 With repository pytest configuration disabled, all 18 strict video-state tests
 and the public comment-only high-level resume rejection passed against the
 installed target. No package configuration or runtime behavior changed.
+
+#451 reconciles the still-open PDF repair artifact decision without changing
+runtime. The maintainer's earlier "first A, second B" selection is already
+owned by video branch cancellation and recoverable long-audio behavior; it
+predates #422 and cannot be attributed to the later PDF-specific route names.
+Current PDF failure behavior publishes no canonical or partial aggregate
+Markdown while retaining completed child-group Markdown and image sidecars for
+ordinary resume. PDF repair therefore remains unavailable pending one explicit
+choice: approve the separate source-bound `*_board.partial.md` vertical slice,
+or preserve no partial artifact and keep resume/fresh recognition as the only
+recovery paths. No parser, producer, public API, state, provider, worker,
+legacy compatibility, retry, fallback, or second checkpoint was added.
