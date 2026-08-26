@@ -3965,11 +3965,10 @@ Post-register findings are ordered by demonstrated user impact:
   entire tuple before snapshot, provider dispatch, or publication. A new item
   with neither result nor sidecar remains valid. Per-item source fingerprint and
   full identity checks stay at the existing snapshot boundary.
-- Open, medium: `recognize_video_to_markdown(..., resume=True)` does not yet use
-  the journal's saved interval minutes when the caller omits
-  `audio_interval_minutes`. Omission should restore the saved exact integer;
-  an explicitly different integer must remain a mismatch. Do not widen this
-  into a new configuration migration layer.
+- #380 closes the medium video interval-resume defect. After strict journal
+  loading, an omitted `audio_interval_minutes` uses the saved exact integer;
+  an explicitly supplied different integer still fails before redispatch.
+  Whole mode remains `None`, and no configuration migration layer was added.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
@@ -7329,3 +7328,20 @@ validated snapshots and remains in per-item execution. This change adds no
 transaction, rollback, eager snapshot, cross-process lock, iterable
 compatibility, or second batch abstraction. The focused batch/image-resume set
 passes 94 tests, and the complete offline suite passes all 1,827 tests.
+
+## Current working update: #380 restores saved video interval minutes
+
+An interval video job that was created with a positive integer now resumes when
+the caller leaves `audio_interval_minutes` at its public `None` default. The
+facade first strictly loads its existing journal and only then substitutes the
+saved `VideoAudioState.interval_minutes`; whole-mode journals therefore remain
+`None`. An explicitly supplied integer is never replaced and the existing
+request-identity validator rejects a mismatch before provider dispatch.
+
+The public whole/interval publication-failure regression now proves both sides:
+interval `5` rejects explicit `6` without new work, then succeeds when the
+argument is omitted, reuses every settled provider result, publishes the fixed
+Markdown, and removes the journal. The correction changes no public signature,
+state schema, provider behavior, repair path, or configuration migration. The
+focused video/interval set passes 63 tests, and the complete offline suite
+passes all 1,827 tests.

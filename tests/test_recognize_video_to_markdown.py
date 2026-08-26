@@ -855,13 +855,26 @@ def test_long_audio_modes_resume_from_the_single_video_journal_after_publish_fai
     assert not tuple(output_root.rglob(".ocrllm-long-audio-resume.json"))
     assert not tuple(output_root.rglob(".ocrllm-video-audio-resume.json"))
 
+    if interval_minutes is not None:
+        with pytest.raises(ResumeStateError) as mismatch:
+            _public_facade()(
+                source,
+                output_dir=output_parent,
+                image_config=Config(provider=image_provider),
+                audio_config=_audio_config(tmp_path),
+                audio_interval_minutes=interval_minutes + 1,
+                resume=True,
+            )
+        assert mismatch.value.code == "RESUME_STATE_MISMATCH"
+        assert provider_calls == calls_after_settlement
+        assert processor_calls == publication_calls == 1
+
     result = _public_facade()(
         source,
         output_dir=output_parent,
         image_config=Config(provider=image_provider),
         audio_config=_audio_config(tmp_path),
         resume=True,
-        **kwargs,
     )
 
     assert result.output_path == output_root / "result.md"

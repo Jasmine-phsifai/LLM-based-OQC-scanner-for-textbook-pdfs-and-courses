@@ -1101,6 +1101,7 @@ explicitly authorizes that work.
 longer atomic `.ocrllm-<32 hex>.tmp` sibling, so unsupported paths are rejected
 before any provider call. #379 closes the next batch-wide resume-sidecar gap by
 loading every resolved image sidecar before any item dispatches. The next proven
-active defect is restoration of saved video interval minutes when `resume=True`
-omits that argument. Keep that fix atomic and reuse existing journal validation;
-do not build transactions or configuration migration.
+active defect was restoration of saved video interval minutes when `resume=True`
+omits that argument; #380 closes it after strict journal loading while preserving
+explicit mismatch rejection. No transaction or configuration migration was
+introduced.

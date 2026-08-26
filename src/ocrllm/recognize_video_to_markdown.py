@@ -246,14 +246,18 @@ def _resume_video_job(
 ) -> RecognitionResult:
     from .errors import OutputError
     from .load_video_job_state import load_video_job_state
-    from .validate_video_job_resume import validate_video_job_resume
+    from .validate_video_job_resume import (
+        validate_video_job_finalization_state,
+        validate_video_job_resume,
+    )
     from .video.snapshot_video_source import snapshot_video_source
     from .video_job_journal import VideoJobJournal
     from .video_job_state import VIDEO_JOB_RESULT_NAME, VIDEO_JOB_STATE_NAME
 
     journal_path = output_root / VIDEO_JOB_STATE_NAME
     journal = VideoJobJournal(journal_path, load_video_job_state(journal_path))
-    from .validate_video_job_resume import validate_video_job_finalization_state
+    if interval_minutes is None:
+        interval_minutes = journal.state.audio.interval_minutes
 
     validate_video_job_finalization_state(
         journal.state,

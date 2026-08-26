@@ -1680,6 +1680,15 @@ compatibility, or second batch abstraction was added. The next proven defect is
 video interval resume with an omitted minutes argument. The complete offline
 suite passes all 1,827 tests.
 
+#380 closes that omitted-minutes defect. A resumed interval video job now uses
+its journal's saved positive integer only when the caller leaves the public
+argument at `None`; explicit differing integers still fail the existing request
+identity check before redispatch, and whole mode remains `None`. The settled
+interval regression proves explicit mismatch, omitted-argument zero-call reuse,
+final publication, and journal cleanup. No signature, schema, provider, repair,
+or configuration-migration behavior was added. The complete offline suite
+passes all 1,827 tests.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
