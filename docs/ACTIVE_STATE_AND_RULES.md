@@ -7826,3 +7826,29 @@ transaction, retry, or fallback was added. Focused PDF/image/resume/output
 coverage passes 110 tests; independent review finds no high- or medium-severity
 issue; the complete offline suite passes all 1,864 tests with zero failures.
 Return to a fresh bounded public-lifecycle audit before selecting another fix.
+
+## Current working update: #408 preserves cross-branch client cleanup failure
+
+A provider-free public video regression now lets the first retained-frame group
+settle, fails the second image-provider call, and independently settles short
+audio with exact 7/2 token usage and `provider_client_closed=False`. Previously
+the primary image error reported all three current calls and both models' token
+usage but discarded the audio branch's exact failed client cleanup.
+
+The existing video current-evidence merger now propagates only an exact false
+client-close fact from its ordered before, primary, or after evidence. It does
+not infer true from successful, missing, or malformed values and does not merge
+remote-file cleanup. The same image error remains primary; the journal keeps
+the completed first frame group and audio result; resume recognizes only the
+missing frame group, makes no second audio call, publishes once, and removes
+the journal.
+
+No generic cleanup ledger, result schema, state field, retry, fallback, or
+transaction was added. The focused video/image set passes 108 tests;
+independent review finds no high- or medium-severity issue; the frozen-worktree
+complete offline rerun passes all 1,864 tests with zero failures. A separate
+low-priority consistency gap remains: a successful recognized-audio result with
+failed client cleanup keeps its partial status and warning through composition,
+but the composite video metadata does not expose the audio-scoped false boolean.
+Compare that bounded disclosure gap against stronger fresh defects before
+selecting the next iteration.

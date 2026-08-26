@@ -1212,3 +1212,13 @@ well as its existing call and token evidence. False dominates, while unknown
 cleanup cannot become true. This extends the existing PDF evidence attachment;
 it adds no generic lifecycle ledger, schema, retry, or transaction. The
 complete offline suite passes all 1,864 tests.
+
+#408 preserves exact failed client cleanup across high-level video branches.
+When one image branch is the primary error after another image group and short
+audio have settled, the original error now includes the audio branch's exact
+`provider_client_closed=False` alongside the existing complete current call and
+token evidence. Resume reuses both settled branches and dispatches only the
+missing frame group. This is false-only propagation in the existing video
+evidence merger, not a generic lifecycle ledger. The complete offline suite
+passes all 1,864 tests. A separate low-priority composite-result metadata
+asymmetry remains recorded in the authority file.

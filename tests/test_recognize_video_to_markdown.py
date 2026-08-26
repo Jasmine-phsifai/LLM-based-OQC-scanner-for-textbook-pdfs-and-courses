@@ -550,7 +550,7 @@ def test_later_frame_failure_reports_earlier_frames_and_settled_audio(
             markdown="# Settled audio\n",
             input_tokens=7,
             output_tokens=2,
-            client_closed=True,
+            client_closed=False,
         )
 
     monkeypatch.setattr(prepare, "prepare_video_media", prepare_nine_frames)
@@ -590,6 +590,7 @@ def test_later_frame_failure_reports_earlier_frames_and_settled_audio(
             "unit": "tokens",
         },
     )
+    assert captured.value.details["provider_client_closed"] is False
     assert [len(group) for group in image_groups] == [8, 1]
     assert audio_calls == 1
     saved = load_video_job_state(_root_journals(output_root)[0])
@@ -597,6 +598,25 @@ def test_later_frame_failure_reports_earlier_frames_and_settled_audio(
     assert saved.frame_groups[0].image_state.markdown
     assert saved.frame_groups[1].image_state is None
     assert saved.audio.short_state is not None
+
+    result = _public_facade()(
+        source,
+        output_dir=output_parent,
+        image_config=Config(
+            provider=FailSecondImageProvider(),
+            vision_model=VisionModelSettings(name="test-image-model"),
+        ),
+        audio_config=_audio_config(tmp_path),
+        resume=True,
+    )
+
+    assert result.output_path == output_root / "result.md"
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert result.metadata["current_run_provider_call_count"] == 1
+    assert any("client could not be closed" in item for item in result.warnings)
+    assert audio_calls == 1
+    assert [len(group) for group in image_groups] == [8, 1, 1]
+    assert _root_journals(output_root) == ()
 
 
 def test_two_branch_failures_report_both_current_run_attempts(

@@ -20,10 +20,11 @@ def attach_current_video_evidence_to_error(
     after: tuple[VideoEvidence, ...] = (),
     primary_provider_calls_attempted: int | None = None,
 ) -> None:
-    """Merge current calls and usage; an explicit primary count is local work."""
+    """Merge current calls, usage, and any exact failed client cleanup."""
     ordered_evidence = (*before, primary_error, *after)
     call_counts: list[int | None] = []
     usage_rows: list[dict[str, str | int | None]] = []
+    client_cleanup_failed = False
     for item in ordered_evidence:
         if isinstance(item, OCRLLMError):
             count = (
@@ -33,6 +34,9 @@ def attach_current_video_evidence_to_error(
                 else item.details.get("provider_calls_attempted")
             )
             usage_rows.extend(aggregate_current_model_token_usage((), (item,)))
+            client_cleanup_failed |= (
+                item.details.get("provider_client_closed") is False
+            )
         else:
             count = (
                 item.metadata["current_run_provider_call_count"]
@@ -40,6 +44,9 @@ def attach_current_video_evidence_to_error(
                 else item.metadata.get("provider_call_count")
             )
             usage_rows.extend(aggregate_current_model_token_usage((item,)))
+            client_cleanup_failed |= (
+                item.metadata.get("provider_client_closed") is False
+            )
         call_counts.append(count if type(count) is int and count >= 0 else None)
 
     if all(count is not None for count in call_counts):
@@ -62,3 +69,5 @@ def attach_current_video_evidence_to_error(
                 for item in usage
             ),
         )
+    if client_cleanup_failed:
+        primary_error._add_safe_detail("provider_client_closed", False)
