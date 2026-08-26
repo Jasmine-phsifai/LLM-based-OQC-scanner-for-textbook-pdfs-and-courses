@@ -732,6 +732,11 @@ class VideoProcessor(BaseProcessor):
         import threading
         coarse_skip = max(1, int(fps * self.cfg.video.frame_interval))
         target_indices = list(range(0, total_frames, coarse_skip))
+        final_frame_index = total_frames - 1
+        if final_frame_index >= 0 and (
+            not target_indices or target_indices[-1] != final_frame_index
+        ):
+            target_indices.append(final_frame_index)
         total_targets = len(target_indices)
 
         self.tracker.update_phase(
@@ -1076,8 +1081,12 @@ class VideoProcessor(BaseProcessor):
 
         # 安全上限: 若仍超出目标，均匀子采样
         if len(best_selected) > target_high:
-            step = len(best_selected) / target_high
-            best_selected = [best_selected[int(i * step)] for i in range(target_high)]
+            final_index = len(best_selected) - 1
+            final_slot = target_high - 1
+            best_selected = [
+                best_selected[int(i * final_index / final_slot + 0.5)]
+                for i in range(target_high)
+            ]
             logger.info("[VIDEO] 安全上限均匀下采样: → %d帧", len(best_selected))
 
         return best_selected

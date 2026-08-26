@@ -314,6 +314,15 @@ legacy defect: its coarse scan does not force the exact final frame and its old
 density-cap formula does not force the final observed candidate. That parent
 defect is recorded in `legacy_app/AGENTS.md` for a separate failing-first atomic
 fix; it does not justify active-library compatibility or another selector.
+#448 closes that bounded legacy defect without changing the active library.
+Legacy coarse scanning now conditionally appends `total_frames - 1`, so an
+unaligned tail is observed once while an already scheduled final frame is not
+duplicated. Its post-calibration safety cap now uses the same endpoint-inclusive
+uniform mapping already proven by the active selector. Focused fake-capture and
+real six-frame MP4 regressions require the exact EOF candidate, while a forced
+11-to-10 cap requires both endpoints and strict ordering. Scan intervals,
+thresholds, refinement, pHash, complete-frame publication, and failed-seek
+behavior are unchanged; no shared selector or compatibility layer was added.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but

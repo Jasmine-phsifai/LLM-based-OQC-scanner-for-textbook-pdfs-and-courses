@@ -1091,8 +1091,8 @@ boundary and add source-bound identity rather than importing this legacy parser.
 
 ## 2026-08-27: video tail changes can be omitted before selection
 
-**Observed, not fixed in this audit.** Legacy video coarse scanning builds its
-targets with `range(0, total_frames, coarse_skip)` and does not explicitly add
+**Observed and fixed.** Legacy video coarse scanning built its
+targets with `range(0, total_frames, coarse_skip)` and did not explicitly add
 `total_frames - 1`. With the default five-second interval, a meaningful board
 change confined to the final almost-five-second tail can therefore remain
 unobserved. The refinement pass only scans gaps between existing candidates and
@@ -1100,14 +1100,26 @@ does not create a final-candidate-to-EOF gap. Ordinary segmentation correctly
 flushes the last candidate it did observe, so the primary defect is missing EOF
 sampling rather than failure to close a segment.
 
-A second bounded risk remains in the post-calibration density cap: its uniform
+A second bounded defect was in the post-calibration density cap: its uniform
 index formula does not force the last selected candidate into the capped output.
 For example, capping 11 candidates to 10 selects indices 0 through 9 and omits
-index 10. No tracked legacy test currently protects explicit EOF sampling or
-this capped endpoint. This entry records the evidence only; the next atomic
-legacy fix should add failing public-path regressions before changing either
-formula, and must not add crop, ROI, perspective correction, another selector,
-or generalized video recovery.
+index 10.
+
+The coarse target list now conditionally appends `total_frames - 1`; an aligned
+final target remains present exactly once and a nonpositive frame count remains
+empty. The safety cap now maps its first and last output slots exactly to the
+first and last selected candidates while keeping its existing fixed count and
+ordering. The initial two regressions failed with seek targets `[0, 50, 100]`
+instead of `[0, 50, 100, 149]` and capped endpoint 9 instead of 10. The final
+focused set also covers the aligned no-duplicate case and a real six-frame MP4,
+and passes 4/4. The adjacent full-frame, capture, and repair set passes 12/12;
+the bounded provider-free legacy gate selected 36 tracked files plus this new
+focused file and passes 268/268 with no skip, provider, or network access.
+
+No scan interval, comparison threshold, refinement, pHash, blank filtering,
+failed-seek behavior, complete-frame publication, crop, ROI, or perspective
+operation changed. The fix did not import the active selector or add a shared
+sampling abstraction.
 
 **Carry-forward judgement.** The same omission must not re-emerge in future
 video work. The active `src/ocrllm` path already explicitly samples the exact
