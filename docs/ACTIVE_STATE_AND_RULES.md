@@ -212,6 +212,15 @@ rendering. Missing providers and injected objects without callable
 evidence while creating neither configured output nor temporary directories.
 The shared check still returns immediately for local OCR, and the PDF processor
 does not gain its own validator, provider abstraction, or alternate route.
+#435 closes the corresponding missing-credential ordering gap for standalone
+Google audio. Short MP3 and fresh whole/interval long-MP3 calls now resolve one
+available explicit or environment credential after structural checks and
+cancellation, but before output creation, source snapshotting, decode, or
+interval materialization. Audio batch preflight resolves it once before any
+member decode. Missing credentials retain `CONFIG_MISSING` and exact
+`provider_calls_attempted=0`. Completed long-audio resume remains credential-
+free and zero-call, while adapters still resolve the credential again at real
+dispatch instead of caching a secret. Video branch ordering is unchanged.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4179,6 +4188,15 @@ Post-register findings are ordered by demonstrated user impact:
   preserving zero-call draft/fix-request evidence. Focused adjacent coverage
   passes 207 tests, independent review passes 139 and 86 tests, and the complete
   provider-free suite passes all 1,877 tests.
+- #435 closes the medium Google-audio missing-credential preflight gap. Short,
+  fresh whole, and fresh interval calls formerly snapshotted/decoded input;
+  interval mode also materialized and hashed its first segment before reporting
+  `CONFIG_MISSING`. These fresh routes now stop before those effects, and audio
+  batch preflight stops before decode, while retaining exact zero-call evidence.
+  Structural and cancellation precedence is unchanged; completed resume still
+  needs no credential and adapters re-resolve at dispatch. Focused adjacent
+  coverage passes 213 tests, independent review passes 242 tests, and the
+  complete provider-free suite passes all 1,882 tests.
 
 The bounded reproduced queue is empty again. Select the next iteration through
 a fresh public-lifecycle audit rather than extending output preflight

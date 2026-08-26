@@ -1993,3 +1993,13 @@ inspection, page rendering, or dispatch. Existing `CONFIG_MISSING` /
 remain stable. Local OCR continues through its existing provider-free route;
 the PDF processor, batch contract, worker boundary, and state formats are
 unchanged.
+
+#435 moves missing Google audio credential rejection ahead of avoidable local
+work for standalone short MP3, fresh whole/interval long MP3, and audio batches.
+Those paths now retain `CONFIG_MISSING` plus `provider_calls_attempted=0` without
+creating an output root, snapshotting/decoding media, or materializing an
+interval segment. Structural validation and cancellation keep their earlier
+precedence. Completed long-audio resume remains credential-free and zero-call;
+the provider adapter still resolves the key again immediately before actual
+work, so no secret is cached. Video orchestration and provider policy are
+unchanged.

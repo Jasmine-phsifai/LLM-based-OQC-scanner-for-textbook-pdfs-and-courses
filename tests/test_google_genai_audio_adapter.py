@@ -207,6 +207,8 @@ def test_invalid_mp3_fails_before_sdk_load(monkeypatch) -> None:
 
 def test_pre_set_google_audio_cancellation_stops_before_snapshot(monkeypatch) -> None:
     processor = importlib.import_module("ocrllm.processors.recognize_short_mp3")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     cancellation = Event()
     cancellation.set()
     snapshot_started = False
@@ -219,10 +221,67 @@ def test_pre_set_google_audio_cancellation_stops_before_snapshot(monkeypatch) ->
     monkeypatch.setattr(processor, "snapshot_short_mp3", fail_snapshot)
 
     with pytest.raises(Cancelled) as caught:
-        recognize(FIXTURE, config=_config(cancellation=cancellation))
+        recognize(
+            FIXTURE,
+            config=Config(
+                provider=GoogleGenAISettings(),
+                audio_model=AudioModelSettings(name=MODEL),
+                cancellation=cancellation,
+            ),
+        )
 
     assert caught.value.code == "CANCELLED"
     assert snapshot_started is False
+
+
+def test_missing_google_audio_credential_stops_before_snapshot(monkeypatch) -> None:
+    processor = importlib.import_module("ocrllm.processors.recognize_short_mp3")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    snapshot_started = False
+
+    def fail_snapshot(*_args, **_kwargs):
+        nonlocal snapshot_started
+        snapshot_started = True
+        raise AssertionError("missing credential must stop before audio snapshot")
+
+    monkeypatch.setattr(processor, "snapshot_short_mp3", fail_snapshot)
+    config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name=MODEL),
+    )
+
+    with pytest.raises(ConfigError) as caught:
+        recognize(FIXTURE, config=config)
+
+    assert caught.value.code == "CONFIG_MISSING"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert snapshot_started is False
+
+
+def test_batch_missing_google_audio_credential_stops_before_decode(monkeypatch) -> None:
+    preflight = importlib.import_module("ocrllm.preflight_recognition_batch")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    decode_started = False
+
+    def fail_decode(*_args, **_kwargs):
+        nonlocal decode_started
+        decode_started = True
+        raise AssertionError("missing credential must stop before batch audio decode")
+
+    monkeypatch.setattr(preflight, "probe_short_mp3", fail_decode)
+    config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name=MODEL),
+    )
+
+    with pytest.raises(ConfigError) as caught:
+        recognize_batch((FIXTURE,), config=config)
+
+    assert caught.value.code == "CONFIG_MISSING"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert decode_started is False
 
 
 def test_google_audio_adapter_checks_catalog_before_generate(monkeypatch) -> None:

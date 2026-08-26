@@ -229,6 +229,82 @@ def test_interval_mode_requires_persistent_output_before_snapshot(
     assert started is False
 
 
+@pytest.mark.parametrize("interval_minutes", (None, 5))
+def test_fresh_long_audio_missing_credential_stops_before_output_or_snapshot(
+    tmp_path: Path,
+    monkeypatch,
+    interval_minutes: int | None,
+) -> None:
+    processor = __import__(
+        "ocrllm.processors.recognize_long_mp3",
+        fromlist=["recognize_long_mp3"],
+    )
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    snapshot_started = False
+
+    def fail_snapshot(*_args, **_kwargs):
+        nonlocal snapshot_started
+        snapshot_started = True
+        raise AssertionError("missing credential must stop before audio snapshot")
+
+    monkeypatch.setattr(processor, "snapshot_long_mp3", fail_snapshot)
+    output_dir = tmp_path / "out"
+    config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name=MODEL),
+        output_dir=output_dir,
+    )
+
+    with pytest.raises(ConfigError) as caught:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=config,
+            interval_minutes=interval_minutes,
+        )
+
+    assert caught.value.code == "CONFIG_MISSING"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert snapshot_started is False
+    assert not output_dir.exists()
+
+
+def test_pre_cancelled_fresh_long_audio_does_not_require_credential(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    processor = __import__(
+        "ocrllm.processors.recognize_long_mp3",
+        fromlist=["recognize_long_mp3"],
+    )
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    cancellation = Event()
+    cancellation.set()
+    snapshot_started = False
+
+    def fail_snapshot(*_args, **_kwargs):
+        nonlocal snapshot_started
+        snapshot_started = True
+        raise AssertionError("cancelled audio must stop before snapshot")
+
+    monkeypatch.setattr(processor, "snapshot_long_mp3", fail_snapshot)
+    output_dir = tmp_path / "out"
+    config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name=MODEL),
+        output_dir=output_dir,
+        cancellation=cancellation,
+    )
+
+    with pytest.raises(Cancelled) as caught:
+        recognize_long_mp3(tmp_path / "lecture.mp3", config=config)
+
+    assert caught.value.code == "CANCELLED"
+    assert snapshot_started is False
+    assert not output_dir.exists()
+
+
 def test_interval_run_saves_each_paid_prefix_then_publishes_ordered_markdown(
     tmp_path: Path,
     monkeypatch,

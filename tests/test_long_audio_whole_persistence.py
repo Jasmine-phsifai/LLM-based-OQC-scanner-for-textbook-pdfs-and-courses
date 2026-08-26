@@ -250,9 +250,16 @@ def test_failed_publication_preserves_paid_state_for_zero_call_resume(
         output_module.write_markdown_atomically,
         raising=False,
     )
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     result = recognize_long_mp3(
         tmp_path / "lecture.mp3",
-        config=_config(output_dir, resume=True),
+        config=Config(
+            provider=GoogleGenAISettings(),
+            audio_model=AudioModelSettings(name=MODEL),
+            output_dir=output_dir,
+            resume=True,
+        ),
     )
 
     assert provider_calls == [MODEL]

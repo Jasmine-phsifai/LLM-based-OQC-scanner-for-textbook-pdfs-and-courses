@@ -8,7 +8,7 @@ from pathlib import Path
 from .audio.probe_short_mp3 import probe_short_mp3
 from .coerce_source_paths import coerce_source_paths
 from .config import Config
-from .errors import InvalidSource, OutputError, OutputExists
+from .errors import ConfigError, InvalidSource, OutputError, OutputExists
 from .output.load_image_resume_state import load_image_resume_state
 from .output.resolve_image_resume_state_path import resolve_image_resume_state_path
 from .output.resolve_output_path import resolve_output_path
@@ -36,6 +36,7 @@ def preflight_recognition_batch(
     media_types: list[str] = []
     resolved_targets: list[Path] = []
     image_provider_validated = False
+    audio_credential_validated = False
 
     for source_paths in groups:
         media_type = validate_same_type_group(source_paths)
@@ -71,6 +72,17 @@ def preflight_recognition_batch(
             ) from None
         else:
             validate_google_mp3_options(source_paths, config=config)
+            if not audio_credential_validated:
+                from .providers.google_genai.resolve_google_genai_credential import (
+                    resolve_google_genai_credential,
+                )
+
+                try:
+                    resolve_google_genai_credential(config.provider)
+                except ConfigError as error:
+                    error._add_safe_detail("provider_calls_attempted", 0)
+                    raise
+                audio_credential_validated = True
 
     if len(set(resolved_targets)) != len(resolved_targets):
         raise OutputExists(

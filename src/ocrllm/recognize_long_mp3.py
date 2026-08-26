@@ -69,6 +69,18 @@ def _recognize_long_mp3(
             "Long-audio interval recognition requires Config.output_dir.",
             code="CONFIG_INVALID",
         ) from None
+    if not cfg.resume:
+        from .providers.google_genai.resolve_google_genai_credential import (
+            resolve_google_genai_credential,
+        )
+        from .raise_if_cancelled import raise_if_cancelled
+
+        raise_if_cancelled(cfg.cancellation)
+        try:
+            resolve_google_genai_credential(cfg.provider)
+        except ConfigError as error:
+            error._add_safe_detail("provider_calls_attempted", 0)
+            raise
     with reuse_or_create_provider_request_start_gate(
         cfg.execution.provider_request_start_interval_seconds
     ):
