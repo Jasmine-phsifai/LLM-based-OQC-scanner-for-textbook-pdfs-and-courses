@@ -2055,3 +2055,15 @@ video, restores and hashes retained frames, replans groups, and validates saved
 image state; journal facts are not misrepresented as current-byte proof. No
 public API, state schema, second identity algorithm, cache, retry/fallback,
 provider framework, or frozen worker/contracts change was made.
+
+#444 rechecks the current high-level video facade through one authorized
+bounded Google run after #431--#442. Live discovery confirmed explicit
+`gemini-2.5-flash`; a controlled 1280x720 full-frame short video made exactly
+one image request and one short-audio request through separate configs, with no
+retry, candidate, model switch, or fallback. Audio settled, while the image
+request returned honest `PROVIDER_TIMEOUT`; the public error counted both calls
+and retained one settled usage row. The v1 journal keeps the settled short
+audio and missing image group, with no final digest or `result.md`. No resume
+was attempted because it would require another image request. Runtime, public
+API, state, dependencies, worker/contracts, and provider policy are unchanged;
+#427 remains the successful publication-failure/zero-call-resume authority.

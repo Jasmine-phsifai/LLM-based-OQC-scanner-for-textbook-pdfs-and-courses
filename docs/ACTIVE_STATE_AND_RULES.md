@@ -279,6 +279,19 @@ source hash, retained-frame restoration, group replanning, and saved image-state
 validation remain unchanged. No second fingerprint algorithm, identity cache,
 public API, state schema, retry/fallback, or generalized preflight framework was
 added.
+#444 performs one bounded current-HEAD Google recheck after #431--#442 without
+changing provider policy. Live catalog discovery still exposed explicit
+`gemini-2.5-flash`; one controlled 1280x720 complete-frame short video then
+entered exactly one image and one audio request, with separate branch configs,
+no retry, model switch, candidate, or fallback. Short audio settled and its
+usage remained journaled, while the image request ended honestly as
+`PROVIDER_TIMEOUT`; the public error aggregated two attempted calls and one
+settled usage row. No final digest or `result.md` was published, and the journal
+retained the missing image group plus settled short audio for a caller-owned
+future resume. The run was not resumed because that would require a second
+image request outside the declared gate. This refreshes real SDK/error-state
+evidence; it does not supersede #427's successful publication/zero-call-resume
+proof or justify runtime changes.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
