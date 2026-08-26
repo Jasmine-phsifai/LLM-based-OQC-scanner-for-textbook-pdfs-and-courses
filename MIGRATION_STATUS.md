@@ -1418,6 +1418,11 @@ The following directions remain traceable but are not current work:
   failed before a new generation with zero current calls. #335 adds only a safe
   fixed native-operation discriminator for mapped SDK failures; all 1,725
   source tests pass. Retry/fallback remains unchanged and live success is open.
+  Exact commit `d2819c0` passes the clean installed gate with 1,724 archived
+  tests and one optional skip, wheel 266,993 bytes, base 1,351,006 bytes, all
+  profiles/smokes green, and cleanup complete. A retained-state live resume
+  then proved the zero-call failure occurs in Files `upload`; slot 0 remains
+  reusable and the live success gate remains open.
 
 ## Obsolete Prose Kept For Trace
 

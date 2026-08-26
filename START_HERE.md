@@ -845,6 +845,11 @@ calls, and no remote-file fact. #335 adds one safe fixed `provider_operation`
 detail to mapped SDK exceptions so a bounded follow-up can distinguish catalog,
 upload, processing, and generation without provider text. All 1,725 source
 tests pass; no retry/fallback policy changed. The live success gate remains open.
+#335 is clean-installed at exact `d2819c0`: 1,724 archived tests pass with one
+optional skip, wheel 266,993 bytes, base 1,351,006 bytes, all profiles and local
+smokes green. One auditable retained-state resume then identified the real
+failure as `provider_operation=upload`, with zero new generation calls and one
+persisted slot. The sidecar remains reusable; live success is still open.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

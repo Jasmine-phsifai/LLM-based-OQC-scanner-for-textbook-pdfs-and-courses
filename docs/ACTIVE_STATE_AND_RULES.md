@@ -6272,6 +6272,23 @@ legacy 复查最初误判为 Files state `FAILED`；个人复核用“remote del
 异常类、SDK 文本记录、通用状态机、retry、fallback、provider class 或代理逻辑；
 一个局部枚举是由真实失败直接要求的最小可观测事实。
 
+精确提交 `d2819c0a83e1dbe6b9245ce21deccd2fa3c2c99b` 的委派干净安装
+门禁退出 0：归档测试 1,724 项通过、1 项可选集成跳过，wheel 266,993 bytes，
+base 1,351,006 bytes，八种隔离配置和 audio/PDF/video/combined 本地 smoke 全部
+通过。代理 TCP 与代理 HTTPS 200 可达，门禁根清零，保留 wheelhouse 未删除，
+没有云端调用或 repo/legacy 变更。#335 已 release-proven。
+
+为了不再丢失长时 runner 输出，轻量执行者先用一个 12 秒零网络任务证明内层
+`exec_command` 返回 session id、再由 `write_stdin` 续取同一会话：exit 0 且固定
+marker 完整返回。随后只运行一次保留状态的真实 resume，得到 exit 1 和完整安全
+JSON：`provider_operation=upload`、request-scope
+`PROVIDER_RESPONSE_INVALID`、`provider_calls_attempted=0`、
+`persisted_interval_count=1`、`provider_client_closed=true`，远端删除事实缺失。
+因此第二次 catalog 已通过，失败发生在 `client.files.upload()` 返回对象之前；换模型
+没有依据，Files processing 与 generation 均未开始。结果未发布，真实 sidecar 保留，
+本轮不重试。下一步若继续诊断，只应增加安全异常类型判别，不能记录 SDK message
+或先加入 retry/fallback。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
