@@ -664,7 +664,7 @@ def test_pre_provider_render_failure_removes_new_empty_pdf_state_directory(
     assert not state_directory.exists()
 
 
-def test_first_pdf_group_publication_failure_retains_state_without_cleanup_error(
+def test_first_pdf_group_publication_failure_resumes_without_replay(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -676,6 +676,7 @@ def test_first_pdf_group_publication_failure_retains_state_without_cleanup_error
     writer = importlib.import_module(
         "ocrllm.output.write_markdown_atomically"
     )
+    write_markdown_atomically = writer.write_markdown_atomically
 
     def fail_child_publication(*_args, **_kwargs):
         raise OutputError("test-only child publication failure")
@@ -702,6 +703,25 @@ def test_first_pdf_group_publication_failure_retains_state_without_cleanup_error
     assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 1
     assert not tuple(state_directory.glob("*.md"))
     assert not (output_dir / "book_board.md").exists()
+
+    monkeypatch.setattr(
+        writer,
+        "write_markdown_atomically",
+        write_markdown_atomically,
+    )
+    resumed = recognize(
+        source,
+        config=_pdf_config(provider, output_dir=output_dir, resume=True),
+    )
+
+    assert len(provider.calls) == 1
+    assert resumed.status == "complete"
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert resumed.metadata["pdf_group_count"] == 1
+    assert resumed.output_path == output_dir / "book_board.md"
+    assert resumed.output_path.read_text(encoding="utf-8") == resumed.markdown
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 1
+    assert len(tuple(state_directory.glob("*.md"))) == 1
 
 
 def test_generated_pdf_png_decode_failure_is_local_after_settled_group(

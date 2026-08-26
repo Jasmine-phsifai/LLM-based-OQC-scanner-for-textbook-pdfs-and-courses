@@ -6939,3 +6939,18 @@ repair, output layout, or frozen boundary changes. The complete active suite
 collects 1,774 tests: 1,772 pass, while the same two Node-harness tests stop
 before execution because this environment has no Node executable. Compilation,
 diff validation, and the frozen boundaries pass.
+
+## Current working update: #359 #358 state resumes without replay
+
+File retention alone did not prove that #358 preserved useful paid work. The
+public regression now continues past the first child-publication failure:
+after restoring the real atomic writer, `recognize(..., resume=True)` consumes
+the retained first-group image sidecar, makes zero additional provider calls,
+publishes the child Markdown and final range-marked PDF Markdown, and reports
+zero current-run calls. The provider call list remains exactly the one original
+eight-page request.
+
+The existing runtime already passed this stronger consumer proof, so #359 makes
+no production change. It adds no PDF state, repair parser, retry, alternate
+publication path, provider behavior, or API. The focused PDF suite passes 25
+tests without network access.

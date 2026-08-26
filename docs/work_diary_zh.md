@@ -6267,3 +6267,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **失败优先证据和修复。** 新公共回归通过 `recognize()` 注入首组 child Markdown 写失败；旧代码精确得到 **1 failed**：provider 调用 1 次、sidecar 1 份、child/final Markdown 均为 0，但错误详情虚假含 cleanup failure。路线 A 是先扫描目录判空再删除，判断可能立即过时；路线 B 是保持原子 `rmdir()`，仅把标准 `ENOTEMPTY/EEXIST` 解释为“有意保留状态”，选择 B。权限、非法路径及其他 `OSError`、`ValueError` 仍如实添加清理失败标记。没有按文件名猜 sidecar，也没有读取、迁移或删除它。
 
 **验证与过度设计复查。** 修复后直接回归及相邻空目录清理、后续页渲染失败为 **3 passed in 0.43s**；PDF/视频邻近集合 **75 passed in 28.50s**。轻量执行者完成 active 全量：收集 1,774 项，**1,772 passed、2 failed in 87.12s**；两项仍精确是当前 PATH 找不到 Node executable，均在 Node harness 执行前停止，没有其他失败。compileall、`git diff --check` 和冻结 `contracts/worker` 边界通过。本轮没有 provider 调用、state schema、resume/repair、重试、目录扫描 helper、通用 cleanup 分类器或 video journal。保留 sidecar 的原行为没有变化，只纠正附加到主错误上的虚假事实。
+
+## #359 — 2026-08-26：PDF 发布失败后保留的 sidecar 已证明可恢复且不重付
+
+**本轮英文原子任务。** `Atomic task — Iteration #359: prove that the PDF state retained by #358 is actually consumable by the existing public resume path without replaying its paid first group. Context: #358 corrected a false cleanup marker after child Markdown publication failure, but retention is only product value if a later resume=True call can reuse that exact sidecar and complete publication with zero additional provider calls for the saved group. Success means adding one bounded public crash-then-resume regression, fixing only a reproduced lifecycle gap if reuse fails, and otherwise recording the proof without inventing new state or repair behavior. This matters because “state retained” must mean recoverable paid work, not merely a leftover file.`
+
+**证据缺口与路线。** 旧测试已经证明第一组成功、第二组 provider 失败后可以恢复，但没有覆盖第一组 provider/sidecar 已成功、第一组 child Markdown 发布失败这一更早的故障点。路线 A 只检查 sidecar 存在，正是 #358 已有的间接证据；路线 B 在同一个公共回归中恢复真实 writer，再显式 `resume=True` 并要求 provider 不增加调用，选择 B。没有为了测试另建状态读取器或直接解析并回填结果。
+
+**结果与判断。** 当前运行时代码直接通过：第一次调用仍精确是一个八页 provider 请求、一个 sidecar、零 child/final Markdown；第二次恢复后 provider 调用列表仍只有原来一次，结果 `current_run_provider_call_count=0`，一个 child Markdown 和最终 `book_board.md` 均发布，最终内容等于返回 Markdown。测试函数改名为 `test_first_pdf_group_publication_failure_resumes_without_replay`，使名称与完整责任一致。PDF 与 backend 集合 **25 passed in 2.85s**。
+
+**验证与过度设计复查。** 本轮是消费者证据，不改运行时。没有新增 schema、状态字段、repair、retry、publication helper、provider mock 类型或第二条恢复路径；只把 #358 已有回归延伸到真实公共 resume 终点。轻量执行者重跑后，PDF 定向为 **16 passed**，排除唯一 Node harness 文件的全量为 **1,772 passed in 81.78s**；完整收集仍为 **1,772 passed、2 failed in 85.62s**，两项均在测试逻辑前因当前 PATH 找不到 Node executable 而失败。compileall、`git diff --check` 和冻结 `contracts/worker` 边界均通过；未调用 provider。

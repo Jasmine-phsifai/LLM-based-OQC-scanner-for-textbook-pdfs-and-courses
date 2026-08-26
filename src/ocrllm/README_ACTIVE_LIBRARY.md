@@ -274,6 +274,8 @@ The PDF vision facade:
   groups without another provider call;
 - retains a first-group sidecar when child Markdown publication fails without
   misreporting the intentionally nonempty state directory as a cleanup failure;
+  explicit resume reuses that sidecar with zero new provider calls and publishes
+  both child and final PDF Markdown;
 - requires a pre-existing same-named state path to be an ordinary directory;
   symlinks and Windows junctions fail before rendering or provider dispatch;
 - publishes stable `ocrllm:pdf-pages` range markers in source order and removes

@@ -243,6 +243,13 @@ state; permission, path, and other cleanup errors remain disclosed. Provider
 calls, sidecar content, resume, final publication, and repair behavior do not
 change.
 
+#359 proves the #358 retained state through its actual public consumer rather
+than treating file existence as sufficient evidence. After the first child
+publication failure, an explicit `resume=True` call reuses the one-group
+sidecar with zero new provider calls, publishes the child Markdown and final
+range-marked PDF Markdown, and reports zero current-run calls. Runtime was
+already correct; this adds no state, retry, repair, or API behavior.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes

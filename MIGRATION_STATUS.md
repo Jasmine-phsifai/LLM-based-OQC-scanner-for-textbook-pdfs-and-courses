@@ -1548,6 +1548,12 @@ standard nonempty-directory errors are ignored; every other `rmdir()` failure
 remains reported. The public regression preserves exact one-call accounting,
 one reusable sidecar, and absence of child/final Markdown.
 
+#359 closes the consumer proof for that retained first-group state. The same
+public regression restores normal publication and calls `recognize(...,
+resume=True)`: the provider remains at exactly one historical call, the resumed
+PDF reports zero current-run calls, and both child and final Markdown are
+published from the saved sidecar. No runtime change was needed.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
