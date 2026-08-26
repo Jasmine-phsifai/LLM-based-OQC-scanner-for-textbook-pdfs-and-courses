@@ -2079,3 +2079,14 @@ digest-consistent comment-only settled frame is rejected as
 publication, with byte-identical journal retention. Fresh provider behavior,
 generic results, public API, state schema, retry/fallback, and frozen
 worker/contracts are unchanged.
+
+#450 proves #446 is present and executable in an ordinary installed package.
+Exact clean commit `55a7ccdf79b4f9477eb646f62e6a0cda1af1f778` built one
+311,167-byte, 304-member wheel offline. It contains the new saved-audio Markdown
+validator plus `py.typed`, remains below the 320 KiB base-wheel budget, and
+excludes legacy, tests, repository docs, and untracked files. A no-index,
+no-dependency target install outside the repository supplied both package and
+distribution imports without loading OpenCV, NumPy, Google, PDFium, or RapidOCR.
+With repository pytest configuration disabled, all 18 strict video-state tests
+and the public comment-only high-level resume rejection passed against the
+installed target. No package configuration or runtime behavior changed.

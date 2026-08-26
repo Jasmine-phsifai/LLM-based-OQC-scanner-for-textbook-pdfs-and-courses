@@ -323,6 +323,17 @@ real six-frame MP4 regressions require the exact EOF candidate, while a forced
 11-to-10 cap requires both endpoints and strict ordering. Scan intervals,
 thresholds, refinement, pHash, complete-frame publication, and failed-seek
 behavior are unchanged; no shared selector or compatibility layer was added.
+#450 release-proves the #446 resume validator from a clean archive of exact
+commit `55a7ccdf79b4f9477eb646f62e6a0cda1af1f778`. The offline build produced one
+311,167-byte, 304-member wheel, below the 320 KiB base-wheel budget, containing
+`ocrllm/audio/validate_saved_audio_markdown.py` and `py.typed` while excluding
+legacy, tests, repository docs, and untracked files. A no-index/no-dependency
+install outside the repository supplied both package and distribution imports;
+plain import loaded none of OpenCV, NumPy, Google, PDFium, or RapidOCR. With
+repository pytest configuration disabled, all 18 video-state persistence tests
+and the public digest-consistent comment-only resume regression passed against
+that installed target. This closes a distribution-evidence gap only; runtime,
+manifest, dependencies, API, state schema, and provider behavior are unchanged.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
