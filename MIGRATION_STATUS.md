@@ -1496,7 +1496,17 @@ The following directions remain traceable but are not current work:
   generation and the first audio Files upload each timed out. The redacted
   outcome preserved exact call/settlement/cleanup facts and no residue, but no
   interval completed; the live success gate remains open without retry or model
-  switching.
+  switching at that revision.
+  #353 made the maintained runner preserve total monotonic elapsed time. #354
+  then closes the complete interval gate on exact clean commit `2e3ead0`: one
+  five-frame `gemini-2.5-flash` image request and exactly two three-minute Google
+  Files audio requests for a 301.0235-second artifact all completed, followed by
+  a complete six-asset composition with 13,602 input / 872 output tokens. Remote
+  and client cleanup, absence of a remaining sidecar, task cleanup, proxy
+  health, and repository cleanliness were verified. Total runner time was
+  790.609 seconds;
+  no per-stage duration, product-default timeout change, retry, fallback, or
+  model switch is claimed.
 
 ## Obsolete Prose Kept For Trace
 

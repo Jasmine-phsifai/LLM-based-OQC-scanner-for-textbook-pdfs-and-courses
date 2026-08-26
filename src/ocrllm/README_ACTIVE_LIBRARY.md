@@ -670,7 +670,15 @@ proxy, then one image generation and the first audio Files upload each returned
 zero generation calls, zero settled intervals, and a closed client. The runner
 returned an honest failed `video_outcome`, performed no composition, and left no
 task-owned residue. This is another bounded real failure, not interval success
-or evidence for automatic retry/model switching.
+or evidence for automatic retry/model switching. #354 later reran the same
+controlled 301-second/two-interval shape once with the supported 600-second
+per-operation setting. One five-frame image call and exactly two Google Files
+audio calls all completed; composition returned six assets with 13,602 input /
+872 output tokens, remote/client cleanup completed, no sidecar remained, and no
+task-owned residue remained. The runner's total elapsed time was
+790.609 seconds, which does not identify any individual stage duration or change
+the product's default timeout. The bounded complete video-interval live gate is
+therefore closed without retry, fallback, or model switching.
 The #186 robustness run retained three equal-luminance color scenes and made one
 image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.

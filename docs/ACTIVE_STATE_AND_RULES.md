@@ -6832,3 +6832,32 @@ the runner suite passed 40 tests. The complete active offline suite passes 1,771
 tests; compileall for the package and runner, diff validation, and frozen
 `contracts/worker` checks also pass. No library runtime/API, provider call,
 retry, model selection, log file, or stderr-capture layer changed.
+
+## Current working update: #354 complete Google video interval live proof
+
+One and only one authorized Google run exercised exact clean commit `2e3ead0`
+with the maintained runner, the same `gemini-2.5-flash` image/audio selections,
+one five-frame image group, a 301.0235-second audio artifact, and two explicit
+three-minute intervals. The live catalog returned 37 models. With the existing
+maximum supported 600-second per-operation timeout, the image group completed
+in one generation call and both Google Files audio intervals completed in
+exactly two generation calls. The composed result was complete with six assets
+and validated aggregate usage of 13,602 input and 872 output tokens.
+
+The runner exited zero after 790.609 seconds; its independently measured outer
+elapsed time was 790.875 seconds. This is total runner timing, not a per-stage
+or per-request duration. The uploaded remote file was deleted, the provider
+client closed, the successful interval sidecar was absent after settlement,
+and every task-owned fixture/output directory and runner process was removed.
+The 284 stderr bytes were retained only as a count and were not classified;
+the captured-output scan found no credential, task path, fixture name, raw
+provider message, or traceback marker. The proxy remained enabled and reachable
+afterward, and the repository stayed exact-clean apart from the two protected
+untracked files.
+
+This closes the bounded complete Google video-interval live gate. It proves
+that the existing native transport and separated image/audio orchestration can
+settle this controlled shape when the gate allows the contract maximum; it does
+not identify a single slow stage or justify changing the product default
+timeout. No retry, second catalog, model switch, fallback, runtime code, or
+provider abstraction was added.

@@ -6211,3 +6211,15 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **实现与验证。** `main()` 在参数验证完成后读取一次 `time.monotonic()`，所有 JSON 出口在打印前计算一次差值；既有 summary 不改字段语义。runner 集合为 **40 passed**。轻量执行者完成 active 全量 **1,771 passed in 85.58s**；package/runner compileall、diff check 和冻结 `contracts/worker` 边界均通过，没有 legacy 测试、provider、下载或安装。
 
 **过度设计复查。** 没有 stage timer、trace/span、墙钟、日志文件、stderr 捕获器、telemetry 类或 library 公共字段。总耗时覆盖 preflight、catalog、识别、组合和安全汇总，所以只能解释“这次 runner 总共多久”，不能伪称某次 API 调用时长。本轮只修维护测试工具和测试，未改 provider timeout、重试、模型选择或产品运行时。
+
+## #354 — 2026-08-26：600 秒操作上限下完整跑通 Google 视频 interval
+
+**本轮英文原子任务。** `Atomic task — Iteration #354: determine whether #351's 240-second gate timeout—not the selected native transport—prevented the complete Google video interval path from settling. Context: #351 reached the live catalog but timed out in image generation and Files upload, #352 confirmed the transport is correct, and #353 now preserves exact runner elapsed time. Success means one fresh proxy-checked 301-second video run with the same gemini-2.5-flash models and two three-minute intervals but the maximum supported 600-second timeout, recording either complete one-image/two-audio settlement or one exact timed failure with no replay. This matters because changing product timeout policy requires real evidence, while repeating the identical 240-second experiment would add none.`
+
+**假设、路线与边界。** 开始和结束时 `HEAD`/`origin/master` 都是 `2e3ead08da6891d66d7480bdb780e062b77d292a`，tracked clean，只有两份受保护未跟踪文件。路线 A 是直接提高产品默认 timeout；路线 B 是只把这一次维护门禁设为公开契约已允许的最大 600 秒，保持默认值、transport、模型和调用策略不变；选 B。WinINET 代理始终开启，`127.0.0.1:10080` 前后可达。机械生成、调用、等待、清理交给轻量执行者且只运行一次，主代理没有启动第二份 runner；等待期间只读检查 runner 的计时、脱敏和终态字段。
+
+**真实完整结果。** catalog 返回 **37** 个模型。fixture 的音频为 **301.0235 秒**，预检保留 **5** 帧、恰好 **1** 个图片组，音频明确按 **3 分钟**形成 **2** 个 interval。相同 `gemini-2.5-flash` 配置下，图片组以 **1** 次调用 complete；Google Files 音频以准确 **2** 次 generation 调用 recognized。组合结果 complete，包含 **6** 个资源，汇总用量为 **13,602 input / 872 output tokens**。runner exit 0，自身单调计时 **790.609 秒**，外层独立计时 **790.875 秒**。这两个数只代表整条 runner，不提供任一上传、等待或生成阶段的单独耗时。
+
+**生命周期、证据诚实性与判断。** 远端文件删除成功，provider client 关闭，成功后 sidecar 不存在；task-owned fixture/output 根、runner 进程均清零。stdout 是 807 bytes 的合法脱敏 JSON；stderr 精确为 284 bytes，但没有保留可审计分类，因此不把它猜成普通 SDK 日志，也不声称 stderr 为零。机器扫描没有发现 credential、任务路径、fixture 名、provider 原始错误或 traceback marker。这个结果关闭完整 Google 视频 interval live 成功门禁，并证明当前原生 transport、图片/音频独立配置和 interval 结算能在受控 600 秒操作上限下跑通；它不能证明 #351 的某一个具体阶段实际耗时，也不自动授权修改产品默认 timeout。
+
+**复核与过度设计检查。** 本轮没有运行时代码、测试、API、依赖或输出布局变化，因此不机械重复 #353 的 1,771 项源码全量和 #349 的 clean package gate；只重新运行全帧视频/PDF/legacy 邻近集合得到 **39 passed in 4.49s**，确认临时提出的黑板裁剪澄清仍由已删除模块和完整帧契约覆盖。没有 retry、第二 catalog、换模、fallback、provider 层、stage timing schema、stderr 日志系统或默认 timeout 修改。未来高层 video resume 的只读审计另行返回，不混入本轮实现和成功结论。

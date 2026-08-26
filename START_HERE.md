@@ -247,7 +247,16 @@ after one attempted call and the first Files interval timed out during upload
 before generation. The failed outcome reported zero settled audio intervals and
 a closed client, skipped composition, and left no task-owned residue. It was not
 retried or switched to another model, so the complete live interval gate remains
-open.
+open at that revision. #353 then made the maintained runner retain its own total
+monotonic elapsed time. #354 closed the gate with one non-replayed run from exact
+commit `2e3ead0`: the same model completed one five-frame image group and exactly
+two three-minute Google Files audio intervals for a 301.0235-second artifact.
+Composition completed with six assets and aggregate usage of 13,602 input / 872
+output tokens; remote/client cleanup, absence of a remaining sidecar, task
+cleanup, and the still-active proxy were verified. The runner took 790.609
+seconds in total. This
+supports the existing optional 600-second per-operation setting for this gate;
+it does not provide per-stage timing or change the product default timeout.
 
 #138 makes the public video outcome reject
 frame/audio paths outside its exact lexical `output_root/frames/*` and optional
