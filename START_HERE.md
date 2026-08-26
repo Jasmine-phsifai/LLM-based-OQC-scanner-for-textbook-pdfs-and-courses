@@ -829,6 +829,9 @@ resume; this was an operator cleanup mistake, not a library resume result.
 #332 exposes only exact nonnegative provider-attempt and persisted-window counts
 on typed interval failures. It does not expose transcript, paths, credentials,
 or arbitrary error details, and adds no retry, fallback, or provider framework.
+Exact commit `8b37e81` passes the clean installed gate: 1,722 archived tests pass
+with one optional skip; wheel 266,940 bytes; base 1,350,517 bytes; all profiles
+and local media smokes green; no cloud I/O; complete cleanup.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

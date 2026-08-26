@@ -1408,6 +1408,9 @@ The following directions remain traceable but are not current work:
   the live gate. #332 keeps exact safe provider-attempt and persisted-window
   counts on interval failure so the next bounded run can distinguish upload,
   generation, and reusable-prefix outcomes without exposing content or paths.
+  Exact commit `8b37e81` passes the clean installed gate with 1,722 archived
+  tests and one optional skip, a 266,940-byte wheel, 1,350,517-byte base target,
+  all profiles and local media smokes green, no cloud I/O, and complete cleanup.
 
 ## Obsolete Prose Kept For Trace
 

@@ -6185,6 +6185,13 @@ MP3（2,404,592 bytes，约第 60 秒与 420 秒有语音）对
 OpenAI / HTTPX / ONNX Runtime / Google / miniaudio）和冻结的
 `contracts/worker` 检查通过。
 
+精确提交 `8b37e816db5e8cd80b038e85328be55f6aea7e0f` 的委派干净安装
+门禁随后退出 0：归档测试 1,722 项通过、1 项可选集成跳过，wheel 为
+266,940 bytes，基础安装为 1,350,517 bytes，全部隔离配置和本地媒体 smoke
+通过。WinINET 代理开启，TCP 与代理 HTTPS 均可达；门禁根完整删除，未读取凭据
+或调用云端 provider，工作树仍只含两份受保护的用户文件。#332 已达到
+release-proven；Google interval 的真实成功门禁仍开放。
+
 过度设计复查：只增加两个标量事实和 runner 白名单，没有通用错误协议、生命周期
 聚合器、完整 sidecar 输出、自动重试或 provider 框架。DashScope 决策也同步收紧：
 legacy UI 凭据可用于一次一个、已声明调用上限的原子试验；先实时发现模型，优先
