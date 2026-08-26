@@ -350,10 +350,11 @@ blocking, candidate recovery, and request/batch image resume are available;
 there is no cross-process pool state. File-producing calls claim one output target
 for the duration of a recognition, so direct threads and `recognize_batch()` cannot
 split final Markdown from its resume sidecar. The claim is process-local: separate
-processes must not target the same output path concurrently. PDF repair, long
-audio chunking, and persisted/resumable audio remain unavailable. #120 explicitly rejects
-legacy repair-Markdown compatibility. PDF recognition is offline- and
-Google-live-proven.
+processes must not target the same output path concurrently. PDF repair remains
+unavailable, and #120 explicitly rejects legacy repair-Markdown compatibility.
+Short MP3 remains memory-only; standalone long-MP3 whole/interval publication
+and resume are available through `recognize_long_mp3()`. PDF recognition is
+offline- and Google-live-proven.
 
 The provider-free video parsing and separately configured recognition slices
 are available:

@@ -1902,3 +1902,11 @@ contradictory, not because their history was unimportant. Treat these as
 
 The original wording remains recoverable in Git history and in the dated
 records. It is not silently presented as current behavior.
+
+#420 reconciles the current consumer documentation with the shipped package.
+Stage M's live exit closed at #339; standalone long-MP3 whole/interval
+publication and resume are available; and the high-level
+`recognize_video_to_markdown()` facade owns journal-based resume. Short MP3 and
+the low-level three-step video API remain memory-only/non-resumable, while PDF
+repair and worker routing remain unavailable. This iteration changed no runtime
+API, state format, dependency, provider behavior, or legacy compatibility.

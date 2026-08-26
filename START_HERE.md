@@ -522,8 +522,10 @@ and composer, but automatic duration routing must not be implemented as
 short-route failure fallback or repeated whole-audio probing. With #127 now
 resolved by #294, the next integration seam may retain one MP3 and select
 exactly one adapter.
-One-shot 300-second-to-model-limit integration is independent of #152; the
-9.5-to-10-hour ceiling and persisted recovery remain blocked on #152.
+One-shot 300-second-to-model-limit integration was independent of #152; at
+#245, the 9.5-to-10-hour ceiling and persisted recovery were still blocked on
+that decision. #152 and its later implementation slices subsequently selected
+and shipped explicit whole/interval modes with persisted recovery.
 
 #246 makes one bounded normal-install refresh of #239 from exact commit
 `1e9cd87`. The clean 259,383-byte wheel still has an empty base and only OpenCV
@@ -704,14 +706,13 @@ bounded design evidence where it does not conflict with that queue.
 The active library has a region-bound in-memory credential scheduler and
 request/batch image resume. Candidate switching is opt-in, bounded,
 disposition-gated, and fully disclosed offline. Experimental direct Google
-short-audio recognition and standalone single-request Google Files long-MP3
-recognition are live-proven but remain memory-only; their published gates are
-not transcription-quality evaluations. PDF repair, long-audio chunk/resume,
-and persisted/resumable audio remain unavailable. Video recognition is now
-available as one typed orchestration facade over retained-frame extraction and
-recognition plus independently configured extracted-audio recognition.
-Provider-free composition and atomic final Markdown publication are separate
-public steps. Video branch resume, A2b chunking, and worker routing remain
+short-audio recognition remains memory-only. Standalone Google Files long-MP3
+whole/interval publication and resume are shipped; their published live gates
+are lifecycle evidence, not transcription-quality evaluations. PDF repair
+remains unavailable. Video recognition is available through provider-free
+three-step calls and the higher-level `recognize_video_to_markdown()` facade.
+Only the high-level facade owns a journal and resumes missing image/audio work;
+the three-step calls remain non-resumable. Video worker routing remains
 unavailable. The request-owned video snapshot implementation is present in a
 clean externally installed wheel and does not make plain package import load
 heavy media or provider modules. Local user
@@ -719,9 +720,10 @@ PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 
 The defect register is only in `docs/ACTIVE_STATE_AND_RULES.md`. D1-D7,
-F1-F4, and G1-G10 are closed in offline code and tests. Stage M itself remains
-open only at that credential- and budget-gated live exit; provider-account
-semantics are not claimed live-proven by the offline closure.
+F1-F4, and G1-G10 are closed in offline code and tests, and #339 closed the
+bounded Stage M live exit. The open provider gate is the high-level video
+publication-failure/zero-call-resume proof; #419 refreshed honest failure
+evidence but did not close it.
 
 ## Legacy Application
 

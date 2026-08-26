@@ -123,6 +123,11 @@ private duration boundary: whole Google Files requests still stop at 9.5 hours,
 while explicitly selected integer-minute interval mode admits sources through
 the product's 10-hour ceiling. Temporary mode and interval identity remain only
 until final publication; repair stays a small failed-range text side path.
+#420 reconciles the consumer-facing navigation with that shipped boundary:
+standalone long-MP3 whole/interval publication and resume, plus high-level
+video journal/resume, are available; short MP3 and the low-level three-step
+video API remain memory-only/non-resumable, while PDF repair and worker routing
+remain unavailable. This was a documentation correction only.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but

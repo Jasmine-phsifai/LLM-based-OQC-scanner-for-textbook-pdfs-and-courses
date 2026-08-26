@@ -11,7 +11,7 @@ Current truth is maintained in
 before relying on any dated phase, decision, checkpoint, review, or incident
 record. Those files preserve history and do not override current status.
 
-As of 2026-08-26:
+As of 2026-08-27:
 
 - Phase 0 contract honesty, the Phase 1 image gate, the Phase 2 development
   worker, and Phase 2A image-library completion are GO.
@@ -81,8 +81,10 @@ As of 2026-08-26:
 
 The authoritative defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,
-F1-F4, and G1-G10 are closed in offline code and tests; only the paid Stage M
-exit gate and live provider-account/model-quota re-verification remain open.
+F1-F4, and G1-G10 are closed in offline code and tests, and #339 closed the
+bounded Stage M live exit. The still-open provider gate is the high-level
+`recognize_video_to_markdown()` publication-failure/zero-call-resume proof;
+#419 refreshed honest live failure evidence without closing that gate.
 
 ## Active Library
 
@@ -339,8 +341,9 @@ Do not:
   through `pypdfium2`;
 - treat `output/`, `temp/`, `ocrllm_social_e2e/`, caches, or screenshots as
   source-of-truth evidence;
-- start HarmonyOS/ArkTS, Rust/PyO3, long-audio chunking/resume, video recognition
-  beyond the ordered P1-e slice, or PDF repair outside the approved phase gate.
+- start HarmonyOS/ArkTS, Rust/PyO3, social-media recognition, PDF repair outside
+  the approved phase gate, video worker routing, or a second resume protocol for
+  the low-level three-step video API.
 
 ## History Trace
 
