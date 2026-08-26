@@ -162,6 +162,24 @@ def test_base_install_budget_keeps_real_disk_measurement_with_bounded_headroom()
     assert "__pycache__" not in script
 
 
+def test_base_install_probe_resolves_public_class_type_hints() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+    base_probe = script.split("$baseProbe = @'", maxsplit=1)[1].split(
+        "'@", maxsplit=1
+    )[0]
+
+    assert "import typing" in base_probe
+    assert "from ocrllm.providers.vision_provider import VisionProvider" in base_probe
+    for target in (
+        "typing.get_type_hints(Config)",
+        "typing.get_type_hints(BatchItemOutcome)",
+        "typing.get_type_hints(DashScopeSettings)",
+        "typing.get_type_hints(DashScopeSettings.for_region)",
+    ):
+        assert target in base_probe
+    assert base_probe.count("assert not loaded & forbidden, loaded & forbidden") == 2
+
+
 def test_base_wheel_budget_keeps_bounded_product_headroom() -> None:
     script = GATE_SCRIPT.read_text(encoding="utf-8")
 

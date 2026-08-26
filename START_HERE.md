@@ -1127,7 +1127,10 @@ snapshot/PDFium work, so a known collision refuses without backend work. #391's
 fresh audit then closes paid short-audio evidence loss when video journal saving
 fails after recognition. #392 preserves provider-reported token usage on exact
 Google no-speech across short, whole, interval, and video audio state while
-keeping zero-call resume history out of current-run totals. The current queue is:
-repair three installed public class type-hint resolutions, then align
-single-image collision ordering. Keep each atomic and add no recovery framework
-without evidence.
+keeping zero-call resume history out of current-run totals. #394 then restores
+standard runtime type-hint resolution for the exported `Config`,
+`BatchItemOutcome`, `DashScopeSettings`, and its public `for_region()` factory
+through three direct cycle-free internal imports. A clean installed wheel
+resolves the exact types without loading optional backends. The current queue
+is now the low-priority single-image collision ordering defect. Keep it atomic
+and add no recovery framework without evidence.

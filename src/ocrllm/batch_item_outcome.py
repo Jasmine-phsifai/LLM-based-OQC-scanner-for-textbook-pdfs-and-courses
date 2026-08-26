@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from .errors import OCRLLMError
-
-if TYPE_CHECKING:
-    from .result import RecognitionResult
+from .result import RecognitionResult
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

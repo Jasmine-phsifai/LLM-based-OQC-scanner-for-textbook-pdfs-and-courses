@@ -4025,9 +4025,16 @@ Post-register findings are ordered by demonstrated user impact:
   once and returned the honest `PROVIDER_RESPONSE_INVALID` branch rather than
   exact no-speech, so the corrected sentinel accounting remains causally proven
   offline and is not misreported as a live no-speech result.
-- Open, medium-low: `typing.get_type_hints()` fails for the exported `Config`,
-  `BatchItemOutcome`, and `DashScopeSettings` classes because three annotation
-  names exist only under `TYPE_CHECKING` in an installed package.
+- #394 closes the medium-low public class type-hint defect. `Config`,
+  `BatchItemOutcome`, `DashScopeSettings`, and the public
+  `DashScopeSettings.for_region()` factory now resolve their standard runtime
+  hints because each defining module binds its real lightweight annotation
+  type at runtime. The direct imports are cycle-free, add no optional SDK or
+  media backend, and remove one now-redundant local credential-pool import.
+  Source and clean installed-wheel probes resolve the exact types while the
+  optional/legacy module set stays unloaded. The focused set passes 141 tests,
+  the clean wheel is 304,645 bytes, and the complete offline suite passes all
+  1,848 tests.
 - Open, low: ordinary single-image output collision is still checked after a
   bounded image snapshot/decode. It makes no provider call and preserves the
   target, but differs from the corrected PDF preflight ordering.

@@ -1807,6 +1807,18 @@ A single authorized live `gemini-2.5-flash` request accepted a validated
 `PROVIDER_RESPONSE_INVALID` after one call, not as exact no-speech; it was not
 retried and therefore does not claim live proof of the corrected sentinel path.
 
+#394 fixes standard runtime type-hint resolution for the exported `Config`,
+`BatchItemOutcome`, `DashScopeSettings`, and the public
+`DashScopeSettings.for_region()` factory. Each defining module now binds the
+real lightweight annotation type at runtime; the direct imports are cycle-free
+and load no optional SDK, media backend, or legacy application module. The
+maintained base-wheel probe now checks the same installed behavior before and
+after resolving the hints. The focused set passes 141 tests, an independently
+built and externally installed 304,645-byte wheel passes the exact type/import
+probe, and the complete offline suite passes all 1,848 tests. The remaining
+reproduced queue contains only the low-priority single-image output-collision
+ordering defect.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

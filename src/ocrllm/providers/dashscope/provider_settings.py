@@ -4,17 +4,13 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 from ...errors import ConfigError
+from .credential_pool import DashScopeCredentialPool
 from .resolve_dashscope_model import DEFAULT_DASHSCOPE_MODEL
 from .supported_regions import SUPPORTED_DASHSCOPE_REGIONS
 from .validate_dashscope_api_key import validate_dashscope_api_key
-
-if TYPE_CHECKING:
-    from .credential_pool import DashScopeCredentialPool
-
 
 _OPENAI_COMPATIBLE_PATH = "/compatible-mode/v1"
 _WORKSPACE_REGIONS = frozenset(
@@ -121,8 +117,6 @@ def _validate_credential_pool(
 ) -> None:
     if pool is None:
         return
-    from .credential_pool import DashScopeCredentialPool
-
     if type(pool) is not DashScopeCredentialPool:
         raise ConfigError(
             "DashScopeSettings.credential_pool must be exact "

@@ -7,7 +7,7 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, cast
+from typing import Literal, cast
 
 from .audio_model_settings import AudioModelSettings
 from .errors import ConfigError
@@ -15,13 +15,10 @@ from .freeze_json_value import FrozenJSONValue, JSONValue, freeze_json_value
 from .local_ocr_settings import LocalOCRSettings
 from .providers.dashscope.provider_settings import DashScopeSettings
 from .providers.google_genai.provider_settings import GoogleGenAISettings
+from .providers.vision_provider import VisionProvider
 from .recognition_execution_policy import RecognitionExecutionPolicy
 from .recognition_preferences import RecognitionPreferences
 from .vision_model_settings import VisionModelSettings
-
-if TYPE_CHECKING:
-    from .providers.vision_provider import VisionProvider
-
 
 _LANGUAGE_SUBTAG = re.compile(r"^[A-Za-z0-9]{1,8}$")
 

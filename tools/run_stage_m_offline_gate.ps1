@@ -245,6 +245,7 @@ try {
     $baseProbe = @'
 import pathlib
 import sys
+import typing
 
 target = pathlib.Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(target))
@@ -256,6 +257,29 @@ forbidden = {
     'PIL', 'pypdfium2', 'openai', 'httpx', 'onnxruntime',
     'miniaudio', '_miniaudio', 'google', 'cv2', 'numpy', 'imageio_ffmpeg', 'legacy_app',
 }
+assert not loaded & forbidden, loaded & forbidden
+from ocrllm import (
+    BatchItemOutcome,
+    Config,
+    DashScopeCredentialPool,
+    DashScopeSettings,
+    RecognitionResult,
+)
+from ocrllm.providers.vision_provider import VisionProvider
+config_hints = typing.get_type_hints(Config)
+outcome_hints = typing.get_type_hints(BatchItemOutcome)
+dashscope_hints = typing.get_type_hints(DashScopeSettings)
+factory_hints = typing.get_type_hints(DashScopeSettings.for_region)
+assert VisionProvider in typing.get_args(config_hints['provider'])
+assert RecognitionResult in typing.get_args(outcome_hints['result'])
+assert DashScopeCredentialPool in typing.get_args(
+    dashscope_hints['credential_pool']
+)
+assert DashScopeCredentialPool in typing.get_args(
+    factory_hints['credential_pool']
+)
+assert factory_hints['return'] is DashScopeSettings
+loaded = {name.split('.')[0] for name in sys.modules}
 assert not loaded & forbidden, loaded & forbidden
 print(ocrllm.__version__, origin)
 '@
