@@ -6289,6 +6289,23 @@ JSON：`provider_operation=upload`、request-scope
 本轮不重试。下一步若继续诊断，只应增加安全异常类型判别，不能记录 SDK message
 或先加入 retry/fallback。
 
+## Iteration 336：未知 upload 错误可以报告安全 SDK 类型
+
+本轮英文原子目标是：只为 #335 已证明的未分类 Google SDK upload 异常增加一个
+安全类名，让后续 retry 决策基于实际异常族；成功标准是 ASCII Python 标识符验证、
+runner 二次白名单、隐私回归、完整离线测试，且不记录 module/message/path，不改变
+错误码或重试策略。
+
+`map_google_genai_error()` 只在所有既有 status/code/type 分支均未命中时读取
+`type(error).__name__`，仅当它是长度不超过 128 的 ASCII Python 标识符才放入
+`provider_sdk_type`。最初字段名包含 `exception`，失败先行测试证明公共错误层会按
+既有敏感 key 规则将其统一脱敏；本轮保留该全局规则并改用不触发它的明确 SDK 字段，
+没有放宽错误详情安全边界。runner 重新做同样验证，只以 `sdk_type` 输出。
+
+107 项相邻 Google/audio/runner 测试和 1,725 项完整离线测试通过（65.41 秒）。
+过度设计复查：没有异常类表、module allowlist、message 解析、traceback、日志系统、
+retry、fallback 或 provider 抽象；只有真实未知分支的一个经两层验证的类名。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

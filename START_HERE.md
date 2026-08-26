@@ -850,6 +850,10 @@ optional skip, wheel 266,993 bytes, base 1,351,006 bytes, all profiles and local
 smokes green. One auditable retained-state resume then identified the real
 failure as `provider_operation=upload`, with zero new generation calls and one
 persisted slot. The sidecar remains reusable; live success is still open.
+#336 adds only `provider_sdk_type` for an otherwise-unclassified native Google
+error, accepting an ASCII Python identifier and exposing it through the runner
+as `sdk_type` after a second validation. It records no message/module/path and
+does not change retry policy. All 1,725 source tests pass.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

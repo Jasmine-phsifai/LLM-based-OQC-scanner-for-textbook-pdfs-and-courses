@@ -1423,6 +1423,10 @@ The following directions remain traceable but are not current work:
   profiles/smokes green, and cleanup complete. A retained-state live resume
   then proved the zero-call failure occurs in Files `upload`; slot 0 remains
   reusable and the live success gate remains open.
+  #336 adds one twice-validated ASCII SDK class name only for otherwise unknown
+  native Google errors. It records no provider text and changes no retry policy;
+  all 1,725 source tests pass. A bounded live resume must identify the actual
+  upload exception family before retry/fallback policy is selected.
 
 ## Obsolete Prose Kept For Trace
 

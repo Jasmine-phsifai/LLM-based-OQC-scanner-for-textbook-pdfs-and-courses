@@ -406,6 +406,7 @@ def test_unknown_upload_failure_reports_only_safe_operation(monkeypatch) -> None
 
     assert caught.value.code == "PROVIDER_RESPONSE_INVALID"
     assert caught.value.details["provider_operation"] == "upload"
+    assert caught.value.details["provider_sdk_type"] == "RuntimeError"
     assert caught.value.details["provider_calls_attempted"] == 0
     assert "PRIVATE" not in str(caught.value)
     assert fake.files.delete_calls == []

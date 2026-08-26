@@ -291,6 +291,14 @@ def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
         "generation",
     }:
         operation = None
+    exception_type = error.details.get("provider_sdk_type")
+    if not (
+        type(exception_type) is str
+        and exception_type.isascii()
+        and exception_type.isidentifier()
+        and len(exception_type) <= 128
+    ):
+        exception_type = None
     return _report_failure(
         code=error.code,
         scope=scope,
@@ -298,6 +306,7 @@ def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
         cleanup=cleanup or None,
         progress=progress or None,
         operation=operation,
+        exception_type=exception_type,
     )
 
 
@@ -309,6 +318,7 @@ def _report_unexpected_failure(stage: str | None) -> int:
         cleanup=None,
         progress=None,
         operation=None,
+        exception_type=None,
     )
 
 
@@ -320,6 +330,7 @@ def _report_failure(
     cleanup: dict[str, bool] | None,
     progress: dict[str, int] | None,
     operation: str | None,
+    exception_type: str | None,
 ) -> int:
     summary: dict[str, object] = {
         "status": "failed",
@@ -331,6 +342,8 @@ def _report_failure(
     }
     if operation is not None:
         summary["error"]["operation"] = operation
+    if exception_type is not None:
+        summary["error"]["sdk_type"] = exception_type
     if cleanup is not None:
         summary["cleanup"] = cleanup
     if progress is not None:

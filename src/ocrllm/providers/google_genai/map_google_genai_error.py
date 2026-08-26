@@ -91,11 +91,26 @@ def map_google_genai_error(error: object, *, model: str) -> OCRLLMError:
             "Google GenAI rejected the request parameters.",
             details=_scoped(details, "request"),
         )
+    exception_type = _safe_exception_type(error)
+    if exception_type is not None:
+        details["provider_sdk_type"] = exception_type
     return ProviderError(
         "Google GenAI failed without a valid recognition response.",
         code="PROVIDER_RESPONSE_INVALID",
         details=_scoped(details, "request"),
     )
+
+
+def _safe_exception_type(error: object) -> str | None:
+    name = type(error).__name__
+    if (
+        type(name) is str
+        and name.isascii()
+        and name.isidentifier()
+        and len(name) <= 128
+    ):
+        return name
+    return None
 
 
 def _scoped(details: dict[str, str | int], scope: str) -> dict[str, str | int]:
