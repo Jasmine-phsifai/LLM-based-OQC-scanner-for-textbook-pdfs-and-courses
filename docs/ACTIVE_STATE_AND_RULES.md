@@ -6795,3 +6795,25 @@ composition did not start, no sidecar existed, and the task-owned fixture/output
 were removed. No retry, second catalog, model switch, fallback, or code change
 occurred. Exact elapsed time and stderr byte count were not captured and must not
 be inferred. The complete live video-interval success gate remains open.
+
+## Current working update: #352 Google transport decision re-audit
+
+#351's two native-SDK timeouts do not reopen the selected Google transport.
+A fresh code-path audit confirms that legacy built-in Google image/video frames
+construct `google.genai` byte parts and call `models.generate_content`; legacy
+long audio calls `files.upload`, polls Files readiness, then calls the same native
+generation API. Its configurable Google OpenAI-compatible URL belongs to the
+separate optional vision-provider route and is not the built-in Google mode.
+The active library therefore already follows the maintainer's same-as-legacy
+transport decision.
+
+The products intentionally differ above that wire boundary. Legacy has internal
+same-model retry and candidate switching (normally four audio or six image/text
+attempts), while the library makes one accounted attempt and returns a typed,
+redacted error for caller-owned recovery. Legacy's main native client supplies
+no explicit HTTP timeout; the active library exposes one bounded `(0, 600]`
+second timeout to the SDK and uses it for Files readiness. #351 chose 240 seconds
+for that gate, but its outer runner did not capture exact stage timing, so there
+is no evidence to change the product default or remove the timeout. Keep native
+`google-genai`; do not add a compatibility transport, automatic retry, model
+switching, or provider abstraction from these timeouts alone.
