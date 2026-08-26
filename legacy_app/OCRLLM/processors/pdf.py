@@ -791,11 +791,13 @@ class PDFProcessor(BaseProcessor):
             if not repaired_parts:
                 continue
             replacement = "\n\n".join(repaired_parts)
-            # If some pages in the range still failed, keep a trimmed placeholder
+            # Keep one grammar-valid marker per missing page so the next repair
+            # pass can discover every remaining failure.
             still_missing = [p for p in range_pages if p not in results]
-            if still_missing:
-                missing_str = ", ".join(str(p) for p in still_missing)
-                replacement += f"\n\n<!-- 第 {missing_str} 页识别失败: 修复重试后仍失败 -->\n\n"
+            for page_num in still_missing:
+                replacement += (
+                    f"\n\n<!-- 第 {page_num} 页识别失败: 修复重试后仍失败 -->\n\n"
+                )
             content = content.replace(m.group(0), "\n\n" + replacement + "\n\n", 1)
 
         Path(md_path).write_text(content, encoding="utf-8")

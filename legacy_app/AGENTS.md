@@ -1022,3 +1022,36 @@ frames for temporal selection and does not change recognition pixels.
 **Carry-forward judgement. WARNING FOR src/ocrllm.** The active library has no
 analogous operation. Keep full-frame comparison thumbnails, uniform full-page
 rendering, and aspect-preserving limits distinct from forbidden spatial crop.
+
+## 2026-08-27: PDF partial repair hid its remaining failed pages
+
+**Observed and fixed.** `PDFProcessor.repair()` accepts only one failed page or
+one contiguous failed range per HTML marker. When part of a range succeeded, it
+joined noncontiguous missing pages into one marker such as `第 2, 4 页识别失败`.
+That text was outside `_FAILED_PAGE_RE`, so the next repair pass reported no
+failed pages even though failures remained.
+
+The producer now emits one existing single-page marker for every unresolved
+page, in original page order. The parser was deliberately not widened: adding
+comma-list grammar would preserve an output shape that the application never
+needed. A production-path regression repairs pages 1–4 with pages 1 and 3
+successful, verifies all four serial provider calls and surrounding/successful
+Markdown, then requires the rewritten file to expose pages 2 and 4 again.
+
+**Verification.** The regression failed before the fix with `[] != [2, 4]`.
+After the fix, it plus legacy failure propagation passed 13/13; adding the PDF
+fresh-process renderer passed 14/14. `compileall` and `git diff --check` passed,
+and an independent review found no ordering, exception, or scope regression.
+The bounded provider-free legacy gate selected 36 tracked test files plus this
+new regression, excluded only three real social E2E files and live Google model
+discovery, and passed 267/267 with no skip or provider access.
+
+**Still open.** PDF repair still trusts a caller-selected PDF plus localized
+Markdown and still publishes through direct `Path.write_text()`. Those identity
+and atomicity weaknesses are separate tasks and were not hidden or expanded
+into this marker correction.
+
+**Carry-forward judgement. WARNING FOR src/ocrllm.** The active library has no
+PDF repair path and must not copy this localized grammar. If its separate
+partial-artifact choice is approved, every artifact it emits must be consumable
+by the same strict schema, with source identity and atomic publication.

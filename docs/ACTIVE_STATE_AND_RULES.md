@@ -138,15 +138,22 @@ available usage row; the journal kept the settled audio result, complete frame,
 and audio artifact, with no image state, final digest, or `result.md`. It was
 not resumed because that would require a new image request. The live final-
 publication/zero-call-resume gate therefore remains open.
-#422 re-audits the deferred PDF repair side path. The legacy implementation is
-not portable: it has no PDF identity, has no direct repair tests, rewrites the
-only Markdown non-atomically, and can emit comma-separated or multiline failure
-markers that its own parser cannot read. The active facade instead fails before
-publishing canonical Markdown and keeps ordinary image sidecars for resume, so
-a repair parser currently has no library-owned Markdown input. PDF repair stays
-unavailable pending the explicit Route A/Route B output-artifact choice in
-`docs/MAINTAINER_PRODUCT_DECISIONS.md`; no legacy compatibility, partial producer,
-parser, public API, worker route, retry, or second checkpoint was added.
+#422 re-audits the deferred PDF repair side path. At that audit, the legacy
+implementation was not portable: it had no PDF identity or direct repair test,
+rewrote the only Markdown non-atomically, and could emit comma-separated failure
+markers that its own parser could not read. The active facade instead fails
+before publishing canonical Markdown and keeps ordinary image sidecars for
+resume, so a repair parser currently has no library-owned Markdown input. PDF
+repair stays unavailable pending the explicit Route A/Route B output-artifact
+choice in `docs/MAINTAINER_PRODUCT_DECISIONS.md`; no legacy compatibility,
+partial producer, parser, public API, worker route, retry, or second checkpoint
+was added.
+#425 fixes only that proven legacy producer/parser contradiction. A partially
+successful range repair now emits one existing single-page marker for each
+remaining failure, in page order, so the next legacy repair pass can discover
+all of them. The parser grammar, provider calls, active library, and open Route
+A/Route B choice are unchanged; legacy PDF identity and non-atomic publication
+remain separate known weaknesses.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but

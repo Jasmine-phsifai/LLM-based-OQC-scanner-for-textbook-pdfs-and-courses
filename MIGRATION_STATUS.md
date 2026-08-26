@@ -1923,11 +1923,17 @@ tests are unchanged; the publication-failure/zero-call-resume gate remains open.
 
 #422 investigates the legacy PDF repair feature without porting it. Legacy
 repair trusts localized failure comments and a caller-selected PDF, has no
-source identity or direct repair tests, can emit markers its own regex cannot
-parse, and rewrites Markdown non-atomically. Active PDF recognition instead
+source identity, formerly emitted markers its own regex could not parse, and
+rewrites Markdown non-atomically. Active PDF recognition instead
 publishes no partial Markdown on failure and relies on ordinary image-sidecar
 resume. A material product choice is now recorded: either approve a separate
 source-bound `*_board.partial.md` whose successful range complement drives a
 small current-config repair operation, or keep repair unavailable. Runtime,
 public API, output layout, state, provider behavior, tests, legacy code, worker,
-and frozen contracts remain unchanged until that choice is made.
+and frozen contracts remained unchanged in #422 pending that choice.
+
+#425 closes only the legacy self-generated marker defect found by #422. Partial
+range repair now writes one existing single-page failure marker per unresolved
+page, keeping all remaining pages discoverable by the unchanged parser. This
+does not port repair, change the active output contract, or resolve the open
+partial-artifact choice; legacy identity and publication weaknesses remain.
