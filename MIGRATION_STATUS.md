@@ -1610,6 +1610,13 @@ audio result. Its saved sidecar remains reusable and public interval coverage
 proves zero-call resume. No state format, retry, repair, provider, transaction,
 or publication abstraction was added.
 
+#370 adds direct public whole/interval evidence for the already-selected
+post-publication cleanup contract. If only sidecar removal fails, the valid
+Markdown remains published and is returned as `partial` with a fixed warning
+and `resume_state_removed=False`; calls, usage, and provider cleanup facts stay
+honest. Resume remains restricted to unpublished results, so no result-identity
+or finalize protocol was introduced.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

@@ -260,6 +260,9 @@ original choice.
   call; if final Markdown publication fails after whole or interval settlement,
   the typed error also retains current-run per-model token usage and exact
   remote-file/client-cleanup facts while the reusable state remains in place;
+  if publication succeeds but temporary-state removal fails, the published
+  result is returned as `partial` with `resume_state_removed=False` and one
+  warning, and the caller owns cleanup of the retained sidecar;
 - records a paid whole-file no-speech outcome in the same temporary state;
   explicit resume then raises the same typed no-speech result with zero new
   provider calls, and the internal sentinel is never published as Markdown;

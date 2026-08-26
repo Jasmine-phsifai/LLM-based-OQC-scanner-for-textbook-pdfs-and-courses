@@ -188,6 +188,47 @@ def test_interval_run_saves_each_paid_prefix_then_publishes_ordered_markdown(
     assert not (output_dir / "lecture" / ".ocrllm-long-audio-resume.json").exists()
 
 
+def test_interval_state_removal_failure_keeps_published_partial_result(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    _interval_processor, materialized, provider_calls = _install_interval_fakes(
+        monkeypatch,
+        tmp_path,
+        ["first", "second", "third"],
+    )
+    state_path = output_dir / "lecture" / ".ocrllm-long-audio-resume.json"
+    real_unlink = Path.unlink
+
+    def fail_state_unlink(path: Path, *args, **kwargs):
+        if path == state_path:
+            raise PermissionError("injected-state-unlink-failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_state_unlink)
+
+    result = recognize_long_mp3(
+        tmp_path / "lecture.mp3",
+        config=_config(output_dir),
+        interval_minutes=5,
+    )
+
+    assert materialized == [0, 1, 2]
+    assert provider_calls == [0, 1, 2]
+    assert result.status == "partial"
+    assert result.output_path == output_dir / "lecture" / "result.md"
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert state_path.is_file()
+    assert result.metadata["resume_state_removed"] is False
+    assert result.metadata["current_run_provider_call_count"] == 3
+    assert result.metadata["remote_file_deleted"] is True
+    assert result.metadata["provider_client_closed"] is True
+    assert result.warnings == (
+        "The temporary long-audio resume state could not be removed.",
+    )
+
+
 def test_interval_publication_failure_reports_saved_settlement(
     tmp_path: Path,
     monkeypatch,

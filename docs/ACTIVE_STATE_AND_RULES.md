@@ -7143,3 +7143,27 @@ set passes 125 tests. The complete offline suite passes all 1,784 tests with the
 known Node executable supplied only to the test subprocess; the explicit
 non-Node suite passes 1,782 tests. Compileall, diff validation, and
 frozen-boundary checks pass without provider calls.
+
+## Current working update: #370 published long-audio cleanup failure is an explicit partial terminal
+
+Standalone whole and interval long-audio publication already use the intended
+post-publication cleanup contract: if `result.md` is written but the temporary
+resume sidecar cannot be removed, the public call returns the real output as
+`partial`, retains the sidecar, sets `resume_state_removed=False`, and adds one
+fixed warning. Provider calls, per-model usage, and provider cleanup facts remain
+unchanged. New public regressions prove that exact behavior for both modes.
+
+This is not a resumable recognition failure. The existing `resume=True`
+contract remains limited to a valid sidecar with no published final result.
+Allowing resume to enter an already-published root would require a new result
+identity/finalize protocol merely to automate deletion of one warned-about
+temporary file; that broader proposal is rejected here. The caller may consume
+the published partial result and remove the retained sidecar after resolving
+the local filesystem problem. No runtime, state, provider, retry, repair,
+transaction, or output-ownership behavior changed.
+
+The focused whole/interval/video settlement set passes 26 tests. The complete
+offline suite passes all 1,786 tests with the known Node executable supplied
+only to the test subprocess; the explicit non-Node suite passes 1,784 tests
+with two Node tests deselected. Compileall, diff validation, and frozen-boundary
+checks pass without provider calls.

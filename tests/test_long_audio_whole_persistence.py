@@ -139,6 +139,42 @@ def test_new_whole_run_saves_before_atomic_publication_then_removes_state(
     assert result.metadata["provider_client_closed"] is True
 
 
+def test_whole_state_removal_failure_keeps_published_partial_result(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    provider_calls: list[str] = []
+    _install_fakes(monkeypatch, provider_calls)
+    state_path = _state_path(output_dir)
+    real_unlink = Path.unlink
+
+    def fail_state_unlink(path: Path, *args, **kwargs):
+        if path == state_path:
+            raise PermissionError("injected-state-unlink-failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_state_unlink)
+
+    result = recognize_long_mp3(
+        tmp_path / "lecture.mp3",
+        config=_config(output_dir),
+    )
+
+    assert provider_calls == [MODEL]
+    assert result.status == "partial"
+    assert result.output_path == _root(output_dir) / "result.md"
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert state_path.is_file()
+    assert result.metadata["resume_state_removed"] is False
+    assert result.metadata["current_run_provider_call_count"] == 1
+    assert result.metadata["remote_file_deleted"] is True
+    assert result.metadata["provider_client_closed"] is True
+    assert result.warnings == (
+        "The temporary long-audio resume state could not be removed.",
+    )
+
+
 def test_failed_publication_preserves_paid_state_for_zero_call_resume(
     tmp_path: Path,
     monkeypatch,

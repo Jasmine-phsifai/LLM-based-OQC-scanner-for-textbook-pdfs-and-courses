@@ -309,6 +309,13 @@ Public regressions also prove the retained interval state resumes with zero new
 provider calls. State format, lifecycle, retry, repair, and provider behavior
 are unchanged.
 
+#370 directly proves the complementary successful-publication boundary for
+standalone whole and interval long audio. If only temporary sidecar removal
+fails, the real `result.md` is returned as `partial` with one fixed warning and
+`resume_state_removed=False`; the state remains for explicit caller cleanup.
+This does not expand `resume=True` to already-published results or add a
+finalize protocol.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes
