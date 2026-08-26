@@ -1838,6 +1838,17 @@ signature, state format, provider, retry, fallback, or transaction changed.
 Focused video coverage passes 104 tests and the complete offline suite passes
 all 1,867 tests.
 
+#415 adds the missing post-work/pre-publication cancellation boundary to image
+recognition. Cancellation arriving during the final provider or local-OCR call
+now prevents completed-state and Markdown publication while keeping the paid
+partial slot and exact current call/token evidence. Clearing the signal lets
+resume reuse that slot with zero calls. PDF child groups inherit the same rule;
+no provider workflow, public signature, state format, rollback, or transaction
+changed. The shared cancellation message is now timing-neutral. Focused
+image/PDF/batch/local-OCR coverage passes 151 tests and the complete offline
+suite passes all 1,868 tests. High-level video has a separately reproduced
+post-settlement cancellation gap queued next.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

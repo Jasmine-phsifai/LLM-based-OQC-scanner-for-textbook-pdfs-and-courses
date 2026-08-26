@@ -636,9 +636,17 @@ def test_cancel_after_first_pdf_group_resumes_without_replaying_it(
         tuple(f"page-{page_number:06d}.png" for page_number in range(1, 9))
     ]
     assert interrupted.value.details["provider_calls_attempted"] == 1
-    assert interrupted.value.details["settled_pdf_group_count"] == 1
+    assert interrupted.value.details["settled_pdf_group_count"] == 0
     assert not (output_dir / "book_board.md").exists()
-    assert len(tuple((output_dir / "book_board").glob("*.ocrllm-state.json"))) == 1
+    state_directory = output_dir / "book_board"
+    state_paths = tuple(state_directory.glob("*.ocrllm-state.json"))
+    assert len(state_paths) == 1
+    assert not tuple(state_directory.glob("*.md"))
+    partial_result = json.loads(
+        state_paths[0].read_text(encoding="utf-8")
+    )["result"]
+    assert partial_result["markdown"] == ""
+    assert partial_result["status"] == "partial"
 
     resumed = recognize(
         source,

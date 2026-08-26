@@ -1,4 +1,4 @@
-"""Honor an Event-compatible cancellation signal before recognition work."""
+"""Honor an Event-compatible cancellation signal at a safe boundary."""
 
 from __future__ import annotations
 
@@ -25,4 +25,4 @@ def raise_if_cancelled(cancellation: object | None) -> None:
             code="CONFIG_INVALID",
         ) from None
     if cancelled:
-        raise Cancelled("Recognition was cancelled before recognition work.") from None
+        raise Cancelled() from None

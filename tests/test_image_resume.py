@@ -23,6 +23,7 @@ from ocrllm import (
     OutputExists,
     RecognitionResult,
     ResumeStateError,
+    VisionModelSettings,
     recognize,
 )
 from ocrllm.processor_output import ProcessorOutput
@@ -258,6 +259,86 @@ def test_completed_resume_honors_pre_set_cancellation_without_losing_state(
     assert len(calls) == 1
     assert initial.output_path.read_bytes() == output_before
     assert state_path.read_bytes() == state_before
+
+
+def test_cancellation_during_final_image_call_preserves_paid_slot_for_resume(
+    tmp_path,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_path = output_dir / "board_board.md"
+    state_path = _state_path(output_dir)
+    cancellation = threading.Event()
+
+    class Provider:
+        resume_identity = "cancel-during-final-image-call-v1"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            cancellation.set()
+            return VisionProviderResponse(
+                markdown="# Paid board\n",
+                input_tokens=13,
+                output_tokens=3,
+            )
+
+    provider = Provider()
+
+    def config(*, resume: bool = False) -> Config:
+        return Config(
+            provider=provider,
+            output_dir=output_dir,
+            resume=resume,
+            cancellation=cancellation,
+            vision_model=VisionModelSettings(name="model-a"),
+        )
+
+    with pytest.raises(Cancelled) as captured:
+        recognize(source, config=config())
+
+    assert captured.value.code == "CANCELLED"
+    assert str(captured.value) == "Recognition was cancelled."
+    assert provider.calls == 1
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert [dict(attempt) for attempt in captured.value.details["model_attempts"]] == [
+        {
+            "model": "model-a",
+            "outcome": "success",
+            "provider_calls_attempted": 1,
+        }
+    ]
+    assert [
+        dict(usage) for usage in captured.value.details["settled_model_usage"]
+    ] == [
+        {
+            "model": "model-a",
+            "input_count": 13,
+            "output_count": 3,
+            "unit": "tokens",
+        }
+    ]
+    assert not output_path.exists()
+    partial_state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert partial_state["result"]["status"] == "partial"
+    assert partial_state["result"]["markdown"] == ""
+    assert [slot["slot_id"] for slot in partial_state["slots"]] == ["draft"]
+
+    cancellation.clear()
+    resumed = recognize(source, config=config(resume=True))
+
+    assert provider.calls == 1
+    assert resumed.markdown == "# Paid board\n"
+    assert resumed.output_path == output_path
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert "current_model_token_usage" not in resumed.metadata
+    assert output_path.read_text(encoding="utf-8") == resumed.markdown
+    completed_state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert completed_state["result"]["status"] == "complete"
+    assert completed_state["result"]["markdown"] == resumed.markdown
+    assert "current_model_token_usage" not in completed_state["result"]["metadata"]
 
 
 def test_local_ocr_resume_reuses_completed_result_without_backend_call(

@@ -7968,3 +7968,32 @@ high-level video, publication, outcome, and long-audio video coverage passes
 104 tests; independent review finds no correctness issue; the complete offline
 suite passes all 1,867 tests with zero failures or skips. The queued disclosure
 gap is closed; return to a fresh bounded active-library audit.
+
+## Current working update: #415 stops image publication after late cancellation
+
+A public provider-free image regression now sets the caller's cancellation
+event during the final successful provider request, after one exact 13/3-token
+response. Previously the facade returned complete success, saved completed
+state, and published Markdown despite the signal already being set. The image
+path now checks cancellation after the owned snapshot and provider gate have
+settled, but before completed-state saving, output validation, Markdown
+publication, or result construction.
+
+The resulting canonical `Cancelled` keeps the one current provider call,
+successful model attempt, and exact token evidence. The already-persisted draft
+slot remains partial and no final Markdown is written; after the caller clears
+the event, explicit resume reuses that slot with zero provider calls, publishes
+once, and excludes historical usage from current-run metadata. PDF inherits the
+same image-child boundary: a cancellation during its first group leaves zero
+fully settled PDF groups, one reusable partial child state, and no child or
+final PDF Markdown; resume reuses that group and dispatches only the second.
+
+`raise_if_cancelled()` now uses the timing-neutral canonical message
+`Recognition was cancelled.` because the shared helper is valid both before
+work and after settled work at a safe pre-publication boundary. No provider
+interruption, workflow-pass checks, cancellation coordinator, state schema,
+rollback, or transaction was added. Focused image, PDF, batch, and local-OCR
+coverage passes 151 tests; all cancellation-focused tests pass 22; independent
+review closes its message-honesty finding; and the complete offline suite passes
+all 1,868 tests with zero failures or skips. A separately reproduced high-level
+video post-settlement cancellation gap is next; keep it atomic.

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .config import Config
-from .errors import OCRLLMError, OutputError, ResumeStateError
+from .errors import Cancelled, OCRLLMError, OutputError, ResumeStateError
 from .providers.dashscope.provider_settings import DashScopeSettings
 from .providers.google_genai.provider_settings import GoogleGenAISettings
 from .result import RecognitionResult
@@ -299,6 +299,8 @@ def _recognize(
 
     assert processor_output is not None
     try:
+        if media_type == "image":
+            raise_if_cancelled(cfg.cancellation)
         if output_path is not None and resume_identity is not None:
             # The state file is kept after publication: it is what lets a repeated
             # call, and therefore a repeated batch, skip work that was already paid for.
@@ -339,7 +341,7 @@ def _recognize(
             processor_output,
             output_path=output_path,
         )
-    except (OutputError, ResumeStateError) as error:
+    except (Cancelled, OutputError, ResumeStateError) as error:
         if provider_calls_attempted is not None:
             error._add_safe_detail(
                 "provider_calls_attempted",
