@@ -2,20 +2,16 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from ..errors import OutputError
 from ..output.normalize_output_stem import normalize_output_stem
+from ..output.validate_atomic_output_path import validate_atomic_output_path
 from .long_audio_output_paths import (
     LONG_AUDIO_RESULT_NAME,
     LONG_AUDIO_RESUME_STATE_NAME,
     LongAudioOutputPaths,
 )
-
-
-_MAX_LEGACY_WINDOWS_PATH_UNITS = 259
-_ATOMIC_TEMPORARY_PATH_PROBE_NAME = f".ocrllm-{'0' * 32}.tmp"
 
 
 def plan_long_audio_output_paths(
@@ -35,23 +31,10 @@ def plan_long_audio_output_paths(
         result=root / LONG_AUDIO_RESULT_NAME,
         resume_state=root / LONG_AUDIO_RESUME_STATE_NAME,
     )
-    # Both long-audio state and Markdown writers use this UUID-shaped sibling.
-    atomic_temporary_path = paths.root / _ATOMIC_TEMPORARY_PATH_PROBE_NAME
+    validate_atomic_output_path(paths.result)
+    validate_atomic_output_path(paths.resume_state)
 
     try:
-        if os.name == "nt" and any(
-            _windows_path_units(path) > _MAX_LEGACY_WINDOWS_PATH_UNITS
-            for path in (
-                paths.root,
-                paths.result,
-                paths.resume_state,
-                atomic_temporary_path,
-            )
-        ):
-            raise OutputError(
-                "The long-audio output path exceeds the supported Windows limit.",
-                code="OUTPUT_PATH_INVALID",
-            ) from None
         if output_dir.exists() and not output_dir.is_dir():
             raise OutputError(
                 "The long-audio output parent must be a directory.",
@@ -66,8 +49,3 @@ def plan_long_audio_output_paths(
         ) from error
 
     return paths
-
-
-def _windows_path_units(path: Path) -> int:
-    absolute = os.path.abspath(os.fspath(path))
-    return len(absolute.encode("utf-16-le")) // 2

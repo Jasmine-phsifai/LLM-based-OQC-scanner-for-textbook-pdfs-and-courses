@@ -7,6 +7,8 @@ from pathlib import Path
 
 from ..config import Config
 from .normalize_output_stem import normalize_output_stem
+from .resolve_image_resume_state_path import resolve_image_resume_state_path
+from .validate_atomic_output_path import validate_atomic_output_path
 
 
 def resolve_output_path(
@@ -25,4 +27,7 @@ def resolve_output_path(
         if len(source_paths) == 1
         else f"{first_stem}_plus_{len(source_paths) - 1}"
     )
-    return output_dir / f"{filename_stem}_{profile}.md"
+    output_path = output_dir / f"{filename_stem}_{profile}.md"
+    validate_atomic_output_path(output_path)
+    validate_atomic_output_path(resolve_image_resume_state_path(output_path))
+    return output_path

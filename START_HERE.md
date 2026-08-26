@@ -1105,3 +1105,12 @@ active defect was restoration of saved video interval minutes when `resume=True`
 omits that argument; #380 closes it after strict journal loading while preserving
 explicit mismatch rejection. No transaction or configuration migration was
 introduced.
+
+#381 closes the next proven paid-work loss: image output planning now checks
+the fixed Markdown, fixed resume sidecar, and current UUID-shaped atomic sibling
+before provider dispatch. The exact atomic-path check is shared with long audio,
+removing #378's duplicate constants and path-unit code. The next queue is:
+verify selected video frame position after seek/read; reject batch partial-state
+plus existing-output conflicts; then preserve audio usage/cleanup facts when
+state persistence itself fails. Keep each item atomic and do not widen them into
+frame-selection changes, transactions, or provider retry.

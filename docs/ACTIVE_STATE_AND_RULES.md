@@ -3969,6 +3969,26 @@ Post-register findings are ordered by demonstrated user impact:
   loading, an omitted `audio_interval_minutes` uses the saved exact integer;
   an explicitly supplied different integer still fails before redispatch.
   Whole mode remains `None`, and no configuration migration layer was added.
+- #381 closes a high-severity image path-preflight defect. Image output
+  resolution now rejects the fixed Markdown, fixed resume sidecar, or current
+  UUID-shaped atomic sibling when any exceeds the supported legacy Windows
+  limit. The rejection precedes snapshot/provider work in batch preflight and
+  precedes provider work in the single facade. The exact check is shared with
+  long audio now that it has two real consumers.
+- Open, high: selected video-frame publication trusts successful seek/read but
+  does not verify the capture's post-read frame position. A backend can return
+  different frame bytes while the retained metadata and journal still name the
+  requested frame. The next fix should reuse the scanner's existing finite
+  post-read position check; it must not change frame selection or add crop.
+- Open, medium-high: batch resume preflight loads a valid partial image state
+  but does not reject its conflict with an already-existing Markdown output.
+  A later item can therefore fail only after earlier dispatch. Reuse the same
+  partial-state/output mismatch already enforced by single-item recognition.
+- Open, medium-high: whole/interval audio state-save failures report the paid
+  call count but omit already validated token and provider-cleanup facts because
+  no `ProcessorOutput` returns to the outer error boundary. Preserve those
+  settled facts at the failing persistence boundary; do not add retry or a
+  durable transaction protocol.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
@@ -7345,3 +7365,25 @@ Markdown, and removes the journal. The correction changes no public signature,
 state schema, provider behavior, repair path, or configuration migration. The
 focused video/interval set passes 63 tests, and the complete offline suite
 passes all 1,827 tests.
+
+## Current working update: #381 preflights every current image write path
+
+Image output resolution now validates three paths before provider dispatch: the
+fixed Markdown target, its fixed `.ocrllm-state.json` sibling, and the
+`.ocrllm-<32 hex>.tmp` sibling used by both atomic writers. On Windows, any path
+above 259 UTF-16 units raises `OUTPUT_PATH_INVALID`. A controlled public
+regression previously admitted a 260-unit temporary path, called the provider
+once, then returned `OUTPUT_WRITE_FAILED` with neither result nor resumable
+state. The same call now makes zero provider calls and writes neither file.
+
+A second public regression uses a 96-unit normalized source stem to prove the
+fixed Markdown can still fit while the actual sidecar exceeds the limit; that
+case is also rejected before dispatch. The previous legal 258-unit boundary
+continues to recognize and resume normally. The temporary-name rule gained its
+second real consumer, so one narrow `validate_atomic_output_path()` now owns the
+fixed-destination and UUID-sibling check. The long-audio planner uses the same
+function and deletes its duplicate constants/unit calculation while preserving
+#378 behavior. No automatic shortening, extended-path layer, filename change,
+transaction, retry, or generalized filesystem framework was added. The focused
+image/batch/output/long-audio set passes 99 tests, and the complete offline
+suite passes all 1,829 tests.

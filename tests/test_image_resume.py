@@ -371,6 +371,66 @@ def test_resume_state_temp_does_not_amplify_near_limit_sidecar_path(
     assert len(calls) == 1
 
 
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="Windows legacy path-limit regression",
+)
+def test_atomic_image_path_is_rejected_before_provider_call(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    if _windows_path_units(tmp_path) >= 215:
+        pytest.skip(
+            "pytest temporary root is already beyond the controlled path range"
+        )
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = _make_directory_with_windows_path_units(tmp_path, 215)
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    _enforce_legacy_windows_open_limit(monkeypatch)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(source, config=_vision_config(output_dir))
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert calls == []
+    assert not (output_dir / "board_board.md").exists()
+    assert not _state_path(output_dir).exists()
+
+
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="Windows legacy path-limit regression",
+)
+def test_fixed_image_state_path_is_rejected_before_provider_call(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    if _windows_path_units(tmp_path) >= 150:
+        pytest.skip(
+            "pytest temporary root is already beyond the controlled path range"
+        )
+    source = write_test_image(tmp_path / f"{'s' * 96}.png")
+    output_dir = _make_directory_with_windows_path_units(tmp_path, 150)
+    output_path = output_dir / f"{source.stem}_board.md"
+    state_path = output_path.with_name(
+        f"{output_path.stem}.ocrllm-state.json"
+    )
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    _enforce_legacy_windows_open_limit(monkeypatch)
+
+    assert _windows_path_units(output_path) <= 259
+    assert _windows_path_units(state_path) > 259
+    with pytest.raises(OutputError) as captured:
+        recognize(source, config=_vision_config(output_dir))
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert calls == []
+    assert not output_path.exists()
+    assert not state_path.exists()
+
+
 def test_matching_state_and_output_complete_post_publish_crash_window(
     tmp_path,
     monkeypatch,

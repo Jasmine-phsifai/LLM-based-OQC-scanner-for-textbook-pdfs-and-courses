@@ -1689,6 +1689,18 @@ final publication, and journal cleanup. No signature, schema, provider, repair,
 or configuration-migration behavior was added. The complete offline suite
 passes all 1,827 tests.
 
+#381 closes a reproduced image Windows path defect. A 260-unit atomic sibling
+previously failed only after one paid provider call and left no Markdown or
+resume state. Image resolution now checks the fixed output, fixed sidecar, and
+current UUID temporary sibling before dispatch; a long normalized stem whose
+Markdown fits but sidecar does not is also rejected. The second real consumer
+justifies one shared atomic-path validator, and long audio now uses it instead
+of retaining duplicate constants/unit logic. Legal 258-unit behavior remains
+green. No shortening, extended-path support, transaction, or retry was added.
+The next evidenced queue is selected-frame position honesty, batch
+partial-state/output conflict preflight, then audio persistence-failure usage
+and cleanup disclosure. The complete offline suite passes all 1,829 tests.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
