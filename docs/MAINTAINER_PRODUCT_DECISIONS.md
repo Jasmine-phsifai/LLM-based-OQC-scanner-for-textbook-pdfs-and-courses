@@ -472,6 +472,36 @@ is often accepted.
   remains deferred until that high-level consumer is implemented, so no durable
   frame-group schema is added in advance.
 
+- **#355 rejects publication-only recovery as that high-level job.** Saving only
+  an already-composed Markdown result would cover a narrow crash-before-write
+  window but would replay every paid image/audio unit after an earlier failure.
+  It would also create a first journal schema that the real resume path must
+  immediately replace. The first public high-level job must own the fixed
+  root/result and immediately consume one video journal containing
+  source/media-plan identity plus settled image and audio work. Whole and
+  integer-minute interval audio both remain in scope; short audio needs one
+  settled record rather than a second sidecar. Do not ship audio-only,
+  one-frame-group-only, or publication-only behavior under the name video
+  resume.
+
+- **Open #355 terminal-failure choice.** Recommended: if any required frame
+  group or audio unit lacks recognized content, publish no `result.md`, retain
+  every settled paid unit in the journal, and raise the typed failure. A later
+  explicit `resume=True` retries only missing work; that is caller-owned retry,
+  not an adapter loop. A result whose content is fully settled but whose cleanup
+  warning makes it `partial` may still publish. Alternative: publish a terminal
+  partial `result.md` on any provider failure and delete state, which gives up
+  resume for the missing work. The maintainer must select before implementation.
+
+- **Recommended #355 strict defaults unless separately changed.** Bind resume
+  to the exact normalized source path, byte size, and SHA-256; a moved source is
+  rejected even when byte-identical. Process resumable frame groups serially so
+  each settled paid group is durably journaled before the next dispatch. If a
+  matching `result.md` and journal coexist after a crash, validate the result
+  digest and remove only the matching journal; mismatches are rejected. These
+  choices prefer explicit rejection and an understandable lifecycle over path
+  compatibility, parallel checkpoint callbacks, or generalized transactions.
+
 - Video is the next active library line. Start with local parsing, then migrate
   the main legacy negative-feedback frame comparison and retained-image
   behavior before provider recognition.

@@ -258,6 +258,17 @@ seconds in total. This
 supports the existing optional 600-second per-operation setting for this gate;
 it does not provide per-stage timing or change the product default timeout.
 
+#355 rejects an easier publication-only journal as the selected resumable-video
+job. Saving only composed Markdown would not preserve any paid frame or audio
+unit and would force immediate state-schema churn. The first public job must
+instead own fixed `result.md` publication and immediately consume one journal
+covering source/media-plan identity plus settled full-frame groups and
+short/whole/interval audio work. The current three-step API stays unchanged.
+Implementation waits on one terminal rule: the recommendation is to publish no
+final file while any required unit is missing, retain settled paid work, raise
+the typed failure, and let an explicit later resume retry only the missing work;
+cleanup-only partial content may publish.
+
 #138 makes the public video outcome reject
 frame/audio paths outside its exact lexical `output_root/frames/*` and optional
 `output_root/audio.mp3` layout before composition. #139 makes composed

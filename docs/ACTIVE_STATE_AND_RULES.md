@@ -6861,3 +6861,36 @@ settle this controlled shape when the gate allows the contract maximum; it does
 not identify a single slow stage or justify changing the product default
 timeout. No retry, second catalog, model switch, fallback, runtime code, or
 provider abstraction was added.
+
+## Current working update: #355 video resume must start with paid-work reuse
+
+The complete live interval proof does not make the current three-step video API
+resumable. A main-agent code trace and two bounded independent audits compared
+the tempting first step of saving only an already-composed result with the
+minimum job that actually avoids replay. Publication-only recovery covers just
+the crash between composition and final Markdown write; it preserves no paid
+image group, short-audio result, or long-audio slot, yet creates a journal
+version and source-identity burden that the real job must immediately replace.
+It is therefore rejected as the selected Route A job, not implemented as an
+easier half-feature.
+
+The first public high-level job must own one fixed source-stem root, fixed
+`result.md`, and one temporary video journal that it consumes itself. That
+journal must bind the exact source, retained full-frame plan, grouped frame
+identity, audio artifact/mode, and every settled image/audio unit. Whole and
+exact-integer-minute interval audio remain required, and short audio receives a
+single settled record rather than a parallel state file. The existing low-level
+recognize/compose/publish functions remain unchanged and non-resumable. Do not
+add an audio-only flag, one-group resume claim, nested image/audio state tree,
+generic transaction, cross-process lock, retry/fallback, or legacy parser.
+
+One material terminal rule remains maintainer-owned before implementation. The
+recommended rule is: if any required provider unit has no recognized content,
+publish no final Markdown, preserve all settled paid work, and raise the typed
+failure; a later explicit resume retries only missing units. Fully recognized
+content carrying cleanup-only warnings may publish as partial. The alternative
+is to publish any provider-failed partial outcome terminally and delete state,
+which abandons recovery of its missing work. Recommended strict defaults are
+exact path plus byte identity, serial checkpointed frame groups, and digest-
+verified cleanup when a matching final result and journal coexist after a crash.
+No runtime/state/API/test change is made until the terminal rule is selected.

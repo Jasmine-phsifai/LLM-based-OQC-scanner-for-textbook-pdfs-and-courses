@@ -1507,6 +1507,15 @@ The following directions remain traceable but are not current work:
   790.609 seconds;
   no per-stage duration, product-default timeout change, retry, fallback, or
   model switch is claimed.
+  #355 rejects publication-only recovery as the selected high-level video job:
+  it would add a journal while preserving none of the paid image/audio work the
+  resume feature exists to protect. The first public job must immediately own
+  and consume fixed `result.md` plus one source/media-plan-bound journal for
+  settled frame groups and short/whole/interval audio work. The current
+  three-step API remains non-resumable. Runtime implementation waits on the
+  maintainer's terminal-failure choice; the recommended rule retains settled
+  paid work, publishes no final file while any required unit is missing, raises
+  the typed error, and lets explicit resume retry only the missing work.
 
 ## Obsolete Prose Kept For Trace
 
