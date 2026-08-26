@@ -23,11 +23,12 @@ As of 2026-08-26:
   Google inline short MP3 and Files-based single-request long MP3 paths are
   implemented and live-proven. Short MP3 remains memory-only; the standalone
   long-MP3 facade can optionally publish to a same-name directory and resume
-  an already-settled whole-file request without another provider call. Combined video now
-  selects inline audio through 300 seconds or Files above 300 seconds through
-  the current 9.5-hour single-request ceiling after one owned decode. Long-audio
-  interval chunk dispatch/resume and the remaining 9.5-to-10-hour range remain
-  unavailable.
+  settled whole-file or integer-minute interval work without replaying paid
+  calls. Combined video selects inline audio through 300 seconds, whole-file
+  Files requests above that through 9.5 hours by default, or explicit serial
+  intervals through the private 10-hour product ceiling. Video retains settled
+  interval prefixes after failure, but the current three-step video API does not
+  yet expose resume.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. Its bounded Google exit gate completed 16 pages in two

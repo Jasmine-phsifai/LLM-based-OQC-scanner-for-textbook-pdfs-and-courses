@@ -6753,6 +6753,11 @@ accepts exactly 10 hours and rejects anything longer before dispatch. Standalone
 resume resolves its saved mode and integer-minute interval before snapshotting,
 so omitting the interval on a valid resume does not regress to the whole limit.
 Focused failing-first evidence was four failures against the old probes; the
-implemented focused set passes 93 tests. Complete source, wheel, and bounded
-live-video evidence are pending the delegated clean gate and must not be inferred
-from those offline regressions.
+implemented focused set passes 93 tests. #349 release-proves the exact
+post-crop-removal commit from a clean archive: 1,768 tests passed and one was
+skipped, every maintained isolated install profile built and installed, and
+local audio, image, PDF, video, and combined-media smokes passed. A compatible
+declared Pillow 12.3.0 wheel was staged through the active proxy without changing
+dependency bounds or persistent pip configuration. This is package and local
+media evidence only; no provider was called and it does not replace the still-open
+bounded live-video interval success gate.

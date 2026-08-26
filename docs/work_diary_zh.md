@@ -6161,3 +6161,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **删除与保留。** 已删除整个 `imaging/preprocess.py`、自动/手动四边形入口、透视变换、视频 ROI 检测器、ROI 遮挡拒绝、相关配置、GUI“跳过预处理”复选框和 CLI 参数。旧模块混放的 Unicode OpenCV 写图被移到同名文件；板书图片准备被移到 `prepare_board_image.py`。后者不寻找内容区域：尺寸无需缩小时原样复制完整文件，需要缩小时只按比例缩小完整画面；HEIC/TIFF 仅为 provider 格式转换。新 repair manifest 写 `full-frame-resize-v1`。只为不毁掉既有小型 repair 侧链，读取旧 manifest 时仍接受历史 `skip_preprocess` 布尔值，但它不再连接任何裁剪代码。
 
 **证据与过度设计复查。** 新回归直接验证四角像素、完整尺寸和无需缩小时的逐字节复制；视频回归验证候选 JPEG 保留完整宽高及左右边缘。板书/repair/失败传播 focused 集合 **28 passed**，视频/GUI/配置邻近集合 **30 passed**。active 全量在临时前置已有 STA PATH 后为 **1,769 passed in 79.99s**；首次缺 Node 的 2 项环境失败不冒充源码失败。legacy 全量在排除明确延期且会真实下载的 `test_social_e2e.py` 和受保护未跟踪测试后为 **281 passed, 1 skipped in 36.02s**。本轮没有给新 library 增加“禁止裁剪”运行时守卫、图像相似度检查、角点反检测器或兼容 wrapper；删除错误模块和入口比增加关闭开关更清楚。上一轮 Pillow clean gate 因本次紧急澄清被中止，Google live 从未启动；它们不能算 #348 证据。
+
+## #349 — 2026-08-26：完成十小时 interval 改动的隔离安装证明
+
+**本轮英文原子任务。** `Atomic task — Iteration #349: close the interrupted clean-installed release proof for the route-aware 10-hour interval change on the current post-cropping-removal commit. Context: source tests pass, but the prior clean gate stopped because the selected package index did not supply a compatible Pillow wheel; the proxy itself was healthy, and the Google live stage never started. Success means reconciling current authority, correcting only directly stale public duration/resume documentation, delegating exact Pillow acquisition through the active proxy, and proving the current commit through the maintained archive/wheel/profile/media gate without provider calls. This matters because source tests cannot prove that users can install and run the packaged audio/video paths.`
+
+**路线和安装处理。** 路线 A 是放宽 Pillow 依赖或跳过 PDF vision profile，这会用改合同掩盖下载源问题；路线 B 是在不改依赖范围的前提下，经已开启代理给一次性 gate 提供兼容 wheel，选 B。轻量执行者确认 WinINET 代理开启、`127.0.0.1:10080` 可达，pip 没有全局/环境/用户配置覆盖；复用 `pillow-12.3.0-cp310-cp310-win_amd64.whl`（7,226,887 bytes，SHA-256 `300557495eb45ebb8aec96c2da9c4be642fbf7cd937278b4013ba894ea8eb0eb`），只通过临时 `PIP_FIND_LINKS` 暴露给 gate，没有修改持久配置。
+
+**完整证据。** exact HEAD/origin 是 `3c09cde999036b2984eb3526c45fa84897d867a9`。clean archive 为 **1,768 passed, 1 skipped**；构建 wheel 269,222 bytes。base、audio、image、image+DashScope、Google、audio+Google、PDF vision、video、video+audio+image 全部在隔离目标中安装成功，本地媒体 smoke 和冻结边界检查全部通过。临时根已删除，仓库最终只保留两份既有受保护未跟踪文件。没有调用 provider，因此本轮不是 Google live 成功证据。
+
+**文档修正和过度设计复查。** 根 README 与 active-library README 原先仍说 interval/resume 未实现、9.5 到 10 小时不可用，已按当前代码改为：整段上限 9.5 小时，显式正整数分钟 interval 上限 10 小时；standalone 可恢复，当前 video 三段接口不可恢复，未来采用已选定的高层固定结果任务。没有增加安装器、依赖 fallback、Pillow 特判、缓存管理器、provider retry 或第二次真实调用。临时 wheel 注入解决一次发布验证，不进入产品运行时。

@@ -95,14 +95,15 @@ whole-file Files above 300 seconds by default. Its optional
 `audio_interval_minutes` selects ordered Files intervals using an exact positive
 integer number of minutes; settled state is written under the video-owned output
 root and removed after a successful clean audio result. Current video calls do
-not consume retained state, so public video resume and the remaining private
-9.5-to-10-hour range remain unavailable. Install `ocrllm[audio]` for both its
+not consume retained state, so public video resume remains unavailable;
+interval mode nevertheless accepts sources through the private 10-hour product
+ceiling. Install `ocrllm[audio]` for both its
 lazy MP3 decoder and interval FFmpeg backend; neither loads during plain import.
 An audio-only resume flag would still replay paid image groups and cannot bind
 an existing output root to the source video or short-audio result. A public
-video resume therefore waits for a maintainer choice between one high-level
-fixed-result resumable job and explicit finalize/discard semantics for the
-current three-step API; no unconsumed video journal is shipped.
+video resume will be a later high-level fixed-result job owning one temporary
+journal and atomic `result.md` publication. The current three-step API remains
+non-resumable and gains no finalize/discard protocol.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
 legacy-Markdown repair, so ordinary image-sidecar resume remains its recovery
 path.
@@ -232,8 +233,9 @@ After an interrupted run, repeat the call with `resume=True` in `Config`. The
 resume call may omit `interval_minutes` because temporary state retains the
 original choice.
 
-- requires one fully decoded MP3 longer than 300 seconds and no longer than the
-  current Google single-prompt limit of 9.5 hours;
+- requires one fully decoded MP3 longer than 300 seconds; whole-file mode stops
+  at the current Google single-prompt limit of 9.5 hours, while explicit
+  interval mode accepts the private product ceiling of 10 hours;
 - snapshots through bounded chunked disk I/O, with a 2 GB Files limit, and does
   not load the complete audio or decoded PCM into Python memory;
 - discovers the live `generateContent` catalog and rejects before upload when
@@ -444,9 +446,11 @@ valid but has no audio stream; present-but-corrupt or undecodable audio remains
 `VIDEO_INVALID`, so callers do not have to parse FFmpeg text. The
 combined recognizer uses the separately installed `audio,google` routes: it
 owns and fully decodes the extracted MP3 once, then selects inline recognition
-through 300 seconds or Google Files above 300 seconds through the current
-9.5-hour single-request ceiling. It does not try short recognition first or
-probe a second copy. Image and audio providers are selected by the two separate
+through 300 seconds, Google Files whole-audio above 300 seconds through the
+9.5-hour single-request ceiling by default, or explicit integer-minute Files
+intervals through the private 10-hour product ceiling. It does not try short
+recognition first or probe a second copy. Image and audio providers are selected
+by the two separate
 `Config` objects. Standalone frame extraction and standalone
 audio extraction each own one hidden snapshot under their output parent.
 Combined video recognition instead owns one shared snapshot under `output_dir`:

@@ -228,6 +228,13 @@ perspective transform, inferred video board ROI, ROI-only candidate JPEGs, and
 ROI-based occlusion rejection were removed; size-only full-field downscaling
 remains allowed.
 
+#349 then release-proves exact post-removal commit `3c09cde` from a clean
+archive: 1,768 tests passed with one skip, every maintained isolated install
+profile succeeded, and local audio, image, PDF, video, and combined-media smokes
+passed. It staged the already-declared compatible Pillow 12.3.0 wheel through the
+active proxy without changing package bounds or persistent pip configuration;
+no provider was called.
+
 #138 makes the public video outcome reject
 frame/audio paths outside its exact lexical `output_root/frames/*` and optional
 `output_root/audio.mp3` layout before composition. #139 makes composed

@@ -1482,6 +1482,12 @@ The following directions remain traceable but are not current work:
   interval mode accepts a source through the private 10-hour product ceiling.
   Mode and interval identity remain temporary resume data and repair remains an
   independent failed-range text side path.
+  #349 release-proves that route-aware boundary and the subsequent full-frame
+  removal from exact clean commit `3c09cde`: 1,768 archive tests passed with one
+  skip, all maintained isolated install profiles succeeded, and local
+  audio/image/PDF/video/combined-media smokes passed. Pillow 12.3.0 was supplied
+  as the declared compatible wheel through the active proxy; no dependency bound,
+  persistent installer configuration, or provider behavior changed.
 
 ## Obsolete Prose Kept For Trace
 
