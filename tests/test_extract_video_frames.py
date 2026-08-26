@@ -79,6 +79,30 @@ def _write_constant_mp4(path: Path, *, value: int) -> Path:
     return path
 
 
+def _write_corner_marked_mp4(path: Path) -> Path:
+    import cv2
+    import numpy as np
+
+    writer = cv2.VideoWriter(
+        str(path),
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        2.0,
+        (64, 48),
+    )
+    assert writer.isOpened()
+    try:
+        frame = np.zeros((48, 64, 3), dtype=np.uint8)
+        frame[:12, :12] = (0, 0, 255)
+        frame[:12, -12:] = (0, 255, 0)
+        frame[-12:, :12] = (255, 0, 0)
+        frame[-12:, -12:] = (0, 255, 255)
+        for _ in range(6):
+            writer.write(frame)
+    finally:
+        writer.release()
+    return path
+
+
 def _write_equal_luma_color_change_mp4(path: Path) -> Path:
     import cv2
     import numpy as np
@@ -295,6 +319,25 @@ def test_extract_video_frames_retains_ordered_change_representatives(
 
     with pytest.raises(FrozenInstanceError):
         frames[0].frame_index = 1  # type: ignore[misc]
+
+
+def test_extract_video_frames_preserves_all_four_source_corners(
+    tmp_path: Path,
+) -> None:
+    import cv2
+
+    source = _write_corner_marked_mp4(tmp_path / "four-corners.mp4")
+
+    frames = extract_video_frames(source, output_dir=tmp_path / "output")
+
+    assert len(frames) == 1
+    retained = cv2.imread(str(frames[0].path))
+    assert retained.shape[:2] == (48, 64)
+    assert retained[4:8, 4:8, 2].mean() > 200
+    assert retained[4:8, 56:60, 1].mean() > 200
+    assert retained[40:44, 4:8, 0].mean() > 200
+    assert retained[40:44, 56:60, 1].mean() > 200
+    assert retained[40:44, 56:60, 2].mean() > 200
 
 
 def test_extract_video_frames_compares_and_retains_a_changed_final_frame(

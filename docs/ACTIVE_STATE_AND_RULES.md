@@ -882,6 +882,12 @@ it cannot activate cropping and new manifests record `full-frame-resize-v1`.
 No corner detector, contour/ROI crop, or perspective rectifier remains in
 legacy or active code. The final unused legacy Canny/contour configuration was
 deleted, and runtime/docs no longer misname complete-frame resizing as cropping.
+#376 reverified the current executable trees after the maintainer restated this
+rule: there is still no forbidden module or hidden geometry-changing call to
+remove. The focused current video/PDF suite passed 50 tests and the bounded
+legacy full-frame/PDF suite passed 5 tests. Comparison thumbnails, blank-frame
+tests, and OCR text-box ordering remain selection or text-layout operations;
+they do not alter the recognition image.
 #367 removed the last stale legacy `imaging` update whitelist entry, the unused
 `STEP_FRAME_PREPROCESS` name, and an architecture-diagram node for the deleted
 module. These remnants could not crop an image, but one made API configuration

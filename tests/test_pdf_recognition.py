@@ -242,6 +242,77 @@ def test_public_pdf_uses_two_ordered_bounded_image_groups(
     assert result.metadata["current_run_provider_call_count"] == 2
 
 
+def test_public_pdf_provider_receives_all_four_page_corners(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from PIL import Image
+
+    class CornerMarkedBitmap:
+        def to_pil(self):
+            image = Image.new("RGB", (40, 30), "black")
+            image.paste((255, 0, 0), (0, 0, 8, 8))
+            image.paste((0, 255, 0), (32, 0, 40, 8))
+            image.paste((0, 0, 255), (0, 22, 8, 30))
+            image.paste((255, 255, 0), (32, 22, 40, 30))
+            return image
+
+        def close(self) -> None:
+            pass
+
+    class CornerMarkedPage:
+        def render(self, *, scale: float):
+            assert scale > 0
+            return CornerMarkedBitmap()
+
+        def close(self) -> None:
+            pass
+
+    class CornerMarkedDocument:
+        def __len__(self) -> int:
+            return 1
+
+        def get_page_size(self, page_index: int) -> tuple[float, float]:
+            assert page_index == 0
+            return 40.0, 30.0
+
+        def get_page(self, page_index: int) -> CornerMarkedPage:
+            assert page_index == 0
+            return CornerMarkedPage()
+
+        def close(self) -> None:
+            pass
+
+    class CornerCheckingProvider:
+        resume_identity = "offline-pdf-four-corners-v1"
+
+        def recognize_images(self, image_paths, *, prompt: str, config: Config) -> str:
+            assert "input order" in prompt
+            paths = tuple(Path(path) for path in image_paths)
+            assert len(paths) == 1
+            with Image.open(paths[0]) as rendered:
+                assert rendered.size == (40, 30)
+                assert rendered.getpixel((3, 3)) == (255, 0, 0)
+                assert rendered.getpixel((36, 3)) == (0, 255, 0)
+                assert rendered.getpixel((3, 26)) == (0, 0, 255)
+                assert rendered.getpixel((36, 26)) == (255, 255, 0)
+            return "Complete page."
+
+    monkeypatch.setitem(
+        sys.modules,
+        "pypdfium2",
+        SimpleNamespace(
+            PYPDFIUM_INFO=SimpleNamespace(api_tag=(5, 11, 0), beta=None),
+            PdfDocument=lambda _path: CornerMarkedDocument(),
+        ),
+    )
+    source = _write_pdf_placeholder(tmp_path / "four-corners.pdf")
+
+    result = recognize(source, config=_pdf_config(CornerCheckingProvider()))
+
+    assert result.status == "complete"
+
+
 def test_pdf_group_combination_preserves_partial_image_status() -> None:
     warning = "The Google GenAI client could not be closed after recognition."
     combined = combine_pdf_group_results(

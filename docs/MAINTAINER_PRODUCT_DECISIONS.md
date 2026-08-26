@@ -470,6 +470,9 @@ is often accepted.
   #372 re-audited both trees after the maintainer explicitly reaffirmed that
   this prohibition also covers frames extracted from video and pages rendered
   from PDF. No executable crop module or hidden geometry-changing call remains.
+  #376 repeated that audit against the current tree after the rule was raised
+  again. The result is unchanged: the deleted legacy module has not returned,
+  and active video/PDF recognition still receives complete frames/pages.
 
 - **Resolved video-resume terminal decision (#345/#347): Route A.** Do not add an audio-only
   `resume=True` to `recognize_video()`: current video state cannot preserve paid
