@@ -12,6 +12,7 @@ from uuid import uuid4
 from ..errors import OCRLLMError, OutputError, OutputExists, VideoError
 from ..retained_video_frame import RetainedVideoFrame
 from .open_video_capture import open_video_capture
+from .read_decoded_video_frame_index import read_decoded_video_frame_index
 from .video_frame_candidate import VideoFrameCandidate
 
 
@@ -123,6 +124,13 @@ def _write_one_selected_frame(
     if not positioned or not decoded or frame is None:
         raise VideoError(
             "The selected video frame could not be decoded.",
+            code="VIDEO_INVALID",
+            details={"frame_index": candidate.frame_index},
+        ) from None
+    decoded_frame_index = read_decoded_video_frame_index(capture, cv2=cv2)
+    if decoded_frame_index != candidate.frame_index:
+        raise VideoError(
+            "The video backend decoded a different selected frame.",
             code="VIDEO_INVALID",
             details={"frame_index": candidate.frame_index},
         ) from None

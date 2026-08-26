@@ -1701,6 +1701,19 @@ The next evidenced queue is selected-frame position honesty, batch
 partial-state/output conflict preflight, then audio persistence-failure usage
 and cleanup disclosure. The complete offline suite passes all 1,829 tests.
 
+#382 closes selected-video-frame identity honesty. The writer no longer treats
+successful seek/read as proof that the requested frame was decoded: it reads
+OpenCV's finite post-read cursor, normalizes the next-frame position with the
+same rule as the scanner, and rejects a mismatch before JPEG publication. A
+public regression proves that frame-1 bytes cannot be labeled frame 0 and that
+capture/staging cleanup still completes. One narrow cursor parser serves the
+two real consumers; scanner range/timestamp policy and writer target equality
+remain separate. No pixel comparison, crop, timestamp matching, selection
+change, seek abstraction, or journal change was introduced. The next evidenced
+queue is batch partial-state/output conflict preflight, then audio
+persistence-failure evidence retention. The complete offline suite passes all
+1,830 tests.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

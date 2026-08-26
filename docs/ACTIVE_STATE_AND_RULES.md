@@ -3975,11 +3975,11 @@ Post-register findings are ordered by demonstrated user impact:
   limit. The rejection precedes snapshot/provider work in batch preflight and
   precedes provider work in the single facade. The exact check is shared with
   long audio now that it has two real consumers.
-- Open, high: selected video-frame publication trusts successful seek/read but
-  does not verify the capture's post-read frame position. A backend can return
-  different frame bytes while the retained metadata and journal still name the
-  requested frame. The next fix should reuse the scanner's existing finite
-  post-read position check; it must not change frame selection or add crop.
+- #382 closes the high-severity selected-frame identity defect. The writer now
+  validates OpenCV's finite post-read next-frame cursor and rejects any decoded
+  index other than the selected candidate before JPEG publication. Scanner and
+  writer share only that non-obvious cursor normalization; range, timestamp,
+  selection, full-frame encoding, and error context remain local.
 - Open, medium-high: batch resume preflight loads a valid partial image state
   but does not reject its conflict with an already-existing Markdown output.
   A later item can therefore fail only after earlier dispatch. Reuse the same
@@ -7387,3 +7387,22 @@ function and deletes its duplicate constants/unit calculation while preserving
 transaction, retry, or generalized filesystem framework was added. The focused
 image/batch/output/long-audio set passes 99 tests, and the complete offline
 suite passes all 1,829 tests.
+
+## Current working update: #382 rejects silently mispositioned selected frames
+
+The selected-frame writer previously trusted successful `set()` and `read()`.
+A controlled public `extract_video_frames()` regression made the backend accept
+a seek to frame 0 but return frame 1 and report the corresponding post-read
+cursor. The old implementation published those bright frame-1 bytes as
+`frame-00000000.jpg`; the corrected path raises `VIDEO_INVALID`, releases the
+capture, removes staging, and publishes no target directory.
+
+OpenCV reports the next-frame cursor after decoding, so one narrow
+`read_decoded_video_frame_index()` now owns finite exact-number validation and
+the existing `round(cursor) - 1` normalization. The scanner keeps its own
+source-range and optional expected-index checks. The writer adds only exact
+equality with the selected candidate before encoding. No timestamp equality,
+pixel comparison, seek wrapper, frame-selection change, crop, or journal schema
+was added. The existing complete-frame JPEG and four-corner regressions remain
+green; the focused active-video set passes 161 tests, and the complete offline
+suite passes all 1,830 tests.

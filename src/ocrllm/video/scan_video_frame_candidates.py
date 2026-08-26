@@ -9,6 +9,7 @@ from typing import Any
 from ..errors import VideoError
 from ..video_info import VideoInfo
 from .open_video_capture import open_video_capture
+from .read_decoded_video_frame_index import read_decoded_video_frame_index
 from .video_frame_candidate import VideoFrameCandidate
 
 
@@ -105,23 +106,13 @@ def _read_candidate(
     try:
         positioned = capture.set(position_property, position_value)
         decoded, frame = capture.read()
-        next_frame_position = capture.get(cv2.CAP_PROP_POS_FRAMES)
         timestamp_milliseconds = capture.get(cv2.CAP_PROP_POS_MSEC)
         if not positioned or not decoded or frame is None:
             raise VideoError(
                 "The video backend could not decode a comparison frame.",
                 code="VIDEO_INVALID",
             ) from None
-        if (
-            not isinstance(next_frame_position, (int, float))
-            or isinstance(next_frame_position, bool)
-            or not math.isfinite(float(next_frame_position))
-        ):
-            raise VideoError(
-                "The decoded video-frame position is invalid.",
-                code="VIDEO_INVALID",
-            ) from None
-        frame_index = int(round(float(next_frame_position))) - 1
+        frame_index = read_decoded_video_frame_index(capture, cv2=cv2)
         if not 0 <= frame_index < video_info.frame_count:
             raise VideoError(
                 "The decoded video-frame position is invalid.",

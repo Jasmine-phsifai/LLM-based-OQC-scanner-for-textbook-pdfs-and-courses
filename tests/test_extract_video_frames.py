@@ -340,6 +340,79 @@ def test_extract_video_frames_preserves_all_four_source_corners(
     assert retained[40:44, 56:60, 2].mean() > 200
 
 
+def test_extract_video_frames_rejects_a_different_frame_after_seek(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from contextlib import contextmanager
+
+    import numpy as np
+
+    from ocrllm.video.video_frame_candidate import VideoFrameCandidate
+
+    source = _write_constant_mp4(tmp_path / "wrong-frame.mp4", value=20)
+    output_parent = tmp_path / "output"
+    prepare = __import__(
+        "ocrllm.video.prepare_video_media",
+        fromlist=["unused"],
+    )
+    writer = __import__(
+        "ocrllm.video.write_selected_video_frames",
+        fromlist=["unused"],
+    )
+    candidate = VideoFrameCandidate(
+        frame_index=0,
+        timestamp_seconds=0.0,
+        luminance_thumbnail=np.zeros((128, 128), dtype=np.uint8),
+        color_thumbnail=np.zeros((32, 32, 3), dtype=np.uint8),
+    )
+
+    class WrongFrameCapture:
+        released = False
+
+        def set(self, _property_id: int, _value: float) -> bool:
+            return True
+
+        def read(self):
+            return True, np.full((48, 64, 3), 240, dtype=np.uint8)
+
+        def get(self, _property_id: int) -> float:
+            return 2.0
+
+        def release(self) -> None:
+            self.released = True
+
+    monkeypatch.setattr(
+        prepare,
+        "scan_video_frame_candidates",
+        lambda *_args, **_kwargs: (candidate,),
+    )
+    monkeypatch.setattr(
+        prepare,
+        "select_video_frame_candidates",
+        lambda candidates, **_kwargs: candidates,
+    )
+    fake_capture = WrongFrameCapture()
+
+    @contextmanager
+    def fake_open(_source, *, cv2):
+        try:
+            yield fake_capture
+        finally:
+            fake_capture.release()
+
+    monkeypatch.setattr(writer, "open_video_capture", fake_open)
+
+    with pytest.raises(VideoError) as captured:
+        extract_video_frames(source, output_dir=output_parent)
+
+    assert captured.value.code == "VIDEO_INVALID"
+    assert captured.value.details["frame_index"] == 0
+    assert fake_capture.released
+    assert not (output_parent / "wrong-frame").exists()
+    assert not list(output_parent.glob(".ocrllm-video-*"))
+
+
 def test_extract_video_frames_compares_and_retains_a_changed_final_frame(
     tmp_path: Path,
 ) -> None:
