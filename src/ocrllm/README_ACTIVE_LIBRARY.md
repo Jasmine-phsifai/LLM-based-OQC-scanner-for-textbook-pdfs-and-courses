@@ -266,6 +266,9 @@ original choice.
   for settled work, while source/model/prompt/transport/interval drift is rejected;
 - interval mode requires `output_dir`, recognizes missing windows serially, and
   saves every settled speech or no-speech window before starting the next one;
+  if every window is no-speech, both the initial typed result and exact
+  zero-call resume aggregate remote-file deletion and client-close facts from
+  all saved windows;
 - has no overwrite, repair integration, parallel splitting, fallback, model
   switching, batch support, worker route, or automatic video integration.
 

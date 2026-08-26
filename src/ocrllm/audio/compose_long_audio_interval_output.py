@@ -19,12 +19,20 @@ def compose_long_audio_interval_output(
     spoken_markdown = tuple(
         slot.markdown for slot in slots if slot.markdown != NO_SPEECH_SENTINEL
     )
+    remote_file_deleted = _aggregate_cleanup(
+        tuple(slot.provider_file_cleanup_succeeded for slot in slots)
+    )
+    provider_client_closed = _aggregate_cleanup(
+        tuple(slot.provider_client_cleanup_succeeded for slot in slots)
+    )
     if not spoken_markdown:
         raise NoSpeechDetected(
             details={
                 "provider": slots[0].provider,
                 "model": slots[0].model,
                 "provider_calls_attempted": current_calls,
+                "remote_file_deleted": remote_file_deleted,
+                "provider_client_closed": provider_client_closed,
             }
         ) from None
     current_slot_count = len(current_usage)
@@ -54,12 +62,8 @@ def compose_long_audio_interval_output(
             ),
             "duration_seconds": snapshot.duration_seconds,
             "byte_size": snapshot.byte_size,
-            "remote_file_deleted": _aggregate_cleanup(
-                tuple(slot.provider_file_cleanup_succeeded for slot in slots)
-            ),
-            "provider_client_closed": _aggregate_cleanup(
-                tuple(slot.provider_client_cleanup_succeeded for slot in slots)
-            ),
+            "remote_file_deleted": remote_file_deleted,
+            "provider_client_closed": provider_client_closed,
         },
     )
 

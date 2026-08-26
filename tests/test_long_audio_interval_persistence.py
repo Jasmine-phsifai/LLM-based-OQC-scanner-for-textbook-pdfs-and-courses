@@ -267,14 +267,18 @@ def test_resume_rejects_changed_interval_before_materialization_or_provider(
     assert calls == []
 
 
-def _no_speech() -> NoSpeechDetected:
+def _no_speech(
+    *,
+    remote_file_deleted: bool = True,
+    provider_client_closed: bool = True,
+) -> NoSpeechDetected:
     return NoSpeechDetected(
         details={
             "provider": "google",
             "model": MODEL,
             "provider_calls_attempted": 1,
-            "remote_file_deleted": True,
-            "provider_client_closed": True,
+            "remote_file_deleted": remote_file_deleted,
+            "provider_client_closed": provider_client_closed,
         }
     )
 
@@ -329,7 +333,11 @@ def test_all_no_speech_resume_replays_typed_result_without_provider_calls(
     _install_interval_fakes(
         monkeypatch,
         tmp_path,
-        [_no_speech(), _no_speech(), _no_speech()],
+        [
+            _no_speech(remote_file_deleted=False),
+            _no_speech(provider_client_closed=False),
+            _no_speech(),
+        ],
     )
     with pytest.raises(NoSpeechDetected) as first_error:
         recognize_long_mp3(
@@ -338,6 +346,8 @@ def test_all_no_speech_resume_replays_typed_result_without_provider_calls(
             interval_minutes=5,
         )
     assert first_error.value.details["provider_calls_attempted"] == 3
+    assert first_error.value.details["remote_file_deleted"] is False
+    assert first_error.value.details["provider_client_closed"] is False
 
     _processor, materialized, calls = _install_interval_fakes(
         monkeypatch,
@@ -351,6 +361,8 @@ def test_all_no_speech_resume_replays_typed_result_without_provider_calls(
         )
 
     assert resumed_error.value.details["provider_calls_attempted"] == 0
+    assert resumed_error.value.details["remote_file_deleted"] is False
+    assert resumed_error.value.details["provider_client_closed"] is False
     assert materialized == []
     assert calls == []
 

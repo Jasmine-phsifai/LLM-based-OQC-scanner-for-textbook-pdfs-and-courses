@@ -7073,3 +7073,31 @@ constant, state reader, resume API, or journal schema was added.
 The complete offline suite passes all 1,782 tests with the known Node
 executable supplied only to the test subprocess; the explicit non-Node suite
 passes 1,780 tests. Compileall, diff validation, and frozen-boundary checks pass.
+
+## Current working update: #366 all-silent intervals retain cleanup truth
+
+When every long-audio interval settled as paid no-speech, composition raised the
+correct `NoSpeechDetected` with the exact current-run call count and retained
+state, but it raised before the normal slot cleanup aggregation. A remote-file
+deletion failure in one slot and a provider-client close failure in another
+therefore disappeared from both the initial public error and its zero-call
+resume replay even though the saved slots retained those facts.
+
+Interval composition now calculates the existing tri-state cleanup aggregates
+before selecting speech versus all-silent output. The same two values feed the
+ordinary result metadata or the typed no-speech details. A failing-first public
+regression proves three paid silent intervals report both failures, publish no
+result, and replay the same facts on exact resume with zero calls. The focused
+interval, whole, video-settlement, and public-video set passes 57 tests without
+a provider call. No state field, serializer, error type, retry, cleanup action,
+or lifecycle abstraction was added.
+
+One independently reproduced PDF disclosure defect remains for the next atomic
+correction: if a child image provider result and sidecar settle but child
+Markdown publication fails, the public error retains the call and model attempt
+but omits that result's validated token usage even though the sidecar contains
+it. Fix the shared publication error boundary narrowly; do not change PDF state
+or repair behavior.
+The complete offline suite passes all 1,782 tests with the known Node
+executable supplied only to the test subprocess; the explicit non-Node suite
+passes 1,780 tests. Compileall, diff validation, and frozen-boundary checks pass.

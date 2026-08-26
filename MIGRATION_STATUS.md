@@ -1584,6 +1584,13 @@ Markdown. The existing reserved identity tuple now includes this one fixed
 sidecar; its bytes survive the typed rejection. No resume consumer, state
 format, public constant, or broader output-root ownership policy was added.
 
+#366 makes all-no-speech interval errors preserve the cleanup facts already in
+their settled slots. Initial execution and exact zero-call resume now report
+the aggregate remote-file deletion and client-close booleans as well as the
+current call count. It reuses the normal result's tri-state aggregation and
+changes no state, provider, retry, or publication contract. The independently
+reproduced PDF child-publication token-usage omission is recorded next.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

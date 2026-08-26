@@ -283,6 +283,13 @@ interval prefixes after a partial video failure even though the current
 three-step API cannot resume them yet. It is protected by the existing local
 reserved-path check; no video journal or directory ownership system was added.
 
+#366 preserves cleanup disclosure when every standalone long-audio interval is
+paid no-speech. The initial typed result and exact zero-call resume now aggregate
+remote-file deletion and provider-client close facts from all settled slots,
+instead of raising before that existing aggregation. State, calls, retry, and
+publication behavior are unchanged. A separately reproduced child-publication
+PDF token-usage omission remains the next atomic defect.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes
