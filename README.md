@@ -18,7 +18,8 @@ As of 2026-08-26:
 - Stage M is offline implementation-complete: lazy DashScope catalog checks,
   atomic file-backed image state, opt-in disposition-gated candidate recovery,
   complete spend disclosure, model-aware credential blocking, and slot-indexed
-  intra-request checkpoints are shipped. Its paid live exit smoke remains open.
+  intra-request checkpoints are shipped. #339 closed its bounded DashScope live
+  exit with current catalog discovery and one explicit recognition call.
 - The former standalone Stage 2 vision/audio scaffold was removed. Native
   Google inline short MP3 and Files-based single-request long MP3 paths are
   implemented and live-proven. Short MP3 remains memory-only; the standalone
@@ -27,8 +28,10 @@ As of 2026-08-26:
   calls. Combined video selects inline audio through 300 seconds, whole-file
   Files requests above that through 9.5 hours by default, or explicit serial
   intervals through the private 10-hour product ceiling. Video retains settled
-  interval prefixes after failure or a partial provider-cleanup result, but the
-  current three-step video API does not yet expose resume.
+  interval prefixes after failure or a partial provider-cleanup result. The
+  high-level `recognize_video_to_markdown()` facade now owns one fixed result
+  and temporary journal and resumes only missing image/audio units; the
+  three-step video API remains the lower-level non-resumable surface.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. Its bounded Google exit gate completed 16 pages in two
@@ -58,8 +61,8 @@ As of 2026-08-26:
   only when every settled branch supplies exact evidence; otherwise it is
   `None`, never a guessed zero. `publish_video_result()` can instead atomically
   publish the same complete or partial composition to an explicit caller-owned
-  path, with opt-in overwrite. Long-audio video routing, video resume, and
-  worker routing are not implemented yet.
+  path, with opt-in overwrite. Long-audio video routing and high-level video
+  resume are implemented; video worker routing is not.
 - Native Google image, inline short-MP3, and single-request Google Files long-MP3
   adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
@@ -226,9 +229,31 @@ with a small request: catalog membership alone does not prove that a model
 accepts audio. The current combined-video audio branch selects native Google
 inline transport through 300 decoded seconds and the existing Files transport
 above 300 seconds, subject to the selected model and current single-request
-limits. Recoverable interval dispatch and resume are not implemented.
+limits. The low-level three-step route itself remains non-resumable.
 `recognize_video()` retains media and returns typed branch evidence; only a
 complete or partial outcome can be composed or published as final Markdown.
+
+For library-owned persistence, call the high-level facade instead:
+
+```python
+from ocrllm import recognize_video_to_markdown
+
+result = recognize_video_to_markdown(
+    "lecture.mp4",
+    output_dir=Path("recognized"),
+    image_config=image_config,
+    audio_config=audio_config,
+    audio_interval_minutes=5,  # omit for automatic short/whole mode
+)
+
+# After a recoverable failure, repeat with the same inputs and resume=True.
+```
+
+This route validates all saved artifacts and request identities before a
+resumed provider dispatch, reuses settled work, and publishes fixed
+`recognized/lecture/result.md` only after recoverable gaps are closed. Interval
+length accepts positive integer minutes only. Repair remains a separate narrow
+future side path and does not consume this journal.
 
 ### Built-in DashScope example
 

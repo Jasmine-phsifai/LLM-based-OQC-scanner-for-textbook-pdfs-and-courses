@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from collections.abc import Callable
 
 from ..audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
 from ..audio.build_long_audio_interval_upload_snapshot import (
@@ -24,9 +24,6 @@ from ..audio.long_audio_partial_state import (
 )
 from ..audio.materialize_long_audio_interval import materialize_long_audio_interval
 from ..audio.reuse_long_audio_partial_state import reuse_long_audio_partial_state
-from ..audio.save_long_audio_partial_state_atomically import (
-    save_long_audio_partial_state_atomically,
-)
 from ..errors import NoSpeechDetected, OCRLLMError
 from ..providers.google_genai.recognize_uploaded_mp3 import recognize_uploaded_mp3
 from ..raise_if_cancelled import raise_if_cancelled
@@ -38,7 +35,7 @@ def recognize_long_mp3_intervals(
     *,
     config,
     interval_minutes: int,
-    state_path: Path,
+    persist_state: Callable[[LongAudioPartialState], None],
     saved_state,
 ):
     """Dispatch missing windows serially and save each paid prefix."""
@@ -117,8 +114,7 @@ def recognize_long_mp3_intervals(
                     )
                     raise
                 slots = slots + (slot,)
-                save_long_audio_partial_state_atomically(
-                    state_path,
+                persist_state(
                     LongAudioPartialState(
                         state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
                         identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from collections.abc import Callable
 
 from ..audio.build_long_audio_no_speech_slot import build_long_audio_no_speech_slot
 from ..audio.build_long_audio_settled_slot import build_long_audio_settled_slot
@@ -16,9 +16,6 @@ from ..audio.long_audio_partial_state import (
 )
 from ..audio.long_audio_settled_slot import LongAudioSettledSlot
 from ..audio.reuse_long_audio_partial_state import reuse_long_audio_partial_state
-from ..audio.save_long_audio_partial_state_atomically import (
-    save_long_audio_partial_state_atomically,
-)
 from ..audio.transcription_prompt import (
     AUDIO_TRANSCRIPTION_PROMPT,
     NO_SPEECH_SENTINEL,
@@ -34,7 +31,7 @@ def recognize_long_mp3_whole(
     snapshot,
     *,
     config: Config,
-    state_path: Path,
+    persist_state: Callable[[LongAudioPartialState], None],
     saved_state,
 ) -> tuple[ProcessorOutput, int]:
     """Reuse or settle one whole-file slot and persist it before returning."""
@@ -96,8 +93,7 @@ def recognize_long_mp3_whole(
                 model=model,
                 error=no_speech_error,
             )
-        save_long_audio_partial_state_atomically(
-            state_path,
+        persist_state(
             LongAudioPartialState(
                 state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
                 identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,

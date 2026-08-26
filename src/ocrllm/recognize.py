@@ -151,6 +151,9 @@ def _recognize(
                             raise_if_cancelled(cfg.cancellation)
                         else:
                             from .image_slot_checkpoint import ImageSlotCheckpoint
+                            from .output.save_image_resume_state_atomically import (
+                                save_image_resume_state_atomically,
+                            )
                             from .recognize_validated_images import (
                                 recognize_validated_images,
                             )
@@ -175,7 +178,12 @@ def _recognize(
                                 seeded_slots = resume_state.slots
                             slot_checkpoint = ImageSlotCheckpoint(
                                 resume_identity,
-                                resume_state_path,
+                                persist_state=lambda state: (
+                                    save_image_resume_state_atomically(
+                                        resume_state_path,
+                                        state,
+                                    )
+                                ),
                                 profile=profile,
                                 snapshot_paths=tuple(validated_paths),
                                 seeded_slots=seeded_slots,

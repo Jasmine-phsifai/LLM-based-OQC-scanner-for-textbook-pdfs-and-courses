@@ -152,10 +152,14 @@ def test_interval_run_saves_each_paid_prefix_then_publishes_ordered_markdown(
     monkeypatch,
 ) -> None:
     output_dir = tmp_path / "out"
-    processor, materialized, provider_calls = _install_interval_fakes(
+    _interval_processor, materialized, provider_calls = _install_interval_fakes(
         monkeypatch,
         tmp_path,
         ["first", "second", "third"],
+    )
+    persistence_owner = __import__(
+        "ocrllm.processors.recognize_long_mp3",
+        fromlist=["recognize_long_mp3"],
     )
     state_module = __import__(
         "ocrllm.audio.save_long_audio_partial_state_atomically",
@@ -168,7 +172,7 @@ def test_interval_run_saves_each_paid_prefix_then_publishes_ordered_markdown(
         state_module.save_long_audio_partial_state_atomically(path, state)
 
     monkeypatch.setattr(
-        processor,
+        persistence_owner,
         "save_long_audio_partial_state_atomically",
         observed_save,
     )

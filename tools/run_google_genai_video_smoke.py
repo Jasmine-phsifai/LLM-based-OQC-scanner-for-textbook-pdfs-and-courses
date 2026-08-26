@@ -24,7 +24,7 @@ from ocrllm import (
     recognize_video,
 )
 from ocrllm.errors import ConfigError, OCRLLMError, VideoError
-from ocrllm.recognize_video_frames import _VIDEO_FRAME_GROUP_LIMIT
+from ocrllm.group_retained_video_frames import VIDEO_FRAME_GROUP_LIMIT
 
 
 _SAFE_PROVIDER_FAILURE_REASONS = frozenset(
@@ -248,8 +248,8 @@ def _preflight_video_frames(source: Path) -> tuple[int, int]:
         )
         retained_count = len(frames)
     group_count = (
-        retained_count + _VIDEO_FRAME_GROUP_LIMIT - 1
-    ) // _VIDEO_FRAME_GROUP_LIMIT
+        retained_count + VIDEO_FRAME_GROUP_LIMIT - 1
+    ) // VIDEO_FRAME_GROUP_LIMIT
     return retained_count, group_count
 
 

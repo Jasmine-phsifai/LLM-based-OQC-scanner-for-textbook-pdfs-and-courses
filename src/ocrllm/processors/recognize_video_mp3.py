@@ -8,6 +8,9 @@ from ..audio.probe_short_mp3 import MAX_SHORT_MP3_DURATION_SECONDS
 from ..audio.remove_long_audio_temporary_state import (
     remove_long_audio_temporary_state,
 )
+from ..audio.save_long_audio_partial_state_atomically import (
+    save_long_audio_partial_state_atomically,
+)
 from ..audio.snapshot_long_mp3 import LongMP3Snapshot
 from ..audio.snapshot_short_mp3 import ShortMP3Snapshot
 from ..audio.snapshot_video_mp3 import snapshot_video_mp3
@@ -75,7 +78,12 @@ def recognize_video_mp3(
                     processor_output, _ = recognize_long_mp3_whole(
                         long_snapshot,
                         config=config,
-                        state_path=state_path,
+                        persist_state=lambda state: (
+                            save_long_audio_partial_state_atomically(
+                                state_path,
+                                state,
+                            )
+                        ),
                         saved_state=None,
                     )
                 else:
@@ -83,7 +91,12 @@ def recognize_video_mp3(
                         long_snapshot,
                         config=config,
                         interval_minutes=interval_minutes,
-                        state_path=state_path,
+                        persist_state=lambda state: (
+                            save_long_audio_partial_state_atomically(
+                                state_path,
+                                state,
+                            )
+                        ),
                         saved_state=None,
                     )
                 long_audio_route_selected = True

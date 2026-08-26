@@ -516,6 +516,16 @@ is often accepted.
   not add `run_video_recognition_job`, `overwrite`, a third cancellation signal,
   or a publication-only/audio-only compatibility stage.
 
+- **#374 implements the resolved consumer and keeps its audio identity narrow.**
+  Whole-file audio remains the default; explicit interval mode accepts only a
+  positive integer number of minutes. Mode and interval minutes may be kept in
+  the temporary journal solely for exact resume and are discarded after final
+  publication. The later repair side path derives time ranges from failure text
+  and does not depend on this state. Future provider classes may eventually own
+  provider-specific concurrency, effort, error handling, and fallback policy,
+  but that framework starts only after the core library is stable. Current code
+  should keep the provider seam usable without implementing the abstraction.
+
 - **Recommended #355 strict defaults unless separately changed.** Bind resume
   to the exact normalized source path, byte size, and SHA-256; a moved source is
   rejected even when byte-identical. Process resumable frame groups serially so

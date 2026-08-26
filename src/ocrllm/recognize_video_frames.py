@@ -7,9 +7,6 @@ from .config import Config
 from .retained_video_frame import RetainedVideoFrame
 
 
-_VIDEO_FRAME_GROUP_LIMIT = 8
-
-
 def recognize_video_frames(
     frames: tuple[RetainedVideoFrame, ...],
     *,
@@ -25,6 +22,10 @@ def recognize_video_frames(
         validate_vision_provider_config,
     )
     from .recognize_batch import recognize_batch
+    from .group_retained_video_frames import (
+        VIDEO_FRAME_GROUP_LIMIT,
+        group_retained_video_frames,
+    )
     from .resolve_effective_image_limit import resolve_effective_image_limit
     from .validate_config import validate_config
 
@@ -36,53 +37,21 @@ def recognize_video_frames(
     )
     _validate_retained_frame_tuple(frames)
     configured_limit, _ = resolve_effective_image_limit(cfg)
-    group_size = min(_VIDEO_FRAME_GROUP_LIMIT, configured_limit)
-    frame_groups = _group_retained_frames(frames, group_size)
+    group_size = min(VIDEO_FRAME_GROUP_LIMIT, configured_limit)
+    frame_groups = group_retained_video_frames(frames, group_size)
     groups = tuple(
         tuple(frame.path for frame in frame_group)
         for frame_group in frame_groups
     )
     outcomes = recognize_batch(groups, config=cfg)
+    from .attach_video_frame_group_identity import (
+        attach_video_frame_group_identity,
+    )
+
     return [
-        _attach_video_frame_group_identity(outcome, group)
+        attach_video_frame_group_identity(outcome, group)
         for outcome, group in zip(outcomes, frame_groups)
     ]
-
-
-def _group_retained_frames(
-    frames: tuple[RetainedVideoFrame, ...],
-    group_size: int,
-) -> tuple[tuple[RetainedVideoFrame, ...], ...]:
-    return tuple(
-        frames[start : start + group_size]
-        for start in range(0, len(frames), group_size)
-    )
-
-
-def _attach_video_frame_group_identity(
-    outcome: BatchItemOutcome,
-    frames: tuple[RetainedVideoFrame, ...],
-) -> BatchItemOutcome:
-    from dataclasses import replace
-
-    frame_indices = tuple(frame.frame_index for frame in frames)
-    frame_timestamps = tuple(frame.timestamp_seconds for frame in frames)
-    if outcome.result is not None:
-        metadata = dict(outcome.result.metadata)
-        metadata["video_frame_indices"] = frame_indices
-        metadata["video_frame_timestamps_seconds"] = frame_timestamps
-        return BatchItemOutcome(
-            index=outcome.index,
-            result=replace(outcome.result, metadata=metadata),
-        )
-
-    assert outcome.error is not None
-    outcome.error._add_safe_detail("video_frame_indices", frame_indices)
-    outcome.error._add_safe_detail(
-        "video_frame_timestamps_seconds",
-        frame_timestamps,
-    )
-    return outcome
 
 
 def _reject_video_persistence(config: Config) -> None:

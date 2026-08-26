@@ -59,6 +59,7 @@ from ocrllm import (
     recognize_long_mp3,
     recognize_video,
     recognize_video_frames,
+    recognize_video_to_markdown,
     get_capabilities,
     get_provider_error_disposition,
     inspect_video,
@@ -80,7 +81,7 @@ implementation-complete: lazy DashScope catalog validation, atomic file-backed
 image state, opt-in disposition-gated candidate recovery, complete
 attempt-spend disclosure, model-aware credential scheduling, and slot-indexed
 intra-request checkpoints with explicit v1-to-v2 resume identity are shipped.
-Its paid live exit smoke remains open. The former standalone Stage 2
+Its bounded paid live exit was closed by #339. The former standalone Stage 2
 provider-splitting scaffold was removed; audio-specific configuration now lands
 with executable Stage A1 short-MP3 recognition. The bounded direct slice is
 implemented and live-proven: the
@@ -96,15 +97,17 @@ whole-file Files above 300 seconds by default. Its optional
 integer number of minutes; settled state is written under the video-owned output
 root and removed only after a complete clean audio result. Failed and partial
 audio outcomes retain any settled state. Current video calls do not consume
-retained state, so public video resume remains unavailable;
+retained state. The high-level `recognize_video_to_markdown()` call now owns
+one complete video journal, validates all saved media/request identity before
+dispatch, and resumes only missing image/audio work;
 interval mode nevertheless accepts sources through the private 10-hour product
 ceiling. Install `ocrllm[audio]` for both its
 lazy MP3 decoder and interval FFmpeg backend; neither loads during plain import.
 An audio-only resume flag would still replay paid image groups and cannot bind
-an existing output root to the source video or short-audio result. A public
-video resume will be a later high-level fixed-result job owning one temporary
-journal and atomic `result.md` publication. The current three-step API remains
-non-resumable and gains no finalize/discard protocol.
+an existing output root to the source video or short-audio result. The shipped
+high-level job instead owns one temporary journal and atomic `result.md`
+publication. The current three-step API remains non-resumable and gains no
+finalize/discard protocol.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
 legacy-Markdown repair, so ordinary image-sidecar resume remains its recovery
 path.
@@ -761,8 +764,8 @@ captured text, no retry or fallback, and both temporary roots removed.
 
 The authoritative defect register is in
 `../../docs/ACTIVE_STATE_AND_RULES.md`. D1-D7, F1-F4, and G1-G10 are closed in
-offline code and tests. Stage M remains open at its paid live exit smoke, and
-the offline model/account quota distinction is not claimed live-proven. A crash
+offline code and tests. #339 closed Stage M's bounded DashScope live exit; the
+offline model/account quota distinction is not claimed broadly live-proven. A crash
 inside one `recognize()` call preserves completed workflow slots in the atomic
 state sidecar so resume pays only for missing work.
 

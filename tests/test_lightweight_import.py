@@ -74,6 +74,7 @@ def test_public_video_symbols_do_not_load_the_optional_backend():
         "extract_video_audio=ocrllm.extract_video_audio; "
         "recognize_video_frames=ocrllm.recognize_video_frames; "
         "recognize_video=ocrllm.recognize_video; "
+        "recognize_video_to_markdown=ocrllm.recognize_video_to_markdown; "
         "compose_video_result=ocrllm.compose_video_result; "
         "publish_video_result=ocrllm.publish_video_result; "
         "VideoRecognitionOutcome=ocrllm.VideoRecognitionOutcome; "
@@ -86,6 +87,7 @@ def test_public_video_symbols_do_not_load_the_optional_backend():
         "assert callable(extract_video_audio); "
         "assert callable(recognize_video_frames); "
         "assert callable(recognize_video); "
+        "assert callable(recognize_video_to_markdown); "
         "assert callable(compose_video_result); "
         "assert callable(publish_video_result); "
         "assert VideoRecognitionOutcome.__module__ == 'ocrllm.video_recognition_outcome'; "
@@ -210,7 +212,11 @@ def test_public_recognition_callables_survive_explicit_submodule_import(
 
 @pytest.mark.parametrize(
     "submodule_name",
-    ("ocrllm.recognize_video", "ocrllm.recognize_video_frames"),
+    (
+        "ocrllm.recognize_video",
+        "ocrllm.recognize_video_frames",
+        "ocrllm.recognize_video_to_markdown",
+    ),
 )
 def test_public_video_callables_survive_explicit_submodule_import(submodule_name):
     source_root = Path(__file__).resolve().parents[1] / "src"
@@ -219,13 +225,16 @@ def test_public_video_callables_survive_explicit_submodule_import(submodule_name
         "sys.path.insert(0, sys.argv[1]); "
         "import ocrllm; "
         "importlib.import_module(sys.argv[2]); "
-        "from ocrllm import recognize_video, recognize_video_frames; "
+        "from ocrllm import recognize_video, recognize_video_frames, recognize_video_to_markdown; "
         "assert callable(recognize_video), type(recognize_video); "
         "assert callable(recognize_video_frames), type(recognize_video_frames); "
+        "assert callable(recognize_video_to_markdown), type(recognize_video_to_markdown); "
         "assert recognize_video is importlib.import_module("
         "'ocrllm.recognize_video').recognize_video; "
         "assert recognize_video_frames is importlib.import_module("
         "'ocrllm.recognize_video_frames').recognize_video_frames; "
+        "assert recognize_video_to_markdown is importlib.import_module("
+        "'ocrllm.recognize_video_to_markdown').recognize_video_to_markdown; "
         "loaded={name.split('.')[0] for name in sys.modules}; "
         "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
         "assert not loaded & forbidden, loaded & forbidden"

@@ -12,6 +12,9 @@ from ..audio.preflight_long_audio_output_ownership import (
 from ..audio.remove_long_audio_temporary_state import (
     remove_long_audio_temporary_state,
 )
+from ..audio.save_long_audio_partial_state_atomically import (
+    save_long_audio_partial_state_atomically,
+)
 from ..audio.snapshot_long_mp3 import snapshot_long_mp3
 from ..audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT
 from ..config import Config
@@ -84,14 +87,24 @@ def recognize_validated_long_mp3(
                         snapshot,
                         config=config,
                         interval_minutes=interval_minutes,
-                        state_path=paths.resume_state,
+                        persist_state=lambda state: (
+                            save_long_audio_partial_state_atomically(
+                                paths.resume_state,
+                                state,
+                            )
+                        ),
                         saved_state=saved_state,
                     )
                 else:
                     processor_output, current_run_calls = recognize_long_mp3_whole(
                         snapshot,
                         config=config,
-                        state_path=paths.resume_state,
+                        persist_state=lambda state: (
+                            save_long_audio_partial_state_atomically(
+                                paths.resume_state,
+                                state,
+                            )
+                        ),
                         saved_state=saved_state,
                     )
             write_markdown_atomically(

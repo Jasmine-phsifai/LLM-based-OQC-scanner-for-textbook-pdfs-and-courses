@@ -89,14 +89,23 @@ def test_video_interval_snapshot_cleanup_failure_keeps_state_and_exact_call_coun
 
     def settle_intervals(*_args, **kwargs):
         assert kwargs["interval_minutes"] == 3
-        kwargs["state_path"].write_text("paid-prefix", encoding="utf-8")
+        kwargs["persist_state"]("paid-prefix")
         return _settled_output(calls=2), 2
+
+    def save_marker(path, state):
+        assert state == "paid-prefix"
+        path.write_text(state, encoding="utf-8")
 
     monkeypatch.setattr(processor, "snapshot_video_mp3", failing_snapshot)
     monkeypatch.setattr(
         processor,
         "recognize_long_mp3_intervals",
         settle_intervals,
+    )
+    monkeypatch.setattr(
+        processor,
+        "save_long_audio_partial_state_atomically",
+        save_marker,
     )
 
     with pytest.raises(OutputError) as captured:
@@ -126,8 +135,12 @@ def test_video_long_audio_state_unlink_failure_returns_partial_result(
         yield _snapshot(tmp_path)
 
     def settle_whole(*_args, **kwargs):
-        kwargs["state_path"].write_text("settled", encoding="utf-8")
+        kwargs["persist_state"]("settled")
         return _settled_output(calls=1), 1
+
+    def save_marker(path, state):
+        assert state == "settled"
+        path.write_text(state, encoding="utf-8")
 
     real_unlink = Path.unlink
 
@@ -138,6 +151,11 @@ def test_video_long_audio_state_unlink_failure_returns_partial_result(
 
     monkeypatch.setattr(processor, "snapshot_video_mp3", clean_snapshot)
     monkeypatch.setattr(processor, "recognize_long_mp3_whole", settle_whole)
+    monkeypatch.setattr(
+        processor,
+        "save_long_audio_partial_state_atomically",
+        save_marker,
+    )
     monkeypatch.setattr(Path, "unlink", fail_owned_state_unlink)
 
     result = recognize_video_mp3(
@@ -190,7 +208,7 @@ def test_video_whole_state_save_failure_reports_the_completed_provider_call(
     monkeypatch.setattr(processor, "snapshot_video_mp3", clean_snapshot)
     monkeypatch.setattr(whole_processor, "recognize_uploaded_mp3", recognize_once)
     monkeypatch.setattr(
-        whole_processor,
+        processor,
         "save_long_audio_partial_state_atomically",
         fail_state_save,
     )
@@ -221,14 +239,23 @@ def test_video_partial_long_audio_result_keeps_settled_state(
         yield _snapshot(tmp_path)
 
     def settle_intervals(*_args, **kwargs):
-        kwargs["state_path"].write_text("settled", encoding="utf-8")
+        kwargs["persist_state"]("settled")
         return _partial_settled_output(calls=2), 2
+
+    def save_marker(path, state):
+        assert state == "settled"
+        path.write_text(state, encoding="utf-8")
 
     monkeypatch.setattr(processor, "snapshot_video_mp3", clean_snapshot)
     monkeypatch.setattr(
         processor,
         "recognize_long_mp3_intervals",
         settle_intervals,
+    )
+    monkeypatch.setattr(
+        processor,
+        "save_long_audio_partial_state_atomically",
+        save_marker,
     )
 
     result = recognize_video_mp3(

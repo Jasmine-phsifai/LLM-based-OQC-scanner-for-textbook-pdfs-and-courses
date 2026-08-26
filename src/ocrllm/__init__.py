@@ -11,6 +11,9 @@ from .recognize_batch import recognize_batch as recognize_batch
 from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
 from .recognize_video import recognize_video as recognize_video
 from .recognize_video_frames import recognize_video_frames as recognize_video_frames
+from .recognize_video_to_markdown import (
+    recognize_video_to_markdown as recognize_video_to_markdown,
+)
 
 
 if TYPE_CHECKING:
@@ -85,6 +88,9 @@ if TYPE_CHECKING:
         recognize_video_frames as recognize_video_frames,
     )
     from .recognize_video import recognize_video as recognize_video
+    from .recognize_video_to_markdown import (
+        recognize_video_to_markdown as recognize_video_to_markdown,
+    )
     from .retained_video_frame import RetainedVideoFrame as RetainedVideoFrame
     from .result import RecognitionResult as RecognitionResult
     from .video.extract_video_frames import extract_video_frames as extract_video_frames
@@ -193,6 +199,10 @@ _PUBLIC_IMPORTS = {
         "recognize_video_frames",
     ),
     "recognize_video": (".recognize_video", "recognize_video"),
+    "recognize_video_to_markdown": (
+        ".recognize_video_to_markdown",
+        "recognize_video_to_markdown",
+    ),
     "inspect_video": (".video.inspect_video", "inspect_video"),
 }
 
@@ -248,6 +258,7 @@ __all__ = [
     "recognize_long_mp3",
     "recognize_video_frames",
     "recognize_video",
+    "recognize_video_to_markdown",
     "extract_video_frames",
     "extract_video_audio",
     "inspect_video",

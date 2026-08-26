@@ -91,7 +91,7 @@ def test_new_whole_run_saves_before_atomic_publication_then_removes_state(
 ) -> None:
     output_dir = tmp_path / "out"
     provider_calls: list[str] = []
-    processor, whole_processor = _install_fakes(monkeypatch, provider_calls)
+    processor, _whole_processor = _install_fakes(monkeypatch, provider_calls)
     events: list[str] = []
     output_module = __import__(
         "ocrllm.output.write_markdown_atomically",
@@ -112,10 +112,9 @@ def test_new_whole_run_saves_before_atomic_publication_then_removes_state(
         output_module.write_markdown_atomically(path, markdown, overwrite=overwrite)
 
     monkeypatch.setattr(
-        whole_processor,
+        processor,
         "save_long_audio_partial_state_atomically",
         observed_save,
-        raising=False,
     )
     monkeypatch.setattr(
         processor,
@@ -301,7 +300,7 @@ def test_whole_state_save_failure_reports_the_completed_provider_call(
 ) -> None:
     output_dir = tmp_path / "out"
     provider_calls: list[str] = []
-    _, whole_processor = _install_fakes(monkeypatch, provider_calls)
+    processor, _whole_processor = _install_fakes(monkeypatch, provider_calls)
 
     def fail_state_save(*_args, **_kwargs):
         raise OutputError(
@@ -310,7 +309,7 @@ def test_whole_state_save_failure_reports_the_completed_provider_call(
         )
 
     monkeypatch.setattr(
-        whole_processor,
+        processor,
         "save_long_audio_partial_state_atomically",
         fail_state_save,
     )

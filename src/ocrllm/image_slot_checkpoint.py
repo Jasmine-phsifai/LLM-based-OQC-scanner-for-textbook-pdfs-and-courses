@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from .image_request_identity import ImageRequestIdentity
 from .image_resume_state import IMAGE_RESUME_STATE_VERSION, ImageResumeState
 from .image_slot_state import ImageSlotState
-from .output.save_image_resume_state_atomically import (
-    save_image_resume_state_atomically,
-)
 
 
 class ImageSlotCheckpoint:
@@ -23,14 +21,14 @@ class ImageSlotCheckpoint:
     def __init__(
         self,
         identity: ImageRequestIdentity,
-        state_path: Path,
         *,
+        persist_state: Callable[[ImageResumeState], None],
         profile: str,
         snapshot_paths: tuple[Path, ...],
         seeded_slots: tuple[ImageSlotState, ...] = (),
     ) -> None:
         self._identity = identity
-        self._state_path = state_path
+        self._persist_state = persist_state
         self._profile = profile
         self._snapshot_paths = snapshot_paths
         self._slots: dict[str, ImageSlotState] = {
@@ -75,7 +73,7 @@ class ImageSlotCheckpoint:
             warnings=(),
             slots=tuple(candidate_slots.values()),
         )
-        save_image_resume_state_atomically(self._state_path, state)
+        self._persist_state(state)
         self._slots = candidate_slots
 
     def verify_snapshots(self) -> None:

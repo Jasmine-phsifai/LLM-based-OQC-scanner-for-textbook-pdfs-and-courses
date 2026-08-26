@@ -1633,6 +1633,17 @@ runtime slice must consume its journal end to end and reuse settled frame-group
 workflow slots plus short/whole/interval audio work; no orphan schema or easier
 publication-only/audio-only facade was added.
 
+#374 implements and offline-proves that first complete consumer. The public
+`recognize_video_to_markdown()` facade owns one normalized source-stem root,
+one temporary journal, fixed `result.md`, and separate image/audio configs. It
+validates the complete saved source, retained-frame plan, image workflow state,
+and short/whole/interval audio state before resumed provider dispatch; settled
+paid units are reused with zero replay. Exact no-audio/no-speech settle
+terminally, recoverable gaps retain state, and publication-plus-journal cleanup
+can finish on zero-call resume. Whole audio remains default and interval mode
+accepts only positive integer minutes. No provider framework, fallback, retry,
+repair parser, crop, generic transaction, or cross-process lock was added.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

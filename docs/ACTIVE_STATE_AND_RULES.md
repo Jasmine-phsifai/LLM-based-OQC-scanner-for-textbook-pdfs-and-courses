@@ -98,10 +98,12 @@ audio branch without changing its independent image configuration. Whole remains
 the default; exact positive integer `audio_interval_minutes` enables serial
 intervals. Video owns one temporary sidecar directly under its output root,
 retains paid prefixes on failure, removes it after clean audio/snapshot success,
-and never nests the standalone audio publication. Public video resume is not yet
-available. #347 closes the former terminal choice in favor of a later high-level
-resumable video job owning fixed `result.md` publication and one temporary
-journal; the current three-step API remains non-resumable. It also corrects the
+and never nests the standalone audio publication. #374 now exposes the
+high-level `recognize_video_to_markdown()` consumer: it owns fixed `result.md`
+and one temporary journal, validates saved source/media/request identity before
+resumed dispatch, and reuses settled image plus short/whole/interval audio work
+without replay. The current three-step API remains non-resumable. #347 closed
+the former terminal choice in favor of that high-level job. It also corrects the
 private duration boundary: whole Google Files requests still stop at 9.5 hours,
 while explicitly selected integer-minute interval mode admits sources through
 the product's 10-hour ceiling. Temporary mode and interval identity remain only
@@ -246,8 +248,9 @@ Content repair is not implemented; #120 selected ordinary resume and explicitly
 rejected legacy-Markdown compatibility. With the Stage M DashScope live exit
 closed by #339, #341 preserves the existing separate image/audio configs while
 allowing a video's audio branch to select the already-proven whole or
-exact-integer-minute interval path. Retained video sidecars are future resume
-groundwork only; the public call cannot consume them yet.
+exact-integer-minute interval path. #374's high-level
+`recognize_video_to_markdown()` now consumes one complete video journal and
+reuses settled image and audio work; the three-step API remains non-resumable.
 The built-in Google and DashScope adapters report per-model input/output token
 usage when their endpoint supplies it. Public injected providers
 return Markdown strings and make no token-usage claim. Existing attempt disclosure
@@ -7222,3 +7225,31 @@ must create, read, and remove its one journal itself; preserve complete-frame
 selection plus image workflow slots and short/whole/interval audio settlement;
 resume without redispatching settled units; and publish only after #371's
 terminal gate. This planning iteration changed no runtime or public export.
+
+## Current working update: #374 ships the resumable-video vertical slice
+
+`recognize_video_to_markdown()` implements the exact #373 public contract. One
+normalized source-stem directory owns retained full-frame JPEGs, optional
+`audio.mp3`, fixed `result.md`, and one temporary
+`.ocrllm-video-resume.json`. A new run journals the complete frame plan and
+pending-audio fact before provider work. Resume validates source bytes, every
+retained frame, image request identities and completed workflow slots, and the
+audio artifact/model/mode plus complete long-audio request plan before either
+provider dispatches.
+
+The image and audio configs remain independent. A failure or cancellation in
+one branch does not discard paid state settled by the other. Exact no-audio and
+no-speech are persisted terminal outcomes. Final Markdown is published only
+after no recoverable gap remains; its digest is journaled first, so a
+result-plus-journal cleanup failure resumes with zero provider calls. Whole
+audio remains the default. Explicit interval mode accepts only positive integer
+minutes; mode and minutes exist only as temporary resume identity and disappear
+with successful journal cleanup.
+
+Repair remains a small side path which derives failed time ranges from failure
+text; it must not depend on this journal or its saved interval parameter. This
+slice adds no generalized transaction, cross-process lock, retry, provider
+fallback, provider-class hierarchy, legacy-format compatibility, crop, or
+second batch abstraction. Provider-class generalization and multi-provider
+fallback remain future constraints after the recognition library is stable,
+not #374 runtime work.

@@ -40,6 +40,7 @@ def publish_video_result(
             *composed.assets,
             outcome.output_root / "audio.mp3",
             outcome.output_root / ".ocrllm-video-audio-resume.json",
+            outcome.output_root / ".ocrllm-video-resume.json",
         ),
     )
 
