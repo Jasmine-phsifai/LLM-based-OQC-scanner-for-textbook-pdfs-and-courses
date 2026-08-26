@@ -6523,3 +6523,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **两条路线与最小实现。** 路线 A 改变 whole/interval 返回形状、制造半成品 `ProcessorOutput` 或增加 durable response/transaction；路线 B 直接使用刚构造并已通过 dataclass 校验的 `LongAudioSettledSlot`。选择 B。`attach_long_audio_slot_evidence_to_error()` 只为失败保存的这一 slot 补现有 `settled_model_usage` 形状，以及值确为 bool 的 remote/client cleanup；错误已有同名字段时不覆盖。whole 与 interval 只在 `persist_state(...)` 的 typed error 周围调用，因此不聚合已保存 prefix，不改变 provider、materializer cleanup、publication 或普通 resume 错误。共享 processor 也自然覆盖 video journal callback，无第二套实现。
 
 **验证与过度设计复查。** 两条文件完整为 **24 passed in 0.26s**。第一次扩大命令误写了不存在的 `tests/test_compose_long_audio_interval_output.py`，pytest 在执行前停止，不能算产品结果；改用实际文件后，覆盖 long-audio whole/interval/state/load/save/reuse、Google adapter、video long-audio settlement 和高层 video facade 的集合为 **124 passed in 1.51s**。冻结 runtime/test 工作树后由轻量执行者完成完整离线门禁：**1,832 passed in 79.53s**，0 失败、0 跳过；没有修改文件或访问外部/受保护资源。没有新增 telemetry framework、事件 ledger、state schema、半成品结果、response cache、retry/fallback 或 transaction；helper 恰有 whole/interval 两个当前消费者，而且删除了未来最容易漂移的重复错误 detail 组装。
+
+## #385 — 2026-08-26：再次核对黑板定位与画面裁剪已彻底移除
+
+**本轮英文原子任务。** `Atomic task — remove obsolete blackboard-corner detection, ROI cropping, contour cropping, and perspective correction from both the legacy app and active library wherever they remain, including video frames and PDF-rendered pages. Preserve temporal frame selection, complete-frame proportional resizing, and complete-page rendering.`
+
+**优先级、假设与事实。** 维护者再次明确，多块分离黑板、滑动黑板以及黑板与投影幕布并存时不存在可靠的自动四角；裁剪既可能丢失有效内容，也可能降低画质。本轮因此暂停尚未改动代码、也未调用 provider 的短音频清理信息检查，优先复核两代产品。路线 A 是保留模块但关闭入口，路线 B 是删除模块、入口和配置；产品规则选择 B。当前树已经由 `3c09cde`、`efa256e`、`3230b2b` 完成这条路线：legacy 的自动/手动四边形、透视变换、视频 `board_roi`、ROI 遮挡判断和相关配置入口均已删除；active library 从未迁入这套工序。两项独立只读审计与本人逐条调用链复核均未发现可达的角点、轮廓、ROI、裁剪或透视代码。
+
+**保留边界。** legacy 普通图片只原样复制或对完整画面等比例缩小；视频比较缩略图只决定时间点，最终保存的是完整解码帧；PDF 使用统一比例渲染完整页面且不传裁剪区域。active 普通图片按字节快照，视频 writer 直接编码完整帧，PDFium 只按统一 scale 渲染整页。OCR 文本框排序和质量测试中故意制造透视畸变的素材生成器都不改变生产识别图片，不应删除。旧 repair manifest 的 `skip_preprocess` 只读字段不能触发任何裁剪；删除它只会破坏旧修复记录，不会加强当前规则。
+
+**验证与过度设计复查。** 第一次聚焦命令误用了已经不存在的 `test_pdf_backend.py` 和 `test_pdf_fresh_process.py`，两套 pytest 均在执行前停止，不能算验证。按当前文件名重跑后，active 视频完整帧、PDF backend 与 PDF 识别为 **51 passed in 4.71s**；legacy 完整图片和 PDF fresh-process 为 **5 passed in 4.67s**。当前没有运行时代码可删；继续增加运行时反裁剪守卫、源码禁词扫描、no-crop wrapper 或新的图像身份框架，会重复已经由删除和四角像素回归证明的规则，属于过度设计。本轮只记录重新确认，不修改产品代码、测试、API、依赖或输出布局。
