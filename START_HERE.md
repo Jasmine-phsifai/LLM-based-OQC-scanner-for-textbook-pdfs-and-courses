@@ -80,8 +80,12 @@ longer than the current 9.5-hour single-prompt limit. It owns the source,
 uploads once, waits within the configured timeout, generates once, deletes the
 remote file, and closes the client. #297 integrates these existing short and
 long adapters into `recognize_video()`: one owned extracted MP3 is decoded once,
-then exactly one adapter is selected at 300 seconds. Chunking, resume, fallback,
-and batch/worker support remain later gates. #152 now selects Route B
+then exactly one adapter is selected at 300 seconds. Standalone long audio now
+supports proven whole-file persistence and exact-integer-minute interval resume,
+but video still uses only the memory-only whole-file adapter for long audio;
+connecting those existing processors without duplicating publication/state is
+the next video consumer after the bounded DashScope live exit. Fallback and
+batch/worker support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval
 length is configurable only in integer minutes and belongs to temporary resume
 state. #304 closes the last identity choice: interval chunks use a private fixed

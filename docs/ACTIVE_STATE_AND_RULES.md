@@ -91,13 +91,18 @@ real failure as upload `ReadTimeout` without exposing SDK text. #337 maps that
 family to retryable `PROVIDER_TIMEOUT`; one bounded caller-owned resume then
 reused the settled prefix, made exactly one missing generation call, published
 the final result, and removed temporary state. The Google interval live gate is
-closed. The route does not alter A1 or route video. A1 did
-not wait on the independent Stage M paid image smoke. Bounded Google image and
-audio live tests are already authorized without a separate budget request.
-DashScope live work may reuse the credential stored by the legacy UI for one
-declared, bounded atomic trial. Discover the current catalog first, cap calls,
-and do not interpret that authorization as an unlimited paid run; its canonical
-Beijing endpoint is already confirmed.
+closed. The route does not alter A1 or route video. The current execution order
+is now explicit: first close the already-built Stage M DashScope live gate with
+one bounded catalog-driven trial; then connect the proven whole/interval
+long-audio processors to the existing video audio branch without changing its
+independent image configuration. Bounded Google image and audio live tests are
+already authorized without a separate budget request. DashScope live work may
+reuse the credential stored by the legacy UI for one declared atomic trial, but
+the active library must not read legacy UI state itself. Discover the current
+catalog first, cap recognition calls, prefer a justified smaller model aimed at
+formula/LaTeX/Mermaid/reasoning gaps, and exclude both models clearly worse than
+RapidOCR for ordinary OCR and current oversized flagships. This is not an
+unlimited paid run; the canonical Beijing endpoint is already confirmed.
 The A1 probe uses lazy `miniaudio>=1.71,<2` for MP3-specific metadata plus
 bounded-memory full decode. FFmpeg, PyAV, Mutagen, and external executable
 requirements remain outside the A1 runtime. The probe rejects malformed or
@@ -227,8 +232,11 @@ Google short-audio path for one MP3 of at most 300 seconds. Its PDF vision slice
 is proven offline, in an installed wheel, and live through Google; it renders all
 pages through PDFium and reuses the image/resume path in serial groups of eight.
 Content repair is not implemented; #120 selected ordinary resume and explicitly
-rejected legacy-Markdown compatibility. The queue now advances to the bounded
-video-library slice recorded below. The Google adapters report per-model
+rejected legacy-Markdown compatibility. After the bounded Stage M DashScope
+live exit, the queue advances to the next video-library consumer: preserve the
+existing separate image/audio configs while allowing a long video's audio
+branch to select the already-proven whole or exact-integer-minute interval path.
+The Google adapters report per-model
 input/output token usage when the endpoint supplies it. Public injected providers
 return Markdown strings and make no token-usage claim. Existing attempt disclosure
 counts provider
@@ -6355,6 +6363,33 @@ Windows 回收站。该操作可恢复，没有永久删除或触碰其他目录
 但一次成功不自动选择库内“重试六次”。自动次数、退避和 multi-provider fallback
 仍应在 provider 泛化阶段依据更多实际错误分别决定；当前路线已经做到错误诚实、
 付费前缀不丢和恢复不重放。
+
+## Iteration 338：重新收敛 DashScope 与视频长音频的执行顺序
+
+本轮只读复核 current authority、公开视频 facade、长音频 facade/processor 和直接
+回归后，撤回“图片/音频 provider separation 尚未实现”的初始假设。公开
+`recognize_video()` 已要求两个独立 `Config`，真实和离线证据也已证明不同模型、
+分支独立结算和部分结果保留；继续增加视频专用 provider 层会重复设计。
+
+两条可行路线是：A 立即把 standalone `recognize_long_mp3()` 直接塞入视频；B 先关闭
+已建但尚未 live 退出的 Stage M DashScope，再为视频复用现有 long-audio processor
+设计一个窄接缝。选择 B。standalone facade 自己认领同名输出目录并发布
+`result.md`，直接嵌套会与视频的输出根、composition 和 publication 职责冲突。
+下一视频实现必须保留当前 whole 默认路径，同时只用精确正整数分钟显式开启 interval；
+恢复参数只存在于临时 sidecar，成功后可删除。repair 仍是以后从失败文字提取明确
+时间范围的小侧链，不依赖该 sidecar，也不进入本次主路径。
+
+当前顺序因此是：①轻量执行者在确认 WinINET、`127.0.0.1:10080` TCP 和显式代理
+HTTPS 后，通过隔离控制器读取 legacy UI 已保存凭据，实时发现 DashScope 模型并执行
+一个有明确调用上限的原子识别；候选优先有公式、LaTeX、Mermaid 或推理价值的较小
+模型，排除明显弱于 RapidOCR 的普通 OCR 模型和最新超大旗舰。②再以失败优先测试
+定义视频 long-audio 窄接缝及输出/state 所有权，随后补一个有可见文字与可听语音的
+301 秒以上 bounded live gate。下载、长门禁和机械等待继续交给轻量执行者；主线程
+同时复核代码与文档。
+
+过度设计复查：本轮没有 runtime、API、state schema、provider class、retry、fallback、
+repair parser 或 worker 变更。最危险的两条过度设计路线分别是重复构造视频 provider
+层，以及让 standalone 音频 publication 嵌套进视频 publication；两者均明确拒绝。
 
 ## Documentation Rules
 

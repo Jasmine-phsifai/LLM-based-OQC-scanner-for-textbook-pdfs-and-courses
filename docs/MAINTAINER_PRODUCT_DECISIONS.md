@@ -652,6 +652,10 @@ is often accepted.
   [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-d--minimal-pdf-repair-after-stable-markers).
   #080 proved that one failed-range marker cannot recover an unattempted suffix
   under the current serial fail-fast loop; #102 narrowed the remaining decision
-  to historical explicitly marked Markdown compatibility. #120 answered no;
-  the next authority is the ordered P1-e video slice, not repair or provider
-  generalization.
+  to historical explicitly marked Markdown compatibility. #120 answered no.
+  #338 reconfirms that image/audio provider separation is already shipped
+  through two independent video configs. The current order is one bounded Stage
+  M DashScope live exit, then the next P1-e consumer: reuse the proven
+  whole/interval long-audio processors in video without nesting the standalone
+  audio publication or creating provider generalization. Repair remains a later
+  narrow side path.
