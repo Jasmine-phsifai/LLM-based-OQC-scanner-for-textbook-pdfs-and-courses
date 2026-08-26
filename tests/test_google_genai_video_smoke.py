@@ -55,11 +55,12 @@ def _audio_result(
     include_usage: bool = False,
     model: str = AUDIO_MODEL,
     transport: str = "google_inline",
+    provider_calls: int = 1,
 ) -> RecognitionResult:
     metadata: dict[str, object] = {
         "provider": "google",
         "model": model,
-        "provider_call_count": 1,
+        "provider_call_count": provider_calls,
         "duration_seconds": 1.0,
         "provider_client_closed": True,
     }
@@ -98,6 +99,7 @@ def _build_outcome(
     retained_count: int = 1,
     frame_group_count: int = 1,
     audio_transport: str = "google_inline",
+    audio_provider_calls: int = 1,
 ) -> VideoRecognitionOutcome:
     output_root = output_dir / "video"
     frames_dir = output_root / "frames"
@@ -156,6 +158,7 @@ def _build_outcome(
                 include_usage=include_usage,
                 model=audio_model,
                 transport=audio_transport,
+                provider_calls=audio_provider_calls,
             )
             if audio_error is None
             else None
@@ -170,6 +173,9 @@ def _arguments(
     audio_model: str = AUDIO_MODEL,
     expected_frame_group_count: int = 1,
     expected_audio_transport: str = "google_inline",
+    audio_interval_minutes: int | None = None,
+    expected_audio_calls: int | None = None,
+    output_dir: Path | None = None,
 ) -> argparse.Namespace:
     return argparse.Namespace(
         image_model=image_model,
@@ -178,6 +184,9 @@ def _arguments(
         timeout=9.0,
         expected_frame_group_count=expected_frame_group_count,
         expected_audio_transport=expected_audio_transport,
+        audio_interval_minutes=audio_interval_minutes,
+        expected_audio_calls=expected_audio_calls,
+        output_dir=output_dir,
     )
 
 
@@ -237,6 +246,166 @@ def test_video_smoke_rejects_unbounded_expected_group_counts(
                 invalid_count,
             ]
         )
+
+
+def test_video_smoke_parses_one_strict_interval_contract(tmp_path: Path) -> None:
+    output_dir = tmp_path / "live-output"
+    arguments = smoke.parse_arguments(
+        [
+            "--image-model",
+            IMAGE_MODEL,
+            "--audio-model",
+            AUDIO_MODEL,
+            "--expected-audio-transport",
+            "google_files",
+            "--video",
+            "controlled.mp4",
+            "--expected-frame-groups",
+            "1",
+            "--audio-interval-minutes",
+            "3",
+            "--expected-audio-calls",
+            "2",
+            "--output-dir",
+            str(output_dir),
+        ]
+    )
+
+    assert arguments.audio_interval_minutes == 3
+    assert arguments.expected_audio_calls == 2
+    assert arguments.output_dir == output_dir
+
+
+@pytest.mark.parametrize(
+    "extra",
+    (
+        ("--audio-interval-minutes", "3"),
+        ("--expected-audio-calls", "2"),
+        ("--output-dir", "owned-output"),
+        (
+            "--audio-interval-minutes",
+            "3",
+            "--expected-audio-calls",
+            "2",
+        ),
+        (
+            "--audio-interval-minutes",
+            "03",
+            "--expected-audio-calls",
+            "2",
+            "--output-dir",
+            "owned-output",
+        ),
+    ),
+)
+def test_video_smoke_rejects_incomplete_or_noncanonical_interval_contract(extra):
+    with pytest.raises(SystemExit):
+        smoke.parse_arguments(
+            [
+                "--image-model",
+                IMAGE_MODEL,
+                "--audio-model",
+                AUDIO_MODEL,
+                "--expected-audio-transport",
+                "google_files",
+                "--video",
+                "controlled.mp4",
+                "--expected-frame-groups",
+                "1",
+                *extra,
+            ]
+        )
+
+
+def test_video_interval_smoke_propagates_owned_output_and_exact_call_count(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_catalog(monkeypatch)
+    output_dir = tmp_path / "live-output"
+    observed: list[tuple[Path, int]] = []
+
+    def fake_recognize_video(
+        source,
+        *,
+        output_dir,
+        image_config,
+        audio_config,
+        audio_interval_minutes,
+    ):
+        observed.append((Path(output_dir), audio_interval_minutes))
+        return _build_outcome(
+            Path(output_dir),
+            private_markdown="PRIVATE INTERVAL VIDEO",
+            audio_transport="google_files",
+            audio_provider_calls=2,
+        )
+
+    monkeypatch.setattr(smoke, "recognize_video", fake_recognize_video)
+
+    summary = smoke.run_google_genai_video_smoke(
+        _arguments(
+            expected_audio_transport="google_files",
+            audio_interval_minutes=3,
+            expected_audio_calls=2,
+            output_dir=output_dir,
+        )
+    )
+
+    assert observed == [(output_dir, 3)]
+    assert summary["status"] == "passed"
+    assert summary["preflight"]["audio_interval_minutes"] == 3
+    assert summary["preflight"]["expected_audio_calls"] == 2
+    assert summary["audio"]["provider_calls_attempted"] == 2
+
+
+def test_video_interval_smoke_rejects_leftover_temporary_state(
+    tmp_path: Path,
+) -> None:
+    outcome = _build_outcome(
+        tmp_path,
+        private_markdown="PRIVATE INTERVAL VIDEO",
+        audio_transport="google_files",
+        audio_provider_calls=2,
+    )
+    (outcome.output_root / ".ocrllm-video-audio-resume.json").write_text(
+        "private-state",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="temporary state"):
+        smoke._safe_video_summary(
+            outcome,
+            image_model=IMAGE_MODEL,
+            audio_model=AUDIO_MODEL,
+            expected_audio_transport="google_files",
+            expected_audio_calls=2,
+            audio_interval_minutes=3,
+            catalog_count=2,
+            preflight_retained_count=1,
+            expected_frame_group_count=1,
+        )
+
+
+def test_video_smoke_preserves_safe_interval_failure_progress() -> None:
+    summary = smoke._safe_error(
+        ProviderError(
+            code="PROVIDER_TIMEOUT",
+            details={
+                "provider_calls_attempted": 2,
+                "persisted_interval_count": 1,
+                "provider_operation": "upload",
+                "provider_sdk_type": "ReadTimeout",
+            },
+        ),
+        "audio_recognition",
+        2,
+    )
+
+    assert summary["provider_calls_attempted"] == 2
+    assert summary["persisted_interval_count"] == 1
+    assert summary["operation"] == "upload"
+    assert summary["sdk_type"] == "ReadTimeout"
 
 
 def test_video_smoke_reports_complete_branches_and_cleans_owned_artifacts(

@@ -89,7 +89,10 @@ supports proven whole-file persistence and exact-integer-minute interval resume.
 #341 reuses those settlement functions in video without nesting standalone
 publication: whole remains the default, while `audio_interval_minutes` selects
 serial intervals and stores paid prefixes under the video root until clean
-success. Public video resume is not yet exposed. Fallback and batch/worker
+success. #342 extends only the maintained redacted Google video runner so one
+bounded live gate can require an exact interval and exact audio-call count while
+retaining caller-owned failure state for inspection. Public video resume is not
+yet exposed. Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval
 length is configurable only in integer minutes and belongs to temporary resume

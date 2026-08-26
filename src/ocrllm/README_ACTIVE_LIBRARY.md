@@ -619,6 +619,18 @@ For a settled outcome to pass, its retained count must match the preflight and
 its image group/call count must match the explicit expectation. This extra
 local frame pass is a runner safety check, not part of `recognize_video()` and
 not a new public planning API.
+
+To exercise the explicit video-audio interval route, also pass the three
+arguments `--audio-interval-minutes N`, `--expected-audio-calls M`, and
+`--output-dir PATH` together. `N` and `M` are canonical positive integers, the
+expected transport must be `google_files`, and `PATH` must be a caller-owned
+test directory. The runner checks the exact audio call count against the
+recognized duration and interval, and a passing outcome must have removed the
+video audio sidecar without creating a nested standalone `result.md`. On a
+failure the caller-owned directory remains available for bounded inspection of
+the resumable state; the JSON output still exposes only allowlisted error facts
+and never prints the directory or saved Markdown. This is a live-test control,
+not a second public interval or resume API.
 The #186 robustness run retained three equal-luminance color scenes and made one
 image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.

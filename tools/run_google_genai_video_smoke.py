@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import tempfile
 from collections.abc import Mapping, Sequence
@@ -63,6 +64,9 @@ _SAFE_LIFECYCLE_DETAIL_NAMES = (
     "provider_client_closed",
     "provider_client_cleanup_failed",
 )
+_SAFE_PROVIDER_OPERATIONS = frozenset(
+    {"client_setup", "catalog", "upload", "processing", "generation"}
+)
 
 
 class _LiveSmokeFailure(Exception):
@@ -93,7 +97,38 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
         dest="expected_frame_group_count",
     )
     parser.add_argument("--timeout", type=float, default=120.0)
-    return parser.parse_args(argv)
+    parser.add_argument("--audio-interval-minutes", type=_positive_integer)
+    parser.add_argument("--expected-audio-calls", type=_positive_integer)
+    parser.add_argument("--output-dir", type=Path)
+    arguments = parser.parse_args(argv)
+    interval_values = (
+        arguments.audio_interval_minutes,
+        arguments.expected_audio_calls,
+        arguments.output_dir,
+    )
+    if any(value is not None for value in interval_values) and not all(
+        value is not None for value in interval_values
+    ):
+        parser.error(
+            "--audio-interval-minutes, --expected-audio-calls, and "
+            "--output-dir must be used together"
+        )
+    if (
+        arguments.audio_interval_minutes is not None
+        and arguments.expected_audio_transport != "google_files"
+    ):
+        parser.error("video audio intervals require google_files transport")
+    return arguments
+
+
+def _positive_integer(raw: str) -> int:
+    try:
+        value = int(raw)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a positive integer") from None
+    if value <= 0 or str(value) != raw:
+        raise argparse.ArgumentTypeError("must be a positive integer") from None
+    return value
 
 
 def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, object]:
@@ -136,31 +171,21 @@ def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, obj
             ) from None
 
     try:
+        if arguments.audio_interval_minutes is not None:
+            return _run_video_recognition(
+                arguments,
+                output_dir=arguments.output_dir,
+                catalog_count=len(models),
+                preflight_retained_count=preflight_retained_count,
+            )
         with tempfile.TemporaryDirectory(
             prefix="ocrllm-google-video-smoke-"
         ) as temporary_root:
-            outcome = recognize_video(
-                arguments.video,
+            return _run_video_recognition(
+                arguments,
                 output_dir=Path(temporary_root) / "output",
-                image_config=Config(
-                    provider=GoogleGenAISettings(),
-                    vision_model=VisionModelSettings(name=arguments.image_model),
-                    timeout_seconds=arguments.timeout,
-                ),
-                audio_config=Config(
-                    provider=GoogleGenAISettings(),
-                    audio_model=AudioModelSettings(name=arguments.audio_model),
-                    timeout_seconds=arguments.timeout,
-                ),
-            )
-            return _safe_video_summary(
-                outcome,
-                image_model=arguments.image_model,
-                audio_model=arguments.audio_model,
-                expected_audio_transport=arguments.expected_audio_transport,
                 catalog_count=len(models),
                 preflight_retained_count=preflight_retained_count,
-                expected_frame_group_count=arguments.expected_frame_group_count,
             )
     except OCRLLMError as error:
         raise _LiveSmokeFailure("video_orchestration", error) from None
@@ -168,6 +193,47 @@ def run_google_genai_video_smoke(arguments: argparse.Namespace) -> dict[str, obj
         raise
     except Exception:
         raise _LiveSmokeFailure("video_orchestration", None) from None
+
+
+def _run_video_recognition(
+    arguments: argparse.Namespace,
+    *,
+    output_dir: Path,
+    catalog_count: int,
+    preflight_retained_count: int,
+) -> dict[str, object]:
+    video_options: dict[str, object] = {}
+    if arguments.audio_interval_minutes is not None:
+        video_options["audio_interval_minutes"] = arguments.audio_interval_minutes
+    outcome = recognize_video(
+        arguments.video,
+        output_dir=output_dir,
+        image_config=Config(
+            provider=GoogleGenAISettings(),
+            vision_model=VisionModelSettings(name=arguments.image_model),
+            timeout_seconds=arguments.timeout,
+        ),
+        audio_config=Config(
+            provider=GoogleGenAISettings(),
+            audio_model=AudioModelSettings(name=arguments.audio_model),
+            timeout_seconds=arguments.timeout,
+        ),
+        **video_options,
+    )
+    expected_audio_calls = arguments.expected_audio_calls
+    if expected_audio_calls is None:
+        expected_audio_calls = 1
+    return _safe_video_summary(
+        outcome,
+        image_model=arguments.image_model,
+        audio_model=arguments.audio_model,
+        expected_audio_transport=arguments.expected_audio_transport,
+        expected_audio_calls=expected_audio_calls,
+        audio_interval_minutes=arguments.audio_interval_minutes,
+        catalog_count=catalog_count,
+        preflight_retained_count=preflight_retained_count,
+        expected_frame_group_count=arguments.expected_frame_group_count,
+    )
 
 
 def _preflight_video_frames(source: Path) -> tuple[int, int]:
@@ -192,6 +258,8 @@ def _safe_video_summary(
     image_model: str,
     audio_model: str,
     expected_audio_transport: str,
+    expected_audio_calls: int = 1,
+    audio_interval_minutes: int | None = None,
     catalog_count: int,
     preflight_retained_count: int,
     expected_frame_group_count: int,
@@ -201,13 +269,18 @@ def _safe_video_summary(
             "Google video smoke returned an unexpected outcome boundary.",
             code="CONFIG_INVALID",
         ) from None
-    _validate_owned_artifacts(outcome)
+    _validate_owned_artifacts(
+        outcome,
+        require_audio_state_removed=audio_interval_minutes is not None,
+    )
 
     frames = _safe_frame_summary(outcome, image_model)
     audio = _safe_audio_summary(
         outcome,
         audio_model,
         expected_audio_transport,
+        expected_calls=expected_audio_calls,
+        interval_minutes=audio_interval_minutes,
     )
     composition = _safe_composition_summary(
         outcome,
@@ -220,7 +293,7 @@ def _safe_video_summary(
         and frames["group_count"] == expected_frame_group_count
         and frames["provider_calls_attempted"] == expected_frame_group_count
         and audio["status"] == "recognized"
-        and audio["provider_calls_attempted"] == 1
+        and audio["provider_calls_attempted"] == expected_audio_calls
         and audio["transport"] == expected_audio_transport
         and audio["provider_client_closed"] is True
         and (
@@ -229,6 +302,13 @@ def _safe_video_summary(
         )
         and composition["status"] == "complete"
     )
+    preflight: dict[str, object] = {
+        "retained_count": preflight_retained_count,
+        "expected_frame_group_count": expected_frame_group_count,
+    }
+    if audio_interval_minutes is not None:
+        preflight["audio_interval_minutes"] = audio_interval_minutes
+        preflight["expected_audio_calls"] = expected_audio_calls
     return {
         "report_type": "video_outcome",
         "status": "passed" if passed else "failed",
@@ -236,17 +316,18 @@ def _safe_video_summary(
         "image_model": image_model,
         "audio_model": audio_model,
         "outcome_status": outcome.status,
-        "preflight": {
-            "retained_count": preflight_retained_count,
-            "expected_frame_group_count": expected_frame_group_count,
-        },
+        "preflight": preflight,
         "frames": frames,
         "audio": audio,
         "composition": composition,
     }
 
 
-def _validate_owned_artifacts(outcome: VideoRecognitionOutcome) -> None:
+def _validate_owned_artifacts(
+    outcome: VideoRecognitionOutcome,
+    *,
+    require_audio_state_removed: bool = False,
+) -> None:
     if not outcome.output_root.is_dir() or any(
         not frame.path.is_file() for frame in outcome.retained_frames
     ):
@@ -257,6 +338,15 @@ def _validate_owned_artifacts(outcome: VideoRecognitionOutcome) -> None:
     if outcome.audio_artifact is not None and not outcome.audio_artifact.is_file():
         raise ConfigError(
             "Google video smoke did not retain its audio artifact.",
+            code="CONFIG_INVALID",
+        ) from None
+    if require_audio_state_removed and (
+        (outcome.output_root / ".ocrllm-video-audio-resume.json").exists()
+        or (outcome.output_root / "audio" / "result.md").exists()
+        or (outcome.output_root / "result.md").exists()
+    ):
+        raise ConfigError(
+            "Google video smoke retained temporary state or nested publication.",
             code="CONFIG_INVALID",
         ) from None
 
@@ -305,9 +395,17 @@ def _safe_audio_summary(
     outcome: VideoRecognitionOutcome,
     model: str,
     expected_transport: str,
+    *,
+    expected_calls: int = 1,
+    interval_minutes: int | None = None,
 ) -> dict[str, object]:
     if outcome.audio_result is not None:
-        count = _result_call_count(outcome.audio_result, "audio", model)
+        count = _result_call_count(
+            outcome.audio_result,
+            "audio",
+            model,
+            expected_count=expected_calls,
+        )
         metadata = outcome.audio_result.metadata
         duration_seconds = metadata.get("duration_seconds")
         client_closed = metadata.get("provider_client_closed")
@@ -331,6 +429,13 @@ def _safe_audio_summary(
             ):
                 raise ConfigError(
                     "Google video smoke returned unexpected Files audio evidence.",
+                    code="CONFIG_INVALID",
+                ) from None
+            if interval_minutes is not None and math.ceil(
+                duration_seconds / (interval_minutes * 60)
+            ) != expected_calls:
+                raise ConfigError(
+                    "Google video smoke returned unexpected interval call evidence.",
                     code="CONFIG_INVALID",
                 ) from None
         else:
@@ -457,7 +562,13 @@ def _safe_model_token_usage(
     return safe_usage
 
 
-def _result_call_count(result: Any, source_type: str, model: str) -> int:
+def _result_call_count(
+    result: Any,
+    source_type: str,
+    model: str,
+    *,
+    expected_count: int = 1,
+) -> int:
     metadata = result.metadata
     count = metadata.get("provider_call_count")
     if (
@@ -466,7 +577,7 @@ def _result_call_count(result: Any, source_type: str, model: str) -> int:
         or metadata.get("provider") != "google"
         or metadata.get("model") != model
         or type(count) is not int
-        or count != 1
+        or count != expected_count
     ):
         raise ConfigError(
             "Google video smoke returned invalid provider-call evidence.",
@@ -519,6 +630,19 @@ def _safe_error(
             detail_value = error.details.get(detail_name)
             if type(detail_value) is bool:
                 summary[detail_name] = detail_value
+        persisted_count = error.details.get("persisted_interval_count")
+        if type(persisted_count) is int and persisted_count >= 0:
+            summary["persisted_interval_count"] = persisted_count
+        operation = error.details.get("provider_operation")
+        if type(operation) is str and operation in _SAFE_PROVIDER_OPERATIONS:
+            summary["operation"] = operation
+        sdk_type = error.details.get("provider_sdk_type")
+        if (
+            type(sdk_type) is str
+            and sdk_type.isascii()
+            and sdk_type.isidentifier()
+        ):
+            summary["sdk_type"] = sdk_type
     return summary
 
 

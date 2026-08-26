@@ -1455,6 +1455,13 @@ The following directions remain traceable but are not current work:
   with one optional RapidOCR skip, wheel 268,897 bytes, base 1,359,287 bytes,
   all profiles and local video/combined publication smokes green, no cloud I/O,
   and complete cleanup.
+  #342 narrows the next proof surface rather than changing the library API: the
+  maintained Google video runner can pass an exact integer-minute interval,
+  require its precomputed audio-call count, keep a caller-owned output directory
+  on failure, and reject successful runs that leave the temporary audio sidecar
+  or nested standalone publication. Its bounded live result remains the exit
+  gate and will be recorded in the authoritative state and work diary; this
+  does not claim public video resume.
 
 ## Obsolete Prose Kept For Trace
 

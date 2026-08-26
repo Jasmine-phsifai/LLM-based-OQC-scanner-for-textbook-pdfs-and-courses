@@ -6531,6 +6531,35 @@ cross-process lock 或事务框架。保留但尚不能由公开视频调用消�
 直接测试没有在第一行 runtime patch 前先单独形成红灯；初次相邻测试仍立即暴露旧 mock
 边界失效并阻止提交，但本轮不会把它写成严格 failing-first 证据。
 
+## Iteration 342：收窄 Google 视频 interval 真实验收入口
+
+本轮不改公开 library API，只扩展已维护的脱敏 Google video runner。普通模式保持原有
+自管临时目录和一次音频调用预期；interval 模式必须同时显式传入正整数分钟、
+预先计算的正整数音频调用数和 caller-owned 输出目录，且 transport 必须是
+`google_files`。三项缺任何一项、布尔式/零/负数/小数或 `03` 这类非标准整数
+表达均在 catalog/provider 前拒绝。
+
+成功摘要要求音频结果的 exact `provider_call_count` 等于预期值，并用实报时长与分钟
+重算窗口数；同时要求 video-owned sidecar、`audio/result.md` 和根目录内部
+`result.md` 全部不存在。失败时不用 `TemporaryDirectory` 自动毁掉证据，由外层在有界检查
+后处理 caller-owned 目录；脱敏 JSON 只新增非负的已保存 interval 数、固定白名单
+provider operation 和 ASCII identifier 形式的 SDK 异常类名，不转发 message、正文、路径或
+raw response。
+
+回归先精确复现了 4 个缺口：CLI 无法表达 interval，参数未传入公开视频入口，
+成功摘要写死一次音频调用且不检查 sidecar，失败摘要丢失已保存进度/操作/异常
+类型；当时为 **4 failed, 34 passed**。最小修复后 runner 集 **38 passed**，相邻 Google
+video/audio 与公开视频集 **90 passed in 24.54s**，全量离线 **1,764 passed in
+75.07s**；compileall、轻量 import 与 diff check 也通过。只构建一次的 worktree wheel 为
+**268,897 bytes / 266 members**，262 份 Python runtime 与 `src/ocrllm` 精确对应，tests/tools/docs
+和 package README 均未进入，checker 通过且自有临时目录已清理。真实 Google 证据仍是本轮
+退出条件，未运行前不得写成已通过。
+
+过度设计复查：没有新建 interval-only runner、公开 resume、state parser、第二批处理抽象、
+provider 基类、调用 ledger、retry、fallback、模型 sweep 或压力框架。caller-owned 目录只在
+interval 模式开放，是为了失败后不丢已付费 state，不是对所有 smoke 的通用 artifact
+管理。repair 仍不依赖这个 state。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
