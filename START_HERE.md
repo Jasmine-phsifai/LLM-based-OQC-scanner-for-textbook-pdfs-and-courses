@@ -323,6 +323,16 @@ explicit later resume. Exact no-audio and no-speech outcomes are settled
 terminal absence and are never mechanically retried. Existing low-level video
 partial publication remains unchanged; no journal code shipped in this step.
 
+#373 fixes that future public consumer as
+`recognize_video_to_markdown(source, *, output_dir, image_config, audio_config,
+audio_interval_minutes=None, resume=False) -> RecognitionResult`. It owns the
+one source-stem root, fixed `result.md`, and one temporary journal; branch
+configs remain free of output/resume/overwrite ownership. The current
+`recognize_video()` three-step workflow stays low-level and non-resumable. A
+bounded feasibility trace rejected publication-only, audio-only, and
+one-frame-group versions because they replay paid work or freeze a disposable
+state shape. No runtime or schema shipped in this planning iteration.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes

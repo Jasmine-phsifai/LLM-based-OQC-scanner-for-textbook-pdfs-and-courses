@@ -507,6 +507,15 @@ is often accepted.
   units are all recognized or terminal absence may publish, including a
   `partial` result caused only by no-speech or cleanup warnings.
 
+- **Resolved public consumer shape (#373).** Add one synchronous importable
+  `recognize_video_to_markdown(source, *, output_dir, image_config,
+  audio_config, audio_interval_minutes=None, resume=False) -> RecognitionResult`.
+  The facade, not either branch `Config`, owns persistence, the normalized
+  source-stem root, fixed `result.md`, and the single video journal. Keep
+  `recognize_video()` as the existing non-resumable low-level outcome API. Do
+  not add `run_video_recognition_job`, `overwrite`, a third cancellation signal,
+  or a publication-only/audio-only compatibility stage.
+
 - **Recommended #355 strict defaults unless separately changed.** Bind resume
   to the exact normalized source path, byte size, and SHA-256; a moved source is
   rejected even when byte-identical. Process resumable frame groups serially so

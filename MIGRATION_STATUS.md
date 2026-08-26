@@ -1624,6 +1624,15 @@ resume. Exact no-audio and no-speech are recorded terminal absence and do not
 loop. This decision changes neither the current three-step video API nor any
 runtime/state format; it removes the blocker for the first real journal slice.
 
+#373 fixes the first real journal consumer before implementation. The new
+importable facade will be `recognize_video_to_markdown(...) -> RecognitionResult`
+with top-level `resume`, separate image/audio configs, optional exact integer
+audio intervals, one normalized source-stem root, fixed `result.md`, and one
+temporary journal. Existing low-level video calls remain unchanged. The first
+runtime slice must consume its journal end to end and reuse settled frame-group
+workflow slots plus short/whole/interval audio work; no orphan schema or easier
+publication-only/audio-only facade was added.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

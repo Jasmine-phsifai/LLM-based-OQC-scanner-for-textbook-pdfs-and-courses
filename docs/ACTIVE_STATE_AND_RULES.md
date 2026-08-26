@@ -7187,3 +7187,38 @@ allowed; no-speech and cleanup-only warnings may make that result `partial`.
 The existing low-level recognize/compose/publish API keeps its current ability
 to publish caller-selected partial outcomes. No journal schema or runtime API
 is implemented in this decision-only iteration.
+
+## Current working update: #373 fixes the resumable-video public consumer
+
+The future high-level consumer is now fixed as:
+
+```python
+recognize_video_to_markdown(
+    source,
+    *,
+    output_dir,
+    image_config,
+    audio_config,
+    audio_interval_minutes=None,
+    resume=False,
+) -> RecognitionResult
+```
+
+`output_dir` is the parent of one normalized source-stem root; that root owns
+fixed `result.md` and one temporary video journal. `resume` is an exact boolean
+owned only by this facade. Both branch configurations must reject their own
+`output_dir`, `resume`, and `overwrite`; their existing independent
+cancellation signals remain unchanged. `audio_interval_minutes=None` keeps the
+current automatic short/whole route, while an exact positive integer selects
+interval recognition.
+
+The existing `recognize_video()` plus compose/publish calls remain the
+non-resumable low-level API. Do not rename them, retrofit them with persistence,
+or add a second `run_video_recognition_job` facade. A feasibility trace proved
+that publication-only, audio-only, and one-frame-group implementations would
+either replay paid work or create a state format the real job must replace.
+Consequently no orphan journal schema is added first. The first runtime slice
+must create, read, and remove its one journal itself; preserve complete-frame
+selection plus image workflow slots and short/whole/interval audio settlement;
+resume without redispatching settled units; and publish only after #371's
+terminal gate. This planning iteration changed no runtime or public export.
