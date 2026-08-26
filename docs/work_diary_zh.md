@@ -7009,3 +7009,11 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **错误诚实性与测试修正。** 提前失败最初丢失了 adapter 原有的 `provider_calls_attempted=0`；独立复审把它列为阻塞，本人没有用已通过的首轮完整套件掩盖回退，而是在三个本地提前边界保留同一零调用事实并补断言。short 与 fresh long 的预置取消在无 key 时仍优先返回 `CANCELLED`；completed whole resume 在设置和环境都无 key 时仍零调用发布。执行 adapter 仍再次读取环境值，没有 secret cache。一次定向 pytest 命令错误地附加 `-k`，使两个显式 node id 被过滤，只执行 1 项；随后去掉过滤条件重跑正确的 2 项，不把前一次算作证据。
 
 **验证与过度设计复查。** 主代理最终相邻 audio/video/batch/import 集为 **213 passed in 27.78s**；独立复审为 **242 passed in 27.73s**，另证明 completed interval 与高层视频 resume 无 key 仍零调用、动态环境值会在 dispatch 前重新读取、轻量 import 不加载 SDK/media。最终完整 provider-free 套件为 **1,882 passed in 79.21s**；`git diff --check`、冻结 `contracts/worker` 检查和编译均通过。没有网络、live provider、credential、安装、依赖、API、state、legacy/social/crop 或 worker 改动。三处局部零调用注释有少量重复，但比新建 credential/preflight 框架、secret cache、catalog 检查或统一事务更直白；当前不抽象。
+
+## #437 — 2026-08-27：再次确认两代产品不存在黑板四角裁剪工序
+
+**本轮英文原子任务与中断说明。** `Atomic task — Iteration #437: remove any remaining automatic blackboard-corner detection, perspective correction, ROI/cropping stage from both legacy_app and src/ocrllm, including video frames and PDF-derived images; delete a dedicated module rather than hiding it behind a flag, but preserve full-field decoding, proportional resizing, temporal frame selection, compression, and uniform full-page rendering.` 尚未改动的 #436 视频 credential 顺序审计在任何代码、日记或 provider 调用前中止，本轮优先处理维护者的产品事实澄清。路线一是保留关闭开关，路线二是彻底删除专用模块、调用和配置；产品规则选择路线二。
+
+**当前事实与删除边界。** 当前 `master` 与 `origin/master` 均为 `ce79cd6`。历史提交 `3c09cde` 已经按路线二删除 legacy 的 `imaging/preprocess.py`、自动/手动四边形、透视变换、视频 `board_roi`、ROI-only 候选、ROI 遮挡过滤以及 GUI/CLI/配置入口；后续提交清除了死配置和误导命名。新 library 从未迁入该工序。当前产品 Python 路径扫描 `auto_crop_board/manual_quad/board_roi/crop_roi/perspective_crop/warpPerspective/getPerspectiveTransform/findContours/approxPolyDP/boundingRect/homography/.crop()` 为零命中。legacy `prepare_board_image()` 只复制、格式转换或等比缩小完整图片；active 视频缩略图只选择时间点，最终重新解码完整帧并校验尺寸；PDFium 只执行统一 `scale` 的整页渲染。因此本轮的运行时删除清单为空；为了“再删一次”而删掉这些合法操作反而会破坏识别输入。
+
+**验证、命令纠正与过度设计复查。** active 视频/PDF 四角保留回归为 **2 passed in 0.24s**；legacy 完整图片、等比缩小、已删配置与完整视频候选为 **4 passed in 0.46s**。第一条 active 命令写错 PDF 测试节点名，第二条用不匹配的 `-k` 过滤掉全部节点；两次均为零测试，不计入证据，查明真实函数名后重跑得到上述 2 项通过。完整 provider-free 套件为 **1,882 passed in 80.90s**。本轮不新增“禁止裁剪”包装层、开关、关键词门禁、几何策略接口或重复测试模块；已删源码、直白全画面实现、四角回归和权威规则已经足够。两个维护者保护的未跟踪文件未触碰。
