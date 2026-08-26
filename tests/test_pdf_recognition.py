@@ -724,6 +724,77 @@ def test_first_pdf_group_publication_failure_resumes_without_replay(
     assert len(tuple(state_directory.glob("*.md"))) == 1
 
 
+def test_pdf_child_publication_failure_reports_saved_token_usage(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=1)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    state_directory = output_dir / "book_board"
+    observed: list[tuple[Path, ...]] = []
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_images"
+    )
+
+    def fake_google_image(image_paths, *, prompt, config):
+        assert "input order" in prompt
+        observed.append(tuple(Path(path) for path in image_paths))
+        return VisionProviderResponse(
+            markdown="Google PDF group.\n",
+            input_tokens=17,
+            output_tokens=4,
+        )
+
+    monkeypatch.setattr(adapter, "recognize_images", fake_google_image)
+    writer = importlib.import_module("ocrllm.output.write_markdown_atomically")
+
+    def fail_child_publication(*_args, **_kwargs):
+        raise OutputError("test-only child publication failure")
+
+    monkeypatch.setattr(
+        writer,
+        "write_markdown_atomically",
+        fail_child_publication,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=GoogleGenAISettings(api_key="test-only-google-key"),
+                vision_model=VisionModelSettings(name="test-image-model"),
+                output_dir=output_dir,
+                temp_dir=tmp_path / "snapshots",
+            ),
+        )
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["settled_pdf_group_count"] == 0
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_count": 17,
+            "output_count": 4,
+            "unit": "tokens",
+        },
+    )
+    assert len(observed) == 1
+    state_paths = tuple(state_directory.glob("*.ocrllm-state.json"))
+    assert len(state_paths) == 1
+    state = json.loads(state_paths[0].read_text(encoding="utf-8"))
+    assert state["result"]["metadata"]["current_model_token_usage"] == [
+        {
+            "model": "test-image-model",
+            "input_tokens": 17,
+            "output_tokens": 4,
+        }
+    ]
+    assert not tuple(state_directory.glob("*.md"))
+    assert not (output_dir / "book_board.md").exists()
+
+
 def test_generated_pdf_png_decode_failure_is_local_after_settled_group(
     tmp_path: Path,
     monkeypatch,

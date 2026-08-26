@@ -313,6 +313,27 @@ def _recognize(
             )
         if current_model_attempts is not None:
             error._add_safe_detail("model_attempts", current_model_attempts)
+        current_usage = processor_output.metadata.get("current_model_token_usage")
+        if (
+            type(current_usage) is tuple
+            and "settled_model_usage" not in error.details
+        ):
+            from .aggregate_model_token_usage import aggregate_model_token_usage
+
+            normalized_usage = aggregate_model_token_usage(current_usage)
+            if normalized_usage:
+                error._add_safe_detail(
+                    "settled_model_usage",
+                    tuple(
+                        {
+                            "model": item["model"],
+                            "input_count": item["input_tokens"],
+                            "output_count": item["output_tokens"],
+                            "unit": "tokens",
+                        }
+                        for item in normalized_usage
+                    ),
+                )
         raise
     return result
 

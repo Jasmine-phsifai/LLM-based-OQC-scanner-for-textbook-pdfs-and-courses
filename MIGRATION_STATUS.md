@@ -1593,8 +1593,14 @@ format, public constant, or broader output-root ownership policy was added.
 their settled slots. Initial execution and exact zero-call resume now report
 the aggregate remote-file deletion and client-close booleans as well as the
 current call count. It reuses the normal result's tri-state aggregation and
-changes no state, provider, retry, or publication contract. The independently
-reproduced PDF child-publication token-usage omission is recorded next.
+changes no state, provider, retry, or publication contract.
+
+#368 preserves validated current-run model usage across the shared final
+publication failure boundary. A PDF child provider result can now fail to write
+Markdown after its sidecar settles without losing its 17/4 token evidence from
+the public typed error. Existing settled details are not overwritten, completed
+resume cannot expose historical usage as current, and no PDF state, repair,
+provider, retry, video, or long-audio behavior changed.
 
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as

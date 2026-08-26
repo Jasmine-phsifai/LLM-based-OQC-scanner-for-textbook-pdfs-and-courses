@@ -282,6 +282,8 @@ The PDF vision facade:
   groups without another provider call;
 - retains a first-group sidecar when child Markdown publication fails without
   misreporting the intentionally nonempty state directory as a cleanup failure;
+  the typed publication error also retains validated current-run per-model token
+  usage already stored in that sidecar;
   explicit resume reuses that sidecar with zero new provider calls and publishes
   both child and final PDF Markdown;
 - requires a pre-existing same-named state path to be an ordinary directory;

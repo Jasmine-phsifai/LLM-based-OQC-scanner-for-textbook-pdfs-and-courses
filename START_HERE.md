@@ -293,8 +293,13 @@ reserved-path check; no video journal or directory ownership system was added.
 paid no-speech. The initial typed result and exact zero-call resume now aggregate
 remote-file deletion and provider-client close facts from all settled slots,
 instead of raising before that existing aggregation. State, calls, retry, and
-publication behavior are unchanged. A separately reproduced child-publication
-PDF token-usage omission remains the next atomic defect.
+publication behavior are unchanged.
+
+#368 closes the separately reproduced PDF token-usage omission. If a child
+image result and reusable sidecar settle but child Markdown publication fails,
+the public error now carries that current run's validated per-model token usage
+alongside its existing call and attempt evidence. Historical resume usage is
+not relabeled as current, and PDF state/repair behavior is unchanged.
 
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install

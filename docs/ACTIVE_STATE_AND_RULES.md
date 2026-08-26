@@ -7097,12 +7097,25 @@ interval, whole, video-settlement, and public-video set passes 57 tests without
 a provider call. No state field, serializer, error type, retry, cleanup action,
 or lifecycle abstraction was added.
 
-One independently reproduced PDF disclosure defect remains for the next atomic
-correction: if a child image provider result and sidecar settle but child
-Markdown publication fails, the public error retains the call and model attempt
-but omits that result's validated token usage even though the sidecar contains
-it. Fix the shared publication error boundary narrowly; do not change PDF state
-or repair behavior.
-The complete offline suite passes all 1,782 tests with the known Node
-executable supplied only to the test subprocess; the explicit non-Node suite
-passes 1,780 tests. Compileall, diff validation, and frozen-boundary checks pass.
+## Current working update: #368 publication failures retain current token usage
+
+A PDF child image group can finish one paid provider call, save its complete
+ordinary image sidecar, and then fail while publishing the child Markdown. The
+shared final-publication catch already preserved the call and model attempt but
+previously omitted the validated 17/4 token usage held by that `ProcessorOutput`.
+Because the child call had not returned, the outer PDF result had no settled
+child object from which to recover it.
+
+The shared catch now normalizes only nonempty current-run usage and converts it
+to the established `settled_model_usage` error shape. It never replaces an
+existing settled detail. Completed image resume continues to clear historical
+usage before this boundary, malformed or negative rows are ignored, and unknown
+counts remain unknown rather than becoming zero. A failing-first public PDF
+regression proves one call, a sidecar containing 17/4, no child or final
+Markdown, zero settled PDF groups, and the same 17/4 in the public typed error.
+PDF state, resume, repair, providers, retry, video, and long audio are unchanged.
+
+The focused publication and usage set passes 90 tests. The complete offline
+suite passes all 1,783 tests with the known Node executable supplied only to the
+test subprocess; the explicit non-Node suite passes 1,781 tests. Compileall,
+diff validation, and frozen-boundary checks pass without provider calls.
