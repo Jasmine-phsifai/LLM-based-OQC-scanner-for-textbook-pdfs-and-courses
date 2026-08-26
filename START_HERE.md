@@ -1186,3 +1186,12 @@ on the original error. Short, whole Files, and interval public paths preserve it
 without changing cleanup, call count, persistence, or publication. Shared text
 and image parsing remain untouched. The bounded #400 queue is closed; resume
 with a fresh public-lifecycle audit rather than broader parser hardening.
+
+#405 closes the next fresh image-lifecycle defect. If a memory-only image
+provider has already returned a validated result but the owned image snapshot
+then fails during context exit, the original typed error now preserves the
+current call/model-attempt evidence, exact token usage, and a known false client
+close. Earlier failures receive no invented evidence, and completed resume does
+not expose historical usage as current. This reuses the existing usage helper;
+it adds no lifecycle abstraction, provider reconstruction, schema, retry, or
+transaction. The complete offline suite passes all 1,863 tests.

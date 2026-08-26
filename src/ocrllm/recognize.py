@@ -15,6 +15,7 @@ from .result import RecognitionResult
 
 if TYPE_CHECKING:
     from .output.output_target_claims import OutputTargetClaims
+    from .processor_output import ProcessorOutput
 
 
 def recognize(
@@ -73,6 +74,7 @@ def _recognize(
     completed_resume_reused = False
     provider_calls_attempted: int | None = None
     current_model_attempts = None
+    processor_output: ProcessorOutput | None = None
 
     with reuse_or_create_provider_request_start_gate(
         cfg.execution.provider_request_start_interval_seconds
@@ -256,6 +258,20 @@ def _recognize(
                     )
                 if current_model_attempts is not None:
                     error._add_safe_detail("model_attempts", current_model_attempts)
+                if processor_output is not None:
+                    from .attach_current_model_token_usage_to_error import (
+                        attach_current_model_token_usage_to_error,
+                    )
+
+                    attach_current_model_token_usage_to_error(
+                        error,
+                        processor_output.metadata.get("current_model_token_usage"),
+                    )
+                    if (
+                        processor_output.metadata.get("provider_client_closed") is False
+                        and "provider_client_closed" not in error.details
+                    ):
+                        error._add_safe_detail("provider_client_closed", False)
                 raise
         elif media_type == "pdf":
             from .processors.recognize_pdf import recognize_pdf
@@ -281,6 +297,7 @@ def _recognize(
                 config=cfg,
             )
 
+    assert processor_output is not None
     try:
         if output_path is not None and resume_identity is not None:
             # The state file is kept after publication: it is what lets a repeated

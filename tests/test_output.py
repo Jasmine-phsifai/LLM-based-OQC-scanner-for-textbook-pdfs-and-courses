@@ -10,7 +10,15 @@ from pathlib import Path
 
 import pytest
 
-from ocrllm import Config, OutputError, OutputExists, ProviderError, recognize
+from ocrllm import (
+    Config,
+    OutputError,
+    OutputExists,
+    ProviderError,
+    VisionModelSettings,
+    recognize,
+)
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
 from write_test_image import write_test_image
 
@@ -409,6 +417,83 @@ def test_snapshot_cleanup_failure_is_typed_and_never_reported_as_success(
     completed_state = json.loads(state_path.read_text(encoding="utf-8"))
     assert completed_state["result"]["status"] == "complete"
     assert completed_state["result"]["markdown"] == "# Fresh board\n"
+
+
+def test_memory_only_snapshot_exit_failure_preserves_paid_image_evidence(
+    tmp_path,
+    monkeypatch,
+):
+    source = write_test_image(tmp_path / "board.png")
+    source_bytes = source.read_bytes()
+    cleanup_error = OutputError(
+        "test-only snapshot exit failure",
+        code="OUTPUT_WRITE_FAILED",
+        retryable=True,
+    )
+
+    class Provider:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            return VisionProviderResponse(
+                markdown="# Paid image\n",
+                input_tokens=17,
+                output_tokens=5,
+                client_closed=False,
+            )
+
+    class SnapshotThatFailsOnExit:
+        def __enter__(self):
+            return (source,)
+
+        def __exit__(self, exception_type, exception, traceback):
+            raise cleanup_error
+
+    snapshot_module = importlib.import_module("ocrllm.imaging.snapshot_image_group")
+    monkeypatch.setattr(
+        snapshot_module,
+        "snapshot_image_group",
+        lambda sources, *, config: SnapshotThatFailsOnExit(),
+    )
+    provider = Provider()
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(name="model-a"),
+            ),
+        )
+
+    assert captured.value is cleanup_error
+    assert type(captured.value) is OutputError
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.retryable is True
+    assert provider.calls == 1
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert [dict(attempt) for attempt in captured.value.details["model_attempts"]] == [
+        {
+            "model": "model-a",
+            "outcome": "success",
+            "provider_calls_attempted": 1,
+        }
+    ]
+    assert [
+        dict(usage) for usage in captured.value.details["settled_model_usage"]
+    ] == [
+        {
+            "model": "model-a",
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        }
+    ]
+    assert captured.value.details["provider_client_closed"] is False
+    assert source.read_bytes() == source_bytes
+    assert set(tmp_path.iterdir()) == {source}
 
 
 def test_snapshot_cleanup_failure_does_not_mask_primary_provider_failure(

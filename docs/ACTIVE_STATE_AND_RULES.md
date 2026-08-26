@@ -7751,3 +7751,28 @@ passes 159 tests; independent Google-adapter and long-audio reviews pass 118 and
 53 tests; the complete offline suite passes all 1,862 tests with zero skips.
 The high-priority paid-evidence queue recorded by #400 is now closed. Return to
 a fresh public-lifecycle audit rather than extending this parser defensively.
+
+## Current working update: #405 preserves image snapshot-exit evidence
+
+A provider-free public regression now settles one memory-only image request
+with exact 17/5 token usage and `provider_client_closed=False`, then makes the
+owned image snapshot raise one prebound retryable `OUTPUT_WRITE_FAILED` while
+exiting. Previously the same error retained the one provider call and successful
+model-attempt row but lost the already-built output's token and cleanup facts.
+
+The image route now keeps one nullable `ProcessorOutput` across the existing
+snapshot boundary. When that output exists, the early typed-error catch reuses
+the existing current-usage helper and adds only an otherwise-absent exact false
+client-close fact before bare-raising the same error. Failures before output
+construction gain no evidence. Completed resume still reports zero current
+calls and strips historical current usage; normal image, PDF, audio, checkpoint,
+and publication behavior are unchanged.
+
+No lifecycle wrapper, provider response reconstruction, schema, retry/fallback,
+transaction, or generic cleanup framework was added. Focused image/output,
+resume, adapter, PDF, and batch coverage passes 152 tests; independent adjacent
+review passes 116 tests; the complete offline suite passes all 1,863 tests with
+zero skips. The next reproduced queue remains separate: avoid audio extraction
+when the high-level video's audio branch is already cancelled, then preserve an
+exact failed PDF child-client cleanup fact at the outer snapshot boundary, then
+consider bounded exact-JSON input rejection.
