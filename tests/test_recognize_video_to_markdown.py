@@ -26,6 +26,7 @@ from ocrllm import (
     ResumeStateError,
     RetainedVideoFrame,
     VideoError,
+    VisionModelSettings,
 )
 from ocrllm.providers.google_genai.google_genai_audio_response import (
     GoogleGenAIAudioResponse,
@@ -45,6 +46,7 @@ from ocrllm.audio.long_audio_settled_slot import LongAudioSettledSlot
 from ocrllm.build_owned_media_fingerprint import build_owned_media_fingerprint
 from ocrllm.load_video_job_state import load_video_job_state
 from ocrllm.processor_output import ProcessorOutput
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 from ocrllm.video_job_state import VideoAudioState
 
 from write_test_image import write_test_image
@@ -314,7 +316,23 @@ def test_recoverable_audio_gap_keeps_one_journal_and_resume_reuses_images(
     source.write_bytes(b"stable-test-video")
     output_parent = tmp_path / "output"
     output_root = output_parent / "lecture"
-    image_provider = _ImageProvider()
+    class UsageImageProvider:
+        resume_identity = "video-cross-branch-audio-failure-v1"
+
+        def __init__(self) -> None:
+            self.groups: list[tuple[Path, ...]] = []
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            group = tuple(image_paths)
+            self.groups.append(group)
+            return VisionProviderResponse(
+                markdown=f"# Frame group {len(self.groups)}\n",
+                input_tokens=10,
+                output_tokens=2,
+                client_closed=True,
+            )
+
+    image_provider = UsageImageProvider()
     prepare_calls = 0
     extraction_calls = 0
     audio_calls = 0
@@ -368,7 +386,17 @@ def test_recoverable_audio_gap_keeps_one_journal_and_resume_reuses_images(
         if audio_calls == 1:
             raise ProviderUnavailable(
                 "Audio provider is temporarily unavailable.",
-                details={"provider_calls_attempted": 1},
+                details={
+                    "provider_calls_attempted": 1,
+                    "settled_model_usage": (
+                        {
+                            "model": "test-audio-model",
+                            "input_count": 3,
+                            "output_count": 1,
+                            "unit": "tokens",
+                        },
+                    ),
+                },
             )
         return GoogleGenAIAudioResponse(
             markdown="# Audio\n",
@@ -385,7 +413,10 @@ def test_recoverable_audio_gap_keeps_one_journal_and_resume_reuses_images(
     )
     monkeypatch.setattr(job_audio, "recognize_short_mp3", recognize_audio)
     facade = _public_facade()
-    image_config = Config(provider=image_provider)
+    image_config = Config(
+        provider=image_provider,
+        vision_model=VisionModelSettings(name="test-image-model"),
+    )
     audio_config = _audio_config(tmp_path)
 
     with pytest.raises(ProviderUnavailable) as captured:
@@ -396,7 +427,23 @@ def test_recoverable_audio_gap_keeps_one_journal_and_resume_reuses_images(
             audio_config=audio_config,
         )
 
-    assert captured.value.details["provider_calls_attempted"] == 1
+    assert type(captured.value) is ProviderUnavailable
+    assert captured.value.code == "PROVIDER_UNAVAILABLE"
+    assert captured.value.details["provider_calls_attempted"] == 3
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_count": 20,
+            "output_count": 4,
+            "unit": "tokens",
+        },
+        {
+            "model": "test-audio-model",
+            "input_count": 3,
+            "output_count": 1,
+            "unit": "tokens",
+        },
+    )
     assert [len(group) for group in image_provider.groups] == [8, 1]
     assert prepare_calls == extraction_calls == audio_calls == 1
     assert output_root.is_dir()
@@ -423,7 +470,212 @@ def test_recoverable_audio_gap_keeps_one_journal_and_resume_reuses_images(
     assert prepare_calls == 1
     assert extraction_calls == 1
     assert audio_calls == 2
+    assert result.metadata["current_run_provider_call_count"] == 1
+    assert result.metadata["current_model_token_usage"] == (
+        {
+            "model": "test-audio-model",
+            "input_tokens": 7,
+            "output_tokens": 2,
+        },
+    )
     assert _root_journals(output_root) == ()
+
+
+def test_later_frame_failure_reports_earlier_frames_and_settled_audio(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "later-frame-failure.mp4"
+    source.write_bytes(b"stable-video-before-later-frame-failure")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    prepare = __import__(
+        "ocrllm.video.prepare_video_media",
+        fromlist=["prepare_video_media"],
+    )
+    extraction = __import__(
+        "ocrllm.video.extract_video_audio",
+        fromlist=["_extract_video_audio_from_stable_source"],
+    )
+    job_audio = __import__(
+        "ocrllm.recognize_video_job_audio",
+        fromlist=["recognize_video_job_audio"],
+    )
+    image_groups: list[tuple[Path, ...]] = []
+    audio_calls = 0
+
+    class FailSecondImageProvider:
+        resume_identity = "video-cross-branch-frame-failure-v1"
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            group = tuple(image_paths)
+            image_groups.append(group)
+            if len(image_groups) == 2:
+                raise ProviderUnavailable(
+                    "The second image group is temporarily unavailable.",
+                    details={"provider_calls_attempted": 1},
+                )
+            return VisionProviderResponse(
+                markdown="# Settled first frame group\n",
+                input_tokens=10,
+                output_tokens=2,
+                client_closed=True,
+            )
+
+    @contextmanager
+    def prepare_nine_frames(_source, *, output_dir):
+        assert Path(output_dir) == output_parent
+        frames = tuple(
+            RetainedVideoFrame(
+                frame_index=index * 10,
+                timestamp_seconds=float(index),
+                path=write_test_image(
+                    output_root / "frames" / f"frame-{index:08d}.jpg",
+                    color=(index, 0, 0),
+                ),
+            )
+            for index in range(9)
+        )
+        yield source, frames
+
+    def extract_audio(_source, *, output_path, **_kwargs):
+        target = Path(output_path)
+        shutil.copyfile(_VALID_SHORT_MP3, target)
+        return target
+
+    def recognize_audio(_snapshot, *, prompt, config):
+        nonlocal audio_calls
+        audio_calls += 1
+        return GoogleGenAIAudioResponse(
+            markdown="# Settled audio\n",
+            input_tokens=7,
+            output_tokens=2,
+            client_closed=True,
+        )
+
+    monkeypatch.setattr(prepare, "prepare_video_media", prepare_nine_frames)
+    monkeypatch.setattr(
+        extraction,
+        "_extract_video_audio_from_stable_source",
+        extract_audio,
+    )
+    monkeypatch.setattr(job_audio, "recognize_short_mp3", recognize_audio)
+
+    with pytest.raises(ProviderUnavailable) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=Config(
+                provider=FailSecondImageProvider(),
+                vision_model=VisionModelSettings(name="test-image-model"),
+            ),
+            audio_config=_audio_config(tmp_path),
+        )
+
+    assert type(captured.value) is ProviderUnavailable
+    assert captured.value.code == "PROVIDER_UNAVAILABLE"
+    assert captured.value.retryable is True
+    assert captured.value.details["provider_calls_attempted"] == 3
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_count": 10,
+            "output_count": 2,
+            "unit": "tokens",
+        },
+        {
+            "model": "test-audio-model",
+            "input_count": 7,
+            "output_count": 2,
+            "unit": "tokens",
+        },
+    )
+    assert [len(group) for group in image_groups] == [8, 1]
+    assert audio_calls == 1
+    saved = load_video_job_state(_root_journals(output_root)[0])
+    assert saved.frame_groups[0].image_state is not None
+    assert saved.frame_groups[0].image_state.markdown
+    assert saved.frame_groups[1].image_state is None
+    assert saved.audio.short_state is not None
+
+
+def test_two_branch_failures_report_both_current_run_attempts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "two-branch-failure.mp4"
+    source.write_bytes(b"stable-video-before-two-branch-failure")
+    output_parent = tmp_path / "output"
+    media_calls = _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=True,
+    )
+    job_audio = __import__(
+        "ocrllm.recognize_video_job_audio",
+        fromlist=["recognize_video_job_audio"],
+    )
+    image_calls = 0
+    audio_calls = 0
+
+    class FailingImageProvider:
+        resume_identity = "video-cross-branch-two-failures-v1"
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            nonlocal image_calls
+            image_calls += 1
+            raise ProviderUnavailable(
+                "The image provider is temporarily unavailable.",
+                details={"provider_calls_attempted": 1},
+            )
+
+    def fail_audio(_snapshot, *, prompt, config):
+        nonlocal audio_calls
+        audio_calls += 1
+        raise OutputError(
+            "The audio response could not be settled.",
+            code="OUTPUT_WRITE_FAILED",
+            details={
+                "provider_calls_attempted": 1,
+                "settled_model_usage": (
+                    {
+                        "model": "test-audio-model",
+                        "input_count": 3,
+                        "output_count": 1,
+                        "unit": "tokens",
+                    },
+                ),
+            },
+        )
+
+    monkeypatch.setattr(job_audio, "recognize_short_mp3", fail_audio)
+
+    with pytest.raises(ProviderUnavailable) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=Config(
+                provider=FailingImageProvider(),
+                vision_model=VisionModelSettings(name="test-image-model"),
+            ),
+            audio_config=_audio_config(tmp_path),
+        )
+
+    assert type(captured.value) is ProviderUnavailable
+    assert captured.value.code == "PROVIDER_UNAVAILABLE"
+    assert captured.value.retryable is True
+    assert captured.value.details["provider_calls_attempted"] == 2
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-audio-model",
+            "input_count": 3,
+            "output_count": 1,
+            "unit": "tokens",
+        },
+    )
+    assert image_calls == audio_calls == 1
+    assert media_calls == {"prepare": 1, "extract": 1}
 
 
 def test_no_audio_stream_is_terminal_and_publishes_without_audio_dispatch(
@@ -680,7 +932,7 @@ def test_short_audio_settlement_save_failure_preserves_paid_evidence(
         )
 
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
-    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["provider_calls_attempted"] == 2
     assert captured.value.details["provider_client_closed"] is False
     assert captured.value.details["settled_model_usage"] == (
         {

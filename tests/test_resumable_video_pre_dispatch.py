@@ -154,7 +154,7 @@ def test_resume_reuses_first_paid_image_pass_and_dispatches_only_missing_review(
         )
 
     assert interrupted.value.details["workflow_pass"] == "review"
-    assert interrupted.value.details["provider_calls_attempted"] == 2
+    assert interrupted.value.details["provider_calls_attempted"] == 3
     assert provider.call_count == 2
     # The independent audio branch settles while the image branch retains its
     # paid draft. Resume must reuse both of those durable facts.

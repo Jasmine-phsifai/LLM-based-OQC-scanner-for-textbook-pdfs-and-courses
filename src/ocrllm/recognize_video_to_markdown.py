@@ -381,6 +381,9 @@ def _settle_video_job(
     image_cancelled,
     audio_cancelled,
 ):
+    from .attach_current_video_evidence_to_error import (
+        attach_current_video_evidence_to_error,
+    )
     from .errors import NoSpeechDetected, OCRLLMError, VideoError
     from .recognize_video_job_audio import recognize_video_job_audio
     from .recognize_video_job_frames import recognize_video_job_frames
@@ -414,12 +417,25 @@ def _settle_video_job(
                 journal=journal,
             )
     if frame_error is not None:
+        secondary_audio = audio_result if audio_result is not None else audio_error
+        attach_current_video_evidence_to_error(
+            frame_error,
+            after=(() if secondary_audio is None else (secondary_audio,)),
+        )
         raise frame_error from None
     if (
         audio_error is not None
         and not isinstance(audio_error, NoSpeechDetected)
         and audio_error.code != "VIDEO_NO_AUDIO_STREAM"
     ):
+        attach_current_video_evidence_to_error(
+            audio_error,
+            before=tuple(
+                item.result
+                for item in frame_outcomes
+                if item.result is not None
+            ),
+        )
         raise audio_error from None
     assert (audio_result is None) != (audio_error is None)
     return VideoRecognitionOutcome(

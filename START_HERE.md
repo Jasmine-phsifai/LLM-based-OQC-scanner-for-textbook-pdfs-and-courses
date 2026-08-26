@@ -1139,5 +1139,7 @@ image-provider client-close failure in the existing partial resume metadata,
 so zero-call image/PDF/video reuse cannot turn that known cleanup failure into
 `complete` or report it as successful. No slot schema or state version changed.
 The next reproduced item is high-level video current-run call/token
-under-counting when another branch has already settled work; a narrower Windows
-long-audio junction-ownership defect follows it.
+under-counting when another branch has already settled work. #397 closes that
+gap in both branch directions and dual failure while preserving the original
+typed error and excluding zero-call resume history. The next reproduced item
+is the narrower Windows long-audio junction-root ownership defect.

@@ -9,6 +9,7 @@ from .batch_item_outcome import BatchItemOutcome
 from .build_image_resume_state import build_image_resume_state
 from .build_recognition_result import build_recognition_result
 from .config import Config
+from .errors import OCRLLMError
 from .fingerprint_image_request import fingerprint_image_request
 from .fingerprint_image_sources import fingerprint_image_sources
 from .group_retained_video_frames import group_retained_video_frames
@@ -51,83 +52,101 @@ def recognize_video_job_frames(
             code="RESUME_STATE_MISMATCH",
         ) from None
 
-    outcomes = []
+    outcomes: list[BatchItemOutcome] = []
     interval = config.execution.provider_request_start_interval_seconds
-    with reuse_or_create_provider_request_start_gate(interval):
-        for planned, frames_group in zip(
-            planned_groups,
-            grouped_frames,
-            strict=True,
-        ):
-            source_paths = tuple(frame.path for frame in frames_group)
-            with snapshot_image_group(source_paths, config=config) as snapshot_paths:
-                current_identity = fingerprint_image_request(
-                    fingerprint_image_sources(source_paths, snapshot_paths),
-                    profile=profile,
+    try:
+        with reuse_or_create_provider_request_start_gate(interval):
+            for planned, frames_group in zip(
+                planned_groups,
+                grouped_frames,
+                strict=True,
+            ):
+                source_paths = tuple(frame.path for frame in frames_group)
+                with snapshot_image_group(
+                    source_paths,
                     config=config,
-                )
-                if current_identity != planned.identity:
-                    from .errors import ResumeStateError
-
-                    raise ResumeStateError(
-                        "A retained video frame group no longer matches the journal.",
-                        code="RESUME_STATE_MISMATCH",
-                    ) from None
-
-                saved = journal.state.frame_groups[planned.index].image_state
-                if saved is not None:
-                    validate_image_resume_identity(saved, current_identity)
-                if saved is not None and saved.markdown:
-                    output = _normalize_reused_output(
-                        reuse_image_resume_state(saved, current_identity)
-                    )
-                else:
-                    saved_client_closed = (
-                        None
-                        if saved is None
-                        else saved.metadata.get("provider_client_closed")
-                    )
-                    checkpoint = ImageSlotCheckpoint(
-                        current_identity,
-                        persist_state=lambda state, index=planned.index: (
-                            journal.persist_image_state(index, state)
-                        ),
-                        profile=profile,
-                        snapshot_paths=tuple(snapshot_paths),
-                        seeded_slots=() if saved is None else saved.slots,
-                        seeded_provider_client_closed=(
-                            True
-                            if saved is None
-                            else (
-                                saved_client_closed
-                                if type(saved_client_closed) is bool
-                                else None
-                            )
-                        ),
-                    )
-                    output = recognize_validated_images(
-                        snapshot_paths,
+                ) as snapshot_paths:
+                    current_identity = fingerprint_image_request(
+                        fingerprint_image_sources(source_paths, snapshot_paths),
                         profile=profile,
                         config=config,
-                        slot_checkpoint=checkpoint,
                     )
-                    output = _normalize_fresh_output(output)
-                    journal.persist_image_state(
-                        planned.index,
-                        build_image_resume_state(
-                            current_identity,
-                            output,
-                            slots=checkpoint.slots,
-                        ),
-                    )
+                    if current_identity != planned.identity:
+                        from .errors import ResumeStateError
 
-            outcome = BatchItemOutcome(
-                index=planned.index,
-                result=build_recognition_result(output, output_path=None),
-            )
-            outcomes.append(
-                attach_video_frame_group_identity(outcome, frames_group)
-            )
+                        raise ResumeStateError(
+                            "A retained video frame group no longer matches the journal.",
+                            code="RESUME_STATE_MISMATCH",
+                        ) from None
+
+                    saved = journal.state.frame_groups[planned.index].image_state
+                    if saved is not None:
+                        validate_image_resume_identity(saved, current_identity)
+                    if saved is not None and saved.markdown:
+                        output = _normalize_reused_output(
+                            reuse_image_resume_state(saved, current_identity)
+                        )
+                    else:
+                        saved_client_closed = (
+                            None
+                            if saved is None
+                            else saved.metadata.get("provider_client_closed")
+                        )
+                        checkpoint = ImageSlotCheckpoint(
+                            current_identity,
+                            persist_state=lambda state, index=planned.index: (
+                                journal.persist_image_state(index, state)
+                            ),
+                            profile=profile,
+                            snapshot_paths=tuple(snapshot_paths),
+                            seeded_slots=() if saved is None else saved.slots,
+                            seeded_provider_client_closed=(
+                                True
+                                if saved is None
+                                else (
+                                    saved_client_closed
+                                    if type(saved_client_closed) is bool
+                                    else None
+                                )
+                            ),
+                        )
+                        output = recognize_validated_images(
+                            snapshot_paths,
+                            profile=profile,
+                            config=config,
+                            slot_checkpoint=checkpoint,
+                        )
+                        output = _normalize_fresh_output(output)
+                        journal.persist_image_state(
+                            planned.index,
+                            build_image_resume_state(
+                                current_identity,
+                                output,
+                                slots=checkpoint.slots,
+                            ),
+                        )
+
+                outcome = BatchItemOutcome(
+                    index=planned.index,
+                    result=build_recognition_result(output, output_path=None),
+                )
+                outcomes.append(
+                    attach_video_frame_group_identity(outcome, frames_group)
+                )
+    except OCRLLMError as error:
+        from .attach_current_video_evidence_to_error import (
+            attach_current_video_evidence_to_error,
+        )
+
+        attach_current_video_evidence_to_error(
+            error,
+            before=tuple(
+                outcome.result
+                for outcome in outcomes
+                if outcome.result is not None
+            ),
+        )
+        raise
     return tuple(outcomes)
 
 

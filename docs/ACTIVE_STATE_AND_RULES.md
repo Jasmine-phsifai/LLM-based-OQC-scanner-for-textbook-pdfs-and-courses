@@ -7585,3 +7585,33 @@ the job root and can write through it outside the physical output directory.
 Prefer the video accounting defect next because it affects ordinary paid-work
 honesty; keep the junction correction narrow and do not create a generalized
 filesystem ownership framework.
+
+## Current working update: #397 preserves all current video branch evidence
+
+Three provider-free public regressions prove the former under-count in both
+directions. Two image groups could settle before one audio failure, yet the
+raised audio error reported only one of three calls and omitted 20/4 image
+tokens. An earlier image group could settle before a later image failure while
+audio still succeeded, yet the primary image error reported only its own call
+and omitted both settled branches. When both branches failed, the selected
+primary image error omitted the secondary audio attempt and its token row.
+
+One video-only `attach_current_video_evidence_to_error()` now merges exactly
+the established current-run call count and model-token rows around the same
+primary typed error. The serial frame loop first attaches earlier completed
+groups to a later frame error. The high-level settlement boundary then appends
+the independently settled audio result/error, or prepends completed frame
+results when audio is primary. The original error object, class, code, message,
+and retryability remain unchanged. Reused results contribute explicit zero
+current calls and empty current usage, so journal history is never counted as
+new work. If any component lacks an exact count, the helper does not report a
+known subtotal as the total.
+
+The correction does not copy cleanup facts, warnings, provider labels, or
+arbitrary error details; it does not alter branch priority, journal/state
+schema, retries, provider separation, composition, or finalization. Existing
+tests that expected only the primary branch count were migrated where their own
+fixtures proved another branch had run. The focused video lifecycle set passes
+135 tests; the complete offline suite passes all 1,850 tests.
+The next reproduced queue item is the narrow Windows long-audio junction root
+ownership defect already recorded by #396.
