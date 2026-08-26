@@ -7,6 +7,7 @@ import json
 from .audio.parse_long_audio_partial_state_document import (
     parse_long_audio_partial_state_document,
 )
+from .audio.validate_saved_audio_markdown import validate_saved_audio_markdown
 from .contracts.source_fingerprint import SourceFingerprint
 from .errors import ResumeStateError
 from .image_request_identity import ImageRequestIdentity
@@ -142,6 +143,11 @@ def parse_video_job_state(raw: bytes) -> VideoJobState:
                 no_speech=short_document["no_speech"],
             )
         )
+        if short_state is not None and not short_state.no_speech:
+            validate_saved_audio_markdown(
+                short_state.markdown,
+                allow_no_speech_sentinel=False,
+            )
         long_document = audio_document["long_state"]
         return VideoJobState(
             state_version=document["state_version"],

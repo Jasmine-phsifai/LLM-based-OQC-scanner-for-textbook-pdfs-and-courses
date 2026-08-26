@@ -292,6 +292,18 @@ future resume. The run was not resumed because that would require a second
 image request outside the declared gate. This refreshes real SDK/error-state
 evidence; it does not supersede #427's successful publication/zero-call-resume
 proof or justify runtime changes.
+#446 closes a resume-only false-success seam without changing fresh provider
+behavior. Digest-consistent image results/slots, short-audio results, and
+long-audio slots previously needed only non-whitespace Markdown, so a
+library-owned journal containing closed-comment-only content could be reused
+and published without another provider call. The strict state parsers now apply
+the same visible-Markdown rule already used at fresh provider boundaries;
+audio state additionally permits only the exact canonical long-audio
+`NOSPEECH4OCRLLM` slot and rejects wrapped, embedded, or short-audio misuse.
+Invalid saved content raises `RESUME_STATE_INVALID` before source snapshotting,
+media work, or provider dispatch and leaves journal bytes unchanged. Generic
+`RecognitionResult`, provider dispatch, retry/fallback policy, state schema,
+and frozen worker/contracts are unchanged.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but

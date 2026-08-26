@@ -6,6 +6,7 @@ from .contracts.source_fingerprint import SourceFingerprint
 from .errors import ResumeStateError
 from .image_resume_state import ImageResumeState
 from .image_slot_state import ImageSlotState
+from .providers.validate_provider_markdown import validate_provider_markdown
 
 
 _ROOT_KEYS = frozenset(
@@ -65,6 +66,7 @@ def parse_image_resume_state_document(document: object) -> ImageResumeState:
         for slot in slot_documents:
             if type(slot) is not dict or frozenset(slot) != _SLOT_KEYS:
                 raise ValueError
+            validate_provider_markdown(slot["markdown"])
             slots.append(
                 ImageSlotState(
                     slot_id=slot["slot_id"],
@@ -81,6 +83,8 @@ def parse_image_resume_state_document(document: object) -> ImageResumeState:
             raise ValueError
         if type(result) is not dict or frozenset(result) != _RESULT_KEYS:
             raise ValueError
+        if result["markdown"]:
+            validate_provider_markdown(result["markdown"])
         hotwords = result["hotwords"]
         warnings = result["warnings"]
         if type(hotwords) is not list or type(warnings) is not list:

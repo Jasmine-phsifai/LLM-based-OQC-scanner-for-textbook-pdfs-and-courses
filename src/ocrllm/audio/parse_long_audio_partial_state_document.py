@@ -8,6 +8,7 @@ from .long_audio_partial_state import (
     LongAudioPartialState,
 )
 from .long_audio_settled_slot import LongAudioSettledSlot
+from .validate_saved_audio_markdown import validate_saved_audio_markdown
 
 
 _ROOT_KEYS = frozenset(
@@ -73,6 +74,10 @@ def parse_long_audio_partial_state_document(
             warnings = slot["warnings"]
             if type(warnings) is not list:
                 raise ValueError
+            validate_saved_audio_markdown(
+                slot["markdown"],
+                allow_no_speech_sentinel=True,
+            )
             slots.append(
                 LongAudioSettledSlot(
                     window_index=slot["window_index"],

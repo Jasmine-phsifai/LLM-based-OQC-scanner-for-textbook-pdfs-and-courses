@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import hashlib
 import importlib
+import json
 from pathlib import Path
 import shutil
 
@@ -178,6 +180,74 @@ def test_resume_reuses_first_paid_image_pass_and_dispatches_only_missing_review(
     # The resumed run made only the missing review call. If either the saved
     # image draft or the settled audio had been replayed, this would be larger.
     assert result.metadata["current_run_provider_call_count"] == 1
+
+
+def test_resume_rejects_digest_consistent_comment_only_settled_image(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A comment-only persisted result must not become provider-free success."""
+    source = tmp_path / "lecture.mp4"
+    source.write_bytes(b"stable-test-video")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / "lecture"
+    provider = _CountingImageProvider()
+    image_config = Config(provider=provider)
+    audio_config = _audio_config(tmp_path)
+    _install_preparation_fakes(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+    )
+    _patch_audio(monkeypatch, fail=True)
+
+    with pytest.raises(ProviderUnavailable):
+        ocrllm.recognize_video_to_markdown(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+        )
+
+    journal_path = output_root / ".ocrllm-video-resume.json"
+    document = json.loads(journal_path.read_text(encoding="utf-8"))
+    image_state = document["frame_groups"][0]["image_state"]
+    comment_only = "<!-- persisted comment only -->"
+    image_state["result"]["markdown"] = comment_only
+    image_state["final_markdown_sha256"] = hashlib.sha256(
+        comment_only.encode("utf-8")
+    ).hexdigest()
+    journal_path.write_text(
+        json.dumps(document, separators=(",", ":"), ensure_ascii=False),
+        encoding="utf-8",
+    )
+    durable_bytes = journal_path.read_bytes()
+    image_calls_before = provider.call_count
+    audio_calls = _patch_audio(monkeypatch, fail=False)
+
+    snapshot_module = importlib.import_module("ocrllm.video.snapshot_video_source")
+
+    @contextmanager
+    def reject_snapshot(*args, **kwargs):
+        raise AssertionError("comment-only resume reached source snapshot")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(snapshot_module, "snapshot_video_source", reject_snapshot)
+
+    with pytest.raises(ResumeStateError) as rejected:
+        ocrllm.recognize_video_to_markdown(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+            resume=True,
+        )
+
+    assert rejected.value.code == "RESUME_STATE_INVALID"
+    assert provider.call_count == image_calls_before
+    assert audio_calls == []
+    assert journal_path.read_bytes() == durable_bytes
+    assert not (output_root / "result.md").exists()
 
 
 @pytest.mark.parametrize(

@@ -2067,3 +2067,15 @@ audio and missing image group, with no final digest or `result.md`. No resume
 was attempted because it would require another image request. Runtime, public
 API, state, dependencies, worker/contracts, and provider policy are unchanged;
 #427 remains the successful publication-failure/zero-call-resume authority.
+
+#446 rejects semantically empty recognized Markdown loaded from library-owned
+resume state. Image final results and paid slots now reuse the existing visible
+provider-Markdown validator during strict parsing. Short/long audio state uses
+one small shared validator: only the exact canonical long-audio no-speech slot
+is allowed, while comment-only content and wrapped, embedded, or short-audio
+sentinel misuse are invalid. A public high-level video regression proves a
+digest-consistent comment-only settled frame is rejected as
+`RESUME_STATE_INVALID` before source snapshot, media/provider work, or final
+publication, with byte-identical journal retention. Fresh provider behavior,
+generic results, public API, state schema, retry/fallback, and frozen
+worker/contracts are unchanged.

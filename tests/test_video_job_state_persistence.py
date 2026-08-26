@@ -213,6 +213,81 @@ def test_parser_rejects_schema_drift_and_corrupt_nested_state(mutate) -> None:
     assert caught.value.code == "RESUME_STATE_INVALID"
 
 
+def _set_digest_consistent_markdown(target: dict[str, object], markdown: str) -> None:
+    target["markdown"] = markdown
+    target["markdown_sha256"] = hashlib.sha256(markdown.encode("utf-8")).hexdigest()
+
+
+def _set_short_audio_markdown(document: dict[str, object], markdown: str) -> None:
+    document["audio"].update(
+        {
+            "mode": "short",
+            "interval_minutes": None,
+            "long_state": None,
+            "short_state": {
+                "request_fingerprint": "f" * 64,
+                "markdown": markdown,
+                "markdown_sha256": hashlib.sha256(markdown.encode("utf-8")).hexdigest(),
+                "status": "complete",
+                "warnings": [],
+                "metadata": {},
+                "no_speech": False,
+            },
+        }
+    )
+
+
+def _set_image_markdown(document: dict[str, object], markdown: str) -> None:
+    image_state = document["frame_groups"][0]["image_state"]
+    image_state["result"]["markdown"] = markdown
+    image_state["final_markdown_sha256"] = hashlib.sha256(
+        markdown.encode("utf-8")
+    ).hexdigest()
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda document: _set_image_markdown(
+            document,
+            "<!-- image comment only -->",
+        ),
+        lambda document: _set_digest_consistent_markdown(
+            document["audio"]["long_state"]["slots"][0],
+            "<!-- long audio comment only -->",
+        ),
+        lambda document: _set_digest_consistent_markdown(
+            document["audio"]["long_state"]["slots"][0],
+            " NOSPEECH4OCRLLM\n",
+        ),
+        lambda document: _set_digest_consistent_markdown(
+            document["audio"]["long_state"]["slots"][0],
+            "transcript NOSPEECH4OCRLLM",
+        ),
+        lambda document: _set_short_audio_markdown(
+            document, "<!-- short audio comment only -->"
+        ),
+        lambda document: _set_short_audio_markdown(document, "NOSPEECH4OCRLLM"),
+    ],
+    ids=(
+        "image-comment-only",
+        "long-comment-only",
+        "long-wrapped-sentinel",
+        "long-embedded-sentinel",
+        "short-comment-only",
+        "short-sentinel",
+    ),
+)
+def test_parser_rejects_digest_consistent_nonrecognition_markdown(mutate) -> None:
+    document = _document()
+    mutate(document)
+
+    with pytest.raises(ResumeStateError) as caught:
+        parse_video_job_state(json.dumps(document).encode("utf-8"))
+
+    assert caught.value.code == "RESUME_STATE_INVALID"
+
+
 def test_parser_rejects_nonfinite_values() -> None:
     valid = serialize_video_job_state(_state())
     nonfinite = valid.replace(b'"duration_seconds":601.5', b'"duration_seconds":NaN')
