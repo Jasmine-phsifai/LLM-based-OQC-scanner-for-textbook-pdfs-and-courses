@@ -6277,3 +6277,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **结果与判断。** 当前运行时代码直接通过：第一次调用仍精确是一个八页 provider 请求、一个 sidecar、零 child/final Markdown；第二次恢复后 provider 调用列表仍只有原来一次，结果 `current_run_provider_call_count=0`，一个 child Markdown 和最终 `book_board.md` 均发布，最终内容等于返回 Markdown。测试函数改名为 `test_first_pdf_group_publication_failure_resumes_without_replay`，使名称与完整责任一致。PDF 与 backend 集合 **25 passed in 2.85s**。
 
 **验证与过度设计复查。** 本轮是消费者证据，不改运行时。没有新增 schema、状态字段、repair、retry、publication helper、provider mock 类型或第二条恢复路径；只把 #358 已有回归延伸到真实公共 resume 终点。轻量执行者重跑后，PDF 定向为 **16 passed**，排除唯一 Node harness 文件的全量为 **1,772 passed in 81.78s**；完整收集仍为 **1,772 passed、2 failed in 85.62s**，两项均在测试逻辑前因当前 PATH 找不到 Node executable 而失败。compileall、`git diff --check` 和冻结 `contracts/worker` 边界均通过；未调用 provider。
+
+## #360 — 2026-08-26：紧急复核确认黑板四角定位与画面裁剪已全部移除
+
+**本轮英文原子任务。** `Atomic task — Iteration #360: remove any remaining automatic blackboard-corner detection or crop stage from both legacy_app and the importable ocrllm library, including video- and PDF-derived images. Success means proving by repository-wide search and focused tests that recognition receives the original extracted image/frame, with no hidden crop configuration, fallback, or compatibility path left. This matters because automatic board cropping is now a rejected product behavior: complex classrooms make it lossy and unreliable.`
+
+**紧急澄清与全仓复核。** 维护者再次明确：多块分离/滑动黑板、黑板与投影并存时，自动寻找四角会误判并丢失画质或内容；该工序对普通图片、视频抽帧和 PDF 渲染页均被产品否决。本轮按可执行代码、公开配置、调用点、测试和跟踪文件全仓搜索 `blackboard/board crop/four corner/perspective/ROI/findContours/warpPerspective/Canny` 等路径。#348 已删除真正的 legacy 裁剪/透视模块，#357 已删除最后的死配置和误导命名；当前 legacy 和 active 代码中没有可触发的角点、轮廓、ROI 或透视裁剪模块。
+
+**保留的必要行为。** legacy `prepare_board_image()` 只做完整画面的原样复制、格式转换或等比例缩小；视频候选比较的缩略图不会送给识别，被选中帧会重新解码并按完整 shape 保存；新旧 PDF 都只用一个统一比例渲染整页。legacy 中唯一剩下的 `cv2.Canny` 只统计整帧边缘数量来拒绝空白时间点；pHash 的矩阵切片只是比较指纹。两者都不定位黑板、不改变识别像素。
+
+**验证与过度设计复查。** active 图片/视频/PDF 定向集合 **75 passed in 5.08s**；legacy 完整画面与 PDF 渲染集合 **5 passed in 4.56s**。既有视频回归核对保留帧原尺寸和外缘像素；PDF 测试替身只允许整页 `render(scale=...)`，若代码传入裁剪区域会直接失败。本轮没有运行时修改：删除 `prepare_board_image.py`、缩略图比较或整页渲染反而会破坏现有正常能力；新增反裁剪扫描器、运行时守卫或第二套图像抽象同样是无证据的过度设计。
