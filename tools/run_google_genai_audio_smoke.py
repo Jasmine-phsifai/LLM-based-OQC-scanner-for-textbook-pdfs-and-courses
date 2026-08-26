@@ -265,11 +265,17 @@ def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
         for name in ("remote_file_deleted", "provider_client_closed")
         if type(error.details.get(name)) is bool
     }
+    progress = {
+        name: error.details[name]
+        for name in ("provider_calls_attempted", "persisted_interval_count")
+        if type(error.details.get(name)) is int and error.details[name] >= 0
+    }
     return _report_failure(
         code=error.code,
         scope=scope,
         stage=stage,
         cleanup=cleanup or None,
+        progress=progress or None,
     )
 
 
@@ -279,6 +285,7 @@ def _report_unexpected_failure(stage: str | None) -> int:
         scope=None,
         stage=stage,
         cleanup=None,
+        progress=None,
     )
 
 
@@ -288,6 +295,7 @@ def _report_failure(
     scope: object,
     stage: str | None,
     cleanup: dict[str, bool] | None,
+    progress: dict[str, int] | None,
 ) -> int:
     summary: dict[str, object] = {
         "status": "failed",
@@ -299,6 +307,8 @@ def _report_failure(
     }
     if cleanup is not None:
         summary["cleanup"] = cleanup
+    if progress is not None:
+        summary["progress"] = progress
     print(
         json.dumps(
             summary,

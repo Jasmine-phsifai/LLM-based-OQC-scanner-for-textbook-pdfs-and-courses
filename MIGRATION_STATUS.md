@@ -79,8 +79,9 @@ Phase 1 maturation is offline implementation-complete:
   DashScope FileTrans remains a later independent provider route. The A1
   offline slice may proceed independently of the open Stage M paid image smoke;
   bounded Google image/audio live work is already authorized without a separate
-  budget request, while DashScope live work still requires a recognized
-  credential and explicit maintainer budget. The provider-independent MP3
+  budget request. DashScope may reuse the legacy UI credential for one declared,
+  bounded atomic trial after live catalog discovery, with a fixed call cap and
+  no newest-flagship default. The provider-independent MP3
   probe now uses lazy `miniaudio>=1.71,<2`, fully decodes bounded five-minute
   snapshots, and rejects the fixture-proven malformed cases before dispatch.
   The user-facing `audio` extra remains independent, while `dev` also carries
@@ -1402,7 +1403,11 @@ The following directions remain traceable but are not current work:
   closes the clean installed proof at exact `56e7cc8`: archive 1,718 passed
   with one optional skip, wheel 266,907 bytes, base 1,350,210 bytes, all eight
   profiles and local media smokes green, no cloud I/O, and complete cleanup.
-  Real Google interval behavior remains unproven.
+  #331 reached Google Files with one real 601-second two-window input but
+  returned `PROVIDER_RESPONSE_INVALID`, published no result, and did not close
+  the live gate. #332 keeps exact safe provider-attempt and persisted-window
+  counts on interval failure so the next bounded run can distinguish upload,
+  generation, and reusable-prefix outcomes without exposing content or paths.
 
 ## Obsolete Prose Kept For Trace
 

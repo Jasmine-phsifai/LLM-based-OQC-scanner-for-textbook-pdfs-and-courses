@@ -80,12 +80,17 @@ exact prefix without replay, publishes ordered Markdown once, and removes its
 temporary state only after success. Omitting the argument during resume restores
 the saved interval choice; new memory-only interval calls are rejected. #330
 release-proves this interval route through a clean archive, built wheel, every
-isolated install profile, and local media smokes. A real Google interval call
-remains open; the route does not alter A1 or route video. A1 did
+isolated install profile, and local media smokes. #331 reached Google Files with
+one real 601-second, two-window input but ended honestly as
+`PROVIDER_RESPONSE_INVALID`; it published no result and therefore does not close
+the live gate. #332 preserves exact safe failure progress for the next bounded
+attempt. The route does not alter A1 or route video. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
 audio live tests are already authorized without a separate budget request.
-DashScope live work still requires a nonempty recognized credential and an
-explicit maintainer budget; its canonical Beijing endpoint is already confirmed.
+DashScope live work may reuse the credential stored by the legacy UI for one
+declared, bounded atomic trial. Discover the current catalog first, cap calls,
+and do not interpret that authorization as an unlimited paid run; its canonical
+Beijing endpoint is already confirmed.
 The A1 probe uses lazy `miniaudio>=1.71,<2` for MP3-specific metadata plus
 bounded-memory full decode. FFmpeg, PyAV, Mutagen, and external executable
 requirements remain outside the A1 runtime. The probe rejects malformed or
@@ -6132,6 +6137,60 @@ base target is 1,319,617 bytes. Every installed profile and local
 audio/PDF/video/combined smoke passes without cloud I/O; the gate root is
 removed and cached wheels are unchanged. #326 is release-proven.
 
+## Iteration 331：Google interval 真实请求进入 Files，但没有通过
+
+本轮英文原子目标是：扩展现有 Google 音频 smoke runner，用一次真实的 601 秒、
+6 分钟 interval 输入证明新发布的持久化切片路线；只允许当前模型、一次 runner
+调用、实时模型目录发现和安全摘要，不加入重试、换模型、repair 或 provider 抽象。
+这是必要的，因为离线测试和安装门禁不能证明真实上传、处理、生成与清理链路。
+
+runner 已增加严格的 `--interval-minutes` 与 `--output-dir` 配对，整数分钟验证、
+结果发布/sidecar 删除检查、按音频时长计算的精确调用数检查，以及不包含凭据、
+转写文本和路径的成功摘要。相关失败先行测试和完整离线套件通过后，代码以
+`f3e75dd38c2b0f7414d8bffc682a73ea0ac35c46` 推送。
+
+轻量执行者确认代理开启且 `127.0.0.1:10080` 可达，使用合成的 601 秒单声道
+MP3（2,404,592 bytes，约第 60 秒与 420 秒有语音）对
+`gemini-2.5-flash` 发起一次 runner。337.829 秒后，程序诚实返回
+`PROVIDER_RESPONSE_INVALID`，scope 为 `request`、stage 为 `recognition`；
+`provider_client_closed=true`，没有发布 `result.md`，并留下 resume sidecar。
+失败摘要没有给出调用数、已保存窗口数或远端文件删除事实，因此本轮不能猜测
+请求数量，也不能声称 Google interval 已打通。执行者随后删除了自己拥有的临时
+根；这使该 sidecar 无法用于 live resume，是门禁操作说明的错误，不是库的 resume
+失败。以后失败状态必须保留到 resume 完成或人工明确放弃后再清理。
+
+过度设计复查：本轮没有为了通过门禁加入 retry、fallback、模型切换、错误日志
+转储或第二套 runner。真实失败反而证明了需要先补足现有安全证据，再决定是否有
+运行时代码缺陷。
+
+## Iteration 332：interval 失败进度不再被 smoke runner 丢弃
+
+本轮英文原子目标是：在不重试 provider 的前提下，让 typed interval 失败安全地
+说明已经尝试的生成调用数和真正写入 resume state 的窗口数；成功标准是失败注入
+回归、隐私白名单、完整离线套件、轻量导入与冻结边界全部通过。这样下一次 live
+请求可以区分上传前失败、生成失败和可恢复前缀，而不是从 sidecar 存在与否猜测。
+
+`recognize_long_mp3_intervals()` 现在单独跟踪
+`persisted_interval_count`：只有原子状态写入成功后才增加，保存失败时不会把尚在
+内存的 slot 说成可恢复结果。它与累计 `provider_calls_attempted` 一起附加到 typed
+错误。维护 runner 只接受并输出这两个严格非负整数；任意路径、文本、凭据和其他
+错误详情仍被丢弃。当前失败窗口的远端删除与客户端关闭事实继续沿用 adapter 已有
+布尔字段，没有聚合历史窗口清理，也没有发明失败版
+`current_run_provider_call_count`。
+
+27 项相关测试通过；使用既定 Node PATH 的完整离线套件为 1,723 项通过，耗时
+66.66 秒。第一次全量命令因 shell 没有 Node 而在两个 Node worker 门禁启动前
+失败，按仓库既定方式临时加入 `D:\Anaconda\envs\STA` 后全绿；没有安装依赖或
+修改系统环境。compileall、diff check、轻量导入（0.0275 秒、122 模块、无 PIL /
+OpenAI / HTTPX / ONNX Runtime / Google / miniaudio）和冻结的
+`contracts/worker` 检查通过。
+
+过度设计复查：只增加两个标量事实和 runner 白名单，没有通用错误协议、生命周期
+聚合器、完整 sidecar 输出、自动重试或 provider 框架。DashScope 决策也同步收紧：
+legacy UI 凭据可用于一次一个、已声明调用上限的原子试验；先实时发现模型，优先
+有理由的约 27B OCR/推理候选，禁止默认追逐最新超大旗舰，也不测试明显弱于
+RapidOCR 的普通 OCR 模型。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
@@ -6166,5 +6225,5 @@ Import-weight check:
 
 Credentials for live work are stored by the legacy GUI under
 `HKCU\Software\OCRLLM\QCR\ui`. Read them from the registry; never hardcode a key
-and never print one. Do not run a paid gate without an explicit budget from the
-maintainer.
+and never print one. Do not run a paid gate without an explicit budget or the
+narrow one-atomic-trial authorization recorded above.

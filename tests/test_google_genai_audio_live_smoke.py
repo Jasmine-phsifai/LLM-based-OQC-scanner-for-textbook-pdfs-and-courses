@@ -409,6 +409,65 @@ def test_audio_live_smoke_reports_default_disposition_and_cleanup(
     }
 
 
+def test_audio_live_smoke_reports_safe_interval_failure_progress(
+    monkeypatch, capsys
+):
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda settings, timeout_seconds: (MODEL,),
+    )
+
+    def fail_after_one_settled_interval(actual_source, *, config, interval_minutes):
+        raise ProviderError(
+            code="PROVIDER_RESPONSE_INVALID",
+            details={
+                "provider_calls_attempted": 2,
+                "persisted_interval_count": 1,
+                "remote_file_deleted": False,
+                "provider_client_closed": True,
+                "private_transcript": "must not leak",
+                "private_path": str(actual_source),
+            },
+        )
+
+    monkeypatch.setattr(smoke, "recognize_long_mp3", fail_after_one_settled_interval)
+
+    assert smoke.main(
+        [
+            "--model",
+            MODEL,
+            "--audio",
+            "private.mp3",
+            "--long",
+            "--interval-minutes",
+            "6",
+            "--output-dir",
+            "private-output",
+        ]
+    ) == 1
+    raw = capsys.readouterr().out
+    assert json.loads(raw) == {
+        "cleanup": {
+            "provider_client_closed": True,
+            "remote_file_deleted": False,
+        },
+        "error": {
+            "code": "PROVIDER_RESPONSE_INVALID",
+            "scope": "request",
+            "stage": "recognition",
+        },
+        "progress": {
+            "provider_calls_attempted": 2,
+            "persisted_interval_count": 1,
+        },
+        "status": "failed",
+    }
+    assert "must not leak" not in raw
+    assert "private.mp3" not in raw
+    assert "private-output" not in raw
+
+
 def test_audio_live_smoke_reports_missing_model_selection_stage(monkeypatch, capsys):
     monkeypatch.setattr(
         smoke,

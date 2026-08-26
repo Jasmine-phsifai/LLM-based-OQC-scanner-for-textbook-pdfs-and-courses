@@ -62,8 +62,9 @@ catalog checks, atomic file-backed image state, an opt-in candidate queue, and
 slot-indexed intra-request checkpoints with an explicit v1-to-v2 resume
 identity migration, complete attempt-spend disclosure, disposition-gated
 recovery, model-aware pool behavior, and correct scout-failure attribution.
-Its DashScope live exit smoke remains open because the current workspace has no
-nonempty recognized DashScope credential and no explicit paid-call budget. The
+Its DashScope live exit smoke remains open. A legacy-UI credential is now
+authorized for one declared, bounded atomic trial with live catalog discovery
+and a fixed call cap; this is not permission for an unlimited paid run. The
 canonical Beijing endpoint is already confirmed. The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
@@ -819,6 +820,16 @@ with one optional skip, wheel 266,907 bytes, base 1,350,210 bytes, all eight
 profiles and local media smokes green, no cloud I/O, and complete cleanup. A
 bounded real Google interval call remains the next product evidence.
 
+#331 added a credential-safe two-window interval live runner and reached Google
+Files with one real 601-second input. The request ended as
+`PROVIDER_RESPONSE_INVALID`, published no `result.md`, retained temporary state,
+closed the provider client, and did not close the live gate. The delegated gate
+then deleted its owned temporary root, so that particular state cannot prove
+resume; this was an operator cleanup mistake, not a library resume result.
+#332 exposes only exact nonnegative provider-attempt and persisted-window counts
+on typed interval failures. It does not expose transcript, paths, credentials,
+or arbitrary error details, and adds no retry, fallback, or provider framework.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact
@@ -829,10 +840,10 @@ standard-library channel and owned-tree cleanup, and must not add another
 clean installation itself passes.
 
 Its implementation and budgets are defined in
-`docs/ocrllm_library_go_no_go.md`. Do not run the DashScope live gate until a
-recognized credential and explicit paid-call budget exist, the exact
-region/`base_url` is confirmed, and the runner's Git/import, manifest, artifact,
-and credential preflight passes.
+`docs/ocrllm_library_go_no_go.md`. A DashScope live gate must use the currently
+authorized one-atomic-trial boundary or a later explicit budget, confirm the
+exact region/`base_url`, discover models live, cap calls, and pass the runner's
+Git/import, manifest, artifact, and credential preflight.
 
 Active-library migration tests must not modify or run the legacy suite as a
 phase gate. Create fixtures and tests under root `tests/`. Legacy commands and

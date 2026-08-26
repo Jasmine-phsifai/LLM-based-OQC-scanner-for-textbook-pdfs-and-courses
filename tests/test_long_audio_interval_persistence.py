@@ -201,13 +201,15 @@ def test_interval_failure_preserves_prefix_and_resume_uses_saved_parameters(
         ],
     )
 
-    with pytest.raises(ProviderError):
+    with pytest.raises(ProviderError) as first_failure:
         recognize_long_mp3(
             tmp_path / "lecture.mp3",
             config=_config(output_dir),
             interval_minutes=5,
         )
 
+    assert first_failure.value.details["provider_calls_attempted"] == 1
+    assert first_failure.value.details["persisted_interval_count"] == 1
     assert materialized == [0, 1]
     assert provider_calls == [0, 1]
     state_path = output_dir / "lecture" / ".ocrllm-long-audio-resume.json"

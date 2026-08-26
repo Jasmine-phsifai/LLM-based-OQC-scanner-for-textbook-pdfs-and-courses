@@ -49,6 +49,10 @@ or independently reorder it.
   RapidOCR. Do not hardcode example model names, spend calls on candidates
   clearly worse than RapidOCR for ordinary OCR, or select the current largest
   flagship merely because it is newest.
+- The credential stored by the legacy UI is authorized for one explicitly
+  scoped atomic DashScope trial at a time. Discover models before selection and
+  cap calls in the task announcement. Reuse permission is not an unlimited
+  paid-call budget and does not authorize automatic fallback or a model sweep.
 - When a maintained release command has concrete evidence of hanging, give that
   exact stage a visible start message and a hard failure bound. Do not turn one
   stalled dependency preparation into a downloader, cache manager, retry

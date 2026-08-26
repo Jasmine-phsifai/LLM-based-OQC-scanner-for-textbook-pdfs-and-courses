@@ -66,6 +66,7 @@ def recognize_long_mp3_intervals(
     )
     current_calls = 0
     current_usage: list[tuple[int | None, int | None]] = []
+    persisted_interval_count = len(slots)
     for window in windows[len(slots) :]:
         raise_if_cancelled(config.cancellation)
         try:
@@ -127,9 +128,14 @@ def recognize_long_mp3_intervals(
                         slots=slots,
                     ),
                 )
+                persisted_interval_count = len(slots)
         except OCRLLMError as error:
             if "provider_calls_attempted" not in error.details:
                 error._add_safe_detail("provider_calls_attempted", current_calls)
+            error._add_safe_detail(
+                "persisted_interval_count",
+                persisted_interval_count,
+            )
             raise
     return compose_long_audio_interval_output(
         snapshot,
