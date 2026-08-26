@@ -174,6 +174,16 @@ branches, and removed the journal. The source, retained frame, and audio
 artifact remained available. This is lifecycle evidence, not a transcription-
 quality benchmark, and it adds no production retry, fallback, provider
 framework, test hook, crop/ROI path, or second resume abstraction.
+#428 closes an ordinary batch-preflight defect. An image batch with no provider,
+or with an injected object lacking callable `recognize_images`, formerly passed
+complete batch preflight, created its configured output and temporary
+directories, and only then returned the first item with `CONFIG_MISSING` or
+`CONFIG_INVALID`. `preflight_recognition_batch()` now applies the existing
+strict vision-provider validator once when it encounters the first image group,
+before output resolution, snapshotting, directory creation, executor startup,
+or provider dispatch. The shared config is not repeatedly inspected; local OCR
+and audio-only batches retain their existing routes. Invalid image configuration
+is now a top-level preflight error, consistent with the exact-tuple contract.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4117,6 +4127,14 @@ Post-register findings are ordered by demonstrated user impact:
   cancellation points, grouped sources, and final atomic publication keep
   their existing behavior. The focused image/output/resume/batch set passes
   127 tests, and the complete offline suite passes all 1,848 tests.
+- #428 closes the medium batch configuration-preflight gap. Missing image
+  provider configuration and injected objects without callable
+  `recognize_images` now raise their existing `CONFIG_MISSING` or
+  `CONFIG_INVALID` before any output/temp directory, snapshot, executor, or
+  dispatch. The shared vision config is validated once at the first image group;
+  local OCR and audio-only batches are unchanged. Focused image/batch/config
+  coverage passes 139 tests and the complete provider-free suite passes all
+  1,873 tests.
 
 The bounded reproduced queue is empty again. Select the next iteration through
 a fresh public-lifecycle audit rather than extending output preflight

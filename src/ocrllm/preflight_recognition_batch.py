@@ -16,6 +16,9 @@ from .output.validate_image_resume_state_output_pair import (
     validate_image_resume_state_output_pair,
 )
 from .profiles.resolve_image_profile import resolve_image_profile
+from .providers.validate_vision_provider_config import (
+    validate_vision_provider_config,
+)
 from .validate_execution_image_count import validate_execution_image_count
 from .validate_image_group import validate_image_group
 from .validate_same_type_group import validate_same_type_group
@@ -32,11 +35,18 @@ def preflight_recognition_batch(
     groups = _normalize_batch_shape(sources)
     media_types: list[str] = []
     resolved_targets: list[Path] = []
+    image_provider_validated = False
 
     for source_paths in groups:
         media_type = validate_same_type_group(source_paths)
         media_types.append(media_type)
         if media_type == "image":
+            if not image_provider_validated:
+                validate_vision_provider_config(
+                    config,
+                    require_injected_callable=True,
+                )
+                image_provider_validated = True
             validate_execution_image_count(source_paths, config=config)
             output_path = resolve_output_path(
                 source_paths,

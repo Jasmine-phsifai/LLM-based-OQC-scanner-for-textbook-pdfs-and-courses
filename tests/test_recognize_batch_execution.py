@@ -16,6 +16,7 @@ from ocrllm import (
     recognize_batch,
 )
 from ocrllm.errors import (
+    ConfigError,
     InvalidSource,
     OCRLLMError,
     OutputExists,
@@ -162,6 +163,37 @@ def test_batch_rejects_non_tuple_outer_container_before_provider_or_output(
         )
 
     assert provider.calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
+@pytest.mark.parametrize(
+    ("provider", "expected_code"),
+    (
+        (None, "CONFIG_MISSING"),
+        (object(), "CONFIG_INVALID"),
+    ),
+)
+def test_batch_preflights_invalid_image_provider_before_output_work(
+    tmp_path,
+    provider,
+    expected_code,
+):
+    source = write_test_image(tmp_path / "source.png")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+
+    with pytest.raises(ConfigError) as caught:
+        recognize_batch(
+            (source,),
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert caught.value.code == expected_code
     assert not output_dir.exists()
     assert not temp_dir.exists()
 

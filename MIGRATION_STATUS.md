@@ -1955,3 +1955,13 @@ provider, published nonempty combined Markdown, and removed the journal. The
 retained image included all four source edges. This changes no runtime, API,
 state, dependency, worker, provider policy, or crop/ROI boundary; it proves the
 already-shipped lifecycle through the current importable facade.
+
+#428 makes the exact-tuple batch contract truthful for invalid image-provider
+configuration. Missing providers and injected objects without callable
+`recognize_images` used to reach item execution and create empty output/temp
+directories before returning a first-item config error. Complete batch preflight
+now invokes the existing strict vision validator once at the first image group,
+so those configurations fail at the public call boundary with no filesystem,
+executor, snapshot, or provider side effect. Local OCR and audio-only batches
+keep their existing behavior; no new validator, transaction, provider
+abstraction, retry, or state format was added.
