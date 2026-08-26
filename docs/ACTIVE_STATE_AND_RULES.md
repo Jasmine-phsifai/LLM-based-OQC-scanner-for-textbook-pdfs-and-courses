@@ -6391,6 +6391,34 @@ HTTPS 后，通过隔离控制器读取 legacy UI 已保存凭据，实时发现
 repair parser 或 worker 变更。最危险的两条过度设计路线分别是重复构造视频 provider
 层，以及让 standalone 音频 publication 嵌套进视频 publication；两者均明确拒绝。
 
+## Iteration 339：DashScope 单次真实门槛有了脱敏 runner
+
+仓库此前只有 Google 单图 runner 和历史 Phase 1 的 13-call 质量流程，没有满足当前
+“实时 catalog + 一个显式模型 + 最多一次识别”的 DashScope 工具。复用全量质量流程
+会把双轮评分、scout 和旧 v17 证据链带入一个 connectivity/robustness gate，因此新增
+`tools/run_dashscope_image_smoke.py`。它只接受显式 model、一个 image 和 timeout；凭据
+只从 child-scoped `DASHSCOPE_API_KEY` 读取。每个 runner 进程先请求一次 Beijing
+`/models` catalog，模型缺失时以零识别调用退出，存在时只调用一次公共 `recognize()`。
+
+成功摘要只保留 status、catalog count、model、exact one call、client closed，以及
+当前 DashScope adapter 尚未公开的 input/output token 为 `null`；它不读取 SDK 原始
+usage 来绕过产品契约。成功必须同时有一个 successful `model_attempt` 和一个 fresh
+DashScope draft `workflow_slot`，所以候选切换、review/scout 或第二次 provider call
+不能冒充本门槛。失败只输出稳定 code、allowlisted scope 和 catalog/model-selection/
+recognition stage，不输出正文、图片路径、异常 message、raw response 或 credential。
+
+legacy UI 的外部隔离控制器已只读确认 `QSettings("OCRLLM", "QCR")` 的 `ui/api_key`
+和 approved Beijing endpoint 非空；active library 与 runner 都不读取这些设置。当前
+WinINET 为 `ProxyEnable=1`、`127.0.0.1:10080`，外部控制器只把凭据和大写 proxy
+变量注入 child。108 项 DashScope runner/adapter/catalog/error 相邻测试通过；带既定
+Node PATH 的完整离线套件为 1,738 项通过，compileall、轻量 `import ocrllm`、diff
+check 和冻结边界检查通过。真实 formula-board 调用尚未执行，因此 Stage M live exit
+此刻仍开放；最终事实只在 delegated runner 返回后补录。
+
+过度设计复查：没有自动 catalog 评分、模型循环、13-call quality replay、provider
+hierarchy、pool、retry、fallback 或 runtime token parser。双 ledger 校验分别排除模型
+候选和 workflow 扩张，是当前 one-call gate 的直接证明，不是未来框架。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

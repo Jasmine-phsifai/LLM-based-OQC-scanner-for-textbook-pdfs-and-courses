@@ -1,0 +1,203 @@
+"""Run one bounded, credential-safe DashScope image live smoke."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any
+
+from ocrllm import Config, DashScopeSettings, VisionModelSettings, recognize
+from ocrllm.errors import ConfigError, OCRLLMError, ProviderError
+from ocrllm.providers.dashscope.resolve_dashscope_model import (
+    fetch_dashscope_model_catalog,
+)
+
+
+class _LiveSmokeFailure(Exception):
+    """Keep one safe runner stage beside a public product error."""
+
+    def __init__(self, stage: str, error: OCRLLMError | None) -> None:
+        self.stage = stage
+        self.error = error
+        super().__init__(stage)
+
+
+def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse one explicit current model, image path, and timeout."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--image", required=True, type=Path)
+    parser.add_argument("--timeout", type=float, default=120.0)
+    return parser.parse_args(argv)
+
+
+def run_dashscope_image_smoke(arguments: argparse.Namespace) -> dict[str, object]:
+    """Discover the Beijing catalog and perform at most one recognition call."""
+    settings = DashScopeSettings.for_region("cn-beijing")
+    try:
+        models = fetch_dashscope_model_catalog(settings)
+    except OCRLLMError as error:
+        raise _LiveSmokeFailure("catalog", error) from None
+    except Exception:
+        raise _LiveSmokeFailure("catalog", None) from None
+    if models is None:
+        raise _LiveSmokeFailure(
+            "catalog",
+            ProviderError(
+                "The DashScope model catalog is temporarily unavailable.",
+                code="PROVIDER_CATALOG_UNAVAILABLE",
+                retryable=True,
+                details={"provider": "dashscope"},
+            ),
+        ) from None
+    if arguments.model not in models:
+        raise _LiveSmokeFailure(
+            "model_selection",
+            ConfigError(
+                "The requested DashScope model is absent from the current catalog.",
+                code="CONFIG_INVALID",
+            ),
+        ) from None
+
+    try:
+        result = recognize(
+            arguments.image,
+            config=Config(
+                provider=settings,
+                vision_model=VisionModelSettings(name=arguments.model),
+                timeout_seconds=arguments.timeout,
+            ),
+        )
+        recognition = _safe_recognition_summary(result, arguments.model)
+    except OCRLLMError as error:
+        raise _LiveSmokeFailure("recognition", error) from None
+    except Exception:
+        raise _LiveSmokeFailure("recognition", None) from None
+    return {
+        "status": "passed",
+        "catalog_count": len(models),
+        "model": arguments.model,
+        "recognition": recognition,
+    }
+
+
+def _safe_recognition_summary(result: Any, model: str) -> dict[str, object]:
+    """Validate one-call evidence without exposing recognized content."""
+    metadata = result.metadata
+    if (
+        result.status != "complete"
+        or metadata.get("provider") != "dashscope"
+        or metadata.get("model") != model
+        or metadata.get("provider_region") != "cn-beijing"
+    ):
+        raise ConfigError(
+            "DashScope live recognition returned an unexpected result identity.",
+            code="CONFIG_INVALID",
+        ) from None
+    provider_call_count = metadata.get("provider_call_count")
+    if type(provider_call_count) is not int or provider_call_count != 1:
+        raise ConfigError(
+            "DashScope live recognition did not report exactly one provider call.",
+            code="CONFIG_INVALID",
+        ) from None
+    _require_one_successful_attempt(metadata.get("model_attempts"), model=model)
+    _require_one_draft_slot(metadata.get("workflow_slots"), model=model)
+    if metadata.get("provider_client_closed", True) is not True:
+        raise ConfigError(
+            "DashScope live recognition did not close its provider client.",
+            code="CONFIG_INVALID",
+        ) from None
+    return {
+        "provider_call_count": provider_call_count,
+        "model": model,
+        "input_tokens": None,
+        "output_tokens": None,
+        "client_closed": True,
+    }
+
+
+def _require_one_successful_attempt(value: object, *, model: str) -> None:
+    if type(value) is not tuple or len(value) != 1 or not isinstance(value[0], Mapping):
+        raise _invalid_attempt_evidence()
+    attempt = value[0]
+    if (
+        attempt.get("model") != model
+        or attempt.get("outcome") != "success"
+        or attempt.get("provider_calls_attempted") != 1
+    ):
+        raise _invalid_attempt_evidence()
+
+
+def _require_one_draft_slot(value: object, *, model: str) -> None:
+    if type(value) is not tuple or len(value) != 1 or not isinstance(value[0], Mapping):
+        raise _invalid_attempt_evidence()
+    slot = value[0]
+    if (
+        slot.get("slot_id") != "draft"
+        or slot.get("workflow_pass") != "draft"
+        or slot.get("provider") != "dashscope"
+        or slot.get("model") != model
+        or slot.get("reused") is not False
+        or slot.get("provider_calls_attempted") != 1
+    ):
+        raise _invalid_attempt_evidence()
+
+
+def _invalid_attempt_evidence() -> ConfigError:
+    return ConfigError(
+        "DashScope live recognition returned unexpected attempt evidence.",
+        code="CONFIG_INVALID",
+    )
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    arguments = parse_arguments(argv)
+    try:
+        summary = run_dashscope_image_smoke(arguments)
+    except _LiveSmokeFailure as failure:
+        if failure.error is None:
+            return _report_failure(
+                code="UNEXPECTED_SAFE_FAILURE",
+                scope=None,
+                stage=failure.stage,
+            )
+        return _report_failure(
+            code=failure.error.code,
+            scope=failure.error.details.get("failure_scope"),
+            stage=failure.stage,
+        )
+    except OCRLLMError as error:
+        return _report_failure(
+            code=error.code,
+            scope=error.details.get("failure_scope"),
+            stage=None,
+        )
+    except Exception:
+        return _report_failure(
+            code="UNEXPECTED_SAFE_FAILURE",
+            scope=None,
+            stage=None,
+        )
+    print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
+    return 0
+
+
+def _report_failure(*, code: str, scope: object, stage: str | None) -> int:
+    print(
+        json.dumps(
+            {
+                "status": "failed",
+                "error": {"code": code, "scope": scope, "stage": stage},
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
