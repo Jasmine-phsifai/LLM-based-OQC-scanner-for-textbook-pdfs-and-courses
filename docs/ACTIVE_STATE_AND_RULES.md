@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-26 against the
+Status: **authoritative and current.** Last verified 2026-08-27 against the
 working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
@@ -7640,3 +7640,36 @@ added. The focused media/output set passes 84 tests, and the complete offline
 suite passes all 1,852 tests with zero skips. The bounded reproduced queue is
 empty again; the next iteration should return to a fresh public lifecycle audit
 rather than continue speculative path hardening.
+
+## Current working update: #400 preserves paid slots from every candidate model
+
+A provider-free public regression ran one draft and review with model A, moved
+to model B after A's review returned a model-scoped quota error, completed both
+B passes, and then failed only the completed-state save. Before this correction,
+the partial state retained only B's draft and review. Resume therefore replayed
+both paid drafts and reused only B's review, because the checkpoint indexed
+every candidate's `draft` and `review` solely by `slot_id`.
+
+Checkpoint identity and state validation now use the already-serialized
+`(slot_id, provider, model)` tuple. The state schema, version, field names, and
+public workflow slot IDs do not change. Existing v2 states remain valid because
+their formerly required unique slot IDs are a subset of the qualified rule;
+exact duplicate tuples remain invalid, and `None` remains an exact identity
+component rather than a wildcard.
+
+The corrected first failure retains A's draft plus B's draft and review. Resume
+makes exactly one fresh A-review call, then reuses both B slots, reports one
+current-run call, and leaves historical calls out of current usage. The focused
+image/state/PDF/video set passes 158 tests; the complete offline suite passes
+all 1,853 tests with zero skips.
+
+Fresh #400 audits reproduced three later evidence-honesty items, in priority
+order: video completed-state/final-publication errors can omit already-settled
+branch calls and tokens; short and memory-only whole-audio snapshot-cleanup
+errors can omit their completed output evidence; and Google audio responses
+that report usage but fail content validation can omit that usage. Keep these
+as separate atomic corrections. A video junction currently crosses an external
+read boundary but source identity blocks dispatch, publication, and deletion;
+do not resume speculative path hardening ahead of the three paid-evidence items.
+Hostile numeric subclasses and enormous JSON integers are lower-priority input
+hardening, not a reason to build a shared validation framework.

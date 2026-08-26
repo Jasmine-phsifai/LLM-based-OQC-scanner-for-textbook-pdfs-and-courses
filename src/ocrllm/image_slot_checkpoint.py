@@ -38,8 +38,8 @@ class ImageSlotCheckpoint:
         self._persist_state = persist_state
         self._profile = profile
         self._snapshot_paths = snapshot_paths
-        self._slots: dict[str, ImageSlotState] = {
-            slot.slot_id: slot for slot in seeded_slots
+        self._slots: dict[tuple[str, str | None, str | None], ImageSlotState] = {
+            (slot.slot_id, slot.provider, slot.model): slot for slot in seeded_slots
         }
         self._provider_client_closed = seeded_provider_client_closed
 
@@ -61,10 +61,7 @@ class ImageSlotCheckpoint:
         model: str | None,
     ) -> ImageSlotState | None:
         """Return a persisted slot only for the same provider and model."""
-        slot = self._slots.get(slot_id)
-        if slot is None or slot.provider != provider or slot.model != model:
-            return None
-        return slot
+        return self._slots.get((slot_id, provider, model))
 
     def persist_slot(
         self,
@@ -79,7 +76,7 @@ class ImageSlotCheckpoint:
             raise TypeError("provider_client_closed must be a bool or None") from None
         self.verify_snapshots()
         candidate_slots = dict(self._slots)
-        candidate_slots[slot.slot_id] = slot
+        candidate_slots[(slot.slot_id, slot.provider, slot.model)] = slot
         state = ImageResumeState(
             state_version=IMAGE_RESUME_STATE_VERSION,
             identity_version=self._identity.identity_version,

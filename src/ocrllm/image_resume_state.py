@@ -93,9 +93,11 @@ class ImageResumeState:
             type(slot) is not ImageSlotState for slot in self.slots
         ):
             raise ValueError("image resume slots are invalid")
-        slot_ids = [slot.slot_id for slot in self.slots]
-        if len(set(slot_ids)) != len(slot_ids):
-            raise ValueError("image resume slot ids are duplicated")
+        slot_keys = [
+            (slot.slot_id, slot.provider, slot.model) for slot in self.slots
+        ]
+        if len(set(slot_keys)) != len(slot_keys):
+            raise ValueError("image resume slots are duplicated")
         frozen_metadata = freeze_json_value(self.metadata)
         if not isinstance(frozen_metadata, MappingProxyType):
             raise ValueError("image resume metadata is invalid")

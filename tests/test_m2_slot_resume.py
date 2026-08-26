@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -389,7 +390,13 @@ def test_fallback_does_not_reuse_or_discard_other_models_paid_slots(
     assert all(slot["reused"] is False for slot in slots)
 
     persisted = _state_document(output_dir)
-    assert {slot["model"] for slot in persisted["slots"]} == {"recovery-model"}
+    assert [
+        (slot["slot_id"], slot["model"]) for slot in persisted["slots"]
+    ] == [
+        ("draft", "quota-model"),
+        ("draft", "recovery-model"),
+        ("review", "recovery-model"),
+    ]
 
 
 def test_fallback_preserves_settled_token_usage_from_every_model(
@@ -627,14 +634,127 @@ def test_completed_state_failure_counts_calls_across_model_fallback(
     ]
     assert not (output_dir / "board_board.md").exists()
     partial_state = _state_document(output_dir)
-    assert [slot["slot_id"] for slot in partial_state["slots"]] == [
-        "draft",
-        "review",
+    assert [
+        (slot["slot_id"], slot["model"]) for slot in partial_state["slots"]
+    ] == [
+        ("draft", "quota-model"),
+        ("draft", "recovery-model"),
+        ("review", "recovery-model"),
     ]
-    assert {slot["model"] for slot in partial_state["slots"]} == {
-        "recovery-model"
-    }
     assert list(output_dir.glob(".*.tmp")) == []
+
+
+def test_completed_state_failure_preserves_paid_slots_from_every_model_for_resume(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+
+    class Provider:
+        resume_identity = "m2-qualified-model-slot-provider-v1"
+
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str]] = []
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            model = config.vision_model.name
+            workflow_pass = (
+                "review" if "BEGIN FALLIBLE DRAFT DATA" in prompt else "draft"
+            )
+            self.calls.append((model, workflow_pass))
+            if model == "model-a" and workflow_pass == "review":
+                raise QuotaExhausted(
+                    "per-model quota spent",
+                    details={"failure_scope": "model"},
+                )
+            return f"# {model} {workflow_pass}\n"
+
+    provider = Provider()
+    config = Config(
+        provider=provider,
+        output_dir=output_dir,
+        vision_model=VisionModelSettings(
+            name="model-a",
+            candidate_models=("model-b",),
+        ),
+        preferences=RecognitionPreferences(draft_candidates=1, review_passes=1),
+    )
+    saver = importlib.import_module("ocrllm.output.save_image_resume_state_atomically")
+    real_save = saver.save_image_resume_state_atomically
+
+    def fail_completed_state(state_path, state):
+        if state.markdown:
+            raise OutputError(
+                "test-only completed-state failure",
+                code="OUTPUT_WRITE_FAILED",
+            )
+        return real_save(state_path, state)
+
+    monkeypatch.setattr(
+        saver,
+        "save_image_resume_state_atomically",
+        fail_completed_state,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize(source, config=config)
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert provider.calls == [
+        ("model-a", "draft"),
+        ("model-a", "review"),
+        ("model-b", "draft"),
+        ("model-b", "review"),
+    ]
+    partial_state = _state_document(output_dir)
+    assert [
+        (slot["slot_id"], slot["model"]) for slot in partial_state["slots"]
+    ] == [
+        ("draft", "model-a"),
+        ("draft", "model-b"),
+        ("review", "model-b"),
+    ]
+
+    calls_before_resume = tuple(provider.calls)
+    monkeypatch.setattr(
+        saver,
+        "save_image_resume_state_atomically",
+        real_save,
+    )
+    result = recognize(source, config=replace(config, resume=True))
+
+    assert provider.calls == [*calls_before_resume, ("model-a", "review")]
+    assert result.markdown == "# model-b review\n"
+    assert result.metadata["current_run_provider_call_count"] == 1
+    assert [dict(attempt) for attempt in result.metadata["model_attempts"]] == [
+        {
+            "model": "model-a",
+            "outcome": "PROVIDER_QUOTA_EXHAUSTED",
+            "disposition": "stop",
+            "provider_calls_attempted": 1,
+        },
+        {
+            "model": "model-b",
+            "outcome": "success",
+            "provider_calls_attempted": 0,
+        },
+    ]
+    assert [
+        (slot["slot_id"], slot["model"], slot["reused"])
+        for slot in result.metadata["workflow_slots"]
+    ] == [
+        ("draft", "model-b", True),
+        ("review", "model-b", True),
+    ]
+    completed_state = _state_document(output_dir)
+    assert [
+        (slot["slot_id"], slot["model"]) for slot in completed_state["slots"]
+    ] == [
+        ("draft", "model-a"),
+        ("draft", "model-b"),
+        ("review", "model-b"),
+    ]
 
 
 adapter_module = importlib.import_module("ocrllm.providers.dashscope.recognize_images")

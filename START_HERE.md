@@ -1152,3 +1152,11 @@ contracts. A real Windows junction regression preserves paid state in the
 external target. This did not introduce ancestor containment, a transaction,
 or a general path-security framework. The bounded reproduced queue is empty;
 resume with a fresh public-lifecycle audit.
+
+#400's fresh audit found and fixes candidate-model image checkpoints that
+overwrote another model's paid `draft` or `review` slot. Slot uniqueness is now
+the existing `(slot_id, provider, model)` identity, so image, PDF, and video
+resume can retain every settled candidate without changing the v2 document or
+public workflow names. The next reproduced item is video post-settlement state
+save/publication error evidence, followed by audio snapshot-cleanup evidence
+and response-validation token evidence.
