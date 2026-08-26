@@ -1516,6 +1516,12 @@ The following directions remain traceable but are not current work:
   maintainer's terminal-failure choice; the recommended rule retains settled
   paid work, publishes no final file while any required unit is missing, raises
   the typed error, and lets explicit resume retry only the missing work.
+  #356 fixes an independent current accounting defect: if a whole long-audio
+  call succeeded and the immediately following state save failed, standalone
+  audio reported zero calls and video omitted the count. The whole settlement
+  block now adds the already-known one attempted call to an otherwise uncounted
+  typed error. It changes no provider, state, retry, resume, cleanup, or API
+  behavior.
 
 ## Obsolete Prose Kept For Trace
 

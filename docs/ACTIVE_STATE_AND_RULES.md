@@ -6894,3 +6894,22 @@ which abandons recovery of its missing work. Recommended strict defaults are
 exact path plus byte identity, serial checkpointed frame groups, and digest-
 verified cleanup when a matching final result and journal coexist after a crash.
 No runtime/state/API/test change is made until the terminal rule is selected.
+
+## Current working update: #356 whole-audio save failures keep paid-call truth
+
+The whole long-audio settlement path previously learned that its one native
+Google Files call had completed, built the recognized output, and then saved the
+temporary state. If that state save raised a typed output error, both standalone
+`recognize_long_mp3()` and video-owned whole audio reported the failure after
+their local return-value assignment had not occurred: standalone supplied a
+false zero attempted calls, while video omitted the count entirely. Interval
+audio already carried its running call count across the same boundary.
+
+The whole processor now guards only the post-provider settlement block. A typed
+error there receives `provider_calls_attempted=1` only when it does not already
+carry a more specific count. Provider dispatch, error identity, persistence,
+retry, resume, cleanup, and public signatures are unchanged. Two failing-first
+regressions produced the exact old 0/missing evidence; standalone whole,
+interval, video settlement, public video, and native long-audio neighbors now
+pass 82 tests. Independent cleanup/media audits found no second concrete defect
+and did not add path, VFR, or lifecycle defenses already covered elsewhere.

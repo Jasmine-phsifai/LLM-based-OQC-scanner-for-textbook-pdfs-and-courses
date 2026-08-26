@@ -20,6 +20,7 @@ from ..audio.save_long_audio_partial_state_atomically import (
 )
 from ..audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT
 from ..config import Config
+from ..errors import OCRLLMError
 from ..processor_output import ProcessorOutput
 from ..providers.google_genai.recognize_uploaded_mp3 import recognize_uploaded_mp3
 from .build_long_mp3_processor_output import build_long_mp3_processor_output
@@ -54,26 +55,31 @@ def recognize_long_mp3_whole(
         prompt=AUDIO_TRANSCRIPTION_PROMPT,
         config=config,
     )
-    output = _with_current_run_count(
-        build_long_mp3_processor_output(snapshot, response, config=config),
-        count=1,
-    )
-    slot = build_long_audio_settled_slot(
-        output,
-        window_index=0,
-        request_fingerprint=request_fingerprint,
-    )
-    save_long_audio_partial_state_atomically(
-        state_path,
-        LongAudioPartialState(
-            state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
-            identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
-            mode="whole",
-            interval_minutes=None,
-            request_fingerprints=request_plan,
-            slots=(slot,),
-        ),
-    )
+    try:
+        output = _with_current_run_count(
+            build_long_mp3_processor_output(snapshot, response, config=config),
+            count=1,
+        )
+        slot = build_long_audio_settled_slot(
+            output,
+            window_index=0,
+            request_fingerprint=request_fingerprint,
+        )
+        save_long_audio_partial_state_atomically(
+            state_path,
+            LongAudioPartialState(
+                state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
+                identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+                mode="whole",
+                interval_minutes=None,
+                request_fingerprints=request_plan,
+                slots=(slot,),
+            ),
+        )
+    except OCRLLMError as error:
+        if "provider_calls_attempted" not in error.details:
+            error._add_safe_detail("provider_calls_attempted", 1)
+        raise
     return output, 1
 
 

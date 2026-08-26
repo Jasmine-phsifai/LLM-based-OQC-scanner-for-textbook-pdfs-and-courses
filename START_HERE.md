@@ -269,6 +269,13 @@ final file while any required unit is missing, retain settled paid work, raise
 the typed failure, and let an explicit later resume retry only the missing work;
 cleanup-only partial content may publish.
 
+#356 fixes one current paid-call accounting defect without beginning that job.
+When a whole long-audio provider call completed but the following temporary
+state save failed, standalone audio incorrectly reported zero attempted calls
+and video audio omitted the count. The whole settlement boundary now preserves
+the known value `1` on that typed error. Interval behavior, provider calls,
+state format, retry, resume, cleanup, and public APIs are unchanged.
+
 #138 makes the public video outcome reject
 frame/audio paths outside its exact lexical `output_root/frames/*` and optional
 `output_root/audio.mp3` layout before composition. #139 makes composed

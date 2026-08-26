@@ -193,6 +193,37 @@ def test_failed_publication_preserves_paid_state_for_zero_call_resume(
     assert not _state_path(output_dir).exists()
 
 
+def test_whole_state_save_failure_reports_the_completed_provider_call(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    provider_calls: list[str] = []
+    _, whole_processor = _install_fakes(monkeypatch, provider_calls)
+
+    def fail_state_save(*_args, **_kwargs):
+        raise OutputError(
+            "The long-audio partial state could not be written atomically.",
+            code="OUTPUT_WRITE_FAILED",
+        )
+
+    monkeypatch.setattr(
+        whole_processor,
+        "save_long_audio_partial_state_atomically",
+        fail_state_save,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir),
+        )
+
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert provider_calls == [MODEL]
+    assert not _root(output_dir).exists()
+
+
 def test_resume_request_mismatch_stops_before_provider_dispatch(
     tmp_path: Path,
     monkeypatch,

@@ -155,6 +155,57 @@ def test_video_long_audio_state_unlink_failure_returns_partial_result(
     assert state_path.read_text(encoding="utf-8") == "settled"
 
 
+def test_video_whole_state_save_failure_reports_the_completed_provider_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    processor = __import__(
+        "ocrllm.processors.recognize_video_mp3",
+        fromlist=["recognize_video_mp3"],
+    )
+    whole_processor = __import__(
+        "ocrllm.processors.recognize_long_mp3_whole",
+        fromlist=["recognize_long_mp3_whole"],
+    )
+
+    @contextmanager
+    def clean_snapshot(*_args, **_kwargs):
+        yield _snapshot(tmp_path)
+
+    def recognize_once(*_args, **_kwargs):
+        return SimpleNamespace(
+            markdown="# Paid whole audio\n",
+            input_tokens=101,
+            output_tokens=17,
+            remote_file_deleted=True,
+            client_closed=True,
+        )
+
+    def fail_state_save(*_args, **_kwargs):
+        raise OutputError(
+            "The long-audio partial state could not be written atomically.",
+            code="OUTPUT_WRITE_FAILED",
+        )
+
+    monkeypatch.setattr(processor, "snapshot_video_mp3", clean_snapshot)
+    monkeypatch.setattr(whole_processor, "recognize_uploaded_mp3", recognize_once)
+    monkeypatch.setattr(
+        whole_processor,
+        "save_long_audio_partial_state_atomically",
+        fail_state_save,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize_video_mp3(
+            tmp_path / "audio.mp3",
+            config=_config(tmp_path),
+            interval_minutes=None,
+            state_path=tmp_path / ".ocrllm-video-audio-resume.json",
+        )
+
+    assert captured.value.details["provider_calls_attempted"] == 1
+
+
 def test_video_partial_long_audio_result_keeps_settled_state(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

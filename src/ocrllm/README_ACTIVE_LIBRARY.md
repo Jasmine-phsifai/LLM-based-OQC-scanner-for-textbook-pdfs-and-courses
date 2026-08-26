@@ -253,7 +253,9 @@ original choice.
 - returns an audio result with exact model/usage/source facts and explicit
   cleanup state; with `output_dir`, it first saves the settled paid result,
   atomically publishes `<output_dir>/<audio stem>/result.md`, and then removes
-  the temporary state;
+  the temporary state; if the whole-file state save itself fails after the one
+  provider call completed, the typed error still reports that one attempted
+  call;
 - accepts `resume=True` only with that fixed state present and an unpublished
   final result; an exact whole-file or interval prefix is reused with zero calls
   for settled work, while source/model/prompt/transport/interval drift is rejected;
