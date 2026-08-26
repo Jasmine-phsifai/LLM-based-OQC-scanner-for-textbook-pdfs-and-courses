@@ -457,6 +457,43 @@ def test_google_audio_primary_error_survives_client_close_failure(
 
 
 @pytest.mark.parametrize(
+    ("close_error", "expected_closed"),
+    [
+        (None, True),
+        (RuntimeError("PRIVATE CLOSE BODY"), False),
+    ],
+)
+def test_google_audio_no_speech_preserves_exact_client_close_outcome(
+    close_error,
+    expected_closed,
+    monkeypatch,
+) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    fake = _FakeGoogleModule(
+        text="NOSPEECH4OCRLLM",
+        close_error=close_error,
+    )
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    with pytest.raises(NoSpeechDetected) as caught:
+        recognize(FIXTURE, config=_config())
+
+    assert caught.value.code == "NO_SPEECH_DETECTED"
+    assert caught.value.details["provider"] == "google"
+    assert caught.value.details["model"] == MODEL
+    assert caught.value.details["provider_calls_attempted"] == 1
+    assert caught.value.details["provider_client_closed"] is expected_closed
+    assert "remote_file_deleted" not in caught.value.details
+    assert caught.value.details.get(
+        "provider_client_cleanup_failed",
+        False,
+    ) is (not expected_closed)
+    assert fake.clients[0].closed is expected_closed
+
+
+@pytest.mark.parametrize(
     ("text", "expected_code"),
     [
         ("NOSPEECH4OCRLLM", "NO_SPEECH_DETECTED"),

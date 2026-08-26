@@ -3989,10 +3989,12 @@ Post-register findings are ordered by demonstrated user impact:
   a newly settled whole or interval slot fails, the primary typed persistence
   error now retains that unsaved slot's validated model usage and exact known
   remote/client cleanup booleans alongside the existing paid-call count.
-- Open, medium: short Google audio can propagate `NoSpeechDetected` after one
-  dispatch without attaching the adapter's already-known client-close result.
-  Video journaling then stores the cleanup field as unknown. Preserve only that
-  current cleanup fact; inline short audio has no remote file to delete.
+- #386 closes the medium short-audio no-speech cleanup gap. Native Google
+  inline audio now attaches its exact known client-close boolean to the
+  original `NoSpeechDetected`; video journaling persists that boolean, omits
+  inapplicable remote-file cleanup, and retains the existing client-close
+  warning when closure failed. The no-speech error and paid-call count remain
+  primary, and older journals with an unknown value remain readable.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
@@ -7452,3 +7454,24 @@ their prior boundaries. No `ProcessorOutput` is fabricated, no state/return
 schema changes, and no retry, fallback, response cache, or transaction is
 added. The focused long-audio/video persistence set passes 124 tests, and the
 complete offline suite passes all 1,832 tests.
+
+## Current working update: #386 preserves inline no-speech client cleanup
+
+The native Google short-audio parser can settle one paid request as
+`NoSpeechDetected` before a `GoogleGenAIAudioResponse` exists. The adapter
+already closed the SDK client in `finally`, but previously re-raised the typed
+error without the resulting boolean. Successful and failed close regressions
+both therefore saw the exact one-call count but no `provider_client_closed`.
+
+The adapter now enriches only `NoSpeechDetected` with that already-observed
+boolean after cleanup. Existing primary error, provider/model identity, call
+count, and `provider_client_cleanup_failed=True` on failure remain unchanged.
+Inline transport owns no remote provider file, so no remote-delete field is
+created. The video short-audio consumer stores the client boolean only when it
+is exact, omits the former meaningless `remote_file_deleted: null`, and adds
+the existing Google client-close warning only for `False`. Resume replays the
+saved terminal no-speech result with zero provider calls and tolerates older
+journals whose value was missing or null. No schema version, general cleanup
+copier, retry, fallback, or durable short-audio protocol was added. The focused
+adapter/video/state set passes 150 tests, and the complete offline suite passes
+all 1,835 tests.

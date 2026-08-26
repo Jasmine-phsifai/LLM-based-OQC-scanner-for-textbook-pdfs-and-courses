@@ -6533,3 +6533,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **保留边界。** legacy 普通图片只原样复制或对完整画面等比例缩小；视频比较缩略图只决定时间点，最终保存的是完整解码帧；PDF 使用统一比例渲染完整页面且不传裁剪区域。active 普通图片按字节快照，视频 writer 直接编码完整帧，PDFium 只按统一 scale 渲染整页。OCR 文本框排序和质量测试中故意制造透视畸变的素材生成器都不改变生产识别图片，不应删除。旧 repair manifest 的 `skip_preprocess` 只读字段不能触发任何裁剪；删除它只会破坏旧修复记录，不会加强当前规则。
 
 **验证与过度设计复查。** 第一次聚焦命令误用了已经不存在的 `test_pdf_backend.py` 和 `test_pdf_fresh_process.py`，两套 pytest 均在执行前停止，不能算验证。按当前文件名重跑后，active 视频完整帧、PDF backend 与 PDF 识别为 **51 passed in 4.71s**；legacy 完整图片和 PDF fresh-process 为 **5 passed in 4.67s**。当前没有运行时代码可删；继续增加运行时反裁剪守卫、源码禁词扫描、no-crop wrapper 或新的图像身份框架，会重复已经由删除和四角像素回归证明的规则，属于过度设计。本轮只记录重新确认，不修改产品代码、测试、API、依赖或输出布局。
+
+## #386 — 2026-08-26：短音频静音结果保留真实 client 关闭事实
+
+**本轮英文原子任务。** `Atomic task — Iteration #386: preserve the exact Google short-audio client-close outcome when a paid request terminates as NoSpeechDetected, including the resumable video journal consumer. Keep the typed no-speech result and one-call evidence primary, and never invent remote-file cleanup for inline audio.`
+
+**权威队列、失败优先与两条路线。** #384 后唯一已复现队列项是：Google inline 短音频已经调用一次并由 parser 返回 `NoSpeechDetected`，adapter 在 `finally` 明明得到 client 是否关闭成功，却只在失败时写 `provider_client_cleanup_failed=True`，两种情况都没有正/负 `provider_client_closed`。视频因此把 `provider_client_closed` 和不适用的 `remote_file_deleted` 一起保存成 `null`。路线 A 是把所有 provider 错误、cleanup 和 transport 统一成通用生命周期对象；路线 B 只在现有 no-speech 终点补已知布尔量，并让当前视频消费者保存它。选择 B。两组 adapter 红回归都在缺少字段处得到 `KeyError`；两组视频红回归都因 journal 多出 `remote_file_deleted: None` 而失败，证明不是代码阅读推测。
+
+**最小实现与个人复核。** native adapter 只对 `NoSpeechDetected` 在 client cleanup 完成后补 `provider_client_closed=True/False`；既有 provider/model、精确一次调用、typed 主错误及关闭失败标记均不变。视频短音频状态只在值为精确 bool 时保存该字段，完全删除 inline transport 无所有权的 remote-delete 字段；`False` 时沿用现有 Google client-close warning。读取旧 journal 时缺失或历史 `null` 仍按未知处理，不强制迁移，也不伪造成功。resume 重新抛出的 no-speech 保留零本轮调用和已知 client 布尔量。本人逐段复核了 parser、adapter finally、video state save/replay 和最终 composition；没有把成功正文 response、Google Files 或 long-audio slot 协议混进来。
+
+**验证与过度设计复查。** 两条目标回归修复后分别为 **2 passed** 与 **2 passed**；覆盖完整 Google short adapter、视频普通 facade、高层 journal facade、state serialization、composition 和 live-runner 离线逻辑的邻近集合为 **150 passed in 25.34s**。`compileall -q src tests tools`、`git diff --check` 和冻结 `contracts/worker` 检查通过。冻结 runtime/tests 后由轻量执行者完成完整离线门禁：**1,835 passed in 79.55s**，0 失败、0 跳过；没有 provider、网络、安装、凭据或受保护文件访问。没有新增 cleanup framework、transport 抽象、schema 版本、retry/fallback、远端文件字段或 standalone 短音频持久化；把布尔量扩散到所有错误才会超过当前证据。当前有界缺陷队列已清空，下一轮应重新审计公开生命周期，而不是继续扩张 cleanup 方向。

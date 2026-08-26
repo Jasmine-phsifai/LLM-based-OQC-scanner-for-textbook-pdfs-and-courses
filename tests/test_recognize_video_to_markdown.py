@@ -43,6 +43,7 @@ from ocrllm.audio.long_audio_partial_state import (
 )
 from ocrllm.audio.long_audio_settled_slot import LongAudioSettledSlot
 from ocrllm.build_owned_media_fingerprint import build_owned_media_fingerprint
+from ocrllm.load_video_job_state import load_video_job_state
 from ocrllm.processor_output import ProcessorOutput
 from ocrllm.video_job_state import VideoAudioState
 
@@ -471,9 +472,11 @@ def test_no_audio_stream_is_terminal_and_publishes_without_audio_dispatch(
     assert _root_journals(output_root) == ()
 
 
+@pytest.mark.parametrize("client_closed", [True, False])
 def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    client_closed: bool,
 ) -> None:
     source = tmp_path / "quiet-lecture.mp4"
     source.write_bytes(b"stable-video-with-quiet-audio")
@@ -503,7 +506,7 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
         raise NoSpeechDetected(
             details={
                 "provider_calls_attempted": 1,
-                "provider_client_closed": True,
+                "provider_client_closed": client_closed,
             }
         )
 
@@ -534,7 +537,25 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
     assert audio_calls == publication_calls == 1
     assert media_calls == {"prepare": 1, "extract": 1}
     assert len(image_provider.groups) == 1
-    assert len(_root_journals(output_root)) == 1
+    journals = _root_journals(output_root)
+    assert len(journals) == 1
+    saved = load_video_job_state(journals[0]).audio.short_state
+    assert saved is not None
+    assert saved.metadata == {
+        "provider": "google",
+        "model": "test-audio-model",
+        "provider_call_count": 1,
+        "provider_client_closed": client_closed,
+    }
+    assert "remote_file_deleted" not in saved.metadata
+    assert saved.warnings == (
+        ("No recognizable speech was detected.",)
+        if client_closed
+        else (
+            "No recognizable speech was detected.",
+            "The Google GenAI client could not be closed after recognition.",
+        )
+    )
     assert not (output_root / "result.md").exists()
 
     result = _public_facade()(

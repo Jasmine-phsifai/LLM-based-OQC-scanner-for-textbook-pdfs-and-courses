@@ -1113,6 +1113,8 @@ removing #378's duplicate constants and path-unit code. The next queue is:
 #384 now preserves the newly settled long-audio slot's token and exact cleanup
 facts when its state save fails. #382 already closes selected-frame position
 honesty, and #383 rejects a later batch state/output conflict before dispatch.
-The next proven item is the short-audio no-speech client-close fact lost before
-video journaling; keep it atomic and do not invent remote-file cleanup for
-inline audio, retries, transactions, or a durable response protocol.
+#386 closes the remaining short-audio no-speech client-close gap: the native
+adapter preserves the exact close boolean, video state omits inapplicable
+remote-file cleanup, and exact resume remains zero-call. No reproduced item
+now remains in this bounded queue; select the next iteration from a fresh
+public-lifecycle audit rather than extending cleanup or recovery machinery.

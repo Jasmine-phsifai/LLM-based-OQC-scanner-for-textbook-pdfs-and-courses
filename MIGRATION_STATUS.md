@@ -1737,6 +1737,16 @@ fallback, response cache, or transaction was introduced. The next reproduced
 queue item is short-audio no-speech client-close disclosure before video state
 persistence. The complete offline suite passes all 1,832 tests.
 
+#386 closes that short-audio lifecycle gap without broadening the transport.
+Native Google inline recognition now attaches the already-known exact client
+close result to `NoSpeechDetected` while retaining the typed no-speech error,
+one-call evidence, and existing cleanup-failure marker. Video journaling stores
+only that exact boolean, removes the inapplicable remote-file null, and records
+the existing client-close warning when needed; old unknown journals still
+resume with zero calls. No remote upload, schema migration, retry, fallback,
+generic cleanup layer, or durable standalone short-audio state was added. The
+focused set passes 150 tests and the complete offline suite passes all 1,835.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

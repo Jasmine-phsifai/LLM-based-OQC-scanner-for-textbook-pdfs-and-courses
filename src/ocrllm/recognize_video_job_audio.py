@@ -129,18 +129,16 @@ def _recognize_short(
                 code="RESUME_STATE_MISMATCH",
             ) from None
         if saved.no_speech:
+            details = {
+                "provider": "google",
+                "model": audio.model,
+                "provider_calls_attempted": 0,
+            }
+            client_closed = saved.metadata.get("provider_client_closed")
+            if type(client_closed) is bool:
+                details["provider_client_closed"] = client_closed
             raise NoSpeechDetected(
-                details={
-                    "provider": "google",
-                    "model": audio.model,
-                    "provider_calls_attempted": 0,
-                    "remote_file_deleted": saved.metadata.get(
-                        "remote_file_deleted"
-                    ),
-                    "provider_client_closed": saved.metadata.get(
-                        "provider_client_closed"
-                    ),
-                }
+                details=details
             ) from None
         metadata = dict(saved.metadata)
         metadata["current_run_provider_call_count"] = 0
@@ -170,9 +168,15 @@ def _recognize_short(
             "provider": "google",
             "model": audio.model,
             "provider_call_count": error.details.get("provider_calls_attempted", 1),
-            "remote_file_deleted": error.details.get("remote_file_deleted"),
-            "provider_client_closed": error.details.get("provider_client_closed"),
         }
+        warnings = ["No recognizable speech was detected."]
+        client_closed = error.details.get("provider_client_closed")
+        if type(client_closed) is bool:
+            metadata["provider_client_closed"] = client_closed
+            if not client_closed:
+                warnings.append(
+                    "The Google GenAI client could not be closed after recognition."
+                )
         journal.persist_audio(
             VideoAudioState(
                 state="ready",
@@ -186,7 +190,7 @@ def _recognize_short(
                     markdown=None,
                     markdown_sha256=None,
                     status="partial",
-                    warnings=("No recognizable speech was detected.",),
+                    warnings=tuple(warnings),
                     metadata=metadata,
                     no_speech=True,
                 ),

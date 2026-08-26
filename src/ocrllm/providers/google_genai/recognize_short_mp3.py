@@ -6,7 +6,13 @@ from dataclasses import replace
 
 from ...audio.snapshot_short_mp3 import ShortMP3Snapshot
 from ...config import Config
-from ...errors import ConfigError, OCRLLMError, ProviderError, ProviderUnavailable
+from ...errors import (
+    ConfigError,
+    NoSpeechDetected,
+    OCRLLMError,
+    ProviderError,
+    ProviderUnavailable,
+)
 from ...raise_if_cancelled import raise_if_cancelled
 from ...snapshot_config import snapshot_config
 from .build_google_genai_audio_request import build_google_genai_audio_request
@@ -98,6 +104,11 @@ def recognize_short_mp3(
         del api_key
 
     if public_error is not None:
+        if isinstance(public_error, NoSpeechDetected):
+            public_error._add_safe_detail(
+                "provider_client_closed",
+                client_closed,
+            )
         if "provider_calls_attempted" not in public_error.details:
             public_error._add_safe_detail(
                 "provider_calls_attempted", provider_calls_attempted
