@@ -221,6 +221,18 @@ member decode. Missing credentials retain `CONFIG_MISSING` and exact
 `provider_calls_attempted=0`. Completed long-audio resume remains credential-
 free and zero-call, while adapters still resolve the credential again at real
 dispatch instead of caching a secret. Video branch ordering is unchanged.
+#438 closes the same ordering gap for fresh video orchestration. Both
+`recognize_video()` and fresh `recognize_video_to_markdown()` now resolve the
+configured Google audio credential after structural validation and both branch
+cancellation checks, but before video preparation, audio extraction, image
+provider dispatch, output-root creation, or journal creation. A missing key is
+a top-level `CONFIG_MISSING` with `provider_calls_attempted=0`. A pre-cancelled
+audio branch still lets the independent image branch settle without a key, and
+completed high-level resume still publishes or cleans its journal with zero
+provider calls and no credential. Pending resume keeps adapter-time resolution
+because durable state must first determine whether audio work remains. No
+credential cache, shared preflight framework, fallback, or provider-policy
+change was introduced.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4197,6 +4209,15 @@ Post-register findings are ordered by demonstrated user impact:
   needs no credential and adapters re-resolve at dispatch. Focused adjacent
   coverage passes 213 tests, independent review passes 242 tests, and the
   complete provider-free suite passes all 1,882 tests.
+- #438 closes the corresponding fresh-video gap. Low-level video formerly
+  prepared media, extracted audio, called the image provider, and decoded audio
+  before exposing a missing Google audio key; the high-level facade also
+  created its journal and repeated audio preparation around the image call.
+  Both fresh public entries now reject the known-invalid combined request before
+  any of those effects with exact zero-call evidence. Explicitly pre-cancelled
+  audio and completed high-level resume remain credential-free. Focused adjacent
+  coverage passes 205 tests, independent review passes five exact controls, and
+  the complete provider-free suite passes all 1,884 tests.
 
 The bounded reproduced queue is empty again. Select the next iteration through
 a fresh public-lifecycle audit rather than extending output preflight

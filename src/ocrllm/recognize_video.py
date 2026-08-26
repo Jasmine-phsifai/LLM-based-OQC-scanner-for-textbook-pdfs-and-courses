@@ -18,7 +18,7 @@ def recognize_video(
 ) -> VideoRecognitionOutcome:
     """Settle independent frame and audio recognition for one local MP4."""
     from .clear_public_error import clear_public_error
-    from .errors import Cancelled, OCRLLMError, OutputError
+    from .errors import Cancelled, ConfigError, OCRLLMError, OutputError
     from .providers.validate_vision_provider_config import (
         validate_vision_provider_config,
     )
@@ -69,6 +69,16 @@ def recognize_video(
         audio_cancellation = error
     if image_cancellation is not None and audio_cancellation is not None:
         raise image_cancellation from None
+    if audio_cancellation is None:
+        from .providers.google_genai.resolve_google_genai_credential import (
+            resolve_google_genai_credential,
+        )
+
+        try:
+            resolve_google_genai_credential(validated_audio_config.provider)
+        except ConfigError as error:
+            error._add_safe_detail("provider_calls_attempted", 0)
+            raise
 
     settled_outcome: VideoRecognitionOutcome | None = None
     try:

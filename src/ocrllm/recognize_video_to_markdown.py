@@ -46,7 +46,7 @@ def _recognize_video_to_markdown(
     audio_interval_minutes: int | None,
     resume: bool,
 ) -> RecognitionResult:
-    from .errors import OutputError, OutputExists
+    from .errors import ConfigError, OutputError, OutputExists
     from .output.claim_output_target import claim_output_target
     from .output.normalize_output_stem import normalize_output_stem
     from .providers.validate_vision_provider_config import (
@@ -82,6 +82,16 @@ def _recognize_video_to_markdown(
     audio_cancelled = _read_cancellation(validated_audio)
     if image_cancelled is not None and audio_cancelled is not None:
         raise image_cancelled from None
+    if not resume and audio_cancelled is None:
+        from .providers.google_genai.resolve_google_genai_credential import (
+            resolve_google_genai_credential,
+        )
+
+        try:
+            resolve_google_genai_credential(validated_audio.provider)
+        except ConfigError as error:
+            error._add_safe_detail("provider_calls_attempted", 0)
+            raise
 
     try:
         source_path = Path(source)

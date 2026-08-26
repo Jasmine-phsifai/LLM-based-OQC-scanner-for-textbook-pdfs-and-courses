@@ -507,13 +507,15 @@ def test_audio_cancellation_returns_partial_frames_without_audio_extraction(
     image_provider = _ImageProvider()
     observed_audio = _install_fake_audio(monkeypatch)
     video_snapshots = _observe_request_owned_video_snapshot(monkeypatch)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
 
     outcome = recognize_video(
         source,
         output_dir=tmp_path / "output",
         image_config=Config(provider=image_provider),
         audio_config=Config(
-            provider=GoogleGenAISettings(api_key="test-only-google-key"),
+            provider=GoogleGenAISettings(),
             audio_model=AudioModelSettings(name="test-audio-model"),
             temp_dir=tmp_path / "audio-snapshots",
             cancellation=cancellation,
@@ -1515,6 +1517,44 @@ def test_recognize_video_rejects_invalid_audio_config_before_output_or_dispatch(
             audio_config=Config(provider=image_provider),
         )
 
+    assert image_provider.calls == []
+    assert not output_dir.exists()
+
+
+def test_recognize_video_rejects_missing_audio_credential_before_media_or_image(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepare = importlib.import_module("ocrllm.video.prepare_video_media")
+    media_calls = 0
+
+    @contextmanager
+    def reject_media_work(*_args, **_kwargs):
+        nonlocal media_calls
+        media_calls += 1
+        raise AssertionError("missing audio credential reached video preparation")
+        yield  # pragma: no cover - makes this an explicit context manager
+
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setattr(prepare, "prepare_video_media", reject_media_work)
+    image_provider = _ImageProvider()
+    output_dir = tmp_path / "output"
+
+    with pytest.raises(ConfigError) as captured:
+        recognize_video(
+            tmp_path / "not-opened.mp4",
+            output_dir=output_dir,
+            image_config=Config(provider=image_provider),
+            audio_config=Config(
+                provider=GoogleGenAISettings(),
+                audio_model=AudioModelSettings(name="test-audio-model"),
+            ),
+        )
+
+    assert captured.value.code == "CONFIG_MISSING"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert media_calls == 0
     assert image_provider.calls == []
     assert not output_dir.exists()
 

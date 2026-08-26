@@ -2003,3 +2003,12 @@ precedence. Completed long-audio resume remains credential-free and zero-call;
 the provider adapter still resolves the key again immediately before actual
 work, so no secret is cached. Video orchestration and provider policy are
 unchanged.
+
+#438 applies that credential ordering to the two public video orchestrators.
+Fresh work whose audio branch is active now rejects a missing Google key before
+video preparation, audio extraction, image dispatch, output-root creation, or
+journal creation, with `provider_calls_attempted=0`. A pre-cancelled audio
+branch remains credential-free and can still settle the image branch; completed
+high-level resume also remains credential-free and zero-call. Pending resume,
+provider fallback, retry, state formats, public signatures, and the separated
+image/audio configuration contract are unchanged.

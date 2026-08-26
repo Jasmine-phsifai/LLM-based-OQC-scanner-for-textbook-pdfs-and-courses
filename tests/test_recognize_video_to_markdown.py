@@ -252,6 +252,47 @@ def test_invalid_branch_persistence_stops_before_media_or_provider_work(
     assert not (tmp_path / "output").exists()
 
 
+def test_missing_audio_credential_stops_before_fresh_video_media_or_image(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepare = __import__(
+        "ocrllm.video.prepare_video_media",
+        fromlist=["prepare_video_media"],
+    )
+    media_calls = 0
+
+    @contextmanager
+    def reject_media_work(*_args, **_kwargs):
+        nonlocal media_calls
+        media_calls += 1
+        raise AssertionError("missing audio credential reached video preparation")
+        yield  # pragma: no cover - makes this an explicit context manager
+
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setattr(prepare, "prepare_video_media", reject_media_work)
+    image_provider = _ImageProvider()
+    output_parent = tmp_path / "output"
+
+    with pytest.raises(ConfigError) as captured:
+        _public_facade()(
+            tmp_path / "not-opened.mp4",
+            output_dir=output_parent,
+            image_config=Config(provider=image_provider),
+            audio_config=Config(
+                provider=GoogleGenAISettings(),
+                audio_model=AudioModelSettings(name="test-audio-model"),
+            ),
+        )
+
+    assert captured.value.code == "CONFIG_MISSING"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert media_calls == 0
+    assert image_provider.groups == []
+    assert not output_parent.exists()
+
+
 def test_initial_journal_failure_removes_unpaid_output_root(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1295,6 +1336,13 @@ def test_published_result_and_journal_resume_cleanup_reuses_every_provider_unit(
     assert len(_root_journals(output_root)) == 1
     assert audio_calls == 1
     assert len(image_provider.groups) == 1
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    resume_audio_config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="test-audio-model"),
+        temp_dir=tmp_path / "audio-snapshots",
+    )
 
     original_bytes = first.output_path.read_bytes()
     first.output_path.write_bytes(b"# changed result\n")
@@ -1303,7 +1351,7 @@ def test_published_result_and_journal_resume_cleanup_reuses_every_provider_unit(
             source,
             output_dir=output_parent,
             image_config=image_config,
-            audio_config=audio_config,
+            audio_config=resume_audio_config,
             resume=True,
         )
     assert mismatch.value.code == "RESUME_STATE_MISMATCH"
@@ -1316,7 +1364,7 @@ def test_published_result_and_journal_resume_cleanup_reuses_every_provider_unit(
         source,
         output_dir=output_parent,
         image_config=image_config,
-        audio_config=audio_config,
+        audio_config=resume_audio_config,
         resume=True,
     )
 
@@ -1665,14 +1713,22 @@ def test_one_pre_cancelled_branch_preserves_other_branch_settlement_for_resume(
     monkeypatch.setattr(job_audio, "recognize_short_mp3", recognize_audio)
     cancellation = Event()
     cancellation.set()
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     image_provider = _ImageProvider()
     image_config = Config(
         provider=image_provider,
         cancellation=cancellation if cancelled_branch == "image" else None,
     )
-    audio_config = _audio_config(
-        tmp_path,
-        cancellation=cancellation if cancelled_branch == "audio" else None,
+    audio_config = (
+        Config(
+            provider=GoogleGenAISettings(),
+            audio_model=AudioModelSettings(name="test-audio-model"),
+            temp_dir=tmp_path / "audio-snapshots",
+            cancellation=cancellation,
+        )
+        if cancelled_branch == "audio"
+        else _audio_config(tmp_path)
     )
     original_cancellation = None
     if cancelled_branch == "audio":
@@ -1741,11 +1797,16 @@ def test_one_pre_cancelled_branch_preserves_other_branch_settlement_for_resume(
         assert repeated.audio.short_state is None
 
     cancellation.clear()
+    resume_audio_config = (
+        _audio_config(tmp_path)
+        if cancelled_branch == "audio"
+        else audio_config
+    )
     result = _public_facade()(
         source,
         output_dir=output_parent,
         image_config=image_config,
-        audio_config=audio_config,
+        audio_config=resume_audio_config,
         resume=True,
     )
 
