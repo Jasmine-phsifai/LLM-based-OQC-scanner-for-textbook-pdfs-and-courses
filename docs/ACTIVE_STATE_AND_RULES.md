@@ -7877,3 +7877,32 @@ or transaction was added. Focused video composition/lifecycle coverage passes
 80 tests; independent review passes 18 tests and finds no correctness issue;
 the complete offline suite passes all 1,864 tests with zero failures. The
 recorded low-priority #408 asymmetry is closed; return to a fresh bounded audit.
+
+## Current working update: #411 preserves rejected structured image evidence
+
+One provider-free public image regression now returns an exact
+`VisionProviderResponse` carrying 17/5 tokens and `client_closed=False`, while
+its whitespace-only Markdown is correctly rejected as
+`PROVIDER_RESPONSE_INVALID`. Previously the error retained the single call,
+workflow pass, failed model, and model-attempt ledger but discarded the
+provider-reported usage and exact cleanup failure before any image slot could
+be saved.
+
+The existing shared `call_vision_provider()` validation boundary now attaches
+current usage through the established model-usage helper and promotes only an
+exact false client-close fact before raising the same validation error. Plain
+string responses keep their old shape, unknown token counts remain unknown,
+usage without a resolved model remains unassigned, and true cleanup is not
+invented as a public success field. This one boundary covers image, PDF, and
+video frame recognition without duplicating the rule in Google, DashScope, or
+injected providers.
+
+No telemetry layer, provider base class, retry, fallback, response schema, or
+state change was added. Focused image/provider/resume/PDF/video coverage passes
+180 tests; independent review passes separate 93- and 59-test sets and finds no
+blocking issue; the complete offline suite passes all 1,865 tests with zero
+failures or skips. Two separate reproduced items remain queued: completed
+long-audio resume can ignore cancellation arriving during source snapshotting
+and publish/delete its saved state, followed by the lower-priority composite
+video omission of `image_provider_client_closed=False` after a successful image
+branch. Keep them atomic rather than extending this evidence fix.

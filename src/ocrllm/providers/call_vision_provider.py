@@ -5,6 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
+from ..attach_current_model_token_usage_to_error import (
+    attach_current_model_token_usage_to_error,
+)
 from ..config import Config
 from ..errors import ConfigError, OCRLLMError, ProviderError
 from .bounded_provider_call import BoundedProviderCall, ProviderDeadlineExceeded
@@ -89,6 +92,22 @@ def call_vision_provider(
             },
         )
     if validation_error is not None:
+        if type(provider_value) is VisionProviderResponse:
+            attach_current_model_token_usage_to_error(
+                validation_error,
+                (
+                    {
+                        "model": resolved_provider.model,
+                        "input_tokens": provider_value.input_tokens,
+                        "output_tokens": provider_value.output_tokens,
+                    },
+                ),
+            )
+            if provider_value.client_closed is False:
+                validation_error._add_safe_detail(
+                    "provider_client_closed",
+                    False,
+                )
         del provider, recognize_method, provider_value
         raise validation_error
     if type(provider_value) is VisionProviderResponse:

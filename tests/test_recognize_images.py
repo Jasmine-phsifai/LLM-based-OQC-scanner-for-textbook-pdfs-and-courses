@@ -14,9 +14,11 @@ from ocrllm import (
     ConfigError,
     ProviderError,
     RecognitionPreferences,
+    VisionModelSettings,
     recognize,
     recognize_batch,
 )
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
 from write_test_image import write_test_image
 
@@ -360,6 +362,63 @@ def test_invalid_provider_output_never_becomes_success(tmp_path, provider_output
     assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
     assert captured.value.details["reason"] == "empty"
     assert len(provider.calls) == 1
+
+
+def test_rejected_structured_provider_response_preserves_paid_evidence(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    provider = RecordingProvider(
+        VisionProviderResponse(
+            markdown="   \n",
+            input_tokens=17,
+            output_tokens=5,
+            client_closed=False,
+        )
+    )
+
+    with pytest.raises(ProviderError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                vision_model=VisionModelSettings(name="model-a"),
+            ),
+        )
+
+    assert type(captured.value) is ProviderError
+    assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.retryable is False
+    assert captured.value.details["reason"] == "empty"
+    assert len(provider.calls) == 1
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["workflow_pass"] == "draft"
+    assert captured.value.details["failed_model"] == "model-a"
+    attempts = [
+        dict(attempt) for attempt in captured.value.details["model_attempts"]
+    ]
+    assert attempts == [
+        {
+            "model": "model-a",
+            "outcome": "PROVIDER_RESPONSE_INVALID",
+            "disposition": "inspect_response",
+            "provider_calls_attempted": 1,
+        }
+    ]
+    assert [
+        dict(usage) for usage in captured.value.details["settled_model_usage"]
+    ] == [
+        {
+            "model": "model-a",
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        }
+    ]
+    assert captured.value.details["provider_client_closed"] is False
+    assert not (output_dir / "board_board.md").exists()
+    assert not (output_dir / "board_board.ocrllm-state.json").exists()
+    assert list(output_dir.iterdir()) == []
 
 
 def test_hostile_string_subclass_is_rejected_without_executing_overrides(tmp_path):
