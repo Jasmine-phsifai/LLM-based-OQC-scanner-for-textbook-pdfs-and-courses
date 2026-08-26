@@ -242,6 +242,83 @@ def test_public_pdf_uses_two_ordered_bounded_image_groups(
     assert result.metadata["current_run_provider_call_count"] == 2
 
 
+def test_memory_only_pdf_snapshot_exit_preserves_settled_cleanup_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=1)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    source_bytes = source.read_bytes()
+    cleanup_error = OutputError(
+        "test-only PDF snapshot exit failure",
+        code="OUTPUT_WRITE_FAILED",
+        retryable=True,
+    )
+    snapshot_root = tmp_path / "request-snapshot"
+
+    class StructuredProvider(_RecordingProvider):
+        def recognize_images(self, image_paths, *, prompt: str, config: Config):
+            super().recognize_images(image_paths, prompt=prompt, config=config)
+            return VisionProviderResponse(
+                markdown="# Paid PDF group\n",
+                input_tokens=31,
+                output_tokens=7,
+                client_closed=False,
+            )
+
+    @contextmanager
+    def fail_after_snapshot_exit(source_path, *, temp_dir):
+        snapshot_root.mkdir()
+        snapshot_path = snapshot_root / "source.pdf"
+        snapshot_path.write_bytes(source_bytes)
+        try:
+            yield SimpleNamespace(
+                path=snapshot_path,
+                root=snapshot_root,
+                byte_size=len(source_bytes),
+            )
+        finally:
+            snapshot_path.unlink()
+            (snapshot_root / "rendered-pages").rmdir()
+            snapshot_root.rmdir()
+            raise cleanup_error
+
+    processor = importlib.import_module("ocrllm.processors.recognize_pdf")
+    monkeypatch.setattr(processor, "snapshot_pdf", fail_after_snapshot_exit)
+    provider = StructuredProvider()
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                vision_model=VisionModelSettings(name="model-a"),
+                execution=RecognitionExecutionPolicy(max_parallel_requests=4),
+            ),
+        )
+
+    assert captured.value is cleanup_error
+    assert type(captured.value) is OutputError
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.retryable is True
+    assert len(provider.calls) == 1
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["settled_pdf_group_count"] == 1
+    assert [
+        dict(usage) for usage in captured.value.details["settled_model_usage"]
+    ] == [
+        {
+            "model": "model-a",
+            "input_count": 31,
+            "output_count": 7,
+            "unit": "tokens",
+        }
+    ]
+    assert captured.value.details["provider_client_closed"] is False
+    assert source.read_bytes() == source_bytes
+    assert set(tmp_path.iterdir()) == {source}
+
+
 def test_existing_pdf_output_rejects_before_snapshot_or_backend_inspection(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

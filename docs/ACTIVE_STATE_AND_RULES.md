@@ -7805,3 +7805,24 @@ provider-free timing probe confirms cancellation during media preparation still
 stops before extraction. The complete offline suite passes all 1,863 tests with
 zero skips. Next address the separately reproduced PDF outer-snapshot cleanup
 disclosure gap.
+
+## Current working update: #407 preserves settled PDF cleanup evidence
+
+A provider-free public regression now settles one memory-only PDF page group
+with exact 31/7 token usage and `provider_client_closed=False`, then makes the
+outer owned PDF snapshot raise the same prebound retryable
+`OUTPUT_WRITE_FAILED` while exiting. Previously the error retained the group,
+call, and token evidence but dropped the already-settled client cleanup fact.
+
+The existing PDF settled-work attachment now aggregates exact cleanup booleans
+alongside its existing call and token evidence. Any exact false dominates;
+true is reported only when every included value is exactly true; missing or
+malformed values remain unknown instead of becoming success. The original
+typed error, source bytes, zero-publication behavior, ordering, and resume
+history rules are unchanged.
+
+No generic cleanup ledger, cross-domain lifecycle helper, state schema,
+transaction, retry, or fallback was added. Focused PDF/image/resume/output
+coverage passes 110 tests; independent review finds no high- or medium-severity
+issue; the complete offline suite passes all 1,864 tests with zero failures.
+Return to a fresh bounded public-lifecycle audit before selecting another fix.

@@ -1204,3 +1204,11 @@ typed cancellation. Repeated cancelled resume performs zero extraction and
 provider work; clearing the signal resumes with one extraction/audio call and
 zero image replay. This does not add mid-FFmpeg interruption, a coordinator,
 schema, or public option. The complete offline suite remains 1,863 tests.
+
+#407 closes the PDF outer-snapshot cleanup disclosure gap. When a memory-only
+PDF page group has settled but the owned source snapshot then fails on exit,
+the original typed error now preserves the group's exact client-close fact as
+well as its existing call and token evidence. False dominates, while unknown
+cleanup cannot become true. This extends the existing PDF evidence attachment;
+it adds no generic lifecycle ledger, schema, retry, or transaction. The
+complete offline suite passes all 1,864 tests.

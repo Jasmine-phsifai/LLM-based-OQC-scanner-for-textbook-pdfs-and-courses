@@ -12,9 +12,10 @@ def attach_pdf_settled_work(
     error: OCRLLMError,
     settled_results: Sequence[RecognitionResult],
 ) -> None:
-    """Preserve current-run call and token evidence without changing error type."""
+    """Preserve current-run call, token, and cleanup evidence on one error."""
     settled_calls = 0
     usage_by_model: dict[str, dict[str, int | None]] = {}
+    client_cleanup: list[bool | None] = []
     for result in settled_results:
         calls = result.metadata.get("current_run_provider_call_count", 0)
         if type(calls) is int and calls >= 0:
@@ -22,6 +23,10 @@ def attach_pdf_settled_work(
         usage = result.metadata.get("current_model_token_usage", ())
         if type(usage) is tuple:
             _merge_result_usage(usage_by_model, usage)
+        client_closed = result.metadata.get("provider_client_closed")
+        client_cleanup.append(
+            client_closed if type(client_closed) is bool else None
+        )
 
     local_calls = error.details.get("provider_calls_attempted", 0)
     if type(local_calls) is not int or local_calls < 0:
@@ -45,6 +50,16 @@ def attach_pdf_settled_work(
                 for model, counts in usage_by_model.items()
             ),
         )
+
+    if "provider_client_closed" in error.details:
+        error_client_closed = error.details["provider_client_closed"]
+        client_cleanup.append(
+            error_client_closed if type(error_client_closed) is bool else None
+        )
+    if any(value is False for value in client_cleanup):
+        error._add_safe_detail("provider_client_closed", False)
+    elif client_cleanup and all(value is True for value in client_cleanup):
+        error._add_safe_detail("provider_client_closed", True)
 
 
 def _merge_result_usage(
