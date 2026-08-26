@@ -7253,3 +7253,11 @@ fallback, provider-class hierarchy, legacy-format compatibility, crop, or
 second batch abstraction. Provider-class generalization and multi-provider
 fallback remain future constraints after the recognition library is stable,
 not #374 runtime work.
+
+Exact runtime commit `5be9402` passes the maintained clean installed gate:
+1,821 archived tests pass with one optional RapidOCR skip, the wheel is 299,959
+bytes, and base plus audio, image, DashScope, Google, audio+Google, PDF vision,
+video, and combined video/audio/image profiles and local smokes all pass. The
+combined smoke reports two retained frames, one frame result, and one audio
+result. No provider API was called; all gate-owned temporary directories were
+removed.

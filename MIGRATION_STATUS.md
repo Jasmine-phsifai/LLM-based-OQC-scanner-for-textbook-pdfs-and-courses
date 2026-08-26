@@ -1643,6 +1643,10 @@ terminally, recoverable gaps retain state, and publication-plus-journal cleanup
 can finish on zero-call resume. Whole audio remains default and interval mode
 accepts only positive integer minutes. No provider framework, fallback, retry,
 repair parser, crop, generic transaction, or cross-process lock was added.
+Exact runtime commit `5be9402` passes the maintained clean installed gate:
+1,821 archived tests pass with one optional RapidOCR skip, the 299,959-byte
+wheel and all eight optional/combined profiles install, and the local combined
+video smoke completes without a provider call.
 
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
