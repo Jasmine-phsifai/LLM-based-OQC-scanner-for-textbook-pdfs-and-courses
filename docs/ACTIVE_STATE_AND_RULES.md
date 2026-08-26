@@ -895,6 +895,11 @@ remove. The focused current video/PDF suite passed 50 tests and the bounded
 legacy full-frame/PDF suite passed 5 tests. Comparison thumbnails, blank-frame
 tests, and OCR text-box ordering remain selection or text-layout operations;
 they do not alter the recognition image.
+#410 reverified the same boundary on current `ba6c0b0` after another immediate
+maintainer clarification. Image snapshots remain byte-preserving, selected
+video outputs remain complete decoded frames, and PDF outputs remain uniformly
+scaled complete pages. No executable module, public setting, dependency, or
+orphan crop implementation exists to remove.
 #367 removed the last stale legacy `imaging` update whitelist entry, the unused
 `STEP_FRAME_PREPROCESS` name, and an architecture-diagram node for the deleted
 module. These remnants could not crop an image, but one made API configuration
