@@ -1143,3 +1143,12 @@ under-counting when another branch has already settled work. #397 closes that
 gap in both branch directions and dual failure while preserving the original
 typed error and excluding zero-call resume history. The next reproduced item
 is the narrower Windows long-audio junction-root ownership defect.
+
+#398 closes that narrow defect. Resumed long-audio ownership now rejects a
+symbolic-link or Windows reparse-point job root with `OUTPUT_PATH_INVALID`
+before snapshot, provider work, publication, or deletion, while ordinary
+directories and the existing missing/file-root errors keep their prior
+contracts. A real Windows junction regression preserves paid state in the
+external target. This did not introduce ancestor containment, a transaction,
+or a general path-security framework. The bounded reproduced queue is empty;
+resume with a fresh public-lifecycle audit.

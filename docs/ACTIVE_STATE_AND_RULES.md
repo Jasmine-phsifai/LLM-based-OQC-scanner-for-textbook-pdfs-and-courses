@@ -7615,3 +7615,28 @@ fixtures proved another branch had run. The focused video lifecycle set passes
 135 tests; the complete offline suite passes all 1,850 tests.
 The next reproduced queue item is the narrow Windows long-audio junction root
 ownership defect already recorded by #396.
+
+## Current working update: #398 rejects linked long-audio resume roots
+
+A public Windows regression created a real directory junction at the planned
+long-audio job root, pointing to a physical directory outside the requested
+output directory. Valid paid whole-audio state was placed in that external
+target. Before this correction, resume followed the junction, reached
+snapshotting, and could publish `result.md` plus remove the state through the
+redirect.
+
+Resume preflight now uses one no-follow `os.lstat()` on the job root and accepts
+only a plain directory. A symbolic-link mode or Windows reparse point raises the
+established `OUTPUT_PATH_INVALID` before any child inspection, snapshot,
+provider dispatch, publication, or state removal. A missing or ordinary-file
+resume root keeps `RESUME_STATE_INVALID`; a fresh job still uses the existing
+`OUTPUT_EXISTS` rule for any occupied root. The real-junction integration test
+and deterministic symbolic-link-mode regression both preserve the external
+state byte-for-byte.
+
+No ancestor traversal, target containment policy, transaction, cross-process
+lock, generalized filesystem-security layer, retry, or provider behavior was
+added. The focused media/output set passes 84 tests, and the complete offline
+suite passes all 1,852 tests with zero skips. The bounded reproduced queue is
+empty again; the next iteration should return to a fresh public lifecycle audit
+rather than continue speculative path hardening.

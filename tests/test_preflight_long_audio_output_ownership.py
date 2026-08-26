@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import stat
+from types import SimpleNamespace
 
 import pytest
 
@@ -66,6 +68,36 @@ def test_resume_rejects_a_nondirectory_job_root(tmp_path: Path) -> None:
         preflight_long_audio_output_ownership(paths, resume=True)
 
     assert captured.value.code == "RESUME_STATE_INVALID"
+
+
+def test_resume_rejects_a_symlink_mode_root_before_child_inspection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    paths = _paths(tmp_path)
+    paths.root.mkdir(parents=True)
+    paths.resume_state.write_bytes(b"paid state")
+    preflight_module = __import__(
+        "ocrllm.audio.preflight_long_audio_output_ownership",
+        fromlist=["preflight_long_audio_output_ownership"],
+    )
+    real_lstat = preflight_module.os.lstat
+
+    def report_root_as_symlink(path):
+        if Path(path) == paths.root:
+            return SimpleNamespace(
+                st_mode=stat.S_IFLNK,
+                st_file_attributes=0,
+            )
+        return real_lstat(path)
+
+    monkeypatch.setattr(preflight_module.os, "lstat", report_root_as_symlink)
+
+    with pytest.raises(OutputError) as captured:
+        preflight_long_audio_output_ownership(paths, resume=True)
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert paths.resume_state.read_bytes() == b"paid state"
 
 
 def test_resume_requires_the_fixed_regular_state_file(tmp_path: Path) -> None:

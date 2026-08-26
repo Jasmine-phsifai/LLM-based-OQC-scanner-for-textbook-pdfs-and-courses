@@ -3,14 +3,28 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from hashlib import sha256
 import os
 from pathlib import Path
+import subprocess
 from types import SimpleNamespace
 
 import pytest
 
 from ocrllm import AudioModelSettings, Config, GoogleGenAISettings, recognize_long_mp3
+from ocrllm.audio.fingerprint_long_audio_request import (
+    LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+    fingerprint_long_audio_request,
+)
 from ocrllm.audio.load_long_audio_partial_state import load_long_audio_partial_state
+from ocrllm.audio.long_audio_partial_state import (
+    LONG_AUDIO_PARTIAL_STATE_VERSION,
+    LongAudioPartialState,
+)
+from ocrllm.audio.long_audio_settled_slot import LongAudioSettledSlot
+from ocrllm.audio.save_long_audio_partial_state_atomically import (
+    save_long_audio_partial_state_atomically,
+)
 from ocrllm.errors import (
     NoSpeechDetected,
     OutputError,
@@ -451,6 +465,129 @@ def test_paid_state_survives_snapshot_cleanup_failure(
     assert provider_calls == [MODEL]
     assert _state_path(output_dir).is_file()
     assert not (_root(output_dir) / "result.md").exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows junction ownership regression")
+def test_resume_rejects_junction_root_before_snapshot_or_provider(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "lecture.mp3"
+    source.write_bytes(b"junction-owned-source")
+    requested_output = tmp_path / "requested-output"
+    external_root = tmp_path / "external-output" / "lecture"
+    external_root.mkdir(parents=True)
+    state_path = external_root / ".ocrllm-long-audio-resume.json"
+    markdown = "# Paid transcript"
+    request_fingerprint = fingerprint_long_audio_request(
+        source_sha256=sha256(source.read_bytes()).hexdigest(),
+        mode="whole",
+        provider="google",
+        model=MODEL,
+        transport="google_files",
+    )
+    save_long_audio_partial_state_atomically(
+        state_path,
+        LongAudioPartialState(
+            state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
+            identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+            mode="whole",
+            interval_minutes=None,
+            request_fingerprints=(request_fingerprint,),
+            slots=(
+                LongAudioSettledSlot(
+                    window_index=0,
+                    request_fingerprint=request_fingerprint,
+                    markdown=markdown,
+                    markdown_sha256=sha256(markdown.encode("utf-8")).hexdigest(),
+                    provider="google",
+                    model=MODEL,
+                    transport="google_files",
+                    provider_calls_attempted=1,
+                    input_tokens=101,
+                    output_tokens=17,
+                    status="complete",
+                    warnings=(),
+                    provider_file_cleanup_succeeded=True,
+                    provider_client_cleanup_succeeded=True,
+                ),
+            ),
+        ),
+    )
+    state_before = state_path.read_bytes()
+    requested_output.mkdir()
+    junction_root = requested_output / "lecture"
+    expected_target = os.path.normcase(os.path.realpath(external_root))
+    junction_command = subprocess.run(
+        [
+            "cmd.exe",
+            "/d",
+            "/c",
+            "mklink",
+            "/J",
+            os.fspath(junction_root),
+            os.fspath(external_root),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if junction_command.returncode != 0:
+        if (
+            os.path.lexists(junction_root)
+            and os.path.normcase(os.path.realpath(junction_root)) == expected_target
+        ):
+            junction_root.rmdir()
+        pytest.skip("the Windows test environment cannot create a junction")
+
+    try:
+        actual_target = os.path.normcase(os.path.realpath(junction_root))
+        assert junction_root.is_dir()
+        assert actual_target == expected_target
+
+        processor = __import__(
+            "ocrllm.processors.recognize_long_mp3",
+            fromlist=["recognize_long_mp3"],
+        )
+        whole_processor = __import__(
+            "ocrllm.processors.recognize_long_mp3_whole",
+            fromlist=["recognize_long_mp3_whole"],
+        )
+        snapshot_calls: list[str] = []
+        provider_calls: list[str] = []
+
+        def fail_snapshot(*_args, **_kwargs):
+            snapshot_calls.append("snapshot")
+            raise AssertionError("junction ownership must stop before snapshot")
+
+        def fail_provider(*_args, **_kwargs):
+            provider_calls.append("provider")
+            raise AssertionError("junction ownership must stop before provider")
+
+        monkeypatch.setattr(processor, "snapshot_long_mp3", fail_snapshot)
+        monkeypatch.setattr(whole_processor, "recognize_uploaded_mp3", fail_provider)
+
+        with pytest.raises(OutputError) as captured:
+            recognize_long_mp3(
+                source,
+                config=_config(requested_output, resume=True),
+            )
+
+        assert captured.value.code == "OUTPUT_PATH_INVALID"
+        assert snapshot_calls == []
+        assert provider_calls == []
+        assert not (external_root / "result.md").exists()
+        assert state_path.read_bytes() == state_before
+        assert tuple(path.name for path in external_root.iterdir()) == (
+            state_path.name,
+        )
+        assert list(external_root.glob(".ocrllm-*.tmp")) == []
+        assert list(requested_output.glob(".ocrllm-*.tmp")) == []
+    finally:
+        current_target = os.path.normcase(os.path.realpath(junction_root))
+        if current_target == expected_target:
+            junction_root.rmdir()
+            assert not os.path.lexists(junction_root)
 
 
 def _windows_path_units(path: Path) -> int:

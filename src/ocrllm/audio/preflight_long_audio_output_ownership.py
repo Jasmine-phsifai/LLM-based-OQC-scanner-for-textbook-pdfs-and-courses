@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import stat
 from pathlib import Path
 
 from ..errors import ConfigError, OutputError, OutputExists, ResumeStateError
@@ -39,7 +40,22 @@ def preflight_long_audio_output_ownership(
                 ) from None
             return
 
-        if not root_exists or not paths.root.is_dir():
+        if not root_exists:
+            raise ResumeStateError(
+                "The long-audio resume directory is missing or invalid.",
+                code="RESUME_STATE_INVALID",
+            ) from None
+        root_info = os.lstat(paths.root)
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+        is_link_or_reparse_point = stat.S_ISLNK(root_info.st_mode) or bool(
+            getattr(root_info, "st_file_attributes", 0) & reparse_flag
+        )
+        if is_link_or_reparse_point:
+            raise OutputError(
+                "The long-audio resume root is not an owned directory.",
+                code="OUTPUT_PATH_INVALID",
+            ) from None
+        if not stat.S_ISDIR(root_info.st_mode):
             raise ResumeStateError(
                 "The long-audio resume directory is missing or invalid.",
                 code="RESUME_STATE_INVALID",
@@ -53,7 +69,7 @@ def preflight_long_audio_output_ownership(
                 "The long-audio resume state is missing or invalid.",
                 code="RESUME_STATE_INVALID",
             ) from None
-    except (OutputExists, ResumeStateError):
+    except (OutputError, OutputExists, ResumeStateError):
         raise
     except (OSError, TypeError, ValueError) as error:
         raise OutputError(
