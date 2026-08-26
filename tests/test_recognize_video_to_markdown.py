@@ -1820,6 +1820,87 @@ def test_one_pre_cancelled_branch_preserves_other_branch_settlement_for_resume(
     assert _root_journals(output_root) == ()
 
 
+def test_pending_audio_resume_rejects_missing_credential_before_new_media_work(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "pending-audio.mp4"
+    source.write_bytes(b"stable-pending-audio-video")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    media_calls = _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=True,
+    )
+    cancellation = Event()
+    cancellation.set()
+    image_provider = _ImageProvider()
+    image_config = Config(provider=image_provider)
+    audio_config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="test-audio-model"),
+        temp_dir=tmp_path / "audio-snapshots",
+        cancellation=cancellation,
+    )
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    with pytest.raises(Cancelled):
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+        )
+
+    assert media_calls == {"prepare": 1, "extract": 0}
+    assert len(image_provider.groups) == 1
+    pending = load_video_job_state(_root_journals(output_root)[0])
+    assert pending.audio.state == "pending"
+    assert pending.audio.artifact is None
+    assert pending.audio.short_state is None
+    assert not (output_root / "audio.mp3").exists()
+
+    snapshot_module = __import__(
+        "ocrllm.video.snapshot_video_source",
+        fromlist=["snapshot_video_source"],
+    )
+    snapshot_calls = 0
+
+    @contextmanager
+    def reject_snapshot(*_args, **_kwargs):
+        nonlocal snapshot_calls
+        snapshot_calls += 1
+        raise AssertionError("missing credential reached resumed media work")
+        yield  # pragma: no cover - makes this an explicit context manager
+
+    monkeypatch.setattr(snapshot_module, "snapshot_video_source", reject_snapshot)
+    cancellation.clear()
+
+    with pytest.raises(ConfigError) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+            resume=True,
+        )
+
+    assert captured.value.code == "CONFIG_MISSING"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert snapshot_calls == 0
+    assert media_calls == {"prepare": 1, "extract": 0}
+    assert len(image_provider.groups) == 1
+    still_pending = load_video_job_state(_root_journals(output_root)[0])
+    assert still_pending.audio.state == "pending"
+    assert still_pending.audio.artifact is None
+    assert still_pending.audio.short_state is None
+    assert not (output_root / "audio.mp3").exists()
+    assert not (output_root / "result.md").exists()
+
+
 def test_cancellation_during_settled_frame_stops_finalization_and_resumes_zero_call(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -233,6 +233,19 @@ provider calls and no credential. Pending resume keeps adapter-time resolution
 because durable state must first determine whether audio work remains. No
 credential cache, shared preflight framework, fallback, or provider-policy
 change was introduced.
+#439 closes the now-proven literal-pending resume seam after that durable state
+inspection. Once a strict video journal says `audio.state == "pending"`, an
+active audio branch resolves the Google credential before taking a new source
+snapshot. Missing credentials therefore preserve the unchanged pending journal,
+settled image work, no audio artifact, and exact zero-call evidence without
+source snapshotting, extraction, audio decode, interval materialization, or a
+pending image call. Pending audio that is explicitly cancelled still skips the
+credential and media work. Absent, no-speech, fully settled, and final-journal-
+cleanup resumes remain credential-free. A separately reproduced ready-but-
+unsettled short/whole/interval seam remains open: those states still validate
+and decode their retained audio, and interval may materialize a window, before
+adapter-time missing-key rejection. It requires its own exact settled-state
+predicate and was not hidden inside #439.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4218,10 +4231,20 @@ Post-register findings are ordered by demonstrated user impact:
   audio and completed high-level resume remain credential-free. Focused adjacent
   coverage passes 205 tests, independent review passes five exact controls, and
   the complete provider-free suite passes all 1,884 tests.
+- #439 closes literal-pending high-level resume. A missing key formerly allowed
+  the resumed job to snapshot its source, extract and decode audio, materialize
+  an interval window, and, when still needed, settle an image call before the
+  audio adapter failed. Strict journal load now identifies pending audio first;
+  an active branch rejects before all new media/provider work while cancellation
+  and terminal audio states remain credential-free. Focused adjacent coverage
+  passes 122 tests, independent review passes five exact controls, and the
+  complete provider-free suite passes all 1,885 tests.
 
-The bounded reproduced queue is empty again. Select the next iteration through
-a fresh public-lifecycle audit rather than extending output preflight
-speculatively.
+The next reproduced item is ready-but-unsettled video audio resume: short state
+without `short_state`, or whole/interval state without every settled slot, still
+performs retained-audio validation/decode and can materialize an interval before
+adapter-time missing-key rejection. Address it from the existing state fields;
+do not introduce a second resume flag or generic provider-state framework.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4

@@ -2012,3 +2012,12 @@ branch remains credential-free and can still settle the image branch; completed
 high-level resume also remains credential-free and zero-call. Pending resume,
 provider fallback, retry, state formats, public signatures, and the separated
 image/audio configuration contract are unchanged.
+
+#439 applies the same rule after strict journal loading when high-level resume
+finds literal pending audio. An active pending branch now rejects a missing key
+before a new source snapshot, extraction, decode, interval materialization, or
+pending image dispatch, leaving its journal and settled image work unchanged.
+Explicitly cancelled pending audio and terminal absent/no-speech/completed
+states remain credential-free. Ready-but-unsettled short/whole/interval resume
+is separately reproduced and remains the next narrow ordering item; #439 does
+not add a generalized audio-state classifier or claim that seam closed.

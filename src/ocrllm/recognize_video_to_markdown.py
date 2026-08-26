@@ -257,7 +257,7 @@ def _resume_video_job(
     image_cancelled,
     audio_cancelled,
 ) -> RecognitionResult:
-    from .errors import OutputError
+    from .errors import ConfigError, OutputError
     from .load_video_job_state import load_video_job_state
     from .validate_video_job_resume import (
         validate_video_job_finalization_state,
@@ -276,6 +276,19 @@ def _resume_video_job(
         journal.state,
         result_path=output_root / VIDEO_JOB_RESULT_NAME,
     )
+    if journal.state.audio.state == "pending":
+        if audio_cancelled is None:
+            audio_cancelled = _read_cancellation(audio_config)
+        if audio_cancelled is None:
+            from .providers.google_genai.resolve_google_genai_credential import (
+                resolve_google_genai_credential,
+            )
+
+            try:
+                resolve_google_genai_credential(audio_config.provider)
+            except ConfigError as error:
+                error._add_safe_detail("provider_calls_attempted", 0)
+                raise
     outcome = None
     try:
         with snapshot_video_source(
