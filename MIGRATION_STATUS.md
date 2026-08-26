@@ -1910,3 +1910,13 @@ publication and resume are available; and the high-level
 the low-level three-step video API remain memory-only/non-resumable, while PDF
 repair and worker routing remain unavailable. This iteration changed no runtime
 API, state format, dependency, provider behavior, or legacy compatibility.
+
+#421 truthfully advances, but does not close, the high-level video live gate.
+One controlled complete-frame video with readable text and synthetic speech
+reached the current `gemini-2.5-flash` catalog through the public facade. One
+image and one short-audio request ran without retry or model switching. Audio
+settled as recognized; image failed as `PROVIDER_RATE_LIMITED` / `UNAVAILABLE`.
+The journal retained the settled audio, full frame, and audio artifact without
+publishing a final result. No resume was attempted because the missing image
+would require another provider call. Runtime, API, state, dependencies, and
+tests are unchanged; the publication-failure/zero-call-resume gate remains open.

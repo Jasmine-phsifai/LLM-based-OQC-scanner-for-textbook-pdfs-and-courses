@@ -128,6 +128,16 @@ standalone long-MP3 whole/interval publication and resume, plus high-level
 video journal/resume, are available; short MP3 and the low-level three-step
 video API remain memory-only/non-resumable, while PDF repair and worker routing
 remain unavailable. This was a documentation correction only.
+#421 used a controlled 1280x720 complete-frame video with readable text and
+synthetic speech for one later bounded Google facade attempt. The current
+catalog contained explicit `gemini-2.5-flash`; one image request and one short-
+audio request ran with no retry or model switch. Audio settled as recognized,
+but the image request ended honestly as `PROVIDER_RATE_LIMITED` with provider
+status `UNAVAILABLE`. The public error reported both calls and retained one
+available usage row; the journal kept the settled audio result, complete frame,
+and audio artifact, with no image state, final digest, or `result.md`. It was
+not resumed because that would require a new image request. The live final-
+publication/zero-call-resume gate therefore remains open.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
