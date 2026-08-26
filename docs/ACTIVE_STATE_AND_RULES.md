@@ -900,6 +900,15 @@ maintainer clarification. Image snapshots remain byte-preserving, selected
 video outputs remain complete decoded frames, and PDF outputs remain uniformly
 scaled complete pages. No executable module, public setting, dependency, or
 orphan crop implementation exists to remove.
+#413 reverified the boundary again on current `c4c0390` after the maintainer
+made the product reason explicit: separated or sliding boards and mixed
+board/projector scenes make inferred quadrilaterals both lossy and unreliable.
+The historical legacy preprocessing module was deleted by #348 and no later
+change restored it. Fresh independent legacy and library audits found no
+executable crop, ROI, corner, contour, homography, perspective, configuration,
+export, or crop-only dependency to remove. Exact four-corner regressions pass
+for retained video frames, PDF pages, legacy image copy/downscale, and legacy
+video candidates; the complete provider-free suite passes all 1,867 tests.
 #367 removed the last stale legacy `imaging` update whitelist entry, the unused
 `STEP_FRAME_PREPROCESS` name, and an architecture-diagram node for the deleted
 module. These remnants could not crop an image, but one made API configuration
