@@ -39,6 +39,7 @@ def publish_video_result(
         reserved_paths=(
             *composed.assets,
             outcome.output_root / "audio.mp3",
+            outcome.output_root / ".ocrllm-video-audio-resume.json",
         ),
     )
 

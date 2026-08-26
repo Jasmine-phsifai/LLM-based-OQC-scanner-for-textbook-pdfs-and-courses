@@ -7051,3 +7051,25 @@ The complete offline suite passes all 1,781 tests with the known Node
 executable supplied only to the test subprocess; the explicit non-Node suite
 passes 1,779 tests. Compileall, diff validation, and frozen-boundary checks pass
 without provider calls.
+
+## Current working update: #365 video publication preserves paid audio state
+
+An interval-video failure can retain settled paid prefixes in the fixed
+`output_root/.ocrllm-video-audio-resume.json` sidecar. The current low-level
+video API cannot consume that state yet, but the library deliberately preserves
+it for the selected future high-level resume job. `publish_video_result()` only
+reserved retained JPEG/MP3 identities, so an explicit call with the sidecar as
+its target and `overwrite=True` replaced those state bytes with Markdown.
+
+The fixed sidecar is now one more identity in the publisher's existing local
+reserved-path tuple. A failing-first public regression proves overwrite is
+rejected as `OUTPUT_PATH_INVALID` and the original state bytes survive. The
+same #364 identity check also covers aliases without another path mechanism.
+Valid publication, state creation/removal, provider behavior, and the still-open
+#355 high-level job terminal choice are unchanged. The focused publish, video
+audio-settlement, public video, and maintained Google-video runner set passes 89
+tests without a provider call. No directory ownership framework, public state
+constant, state reader, resume API, or journal schema was added.
+The complete offline suite passes all 1,782 tests with the known Node
+executable supplied only to the test subprocess; the explicit non-Node suite
+passes 1,780 tests. Compileall, diff validation, and frozen-boundary checks pass.

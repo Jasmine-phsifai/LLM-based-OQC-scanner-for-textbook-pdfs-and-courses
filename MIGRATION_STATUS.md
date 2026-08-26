@@ -1577,6 +1577,13 @@ identities before its fast path, so `frames/../audio.mp3` cannot receive
 Markdown. Existing hard-link alias protection and valid atomic publication are
 unchanged; no generalized path or ownership framework was introduced.
 
+#365 closes the adjacent state-destruction path. An interval-video failure can
+retain paid prefixes at fixed `.ocrllm-video-audio-resume.json`, but an explicit
+`publish_video_result(..., overwrite=True)` previously replaced that state with
+Markdown. The existing reserved identity tuple now includes this one fixed
+sidecar; its bytes survive the typed rejection. No resume consumer, state
+format, public constant, or broader output-root ownership policy was added.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

@@ -544,7 +544,9 @@ one of the retained frame/audio assets, including an existing hard-link alias.
 The `output_root/audio.mp3` identity remains reserved for video audio even when
 the settled video is silent; nonexistent lexical aliases such as
 `frames/../audio.mp3` are rejected too, so a Markdown publication cannot make
-an absent-audio outcome look like an MP3. Its
+an absent-audio outcome look like an MP3. The fixed retained
+`.ocrllm-video-audio-resume.json` is also reserved, so explicit overwrite cannot
+replace settled paid interval state with Markdown. Its
 returned standard video result preserves the composition and has the verified
 output path. It does not
 recognize again, derive a legacy filename, create resume state, or publish a

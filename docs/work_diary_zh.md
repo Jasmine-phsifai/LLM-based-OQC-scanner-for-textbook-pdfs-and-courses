@@ -6327,3 +6327,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **实现与个人复核。** 发布器在不存在目标的快速返回前解析目标和所有保留媒体路径；相同身份立即抛出脱敏的 `OUTPUT_PATH_INVALID`，解析本身失败也暴力拒绝。随后原有 `lexists/samefile` 分支不变。新增无音频词法别名回归证明错误路径不产生文件；个人复查又发现原“alias”测试其实只覆盖 `..`，因此补充真实本地硬链接回归，直接证明 `samefile()` 责任仍在。没有改变合法目标的进程内 claim、overwrite 或原子写顺序。
 
 **验证与过度设计复查。** 视频发布直接集合 **10 passed in 0.08s**，publish/compose/video/atomic-write 邻近集合 **65 passed in 24.72s**。轻量执行者发现第一次全量收集与主线新增硬链接测试重叠后没有沿用旧数字，等待稳定并重跑：最终 Node 完整全量 **1,781 passed in 87.48s**，明确排除 Node 的集合 **1,779 passed in 85.52s**。compileall、diff check 和冻结 `contracts/worker` 边界均通过；没有 provider 调用、安装或下载。本轮没有通用 canonicalizer、transaction、跨进程锁、第二套输出所有权、后缀白名单或 video journal；只关闭一个已公开复现的保留媒体身份漏洞。
+
+## #365 — 2026-08-26：视频发布不能覆盖已付费音频切片状态
+
+**本轮英文原子任务。** `Atomic task — Iteration #365: reconcile the authoritative next execution step after the current video publication defect queue is empty. Context: #364 closed the last explicitly registered publication defect, while the selected future high-level resumable video job has accumulated decisions across several maintainer clarifications and may still contain stale “decision required” prose. Success means tracing every current decision and executable prerequisite, distinguishing settled choices from genuine ambiguity, selecting one smallest vertical implementation slice or one concrete shipped-surface defect, and updating authority only if evidence proves drift. This matters because the next code change should advance the chosen product rather than implement an obsolete branch or another speculative safeguard.`
+
+**决策复核与缺陷选择。** 维护者此前的“第一个 A、第二个 B”已经分别落实为视频取消 Route A 和长音频 whole/interval Route B；它早于 #355 的新问题，不能被倒推成“必要 provider 单元缺正文时是否发布终态 partial”的答案。因此高层 video journal 的终点仍有真实产品歧义，本轮不猜。转查现有发布面发现：interval 视频失败可在固定 `.ocrllm-video-audio-resume.json` 保存已付费前缀，虽然当前三步 API 还不能消费它，文档明确要求为以后高层 resume 留存；publisher 却只保护 JPEG/MP3。
+
+**失败优先证据与最小修复。** 公共测试创建 partial outcome 和固定 sidecar，再调用 `publish_video_result(outcome, state_path, overwrite=True)`；旧代码精确得到 **DID NOT RAISE**，原 JSON 字节被 `# Video frames` Markdown 替换。独立只读执行者复现相同破坏，并确认 outcome 结束后没有第二个未保护的固定内部文件。修复只把这一个 sidecar 加入现有 `reserved_paths`；#364 的 identity/samefile 逻辑自然覆盖别名。没有新建路径 helper 或公共常量：该状态仍是未来 job 会替换的私有临时形态，现在冻结抽象比两处明确字面量更糟。
+
+**验证与过度设计复查。** 视频发布直接集合 **11 passed in 0.08s**；publish、video audio settlement、公共 video 和维护 Google-video runner 邻近集合 **89 passed in 25.04s**。轻量执行者先后核对收集数量保持稳定为 1,782/1,780，再完成 Node 完整全量 **1,782 passed in 86.80s** 与明确排除 Node 的 **1,780 passed in 85.26s**。compileall、diff check 和冻结 `contracts/worker` 边界均通过；没有 provider 调用、安装或下载。本轮没有 output-root 所有权框架、state reader、resume API、journal schema、后缀限制或自动清理，也没有用这个局部修复绕过仍待维护者回答的 #355 终点语义。

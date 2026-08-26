@@ -277,6 +277,12 @@ fast path, while the existing filesystem-identity check still protects retained
 hard-link aliases. Valid atomic publication is unchanged; no general path or
 transaction framework was added.
 
+#365 also prevents the same publisher from overwriting the fixed retained
+`.ocrllm-video-audio-resume.json` with Markdown. That sidecar can contain paid
+interval prefixes after a partial video failure even though the current
+three-step API cannot resume them yet. It is protected by the existing local
+reserved-path check; no video journal or directory ownership system was added.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes

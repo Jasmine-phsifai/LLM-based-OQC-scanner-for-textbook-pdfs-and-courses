@@ -192,6 +192,21 @@ def test_publish_video_result_rejects_nonexistent_reserved_audio_alias(
     assert not reserved_audio.exists()
 
 
+def test_publish_video_result_preserves_retained_audio_resume_state(
+    tmp_path: Path,
+) -> None:
+    outcome = _outcome(tmp_path, partial=True)
+    state_path = outcome.output_root / ".ocrllm-video-audio-resume.json"
+    original_state = b"paid interval state"
+    state_path.write_bytes(original_state)
+
+    with pytest.raises(OutputError) as captured:
+        publish_video_result(outcome, state_path, overwrite=True)
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert state_path.read_bytes() == original_state
+
+
 def test_publish_video_result_write_failure_preserves_existing_target(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
