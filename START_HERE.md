@@ -241,6 +241,14 @@ whole/interval sidecar. Only a complete clean result removes that state. The
 current video API still cannot consume it; this is honest preservation for the
 later selected high-level resume job, not a new resume surface.
 
+#351 made one authorized free Google run from exact commit `ba0e0a7`. The live
+catalog returned 37 models, but one `gemini-2.5-flash` image generation timed out
+after one attempted call and the first Files interval timed out during upload
+before generation. The failed outcome reported zero settled audio intervals and
+a closed client, skipped composition, and left no task-owned residue. It was not
+retried or switched to another model, so the complete live interval gate remains
+open.
+
 #138 makes the public video outcome reject
 frame/audio paths outside its exact lexical `output_root/frames/*` and optional
 `output_root/audio.mp3` layout before composition. #139 makes composed

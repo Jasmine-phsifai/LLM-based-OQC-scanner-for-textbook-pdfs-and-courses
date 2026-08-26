@@ -662,6 +662,13 @@ interval. It preserved exact call/error facts and audio remote/client cleanup
 without leaking content or leaving residue. No interval settled, so this proves
 the corrected general provider-failure reporting path but does not live-prove
 the narrower retained-sidecar case or the complete interval success path.
+The #351 post-package-gate run reached the 37-model catalog through the active
+proxy, then one image generation and the first audio Files upload each returned
+`PROVIDER_TIMEOUT`. The image branch reported one attempted call; audio reported
+zero generation calls, zero settled intervals, and a closed client. The runner
+returned an honest failed `video_outcome`, performed no composition, and left no
+task-owned residue. This is another bounded real failure, not interval success
+or evidence for automatic retry/model switching.
 The #186 robustness run retained three equal-luminance color scenes and made one
 image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.

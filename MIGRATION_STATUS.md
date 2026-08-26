@@ -1492,6 +1492,11 @@ The following directions remain traceable but are not current work:
   clean long-audio results remove state, while partial provider-cleanup results
   return unchanged and retain settled state. It adds no video resume consumer,
   state format, retry, or provider behavior.
+  #351's one post-fix Google run reached the 37-model catalog, then one image
+  generation and the first audio Files upload each timed out. The redacted
+  outcome preserved exact call/settlement/cleanup facts and no residue, but no
+  interval completed; the live success gate remains open without retry or model
+  switching.
 
 ## Obsolete Prose Kept For Trace
 

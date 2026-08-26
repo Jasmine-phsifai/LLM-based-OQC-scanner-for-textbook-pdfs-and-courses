@@ -6778,3 +6778,20 @@ smoke-runner set passes 39 tests, and the complete active offline suite passes
 1,770 tests. Compileall, lightweight import, diff validation, and the frozen
 `contracts/worker` boundary also pass. No provider was called and #349's package
 gate was not repeated for this one-condition source correction.
+
+## Current working update: #351 bounded Google video interval timeout
+
+One authorized free Google run exercised exact clean commit `ba0e0a7` through
+the maintained redacted video runner. A fresh 301-second MP4 independently
+preflighted as five retained frames, one image group, and two three-minute audio
+intervals. The proxy was enabled and reachable before the run, remained enabled
+and reachable immediately afterward, and the catalog returned 37 models.
+
+The single `gemini-2.5-flash` run did not complete. The image group returned
+`PROVIDER_TIMEOUT` after one attempted generation; the first audio interval
+returned `PROVIDER_TIMEOUT` during Files upload with zero generation calls, zero
+settled intervals, and a closed client. The typed outcome was failed,
+composition did not start, no sidecar existed, and the task-owned fixture/output
+were removed. No retry, second catalog, model switch, fallback, or code change
+occurred. Exact elapsed time and stderr byte count were not captured and must not
+be inferred. The complete live video-interval success gate remains open.
