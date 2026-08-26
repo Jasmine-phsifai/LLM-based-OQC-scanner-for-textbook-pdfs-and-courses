@@ -7700,3 +7700,28 @@ lifecycle coverage passes 121 tests; the complete offline suite passes all
 confirmed that inner and outer evidence attachment do not double-count. The
 next bounded item is short and memory-only whole-audio snapshot-cleanup evidence;
 Google audio response-validation usage remains a separate following correction.
+
+## Current working update: #402 preserves audio snapshot-exit evidence
+
+Two provider-free public regressions now settle one successful provider request
+before the request-owned local MP3 snapshot reports cleanup failure. The short
+inline route has exact 17/5 token usage and a closed client; the memory-only
+Google Files route has exact 101/17 usage, a deleted remote file, and a closed
+client. Previously both typed `OUTPUT_WRITE_FAILED` errors reported one provider
+call but discarded the already-built output, so usage and exact cleanup facts
+were absent.
+
+Each processor now stores its validated `ProcessorOutput` before leaving the
+snapshot context and returns it only after clean context exit. If `__exit__`
+raises `OutputError`, the existing current-usage helper and the transport's
+applicable exact cleanup booleans enrich that same error object. Existing error
+details retain priority. Provider failures before output construction, normal
+successful returns, output-directory whole/interval persistence, and the
+pre-existing failure-only cleanup flags are unchanged.
+
+The correction does not introduce an audio lifecycle copier, telemetry ledger,
+state format, retry/fallback policy, or shared short/Files cleanup abstraction.
+The focused audio lifecycle set passes 120 tests; independent adapter,
+persistence, and lightweight-import reviews pass 57, 27, and 19 tests; the
+complete offline suite passes all 1,856 tests with zero skips. The next bounded
+item is the separately reproduced Google audio response-validation usage loss.

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from ..attach_current_model_token_usage_to_error import (
+    attach_current_model_token_usage_to_error,
+)
 from ..audio.load_long_audio_partial_state import load_long_audio_partial_state
 from ..audio.plan_long_audio_output_paths import plan_long_audio_output_paths
 from ..audio.preflight_long_audio_output_ownership import (
@@ -121,10 +124,6 @@ def recognize_validated_long_mp3(
             if "provider_calls_attempted" not in error.details:
                 error._add_safe_detail("provider_calls_attempted", current_run_calls)
             if processor_output is not None:
-                from ..attach_current_model_token_usage_to_error import (
-                    attach_current_model_token_usage_to_error,
-                )
-
                 attach_current_model_token_usage_to_error(
                     error,
                     processor_output.metadata.get("current_model_token_usage"),
@@ -142,6 +141,7 @@ def _recognize_in_memory(source_path: Path, *, config: Config) -> ProcessorOutpu
     raise_if_cancelled(config.cancellation)
     provider_call_completed = False
     response = None
+    processor_output: ProcessorOutput | None = None
     try:
         with snapshot_long_mp3(source_path, temp_dir=config.temp_dir) as snapshot:
             response = recognize_uploaded_mp3(
@@ -150,14 +150,25 @@ def _recognize_in_memory(source_path: Path, *, config: Config) -> ProcessorOutpu
                 config=config,
             )
             provider_call_completed = True
-            return build_long_mp3_processor_output(
+            processor_output = build_long_mp3_processor_output(
                 snapshot,
                 response,
                 config=config,
             )
+        assert processor_output is not None
+        return processor_output
     except OutputError as error:
         if provider_call_completed and "provider_calls_attempted" not in error.details:
             error._add_safe_detail("provider_calls_attempted", 1)
+        if processor_output is not None:
+            attach_current_model_token_usage_to_error(
+                error,
+                processor_output.metadata.get("current_model_token_usage"),
+            )
+            for key in ("remote_file_deleted", "provider_client_closed"):
+                value = processor_output.metadata.get(key)
+                if type(value) is bool and key not in error.details:
+                    error._add_safe_detail(key, value)
         if response is not None:
             if not response.remote_file_deleted:
                 error._add_safe_detail("provider_file_cleanup_failed", True)

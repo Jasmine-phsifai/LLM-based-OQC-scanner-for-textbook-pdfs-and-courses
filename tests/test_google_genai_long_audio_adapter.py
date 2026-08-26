@@ -615,32 +615,51 @@ def test_successful_transcript_discloses_client_close_failure(monkeypatch) -> No
 
 
 def test_completed_generation_is_counted_when_local_snapshot_cleanup_fails(
+    tmp_path,
     monkeypatch,
 ) -> None:
     fake = _FakeGoogleModule()
     processor = importlib.import_module("ocrllm.processors.recognize_long_mp3")
+    source = tmp_path / "source.mp3"
+    source.write_bytes(b"owned source bytes")
+    cleanup_error = OutputError(
+        "The validated audio snapshot could not be removed after use.",
+        code="OUTPUT_WRITE_FAILED",
+    )
 
     @contextmanager
     def cleanup_failing_snapshot(_source, *, temp_dir):
         yield SimpleNamespace(
-            path=SOURCE,
+            path=source,
             byte_size=12345,
             duration_seconds=301.0,
         )
-        raise OutputError(
-            "The validated audio snapshot could not be removed after use.",
-            code="OUTPUT_WRITE_FAILED",
-        )
+        raise cleanup_error
 
     monkeypatch.setattr(processor, "snapshot_long_mp3", cleanup_failing_snapshot)
     _install_fake_sdk(monkeypatch, fake)
 
     with pytest.raises(OutputError) as caught:
-        recognize_long_mp3(SOURCE, config=_config())
+        recognize_long_mp3(source, config=_config())
 
+    assert caught.value is cleanup_error
+    assert caught.value.code == "OUTPUT_WRITE_FAILED"
+    assert caught.value.retryable is False
     assert caught.value.details["provider_calls_attempted"] == 1
+    assert caught.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 101,
+            "output_count": 17,
+            "unit": "tokens",
+        },
+    )
+    assert caught.value.details["remote_file_deleted"] is True
+    assert caught.value.details["provider_client_closed"] is True
     assert fake.files.delete_calls == ["files/owned-test-file"]
     assert fake.clients[0].closed is True
+    assert source.read_bytes() == b"owned source bytes"
+    assert tuple(tmp_path.iterdir()) == (source,)
 
 
 def test_pre_set_cancellation_stops_before_snapshot(monkeypatch) -> None:

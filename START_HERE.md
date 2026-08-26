@@ -1169,3 +1169,12 @@ with zero new calls and no historical usage counted as current. This reuses the
 video-only evidence merger; it adds no transaction, retry system, state schema,
 or generic telemetry layer. Next address audio snapshot-cleanup evidence, then
 the separately reproduced Google audio response-validation token evidence.
+
+#402 closes the audio snapshot-cleanup item. Short inline and memory-only whole
+Google Files recognition now retain the already-built output until the local
+snapshot context exits, so a cleanup `OUTPUT_WRITE_FAILED` reports the settled
+call, token usage, and transport-appropriate exact cleanup facts on the original
+error. Normal returns and persisted whole/interval paths are unchanged. No
+general lifecycle helper or new state was added. The next bounded correction is
+Google audio usage that is reported by the provider but lost during response
+content validation.

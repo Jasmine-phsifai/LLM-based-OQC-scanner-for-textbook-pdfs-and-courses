@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+from contextlib import contextmanager
 from pathlib import Path
 from threading import Event
 from types import SimpleNamespace
@@ -330,28 +331,46 @@ def test_google_audio_reports_completed_call_when_snapshot_cleanup_fails(
     adapter = importlib.import_module(
         "ocrllm.providers.google_genai.recognize_short_mp3"
     )
-    snapshot_module = importlib.import_module("ocrllm.audio.snapshot_mp3")
+    processor = importlib.import_module("ocrllm.processors.recognize_short_mp3")
     fake = _FakeGoogleModule()
     monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
-
-    def fail_snapshot_cleanup(_snapshot_root):
-        raise OutputError(
-            "The validated audio snapshot could not be removed after use.",
-            code="OUTPUT_WRITE_FAILED",
-        )
-
-    monkeypatch.setattr(
-        snapshot_module,
-        "_delete_snapshot_directory",
-        fail_snapshot_cleanup,
+    source_bytes = FIXTURE.read_bytes()
+    temp_dir = tmp_path / "snapshots"
+    cleanup_error = OutputError(
+        "The validated audio snapshot could not be removed after use.",
+        code="OUTPUT_WRITE_FAILED",
     )
 
-    with pytest.raises(OutputError) as caught:
-        recognize(FIXTURE, config=_config(temp_dir=tmp_path / "snapshots"))
+    @contextmanager
+    def cleanup_failing_snapshot(_source, *, temp_dir):
+        yield SimpleNamespace(
+            path=FIXTURE,
+            byte_size=FIXTURE.stat().st_size,
+            duration_seconds=0.5,
+        )
+        raise cleanup_error
 
+    monkeypatch.setattr(processor, "snapshot_short_mp3", cleanup_failing_snapshot)
+
+    with pytest.raises(OutputError) as caught:
+        recognize(FIXTURE, config=_config(temp_dir=temp_dir))
+
+    assert caught.value is cleanup_error
+    assert caught.value.code == "OUTPUT_WRITE_FAILED"
+    assert caught.value.retryable is False
     assert caught.value.details["provider_calls_attempted"] == 1
+    assert caught.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        },
+    )
+    assert caught.value.details["provider_client_closed"] is True
     assert len(fake.models.generate_calls) == 1
     assert fake.clients[0].closed is True
+    assert FIXTURE.read_bytes() == source_bytes
 
 
 def test_serial_audio_batch_preserves_item_call_counts_and_order(
