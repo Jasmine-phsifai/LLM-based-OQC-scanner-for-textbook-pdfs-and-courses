@@ -81,10 +81,13 @@ As of 2026-08-27:
 
 The authoritative defect register is in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). D1-D7,
-F1-F4, and G1-G10 are closed in offline code and tests, and #339 closed the
-bounded Stage M live exit. The still-open provider gate is the high-level
-`recognize_video_to_markdown()` publication-failure/zero-call-resume proof;
-#419 refreshed honest live failure evidence without closing that gate.
+F1-F4, and G1-G10 are closed in offline code and tests, #339 closed the bounded
+Stage M live exit, and #427 closed the high-level
+`recognize_video_to_markdown()` publication-failure/zero-call-resume live proof.
+Earlier #419 and #421 runs remain useful honest provider-failure evidence rather
+than successful gate evidence. #428 also restores the exact-tuple batch promise
+that invalid image-provider configuration fails before output or temporary
+directory creation.
 
 ## Active Library
 
