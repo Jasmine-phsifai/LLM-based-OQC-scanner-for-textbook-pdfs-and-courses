@@ -1372,8 +1372,9 @@ dispatched full-corpus runs failed.
 > D1), so Phase 1 quality conclusions must be re-confirmed after D1 is repaired.
 
 Preserve the frozen v1 evidence and do not lower or reinterpret its thresholds.
-PDFium remains only a backend feasibility spike; PDF, audio, and video
-recognition remain unavailable under their later gates.
+The records above are historical quality-gate evidence. Current PDF, audio,
+and video implementation status and remaining gates are maintained only in
+`docs/ACTIVE_STATE_AND_RULES.md`.
 
 The user-supplied screenshots currently present under `docs/` are local,
 supplemental, non-redistributable, and remain untracked. Keep them uncommitted.
