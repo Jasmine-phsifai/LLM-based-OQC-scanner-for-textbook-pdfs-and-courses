@@ -162,6 +162,14 @@ def test_base_install_budget_keeps_real_disk_measurement_with_bounded_headroom()
     assert "__pycache__" not in script
 
 
+def test_base_wheel_budget_keeps_bounded_product_headroom() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+
+    assert "$baseWheelMaximumBytes = 327680" in script
+    assert "if ($wheel.Length -gt $baseWheelMaximumBytes)" in script
+    assert "base wheel exceeds 320 KiB" in script
+
+
 @pytest.mark.parametrize(
     ("names", "succeeds"),
     [

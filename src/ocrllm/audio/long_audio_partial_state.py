@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Literal
 
 from .fingerprint_long_audio_request import LONG_AUDIO_REQUEST_IDENTITY_VERSION
 from .long_audio_settled_slot import LongAudioSettledSlot
 
 
-LONG_AUDIO_PARTIAL_STATE_VERSION = "ocrllm.long-audio-partial.v2"
+LONG_AUDIO_PARTIAL_STATE_VERSION = "ocrllm.long-audio-partial.v3"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
@@ -19,6 +20,8 @@ class LongAudioPartialState:
 
     state_version: str
     identity_version: str
+    mode: Literal["whole", "interval"]
+    interval_minutes: int | None
     request_fingerprints: tuple[str, ...]
     slots: tuple[LongAudioSettledSlot, ...] = ()
 
@@ -33,6 +36,13 @@ class LongAudioPartialState:
             or self.identity_version != LONG_AUDIO_REQUEST_IDENTITY_VERSION
         ):
             raise ValueError("long-audio request identity version is unsupported") from None
+        if self.mode not in ("whole", "interval"):
+            raise ValueError("long-audio mode is invalid") from None
+        if self.mode == "whole":
+            if self.interval_minutes is not None:
+                raise ValueError("whole long-audio state has an interval") from None
+        elif type(self.interval_minutes) is not int or self.interval_minutes <= 0:
+            raise ValueError("interval long-audio state has no valid minutes") from None
         if type(self.request_fingerprints) is not tuple:
             raise TypeError("request_fingerprints must be an exact tuple") from None
         if not self.request_fingerprints or any(

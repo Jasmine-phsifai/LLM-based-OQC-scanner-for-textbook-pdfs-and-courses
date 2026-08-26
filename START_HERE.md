@@ -806,6 +806,16 @@ was added. Exact commit `c8a8c72` passes the clean installed gate with 1,702
 archived tests and one optional skip, a 260,782-byte wheel, every profile and
 local media smoke green, no cloud I/O, and complete cleanup.
 
+#327 exposes that interval route through the existing public
+`recognize_long_mp3()` call. An exact positive integer `interval_minutes`
+selects persistent serial windows; every settled speech or no-speech window is
+saved before its temporary MP3 is removed. Exact resume may omit the argument
+and restores it from v3 state, reusing only the exact settled prefix. Existing
+v2 whole-file state migrates narrowly to whole mode. There is no parallelism,
+retry, fallback, repair integration, provider abstraction, legacy format, video
+routing, or worker change. The complete source suite passes 1,719 tests; clean
+installed proof remains the release exit condition.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

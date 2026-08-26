@@ -51,6 +51,8 @@ def _state() -> LongAudioPartialState:
     return LongAudioPartialState(
         state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
         identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+        mode="whole",
+        interval_minutes=None,
         request_fingerprints=REQUESTS,
         slots=(_slot(),),
     )
@@ -81,6 +83,8 @@ def test_serialized_schema_contains_only_the_settled_state_fields() -> None:
 
     assert set(document) == {
         "identity_version",
+        "mode",
+        "interval_minutes",
         "request_fingerprints",
         "slots",
         "state_version",
@@ -103,6 +107,22 @@ def test_serialized_schema_contains_only_the_settled_state_fields() -> None:
     }
     assert "path" not in _json_text(document)
     assert "metadata" not in _json_text(document)
+
+
+def test_exact_v2_state_migrates_only_to_whole_mode() -> None:
+    document = _document()
+    document["state_version"] = "ocrllm.long-audio-partial.v2"
+    document.pop("mode")
+    document.pop("interval_minutes")
+
+    parsed = parse_long_audio_partial_state(
+        json.dumps(document, separators=(",", ":")).encode("utf-8")
+    )
+
+    assert parsed.state_version == LONG_AUDIO_PARTIAL_STATE_VERSION
+    assert parsed.mode == "whole"
+    assert parsed.interval_minutes is None
+    assert parsed.slots == (_slot(),)
 
 
 @pytest.mark.parametrize(
@@ -133,9 +153,9 @@ def test_parser_rejects_schema_drift_and_invalid_slot_facts(mutate) -> None:
 def test_parser_rejects_duplicate_keys_and_nonfinite_numbers() -> None:
     valid = serialize_long_audio_partial_state(_state()).decode("utf-8").rstrip()
     duplicate = valid.replace(
-        '"state_version":"ocrllm.long-audio-partial.v2"',
-        '"state_version":"ocrllm.long-audio-partial.v2",'
-        '"state_version":"ocrllm.long-audio-partial.v2"',
+        '"state_version":"ocrllm.long-audio-partial.v3"',
+        '"state_version":"ocrllm.long-audio-partial.v3",'
+        '"state_version":"ocrllm.long-audio-partial.v3"',
         1,
     )
 

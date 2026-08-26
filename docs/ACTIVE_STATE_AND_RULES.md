@@ -73,8 +73,13 @@ upload, general-`recognize()` long-audio routing, or worker support. #151 implem
 the separate standalone Stage A2a Google Files lifecycle for one MP3 longer
 than 300 seconds. Its public whole-file route now optionally publishes one
 same-name-directory result and can reuse one exact settled state with zero new
-provider calls; interval dispatch remains unavailable. It does not alter A1 or
-route video. A1 did
+provider calls. The same standalone facade now accepts an exact positive integer
+`interval_minutes` when `output_dir` is set: it plans all context-padded windows,
+dispatches missing windows serially, saves each settled paid prefix, resumes an
+exact prefix without replay, publishes ordered Markdown once, and removes its
+temporary state only after success. Omitting the argument during resume restores
+the saved interval choice; new memory-only interval calls are rejected. This
+interval route has offline proof only and does not alter A1 or route video. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
 audio live tests are already authorized without a separate budget request.
 DashScope live work still requires a nonempty recognized credential and an
@@ -85,6 +90,11 @@ requirements remain outside the A1 runtime. The probe rejects malformed or
 undecodable audio, zero decoded frames, and declared/decoded frame mismatch; it
 does not claim that every frame-aligned MP3 truncation can be distinguished
 from an intentionally shorter valid file.
+The compressed base-wheel growth budget is 320 KiB. #327 replaces the former
+256 KiB line only after a 266,903-byte worktree audit found exclusively expected
+active runtime modules and no tests, documentation, dependency, or binary
+payload. The dependency-empty base target remains capped at 1.5 MiB, and all
+lazy-import, wheel-content, profile, and native-payload rules remain unchanged.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

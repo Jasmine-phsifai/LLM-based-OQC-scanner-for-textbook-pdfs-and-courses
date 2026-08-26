@@ -226,8 +226,9 @@ try {
     if ($null -eq $wheel) {
         throw 'wheel build produced no wheel'
     }
-    if ($wheel.Length -gt 262144) {
-        throw "base wheel exceeds 256 KiB: $($wheel.Length)"
+    $baseWheelMaximumBytes = 327680
+    if ($wheel.Length -gt $baseWheelMaximumBytes) {
+        throw "base wheel exceeds 320 KiB: $($wheel.Length)"
     }
 
     $wheelChecker = Join-Path $sourceRoot 'tools\check_built_wheel.py'

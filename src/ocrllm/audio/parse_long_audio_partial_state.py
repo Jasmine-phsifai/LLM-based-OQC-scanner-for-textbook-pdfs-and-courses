@@ -5,11 +5,24 @@ from __future__ import annotations
 import json
 
 from ..errors import ResumeStateError
-from .long_audio_partial_state import LongAudioPartialState
+from .long_audio_partial_state import (
+    LONG_AUDIO_PARTIAL_STATE_VERSION,
+    LongAudioPartialState,
+)
 from .long_audio_settled_slot import LongAudioSettledSlot
 
 
 _ROOT_KEYS = frozenset(
+    {
+        "state_version",
+        "identity_version",
+        "mode",
+        "interval_minutes",
+        "request_fingerprints",
+        "slots",
+    }
+)
+_V2_ROOT_KEYS = frozenset(
     {"state_version", "identity_version", "request_fingerprints", "slots"}
 )
 _SLOT_KEYS = frozenset(
@@ -42,7 +55,19 @@ def parse_long_audio_partial_state(raw: bytes) -> LongAudioPartialState:
             object_pairs_hook=_unique_object,
             parse_constant=_reject_constant,
         )
-        if type(document) is not dict or frozenset(document) != _ROOT_KEYS:
+        if type(document) is not dict:
+            raise ValueError
+        root_keys = frozenset(document)
+        migrated_v2 = (
+            root_keys == _V2_ROOT_KEYS
+            and document["state_version"] == "ocrllm.long-audio-partial.v2"
+        )
+        if root_keys != _ROOT_KEYS and not migrated_v2:
+            raise ValueError
+        if (
+            not migrated_v2
+            and document["state_version"] != LONG_AUDIO_PARTIAL_STATE_VERSION
+        ):
             raise ValueError
         request_fingerprints = document["request_fingerprints"]
         slot_documents = document["slots"]
@@ -79,8 +104,10 @@ def parse_long_audio_partial_state(raw: bytes) -> LongAudioPartialState:
                 )
             )
         return LongAudioPartialState(
-            state_version=document["state_version"],
+            state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
             identity_version=document["identity_version"],
+            mode="whole" if migrated_v2 else document["mode"],
+            interval_minutes=None if migrated_v2 else document["interval_minutes"],
             request_fingerprints=tuple(request_fingerprints),
             slots=tuple(slots),
         )

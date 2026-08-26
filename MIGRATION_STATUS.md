@@ -7,7 +7,7 @@ file and that file differ, that file wins.
 
 ## Current Status
 
-Last synchronized: 2026-08-25.
+Last synchronized: 2026-08-26.
 
 The repository has two boundaries:
 
@@ -1391,6 +1391,15 @@ The following directions remain traceable but are not current work:
   limiter remain unimplemented. Exact commit `c8a8c72` passes the clean gate
   with 1,702 archived tests and one optional skip, a 260,782-byte wheel, all
   profiles and local smokes green, no cloud I/O, and complete cleanup.
+  #327 adds the selected persistent interval mode to that same public facade.
+  `interval_minutes` accepts only an exact positive integer and requires
+  `output_dir`; requests remain serial and each settled speech/no-speech slot is
+  saved before temporary-segment cleanup. Resume may recover the saved minutes
+  when the argument is omitted and reuses only the exact ordered prefix. The
+  state schema narrowly migrates exact v2 whole-file states to v3 whole mode.
+  Repair, parallelism, retry/fallback, provider classes, legacy formats, video
+  routing, and worker changes remain absent. All 1,719 source tests pass; clean
+  installed proof is still pending.
 
 ## Obsolete Prose Kept For Trace
 

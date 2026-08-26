@@ -202,6 +202,25 @@ result = recognize_long_mp3(
 )
 ```
 
+Set `interval_minutes` to an exact positive integer to make a persistent long
+run recoverable at that many minutes per logical request:
+
+```python
+result = recognize_long_mp3(
+    "lecture.mp3",
+    config=Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="gemini-2.5-flash"),
+        output_dir="transcripts",
+    ),
+    interval_minutes=10,
+)
+```
+
+After an interrupted run, repeat the call with `resume=True` in `Config`. The
+resume call may omit `interval_minutes` because temporary state retains the
+original choice.
+
 - requires one fully decoded MP3 longer than 300 seconds and no longer than the
   current Google single-prompt limit of 9.5 hours;
 - snapshots through bounded chunked disk I/O, with a 2 GB Files limit, and does
@@ -222,11 +241,12 @@ result = recognize_long_mp3(
   atomically publishes `<output_dir>/<audio stem>/result.md`, and then removes
   the temporary state;
 - accepts `resume=True` only with that fixed state present and an unpublished
-  final result; an exact whole-file request is published with zero provider
-  calls, while source/model/prompt/transport drift is rejected;
-- has no interval chunk dispatch, overwrite, repair, parallel splitting,
-  fallback, model switching, batch support, worker route, or automatic video
-  integration.
+  final result; an exact whole-file or interval prefix is reused with zero calls
+  for settled work, while source/model/prompt/transport/interval drift is rejected;
+- interval mode requires `output_dir`, recognizes missing windows serially, and
+  saves every settled speech or no-speech window before starting the next one;
+- has no overwrite, repair integration, parallel splitting, fallback, model
+  switching, batch support, worker route, or automatic video integration.
 
 The PDF vision facade:
 

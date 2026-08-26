@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
 
+from ..audio.build_long_audio_settled_slot import build_long_audio_settled_slot
 from ..audio.fingerprint_long_audio_request import (
     LONG_AUDIO_REQUEST_IDENTITY_VERSION,
     fingerprint_long_audio_request,
@@ -33,12 +33,14 @@ from ..processor_output import ProcessorOutput
 from ..providers.google_genai.recognize_uploaded_mp3 import recognize_uploaded_mp3
 from ..raise_if_cancelled import raise_if_cancelled
 from .build_long_mp3_processor_output import build_long_mp3_processor_output
+from .recognize_long_mp3_intervals import recognize_long_mp3_intervals
 
 
 def recognize_validated_long_mp3(
     source_path: Path,
     *,
     config: Config,
+    interval_minutes: int | None = None,
 ) -> tuple[ProcessorOutput, Path | None]:
     """Settle one Files request and optionally publish resumable Markdown."""
     output_dir = config.output_directory()
@@ -58,15 +60,7 @@ def recognize_validated_long_mp3(
             with snapshot_long_mp3(source_path, temp_dir=config.temp_dir) as snapshot:
                 model = config.audio_model.name
                 assert type(model) is str
-                request_fingerprint = fingerprint_long_audio_request(
-                    source_sha256=snapshot.sha256,
-                    mode="whole",
-                    provider="google",
-                    model=model,
-                    transport="google_files",
-                )
-                request_plan = (request_fingerprint,)
-                slots: tuple[LongAudioSettledSlot, ...] = ()
+                saved_state = None
                 if config.resume:
                     saved_state = load_long_audio_partial_state(paths.resume_state)
                     if saved_state is None:
@@ -74,35 +68,31 @@ def recognize_validated_long_mp3(
                             "The long-audio resume state is missing or invalid.",
                             code="RESUME_STATE_INVALID",
                         ) from None
-                    slots = reuse_long_audio_partial_state(saved_state, request_plan)
-                if slots:
-                    processor_output = _build_reused_output(
+                    if interval_minutes is None:
+                        interval_minutes = saved_state.interval_minutes
+                mode = "interval" if interval_minutes is not None else "whole"
+                if saved_state is not None and (
+                    saved_state.mode != mode
+                    or saved_state.interval_minutes != interval_minutes
+                ):
+                    raise ResumeStateError(
+                        "The long-audio partial state belongs to a different mode.",
+                        code="RESUME_STATE_MISMATCH",
+                    ) from None
+                if interval_minutes is not None:
+                    processor_output, current_run_calls = recognize_long_mp3_intervals(
                         snapshot,
-                        slots[0],
+                        config=config,
+                        interval_minutes=interval_minutes,
+                        state_path=paths.resume_state,
+                        saved_state=saved_state,
                     )
                 else:
-                    response = recognize_uploaded_mp3(
+                    processor_output, current_run_calls = _recognize_whole(
                         snapshot,
-                        prompt=AUDIO_TRANSCRIPTION_PROMPT,
                         config=config,
-                    )
-                    current_run_calls = 1
-                    processor_output = _with_current_run_count(
-                        build_long_mp3_processor_output(snapshot, response, config=config),
-                        count=1,
-                    )
-                    slot = _build_settled_slot(
-                        processor_output,
-                        request_fingerprint=request_fingerprint,
-                    )
-                    save_long_audio_partial_state_atomically(
-                        paths.resume_state,
-                        LongAudioPartialState(
-                            state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
-                            identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
-                            request_fingerprints=request_plan,
-                            slots=(slot,),
-                        ),
+                        state_path=paths.resume_state,
+                        saved_state=saved_state,
                     )
             write_markdown_atomically(
                 paths.result,
@@ -119,6 +109,50 @@ def recognize_validated_long_mp3(
                 error._add_safe_detail("provider_calls_attempted", current_run_calls)
             _remove_empty_new_root(paths.root, created=created_root)
             raise
+
+
+def _recognize_whole(snapshot, *, config, state_path, saved_state):
+    model = config.audio_model.name
+    assert type(model) is str
+    request_fingerprint = fingerprint_long_audio_request(
+        source_sha256=snapshot.sha256,
+        mode="whole",
+        provider="google",
+        model=model,
+        transport="google_files",
+    )
+    request_plan = (request_fingerprint,)
+    slots: tuple[LongAudioSettledSlot, ...] = ()
+    if saved_state is not None:
+        slots = reuse_long_audio_partial_state(saved_state, request_plan)
+    if slots:
+        return _build_reused_output(snapshot, slots[0]), 0
+    response = recognize_uploaded_mp3(
+        snapshot,
+        prompt=AUDIO_TRANSCRIPTION_PROMPT,
+        config=config,
+    )
+    output = _with_current_run_count(
+        build_long_mp3_processor_output(snapshot, response, config=config),
+        count=1,
+    )
+    slot = build_long_audio_settled_slot(
+        output,
+        window_index=0,
+        request_fingerprint=request_fingerprint,
+    )
+    save_long_audio_partial_state_atomically(
+        state_path,
+        LongAudioPartialState(
+            state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
+            identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+            mode="whole",
+            interval_minutes=None,
+            request_fingerprints=request_plan,
+            slots=(slot,),
+        ),
+    )
+    return output, 1
 
 
 def _recognize_in_memory(source_path: Path, *, config: Config) -> ProcessorOutput:
@@ -148,30 +182,6 @@ def _recognize_in_memory(source_path: Path, *, config: Config) -> ProcessorOutpu
             if not response.client_closed:
                 error._add_safe_detail("provider_client_cleanup_failed", True)
         raise
-
-
-def _build_settled_slot(
-    output: ProcessorOutput,
-    *,
-    request_fingerprint: str,
-) -> LongAudioSettledSlot:
-    usage = output.metadata["current_model_token_usage"][0]
-    return LongAudioSettledSlot(
-        window_index=0,
-        request_fingerprint=request_fingerprint,
-        markdown=output.markdown,
-        markdown_sha256=hashlib.sha256(output.markdown.encode("utf-8")).hexdigest(),
-        provider=output.metadata["provider"],
-        model=output.metadata["model"],
-        transport=output.metadata["transport"],
-        provider_calls_attempted=output.metadata["provider_call_count"],
-        input_tokens=usage["input_tokens"],
-        output_tokens=usage["output_tokens"],
-        status=output.status,
-        warnings=output.warnings,
-        provider_file_cleanup_succeeded=output.metadata["remote_file_deleted"],
-        provider_client_cleanup_succeeded=output.metadata["provider_client_closed"],
-    )
 
 
 def _build_reused_output(snapshot, slot: LongAudioSettledSlot) -> ProcessorOutput:

@@ -30,6 +30,8 @@ def _state() -> LongAudioPartialState:
     return LongAudioPartialState(
         state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
         identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+        mode="whole",
+        interval_minutes=None,
         request_fingerprints=("1" * 64,),
     )
 

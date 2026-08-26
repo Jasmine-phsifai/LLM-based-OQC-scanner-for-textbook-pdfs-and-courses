@@ -51,6 +51,8 @@ def _state(*, slots: tuple[LongAudioSettledSlot, ...] = ()) -> LongAudioPartialS
     return LongAudioPartialState(
         state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
         identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+        mode="whole",
+        interval_minutes=None,
         request_fingerprints=REQUESTS,
         slots=slots,
     )
@@ -59,7 +61,7 @@ def _state(*, slots: tuple[LongAudioSettledSlot, ...] = ()) -> LongAudioPartialS
 def test_empty_state_binds_the_complete_ordered_request_plan() -> None:
     state = _state()
 
-    assert LONG_AUDIO_PARTIAL_STATE_VERSION == "ocrllm.long-audio-partial.v2"
+    assert LONG_AUDIO_PARTIAL_STATE_VERSION == "ocrllm.long-audio-partial.v3"
     assert state.request_fingerprints == REQUESTS
     assert state.slots == ()
 
@@ -106,6 +108,8 @@ def test_state_rejects_duplicate_plan_fingerprints() -> None:
         LongAudioPartialState(
             state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
             identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+            mode="whole",
+            interval_minutes=None,
             request_fingerprints=(REQUESTS[0], REQUESTS[0]),
         )
 
@@ -156,6 +160,8 @@ def test_state_requires_exact_tuple_containers(field_name: str) -> None:
     arguments = {
         "state_version": LONG_AUDIO_PARTIAL_STATE_VERSION,
         "identity_version": LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+        "mode": "whole",
+        "interval_minutes": None,
         "request_fingerprints": REQUESTS,
         "slots": (),
     }

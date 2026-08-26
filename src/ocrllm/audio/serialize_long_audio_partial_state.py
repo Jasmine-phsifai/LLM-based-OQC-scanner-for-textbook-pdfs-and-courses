@@ -14,6 +14,8 @@ def serialize_long_audio_partial_state(state: LongAudioPartialState) -> bytes:
     document = {
         "state_version": state.state_version,
         "identity_version": state.identity_version,
+        "mode": state.mode,
+        "interval_minutes": state.interval_minutes,
         "request_fingerprints": list(state.request_fingerprints),
         "slots": [
             {
