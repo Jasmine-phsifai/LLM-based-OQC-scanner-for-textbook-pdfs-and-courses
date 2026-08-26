@@ -6513,7 +6513,16 @@ snapshot 清理失败，错误计数为 2 而不是旧代码写死的 1，且 st
 import、diff check 和 frozen `contracts/worker` 均通过。单次 worktree wheel 为
 **268,897 bytes / 266 members**，七个 runtime 均已打包，tests/docs/tools 均未进入，
 wheel checker 和 owned temp 清理通过。精确提交的 clean installed video/combined smoke
-仍是退出条件。
+随后也通过。精确产品提交 `67c52c26f731561b97c9249ef37e78d677789b74`
+只运行一次 maintained gate，exit **0**：archive **1,754 passed, 1 skipped in
+77.48s**，wheel **268,897 bytes**，base **1,359,287 bytes**。八个 profile 为
+audio **91,254,526**、image **17,054,810**、image+DashScope **41,630,436**、
+Google **41,772,593**、audio+Google **130,382,563**、PDF vision **25,253,351**、
+video **254,546,647**、combined **272,418,353 bytes**。安装态视频生成 10 帧、
+5 FPS、2 秒、32×24，保留 2 帧并抽取 8,720-byte 音频；combined 的 `2 1 1`
+证明两帧、一次 injected image 调用和一次 audio snapshot，recognize/compose/publish/
+cleanup 全过。代理、34-wheel wheelhouse、artifact hash、gate process/root 和仓库后检
+均通过；没有 credential 或 provider 调用。
 
 过度设计复查：没有公开视频 resume、state path 字段、第二种 checkpoint、nested
 publication、mode enum、repair parser、provider class、retry、fallback、并行 interval、

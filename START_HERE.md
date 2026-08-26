@@ -887,6 +887,9 @@ accepts exact positive integer minutes. Paid state stays directly under the
 video output root on failure and is removed after clean recognition/snapshot
 cleanup; no nested standalone Markdown is published. This is future resume
 groundwork, not a public video-resume claim, and repair remains separate.
+Exact `67c52c2` passes the clean installed gate with 1,754 archived tests and
+one optional RapidOCR skip, a 268,897-byte wheel, all eight profiles, and local
+video/combined recognize-compose-publish-cleanup smokes green.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

@@ -1451,6 +1451,10 @@ The following directions remain traceable but are not current work:
   Video owns the temporary state path, retains paid prefixes on failure, removes
   state only after a clean audio snapshot exit, and never creates the standalone
   `audio/result.md`. Public video resume and repair parsing remain unavailable.
+  Exact `67c52c2` passes the clean installed gate: 1,754 archived tests pass
+  with one optional RapidOCR skip, wheel 268,897 bytes, base 1,359,287 bytes,
+  all profiles and local video/combined publication smokes green, no cloud I/O,
+  and complete cleanup.
 
 ## Obsolete Prose Kept For Trace
 
