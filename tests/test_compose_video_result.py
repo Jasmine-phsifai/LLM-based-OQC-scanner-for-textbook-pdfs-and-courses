@@ -422,6 +422,41 @@ def test_compose_video_result_marks_missing_audio_provider_call_count_unknown(
     assert result.metadata["current_run_provider_call_count"] is None
 
 
+def test_compose_video_result_does_not_promote_generic_audio_cleanup_details(
+    tmp_path: Path,
+) -> None:
+    frame = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(frame,),
+        frame_outcomes=(
+            BatchItemOutcome(
+                index=0,
+                result=_frame_result(
+                    markdown="Board content.",
+                    indices=(0,),
+                    timestamps=(0.0,),
+                ),
+            ),
+        ),
+        audio_error=ProviderError(
+            "Audio provider failed.",
+            details={
+                "provider_calls_attempted": 1,
+                "provider_client_closed": False,
+            },
+        ),
+    )
+
+    result = compose_video_result(outcome)
+
+    assert "audio_provider_client_closed" not in result.metadata
+    assert (
+        "The Google GenAI client could not be closed after recognition."
+        not in result.warnings
+    )
+
+
 def test_compose_video_result_marks_missing_success_call_count_unknown(
     tmp_path: Path,
 ) -> None:

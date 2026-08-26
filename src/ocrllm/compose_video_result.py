@@ -14,7 +14,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
     )
     from .aggregate_model_token_usage import aggregate_model_token_usage
     from .build_recognition_result import build_recognition_result
-    from .errors import VideoError
+    from .errors import NoSpeechDetected, VideoError
     from .processor_output import ProcessorOutput
     from .read_video_frame_group_identity import read_video_frame_group_identity
 
@@ -134,6 +134,17 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
             warnings.append(
                 f"Video audio recognition failed with {outcome.audio_error.code}."
             )
+            if (
+                isinstance(outcome.audio_error, NoSpeechDetected)
+                and outcome.audio_error.details.get("provider_client_closed")
+                is False
+            ):
+                metadata["audio_provider_client_closed"] = False
+                cleanup_warning = (
+                    "The Google GenAI client could not be closed after recognition."
+                )
+                if cleanup_warning not in warnings:
+                    warnings.append(cleanup_warning)
 
     known_provider_call_counts = [
         count for count in provider_call_counts if count is not None

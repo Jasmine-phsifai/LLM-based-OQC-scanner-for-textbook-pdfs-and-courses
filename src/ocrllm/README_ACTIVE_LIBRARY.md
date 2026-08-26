@@ -106,8 +106,11 @@ lazy MP3 decoder and interval FFmpeg backend; neither loads during plain import.
 An audio-only resume flag would still replay paid image groups and cannot bind
 an existing output root to the source video or short-audio result. The shipped
 high-level job instead owns one temporary journal and atomic `result.md`
-publication. The current three-step API remains non-resumable and gains no
-finalize/discard protocol.
+publication. A terminal no-speech result with a proved failed Google
+audio-client close preserves the existing warning and exposes
+`audio_provider_client_closed=False`, including after zero-call resume; generic
+provider-error details are not lifted into the combined result. The current
+three-step API remains non-resumable and gains no finalize/discard protocol.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
 legacy-Markdown repair, so ordinary image-sidecar resume remains its recovery
 path.

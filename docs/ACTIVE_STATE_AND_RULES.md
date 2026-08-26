@@ -4000,9 +4000,11 @@ Post-register findings are ordered by demonstrated user impact:
   later provider, materializer-cleanup, cancellation, or state-save failure
   reports cumulative current-run token and cleanup evidence alongside the
   exact call and persisted-prefix counts. Resume history is excluded.
-- Open, medium: a resumed terminal video no-speech result preserves failed
-  client cleanup in its journal and internal error, but final composition emits
-  only the generic audio error warning and drops that cleanup fact.
+- #389 closes the medium terminal video no-speech composition gap. When the
+  saved audio branch proves that its Google client did not close, fresh and
+  zero-call resumed final results retain the existing cleanup warning and the
+  audio-scoped `audio_provider_client_closed=False` fact. Other error details,
+  successful/unknown closure, and generic provider failures are not promoted.
 - Open, low: PDF output collision is checked after one bounded snapshot and
   PDFium inspection. It makes no provider call and preserves the target, but a
   known `OUTPUT_EXISTS` should win before backend work.

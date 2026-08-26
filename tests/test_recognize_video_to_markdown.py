@@ -570,6 +570,15 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
     assert result.metadata["audio_error_code"] == "NO_SPEECH_DETECTED"
     assert result.metadata["current_run_provider_call_count"] == 0
     assert "NO_SPEECH_DETECTED" in result.markdown
+    cleanup_warning = (
+        "The Google GenAI client could not be closed after recognition."
+    )
+    if client_closed:
+        assert cleanup_warning not in result.warnings
+        assert "audio_provider_client_closed" not in result.metadata
+    else:
+        assert cleanup_warning in result.warnings
+        assert result.metadata["audio_provider_client_closed"] is False
     assert result.output_path == output_root / "result.md"
     assert audio_calls == 1
     assert publication_calls == 2

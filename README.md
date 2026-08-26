@@ -141,8 +141,11 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
 - exposes `compose_video_result()` as a provider-free explicit second step for
   a returned complete or partial video outcome. It keeps ordered frame and
   audio sections separate, preserves stable failure codes, reports retained
-  media as assets, and accumulates provider-reported tokens by model. It does
-  not infer audio/frame alignment or accept a fully failed outcome.
+  media as assets, and accumulates provider-reported tokens by model. A proved
+  failed Google audio-client close on terminal no-speech remains visible as a
+  cleanup warning and `audio_provider_client_closed=False`; unrelated error
+  details are not copied. It does not infer audio/frame alignment or accept a
+  fully failed outcome.
 - exposes `publish_video_result()` as the separate final-output step. It accepts
   the same settled outcome plus an explicit output path, atomically publishes
   Markdown without overwriting by default, and returns the standard video

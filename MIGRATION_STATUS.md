@@ -1759,6 +1759,16 @@ added. The focused set passes 172 tests and the complete offline suite passes
 all 1,837. The next evidenced queue items are video final-composition cleanup
 disclosure, then pre-PDFium PDF output-collision rejection.
 
+#389 closes the video final-composition cleanup-disclosure item. A terminal
+short-audio `NoSpeechDetected` carrying the exact failed Google client-close
+fact now produces the existing cleanup warning plus
+`audio_provider_client_closed=False`, including after journal-backed zero-call
+resume. Successful, unknown, malformed, or generic provider-error details are
+not promoted. No journal schema, generic lifecycle mapper, retry, fallback, or
+provider abstraction was added. The focused video set passes 134 tests and the
+complete offline suite passes all 1,838. The next evidenced queue item is
+pre-PDFium PDF output-collision rejection.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
