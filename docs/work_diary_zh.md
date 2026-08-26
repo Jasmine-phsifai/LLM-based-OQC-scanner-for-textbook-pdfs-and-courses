@@ -6397,3 +6397,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **为何无需再问与最终决定。** #355 原来给出 A：缺口存在时不发布最终文件、保留 paid state、以后 resume；B：立即发布终态 partial 并删除 state。维护者此前已经明确：供应商可能崩溃三小时或耗尽日额度，不能一直内部重试，应在三小时或二十四小时后由 resume 继续；repair 只在 state 丢失后承担小侧链。B 会主动删除 resume 所需状态，和该决定直接冲突，因此不再重复提问。现正式选择 A：取消/provider/提取/解码/解析造成的缺口阻止 `result.md`，保留全部已结算单元并抛 typed error；显式 resume 只补缺口。精确无音轨和无语音记录为终态 absence，不再 dispatch；所有单元正文或终态 absence 后才允许发布，no-speech 或 cleanup-only warning 可使结果为 partial。现有低层 partial publication 不变。
 
 **验证与过度设计复查。** 当前视频 outcome/compose/publish/recognize 集 **74 passed in 24.76s**。本轮只修正文档中遗漏的决策关联，不创建 journal version、serializer、result digest、API、状态类、provider retry、repair parser、finalize/discard、事务或锁。与其要求用户再次回答已经由早期明确场景决定的问题，主动消除过期“open”标签更符合可维护性；下一轮才可从一个真实消费者所需的最小 journal 单元开始失败优先实现。
+
+## #372 — 2026-08-26：再次确认两代产品均不得裁剪黑板区域
+
+**本轮英文原子任务。** `Atomic task — remove the obsolete blackboard-corner/cropping stage from both the legacy app and the active library, including video- and PDF-derived images, while preserving unrelated image preprocessing.`
+
+**澄清、假设与路线。** 维护者立即重申：多块分离黑板、滑动黑板和黑板加投影幕布无法可靠对准，裁剪还会损失画质；普通图片、视频抽帧和 PDF 渲染页都不得寻找四角、推断 ROI、裁剪轮廓或做透视矫正。这里的“移除裁剪”不等于删除格式解码、完整画面等比例缩小、视频按时间抽帧、负反馈选帧、PDF 整页渲染或 OCR 文本框排序。路线 A 只关闭开关，路线 B 删除实现、入口、配置和误导引用；选择 B，因为废代码不应留待以后误启用。
+
+**仓库事实与个人复核。** 上一轮视频 journal API 规划在任何代码或文档修改前停止，本轮优先级取代它。Git 历史和当前树证明删除已经由三个窄提交完成：`3c09cde` 删除 238 行 `legacy_app/OCRLLM/imaging/preprocess.py` 以及真实调用链，`efa256e` 清除配置和“crop/resize”误导残余，`3230b2b` 再删除失效的 `imaging` 配置入口、未使用 phase 名和旧架构图节点。active library 从未迁入这套工序。全树搜索 `crop()`、透视变换、角点、轮廓、ROI 与 bounding rectangle 没有发现生产调用；legacy 的 `prepare_board_image.py` 只复制或等比例缩小完整图片，active 视频在选定候选后重新解码并保存原尺寸完整帧，PDFium 只按统一 scale 渲染整页。
+
+**验证与过度设计复查。** legacy 完整图片及 PDF 聚焦回归 **5 passed in 4.51s**；active 视频完整帧和 PDF 整页路径 **48 passed in 4.63s**。第一次把两套测试放在仓库根目录共同收集时，legacy 因其独立导入根缺少 `OCRLLM` 而在执行前失败；分开按各自真实导入边界重跑后全部通过，这不是产品错误。没有新增运行时“禁止裁剪”守卫、源码禁词测试、no-crop 抽象或新的预处理层，也没有误删用于时间选择的比较缩略图、Canny 空白判断、pHash、完整画面缩放和 PDF 整页渲染。当前无需再删代码；只把维护者再次确认及其对视频/PDF的明确适用范围写入长期决策记录。

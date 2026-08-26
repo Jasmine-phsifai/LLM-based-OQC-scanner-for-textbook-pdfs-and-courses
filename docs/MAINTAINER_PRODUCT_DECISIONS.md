@@ -467,6 +467,9 @@ is often accepted.
   they do not select a geometry-changing operation.
   #367 removed the final stale `imaging` config whitelist entry, unused
   preprocessing-named constant, and diagram reference to the deleted module.
+  #372 re-audited both trees after the maintainer explicitly reaffirmed that
+  this prohibition also covers frames extracted from video and pages rendered
+  from PDF. No executable crop module or hidden geometry-changing call remains.
 
 - **Resolved video-resume terminal decision (#345/#347): Route A.** Do not add an audio-only
   `resume=True` to `recognize_video()`: current video state cannot preserve paid
