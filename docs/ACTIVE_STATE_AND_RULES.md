@@ -6459,6 +6459,15 @@ import、diff check 和 frozen `contracts/worker` 检查均通过。worktree whe
 **267,421 bytes / 264 members**，三份变更 runtime 均已打包，tests/tools 均未进入；
 wheel checker 和临时根目录清理通过。
 
+精确产品提交 `ec1839c13d3440aa0520c92a305415202075f99b` 随后通过一次
+clean installed gate：归档源码 **1,745 passed, 1 skipped in 70.98s**，wheel
+仍为 **267,421 bytes**，base 安装为 **1,354,273 bytes**。audio、image、
+image+DashScope、Google、audio+Google、PDF vision、video 和 combined profile
+分别为 **91,249,394 / 17,049,678 / 41,625,284 / 41,767,459 /
+130,377,417 / 25,248,209 / 254,541,515 / 272,413,197 bytes**；安装态 MP3、
+图片、PDF、视频抽帧/抽音频和图片/音频分离组合 smoke 全部通过。执行前确认
+`127.0.0.1:10080` 与显式代理 HTTPS 可用，最终 gate root 为 0，仓库不变。
+
 过度设计复查：没有共享 usage parser、provider 基类、billing ledger、价格表、token
 估算、native/compatible 双 schema、retry、fallback 或 API pool。直接复用现有
 `VisionProviderResponse` 和 per-model accumulator；这是修通已有消费者，不是新框架。
