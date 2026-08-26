@@ -213,19 +213,15 @@ class PathConfig:
 
 @dataclass
 class VideoConfig:
-    """视频处理参数配置（抽帧间隔、变化阈值、遮挡检测等）。"""
-    initial_sample_frames: int = 10
+    """视频处理参数配置（抽帧间隔和变化阈值等）。"""
     frame_interval: float = 5.0
     refine_interval: float = 2.0
     change_threshold: float = 0.15
     drift_threshold: float = 0.10
     max_segment_sec: float = 150.0
     min_content_ratio: float = 0.005
-    occlusion_threshold: float = 0.45
     phash_threshold: int = 3
     target_frames_per_hour: float = 40.0
-    board_roi_padding: int = 10
-    board_roi_override: tuple | None = None
     batch_size: int = 4
     extract_hotwords_with_text_model: bool = True
 

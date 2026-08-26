@@ -138,7 +138,7 @@ class VisionFailurePropagationTests(unittest.TestCase):
             proc = BoardProcessor(cfg=_cfg(tmp), llm=_FailingLLM(), api_pool=_SingleClientPool())
 
             with self.assertRaisesRegex(RuntimeError, "全部.*失败"):
-                proc.process([image_path], output_path=output_path, skip_preprocess=True)
+                proc.process([image_path], output_path=output_path)
 
             with open(output_path, encoding="utf-8") as f:
                 self.assertIn("识别失败", f.read())
@@ -154,7 +154,7 @@ class VisionFailurePropagationTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(RuntimeError, r"输出包含识别失败.*2.*board\.md"):
-                proc.process(image_paths, output_path=output_path, skip_preprocess=True)
+                proc.process(image_paths, output_path=output_path)
 
             with open(output_path, encoding="utf-8") as f:
                 content = f.read()

@@ -56,7 +56,7 @@ from OCRLLM.core.document_model import SourceType
 from OCRLLM.processors.video_pipeline import VideoProcessContext, build_video_phase_chain
 from OCRLLM.processors.video_pipeline_selection import VideoPipelineSelection
 from OCRLLM.imaging.audio_extractor import extract_audio
-from OCRLLM.imaging.preprocess import imwrite_unicode
+from OCRLLM.imaging.imwrite_unicode import imwrite_unicode
 from OCRLLM import prompts
 
 logger = logging.getLogger(__name__)
@@ -676,7 +676,7 @@ class VideoProcessor(BaseProcessor):
     def _phase2_extract_inner(
         self, video_path: str, frames_dir: str, debug_dir: str
     ) -> list[dict]:
-        # ---- Step 1: 读取视频元数据 + 检测板书区域（短生命周期 cap） ----
+        # ---- Step 1: 读取视频元数据（短生命周期 cap） ----
         meta_cap = self._open_video_capture(video_path)
         if not meta_cap.isOpened():
             raise RuntimeError(f"无法打开视频: {video_path}")
@@ -691,7 +691,6 @@ class VideoProcessor(BaseProcessor):
 
             self.tracker.update_phase("phase2", 0, f"扫描视频帧 (共 {total_frames} 帧, {duration/60:.1f} 分钟)")
 
-            board_roi = self._detect_board_region(meta_cap, fps, total_frames)
         finally:
             meta_cap.release()
 
@@ -704,11 +703,11 @@ class VideoProcessor(BaseProcessor):
             scan_workers = 1
 
         candidates = self._coarse_scan(
-            video_path, fps, total_frames, board_roi, cand_temp_dir, scan_workers,
+            video_path, fps, total_frames, cand_temp_dir, scan_workers,
         )
 
         # ---- Step 3: 细扫 ----
-        self._refine_scan(video_path, fps, candidates, board_roi, cand_temp_dir)
+        self._refine_scan(video_path, fps, candidates, cand_temp_dir)
 
         # ---- Step 4: 校准 + 保存（不需要 cap） ----
         candidates.sort(key=lambda m: m["timestamp"])
@@ -724,7 +723,7 @@ class VideoProcessor(BaseProcessor):
 
     def _coarse_scan(
         self, video_path: str, fps: float, total_frames: int,
-        board_roi, cand_temp_dir: str, num_workers: int = 1,
+        cand_temp_dir: str, num_workers: int = 1,
     ) -> list[dict]:
         """Pass 1: seek 模式粗扫（直接跳到目标帧，避免 grab() 逐帧开销）。
 
@@ -744,7 +743,7 @@ class VideoProcessor(BaseProcessor):
         progress_lock = threading.Lock()
         progress_counter = [0]
         all_candidates: list[list[dict]] = [[] for _ in range(num_workers)]
-        all_skipped = [{"blank": 0, "occluded": 0} for _ in range(num_workers)]
+        all_skipped = [{"blank": 0} for _ in range(num_workers)]
 
         # 按线程交错分配目标帧（均匀分散 I/O 开销）
         segments = [target_indices[i::num_workers] for i in range(num_workers)]
@@ -766,7 +765,7 @@ class VideoProcessor(BaseProcessor):
                     if not ret:
                         continue
                     self._extract_candidate_from_frame(
-                        frame, frame_idx, fps, board_roi, seg_cands, seg_skip, cand_temp_dir,
+                        frame, frame_idx, fps, seg_cands, seg_skip, cand_temp_dir,
                     )
                     if (i + 1) % 50 == 0:
                         with progress_lock:
@@ -795,18 +794,21 @@ class VideoProcessor(BaseProcessor):
 
         # 合并所有段的候选
         candidates = []
-        total_blank = total_occluded = 0
+        total_blank = 0
         for seg_cands, seg_skip in zip(all_candidates, all_skipped):
             candidates.extend(seg_cands)
             total_blank += seg_skip["blank"]
-            total_occluded += seg_skip["occluded"]
 
         candidates.sort(key=lambda m: m["timestamp"])
-        logger.info("[VIDEO] 粗扫 (%d 线程, seek): %d 候选, 空白=%d, 遮挡=%d",
-                     num_workers, len(candidates), total_blank, total_occluded)
+        logger.info(
+            "[VIDEO] 粗扫 (%d 线程, seek): %d 候选, 空白=%d",
+            num_workers,
+            len(candidates),
+            total_blank,
+        )
         return candidates
 
-    def _refine_scan(self, video_path, fps, candidates, board_roi, cand_temp_dir):
+    def _refine_scan(self, video_path, fps, candidates, cand_temp_dir):
         """Pass 2: 对变化显著的 gap 区间做细扫补充候选帧（seek 模式）。
 
         每个 worker 持有一个 cap，处理分配给它的所有 gap（避免反复 open/release）。
@@ -849,7 +851,7 @@ class VideoProcessor(BaseProcessor):
                     if start_idx >= end_idx:
                         continue
 
-                    gap_skipped = {"blank": 0, "occluded": 0}
+                    gap_skipped = {"blank": 0}
                     frame_idx = start_idx
                     count = 0
                     while frame_idx < end_idx:
@@ -867,8 +869,8 @@ class VideoProcessor(BaseProcessor):
                             ret, frame = worker_cap.read()
                             if ret:
                                 self._extract_candidate_from_frame(
-                                    frame, frame_idx, fps, board_roi, all_cands, gap_skipped,
-                                    cand_temp_dir, skip_occlusion=True,
+                                    frame, frame_idx, fps, all_cands, gap_skipped,
+                                    cand_temp_dir,
                                 )
 
                         frame_idx += refine_skip
@@ -935,95 +937,22 @@ class VideoProcessor(BaseProcessor):
         return results
 
     def _extract_candidate_from_frame(
-        self, frame, frame_idx, fps, board_roi, candidates, skipped, temp_dir, skip_occlusion=False
+        self, frame, frame_idx, fps, candidates, skipped, temp_dir
     ):
-
         timestamp = frame_idx / fps
-        if board_roi:
-            x_min, y_min, x_max, y_max = board_roi
-            board_img = frame[y_min:y_max, x_min:x_max]
-            if board_img.size == 0:
-                return
-        else:
-            board_img = frame
-
-        if _is_blank(board_img, self.cfg.video.min_content_ratio):
+        if _is_blank(frame, self.cfg.video.min_content_ratio):
             skipped["blank"] += 1
             return
 
-        if not skip_occlusion and board_roi and _is_occluded(frame, board_roi, self.cfg.video.occlusion_threshold):
-            skipped["occluded"] += 1
-            return
-
-        thumb = cv2.resize(cv2.cvtColor(board_img, cv2.COLOR_BGR2GRAY), (256, 256))
+        thumb = cv2.resize(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), (256, 256))
         temp_path = os.path.join(temp_dir, f"cand_{frame_idx:08d}.jpg")
-        imwrite_unicode(temp_path, board_img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        imwrite_unicode(temp_path, frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
         candidates.append({
             "temp_path": temp_path,
             "timestamp": timestamp,
             "frame_idx": frame_idx,
             "thumb": thumb,
         })
-
-    def _detect_board_region(self, cap, fps, total_frames):
-        if self.cfg.video.board_roi_override:
-            return tuple(self.cfg.video.board_roi_override)
-
-        sample_count = self.cfg.video.initial_sample_frames
-        step = max(1, total_frames // (sample_count + 1))
-        rects = []
-
-        for i in range(1, sample_count + 1):
-            idx = i * step
-            if idx >= total_frames:
-                break
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if not ret:
-                continue
-
-            h, w = frame.shape[:2]
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            blurred = cv2.GaussianBlur(gray, (7, 7), 0)
-            edges = cv2.Canny(blurred, self.cfg.imaging.canny_low, self.cfg.imaging.canny_high)
-            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-            edges = cv2.dilate(edges, kernel, iterations=2)
-
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            contours = sorted(contours, key=cv2.contourArea, reverse=True)
-
-            for cnt in contours[:5]:
-                if cv2.contourArea(cnt) < h * w * 0.15:
-                    continue
-                peri = cv2.arcLength(cnt, True)
-                approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
-                if len(approx) == 4:
-                    rects.append(approx.reshape(4, 2))
-                    break
-
-        if not rects:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames // 2)
-            ret, frame = cap.read()
-            if ret and frame is not None:
-                h, w = frame.shape[:2]
-            else:
-                h, w = 1080, 1920
-            return (int(w * 0.02), int(h * 0.02), int(w * 0.98), int(h * 0.92))
-
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        ret, frame = cap.read()
-        if ret and frame is not None:
-            h, w = frame.shape[:2]
-        else:
-            h, w = 1080, 1920
-        all_pts = np.vstack(rects)
-        pad = self.cfg.video.board_roi_padding
-        return (
-            max(0, int(np.min(all_pts[:, 0])) - pad),
-            max(0, int(np.min(all_pts[:, 1])) - pad),
-            min(w, int(np.max(all_pts[:, 0])) + pad),
-            min(h, int(np.max(all_pts[:, 1])) + pad),
-        )
 
     def _segment_and_select(self, candidates: list[dict],
                              change_threshold=None, drift_threshold=None,
@@ -1860,16 +1789,6 @@ def _is_blank(img: np.ndarray, threshold: float) -> bool:
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(cv2.GaussianBlur(gray, (5, 5), 0), 30, 100)
     return np.count_nonzero(edges) / (edges.shape[0] * edges.shape[1]) < threshold
-
-
-def _is_occluded(frame, roi, threshold) -> bool:
-    x_min, y_min, x_max, y_max = roi
-    region = frame[y_min:y_max, x_min:x_max]
-    if region.size == 0:
-        return False
-    hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, np.array([0, 30, 60], np.uint8), np.array([25, 170, 255], np.uint8))
-    return np.count_nonzero(mask) / (region.shape[0] * region.shape[1]) > threshold
 
 
 def _compute_phash(gray: np.ndarray, size: int = 8) -> np.ndarray:

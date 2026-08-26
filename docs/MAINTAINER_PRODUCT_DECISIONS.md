@@ -453,6 +453,15 @@ is often accepted.
 
 ## Video recognition direction
 
+- **Full-image retention is mandatory (#348).** Neither legacy nor the active
+  library may detect blackboard corners, infer a board ROI, crop to a contour,
+  or apply perspective rectification before recognition. Multiple separated or
+  sliding boards and board-plus-projector scenes make that operation lossy and
+  unreliable. Video-retained frames, ordinary board images, and PDF-rendered
+  pages must preserve the complete source frame/page. Size-only downscaling is
+  allowed when it preserves the full field of view. Comparison thumbnails used
+  only for bounded frame selection are not recognition crops.
+
 - **Resolved video-resume terminal decision (#345/#347): Route A.** Do not add an audio-only
   `resume=True` to `recognize_video()`: current video state cannot preserve paid
   image groups, short audio, source identity, or a terminal cleanup boundary.

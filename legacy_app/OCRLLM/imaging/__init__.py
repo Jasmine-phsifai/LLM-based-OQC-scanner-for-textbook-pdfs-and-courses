@@ -17,15 +17,9 @@ def __getattr__(name):
     if name == "is_scanned_pdf":
         from OCRLLM.imaging.scan_detector import is_scanned_pdf
         return is_scanned_pdf
-    if name == "ImagePreprocessor":
-        from OCRLLM.imaging.preprocess import ImagePreprocessor
-        return ImagePreprocessor
     if name == "imwrite_unicode":
-        from OCRLLM.imaging.preprocess import imwrite_unicode
+        from OCRLLM.imaging.imwrite_unicode import imwrite_unicode
         return imwrite_unicode
-    if name == "convert_heic_to_jpg":
-        from OCRLLM.imaging.preprocess import convert_heic_to_jpg
-        return convert_heic_to_jpg
     if name == "extract_audio":
         from OCRLLM.imaging.audio_extractor import extract_audio
         return extract_audio

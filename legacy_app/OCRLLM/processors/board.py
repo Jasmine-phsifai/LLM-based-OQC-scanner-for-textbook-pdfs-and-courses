@@ -8,7 +8,6 @@ import os
 import logging
 import re
 from pathlib import Path
-from typing import Optional
 
 from OCRLLM.processors.base import BaseProcessor
 from OCRLLM.processors.board_repair_manifest import (
@@ -24,13 +23,13 @@ from OCRLLM.processors.board_repair_manifest import (
 from OCRLLM.core.document_model import SourceType
 from OCRLLM.core.utils import (
     batch_list, ensure_dir,
-    sort_files_by_time, resize_image_if_needed, strip_md_fence,
+    sort_files_by_time, strip_md_fence,
 )
 from OCRLLM.core.output_quality import failed_placeholder_quality_reason, looks_like_refusal
 from OCRLLM.core.provider_errors import is_provider_setup_error
 from OCRLLM.core.task_runner import CancelledError
 from OCRLLM.core.write_text_atomically import write_text_atomically
-from OCRLLM.imaging.preprocess import ImagePreprocessor
+from OCRLLM.imaging.prepare_board_image import prepare_board_image
 from OCRLLM import prompts
 
 logger = logging.getLogger(__name__)
@@ -77,8 +76,6 @@ class BoardProcessor(BaseProcessor):
         self,
         image_paths: list[str],
         output_path: str = None,
-        manual_quads: Optional[dict] = None,
-        skip_preprocess: bool = False,
         prompt_template: str = None,
     ) -> str:
         """识别板书/截图并生成 Markdown。
@@ -86,8 +83,6 @@ class BoardProcessor(BaseProcessor):
         Args:
             image_paths: 图片文件路径列表。
             output_path: 输出 Markdown 路径，None 则自动生成。
-            manual_quads: 各图片手动裁剪四边形。
-            skip_preprocess: 跳过自动裁剪预处理。
             prompt_template: 自定义识别提示词。
 
         Returns:
@@ -100,31 +95,27 @@ class BoardProcessor(BaseProcessor):
             output_path = _default_board_output_path(self.cfg.paths.output_dir, sorted_paths)
         logger.info("[BOARD] 共 %d 张图片", len(sorted_paths))
 
-        preprocessor = ImagePreprocessor(self.cfg)
-        if not skip_preprocess:
-            self._report(0, len(sorted_paths), "图片预处理中...")
-            processed_paths = preprocessor.process_batch(sorted_paths, manual_quads)
-            for p in processed_paths:
-                self._check_cancelled()
-                resize_image_if_needed(
-                    p,
-                    self.cfg.processing.image_max_side,
-                    self.cfg.processing.image_quality,
+        self._report(0, len(sorted_paths), "准备完整图片...")
+        resize_dir = ensure_dir(os.path.join(self.cfg.paths.temp_dir, "board_resized"))
+        processed_paths = []
+        for idx, src in enumerate(sorted_paths):
+            self._check_cancelled()
+            source_suffix = Path(src).suffix.casefold()
+            output_suffix = ".jpg" if source_suffix in {
+                ".heic", ".heif", ".tif", ".tiff"
+            } else source_suffix
+            resized_path = os.path.join(
+                resize_dir,
+                f"{idx:04d}_{Path(src).stem}{output_suffix}",
+            )
+            processed_paths.append(
+                prepare_board_image(
+                    src,
+                    resized_path,
+                    max_side=self.cfg.processing.image_max_side,
+                    quality=self.cfg.processing.image_quality,
                 )
-        else:
-            resize_dir = ensure_dir(os.path.join(self.cfg.paths.temp_dir, "board_resized"))
-            processed_paths = []
-            for idx, src in enumerate(sorted_paths):
-                self._check_cancelled()
-                resized_path = os.path.join(resize_dir, f"{idx:04d}_{Path(src).name}")
-                processed_paths.append(
-                    resize_image_if_needed(
-                        src,
-                        self.cfg.processing.image_max_side,
-                        self.cfg.processing.image_quality,
-                        output_path=resized_path,
-                    )
-                )
+            )
 
         batches = batch_list(
             list(zip(sorted_paths, processed_paths)), self.cfg.processing.batch_size
@@ -133,7 +124,6 @@ class BoardProcessor(BaseProcessor):
             batches=([original for original, _processed in batch] for batch in batches),
             batch_size=self.cfg.processing.batch_size,
             prompt=prompt_template,
-            skip_preprocess=skip_preprocess,
         )
         ensure_dir(os.path.dirname(output_path))
         save_board_repair_manifest(output_path, manifest)
@@ -233,7 +223,6 @@ class BoardProcessor(BaseProcessor):
         self,
         image_paths: list[str],
         md_path: str,
-        skip_preprocess: bool = False,
         prompt_template: str = None,
     ) -> str:
         """Re-recognize failed batches in an existing board MD.
@@ -266,7 +255,7 @@ class BoardProcessor(BaseProcessor):
 
         results: dict[int, str] = {}  # batch index → recognized text
         still_failed: list[int] = []
-        preprocessor = ImagePreprocessor(self.cfg)
+        resize_dir = ensure_dir(os.path.join(self.cfg.paths.temp_dir, "board_resized"))
 
         for order, (batch_idx, _legacy_names) in enumerate(failed):
             self._check_cancelled()
@@ -283,15 +272,20 @@ class BoardProcessor(BaseProcessor):
             names_str = ", ".join(names)
             prompt = prompt_template.format(image_names=names_str)
 
-            # Preprocess
-            if not skip_preprocess:
-                proc_paths = preprocessor.process_batch(batch_paths, None)
-                for p in proc_paths:
-                    resize_image_if_needed(
-                        p, self.cfg.processing.image_max_side, self.cfg.processing.image_quality,
+            proc_paths = []
+            for item_id, source_path in zip(saved_batch.item_ids, batch_paths):
+                source_suffix = Path(source_path).suffix.casefold()
+                output_suffix = ".jpg" if source_suffix in {
+                    ".heic", ".heif", ".tif", ".tiff"
+                } else source_suffix
+                proc_paths.append(
+                    prepare_board_image(
+                        source_path,
+                        os.path.join(resize_dir, f"repair_{item_id}{output_suffix}"),
+                        max_side=self.cfg.processing.image_max_side,
+                        quality=self.cfg.processing.image_quality,
                     )
-            else:
-                proc_paths = batch_paths
+                )
 
             try:
                 result = self.llm.chat_with_images(prompt=prompt, image_paths=proc_paths)

@@ -174,7 +174,7 @@ def _builtin_specs() -> list[ProcessorSpec]:
             description="单张或多张板书/截图识别。",
             cli_input_help="图片文件路径",
             cli_output_help="输出 MD 路径",
-            cli_option_groups=("skip_preprocess",),
+            cli_option_groups=(),
         ),
         ProcessorSpec(
             key="video",

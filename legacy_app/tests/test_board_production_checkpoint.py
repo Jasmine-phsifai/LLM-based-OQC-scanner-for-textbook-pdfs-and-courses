@@ -82,7 +82,7 @@ def test_board_publishes_repairable_skeleton_before_provider_dispatch(tmp_path):
     llm = _ObserveInitialCheckpointLLM(output)
     processor = _processor(tmp_path, llm)
 
-    processor.process(image_paths, output_path=str(output), skip_preprocess=True)
+    processor.process(image_paths, output_path=str(output))
 
     assert llm.saw_repairable_checkpoint
 
@@ -94,7 +94,7 @@ def test_board_preserves_paid_success_when_reporter_cancels_before_next_batch(tm
     processor.llm = llm
 
     with pytest.raises(CancelledError):
-        processor.process(image_paths, output_path=str(output), skip_preprocess=True)
+        processor.process(image_paths, output_path=str(output))
 
     markdown = output.read_text(encoding="utf-8")
     assert llm.calls == 1
@@ -121,7 +121,7 @@ def test_board_preserves_paid_success_and_propagates_terminal_provider_error(
     processor = _processor(tmp_path, llm)
 
     with pytest.raises(type(terminal_error), match=str(terminal_error)):
-        processor.process(image_paths, output_path=str(output), skip_preprocess=True)
+        processor.process(image_paths, output_path=str(output))
 
     markdown = output.read_text(encoding="utf-8")
     assert llm.calls == 2

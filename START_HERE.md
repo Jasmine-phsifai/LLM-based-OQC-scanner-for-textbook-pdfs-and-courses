@@ -219,7 +219,16 @@ runner completed, so it proves no provider outcome; the next controller must
 poll that exact session and preserve safe JSON before cleanup. #137 did so: one
 image call succeeded, one audio call returned `PROVIDER_QUOTA_EXHAUSTED`, and
 the public outcome/composition honestly preserved a two-asset partial result
-without retry or model switching. #138 then makes the public outcome reject
+without retry or model switching.
+
+#348 establishes one cross-product image rule: recognition always receives the
+complete board image, retained video frame, or PDF-rendered page. The active
+library already followed it. The legacy automatic/manual board crop,
+perspective transform, inferred video board ROI, ROI-only candidate JPEGs, and
+ROI-based occlusion rejection were removed; size-only full-field downscaling
+remains allowed.
+
+#138 makes the public video outcome reject
 frame/audio paths outside its exact lexical `output_root/frames/*` and optional
 `output_root/audio.mp3` layout before composition. #139 makes composed
 current-run provider calls exact-or-unknown: any settled provider branch that

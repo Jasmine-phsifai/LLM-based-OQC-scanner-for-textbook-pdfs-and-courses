@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 from OCRLLM.config import AppConfig
 from OCRLLM.core.provider_errors import ProviderSetupError
@@ -41,7 +42,6 @@ def _write_repairable_failures(md_path: Path, image_paths: list[Path]) -> None:
         batches=([str(path)] for path in image_paths),
         batch_size=1,
         prompt="test prompt",
-        skip_preprocess=True,
     )
     save_board_repair_manifest(md_path, manifest)
     md_path.write_text(
@@ -56,7 +56,7 @@ def _write_repairable_failures(md_path: Path, image_paths: list[Path]) -> None:
 def test_board_repair_publishes_success_and_propagates_cancellation(tmp_path):
     image_paths = [tmp_path / "board-1.png", tmp_path / "board-2.png"]
     for path in image_paths:
-        path.write_bytes(b"image")
+        Image.new("RGB", (8, 8), "white").save(path)
     md_path = tmp_path / "board.md"
     _write_repairable_failures(md_path, image_paths)
     processor = _board_processor(
@@ -68,7 +68,6 @@ def test_board_repair_publishes_success_and_propagates_cancellation(tmp_path):
         processor.repair(
             [str(path) for path in image_paths],
             str(md_path),
-            skip_preprocess=True,
         )
 
     content = md_path.read_text(encoding="utf-8")
@@ -79,7 +78,7 @@ def test_board_repair_publishes_success_and_propagates_cancellation(tmp_path):
 
 def test_board_repair_propagates_provider_setup_errors(tmp_path):
     image_path = tmp_path / "board.png"
-    image_path.write_bytes(b"image")
+    Image.new("RGB", (8, 8), "white").save(image_path)
     md_path = tmp_path / "board.md"
     _write_repairable_failures(md_path, [image_path])
     processor = _board_processor(
@@ -88,6 +87,6 @@ def test_board_repair_propagates_provider_setup_errors(tmp_path):
     )
 
     with pytest.raises(ProviderSetupError, match="provider SDK missing"):
-        processor.repair([str(image_path)], str(md_path), skip_preprocess=True)
+        processor.repair([str(image_path)], str(md_path))
 
     assert "批次 1" in md_path.read_text(encoding="utf-8")

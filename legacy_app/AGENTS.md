@@ -920,3 +920,37 @@ risk can reappear in future optional command entrypoints: environment presence
 must be checked by the executable actually needed, not inferred only from a
 shell activation command being on `PATH`. No `WARNING FOR src/ocrllm` is
 needed until such a launcher is intentionally added.
+
+## 2026-08-26: automatic board cropping silently discarded recognition pixels
+
+**Observed and fixed.** The legacy board-image path defaulted to
+`ImagePreprocessor.auto_crop_board()`, which selected a contour or guessed
+quadrilateral and could apply a perspective transform. The legacy video path
+sampled frames to infer one `board_roi`, then used only that rectangle for
+blank/occlusion decisions, comparison thumbnails, and the JPEG sent to
+recognition. These assumptions fail on separated boards, sliding boards, and a
+board beside a projector screen; a plausible crop could silently remove valid
+content. PDF rendering did not use this module.
+
+**Change.** The complete crop/perspective module was deleted. The unrelated
+Unicode OpenCV writer moved to `imwrite_unicode.py`; board preparation moved to
+`prepare_board_image.py` and now either copies the exact complete image bytes or
+performs aspect-preserving full-field downscaling/conversion. Automatic and
+manual quadrilateral arguments, the video ROI detector, ROI-only candidate
+JPEGs, ROI-based occlusion rejection, ROI configuration fields, GUI checkbox,
+and CLI option were removed. New repair manifests record
+`full-frame-resize-v1`. The old `skip_preprocess` field is accepted only while
+reading historical manifests and cannot select deleted behavior.
+
+**Verification.** Direct full-frame tests preserve all four corner pixels,
+exact source dimensions, exact bytes when no resize is needed, and both outer
+edges of a saved video candidate. Focused board/failure tests passed 28/28;
+neighboring video/GUI/config tests passed 30/30. The bounded legacy suite passed
+281 tests with one expected skip, excluding only the deferred real
+social-download E2E and the maintainer's protected untracked test.
+
+**Carry-forward judgement. WARNING FOR src/ocrllm.** The active library was
+checked and already retains complete video frames and PDF-rendered pages; it has
+no analogous corner/ROI/perspective stage today. Do not add one later. Frame
+selection may use private comparison thumbnails, but every image sent to OCR or
+published as a retained asset must preserve the complete source field of view.

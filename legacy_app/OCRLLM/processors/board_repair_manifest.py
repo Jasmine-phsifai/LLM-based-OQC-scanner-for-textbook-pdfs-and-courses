@@ -82,7 +82,6 @@ def create_board_repair_manifest(
     batches: Iterable[Iterable[str]],
     batch_size: int,
     prompt: str,
-    skip_preprocess: bool,
 ) -> BoardRepairManifest:
     """Fingerprint the exact ordered sources and batch membership before dispatch."""
     if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
@@ -122,7 +121,7 @@ def create_board_repair_manifest(
         request={
             "batch_size": batch_size,
             "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
-            "skip_preprocess": bool(skip_preprocess),
+            "image_handling": "full-frame-resize-v1",
         },
     )
 
@@ -225,8 +224,11 @@ def _parse_manifest(raw: object, path: Path) -> BoardRepairManifest:
         raise BoardRepairIdentityError("板书修复身份 manifest request.batch_size 无效")
     if not isinstance(prompt_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", prompt_hash):
         raise BoardRepairIdentityError("板书修复身份 manifest request.prompt_sha256 无效")
-    if not isinstance(request.get("skip_preprocess"), bool):
-        raise BoardRepairIdentityError("板书修复身份 manifest request.skip_preprocess 无效")
+    if request.get("image_handling") != "full-frame-resize-v1":
+        if not isinstance(request.get("skip_preprocess"), bool):
+            raise BoardRepairIdentityError(
+                "板书修复身份 manifest request.image_handling 无效"
+            )
 
     raw_items = raw.get("items")
     if not isinstance(raw_items, list) or not raw_items:

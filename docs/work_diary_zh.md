@@ -6151,3 +6151,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **当前证据。** probe、standalone whole/interval、Google long-audio adapter、video settlement 和完整 video 邻近集合共 **93 passed in 23.52s**。完整源码、wheel 和真实 provider gate 已交给轻量执行者，当前尚未完成，不能把 93 个离线回归写成全量或 live 成功。代理只读预检已确认 WinINET 开启、`127.0.0.1:10080` TCP 可达、经代理访问 PyPI 为 HTTP 200；以后下载失败应先查代理是否被意外关闭或没有传给子进程。
 
 **DashScope 与过度设计复查。** 决策文档补充了实时 catalog 后可优先考察 `qwen3.5-ocr` 类 OCR 模型或约 27B 的通用推理候选，但它们只是兴趣样例，不是永久 allowlist；不得用明显弱于 RapidOCR 的普通 OCR 小模型，也不得选择最新超大旗舰。代码没有新增公开 mode enum、第二套 state、repair parser、provider 基类、retry/fallback、自动选模或十小时整段承诺。新增的内部 `interval_mode` 只回答已经存在的两条路线应使用哪个上限；这是修复已实现功能被错误前置拒绝，不是扩展供应商能力。
+
+## #348 — 2026-08-26：彻底移除黑板四角识别与裁剪
+
+**本轮英文原子任务。** `Atomic task — Iteration #348: remove any active blackboard-corner detection, perspective alignment, or content-cropping stage from both legacy and library media paths. Context: multi-board, sliding-board, and board-plus-projector scenes make automatic quadrilateral alignment lossy and unsafe; video frames and PDF-rendered images must preserve the full source image. Success means tracing runtime code, imports, tests, and configuration in both products; deleting the complete stage if it exists; proving video/PDF/image flows retain uncropped full frames/pages; and recording the product prohibition. This matters because a “successful” crop can silently destroy the only pixels needed for OCR.`
+
+**调查结果。** 新 library 没有黑板四角、ROI、轮廓裁剪或透视变换：视频只用缩略图做帧间比较，真正保留和识别的是完整帧；PDFium 渲染的也是完整页。错误存在于 legacy 两条生产路径。普通板书图片默认调用 `auto_crop_board()`，会从轮廓猜四边形并透视拉正，猜不到四边形时还可能按最大轮廓矩形裁剪。视频会先抽样猜一个 `board_roi`，随后空白/遮挡判断、比较缩略图和最终候选 JPEG 全部只看这个矩形；即使检测失败也会默认砍掉四周和下方区域。
+
+**删除与保留。** 已删除整个 `imaging/preprocess.py`、自动/手动四边形入口、透视变换、视频 ROI 检测器、ROI 遮挡拒绝、相关配置、GUI“跳过预处理”复选框和 CLI 参数。旧模块混放的 Unicode OpenCV 写图被移到同名文件；板书图片准备被移到 `prepare_board_image.py`。后者不寻找内容区域：尺寸无需缩小时原样复制完整文件，需要缩小时只按比例缩小完整画面；HEIC/TIFF 仅为 provider 格式转换。新 repair manifest 写 `full-frame-resize-v1`。只为不毁掉既有小型 repair 侧链，读取旧 manifest 时仍接受历史 `skip_preprocess` 布尔值，但它不再连接任何裁剪代码。
+
+**证据与过度设计复查。** 新回归直接验证四角像素、完整尺寸和无需缩小时的逐字节复制；视频回归验证候选 JPEG 保留完整宽高及左右边缘。板书/repair/失败传播 focused 集合 **28 passed**，视频/GUI/配置邻近集合 **30 passed**。active 全量在临时前置已有 STA PATH 后为 **1,769 passed in 79.99s**；首次缺 Node 的 2 项环境失败不冒充源码失败。legacy 全量在排除明确延期且会真实下载的 `test_social_e2e.py` 和受保护未跟踪测试后为 **281 passed, 1 skipped in 36.02s**。本轮没有给新 library 增加“禁止裁剪”运行时守卫、图像相似度检查、角点反检测器或兼容 wrapper；删除错误模块和入口比增加关闭开关更清楚。上一轮 Pillow clean gate 因本次紧急澄清被中止，Google live 从未启动；它们不能算 #348 证据。

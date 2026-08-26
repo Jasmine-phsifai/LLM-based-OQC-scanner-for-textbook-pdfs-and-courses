@@ -1485,6 +1485,13 @@ The following directions remain traceable but are not current work:
 
 ## Obsolete Prose Kept For Trace
 
+#348 removes the legacy board-corner/cropping branch rather than porting it.
+Legacy board images and video candidates now preserve the complete field of
+view, matching the already-full-frame active library video and PDF paths. The
+crop/perspective module, board ROI detector/config, ROI occlusion rejection,
+GUI toggle, and CLI option are gone. Only a read-only historical manifest field
+is accepted for repair identity; it cannot select the deleted behavior.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

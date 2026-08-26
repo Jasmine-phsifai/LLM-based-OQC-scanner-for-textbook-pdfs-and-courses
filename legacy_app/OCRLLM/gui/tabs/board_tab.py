@@ -39,8 +39,6 @@ class BoardTab(QWidget):
                                  self._files)))
 
         opt = QHBoxLayout()
-        self._skip = QCheckBox("跳过预处理（直接发送原图）")
-        opt.addWidget(self._skip)
         self._separate = QCheckBox("多文件分别处理（每张图单独输出）")
         opt.addWidget(self._separate)
         opt.addStretch()
@@ -80,7 +78,6 @@ class BoardTab(QWidget):
         if missing:
             QMessageBox.warning(self, "提示", "文件不存在:\n" + "\n".join(missing[:5])); return
 
-        skip = self._skip.isChecked()
         separate = self._separate.isChecked()
         prompt_text = self._prompt.prompt_text()
 
@@ -107,7 +104,6 @@ class BoardTab(QWidget):
                         return proc.process(
                             image_paths=[path],
                             output_path=out,
-                            skip_preprocess=skip,
                             prompt_template=prompt_text or None,
                         )
 
@@ -126,9 +122,11 @@ class BoardTab(QWidget):
             from OCRLLM.processors.board import BoardProcessor
             cfg = self._get_cfg()
             proc = BoardProcessor(cfg=cfg, reporter=reporter)
-            result = proc.process(image_paths=files, output_path=output_path,
-                                  skip_preprocess=skip,
-                                  prompt_template=prompt_text or None)
+            result = proc.process(
+                image_paths=files,
+                output_path=output_path,
+                prompt_template=prompt_text or None,
+            )
             return f"板书识别完成: {result}"
 
         if self._start_worker(task):
@@ -167,7 +165,6 @@ class BoardTab(QWidget):
             QMessageBox.information(self, "修复", "识别结果中没有发现失败批次。")
             return
 
-        skip = self._skip.isChecked()
         prompt_text = self._prompt.prompt_text()
         total = len(failed)
 
@@ -176,9 +173,11 @@ class BoardTab(QWidget):
             cfg = self._get_cfg()
             proc = BoardProcessor(cfg=cfg, reporter=reporter)
             try:
-                proc.repair(files, output_path,
-                            skip_preprocess=skip,
-                            prompt_template=prompt_text or None)
+                proc.repair(
+                    files,
+                    output_path,
+                    prompt_template=prompt_text or None,
+                )
                 return f"修复完成: 全部 {total} 个批次修复成功"
             except RuntimeError:
                 remaining = BoardProcessor.find_failed_batches(output_path)

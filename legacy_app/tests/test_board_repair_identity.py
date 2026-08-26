@@ -66,7 +66,6 @@ def _produce_failed_output(
         processor.process(
             [str(path) for path in image_paths],
             output_path=str(output),
-            skip_preprocess=True,
         )
     return processor, llm, output
 
@@ -80,7 +79,7 @@ def test_board_process_publishes_identity_before_provider_dispatch(tmp_path):
     llm.output_path = output
 
     with pytest.raises(RuntimeError):
-        processor.process([str(image)], output_path=str(output), skip_preprocess=True)
+        processor.process([str(image)], output_path=str(output))
 
     assert llm.checkpoint_seen
 
@@ -96,9 +95,13 @@ def test_board_repair_resolves_comma_filename_after_rename_by_saved_identity(tmp
     renamed = tmp_path / "renamed.png"
     original.rename(renamed)
 
-    processor.repair([str(renamed)], str(output), skip_preprocess=True)
+    processor.repair([str(renamed)], str(output))
 
-    assert llm.repair_calls == [[str(renamed)]]
+    assert len(llm.repair_calls) == 1
+    assert len(llm.repair_calls[0]) == 1
+    with Image.open(llm.repair_calls[0][0]) as repaired_input:
+        assert repaired_input.size == (8, 8)
+        assert repaired_input.getpixel((0, 0)) == (255, 255, 255)
     assert "修复后的可靠内容" in output.read_text(encoding="utf-8")
 
 
@@ -115,9 +118,12 @@ def test_board_repair_does_not_confuse_duplicate_basenames(tmp_path):
         responses=[RuntimeError("timeout"), "第二张成功"],
     )
 
-    processor.repair([str(first), str(second)], str(output), skip_preprocess=True)
+    processor.repair([str(first), str(second)], str(output))
 
-    assert llm.repair_calls == [[str(first)]]
+    assert len(llm.repair_calls) == 1
+    assert len(llm.repair_calls[0]) == 1
+    with Image.open(llm.repair_calls[0][0]) as repaired_input:
+        assert repaired_input.getpixel((0, 0)) == (255, 255, 255)
 
 
 def test_board_repair_rejects_source_byte_drift_before_provider_call(tmp_path):
@@ -131,7 +137,7 @@ def test_board_repair_rejects_source_byte_drift_before_provider_call(tmp_path):
     _make_png(image, "black")
 
     with pytest.raises(Exception, match="指纹|identity|身份"):
-        processor.repair([str(image)], str(output), skip_preprocess=True)
+        processor.repair([str(image)], str(output))
 
     assert llm.repair_calls == []
 
@@ -151,7 +157,7 @@ def test_board_repair_rejects_markdown_unit_drift_before_provider_call(tmp_path)
     )
 
     with pytest.raises(Exception, match="Markdown|manifest|身份"):
-        processor.repair([str(image)], str(output), skip_preprocess=True)
+        processor.repair([str(image)], str(output))
 
     assert llm.repair_calls == []
 
@@ -168,7 +174,7 @@ def test_board_repair_rejects_legacy_filename_marker_without_identity(tmp_path):
     processor = _processor(tmp_path, llm)
 
     with pytest.raises(Exception, match="manifest|身份"):
-        processor.repair([str(image)], str(output), skip_preprocess=True)
+        processor.repair([str(image)], str(output))
 
     assert llm.repair_calls == []
 
@@ -189,6 +195,6 @@ def test_board_repair_rejects_unusable_manifest_before_provider_call(tmp_path, d
         sidecar.write_text(json.dumps({"schema": "wrong"}), encoding="utf-8")
 
     with pytest.raises(Exception, match="manifest|身份"):
-        processor.repair([str(image)], str(output), skip_preprocess=True)
+        processor.repair([str(image)], str(output))
 
     assert llm.repair_calls == []

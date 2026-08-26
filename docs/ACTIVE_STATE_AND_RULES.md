@@ -865,6 +865,21 @@ The following slice feeds these retained frames through the
 existing image-recognition path; audio extraction, independent audio binding,
 composition, resume, and worker support remain unavailable.
 
+#348 makes the full-image rule explicit and removes the contradictory legacy
+implementation. The active library already retained complete video frames and
+complete PDF-rendered pages and had no corner detector, board ROI, contour crop,
+or perspective rectifier to delete. Legacy board recognition now performs only
+full-field copy or aspect-preserving size reduction; legacy video comparison and
+published candidates use the complete frame. Its old preprocessing module,
+automatic/manual quadrilateral crop, ROI detector, ROI-based occlusion filter,
+configuration fields, GUI checkbox, and CLI flag are removed. A historical
+`skip_preprocess` field remains readable only inside old board-repair manifests;
+it cannot activate cropping and new manifests record `full-frame-resize-v1`.
+Focused full-frame and neighboring regressions pass, the maintained active
+suite passes 1,769 tests, and the bounded legacy suite passes 281 tests with one
+expected skip after excluding the deferred real social-download E2E and the
+maintainer's protected untracked test.
+
 #122 completes slice 3 as public
 `recognize_video_frames(frames, config=...) -> list[BatchItemOutcome]`. The
 input must be a nonempty exact tuple of exact `RetainedVideoFrame` values in

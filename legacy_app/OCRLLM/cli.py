@@ -107,7 +107,6 @@ def _run_pdf(proc, args, routed):
 def _run_board(proc, args, routed):
     return proc.process(
         image_paths=list(routed.paths),
-        skip_preprocess=getattr(args, "skip_preprocess", False),
         output_path=getattr(args, "output", None),
     )
 
@@ -195,11 +194,6 @@ def _add_page_range_arguments(parser: argparse.ArgumentParser, *, auto: bool):
     parser.add_argument("--end", type=int, help=end_help)
 
 
-def _add_skip_preprocess_argument(parser: argparse.ArgumentParser, *, auto: bool):
-    help_text = "若识别为图片批量，则跳过预处理" if auto else "跳过预处理"
-    parser.add_argument("--skip-preprocess", action="store_true", help=help_text)
-
-
 def _add_phases_argument(parser: argparse.ArgumentParser, *, auto: bool):
     help_text = "若识别为视频，则指定执行阶段" if auto else "执行阶段 (1-5)"
     parser.add_argument("--phases", type=int, nargs="+", help=help_text)
@@ -223,7 +217,6 @@ def _add_parts_argument(parser: argparse.ArgumentParser, *, auto: bool):
 _CLI_OPTION_BUILDERS: dict[str, Callable[[argparse.ArgumentParser], None]] = {
     "formula": _add_formula_argument,
     "page_range": _add_page_range_arguments,
-    "skip_preprocess": _add_skip_preprocess_argument,
     "phases": _add_phases_argument,
     "resume": _add_resume_argument,
     "hotwords": _add_hotwords_argument,
@@ -233,7 +226,6 @@ _CLI_OPTION_BUILDERS: dict[str, Callable[[argparse.ArgumentParser], None]] = {
 _CLI_OPTION_ATTRS: dict[str, tuple[str, ...]] = {
     "formula": ("formula",),
     "page_range": ("start", "end"),
-    "skip_preprocess": ("skip_preprocess",),
     "phases": ("phases",),
     "resume": ("resume",),
     "hotwords": ("hotwords",),
@@ -243,7 +235,6 @@ _CLI_OPTION_ATTRS: dict[str, tuple[str, ...]] = {
 _CLI_OPTION_LABELS: dict[str, str] = {
     "formula": "--formula",
     "page_range": "--start/--end",
-    "skip_preprocess": "--skip-preprocess",
     "phases": "--phases",
     "resume": "--resume",
     "hotwords": "--hotwords",
