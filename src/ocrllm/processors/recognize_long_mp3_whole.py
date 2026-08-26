@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from ..audio.attach_long_audio_slot_evidence_to_error import (
-    attach_long_audio_slot_evidence_to_error,
+from ..audio.attach_long_audio_slots_evidence_to_error import (
+    attach_long_audio_slots_evidence_to_error,
 )
 from ..audio.build_long_audio_no_speech_slot import build_long_audio_no_speech_slot
 from ..audio.build_long_audio_settled_slot import build_long_audio_settled_slot
@@ -108,7 +108,7 @@ def recognize_long_mp3_whole(
                 ),
             )
         except OCRLLMError as error:
-            attach_long_audio_slot_evidence_to_error(error, slot)
+            attach_long_audio_slots_evidence_to_error(error, (slot,))
             raise
     except OCRLLMError as error:
         if "provider_calls_attempted" not in error.details:

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from ..audio.attach_long_audio_slot_evidence_to_error import (
-    attach_long_audio_slot_evidence_to_error,
+from ..audio.attach_long_audio_slots_evidence_to_error import (
+    attach_long_audio_slots_evidence_to_error,
 )
 from ..audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
 from ..audio.build_long_audio_interval_upload_snapshot import (
@@ -25,6 +25,7 @@ from ..audio.long_audio_partial_state import (
     LONG_AUDIO_PARTIAL_STATE_VERSION,
     LongAudioPartialState,
 )
+from ..audio.long_audio_settled_slot import LongAudioSettledSlot
 from ..audio.materialize_long_audio_interval import materialize_long_audio_interval
 from ..audio.reuse_long_audio_partial_state import reuse_long_audio_partial_state
 from ..errors import NoSpeechDetected, OCRLLMError
@@ -66,10 +67,11 @@ def recognize_long_mp3_intervals(
     )
     current_calls = 0
     current_usage: list[tuple[int | None, int | None]] = []
+    current_slots: tuple[LongAudioSettledSlot, ...] = ()
     persisted_interval_count = len(slots)
     for window in windows[len(slots) :]:
-        raise_if_cancelled(config.cancellation)
         try:
+            raise_if_cancelled(config.cancellation)
             with materialize_long_audio_interval(
                 snapshot.path,
                 window=window,
@@ -117,22 +119,20 @@ def recognize_long_mp3_intervals(
                     )
                     raise
                 slots = slots + (slot,)
-                try:
-                    persist_state(
-                        LongAudioPartialState(
-                            state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
-                            identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
-                            mode="interval",
-                            interval_minutes=interval_minutes,
-                            request_fingerprints=plan,
-                            slots=slots,
-                        ),
-                    )
-                except OCRLLMError as error:
-                    attach_long_audio_slot_evidence_to_error(error, slot)
-                    raise
+                current_slots = current_slots + (slot,)
+                persist_state(
+                    LongAudioPartialState(
+                        state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
+                        identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+                        mode="interval",
+                        interval_minutes=interval_minutes,
+                        request_fingerprints=plan,
+                        slots=slots,
+                    ),
+                )
                 persisted_interval_count = len(slots)
         except OCRLLMError as error:
+            attach_long_audio_slots_evidence_to_error(error, current_slots)
             if "provider_calls_attempted" not in error.details:
                 error._add_safe_detail("provider_calls_attempted", current_calls)
             error._add_safe_detail(

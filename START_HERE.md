@@ -1116,5 +1116,9 @@ honesty, and #383 rejects a later batch state/output conflict before dispatch.
 #386 closes the remaining short-audio no-speech client-close gap: the native
 adapter preserves the exact close boolean, video state omits inapplicable
 remote-file cleanup, and exact resume remains zero-call. No reproduced item
-now remains in this bounded queue; select the next iteration from a fresh
-public-lifecycle audit rather than extending cleanup or recovery machinery.
+remained in that bounded queue, so #387 ran a fresh public-lifecycle audit.
+It now aggregates all current-run interval-audio slots at the existing window
+error boundary, preventing later provider, cleanup, cancellation, or state-save
+failures from under-reporting tokens or reversing cleanup truth. The next queue
+is the lost video no-speech cleanup disclosure in final composition, followed
+by PDF output-collision ordering; keep both atomic and add no recovery framework.

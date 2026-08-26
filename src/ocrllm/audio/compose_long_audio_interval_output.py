@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..errors import NoSpeechDetected
 from ..processor_output import ProcessorOutput
+from .aggregate_long_audio_cleanup import aggregate_long_audio_cleanup
 from .long_audio_settled_slot import LongAudioSettledSlot
 from .transcription_prompt import NO_SPEECH_SENTINEL
 
@@ -19,10 +20,10 @@ def compose_long_audio_interval_output(
     spoken_markdown = tuple(
         slot.markdown for slot in slots if slot.markdown != NO_SPEECH_SENTINEL
     )
-    remote_file_deleted = _aggregate_cleanup(
+    remote_file_deleted = aggregate_long_audio_cleanup(
         tuple(slot.provider_file_cleanup_succeeded for slot in slots)
     )
-    provider_client_closed = _aggregate_cleanup(
+    provider_client_closed = aggregate_long_audio_cleanup(
         tuple(slot.provider_client_cleanup_succeeded for slot in slots)
     )
     if not spoken_markdown:
@@ -91,11 +92,3 @@ def _aggregate_usage(
             ),
         },
     )
-
-
-def _aggregate_cleanup(values: tuple[bool | None, ...]) -> bool | None:
-    if any(value is False for value in values):
-        return False
-    if values and all(value is True for value in values):
-        return True
-    return None

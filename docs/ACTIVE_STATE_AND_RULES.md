@@ -3995,6 +3995,17 @@ Post-register findings are ordered by demonstrated user impact:
   inapplicable remote-file cleanup, and retains the existing client-close
   warning when closure failed. The no-speech error and paid-call count remain
   primary, and older journals with an unknown value remain readable.
+- #387 closes a medium-high interval-audio error-accounting gap. Every current
+  settled slot is now attached at the existing per-window error boundary, so a
+  later provider, materializer-cleanup, cancellation, or state-save failure
+  reports cumulative current-run token and cleanup evidence alongside the
+  exact call and persisted-prefix counts. Resume history is excluded.
+- Open, medium: a resumed terminal video no-speech result preserves failed
+  client cleanup in its journal and internal error, but final composition emits
+  only the generic audio error warning and drops that cleanup fact.
+- Open, low: PDF output collision is checked after one bounded snapshot and
+  PDFium inspection. It makes no provider call and preserves the target, but a
+  known `OUTPUT_EXISTS` should win before backend work.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
@@ -7475,3 +7486,29 @@ journals whose value was missing or null. No schema version, general cleanup
 copier, retry, fallback, or durable short-audio protocol was added. The focused
 adapter/video/state set passes 150 tests, and the complete offline suite passes
 all 1,835 tests.
+
+## Current working update: #387 aggregates current interval settlement on error
+
+A public three-window regression settled and saved the first interval, settled
+the second, then failed its state save. The error correctly reported two calls
+and one persisted interval but exposed only the second slot's 101/11 tokens;
+the known current total was 201/21. When the first slot recorded remote deletion
+failure and the second recorded success, the same error incorrectly reported
+`remote_file_deleted=True`. Independent public probes then proved the same
+boundary loss after a later provider error, after materializer cleanup failed,
+and when cancellation was observed after the first prefix had been saved. The
+old cancellation path even reported zero calls and omitted the persisted count.
+
+The cancellation check now sits inside the existing per-window typed-error
+boundary. That one boundary attaches every slot settled during this invocation,
+then preserves the existing call and persisted-prefix owners. The former
+single-slot helper is replaced by a plural helper; whole mode passes its one
+slot, while interval mode passes only the current-run tuple, never a reused
+prefix. It aggregates tokens through the existing model-usage rule and merges
+cleanup with the same long-audio tri-state rule already used by successful
+composition: any exact false remains false, all exact true values become true,
+and unknown is not invented. An existing failing-call cleanup boolean is
+included rather than overwritten independently. No state schema, retry,
+rollback, transaction, telemetry ledger, or provider behavior changed. The
+focused long-audio/video set passes 172 tests, and the complete offline suite
+passes all 1,837 tests.

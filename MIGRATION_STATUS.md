@@ -1747,6 +1747,18 @@ resume with zero calls. No remote upload, schema migration, retry, fallback,
 generic cleanup layer, or durable standalone short-audio state was added. The
 focused set passes 150 tests and the complete offline suite passes all 1,835.
 
+#387 corrects current-run accounting across interval-audio error exits. A later
+provider failure, materializer cleanup failure, post-save cancellation, or
+state-save failure now retains every slot settled in this invocation, with
+cumulative per-model tokens, false-dominant tri-state cleanup, exact call count,
+and durable-prefix count. Reused historical slots remain excluded. The former
+single-slot helper is replaced by one plural helper shared by whole and interval
+paths, and successful composition shares the same named cleanup aggregator.
+No schema, retry, fallback, transaction, rollback, or telemetry framework was
+added. The focused set passes 172 tests and the complete offline suite passes
+all 1,837. The next evidenced queue items are video final-composition cleanup
+disclosure, then pre-PDFium PDF output-collision rejection.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

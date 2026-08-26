@@ -4,12 +4,17 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
+from threading import Event
 from types import SimpleNamespace
 
 import pytest
 
 from ocrllm import AudioModelSettings, Config, GoogleGenAISettings, recognize_long_mp3
+from ocrllm.audio.load_long_audio_partial_state import (
+    load_long_audio_partial_state,
+)
 from ocrllm.errors import (
+    Cancelled,
     ConfigError,
     NoSpeechDetected,
     OutputError,
@@ -21,12 +26,18 @@ from ocrllm.errors import (
 MODEL = "gemini-test-interval-audio"
 
 
-def _config(output_dir: Path, *, resume: bool = False) -> Config:
+def _config(
+    output_dir: Path,
+    *,
+    resume: bool = False,
+    cancellation: object | None = None,
+) -> Config:
     return Config(
         provider=GoogleGenAISettings(api_key="test-only-google-key"),
         audio_model=AudioModelSettings(name=MODEL),
         output_dir=output_dir,
         resume=resume,
+        cancellation=cancellation,
     )
 
 
@@ -313,11 +324,30 @@ def test_interval_failure_preserves_prefix_and_resume_uses_saved_parameters(
     processor, materialized, provider_calls = _install_interval_fakes(
         monkeypatch,
         tmp_path,
-        [
-            "first",
-            ProviderError(code="PROVIDER_UNAVAILABLE"),
-        ],
+        ["unused-first", "unused-second"],
     )
+
+    def first_then_fail(snapshot, *, prompt, config):
+        index = len(provider_calls)
+        provider_calls.append(index)
+        if index == 0:
+            return SimpleNamespace(
+                markdown="first",
+                input_tokens=100,
+                output_tokens=10,
+                remote_file_deleted=False,
+                client_closed=True,
+            )
+        raise ProviderError(
+            code="PROVIDER_UNAVAILABLE",
+            details={
+                "provider_calls_attempted": 1,
+                "remote_file_deleted": True,
+                "provider_client_closed": True,
+            },
+        )
+
+    monkeypatch.setattr(processor, "recognize_uploaded_mp3", first_then_fail)
 
     with pytest.raises(ProviderError) as first_failure:
         recognize_long_mp3(
@@ -326,8 +356,18 @@ def test_interval_failure_preserves_prefix_and_resume_uses_saved_parameters(
             interval_minutes=5,
         )
 
-    assert first_failure.value.details["provider_calls_attempted"] == 1
+    assert first_failure.value.details["provider_calls_attempted"] == 2
     assert first_failure.value.details["persisted_interval_count"] == 1
+    assert first_failure.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 100,
+            "output_count": 10,
+            "unit": "tokens",
+        },
+    )
+    assert first_failure.value.details["remote_file_deleted"] is False
+    assert first_failure.value.details["provider_client_closed"] is True
     assert materialized == [0, 1]
     assert provider_calls == [0, 1]
     state_path = output_dir / "lecture" / ".ocrllm-long-audio-resume.json"
@@ -511,8 +551,72 @@ def test_paid_interval_is_saved_before_materializer_cleanup_failure(
         )
 
     assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["persisted_interval_count"] == 1
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 100,
+            "output_count": 10,
+            "unit": "tokens",
+        },
+    )
+    assert captured.value.details["remote_file_deleted"] is True
+    assert captured.value.details["provider_client_closed"] is True
     assert calls == [0]
     assert (output_dir / "lecture" / ".ocrllm-long-audio-resume.json").is_file()
+
+
+def test_cancellation_after_saved_interval_reports_current_settlement(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    cancellation = Event()
+    _interval_processor, materialized, provider_calls = _install_interval_fakes(
+        monkeypatch,
+        tmp_path,
+        ["first", "must not run"],
+    )
+    processor = __import__(
+        "ocrllm.processors.recognize_long_mp3",
+        fromlist=["recognize_long_mp3"],
+    )
+    state_module = __import__(
+        "ocrllm.audio.save_long_audio_partial_state_atomically",
+        fromlist=["save_long_audio_partial_state_atomically"],
+    )
+
+    def save_then_cancel(path, state):
+        state_module.save_long_audio_partial_state_atomically(path, state)
+        cancellation.set()
+
+    monkeypatch.setattr(
+        processor,
+        "save_long_audio_partial_state_atomically",
+        save_then_cancel,
+    )
+
+    with pytest.raises(Cancelled) as captured:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir, cancellation=cancellation),
+            interval_minutes=5,
+        )
+
+    assert materialized == [0]
+    assert provider_calls == [0]
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["persisted_interval_count"] == 1
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 100,
+            "output_count": 10,
+            "unit": "tokens",
+        },
+    )
+    assert captured.value.details["remote_file_deleted"] is True
+    assert captured.value.details["provider_client_closed"] is True
 
 
 def test_interval_state_save_failure_preserves_usage_and_cleanup_facts(
@@ -564,3 +668,79 @@ def test_interval_state_save_failure_preserves_usage_and_cleanup_facts(
     assert captured.value.details["remote_file_deleted"] is True
     assert captured.value.details["provider_client_closed"] is True
     assert not (output_dir / "lecture").exists()
+
+
+def test_later_interval_state_save_failure_reports_all_current_settlement(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    interval_processor, materialized, provider_calls = _install_interval_fakes(
+        monkeypatch,
+        tmp_path,
+        ["unused-first", "unused-second", "unused-third"],
+    )
+    processor = __import__(
+        "ocrllm.processors.recognize_long_mp3",
+        fromlist=["recognize_long_mp3"],
+    )
+    state_module = __import__(
+        "ocrllm.audio.save_long_audio_partial_state_atomically",
+        fromlist=["save_long_audio_partial_state_atomically"],
+    )
+    save_calls: list[int] = []
+
+    def provider(snapshot, *, prompt, config):
+        index = len(provider_calls)
+        provider_calls.append(index)
+        return SimpleNamespace(
+            markdown=("first", "second")[index],
+            input_tokens=100 + index,
+            output_tokens=10 + index,
+            remote_file_deleted=index != 0,
+            client_closed=True,
+        )
+
+    def fail_second_save(path, state):
+        save_calls.append(len(state.slots))
+        if len(state.slots) == 2:
+            raise OutputError(
+                "The long-audio partial state could not be written atomically.",
+                code="OUTPUT_WRITE_FAILED",
+            )
+        state_module.save_long_audio_partial_state_atomically(path, state)
+
+    monkeypatch.setattr(interval_processor, "recognize_uploaded_mp3", provider)
+    monkeypatch.setattr(
+        processor,
+        "save_long_audio_partial_state_atomically",
+        fail_second_save,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir),
+            interval_minutes=5,
+        )
+
+    assert materialized == [0, 1]
+    assert provider_calls == [0, 1]
+    assert save_calls == [1, 2]
+    assert captured.value.details["provider_calls_attempted"] == 2
+    assert captured.value.details["persisted_interval_count"] == 1
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 201,
+            "output_count": 21,
+            "unit": "tokens",
+        },
+    )
+    assert captured.value.details["remote_file_deleted"] is False
+    assert captured.value.details["provider_client_closed"] is True
+    state_path = output_dir / "lecture" / ".ocrllm-long-audio-resume.json"
+    saved = load_long_audio_partial_state(state_path)
+    assert saved is not None
+    assert len(saved.slots) == 1
+    assert saved.slots[0].provider_file_cleanup_succeeded is False
