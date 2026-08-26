@@ -1398,8 +1398,11 @@ The following directions remain traceable but are not current work:
   when the argument is omitted and reuses only the exact ordered prefix. The
   state schema narrowly migrates exact v2 whole-file states to v3 whole mode.
   Repair, parallelism, retry/fallback, provider classes, legacy formats, video
-  routing, and worker changes remain absent. All 1,719 source tests pass; clean
-  installed proof is still pending.
+  routing, and worker changes remain absent. All 1,719 source tests pass. #330
+  closes the clean installed proof at exact `56e7cc8`: archive 1,718 passed
+  with one optional skip, wheel 266,907 bytes, base 1,350,210 bytes, all eight
+  profiles and local media smokes green, no cloud I/O, and complete cleanup.
+  Real Google interval behavior remains unproven.
 
 ## Obsolete Prose Kept For Trace
 

@@ -78,8 +78,10 @@ provider calls. The same standalone facade now accepts an exact positive integer
 dispatches missing windows serially, saves each settled paid prefix, resumes an
 exact prefix without replay, publishes ordered Markdown once, and removes its
 temporary state only after success. Omitting the argument during resume restores
-the saved interval choice; new memory-only interval calls are rejected. This
-interval route has offline proof only and does not alter A1 or route video. A1 did
+the saved interval choice; new memory-only interval calls are rejected. #330
+release-proves this interval route through a clean archive, built wheel, every
+isolated install profile, and local media smokes. A real Google interval call
+remains open; the route does not alter A1 or route video. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
 audio live tests are already authorized without a separate budget request.
 DashScope live work still requires a nonempty recognized credential and an

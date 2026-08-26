@@ -813,8 +813,11 @@ saved before its temporary MP3 is removed. Exact resume may omit the argument
 and restores it from v3 state, reusing only the exact settled prefix. Existing
 v2 whole-file state migrates narrowly to whole mode. There is no parallelism,
 retry, fallback, repair integration, provider abstraction, legacy format, video
-routing, or worker change. The complete source suite passes 1,719 tests; clean
-installed proof remains the release exit condition.
+routing, or worker change. The complete source suite passes 1,719 tests.
+#330 closes the clean installed proof at exact `56e7cc8`: archive 1,718 passed
+with one optional skip, wheel 266,907 bytes, base 1,350,210 bytes, all eight
+profiles and local media smokes green, no cloud I/O, and complete cleanup. A
+bounded real Google interval call remains the next product evidence.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
