@@ -638,6 +638,14 @@ sidecar was expected. The runner returned an honest failed outcome after one
 total generation call, with a closed audio client, no composition, no leak,
 and no residue. This proves the bounded failure path, not interval success; it
 was not replayed and does not justify retry or fallback behavior.
+The #343 fresh attempt settled one interval before another branch failure, but
+the then-current runner incorrectly rejected the required retained sidecar and
+reduced the outcome to `CONFIG_INVALID`. The runner now requires sidecar removal
+only after a complete interval outcome; partial and failed outcomes may retain
+paid state and still emit their safe branch summaries. Nested standalone
+publications remain invalid for every outcome. The obscured #343 provider error
+was not reconstructed or replayed, so this correction is failure-evidence proof,
+not a live interval success claim.
 The #186 robustness run retained three equal-luminance color scenes and made one
 image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.

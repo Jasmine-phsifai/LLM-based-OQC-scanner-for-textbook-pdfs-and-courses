@@ -6571,6 +6571,32 @@ provider 基类、调用 ledger、retry、fallback、模型 sweep 或压力框�
 interval 模式开放，是为了失败后不丢已付费 state，不是对所有 smoke 的通用 artifact
 管理。repair 仍不依赖这个 state。
 
+## Iteration 343：失败视频保留 paid sidecar 不再被 runner 误报
+
+与 #342 分开的一次新手工 gate 继续使用不变的已提交 runner，目的只是判断上一次
+Files upload timeout 是否稳定复现。精确 HEAD/origin，代理三项和新的 301 秒合成音视频
+预检均通过；保留 5 帧、1 个图片组，仍使用 3 分钟/2 个预期音频调用和
+`gemini-2.5-flash`。唯一 runner 在 **258.520s** 后 exit 1，却只返回
+`runner_failure / CONFIG_INVALID / video_orchestration`，丢掉了 catalog 和全部分支结算。失败
+目录中 sidecar 存在且安全解析出 **1** 个 settled slot，证明至少一个付费 interval 已结算；
+但没有保留原始分支摘要，因此不推测图片或后续音频的错误类型。无 stderr/泄漏/重放/
+换模/fallback，检查后唯一自有目录与进程均清理为 0。
+
+这次真实证据改变了本轮决定：不再继续 live，而是修 runner 的确定缺陷。#342 的
+`_validate_owned_artifacts()` 在任何 interval outcome 上都要求 sidecar 不存在，但 library 正确设计是
+失败/partial 保留 paid state，只有 complete 成功后删除。新回归以 **1 failed, 38 passed**
+精确复现真实误报；最小修复改为只对 complete interval outcome 要求 sidecar 已删，
+失败/partial 则继续输出脱敏分支与已保存进度。任何 outcome 内的 nested `audio/result.md`
+或根 `result.md` 仍拒绝。修复后 runner **39 passed**，相邻视频/音频 **91 passed in
+24.57s**，全量离线 **1,765 passed in 75.81s**；compileall、轻量 import、diff check 与冻结
+`contracts/worker` 均通过。变更不进入 wheel runtime，#342 已经证明同一 runtime wheel，
+因此本轮不重复构建。不再发起 provider 调用。
+
+过度设计复查：没有读取/公开 sidecar 内容，没有新 error schema、resume API、artifact manager、retry
+或 fallback。只把“成功必须已删 state”与“失败必须保留已付 state”分开，这是已存在生命
+周期的修复，不是放宽成功验收。本次 live 的真实二次分支错误已被旧 runner 遮蔽且临时目录
+按约定清理，不伪造、不从 sidecar Markdown 反推，也不为获得 green 再调一次。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

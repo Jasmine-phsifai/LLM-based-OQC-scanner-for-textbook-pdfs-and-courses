@@ -1464,6 +1464,11 @@ The following directions remain traceable but are not current work:
   interval timed out during Files upload before generation, with zero settled
   intervals and a closed client. This proves the failure boundary, not the
   interval success path, and does not claim public video resume.
+  #343 then settled one real interval but exposed a runner-only evidence defect:
+  the required failure sidecar was rejected before branch summaries were
+  emitted. The corrected runner requires state removal only for complete
+  interval outcomes and preserves paid state on partial/failed outcomes; the
+  obscured provider failure was not replayed or reconstructed.
 
 ## Obsolete Prose Kept For Trace
 

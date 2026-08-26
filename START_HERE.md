@@ -93,7 +93,10 @@ success. #342 extends only the maintained redacted Google video runner so one
 bounded live gate can require an exact interval and exact audio-call count while
 retaining caller-owned failure state for inspection. Its sole live run failed
 honestly at the first audio Files upload with no settled interval; it was not
-replayed and is not success evidence. Public video resume is not yet exposed.
+replayed and is not success evidence. #343's separate fresh attempt settled one
+interval, exposing a runner-only defect that mistook required failure state for
+unclean success. The runner now preserves that safe failure evidence while
+still requiring complete outcomes to remove state. Public video resume is not yet exposed.
 Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval

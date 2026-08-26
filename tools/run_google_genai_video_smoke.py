@@ -271,7 +271,9 @@ def _safe_video_summary(
         ) from None
     _validate_owned_artifacts(
         outcome,
-        require_audio_state_removed=audio_interval_minutes is not None,
+        require_audio_state_removed=(
+            audio_interval_minutes is not None and outcome.status == "complete"
+        ),
     )
 
     frames = _safe_frame_summary(outcome, image_model)
@@ -341,12 +343,17 @@ def _validate_owned_artifacts(
             code="CONFIG_INVALID",
         ) from None
     if require_audio_state_removed and (
-        (outcome.output_root / ".ocrllm-video-audio-resume.json").exists()
-        or (outcome.output_root / "audio" / "result.md").exists()
-        or (outcome.output_root / "result.md").exists()
-    ):
+        outcome.output_root / ".ocrllm-video-audio-resume.json"
+    ).exists():
         raise ConfigError(
-            "Google video smoke retained temporary state or nested publication.",
+            "Google video smoke retained temporary state after success.",
+            code="CONFIG_INVALID",
+        ) from None
+    if (outcome.output_root / "audio" / "result.md").exists() or (
+        outcome.output_root / "result.md"
+    ).exists():
+        raise ConfigError(
+            "Google video smoke retained a nested publication.",
             code="CONFIG_INVALID",
         ) from None
 

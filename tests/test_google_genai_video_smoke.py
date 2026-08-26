@@ -387,6 +387,47 @@ def test_video_interval_smoke_rejects_leftover_temporary_state(
         )
 
 
+def test_video_interval_smoke_preserves_failed_outcome_with_paid_state(
+    tmp_path: Path,
+) -> None:
+    outcome = _build_outcome(
+        tmp_path,
+        private_markdown="PRIVATE INTERVAL FAILURE",
+        audio_error=ProviderError(
+            code="PROVIDER_TIMEOUT",
+            details={
+                "provider_calls_attempted": 2,
+                "persisted_interval_count": 1,
+                "provider_operation": "upload",
+                "provider_client_closed": True,
+            },
+        ),
+    )
+    (outcome.output_root / ".ocrllm-video-audio-resume.json").write_text(
+        "private-paid-state",
+        encoding="utf-8",
+    )
+
+    summary = smoke._safe_video_summary(
+        outcome,
+        image_model=IMAGE_MODEL,
+        audio_model=AUDIO_MODEL,
+        expected_audio_transport="google_files",
+        expected_audio_calls=2,
+        audio_interval_minutes=3,
+        catalog_count=2,
+        preflight_retained_count=1,
+        expected_frame_group_count=1,
+    )
+
+    assert summary["status"] == "failed"
+    assert summary["outcome_status"] == "partial"
+    assert summary["audio"]["provider_calls_attempted"] == 2
+    assert summary["audio"]["error"]["persisted_interval_count"] == 1
+    assert summary["audio"]["error"]["operation"] == "upload"
+    assert summary["audio"]["error"]["provider_client_closed"] is True
+
+
 def test_video_smoke_preserves_safe_interval_failure_progress() -> None:
     summary = smoke._safe_error(
         ProviderError(

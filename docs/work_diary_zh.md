@@ -6097,3 +6097,15 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **退出判断。** #342 已完成 runner 表达与诚实失败结算，但没有证明视频 interval 成功路径。代理当时明确正常，所以不得将 upload timeout 归因为“代理没开”；也不因一次失败建设 retry/fallback。后续若再做真实成功 gate，应是新的单问题原子轮次，并先决定是否允许手工重试 upload timeout，不是本轮自动重放。
 
 **过度设计复查。** 没有新 runner、resume reader、state 摘要 schema、文件清单、调用 ledger、provider 基类、过载测试框架、retry/fallback 或自动选模。三参数强绑定是暴力拒绝含糊测试，不是为任意 iterable/config 做兼容。失败时保留目录是 paid state 的必要生命周期，不会扩展成通用 artifact 系统。repair 仍是以失败文字时间范围为输入的小侧链，不依赖这些参数或 state。
+
+## #343 — 2026-08-26：真实 paid sidecar 暴露 runner 的失败证据丢失
+
+**本轮英文原子任务。** `Atomic task — Iteration #343: distinguish the #342 Google Files upload timeout from a reproducible video-interval defect with one fresh, bounded manual live attempt. Context: #342 proved the maintained runner’s honest failure settlement, but the first audio interval timed out before generation while the proxy was healthy, leaving the success path unproven. Success means reconciling current authority, confirming the exact clean commit and proxy, delegating one newly generated 301-second speech-and-text fixture through the unchanged committed runner, retaining the complete safe JSON this time, and either closing the live success gate or recording a reproducible failure without modifying retry/fallback policy. This matters because one transient free-tier upload failure should not be mistaken for a library defect, while a repeated same-stage failure would justify a separate diagnosis rather than blind replay.`
+
+**路线与唯一真实运行。** 复核时 HEAD/origin 都是 `024bb5db7bd64dd9ecb25c2c108dfddc98add1b6`，tracked tree 干净。路线 A 是未复现前猜测 upload 实现，路线 B 是不改代码地做一次新手工 gate；选 B。轻量执行者复用已证明的进程启动方式，确认 WinINET/10080 TCP/显式代理 HTTPS 204，新生成 301 秒、含可见内容和全程重复语音的 MP4，独立预检 5 帧/1 组。唯一 committed runner 使用 `gemini-2.5-flash`、3 分钟、2 个预期音频调用和 240 秒单操作 timeout；没有第二 catalog/runner、retry、fallback、换模、下载或编辑。
+
+**证据改变了决定。** runner 在 **258.520s** 后 exit 1，但只给出 `runner_failure / CONFIG_INVALID / video_orchestration`，没有 catalog、frame/audio/composition 或 calls/usage。外层检查发现 video-owned sidecar 存在，且安全解析为 1 个 settled slot；nested result 不存在。这证明一个付费切片已结算，但旧 runner 在输出真实分支失败前把“失败必须保留的 state”误当成“成功后未清理”。stderr 0，key/内容/绝对路径/raw provider message 泄漏均 false，取证后 owned root/process/file 为 0。因为被遮蔽的分支摘要没有保留，本轮不猜第二 interval 或图片错误，也不再调 provider。
+
+**失败优先修复。** 新回归在旧 runner 上精确得到 **1 failed, 38 passed**：一个 partial outcome 含音频 typed failure、`persisted_interval_count=1` 和 sidecar，本应输出 `video_outcome`，却抛 `CONFIG_INVALID`。最小修复只在 complete interval outcome 上要求 state 删除；partial/failed 允许 state 存在并保留脱敏错误。两个 nested publication 在所有 outcome 上仍拒绝。runner **39 passed**，相邻集 **91 passed in 24.57s**。轻量执行者不编辑、不下载地完成全源码 **1,765 passed in 75.81s**；compileall、轻量 import、diff check 和冻结 `contracts/worker` 均过。本轮只改 tools/tests/docs，不进入 wheel runtime；#342 已对同一 runtime 构建并检查 wheel，所以不机械重复构建。
+
+**过度设计复查。** 没有 sidecar reader/public field、新 schema、resume API、artifact manager、retry/fallback 或为 green 的第二次调用。这是修正两个已有生命周期的判定顺序，不改 library runtime，不放宽 complete 验收，也不让 repair 依赖 state。
