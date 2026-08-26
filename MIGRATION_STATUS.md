@@ -1658,6 +1658,22 @@ settled short-audio result, and no final digest; `result.md` was absent. The
 attempt was not retried or model-switched. This proves honest failure and state
 retention, not live publication or zero-call resume, so that gate remains open.
 
+#419 truthfully refreshes that gate without changing runtime. The first
+disposable-runner invocation created the public output stem during provider-free
+preflight and was rejected before catalog or provider work; the runner was
+corrected outside the repository and the stale temporary output was not reused.
+One provider-reaching invocation then live-validated explicit
+`gemini-2.5-flash` and made exactly one complete-frame image request plus one
+short-audio request, with no retry or switch. Image returned
+`PROVIDER_RESPONSE_INVALID/missing_text`; synthetic audio settled as
+`NO_SPEECH_DETECTED`. The aggregate error truthfully reported two calls and one
+available usage row. Its 1,537-byte journal retained one full frame, the audio
+artifact, and the settled short-audio state, while image state, final digest,
+and `result.md` remained absent. No resume was attempted, so publication failure
+and zero-call resume remain live-unproven. The focused provider-free baseline
+passes 100 tests; no product retry, fallback, provider framework, or runtime
+change was added.
+
 #378 closes a proven standalone long-audio Windows path defect. The output
 planner previously admitted a root whose fixed sidecar fit the traditional
 limit while the actual UUID-shaped atomic state/Markdown sibling exceeded it;

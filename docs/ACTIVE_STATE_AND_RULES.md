@@ -106,9 +106,17 @@ without replay. #377's first bounded live facade attempt passed provider-free
 one-group/short-audio preflight and live catalog/model validation, then ended
 honestly with provider-scoped `PROVIDER_TIMEOUT` on the first image call. No
 image slot or audio recognition was settled, no final Markdown was published,
-and the journal retained only the complete media plan. The attempt was not
-replayed, so the live publication-failure/zero-call-resume gate remains open;
-this evidence does not justify retry or provider-framework changes. The current
+and the journal retained only the complete media plan. #419 made one later
+provider-reaching attempt after correcting a disposable-runner output collision
+that had made zero provider calls. The current catalog contained explicit
+`gemini-2.5-flash`; exactly one image and one short-audio request then ran with
+no retry or model switch. The complete black frame returned honest
+`PROVIDER_RESPONSE_INVALID/missing_text`, while the synthetic audio settled as
+`NO_SPEECH_DETECTED`. The public error reported both calls and one available
+usage row; the journal retained the full frame, audio artifact, and settled
+no-speech state, with no image state, final digest, or `result.md`. It was not
+resumed. The live publication-failure/zero-call-resume gate therefore remains
+open; this evidence does not justify retry or provider-framework changes. The current
 three-step API remains non-resumable. #347 closed
 the former terminal choice in favor of that high-level job. It also corrects the
 private duration boundary: whole Google Files requests still stop at 9.5 hours,

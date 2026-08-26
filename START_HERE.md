@@ -107,8 +107,13 @@ and short/whole/interval audio work until atomic `result.md` publication. The
 first bounded #377 live attempt reached its first image request after controlled
 media preflight and catalog/model validation, then returned an honest
 provider-scoped `PROVIDER_TIMEOUT` with one attempted call. It settled neither
-image nor audio recognition, published no result, and was not replayed; the
-high-level live success/resume gate therefore remains open. The current
+image nor audio recognition and published no result. #419's one later
+provider-reaching attempt used catalog-validated `gemini-2.5-flash` for exactly
+one complete black frame and one short synthetic-audio request. The image
+returned honest `PROVIDER_RESPONSE_INVALID/missing_text`; audio settled as
+`NO_SPEECH_DETECTED`, and the journal preserved that audio state and both media
+artifacts without publishing. It was not retried or resumed, so the high-level
+live publication/resume gate remains open. The current
 recognize/compose/publish calls remain the non-resumable low-level API. The same
 iteration makes duration validation route-aware: whole Google Files remains
 limited to 9.5 hours, while explicitly selected integer-minute interval mode
