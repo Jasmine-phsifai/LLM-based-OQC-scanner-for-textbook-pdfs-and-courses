@@ -6131,3 +6131,11 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **两条真可行路线和推荐。** 路线 1（推荐）是未来另建一个拥有固定 `result.md` 和单一 video journal 的高层 resumable job，将原子发布作为删除全部临时 state 的终点，保持现有 recognize/compose/publish 为低层非恢复 API。路线 2 继续三段式，但必须加显式 finalize/discard 并把 crash-before-publish/state 残留义务交给 caller。路线 1 产品语义更清晰，但是新 checkpoint 架构；未得维护者选择前不实现。
 
 **第一可执行红灯与过度设计复查。** 最终红灯应是第一次各结算图片组 0/音频切片 0 后在后缀失败，第二次同源/同 config 只调缺失的图片组 1/音频切片 1，并最终原子发布。当前第一原子前置会是 durable exact paid frame-group unit，但不在无消费者时先建 schema。本轮拒绝 audio-only flag、嵌套每组 Markdown/sidecar、通用 media journal、legacy checkpoint、repair、跨进程事务、retry/fallback。本轮无 runtime/tests/provider 变更，不重复全量。
+
+## #346 — 2026-08-26：不把 unlink 后移伪装成 video resume 前置
+
+**本轮英文原子任务。** `Atomic task — Iteration #346: audit the current video long-audio state deletion point against the documented “preserve paid work until the recoverable job is complete” rule, without choosing the still-open public resume terminal API. Context: #345 proved that recognize_video_mp3() deletes a fully settled whole/interval state before the sibling image branch and before optional final publication are known, so an image failure can erase the only durable paid audio result. Success means reconciling authority and current tests, proving whether this is already a lifecycle defect independent of Route A/B, and either moving deletion to the narrowest safe existing owner with failing-first coverage or documenting why the open terminal decision makes any change premature. This matters because future resume architecture should not be forced to recover data the current implementation knowingly deletes, but retaining state indefinitely without a consumer would also be overdesign.`
+
+**两条路线与决定。** A 是从 `recognize_video_mp3()` 抽走 state unlink，建立 outcome 后只在 complete 删除；B 是等维护者回答 #345 的高层固定发布 vs 三段式 finalize/discard，在彼时同一轮决定 state 真正终点。选 B。A 只改善“音频成功+图片失败”，仍在 caller publication 前删 complete state；而且没有图片/短音频 state、source/root resume 和公开消费者。这会产生一份无消费者的完整音频 state，却不解决 crash-before-publish，是半修复。
+
+**当前合同与过度设计复查。** 现在的 `recognize_video()` 仍明确非恢复，因此音频分支成功后删自有临时 state 不是当前假成功；它是下一 resumable job 必须整体改变的设计点。本轮没有 state flag/outcome field、cleanup manager、atexit、定时回收、隐式 finalize 或无消费者持久化。无 runtime/tests/provider 改动，不重复 #343 已验证的同一源码。

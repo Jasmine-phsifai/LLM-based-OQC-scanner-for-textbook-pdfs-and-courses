@@ -6657,6 +6657,27 @@ provider/model/request identity、Markdown、call/token 与 status；但这也�
 checkpoint、repair 联动、跨进程事务、retry/fallback 和无消费者 schema。规划一个统一 video journal
 只是当前推荐路线，不把它写成已授权实现。
 
+## Iteration 346：不单独后移 video long-audio state 删除点
+
+本轮专门核对 #345 发现的“音频成功就删 state，后续图片失败时已无持久音频结果”。
+路线 A 是把 `remove_long_audio_temporary_state()` 从 `recognize_video_mp3()` 移到视频编排层，仅在
+`VideoRecognitionOutcome.status == "complete"` 时删除；路线 B 是等待维护者选定 #345 的真正终点，
+再一次性设定 state lifetime。选 B。
+
+路线 A 只保留“音频 complete + 图片失败”的 state，却仍会在 complete outcome 返回后、caller 可选
+`publish_video_result()` 之前删除，所以没有解决 crash-before-publish。它也没有图片组/短音频 state、没有
+已存在根恢复入口，保留的完整音频 state 仍没有公开消费者。因此它同时是半个 lifecycle 修复
+和无消费者持久化，会提前固化与“高层固定发布终点”或“三段式 finalize/discard”都不完全
+一致的删除时机。
+
+退出判断：当前 `recognize_video()` 明确仍是非恢复低层 API，现有“音频分支成功即删临时 state”
+在这个有限合同内不改。它是 future resumable job 的明确缺口，不是可以脱离终点决策单独修好的
+当前假成功。本轮无 runtime/tests/provider 变更，不重复上一精确源码的全量。
+
+过度设计复查：没有为“先保留再说”增加 state flag、outcome 字段、cleanup manager、atexit、定时
+回收或隐式 finalize。future agent 不应把 unlink 后移到“outcome complete”当作 video resume 前置已完成；
+它必须和被选中的终端发布/丢弃合同同轮设计。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
