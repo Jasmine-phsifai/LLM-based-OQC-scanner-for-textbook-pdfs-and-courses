@@ -78,8 +78,8 @@ def _recognize_video_to_markdown(
     )
     validate_cancellation_signal(validated_image.cancellation)
     validate_cancellation_signal(validated_audio.cancellation)
-    image_cancelled = _read_initial_cancellation(validated_image)
-    audio_cancelled = _read_initial_cancellation(validated_audio)
+    image_cancelled = _read_cancellation(validated_image)
+    audio_cancelled = _read_cancellation(validated_audio)
     if image_cancelled is not None and audio_cancelled is not None:
         raise image_cancelled from None
 
@@ -184,13 +184,16 @@ def _start_video_job(
             )
             journal = VideoJobJournal(output_root / VIDEO_JOB_STATE_NAME, state)
             journal.save_initial()
-            _prepare_pending_audio(
-                snapshot_path,
-                output_root=output_root,
-                config=audio_config,
-                interval_minutes=interval_minutes,
-                journal=journal,
-            )
+            if audio_cancelled is None:
+                audio_cancelled = _read_cancellation(audio_config)
+            if audio_cancelled is None:
+                _prepare_pending_audio(
+                    snapshot_path,
+                    output_root=output_root,
+                    config=audio_config,
+                    interval_minutes=interval_minutes,
+                    journal=journal,
+                )
             outcome = _settle_video_job(
                 frames,
                 output_root=output_root,
@@ -279,13 +282,16 @@ def _resume_video_job(
                 audio_interval_minutes=interval_minutes,
             )
             if journal.state.audio.state == "pending":
-                _prepare_pending_audio(
-                    snapshot_path,
-                    output_root=output_root,
-                    config=audio_config,
-                    interval_minutes=interval_minutes,
-                    journal=journal,
-                )
+                if audio_cancelled is None:
+                    audio_cancelled = _read_cancellation(audio_config)
+                if audio_cancelled is None:
+                    _prepare_pending_audio(
+                        snapshot_path,
+                        output_root=output_root,
+                        config=audio_config,
+                        interval_minutes=interval_minutes,
+                        journal=journal,
+                    )
             outcome = _settle_video_job(
                 frames,
                 output_root=output_root,
@@ -488,7 +494,7 @@ def _reject_branch_persistence(config: Config, *, branch: str) -> None:
         ) from None
 
 
-def _read_initial_cancellation(config: Config):
+def _read_cancellation(config: Config):
     from .errors import Cancelled
     from .raise_if_cancelled import raise_if_cancelled
 

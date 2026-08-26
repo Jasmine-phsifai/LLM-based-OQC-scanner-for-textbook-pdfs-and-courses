@@ -7776,3 +7776,32 @@ zero skips. The next reproduced queue remains separate: avoid audio extraction
 when the high-level video's audio branch is already cancelled, then preserve an
 exact failed PDF child-client cleanup fact at the outer snapshot boundary, then
 consider bounded exact-JSON input rejection.
+
+## Current working update: #406 skips cancelled video-audio extraction
+
+The high-level resumable video facade now matches #294's established independent
+branch contract before local audio extraction. On both a fresh job and a resume
+whose journal still says audio `pending`, it observes the audio cancellation
+signal immediately before `_prepare_pending_audio()`. An already captured
+`Cancelled` remains the same object; a signal set during video preparation is
+captured at this second checkpoint. Either case skips extraction, leaves no
+`audio.mp3`, keeps audio pending, lets the image branch settle or reuse its saved
+work, and then raises that cancellation through the existing branch outcome.
+
+A repeated resume while cancellation remains set performs no fresh image
+provider work, audio extraction, or audio provider work. Clearing the same
+signal allows the next resume to extract and recognize audio exactly once,
+reuse the settled image, publish `result.md`, and remove the journal. Both
+branches pre-cancelled still stop before source or output access. The private
+reader is now named `_read_cancellation()` because it is intentionally used at
+entry and again at the pre-extraction checkpoint.
+
+No extractor cancellation argument, FFmpeg termination protocol, state schema,
+public signature, transaction, or cancellation coordinator was added; work
+already started inside FFmpeg remains governed by its existing timeout and
+cleanup lifecycle. Focused high-level/three-step video, journal, and extraction
+coverage passes 82 tests; independent tracked coverage passes 9 tests and its
+provider-free timing probe confirms cancellation during media preparation still
+stops before extraction. The complete offline suite passes all 1,863 tests with
+zero skips. Next address the separately reproduced PDF outer-snapshot cleanup
+disclosure gap.

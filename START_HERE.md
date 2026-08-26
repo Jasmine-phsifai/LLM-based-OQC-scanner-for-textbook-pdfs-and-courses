@@ -1195,3 +1195,12 @@ close. Earlier failures receive no invented evidence, and completed resume does
 not expose historical usage as current. This reuses the existing usage helper;
 it adds no lifecycle abstraction, provider reconstruction, schema, retry, or
 transaction. The complete offline suite passes all 1,863 tests.
+
+#406 aligns the resumable high-level video's audio cancellation with the
+existing independent-branch contract. Fresh and resumed jobs now check a
+pending audio branch immediately before extraction: cancellation keeps audio
+pending, creates no MP3, preserves settled image work, and raises the same
+typed cancellation. Repeated cancelled resume performs zero extraction and
+provider work; clearing the signal resumes with one extraction/audio call and
+zero image replay. This does not add mid-FFmpeg interruption, a coordinator,
+schema, or public option. The complete offline suite remains 1,863 tests.

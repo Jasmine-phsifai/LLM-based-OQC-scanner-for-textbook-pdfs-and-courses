@@ -1612,7 +1612,7 @@ def test_one_pre_cancelled_branch_preserves_other_branch_settlement_for_resume(
     source.write_bytes(b"stable-cancellation-video")
     output_parent = tmp_path / "output"
     output_root = output_parent / source.stem
-    _install_one_frame_media(
+    media_calls = _install_one_frame_media(
         monkeypatch,
         source=source,
         output_parent=output_parent,
@@ -1646,8 +1646,29 @@ def test_one_pre_cancelled_branch_preserves_other_branch_settlement_for_resume(
         tmp_path,
         cancellation=cancellation if cancelled_branch == "audio" else None,
     )
+    original_cancellation = None
+    if cancelled_branch == "audio":
+        facade_module = __import__(
+            "ocrllm.recognize_video_to_markdown",
+            fromlist=["_read_cancellation"],
+        )
+        read_cancellation = facade_module._read_cancellation
+        original_cancellation = Cancelled(
+            "Recognition was cancelled before recognition work."
+        )
 
-    with pytest.raises(Cancelled):
+        def read_same_audio_cancellation(config):
+            if config.cancellation is cancellation and cancellation.is_set():
+                return original_cancellation
+            return read_cancellation(config)
+
+        monkeypatch.setattr(
+            facade_module,
+            "_read_cancellation",
+            read_same_audio_cancellation,
+        )
+
+    with pytest.raises(Cancelled) as first_cancelled:
         _public_facade()(
             source,
             output_dir=output_parent,
@@ -1658,6 +1679,38 @@ def test_one_pre_cancelled_branch_preserves_other_branch_settlement_for_resume(
     assert len(_root_journals(output_root)) == 1
     assert len(image_provider.groups) == (0 if cancelled_branch == "image" else 1)
     assert audio_calls == (1 if cancelled_branch == "image" else 0)
+    if cancelled_branch == "audio":
+        assert first_cancelled.value is original_cancellation
+        assert source.read_bytes() == b"stable-cancellation-video"
+        assert media_calls == {"prepare": 1, "extract": 0}
+        assert (output_root / "frames" / "frame-00000000.jpg").is_file()
+        assert not (output_root / "audio.mp3").exists()
+        assert not (output_root / "result.md").exists()
+        pending = load_video_job_state(_root_journals(output_root)[0])
+        assert pending.audio.state == "pending"
+        assert pending.audio.artifact is None
+        assert pending.audio.short_state is None
+
+        with pytest.raises(Cancelled) as repeated_cancelled:
+            _public_facade()(
+                source,
+                output_dir=output_parent,
+                image_config=image_config,
+                audio_config=audio_config,
+                resume=True,
+            )
+
+        assert repeated_cancelled.value is original_cancellation
+        assert source.read_bytes() == b"stable-cancellation-video"
+        assert media_calls == {"prepare": 1, "extract": 0}
+        assert len(image_provider.groups) == 1
+        assert audio_calls == 0
+        assert not (output_root / "audio.mp3").exists()
+        assert not (output_root / "result.md").exists()
+        repeated = load_video_job_state(_root_journals(output_root)[0])
+        assert repeated.audio.state == "pending"
+        assert repeated.audio.artifact is None
+        assert repeated.audio.short_state is None
 
     cancellation.clear()
     result = _public_facade()(
@@ -1671,4 +1724,8 @@ def test_one_pre_cancelled_branch_preserves_other_branch_settlement_for_resume(
     assert result.output_path == output_root / "result.md"
     assert len(image_provider.groups) == 1
     assert audio_calls == 1
+    assert media_calls == {"prepare": 1, "extract": 1}
+    assert source.read_bytes() == b"stable-cancellation-video"
+    assert (output_root / "frames" / "frame-00000000.jpg").is_file()
+    assert (output_root / "audio.mp3").is_file()
     assert _root_journals(output_root) == ()
