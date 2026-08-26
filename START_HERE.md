@@ -1110,8 +1110,8 @@ introduced.
 the fixed Markdown, fixed resume sidecar, and current UUID-shaped atomic sibling
 before provider dispatch. The exact atomic-path check is shared with long audio,
 removing #378's duplicate constants and path-unit code. The next queue is:
-reject batch partial-state plus existing-output conflicts; then preserve audio
-usage/cleanup facts when state persistence itself fails. #382 already closes
-selected-frame position honesty by checking OpenCV's finite post-read cursor
-before JPEG publication. Keep each item atomic and do not widen them into
-frame-selection changes, transactions, pixel comparison, or provider retry.
+preserve audio usage/cleanup facts when state persistence itself fails. #382
+already closes selected-frame position honesty, and #383 now rejects a batch
+whose later valid partial sidecar conflicts with existing Markdown before any
+dispatch. Keep the next item atomic and do not widen it into transactions,
+eager identity snapshots, provider retry, or a durable response protocol.

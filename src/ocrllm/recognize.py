@@ -111,6 +111,9 @@ def _recognize(
                         from .output.resolve_image_resume_state_path import (
                             resolve_image_resume_state_path,
                         )
+                        from .output.validate_image_resume_state_output_pair import (
+                            validate_image_resume_state_output_pair,
+                        )
                         from .reuse_image_resume_state import reuse_image_resume_state
 
                         resume_state_path = resolve_image_resume_state_path(output_path)
@@ -133,11 +136,11 @@ def _recognize(
                             if cfg.resume
                             else None
                         )
-                        if cfg.resume and resume_state is None and output_path.exists():
-                            raise ResumeStateError(
-                                "Existing image output has no matching resume state.",
-                                code="RESUME_STATE_INVALID",
-                            ) from None
+                        if cfg.resume:
+                            validate_image_resume_state_output_pair(
+                                resume_state,
+                                output_path,
+                            )
                         if (
                             cfg.resume
                             and resume_state is not None
@@ -168,12 +171,6 @@ def _recognize(
                                     resume_state,
                                     resume_identity,
                                 )
-                                if output_path.exists():
-                                    raise ResumeStateError(
-                                        "Existing image output conflicts with a partial "
-                                        "resume state.",
-                                        code="RESUME_STATE_MISMATCH",
-                                    ) from None
                                 raise_if_cancelled(cfg.cancellation)
                                 seeded_slots = resume_state.slots
                             slot_checkpoint = ImageSlotCheckpoint(

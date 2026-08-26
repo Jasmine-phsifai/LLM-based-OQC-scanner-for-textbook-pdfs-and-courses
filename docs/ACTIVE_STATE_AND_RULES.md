@@ -3980,10 +3980,11 @@ Post-register findings are ordered by demonstrated user impact:
   index other than the selected candidate before JPEG publication. Scanner and
   writer share only that non-obvious cursor normalization; range, timestamp,
   selection, full-frame encoding, and error context remain local.
-- Open, medium-high: batch resume preflight loads a valid partial image state
-  but does not reject its conflict with an already-existing Markdown output.
-  A later item can therefore fail only after earlier dispatch. Reuse the same
-  partial-state/output mismatch already enforced by single-item recognition.
+- #383 closes the medium-high batch partial-state/output conflict. Complete
+  preflight now applies the same image state/output pairing matrix as the
+  single-item facade, so a later partial sidecar plus existing Markdown rejects
+  the tuple before any dispatch or publication. Valid partial-without-output
+  and complete-with-output resume behavior remains unchanged.
 - Open, medium-high: whole/interval audio state-save failures report the paid
   call count but omit already validated token and provider-cleanup facts because
   no `ProcessorOutput` returns to the outer error boundary. Preserve those
@@ -7406,3 +7407,24 @@ pixel comparison, seek wrapper, frame-selection change, crop, or journal schema
 was added. The existing complete-frame JPEG and four-corner regressions remain
 green; the focused active-video set passes 161 tests, and the complete offline
 suite passes all 1,830 tests.
+
+## Current working update: #383 preflights partial-state/output conflicts
+
+A public two-item regression first creates a real partial image checkpoint by
+settling one draft slot and failing the next, while an older Markdown target is
+kept through `overwrite=True`. The resulting sidecar is valid and retains one
+paid slot but has no final Markdown. Before this fix, batch preflight accepted
+the pair, dispatched and published the first item, then returned the later
+single-item `RESUME_STATE_MISMATCH` only inside the outcome tuple.
+
+Batch and single-item recognition now share one narrow
+`validate_image_resume_state_output_pair()` matrix. No state plus no output is
+valid new work; partial state plus no output is valid recovery; completed state
+plus output is valid reuse. An existing output with no state remains
+`RESUME_STATE_INVALID`, and an existing output with partial state is
+`RESUME_STATE_MISMATCH`. The validator does not inspect sources, compute request
+identity, create snapshots, claim targets, or dispatch work. The corrected
+public regression raises before all batch work, preserves the conflicting files
+byte-for-byte, and the focused image/batch/state set passes 99 tests. With the
+worktree held stable for its runtime-identity checks, the complete offline suite
+passes all 1,831 tests.

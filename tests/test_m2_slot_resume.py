@@ -21,6 +21,7 @@ from ocrllm import (
     ResumeStateError,
     VisionModelSettings,
     recognize,
+    recognize_batch,
 )
 from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
@@ -129,6 +130,52 @@ def test_interrupted_request_keeps_paid_slots_and_resume_pays_only_missing(
 
     recognize(source, config=_slot_config(provider, output_dir, resume=True))
     assert len(provider.calls) == 4
+
+
+def test_batch_rejects_later_partial_state_with_existing_output_before_dispatch(
+    tmp_path: Path,
+) -> None:
+    first = write_test_image(tmp_path / "first.png")
+    later = write_test_image(tmp_path / "later.png")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    later_output = output_dir / "later_board.md"
+    later_output.write_text("previous published output", encoding="utf-8")
+    seed_provider = InterruptibleSlotProvider(fail_after=1)
+
+    with pytest.raises(ProviderError):
+        recognize(
+            later,
+            config=_slot_config(
+                seed_provider,
+                output_dir,
+                overwrite=True,
+            ),
+        )
+
+    state_path = output_dir / "later_board.ocrllm-state.json"
+    state_before = state_path.read_bytes()
+    state = _state_document(output_dir, "later_board")
+    assert [slot["slot_id"] for slot in state["slots"]] == ["draft"]
+    assert state["result"]["markdown"] == ""
+    batch_provider = InterruptibleSlotProvider()
+
+    with pytest.raises(ResumeStateError) as captured:
+        recognize_batch(
+            (first, later),
+            config=_slot_config(
+                batch_provider,
+                output_dir,
+                resume=True,
+            ),
+        )
+
+    assert captured.value.code == "RESUME_STATE_MISMATCH"
+    assert batch_provider.calls == []
+    assert not (output_dir / "first_board.md").exists()
+    assert not (output_dir / "first_board.ocrllm-state.json").exists()
+    assert later_output.read_text(encoding="utf-8") == "previous published output"
+    assert state_path.read_bytes() == state_before
 
 
 def test_review_checkpoint_failure_reports_spend_and_keeps_prior_slots(

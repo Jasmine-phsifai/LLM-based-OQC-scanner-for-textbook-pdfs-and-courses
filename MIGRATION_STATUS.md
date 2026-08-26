@@ -1714,6 +1714,18 @@ queue is batch partial-state/output conflict preflight, then audio
 persistence-failure evidence retention. The complete offline suite passes all
 1,830 tests.
 
+#383 completes the remaining known batch resume preflight gap. A valid partial
+image state with an already-existing Markdown target now raises the same
+`RESUME_STATE_MISMATCH` as single-item recognition before any batch dispatch.
+The regression creates a real one-slot checkpoint through the public facade,
+then proves the later conflict causes zero new provider calls, no first-item
+publication, and no mutation of either conflicting artifact. One narrow
+state/output-pair validator now replaces the duplicated missing-state check and
+owns only the existing four-state matrix. It does not precompute source/request
+identity, create snapshots, claim targets, roll back work, or add transactions.
+The next evidenced queue item is audio persistence-failure usage and cleanup
+disclosure. The complete offline suite passes all 1,831 tests.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
