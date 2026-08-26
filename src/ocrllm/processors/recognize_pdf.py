@@ -52,20 +52,21 @@ def recognize_pdf(
 
     try:
         raise_if_cancelled(config.cancellation)
-        with snapshot_pdf(source_path, temp_dir=config.temp_dir) as snapshot:
-            page_sizes = inspect_pdf(snapshot.path)
+        output_path = build_output_path(
+            (source_path,),
+            profile=profile,
+            config=config,
+        )
+        if output_path is not None:
+            output_claims.claim(output_path)
             output_path = build_output_path(
                 (source_path,),
                 profile=profile,
                 config=config,
             )
+        with snapshot_pdf(source_path, temp_dir=config.temp_dir) as snapshot:
+            page_sizes = inspect_pdf(snapshot.path)
             if output_path is not None:
-                output_claims.claim(output_path)
-                output_path = build_output_path(
-                    (source_path,),
-                    profile=profile,
-                    config=config,
-                )
                 state_directory = output_path.with_suffix("")
                 state_directory_created = not os.path.lexists(state_directory)
                 render_directory = prepare_pdf_state_directory(

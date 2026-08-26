@@ -4005,9 +4005,11 @@ Post-register findings are ordered by demonstrated user impact:
   zero-call resumed final results retain the existing cleanup warning and the
   audio-scoped `audio_provider_client_closed=False` fact. Other error details,
   successful/unknown closure, and generic provider failures are not promoted.
-- Open, low: PDF output collision is checked after one bounded snapshot and
-  PDFium inspection. It makes no provider call and preserves the target, but a
-  known `OUTPUT_EXISTS` should win before backend work.
+- #390 closes the low PDF output-collision ordering gap. The existing
+  deterministic output check and process-local claim now run before source
+  snapshotting or PDFium inspection, so a known `OUTPUT_EXISTS` performs no
+  media/backend/provider work and preserves the target. State-directory,
+  overwrite, resume, rendering, and dispatch behavior remain in place.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4

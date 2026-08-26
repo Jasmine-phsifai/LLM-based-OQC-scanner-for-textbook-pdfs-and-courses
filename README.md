@@ -34,10 +34,12 @@ As of 2026-08-26:
   three-step video API remains the lower-level non-resumable surface.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
-  stable range markers. Its bounded Google exit gate completed 16 pages in two
-  calls with two complete checkpoints and no retained rendered pages; PDF
-  repair will not consume legacy application's Markdown format; ordinary
-  image-sidecar resume remains the library recovery path.
+  stable range markers. An existing final Markdown target is rejected before
+  PDF snapshotting or PDFium work unless overwrite/resume permits it. Its
+  bounded Google exit gate completed 16 pages in two calls with two complete
+  checkpoints and no retained rendered pages; PDF repair will not consume
+  legacy application's Markdown format; ordinary image-sidecar resume remains
+  the library recovery path.
 - Provider-free video inspection and retained-frame extraction are available.
   `inspect_video(one.mp4)` writes nothing and rejects ordinary caller-path
   changes during its metadata reads instead of returning mixed metadata;

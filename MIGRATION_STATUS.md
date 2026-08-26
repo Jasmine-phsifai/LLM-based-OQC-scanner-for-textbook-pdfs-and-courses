@@ -1769,6 +1769,16 @@ provider abstraction was added. The focused video set passes 134 tests and the
 complete offline suite passes all 1,838. The next evidenced queue item is
 pre-PDFium PDF output-collision rejection.
 
+#390 closes that PDF collision-ordering item by moving the existing
+`build_output_path()` / process-local claim / recheck block intact before the
+bounded PDF snapshot and PDFium inspection. An ordinary existing Markdown now
+raises `OUTPUT_EXISTS` with zero snapshot, backend, render, resume-state, or
+provider work while preserving its bytes. PDF state-directory preparation,
+overwrite, resume, grouping, and provider behavior are unchanged. No separate
+PDF preflight helper, transaction, lock, or output-path rule was added. The
+focused set passes 67 tests and the complete offline suite passes all 1,839.
+The bounded reproduced queue is empty again.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

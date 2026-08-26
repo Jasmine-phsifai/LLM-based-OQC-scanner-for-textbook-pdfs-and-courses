@@ -286,6 +286,8 @@ original choice.
 The PDF vision facade:
 
 - requires `ocrllm[pdf-vision]` and accepts exactly one `.pdf`;
+- rejects an existing final Markdown before source snapshotting or PDFium work
+  unless the configured overwrite/resume mode permits that target;
 - snapshots at most 100 MiB with bounded reads, inspects all page sizes before
   dispatch, and serializes every PDFium call behind one process-wide lock;
 - renders one page at a time and at most eight PNGs per ordinary image request;

@@ -1122,5 +1122,7 @@ error boundary, preventing later provider, cleanup, cancellation, or state-save
 failures from under-reporting tokens or reversing cleanup truth. #389 then
 preserves a proved failed short-audio client close through final no-speech video
 composition, including zero-call resume, without copying generic error details.
-The next queue item is pre-PDFium PDF output-collision rejection; keep it atomic
-and add no recovery framework.
+#390 then moves the existing PDF output check and process-local claim before
+snapshot/PDFium work, so a known collision refuses without backend work. The
+bounded reproduced queue is empty again; audit shipped public lifecycles before
+selecting another change, and add no recovery framework without evidence.

@@ -242,6 +242,43 @@ def test_public_pdf_uses_two_ordered_bounded_image_groups(
     assert result.metadata["current_run_provider_call_count"] == 2
 
 
+def test_existing_pdf_output_rejects_before_snapshot_or_backend_inspection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    target = output_dir / "book_board.md"
+    target.write_text("original", encoding="utf-8")
+    provider = _RecordingProvider()
+    processor = importlib.import_module("ocrllm.processors.recognize_pdf")
+    calls = {"snapshot": 0, "inspect": 0}
+
+    @contextmanager
+    def counted_snapshot(*_args, **_kwargs):
+        calls["snapshot"] += 1
+        yield SimpleNamespace(path=source, root=tmp_path / "snapshot")
+
+    def counted_inspect(_path):
+        calls["inspect"] += 1
+        return ((72.0, 72.0),)
+
+    monkeypatch.setattr(processor, "snapshot_pdf", counted_snapshot)
+    monkeypatch.setattr(processor, "inspect_pdf", counted_inspect)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=_pdf_config(provider, output_dir=output_dir),
+        )
+
+    assert captured.value.code == "OUTPUT_EXISTS"
+    assert calls == {"snapshot": 0, "inspect": 0}
+    assert provider.calls == []
+    assert target.read_text(encoding="utf-8") == "original"
+
+
 def test_public_pdf_provider_receives_all_four_page_corners(
     tmp_path: Path,
     monkeypatch,
