@@ -7,6 +7,7 @@ from hashlib import sha256
 import os
 from pathlib import Path
 import subprocess
+from threading import Event
 from types import SimpleNamespace
 
 import pytest
@@ -26,6 +27,7 @@ from ocrllm.audio.save_long_audio_partial_state_atomically import (
     save_long_audio_partial_state_atomically,
 )
 from ocrllm.errors import (
+    Cancelled,
     NoSpeechDetected,
     OutputError,
     OutputExists,
@@ -37,12 +39,19 @@ MODEL = "gemini-test-whole-audio"
 SOURCE_SHA256 = "a" * 64
 
 
-def _config(output_dir: Path, *, resume: bool = False, model: str = MODEL) -> Config:
+def _config(
+    output_dir: Path,
+    *,
+    resume: bool = False,
+    model: str = MODEL,
+    cancellation: object | None = None,
+) -> Config:
     return Config(
         provider=GoogleGenAISettings(api_key="test-only-google-key"),
         audio_model=AudioModelSettings(name=model),
         output_dir=output_dir,
         resume=resume,
+        cancellation=cancellation,
     )
 
 
@@ -257,6 +266,123 @@ def test_failed_publication_preserves_paid_state_for_zero_call_resume(
     assert result.metadata["provider_client_closed"] is True
     assert result.output_path is not None and result.output_path.is_file()
     assert not _state_path(output_dir).exists()
+
+
+def test_resume_cancelled_during_snapshot_keeps_paid_state_without_publication(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "lecture.mp3"
+    source_bytes = b"owned source bytes"
+    source.write_bytes(source_bytes)
+    output_dir = tmp_path / "out"
+    provider_calls: list[str] = []
+    processor, _ = _install_fakes(monkeypatch, provider_calls)
+    output_module = __import__(
+        "ocrllm.output.write_markdown_atomically",
+        fromlist=["write_markdown_atomically"],
+    )
+
+    def fail_publication(*_args, **_kwargs):
+        raise OutputError(
+            "The requested Markdown output could not be written atomically.",
+            code="OUTPUT_WRITE_FAILED",
+        )
+
+    monkeypatch.setattr(processor, "write_markdown_atomically", fail_publication)
+    with pytest.raises(OutputError):
+        recognize_long_mp3(source, config=_config(output_dir))
+
+    state_path = _state_path(output_dir)
+    state_bytes = state_path.read_bytes()
+    cancellation = Event()
+
+    @contextmanager
+    def cancel_during_snapshot(resume_source: Path, *, temp_dir):
+        assert resume_source == source
+        assert temp_dir is None
+        yield SimpleNamespace(
+            path=resume_source,
+            byte_size=len(source_bytes),
+            sha256=SOURCE_SHA256,
+            duration_seconds=601.5,
+        )
+        cancellation.set()
+
+    monkeypatch.setattr(processor, "snapshot_long_mp3", cancel_during_snapshot)
+    monkeypatch.setattr(
+        processor,
+        "write_markdown_atomically",
+        output_module.write_markdown_atomically,
+    )
+
+    with pytest.raises(Cancelled) as captured:
+        recognize_long_mp3(
+            source,
+            config=_config(
+                output_dir,
+                resume=True,
+                cancellation=cancellation,
+            ),
+        )
+
+    assert type(captured.value) is Cancelled
+    assert captured.value.code == "CANCELLED"
+    assert captured.value.retryable is False
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert "settled_model_usage" not in captured.value.details
+    assert captured.value.details["remote_file_deleted"] is True
+    assert captured.value.details["provider_client_closed"] is True
+    assert cancellation.is_set()
+    assert provider_calls == [MODEL]
+    assert not (_root(output_dir) / "result.md").exists()
+    assert state_path.read_bytes() == state_bytes
+    assert list(tmp_path.rglob(".ocrllm-*.tmp")) == []
+    assert source.read_bytes() == source_bytes
+
+
+def test_fresh_whole_cancelled_during_snapshot_stops_before_provider(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "lecture.mp3"
+    source_bytes = b"owned source bytes"
+    source.write_bytes(source_bytes)
+    output_dir = tmp_path / "out"
+    provider_calls: list[str] = []
+    processor, _ = _install_fakes(monkeypatch, provider_calls)
+    cancellation = Event()
+
+    @contextmanager
+    def cancel_during_snapshot(fresh_source: Path, *, temp_dir):
+        assert fresh_source == source
+        assert temp_dir is None
+        cancellation.set()
+        yield SimpleNamespace(
+            path=fresh_source,
+            byte_size=len(source_bytes),
+            sha256=SOURCE_SHA256,
+            duration_seconds=601.5,
+        )
+
+    monkeypatch.setattr(processor, "snapshot_long_mp3", cancel_during_snapshot)
+
+    with pytest.raises(Cancelled) as captured:
+        recognize_long_mp3(
+            source,
+            config=_config(output_dir, cancellation=cancellation),
+        )
+
+    assert type(captured.value) is Cancelled
+    assert captured.value.code == "CANCELLED"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert cancellation.is_set()
+    assert provider_calls == []
+    assert not (_root(output_dir) / "result.md").exists()
+    assert not _state_path(output_dir).exists()
+    assert not _root(output_dir).exists()
+    assert list(tmp_path.rglob(".ocrllm-*.tmp")) == []
+    assert source.read_bytes() == source_bytes
 
 
 def test_whole_no_speech_is_settled_and_replayed_without_provider_call(

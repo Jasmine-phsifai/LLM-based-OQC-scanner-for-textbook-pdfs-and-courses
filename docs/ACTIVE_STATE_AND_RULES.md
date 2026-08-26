@@ -7906,3 +7906,31 @@ long-audio resume can ignore cancellation arriving during source snapshotting
 and publish/delete its saved state, followed by the lower-priority composite
 video omission of `image_provider_client_closed=False` after a successful image
 branch. Keep them atomic rather than extending this evidence fix.
+
+## Current working update: #412 honors cancellation across long-audio snapshots
+
+Persistent whole/interval long-audio recognition now observes the caller's
+cancellation signal at both uncovered sides of the owned source snapshot. A
+check immediately after snapshot entry prevents fresh whole mode from starting
+a provider call when cancellation arrived during snapshot construction. A
+second check after snapshot exit prevents final Markdown publication and state
+deletion when cancellation arrived during provider work, completed-state reuse,
+or snapshot cleanup. The existing entry check still stops pre-cancelled calls
+before output ownership, and interval's per-window check still stops between
+paid slices.
+
+Provider-free public regressions prove both boundaries independently. Fresh
+whole mode makes zero provider calls, creates no state or result, removes its
+empty new output root, and preserves the source. A complete whole resume reuses
+the settled state with zero calls, then cancellation during snapshot exit
+prevents publication while preserving byte-identical state and historical
+cleanup facts. It reports no current-run token usage.
+
+No provider interruption, background task, writer cancellation parameter,
+rollback, transaction, or state-schema change was added. Focused whole,
+interval, Google Files adapter, video long-audio, and high-level video coverage
+passes 87 tests; independent review passes the two targets plus 58 adjacent
+tests; the superseding complete offline suite passes all 1,867 tests with zero
+failures or skips. The next reproduced item remains the lower-priority
+composite-video omission of `image_provider_client_closed=False` after a
+successful image branch.

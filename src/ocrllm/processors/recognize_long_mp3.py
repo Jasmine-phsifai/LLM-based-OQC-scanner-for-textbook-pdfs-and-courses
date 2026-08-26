@@ -83,6 +83,7 @@ def recognize_validated_long_mp3(
                 else snapshot_long_mp3(source_path, temp_dir=config.temp_dir)
             )
             with snapshot_context as snapshot:
+                raise_if_cancelled(config.cancellation)
                 model = config.audio_model.name
                 assert type(model) is str
                 if interval_minutes is not None:
@@ -110,6 +111,7 @@ def recognize_validated_long_mp3(
                         ),
                         saved_state=saved_state,
                     )
+            raise_if_cancelled(config.cancellation)
             write_markdown_atomically(
                 paths.result,
                 processor_output.markdown,
