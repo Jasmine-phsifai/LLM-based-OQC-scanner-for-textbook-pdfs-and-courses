@@ -490,14 +490,19 @@ is often accepted.
   one-frame-group-only, or publication-only behavior under the name video
   resume.
 
-- **Open #355 terminal-failure choice.** Recommended: if any required frame
-  group or audio unit lacks recognized content, publish no `result.md`, retain
-  every settled paid unit in the journal, and raise the typed failure. A later
-  explicit `resume=True` retries only missing work; that is caller-owned retry,
-  not an adapter loop. A result whose content is fully settled but whose cleanup
-  warning makes it `partial` may still publish. Alternative: publish a terminal
-  partial `result.md` on any provider failure and delete state, which gives up
-  resume for the missing work. The maintainer must select before implementation.
+- **Resolved #355 terminal-failure choice (#371): retain recoverable gaps.** The
+  maintainer already required supplier outages and exhausted daily quota to be
+  continued hours later through resume, with repair only as the small side path
+  when state is lost. Therefore, if a frame group or audio unit still lacks
+  recognized content because of cancellation, provider, extraction, decoding,
+  or parsing failure, publish no final `result.md`, retain every settled paid
+  unit in the journal, and raise the typed failure. A later explicit
+  `resume=True` retries only missing work; that is caller-owned retry, not an
+  adapter loop. Do not publish a terminal provider-failed partial and delete its
+  state. Exact `VIDEO_NO_AUDIO_STREAM` and exact `NoSpeechDetected` are settled
+  terminal absence rather than missing work; they are not retried. A job whose
+  units are all recognized or terminal absence may publish, including a
+  `partial` result caused only by no-speech or cleanup warnings.
 
 - **Recommended #355 strict defaults unless separately changed.** Bind resume
   to the exact normalized source path, byte size, and SHA-256; a moved source is

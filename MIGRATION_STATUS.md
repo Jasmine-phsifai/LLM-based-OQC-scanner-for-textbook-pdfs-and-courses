@@ -1512,10 +1512,10 @@ The following directions remain traceable but are not current work:
   resume feature exists to protect. The first public job must immediately own
   and consume fixed `result.md` plus one source/media-plan-bound journal for
   settled frame groups and short/whole/interval audio work. The current
-  three-step API remains non-resumable. Runtime implementation waits on the
-  maintainer's terminal-failure choice; the recommended rule retains settled
-  paid work, publishes no final file while any required unit is missing, raises
-  the typed error, and lets explicit resume retry only the missing work.
+  three-step API remains non-resumable. #371 resolves the terminal rule from
+  earlier maintainer authority: retain settled paid work, publish no final file
+  while a recoverable unit is missing, raise the typed error, and let explicit
+  resume retry only the gap; exact no-audio/no-speech are terminal absence.
   #356 fixes an independent current accounting defect: if a whole long-audio
   call succeeded and the immediately following state save failed, standalone
   audio reported zero calls and video omitted the count. The whole settlement
@@ -1616,6 +1616,13 @@ Markdown remains published and is returned as `partial` with a fixed warning
 and `resume_state_removed=False`; calls, usage, and provider cleanup facts stay
 honest. Resume remains restricted to unpublished results, so no result-identity
 or finalize protocol was introduced.
+
+#371 resolves the remaining high-level video-job terminal rule from existing
+maintainer authority. Retryable or externally correctable missing frame/audio
+units block final publication and retain settled paid work for explicit later
+resume. Exact no-audio and no-speech are recorded terminal absence and do not
+loop. This decision changes neither the current three-step video API nor any
+runtime/state format; it removes the blocker for the first real journal slice.
 
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as

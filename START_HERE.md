@@ -316,6 +316,13 @@ fails, the real `result.md` is returned as `partial` with one fixed warning and
 This does not expand `resume=True` to already-published results or add a
 finalize protocol.
 
+#371 closes the last product decision before the selected high-level resumable
+video job. Provider, cancellation, extraction, decoding, or parsing gaps block
+final `result.md`, preserve all settled paid units, and are retried only by an
+explicit later resume. Exact no-audio and no-speech outcomes are settled
+terminal absence and are never mechanically retried. Existing low-level video
+partial publication remains unchanged; no journal code shipped in this step.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes
@@ -352,10 +359,10 @@ unit and would force immediate state-schema churn. The first public job must
 instead own fixed `result.md` publication and immediately consume one journal
 covering source/media-plan identity plus settled full-frame groups and
 short/whole/interval audio work. The current three-step API stays unchanged.
-Implementation waits on one terminal rule: the recommendation is to publish no
-final file while any required unit is missing, retain settled paid work, raise
-the typed failure, and let an explicit later resume retry only the missing work;
-cleanup-only partial content may publish.
+#371 resolves the terminal rule from earlier maintainer authority: publish no
+final file while a recoverable unit is missing, retain settled paid work, raise
+the typed failure, and let an explicit later resume retry only the missing work.
+Exact no-audio/no-speech and cleanup-only partials are terminal and may publish.
 
 #356 fixes one current paid-call accounting defect without beginning that job.
 When a whole long-audio provider call completed but the following temporary

@@ -6896,16 +6896,13 @@ recognize/compose/publish functions remain unchanged and non-resumable. Do not
 add an audio-only flag, one-group resume claim, nested image/audio state tree,
 generic transaction, cross-process lock, retry/fallback, or legacy parser.
 
-One material terminal rule remains maintainer-owned before implementation. The
-recommended rule is: if any required provider unit has no recognized content,
-publish no final Markdown, preserve all settled paid work, and raise the typed
-failure; a later explicit resume retries only missing units. Fully recognized
-content carrying cleanup-only warnings may publish as partial. The alternative
-is to publish any provider-failed partial outcome terminally and delete state,
-which abandons recovery of its missing work. Recommended strict defaults are
-exact path plus byte identity, serial checkpointed frame groups, and digest-
-verified cleanup when a matching final result and journal coexist after a crash.
-No runtime/state/API/test change is made until the terminal rule is selected.
+The terminal rule is resolved by #371 from earlier maintainer authority:
+recoverable missing units block final publication and retain settled paid work
+for explicit later resume; exact no-audio and no-speech are terminal absence.
+Recommended strict defaults remain exact path plus byte identity, serial
+checkpointed frame groups, and digest-verified cleanup when a matching final
+result and journal coexist after a crash. This section itself made no runtime,
+state, API, or test change.
 
 ## Current working update: #356 whole-audio save failures keep paid-call truth
 
@@ -7070,8 +7067,9 @@ The fixed sidecar is now one more identity in the publisher's existing local
 reserved-path tuple. A failing-first public regression proves overwrite is
 rejected as `OUTPUT_PATH_INVALID` and the original state bytes survive. The
 same #364 identity check also covers aliases without another path mechanism.
-Valid publication, state creation/removal, provider behavior, and the still-open
-#355 high-level job terminal choice are unchanged. The focused publish, video
+Valid publication, state creation/removal, and provider behavior are unchanged;
+the then-open #355 high-level terminal choice is later resolved by #371. The
+focused publish, video
 audio-settlement, public video, and maintained Google-video runner set passes 89
 tests without a provider call. No directory ownership framework, public state
 constant, state reader, resume API, or journal schema was added.
@@ -7167,3 +7165,25 @@ offline suite passes all 1,786 tests with the known Node executable supplied
 only to the test subprocess; the explicit non-Node suite passes 1,784 tests
 with two Node tests deselected. Compileall, diff validation, and frozen-boundary
 checks pass without provider calls.
+
+## Current working update: #371 video-job failure terminal is resolved
+
+The remaining #355 choice is no longer open. Earlier maintainer authority
+already requires provider outages and exhausted daily quota to be continued
+hours later through resume, with repair only as a small fallback when state is
+lost. Publishing a terminal partial result and deleting state on those failures
+would directly contradict that product rule.
+
+The future fixed-result video job therefore publishes no final `result.md`
+while any frame group or audio unit remains missing because of cancellation,
+provider, extraction, decoding, or parsing failure. It retains every settled
+paid unit, raises the typed failure, and lets a later explicit `resume=True`
+retry only the missing work. This does not authorize adapter retries.
+
+Exact `VIDEO_NO_AUDIO_STREAM` and exact `NoSpeechDetected` are already-settled
+terminal absence, not retryable gaps. They must be recorded and not dispatched
+again. Once every unit is recognized or terminal absence, final publication is
+allowed; no-speech and cleanup-only warnings may make that result `partial`.
+The existing low-level recognize/compose/publish API keeps its current ability
+to publish caller-selected partial outcomes. No journal schema or runtime API
+is implemented in this decision-only iteration.
