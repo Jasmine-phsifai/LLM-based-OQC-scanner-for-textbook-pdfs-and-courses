@@ -6461,3 +6461,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **两条路线与最小修复。** 路线 A 是抽取全库共享的原子文件命名和 Windows 路径框架；路线 B 是让现有长音频路径规划器同时检查两个真实写入器共同使用的最长 UUID 临时兄弟路径。选择 B。规划器新增一个明确的内部探测名，并把它加入原有 259 单元判断；没有改变公开 API、文件名、状态格式或写入顺序。修复后的同一公开回归在 snapshot 和 provider 之前返回 `OUTPUT_PATH_INVALID`，供应商调用列表为空，输出 root 也不存在。
 
 **验证与过度设计复查。** 失败优先测试先精确得到 `OUTPUT_WRITE_FAILED`，修复后路径规划、状态原子写入和 interval 相邻集合 **35 passed in 0.29s**，整个 whole persistence 文件 **9 passed in 0.11s**，`git diff --check` 通过。轻量执行者补入本机已有 Node 路径后运行完整离线门禁，结果为 **1,825 passed in 81.46s**，0 失败、0 跳过。没有 provider、网络、下载或凭据读取。最接近过度设计的是为了避免未来临时名漂移而建立共享命名模块；目前只有这一规划器需要做最坏长度预检，公共回归又直接经过真实 writer，新增抽象只会增加冷读成本。也没有自动截短、Windows extended-path 层、事务、锁、retry/fallback 或把两个后续缺陷一起修掉。
+
+## #379 — 2026-08-26：批量恢复在任何调用前检查全部图片状态文件
+
+**本轮英文原子任务。** `Atomic task — Iteration #379: enforce the already-settled complete preflight contract for recognize_batch(..., resume=True). Context: #378’s independent audit proved that a missing or corrupt resume sidecar on a later tuple member can be discovered only after an earlier member has already called the provider and published output. Success criteria: reconcile current authority and code; reproduce the public failure with a later invalid sidecar; validate every resume target before any provider dispatch while preserving exact-tuple order and existing valid item contracts; add no transaction, lock, compatibility iterable, or second batch abstraction; personally review; run focused and full offline gates; update Chinese/current-state records; commit and push. Why it matters: batch validation promises zero paid work and zero partial publication when any member is invalid.`
+
+**失败优先证据与语义边界。** 公共回归建立两个图片项，让后一个目标已经存在 Markdown，并分别让其固定 sidecar 缺失或只有损坏的 `{`。旧实现两种参数都以 “DID NOT RAISE” 失败，因为完整 batch preflight 只检查输出目标，随后第一个项目已经进入识别，后一个项目开始时才由单项入口发现 `RESUME_STATE_INVALID`。独立只读审查确认同一根因和插入点。必须保留的边界是：当 Markdown 与 sidecar 都不存在时，`resume=True` 仍表示一个允许开始的新项目；缺失 sidecar 不能被机械地一律拒绝。
+
+**两条路线与实现。** 路线 A 是给 batch 增加事务、回滚或先运行后撤销；路线 B 是在已有只读 preflight 中对每个已解析图片目标调用现有严格 loader。选择 B。损坏状态直接沿用 loader 的类型化错误；只有输出已存在而状态缺失时复用现行单项错误。完整 source fingerprint 和请求身份仍需经过 validated snapshot，因此留在逐项执行边界，没有为了“更完整”而提前创建快照。固定 sidecar 命名从一个消费者变成两个真实消费者后，新增同名窄函数 `resolve_image_resume_state_path()`，单项与 batch 共用它，避免同一持久化约定漂移。
+
+**验证与过度设计复查。** 修复后缺失与损坏两个失败优先参数均通过；batch 执行、旧缺陷回归、image resume、state loader 和成熟度相邻集合 **94 passed in 3.07s**，`compileall` 与 `git diff --check` 通过。轻量执行者补入本机已有 Node 路径后运行完整离线门禁，结果为 **1,827 passed in 78.11s**，0 失败、0 跳过。没有网络、provider、下载或凭据读取。没有 eager snapshot、完整 identity 预演、state cache、事务、rollback、锁、任意 iterable 兼容或第二个 batch abstraction。新增路径函数只有一个固定规则和两个当前消费者，属于消除真实重复，不是未来框架。

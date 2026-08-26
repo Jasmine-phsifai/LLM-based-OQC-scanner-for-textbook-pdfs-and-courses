@@ -1099,7 +1099,8 @@ explicitly authorizes that work.
 
 #378 closes a real Windows long-audio preflight gap: planning now includes the
 longer atomic `.ocrllm-<32 hex>.tmp` sibling, so unsupported paths are rejected
-before any provider call. The next two proven active defects are batch-wide
-resume-sidecar preflight, then restoration of saved video interval minutes when
-`resume=True` omits that argument. Keep both fixes atomic and reuse existing
-load/validation behavior; do not build transactions or configuration migration.
+before any provider call. #379 closes the next batch-wide resume-sidecar gap by
+loading every resolved image sidecar before any item dispatches. The next proven
+active defect is restoration of saved video interval minutes when `resume=True`
+omits that argument. Keep that fix atomic and reuse existing journal validation;
+do not build transactions or configuration migration.

@@ -108,12 +108,12 @@ def _recognize(
                         from .output.load_image_resume_state import (
                             load_image_resume_state,
                         )
+                        from .output.resolve_image_resume_state_path import (
+                            resolve_image_resume_state_path,
+                        )
                         from .reuse_image_resume_state import reuse_image_resume_state
 
-                        # The sibling suffix is a durable persistence convention.
-                        resume_state_path = output_path.with_name(
-                            f"{output_path.stem}.ocrllm-state.json"
-                        )
+                        resume_state_path = resolve_image_resume_state_path(output_path)
                         if (
                             not cfg.resume
                             and os.path.lexists(resume_state_path)

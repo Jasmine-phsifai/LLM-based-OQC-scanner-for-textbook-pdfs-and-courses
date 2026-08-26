@@ -1669,6 +1669,17 @@ transaction, retry, or provider change was added. Two independent findings
 remain queued: complete batch resume-sidecar preflight first, then omitted
 video interval-minute restoration from its own journal.
 
+#379 closes the queued batch resume-sidecar preflight defect. Every resolved
+image target now has its sidecar parsed during complete batch preflight, so a
+later corrupt state or existing result without state rejects the tuple before
+any provider call or publication. A missing state with no result remains a
+valid new resumable item. The fixed sidecar name is shared through one narrow
+resolver; full request identity remains at the existing validated-snapshot
+boundary. No transaction, rollback, eager snapshot, lock, iterable
+compatibility, or second batch abstraction was added. The next proven defect is
+video interval resume with an omitted minutes argument. The complete offline
+suite passes all 1,827 tests.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

@@ -8,7 +8,9 @@ from pathlib import Path
 from .audio.probe_short_mp3 import probe_short_mp3
 from .coerce_source_paths import coerce_source_paths
 from .config import Config
-from .errors import InvalidSource, OutputError, OutputExists
+from .errors import InvalidSource, OutputError, OutputExists, ResumeStateError
+from .output.load_image_resume_state import load_image_resume_state
+from .output.resolve_image_resume_state_path import resolve_image_resume_state_path
 from .output.resolve_output_path import resolve_output_path
 from .profiles.resolve_image_profile import resolve_image_profile
 from .validate_execution_image_count import validate_execution_image_count
@@ -40,6 +42,15 @@ def preflight_recognition_batch(
             )
             if output_path is not None:
                 _validate_output_target_without_writing(output_path, config=config)
+                if config.resume:
+                    resume_state = load_image_resume_state(
+                        resolve_image_resume_state_path(output_path)
+                    )
+                    if resume_state is None and output_path.exists():
+                        raise ResumeStateError(
+                            "Existing image output has no matching resume state.",
+                            code="RESUME_STATE_INVALID",
+                        ) from None
                 resolved_targets.append(output_path)
         elif media_type == "pdf":
             raise InvalidSource(

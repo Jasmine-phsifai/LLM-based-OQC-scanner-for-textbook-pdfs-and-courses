@@ -21,6 +21,7 @@ from ocrllm.errors import (
     OutputExists,
     ProviderError,
     ProviderUnavailable,
+    ResumeStateError,
 )
 
 from write_test_image import write_test_image
@@ -346,6 +347,44 @@ def test_batch_preflights_later_corrupt_image_before_any_call_or_output(tmp_path
     assert caught.value.code == "SOURCE_INVALID"
     assert provider.calls == 0
     assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
+@pytest.mark.parametrize("later_state_bytes", (None, b"{"))
+def test_batch_preflights_every_later_resume_sidecar_before_any_call(
+    tmp_path,
+    later_state_bytes,
+):
+    first = write_test_image(tmp_path / "first.png")
+    later = write_test_image(tmp_path / "later.png")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    later_output = output_dir / "later_board.md"
+    later_output.write_text("original", encoding="utf-8")
+    if later_state_bytes is not None:
+        (output_dir / "later_board.ocrllm-state.json").write_bytes(
+            later_state_bytes
+        )
+    temp_dir = tmp_path / "temp"
+    provider = NumberedProvider()
+    provider.resume_identity = "batch-preflight-v1"
+
+    with pytest.raises(ResumeStateError) as caught:
+        recognize_batch(
+            (first, later),
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+                resume=True,
+            ),
+        )
+
+    assert caught.value.code == "RESUME_STATE_INVALID"
+    assert provider.calls == 0
+    assert later_output.read_text(encoding="utf-8") == "original"
+    assert not (output_dir / "first_board.md").exists()
+    assert not (output_dir / "first_board.ocrllm-state.json").exists()
     assert not temp_dir.exists()
 
 

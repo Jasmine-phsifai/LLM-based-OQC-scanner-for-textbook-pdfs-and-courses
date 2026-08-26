@@ -3959,12 +3959,12 @@ Post-register findings are ordered by demonstrated user impact:
   One provider call could therefore settle before the first write failed. The
   planner now checks the real `.ocrllm-<32 hex>.tmp` shape and rejects it with
   `OUTPUT_PATH_INVALID` before snapshot or provider work.
-- Open, medium-high: `recognize_batch(..., resume=True)` validates later resume
-  sidecars only as their items start. A missing or corrupt later sidecar can
-  therefore be discovered after an earlier item has dispatched and published,
-  contrary to the complete preflight rule. The next fix must reuse the existing
-  image resume loader during batch preflight; it must not add a transaction
-  system or a second batch abstraction.
+- #379 closes the medium-high batch resume-preflight defect. Every resolved
+  image output now has its fixed sidecar loaded during complete batch preflight.
+  A corrupt sidecar, or an existing Markdown result with no sidecar, rejects the
+  entire tuple before snapshot, provider dispatch, or publication. A new item
+  with neither result nor sidecar remains valid. Per-item source fingerprint and
+  full identity checks stay at the existing snapshot boundary.
 - Open, medium: `recognize_video_to_markdown(..., resume=True)` does not yet use
   the journal's saved interval minutes when the caller omits
   `audio_interval_minutes`. Omission should restore the saved exact integer;
@@ -7312,3 +7312,20 @@ narrow correction for the real legacy long-path incident: it adds no extended
 path support, shortening, generic path framework, transaction, retry, or
 provider behavior. Focused planner/state/whole/interval persistence coverage
 passes, and the complete offline suite passes all 1,825 tests.
+
+## Current working update: #379 completes batch resume-sidecar preflight
+
+`recognize_batch(..., resume=True)` now loads every resolved image sidecar in
+the existing complete, read-only batch preflight. A later corrupt sidecar, or a
+later existing Markdown output whose sidecar is absent, raises the existing
+`RESUME_STATE_INVALID` before any item can snapshot, call a provider, publish,
+or create its output state. Missing state remains valid when the corresponding
+output is also absent, preserving the supported new-work path under resume.
+
+The fixed sibling convention now has two real consumers, so one narrow
+`resolve_image_resume_state_path()` function owns it; both batch preflight and
+single-item execution use that same path. Full request identity still requires
+validated snapshots and remains in per-item execution. This change adds no
+transaction, rollback, eager snapshot, cross-process lock, iterable
+compatibility, or second batch abstraction. The focused batch/image-resume set
+passes 94 tests, and the complete offline suite passes all 1,827 tests.
