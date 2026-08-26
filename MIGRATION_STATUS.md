@@ -1658,6 +1658,17 @@ settled short-audio result, and no final digest; `result.md` was absent. The
 attempt was not retried or model-switched. This proves honest failure and state
 retention, not live publication or zero-call resume, so that gate remains open.
 
+#378 closes a proven standalone long-audio Windows path defect. The output
+planner previously admitted a root whose fixed sidecar fit the traditional
+limit while the actual UUID-shaped atomic state/Markdown sibling exceeded it;
+the provider could settle before the first durable write failed. The existing
+preflight now checks that real temporary-name shape and the public regression
+proves `OUTPUT_PATH_INVALID`, zero provider calls, and no output root. The full
+offline suite passes all 1,825 tests. No extended-path layer, shortening,
+transaction, retry, or provider change was added. Two independent findings
+remain queued: complete batch resume-sidecar preflight first, then omitted
+video interval-minute restoration from its own journal.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

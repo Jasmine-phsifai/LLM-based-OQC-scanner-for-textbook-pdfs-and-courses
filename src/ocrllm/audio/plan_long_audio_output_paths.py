@@ -15,6 +15,7 @@ from .long_audio_output_paths import (
 
 
 _MAX_LEGACY_WINDOWS_PATH_UNITS = 259
+_ATOMIC_TEMPORARY_PATH_PROBE_NAME = f".ocrllm-{'0' * 32}.tmp"
 
 
 def plan_long_audio_output_paths(
@@ -34,11 +35,18 @@ def plan_long_audio_output_paths(
         result=root / LONG_AUDIO_RESULT_NAME,
         resume_state=root / LONG_AUDIO_RESUME_STATE_NAME,
     )
+    # Both long-audio state and Markdown writers use this UUID-shaped sibling.
+    atomic_temporary_path = paths.root / _ATOMIC_TEMPORARY_PATH_PROBE_NAME
 
     try:
         if os.name == "nt" and any(
             _windows_path_units(path) > _MAX_LEGACY_WINDOWS_PATH_UNITS
-            for path in (paths.root, paths.result, paths.resume_state)
+            for path in (
+                paths.root,
+                paths.result,
+                paths.resume_state,
+                atomic_temporary_path,
+            )
         ):
             raise OutputError(
                 "The long-audio output path exceeds the supported Windows limit.",

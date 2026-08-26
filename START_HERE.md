@@ -1096,3 +1096,10 @@ Active-library migration tests must not modify or run the legacy suite as a
 phase gate. Create fixtures and tests under root `tests/`. Legacy commands and
 tests are historical reference unless a separate legacy-maintenance request
 explicitly authorizes that work.
+
+#378 closes a real Windows long-audio preflight gap: planning now includes the
+longer atomic `.ocrllm-<32 hex>.tmp` sibling, so unsupported paths are rejected
+before any provider call. The next two proven active defects are batch-wide
+resume-sidecar preflight, then restoration of saved video interval minutes when
+`resume=True` omits that argument. Keep both fixes atomic and reuse existing
+load/validation behavior; do not build transactions or configuration migration.

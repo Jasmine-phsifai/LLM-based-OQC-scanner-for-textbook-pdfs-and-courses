@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -380,6 +381,29 @@ def test_new_run_collision_stops_before_snapshot_and_provider(
     assert provider_calls == []
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows legacy path-limit regression")
+def test_atomic_temporary_path_is_rejected_before_long_audio_provider(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    if _windows_path_units(tmp_path) >= 207:
+        pytest.skip("pytest temporary root is already beyond the controlled range")
+    output_dir = _make_directory_with_windows_path_units(tmp_path, 207)
+    provider_calls: list[str] = []
+    _install_fakes(monkeypatch, provider_calls)
+    _enforce_legacy_windows_open_limit(monkeypatch)
+
+    with pytest.raises(OutputError) as captured:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir),
+        )
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert provider_calls == []
+    assert not (output_dir / "lecture").exists()
+
+
 def test_paid_state_survives_snapshot_cleanup_failure(
     tmp_path: Path,
     monkeypatch,
@@ -395,3 +419,34 @@ def test_paid_state_survives_snapshot_cleanup_failure(
     assert provider_calls == [MODEL]
     assert _state_path(output_dir).is_file()
     assert not (_root(output_dir) / "result.md").exists()
+
+
+def _windows_path_units(path: Path) -> int:
+    return len(str(path).encode("utf-16-le")) // 2
+
+
+def _make_directory_with_windows_path_units(base: Path, target_units: int) -> Path:
+    current = base
+    while _windows_path_units(current) < target_units:
+        remaining = target_units - _windows_path_units(current) - 1
+        if remaining < 1:
+            raise AssertionError("target path length cannot be reached")
+        current /= "d" * min(40, remaining)
+    assert _windows_path_units(current) == target_units
+    current.mkdir(parents=True)
+    return current
+
+
+def _enforce_legacy_windows_open_limit(monkeypatch) -> None:
+    original_open = Path.open
+
+    def open_with_legacy_limit(path: Path, *args, **kwargs):
+        if _windows_path_units(path) > 259:
+            raise OSError(
+                206,
+                "test-only simulated legacy Windows path limit",
+                str(path),
+            )
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", open_with_legacy_limit)

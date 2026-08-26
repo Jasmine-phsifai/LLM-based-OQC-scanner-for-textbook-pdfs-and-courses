@@ -3951,6 +3951,26 @@ It does not re-prove every historical quota/error category or model quality;
 those remain separate bounded robustness questions rather than an open exit gate.
 Do not close an entry without a test that fails before the fix.
 
+Post-register findings are ordered by demonstrated user impact:
+
+- #378 closes a high-severity standalone long-audio path-preflight defect. On
+  Windows, the planner accepted roots whose fixed sidecar was at most 259
+  UTF-16 units even though the actual atomic state/Markdown sibling was longer.
+  One provider call could therefore settle before the first write failed. The
+  planner now checks the real `.ocrllm-<32 hex>.tmp` shape and rejects it with
+  `OUTPUT_PATH_INVALID` before snapshot or provider work.
+- Open, medium-high: `recognize_batch(..., resume=True)` validates later resume
+  sidecars only as their items start. A missing or corrupt later sidecar can
+  therefore be discovered after an earlier item has dispatched and published,
+  contrary to the complete preflight rule. The next fix must reuse the existing
+  image resume loader during batch preflight; it must not add a transaction
+  system or a second batch abstraction.
+- Open, medium: `recognize_video_to_markdown(..., resume=True)` does not yet use
+  the journal's saved interval minutes when the caller omits
+  `audio_interval_minutes`. Omission should restore the saved exact integer;
+  an explicitly different integer must remain a mismatch. Do not widen this
+  into a new configuration migration layer.
+
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
 lives in `tests/test_defect_register_regressions.py`. The current full-suite
@@ -7274,3 +7294,21 @@ video, and combined video/audio/image profiles and local smokes all pass. The
 combined smoke reports two retained frames, one frame result, and one audio
 result. No provider API was called; all gate-owned temporary directories were
 removed.
+
+## Current working update: #378 rejects the actual long-audio temporary path
+
+Standalone whole and interval long-audio writes use a random sibling named
+`.ocrllm-<32 hex>.tmp` for both state and final Markdown publication. That name
+is longer than the fixed resume sidecar, but the Windows path planner previously
+checked only the output root, final result, and sidecar. A controlled public
+regression proved that a root with a 246-unit sidecar and 260-unit atomic sibling
+was accepted, called the provider once, and then failed as
+`OUTPUT_WRITE_FAILED` without durable paid state.
+
+The planner now includes the actual atomic sibling shape in its existing
+259-UTF-16-unit Windows preflight. The same public call fails as
+`OUTPUT_PATH_INVALID` with zero provider calls and no output root. This is a
+narrow correction for the real legacy long-path incident: it adds no extended
+path support, shortening, generic path framework, transaction, retry, or
+provider behavior. Focused planner/state/whole/interval persistence coverage
+passes, and the complete offline suite passes all 1,825 tests.
