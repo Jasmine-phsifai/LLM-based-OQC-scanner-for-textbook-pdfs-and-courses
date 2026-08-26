@@ -7553,3 +7553,35 @@ included rather than overwritten independently. No state schema, retry,
 rollback, transaction, telemetry ledger, or provider behavior changed. The
 focused long-audio/video set passes 172 tests, and the complete offline suite
 passes all 1,837 tests.
+
+## Current working update: #396 preserves image client-cleanup failure on resume
+
+A provider-free public regression settles one structured image response with
+exact token usage and `client_closed=False`, persists its paid draft slot, then
+forces the completed resume-state write to fail. Before this correction, the
+partial state retained the Markdown but not the cleanup fact. A zero-call
+resume then published the right Markdown as `complete`, removed the warning,
+and incorrectly reported `provider_client_closed=True`. The same loss could
+reach PDF and video because both consume the image slot checkpoint.
+
+`ImageSlotCheckpoint` now persists the existing request-level
+`provider_client_closed` metadata with each paid slot and seeds the image
+processor from that exact boolean. False dominates later successful cleanup;
+an older partial state with no boolean remains unknown rather than being
+invented as true. Both a failed first-slot save and a failed completed-state
+save attach the known false cleanup fact to the existing typed error. A
+zero-call resume preserves the established warning, partial status, and false
+metadata while keeping historical token usage out of current-run totals. The
+slot document, state version, provider API, retry behavior, and public result
+schema are unchanged. The focused image/PDF/video set passes 116 tests; the
+complete offline suite passes all 1,848 tests.
+
+Fresh #396 audits also reproduced two separate defects that remain queued and
+must not be folded into this correction. First, the high-level video facade can
+under-count current-run provider calls and token usage when one branch fails
+after another frame/audio branch has already settled work in the journal.
+Second, resumed long-audio publication currently accepts a Windows junction as
+the job root and can write through it outside the physical output directory.
+Prefer the video accounting defect next because it affects ordinary paid-work
+honesty; keep the junction correction narrow and do not create a generalized
+filesystem ownership framework.

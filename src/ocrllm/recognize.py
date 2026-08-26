@@ -162,6 +162,7 @@ def _recognize(
                             )
 
                             seeded_slots = ()
+                            seeded_provider_client_closed: bool | None = True
                             if cfg.resume and resume_state is not None:
                                 from .validate_image_resume_identity import (
                                     validate_image_resume_identity,
@@ -173,6 +174,14 @@ def _recognize(
                                 )
                                 raise_if_cancelled(cfg.cancellation)
                                 seeded_slots = resume_state.slots
+                                saved_client_closed = resume_state.metadata.get(
+                                    "provider_client_closed"
+                                )
+                                seeded_provider_client_closed = (
+                                    saved_client_closed
+                                    if type(saved_client_closed) is bool
+                                    else None
+                                )
                             slot_checkpoint = ImageSlotCheckpoint(
                                 resume_identity,
                                 persist_state=lambda state: (
@@ -184,6 +193,9 @@ def _recognize(
                                 profile=profile,
                                 snapshot_paths=tuple(validated_paths),
                                 seeded_slots=seeded_slots,
+                                seeded_provider_client_closed=(
+                                    seeded_provider_client_closed
+                                ),
                             )
                             processor_output = recognize_validated_images(
                                 validated_paths,
@@ -326,6 +338,8 @@ def _recognize(
             error,
             processor_output.metadata.get("current_model_token_usage"),
         )
+        if processor_output.metadata.get("provider_client_closed") is False:
+            error._add_safe_detail("provider_client_closed", False)
         raise
     return result
 

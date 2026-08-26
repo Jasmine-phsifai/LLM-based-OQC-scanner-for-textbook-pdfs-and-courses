@@ -1134,6 +1134,10 @@ through three direct cycle-free internal imports. A clean installed wheel
 resolves the exact types without loading optional backends. #395 then moves the
 existing single-image output check and process-local claim ahead of image
 snapshotting, so a known collision performs no copy/decode/provider work while
-overwrite and resume behavior remain unchanged. The bounded reproduced queue
-is empty again; use a fresh public-lifecycle audit for the next atomic task
-rather than extending output preflight without evidence.
+overwrite and resume behavior remain unchanged. #396 then preserves an exact
+image-provider client-close failure in the existing partial resume metadata,
+so zero-call image/PDF/video reuse cannot turn that known cleanup failure into
+`complete` or report it as successful. No slot schema or state version changed.
+The next reproduced item is high-level video current-run call/token
+under-counting when another branch has already settled work; a narrower Windows
+long-audio junction-ownership defect follows it.

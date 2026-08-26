@@ -82,6 +82,11 @@ def recognize_video_job_frames(
                         reuse_image_resume_state(saved, current_identity)
                     )
                 else:
+                    saved_client_closed = (
+                        None
+                        if saved is None
+                        else saved.metadata.get("provider_client_closed")
+                    )
                     checkpoint = ImageSlotCheckpoint(
                         current_identity,
                         persist_state=lambda state, index=planned.index: (
@@ -90,6 +95,15 @@ def recognize_video_job_frames(
                         profile=profile,
                         snapshot_paths=tuple(snapshot_paths),
                         seeded_slots=() if saved is None else saved.slots,
+                        seeded_provider_client_closed=(
+                            True
+                            if saved is None
+                            else (
+                                saved_client_closed
+                                if type(saved_client_closed) is bool
+                                else None
+                            )
+                        ),
                     )
                     output = recognize_validated_images(
                         snapshot_paths,

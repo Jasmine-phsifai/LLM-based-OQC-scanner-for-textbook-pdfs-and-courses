@@ -303,7 +303,11 @@ def _recognize_images_once(
     )
 
     calls_dispatched = 0
-    provider_clients_closed = True
+    provider_clients_closed: bool | None = (
+        slot_checkpoint.provider_client_closed
+        if slot_checkpoint is not None
+        else True
+    )
     slot_ledger: list[dict[str, str | int | bool | None]] = []
     current_model_usage: dict[str, dict[str, int | None]] = {}
 
@@ -335,6 +339,11 @@ def _recognize_images_once(
         usage = settled_model_usage()
         if usage:
             error._add_safe_detail("settled_model_usage", usage)
+
+    def attach_client_cleanup_failure(error: OCRLLMError) -> None:
+        """Disclose a known cleanup failure from any settled workflow pass."""
+        if provider_clients_closed is False:
+            error._add_safe_detail("provider_client_closed", False)
 
     def run_pass(
         slot_id: str,
@@ -387,12 +396,18 @@ def _recognize_images_once(
                 calls_dispatched + local_calls_attempted,
             )
             attach_settled_model_usage(error)
+            attach_client_cleanup_failure(error)
             raise
         calls_dispatched += 1
         if type(provider_response) is VisionProviderResponse:
             markdown = provider_response.markdown
             provider_clients_closed = (
-                provider_clients_closed and provider_response.client_closed
+                False
+                if (
+                    provider_clients_closed is False
+                    or provider_response.client_closed is False
+                )
+                else provider_clients_closed
             )
             if resolved.model is not None:
                 usage = current_model_usage.get(resolved.model)
@@ -427,7 +442,8 @@ def _recognize_images_once(
                             markdown.encode("utf-8")
                         ).hexdigest(),
                         provider_calls_attempted=calls_dispatched,
-                    )
+                    ),
+                    provider_client_closed=provider_clients_closed,
                 )
             except OutputError as error:
                 error._add_safe_detail("workflow_pass", slot_id)
@@ -436,6 +452,7 @@ def _recognize_images_once(
                     calls_dispatched,
                 )
                 attach_settled_model_usage(error)
+                attach_client_cleanup_failure(error)
                 raise
         slot_ledger.append(
             {
@@ -504,6 +521,7 @@ def _recognize_images_once(
                 calls_dispatched,
             )
             attach_settled_model_usage(error)
+            attach_client_cleanup_failure(error)
             raise
         scout_prompt = build_board_sign_scout_prompt(markdown)
         scouts: list[str] = []
@@ -534,6 +552,7 @@ def _recognize_images_once(
                 },
             )
             attach_settled_model_usage(error)
+            attach_client_cleanup_failure(error)
             raise error from None
         markdown = restored.markdown
         restored_sign_count = restored.restored_count
@@ -588,11 +607,13 @@ def _recognize_images_once(
         )
     if current_model_usage:
         metadata["current_model_token_usage"] = current_model_token_usage()
-    if resolved_provider.name == "google" or not provider_clients_closed:
+    if provider_clients_closed is not None and (
+        resolved_provider.name == "google" or provider_clients_closed is False
+    ):
         metadata["provider_client_closed"] = provider_clients_closed
 
     warnings: tuple[str, ...] = ()
-    if not provider_clients_closed:
+    if provider_clients_closed is False:
         provider_name = {
             "dashscope": "DashScope",
             "google": "Google GenAI",

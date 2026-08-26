@@ -26,7 +26,14 @@ class ImageSlotCheckpoint:
         profile: str,
         snapshot_paths: tuple[Path, ...],
         seeded_slots: tuple[ImageSlotState, ...] = (),
+        seeded_provider_client_closed: bool | None = True,
     ) -> None:
+        if type(seeded_provider_client_closed) is not bool and (
+            seeded_provider_client_closed is not None
+        ):
+            raise TypeError(
+                "seeded_provider_client_closed must be a bool or None"
+            ) from None
         self._identity = identity
         self._persist_state = persist_state
         self._profile = profile
@@ -34,11 +41,17 @@ class ImageSlotCheckpoint:
         self._slots: dict[str, ImageSlotState] = {
             slot.slot_id: slot for slot in seeded_slots
         }
+        self._provider_client_closed = seeded_provider_client_closed
 
     @property
     def slots(self) -> tuple[ImageSlotState, ...]:
         """Return every persisted slot in completion order."""
         return tuple(self._slots.values())
+
+    @property
+    def provider_client_closed(self) -> bool | None:
+        """Return the aggregate cleanup fact for persisted paid slots."""
+        return self._provider_client_closed
 
     def reusable_slot(
         self,
@@ -53,8 +66,17 @@ class ImageSlotCheckpoint:
             return None
         return slot
 
-    def persist_slot(self, slot: ImageSlotState) -> None:
+    def persist_slot(
+        self,
+        slot: ImageSlotState,
+        *,
+        provider_client_closed: bool | None,
+    ) -> None:
         """Durably record one completed slot before the next call starts."""
+        if type(provider_client_closed) is not bool and (
+            provider_client_closed is not None
+        ):
+            raise TypeError("provider_client_closed must be a bool or None") from None
         self.verify_snapshots()
         candidate_slots = dict(self._slots)
         candidate_slots[slot.slot_id] = slot
@@ -71,10 +93,16 @@ class ImageSlotCheckpoint:
             status="partial",
             hotwords=(),
             warnings=(),
+            metadata=(
+                {"provider_client_closed": provider_client_closed}
+                if type(provider_client_closed) is bool
+                else {}
+            ),
             slots=tuple(candidate_slots.values()),
         )
         self._persist_state(state)
         self._slots = candidate_slots
+        self._provider_client_closed = provider_client_closed
 
     def verify_snapshots(self) -> None:
         """Reject owned snapshots that changed after request fingerprinting."""

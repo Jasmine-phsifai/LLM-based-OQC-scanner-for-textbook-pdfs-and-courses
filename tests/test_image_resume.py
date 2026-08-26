@@ -27,6 +27,7 @@ from ocrllm import (
 )
 from ocrllm.processor_output import ProcessorOutput
 from ocrllm.errors import ConfigError
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
 from write_test_image import write_test_image
 
@@ -868,7 +869,22 @@ def test_atomic_state_save_failure_publishes_no_output_or_temporary_state(
     source = write_test_image(tmp_path / "board.png")
     output_dir = tmp_path / "output"
     calls: list[tuple[Path, ...]] = []
-    _install_fake_dashscope(monkeypatch, calls)
+    adapter = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
+
+    def recognize_with_failed_client_cleanup(image_paths, *, prompt, config):
+        calls.append(tuple(image_paths))
+        return VisionProviderResponse(
+            markdown="# Paid board\n",
+            input_tokens=19,
+            output_tokens=7,
+            client_closed=False,
+        )
+
+    monkeypatch.setattr(
+        adapter,
+        "recognize_images",
+        recognize_with_failed_client_cleanup,
+    )
     saver = importlib.import_module("ocrllm.output.save_image_resume_state_atomically")
     def fail_state_replace(*_args):
         raise OSError("test-only state replace failure")
@@ -890,7 +906,17 @@ def test_atomic_state_save_failure_publishes_no_output_or_temporary_state(
             "provider_calls_attempted": 1,
         },
     )
-    assert "settled_model_usage" not in captured.value.details
+    assert captured.value.details["provider_client_closed"] is False
+    assert tuple(
+        dict(item) for item in captured.value.details["settled_model_usage"]
+    ) == (
+        {
+            "model": "qwen3.7-plus-2026-05-26",
+            "input_count": 19,
+            "output_count": 7,
+            "unit": "tokens",
+        },
+    )
     assert len(calls) == 1
     assert not (output_dir / "board_board.md").exists()
     assert not _state_path(output_dir).exists()
@@ -947,7 +973,22 @@ def test_completed_state_short_write_keeps_reusable_partial_state(
     output_path = output_dir / "board_board.md"
     state_path = _state_path(output_dir)
     calls: list[tuple[Path, ...]] = []
-    _install_fake_dashscope(monkeypatch, calls)
+    adapter = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
+
+    def recognize_with_failed_client_cleanup(image_paths, *, prompt, config):
+        calls.append(tuple(image_paths))
+        return VisionProviderResponse(
+            markdown="# Resumable board\n",
+            input_tokens=19,
+            output_tokens=7,
+            client_closed=False,
+        )
+
+    monkeypatch.setattr(
+        adapter,
+        "recognize_images",
+        recognize_with_failed_client_cleanup,
+    )
     real_open = Path.open
     partial_before: bytes | None = None
     completed_write_was_short = False
@@ -961,7 +1002,10 @@ def test_completed_state_short_write_keeps_reusable_partial_state(
 
         def write(self, data):
             nonlocal completed_write_was_short, partial_before
-            if not completed_write_was_short and b'"status":"complete"' in data:
+            if (
+                not completed_write_was_short
+                and b'"final_markdown_sha256":""' not in data
+            ):
                 partial_before = state_path.read_bytes()
                 completed_write_was_short = True
                 return self.wrapped.write(data[:-1])
@@ -986,6 +1030,17 @@ def test_completed_state_short_write_keeps_reusable_partial_state(
 
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
     assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["provider_client_closed"] is False
+    assert tuple(
+        dict(item) for item in captured.value.details["settled_model_usage"]
+    ) == (
+        {
+            "model": "qwen3.7-plus-2026-05-26",
+            "input_count": 19,
+            "output_count": 7,
+            "unit": "tokens",
+        },
+    )
     assert "workflow_pass" not in captured.value.details
     assert len(calls) == 1
     assert completed_write_was_short is True
@@ -994,6 +1049,9 @@ def test_completed_state_short_write_keeps_reusable_partial_state(
     partial_document = json.loads(partial_before)
     assert partial_document["result"]["status"] == "partial"
     assert partial_document["result"]["markdown"] == ""
+    assert partial_document["result"]["metadata"] == {
+        "provider_client_closed": False
+    }
     assert [slot["slot_id"] for slot in partial_document["slots"]] == ["draft"]
     assert not output_path.exists()
     assert list(output_dir.glob(".ocrllm-*.tmp")) == []
@@ -1002,11 +1060,20 @@ def test_completed_state_short_write_keeps_reusable_partial_state(
 
     assert resumed.markdown == "# Resumable board\n"
     assert resumed.output_path == output_path
+    assert resumed.status == "partial"
+    assert resumed.metadata["provider_client_closed"] is False
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert "current_model_token_usage" not in resumed.metadata
+    assert resumed.warnings == (
+        "The DashScope client could not be closed after recognition.",
+    )
     assert len(calls) == 1
     assert output_path.read_text(encoding="utf-8") == resumed.markdown
-    assert json.loads(state_path.read_text(encoding="utf-8"))["result"][
-        "status"
-    ] == "complete"
+    completed_document = json.loads(state_path.read_text(encoding="utf-8"))
+    assert completed_document["result"]["status"] == "partial"
+    assert completed_document["result"]["metadata"][
+        "provider_client_closed"
+    ] is False
 
 
 def test_all_slots_partial_resume_honors_cancellation_before_final_publication(
