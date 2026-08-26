@@ -6,7 +6,11 @@ import hashlib
 from dataclasses import replace
 from pathlib import Path
 
+from .attach_current_video_evidence_to_error import (
+    attach_current_video_evidence_to_error,
+)
 from .compose_video_result import compose_video_result
+from .errors import OCRLLMError
 from .publish_video_result import publish_video_result
 from .result import RecognitionResult
 from .video_job_journal import VideoJobJournal
@@ -42,8 +46,16 @@ def finalize_video_job(
         _validate_existing_result(result_path, expected=composed.markdown)
         result = replace(composed, output_path=result_path)
     else:
-        journal.persist_final_digest(digest)
-        result = publish_video_result(outcome, result_path)
+        try:
+            journal.persist_final_digest(digest)
+            result = publish_video_result(outcome, result_path)
+        except OCRLLMError as error:
+            attach_current_video_evidence_to_error(
+                error,
+                before=(composed,),
+                primary_provider_calls_attempted=0,
+            )
+            raise
 
     try:
         journal.path.unlink()

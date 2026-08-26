@@ -855,6 +855,265 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
     assert _root_journals(output_root) == ()
 
 
+def test_completed_frame_state_save_failure_reports_paid_work_and_resumes_zero_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "frame-state-save-failure.mp4"
+    source.write_bytes(b"stable-video-before-completed-frame-state-save-failure")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    media_calls = _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=False,
+    )
+    journal_module = __import__(
+        "ocrllm.video_job_journal",
+        fromlist=["VideoJobJournal"],
+    )
+
+    class UsageImageProvider:
+        resume_identity = "video-completed-frame-save-failure-v1"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            return VisionProviderResponse(
+                markdown="# Paid frame\n",
+                input_tokens=13,
+                output_tokens=3,
+                client_closed=True,
+            )
+
+    real_persist_image_state = (
+        journal_module.VideoJobJournal.persist_image_state
+    )
+    completed_save_attempts = 0
+
+    def fail_first_completed_state_save(self, group_index, state):
+        nonlocal completed_save_attempts
+        if state.markdown:
+            completed_save_attempts += 1
+            if completed_save_attempts == 1:
+                raise OutputError(
+                    "The completed frame state could not be saved.",
+                    code="OUTPUT_WRITE_FAILED",
+                )
+        return real_persist_image_state(self, group_index, state)
+
+    monkeypatch.setattr(
+        journal_module.VideoJobJournal,
+        "persist_image_state",
+        fail_first_completed_state_save,
+    )
+    image_provider = UsageImageProvider()
+    image_config = Config(
+        provider=image_provider,
+        vision_model=VisionModelSettings(name="test-image-model"),
+    )
+    audio_config = _audio_config(tmp_path)
+
+    with pytest.raises(OutputError) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+        )
+
+    assert type(captured.value) is OutputError
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_count": 13,
+            "output_count": 3,
+            "unit": "tokens",
+        },
+    )
+    journals = _root_journals(output_root)
+    assert len(journals) == 1
+    saved_image = load_video_job_state(journals[0]).frame_groups[0].image_state
+    assert saved_image is not None
+    assert saved_image.markdown == ""
+    assert len(saved_image.slots) == 1
+    assert not (output_root / "result.md").exists()
+
+    result = _public_facade()(
+        source,
+        output_dir=output_parent,
+        image_config=image_config,
+        audio_config=audio_config,
+        resume=True,
+    )
+
+    assert result.metadata["current_run_provider_call_count"] == 0
+    assert "current_model_token_usage" not in result.metadata
+    assert result.output_path == output_root / "result.md"
+    assert "# Paid frame" in result.markdown
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert image_provider.calls == 1
+    assert completed_save_attempts == 2
+    assert media_calls == {"prepare": 1, "extract": 1}
+    assert _root_journals(output_root) == ()
+
+
+@pytest.mark.parametrize("failure_stage", ("final_state", "publication"))
+def test_finalization_failure_reports_both_branches_and_resumes_zero_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure_stage: str,
+) -> None:
+    source = tmp_path / f"{failure_stage}-failure.mp4"
+    source.write_bytes(b"stable-video-before-finalization-failure")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    media_calls = _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=True,
+    )
+    job_audio = __import__(
+        "ocrllm.recognize_video_job_audio",
+        fromlist=["recognize_video_job_audio"],
+    )
+    finalizer = __import__(
+        "ocrllm.finalize_video_job",
+        fromlist=["publish_video_result"],
+    )
+    journal_module = __import__(
+        "ocrllm.video_job_journal",
+        fromlist=["VideoJobJournal"],
+    )
+
+    class UsageImageProvider:
+        resume_identity = "video-final-publication-failure-v1"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def recognize_images(self, image_paths, *, prompt, config):
+            self.calls += 1
+            return VisionProviderResponse(
+                markdown="# Paid frame\n",
+                input_tokens=13,
+                output_tokens=3,
+                client_closed=True,
+            )
+
+    audio_calls = 0
+    failure_calls = 0
+    real_publish = finalizer.publish_video_result
+    real_persist_final_digest = (
+        journal_module.VideoJobJournal.persist_final_digest
+    )
+
+    def recognize_audio(_snapshot, *, prompt, config):
+        nonlocal audio_calls
+        audio_calls += 1
+        return GoogleGenAIAudioResponse(
+            markdown="# Paid audio\n",
+            input_tokens=17,
+            output_tokens=5,
+            client_closed=True,
+        )
+
+    def fail_first_publication(outcome, output_path, *, overwrite=False):
+        nonlocal failure_calls
+        failure_calls += 1
+        if failure_calls == 1:
+            raise OutputError(
+                "The final video Markdown could not be published.",
+                code="OUTPUT_WRITE_FAILED",
+            )
+        return real_publish(outcome, output_path, overwrite=overwrite)
+
+    def fail_first_final_state_save(self, digest):
+        nonlocal failure_calls
+        failure_calls += 1
+        if failure_calls == 1:
+            raise OutputError(
+                "The final video identity could not be saved.",
+                code="OUTPUT_WRITE_FAILED",
+            )
+        return real_persist_final_digest(self, digest)
+
+    monkeypatch.setattr(job_audio, "recognize_short_mp3", recognize_audio)
+    if failure_stage == "publication":
+        monkeypatch.setattr(finalizer, "publish_video_result", fail_first_publication)
+    else:
+        monkeypatch.setattr(
+            journal_module.VideoJobJournal,
+            "persist_final_digest",
+            fail_first_final_state_save,
+        )
+    image_provider = UsageImageProvider()
+    image_config = Config(
+        provider=image_provider,
+        vision_model=VisionModelSettings(name="test-image-model"),
+    )
+    audio_config = _audio_config(tmp_path)
+
+    with pytest.raises(OutputError) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+        )
+
+    assert type(captured.value) is OutputError
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 2
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-image-model",
+            "input_count": 13,
+            "output_count": 3,
+            "unit": "tokens",
+        },
+        {
+            "model": "test-audio-model",
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        },
+    )
+    journals = _root_journals(output_root)
+    assert len(journals) == 1
+    saved = load_video_job_state(journals[0])
+    assert saved.frame_groups[0].image_state is not None
+    assert saved.frame_groups[0].image_state.markdown == "# Paid frame\n"
+    assert saved.audio.short_state is not None
+    assert saved.audio.short_state.markdown == "# Paid audio\n"
+    assert not (output_root / "result.md").exists()
+
+    result = _public_facade()(
+        source,
+        output_dir=output_parent,
+        image_config=image_config,
+        audio_config=audio_config,
+        resume=True,
+    )
+
+    assert result.metadata["current_run_provider_call_count"] == 0
+    assert "current_model_token_usage" not in result.metadata
+    assert result.output_path == output_root / "result.md"
+    assert "# Paid frame" in result.markdown
+    assert "# Paid audio" in result.markdown
+    assert result.output_path.read_text(encoding="utf-8") == result.markdown
+    assert image_provider.calls == audio_calls == 1
+    assert failure_calls == 2
+    assert media_calls == {"prepare": 1, "extract": 1}
+    assert _root_journals(output_root) == ()
+
+
 @pytest.mark.parametrize("settlement", ("recognized", "no_speech"))
 def test_short_audio_settlement_save_failure_preserves_paid_evidence(
     tmp_path: Path,

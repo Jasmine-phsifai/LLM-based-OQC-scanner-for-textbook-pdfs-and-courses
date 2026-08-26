@@ -7673,3 +7673,30 @@ read boundary but source identity blocks dispatch, publication, and deletion;
 do not resume speculative path hardening ahead of the three paid-evidence items.
 Hostile numeric subclasses and enormous JSON integers are lower-priority input
 hardening, not a reason to build a shared validation framework.
+
+## Current working update: #401 preserves post-settlement video evidence
+
+Provider-free public regressions now cover three failures after paid video work
+has settled: the completed image-state save, the final digest save, and final
+Markdown publication. Previously each typed `OUTPUT_WRITE_FAILED` could omit
+the current run's provider-call count and token rows even though the journal
+retained enough paid state for a zero-call resume.
+
+The frame path now builds its existing `RecognitionResult` before the completed
+state save and attaches that result to a typed local persistence error. Final
+digest persistence and publication similarly attach the already-composed video
+result. Both paths reuse the video-only evidence merger introduced by #397;
+an explicit zero represents only the local save/publish operation and is never
+published as a misleading subtotal when another component's call count is
+unknown. The original error object, class, code, message, and retryability stay
+unchanged. Resume reuses the journaled frame and audio work, makes zero provider
+calls, excludes historical tokens from current-run usage, publishes the exact
+paid Markdown, and removes the journal.
+
+No journal schema, public result type, retry/fallback policy, transaction,
+provider abstraction, or cleanup-detail propagation was added. Focused video
+lifecycle coverage passes 121 tests; the complete offline suite passes all
+1,856 tests with zero skips. Independent review found no blocking issue and
+confirmed that inner and outer evidence attachment do not double-count. The
+next bounded item is short and memory-only whole-audio snapshot-cleanup evidence;
+Google audio response-validation usage remains a separate following correction.

@@ -1160,3 +1160,12 @@ resume can retain every settled candidate without changing the v2 document or
 public workflow names. The next reproduced item is video post-settlement state
 save/publication error evidence, followed by audio snapshot-cleanup evidence
 and response-validation token evidence.
+
+#401 closes the first of those items. Completed frame-state persistence, final
+video digest persistence, and final Markdown publication now preserve all exact
+current-run image/audio call and token evidence on the original typed error.
+The journal remains recoverable, and resume publishes the same paid content
+with zero new calls and no historical usage counted as current. This reuses the
+video-only evidence merger; it adds no transaction, retry system, state schema,
+or generic telemetry layer. Next address audio snapshot-cleanup evidence, then
+the separately reproduced Google audio response-validation token evidence.

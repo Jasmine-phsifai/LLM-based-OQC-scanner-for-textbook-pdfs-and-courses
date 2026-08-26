@@ -18,14 +18,20 @@ def attach_current_video_evidence_to_error(
     *,
     before: tuple[VideoEvidence, ...] = (),
     after: tuple[VideoEvidence, ...] = (),
+    primary_provider_calls_attempted: int | None = None,
 ) -> None:
-    """Merge current calls and token usage without replacing the primary error."""
+    """Merge current calls and usage; an explicit primary count is local work."""
     ordered_evidence = (*before, primary_error, *after)
     call_counts: list[int | None] = []
     usage_rows: list[dict[str, str | int | None]] = []
     for item in ordered_evidence:
         if isinstance(item, OCRLLMError):
-            count = item.details.get("provider_calls_attempted")
+            count = (
+                primary_provider_calls_attempted
+                if item is primary_error
+                and primary_provider_calls_attempted is not None
+                else item.details.get("provider_calls_attempted")
+            )
             usage_rows.extend(aggregate_current_model_token_usage((), (item,)))
         else:
             count = (

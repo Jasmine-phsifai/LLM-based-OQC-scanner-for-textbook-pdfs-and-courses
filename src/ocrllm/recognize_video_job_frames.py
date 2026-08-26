@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from .attach_current_video_evidence_to_error import (
+    attach_current_video_evidence_to_error,
+)
 from .attach_video_frame_group_identity import attach_video_frame_group_identity
 from .batch_item_outcome import BatchItemOutcome
 from .build_image_resume_state import build_image_resume_state
@@ -86,6 +89,7 @@ def recognize_video_job_frames(
                         output = _normalize_reused_output(
                             reuse_image_resume_state(saved, current_identity)
                         )
+                        result = build_recognition_result(output, output_path=None)
                     else:
                         saved_client_closed = (
                             None
@@ -117,27 +121,33 @@ def recognize_video_job_frames(
                             slot_checkpoint=checkpoint,
                         )
                         output = _normalize_fresh_output(output)
-                        journal.persist_image_state(
-                            planned.index,
-                            build_image_resume_state(
+                        result = build_recognition_result(output, output_path=None)
+                        try:
+                            completed_state = build_image_resume_state(
                                 current_identity,
                                 output,
                                 slots=checkpoint.slots,
-                            ),
-                        )
+                            )
+                            journal.persist_image_state(
+                                planned.index,
+                                completed_state,
+                            )
+                        except OCRLLMError as error:
+                            attach_current_video_evidence_to_error(
+                                error,
+                                before=(result,),
+                                primary_provider_calls_attempted=0,
+                            )
+                            raise
 
                 outcome = BatchItemOutcome(
                     index=planned.index,
-                    result=build_recognition_result(output, output_path=None),
+                    result=result,
                 )
                 outcomes.append(
                     attach_video_frame_group_identity(outcome, frames_group)
                 )
     except OCRLLMError as error:
-        from .attach_current_video_evidence_to_error import (
-            attach_current_video_evidence_to_error,
-        )
-
         attach_current_video_evidence_to_error(
             error,
             before=tuple(
