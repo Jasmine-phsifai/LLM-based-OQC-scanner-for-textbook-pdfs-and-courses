@@ -369,6 +369,70 @@ def test_google_response_without_text_reports_safe_missing_text_reason():
 
     assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
     assert captured.value.details["reason"] == "missing_text"
+    assert "settled_model_usage" not in captured.value.details
+
+
+def test_public_google_missing_text_preserves_reported_usage(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+    fake = _FakeGoogleModule()
+
+    def return_missing_text_with_usage(*, model, contents):
+        fake.models.generate_calls.append({"model": model, "contents": contents})
+        return SimpleNamespace(
+            text=None,
+            prompt_feedback=None,
+            candidates=(),
+            usage_metadata=SimpleNamespace(
+                prompt_token_count=23,
+                candidates_token_count=4,
+            ),
+        )
+
+    monkeypatch.setattr(fake.models, "generate_content", return_missing_text_with_usage)
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+    image = write_test_image(tmp_path / "source.png")
+
+    with pytest.raises(ProviderError) as captured:
+        recognize_public(
+            image,
+            config=Config(
+                provider=_google_settings(),
+                vision_model=VisionModelSettings(name=MODEL),
+            ),
+        )
+
+    assert type(captured.value) is ProviderError
+    assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.retryable is False
+    assert captured.value.details["reason"] == "missing_text"
+    assert captured.value.details["provider"] == "google"
+    assert captured.value.details["model"] == MODEL
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["workflow_pass"] == "draft"
+    assert captured.value.details["failed_model"] == MODEL
+    assert [dict(attempt) for attempt in captured.value.details["model_attempts"]] == [
+        {
+            "model": MODEL,
+            "outcome": "PROVIDER_RESPONSE_INVALID",
+            "disposition": "inspect_response",
+            "provider_calls_attempted": 1,
+        }
+    ]
+    assert [
+        dict(usage) for usage in captured.value.details["settled_model_usage"]
+    ] == [
+        {
+            "model": MODEL,
+            "input_count": 23,
+            "output_count": 4,
+            "unit": "tokens",
+        }
+    ]
+    assert len(fake.models.generate_calls) == 1
+    assert fake.clients[0].closed is True
 
 
 @pytest.mark.parametrize(

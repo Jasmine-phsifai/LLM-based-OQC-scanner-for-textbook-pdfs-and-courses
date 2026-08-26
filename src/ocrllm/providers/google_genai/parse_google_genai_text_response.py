@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from ...attach_current_model_token_usage_to_error import (
+    attach_current_model_token_usage_to_error,
+)
 from ...errors import ProviderContentBlocked, ProviderError
 from .google_genai_text_response import GoogleGenAITextResponse
 
@@ -31,8 +34,10 @@ def parse_google_genai_text_response(
         ) from None
     if type(text) is not str:
         text = _candidate_text(candidates)
+    input_tokens = _optional_token_count(usage, "prompt_token_count")
+    output_tokens = _optional_token_count(usage, "candidates_token_count")
     if text is None:
-        raise ProviderError(
+        error = ProviderError(
             "Google GenAI returned no recognition text.",
             code="PROVIDER_RESPONSE_INVALID",
             details={
@@ -40,11 +45,23 @@ def parse_google_genai_text_response(
                 "model": model,
                 "reason": "missing_text",
             },
-        ) from None
+        )
+        if input_tokens is not None or output_tokens is not None:
+            attach_current_model_token_usage_to_error(
+                error,
+                (
+                    {
+                        "model": model,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                    },
+                ),
+            )
+        raise error from None
     return GoogleGenAITextResponse(
         text=text,
-        input_tokens=_optional_token_count(usage, "prompt_token_count"),
-        output_tokens=_optional_token_count(usage, "candidates_token_count"),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
     )
 
 

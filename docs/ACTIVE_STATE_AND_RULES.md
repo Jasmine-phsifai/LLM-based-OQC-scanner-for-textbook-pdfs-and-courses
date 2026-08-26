@@ -8023,3 +8023,30 @@ Focused video lifecycle coverage passes 106 tests, independent review finds no
 issue, and the complete provider-free suite passes all 1,870 tests with zero
 failures or skips. The reproduced high-level video cancellation gap is closed;
 the next iteration must return to a fresh bounded active-library audit.
+
+## Current working update: #417 preserves Google missing-text token usage
+
+A native Google image response can contain no usable text while still carrying
+exact provider-reported token usage. The public facade already returned the
+honest nonretryable `PROVIDER_RESPONSE_INVALID` / `missing_text` error with one
+call and its normal workflow/model-attempt evidence, but the shared parser
+raised before copying the known counts. No resumable image slot can exist at
+that point, so a caller retry would repay without seeing the first call's usage.
+
+The shared Google text parser now reads each optional count once and, only on
+the existing missing-text branch, attaches a model-usage row when at least one
+count is known. Both missing counts still produce no usage row; candidate text
+fallback, blocked-content errors, valid image/audio responses, call accounting,
+cleanup, retryability, and disposition remain unchanged. The same narrow parser
+boundary also keeps the fact available to short- and Files-audio consumers
+without duplicating provider metadata extraction in three adapters.
+
+The public provider-free regression proves one generation call, exact 23/4
+usage, normal client close, and unchanged image workflow/error evidence.
+Focused Google image/audio/Files, video-smoke, image-resume, PDF, and high-level
+video coverage passes 217 tests; independent cross-media review passes 140
+tests and finds no blocker; the complete provider-free suite passes all 1,871
+tests with zero failures or skips. No retry, fallback, provider ledger, generic
+response wrapper, state schema, or blocked-response speculation was added.
+The bounded reproduced defect is closed; return to a fresh public-lifecycle or
+still-open bounded live gate rather than extending shared-parser failures.

@@ -1861,6 +1861,16 @@ rollback, transaction, or cancellation framework changed. Focused video
 coverage passes 106 tests and the complete offline suite passes all 1,870
 tests. The previously reproduced queue is empty again.
 
+#417 preserves exact Google token evidence when native `generateContent`
+returns no recognition text. The same nonretryable
+`PROVIDER_RESPONSE_INVALID/missing_text` remains primary, while an already
+reported input or output count is now attached before the parser raises. A
+response with no usage metadata still has no invented usage row. Candidate
+fallback, blocked responses, cleanup, provider calls, workflow disposition,
+state, retry, and fallback behavior are unchanged. Focused cross-media coverage
+passes 217 tests and the complete offline suite passes all 1,871 tests. No
+generic provider accounting or response wrapper was introduced.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:
