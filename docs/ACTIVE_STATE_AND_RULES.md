@@ -4010,6 +4010,19 @@ Post-register findings are ordered by demonstrated user impact:
   snapshotting or PDFium inspection, so a known `OUTPUT_EXISTS` performs no
   media/backend/provider work and preserves the target. State-directory,
   overwrite, resume, rendering, and dispatch behavior remain in place.
+- #391 closes a medium-high video short-audio settlement-evidence gap. When a
+  paid recognized or no-speech unit is complete but its journal update fails,
+  the typed persistence error now retains the exact known call count and client
+  cleanup fact; recognized settlement also retains current model usage. No false
+  short state is claimed, so later resume honestly requires another call.
+- Open, medium: an exact Google no-speech response can include token usage, but
+  short/whole/interval audio currently drop it before error/state composition.
+- Open, medium-low: `typing.get_type_hints()` fails for the exported `Config`,
+  `BatchItemOutcome`, and `DashScopeSettings` classes because three annotation
+  names exist only under `TYPE_CHECKING` in an installed package.
+- Open, low: ordinary single-image output collision is still checked after a
+  bounded image snapshot/decode. It makes no provider call and preserves the
+  target, but differs from the corrected PDF preflight ordering.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4

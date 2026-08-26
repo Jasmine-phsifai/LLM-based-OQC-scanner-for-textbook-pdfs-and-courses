@@ -587,6 +587,94 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
     assert _root_journals(output_root) == ()
 
 
+@pytest.mark.parametrize("settlement", ("recognized", "no_speech"))
+def test_short_audio_settlement_save_failure_preserves_paid_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    settlement: str,
+) -> None:
+    source = tmp_path / f"{settlement}-save-failure.mp4"
+    source.write_bytes(b"stable-video-before-short-audio-save-failure")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=True,
+    )
+    job_audio = __import__(
+        "ocrllm.recognize_video_job_audio",
+        fromlist=["recognize_video_job_audio"],
+    )
+    journal_module = __import__(
+        "ocrllm.video_job_journal",
+        fromlist=["VideoJobJournal"],
+    )
+    audio_calls = 0
+
+    def recognize_audio(_snapshot, *, prompt, config):
+        nonlocal audio_calls
+        audio_calls += 1
+        if settlement == "no_speech":
+            raise NoSpeechDetected(
+                details={
+                    "provider_calls_attempted": 1,
+                    "provider_client_closed": False,
+                }
+            )
+        return GoogleGenAIAudioResponse(
+            markdown="# Paid audio\n",
+            input_tokens=17,
+            output_tokens=5,
+            client_closed=False,
+        )
+
+    persist_audio = journal_module.VideoJobJournal.persist_audio
+
+    def fail_settlement_save(self, audio):
+        if audio.short_state is not None:
+            raise OutputError(
+                "The settled short-audio state could not be saved.",
+                code="OUTPUT_WRITE_FAILED",
+            )
+        return persist_audio(self, audio)
+
+    monkeypatch.setattr(job_audio, "recognize_short_mp3", recognize_audio)
+    monkeypatch.setattr(
+        journal_module.VideoJobJournal,
+        "persist_audio",
+        fail_settlement_save,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=Config(provider=_ImageProvider()),
+            audio_config=_audio_config(tmp_path),
+        )
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["provider_client_closed"] is False
+    if settlement == "recognized":
+        assert captured.value.details["settled_model_usage"] == (
+            {
+                "model": "test-audio-model",
+                "input_count": 17,
+                "output_count": 5,
+                "unit": "tokens",
+            },
+        )
+    else:
+        assert "settled_model_usage" not in captured.value.details
+    assert audio_calls == 1
+    journals = _root_journals(output_root)
+    assert len(journals) == 1
+    assert load_video_job_state(journals[0]).audio.short_state is None
+
+
 def test_published_result_and_journal_resume_cleanup_reuses_every_provider_unit(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -1779,6 +1779,18 @@ PDF preflight helper, transaction, lock, or output-path rule was added. The
 focused set passes 67 tests and the complete offline suite passes all 1,839.
 The bounded reproduced queue is empty again.
 
+#391's fresh four-surface audit selects and closes video short-audio settlement
+evidence loss after a journal write failure. Successful recognition now leaves
+the typed persistence error with exact provider calls, current per-model usage,
+and client-close truth; no-speech leaves its exact known call and client-close
+facts. The last durable journal remains unchanged and no unsaved short state is
+claimed, so a later resume remains an honest replay rather than false reuse. No
+retry, rollback, transaction, ledger, or persistence schema was added. The next
+reproduced queue is Google no-speech token preservation, installed public class
+type-hint resolution, then single-image output-collision ordering.
+The focused lifecycle set passes 143 tests and the complete offline suite passes
+all 1,841.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

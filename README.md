@@ -31,7 +31,11 @@ As of 2026-08-26:
   interval prefixes after failure or a partial provider-cleanup result. The
   high-level `recognize_video_to_markdown()` facade now owns one fixed result
   and temporary journal and resumes only missing image/audio units; the
-  three-step video API remains the lower-level non-resumable surface.
+  three-step video API remains the lower-level non-resumable surface. If a
+  short-audio unit settles but its journal update fails, the persistence error
+  retains the known call and client-cleanup evidence; a recognized settlement
+  also retains current model usage. It does not claim that the unit can be
+  resumed.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. An existing final Markdown target is rejected before

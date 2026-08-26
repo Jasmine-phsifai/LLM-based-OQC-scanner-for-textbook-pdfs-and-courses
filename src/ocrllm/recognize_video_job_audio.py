@@ -9,6 +9,9 @@ from .audio.snapshot_long_mp3 import LongMP3Snapshot
 from .audio.snapshot_short_mp3 import ShortMP3Snapshot
 from .audio.snapshot_video_mp3 import snapshot_video_mp3
 from .audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT
+from .attach_current_model_token_usage_to_error import (
+    attach_current_model_token_usage_to_error,
+)
 from .build_recognition_result import build_recognition_result
 from .config import Config
 from .errors import NoSpeechDetected, OCRLLMError, ResumeStateError
@@ -177,6 +180,42 @@ def _recognize_short(
                 warnings.append(
                     "The Google GenAI client could not be closed after recognition."
                 )
+        try:
+            journal.persist_audio(
+                VideoAudioState(
+                    state="ready",
+                    mode="short",
+                    interval_minutes=None,
+                    model=audio.model,
+                    artifact=audio.artifact,
+                    duration_seconds=audio.duration_seconds,
+                    short_state=VideoShortAudioState(
+                        request_fingerprint=fingerprint,
+                        markdown=None,
+                        markdown_sha256=None,
+                        status="partial",
+                        warnings=tuple(warnings),
+                        metadata=metadata,
+                        no_speech=True,
+                    ),
+                )
+            )
+        except OCRLLMError as persistence_error:
+            provider_calls = metadata["provider_call_count"]
+            if type(provider_calls) is int and provider_calls >= 0:
+                persistence_error._add_safe_detail(
+                    "provider_calls_attempted",
+                    provider_calls,
+                )
+            if type(client_closed) is bool:
+                persistence_error._add_safe_detail(
+                    "provider_client_closed",
+                    client_closed,
+                )
+            raise
+        raise
+    output = build_short_mp3_processor_output(short_snapshot, response, config=config)
+    try:
         journal.persist_audio(
             VideoAudioState(
                 state="ready",
@@ -187,37 +226,28 @@ def _recognize_short(
                 duration_seconds=audio.duration_seconds,
                 short_state=VideoShortAudioState(
                     request_fingerprint=fingerprint,
-                    markdown=None,
-                    markdown_sha256=None,
-                    status="partial",
-                    warnings=tuple(warnings),
-                    metadata=metadata,
-                    no_speech=True,
+                    markdown=output.markdown,
+                    markdown_sha256=hashlib.sha256(
+                        output.markdown.encode("utf-8")
+                    ).hexdigest(),
+                    status=output.status,
+                    warnings=output.warnings,
+                    metadata=output.metadata,
                 ),
-            )
-        )
-        raise
-    output = build_short_mp3_processor_output(short_snapshot, response, config=config)
-    journal.persist_audio(
-        VideoAudioState(
-            state="ready",
-            mode="short",
-            interval_minutes=None,
-            model=audio.model,
-            artifact=audio.artifact,
-            duration_seconds=audio.duration_seconds,
-            short_state=VideoShortAudioState(
-                request_fingerprint=fingerprint,
-                markdown=output.markdown,
-                markdown_sha256=hashlib.sha256(
-                    output.markdown.encode("utf-8")
-                ).hexdigest(),
-                status=output.status,
-                warnings=output.warnings,
-                metadata=output.metadata,
             ),
         )
-    )
+    except OCRLLMError as error:
+        provider_calls = output.metadata.get("provider_call_count")
+        if type(provider_calls) is int and provider_calls >= 0:
+            error._add_safe_detail("provider_calls_attempted", provider_calls)
+        attach_current_model_token_usage_to_error(
+            error,
+            output.metadata.get("current_model_token_usage"),
+        )
+        client_closed = output.metadata.get("provider_client_closed")
+        if type(client_closed) is bool:
+            error._add_safe_detail("provider_client_closed", client_closed)
+        raise
     return output
 
 

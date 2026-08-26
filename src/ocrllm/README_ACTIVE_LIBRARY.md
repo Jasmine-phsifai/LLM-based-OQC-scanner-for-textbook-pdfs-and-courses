@@ -109,8 +109,13 @@ high-level job instead owns one temporary journal and atomic `result.md`
 publication. A terminal no-speech result with a proved failed Google
 audio-client close preserves the existing warning and exposes
 `audio_provider_client_closed=False`, including after zero-call resume; generic
-provider-error details are not lifted into the combined result. The current
-three-step API remains non-resumable and gains no finalize/discard protocol.
+provider-error details are not lifted into the combined result. If recognized
+or no-speech short audio settles but its journal update fails, the typed save
+error retains the known provider-call and client-close facts; a recognized
+settlement also retains current model usage. It does not claim an unsaved
+resumable unit.
+The current three-step API remains non-resumable and gains no finalize/discard
+protocol.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
 legacy-Markdown repair, so ordinary image-sidecar resume remains its recovery
 path.

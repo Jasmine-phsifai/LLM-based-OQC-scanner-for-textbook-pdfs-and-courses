@@ -1123,6 +1123,9 @@ failures from under-reporting tokens or reversing cleanup truth. #389 then
 preserves a proved failed short-audio client close through final no-speech video
 composition, including zero-call resume, without copying generic error details.
 #390 then moves the existing PDF output check and process-local claim before
-snapshot/PDFium work, so a known collision refuses without backend work. The
-bounded reproduced queue is empty again; audit shipped public lifecycles before
-selecting another change, and add no recovery framework without evidence.
+snapshot/PDFium work, so a known collision refuses without backend work. #391's
+fresh audit then closes paid short-audio evidence loss when video journal saving
+fails after recognition. The current queue is: preserve Google no-speech token
+usage across short/whole/interval audio; repair three installed public class
+type-hint resolutions; then align single-image collision ordering. Keep each
+atomic and add no recovery framework without evidence.
