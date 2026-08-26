@@ -802,8 +802,9 @@ activates or reuses. It waits once before SDK/catalog/upload work; one Files
 lifecycle does not claim separate permits for polling, generation, or cleanup.
 The failing-first order regression and 58 adjacent tests pass, as do all 1,703
 source tests. No interval API, retry, fallback, client cache, or second limiter
-was added. The checked worktree wheel is 260,782 bytes; exact clean installed
-proof is pending.
+was added. Exact commit `c8a8c72` passes the clean installed gate with 1,702
+archived tests and one optional skip, a 260,782-byte wheel, every profile and
+local media smoke green, no cloud I/O, and complete cleanup.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

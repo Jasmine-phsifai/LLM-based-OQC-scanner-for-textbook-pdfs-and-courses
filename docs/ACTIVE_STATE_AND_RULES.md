@@ -6114,7 +6114,11 @@ backfilled from committed test/gate evidence; that documentation omission did
 not affect runtime. A delegated no-download worktree build produces a
 260,782-byte wheel with 258 members and 1,362 bytes of cap headroom; the changed
 adapter is present, tests/docs are absent, and the wheel checker passes. Exact
-clean-installed proof remains pending, so #326 is not yet release-proven.
+commit `c8a8c72` passes the clean-installed gate: 1,702 archived tests pass with
+one expected optional RapidOCR skip; the wheel remains 260,782 bytes and the
+base target is 1,319,617 bytes. Every installed profile and local
+audio/PDF/video/combined smoke passes without cloud I/O; the gate root is
+removed and cached wheels are unchanged. #326 is release-proven.
 
 ## Documentation Rules
 

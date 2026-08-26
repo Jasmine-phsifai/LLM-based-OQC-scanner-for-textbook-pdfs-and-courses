@@ -1388,8 +1388,9 @@ The following directions remain traceable but are not current work:
   provider-start gate. One Files lifecycle now claims one permit before SDK and
   network work; catalog/upload/poll/generate/cleanup are not miscounted as
   separate starts. All 1,703 source tests pass. Interval dispatch and a second
-  limiter remain unimplemented. The checked worktree wheel is 260,782 bytes;
-  clean installed proof is pending.
+  limiter remain unimplemented. Exact commit `c8a8c72` passes the clean gate
+  with 1,702 archived tests and one optional skip, a 260,782-byte wheel, all
+  profiles and local smokes green, no cloud I/O, and complete cleanup.
 
 ## Obsolete Prose Kept For Trace
 
