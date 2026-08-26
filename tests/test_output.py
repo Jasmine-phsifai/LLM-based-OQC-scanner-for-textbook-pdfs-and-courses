@@ -162,18 +162,32 @@ def test_markdown_publish_does_not_amplify_near_limit_output_path(
     assert provider.calls == 1
 
 
-def test_existing_output_fails_before_provider_invocation(tmp_path):
+def test_existing_output_fails_before_snapshot_or_provider_invocation(
+    tmp_path,
+    monkeypatch,
+):
     source = write_test_image(tmp_path / "board.png")
     output_dir = tmp_path / "output"
     output_dir.mkdir()
     target = output_dir / "board_board.md"
     target.write_text("original", encoding="utf-8")
     provider = CountingProvider()
+    snapshot_module = importlib.import_module("ocrllm.imaging.snapshot_image_group")
+    original_snapshot = snapshot_module.snapshot_image_group
+    snapshot_entries = 0
+
+    def observe_snapshot(*args, **kwargs):
+        nonlocal snapshot_entries
+        snapshot_entries += 1
+        return original_snapshot(*args, **kwargs)
+
+    monkeypatch.setattr(snapshot_module, "snapshot_image_group", observe_snapshot)
 
     with pytest.raises(OutputExists) as captured:
         recognize(source, config=Config(provider=provider, output_dir=output_dir))
 
     assert captured.value.code == "OUTPUT_EXISTS"
+    assert snapshot_entries == 0
     assert provider.calls == 0
     assert target.read_text(encoding="utf-8") == "original"
 

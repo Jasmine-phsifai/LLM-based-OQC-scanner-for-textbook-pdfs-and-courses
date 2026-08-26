@@ -81,20 +81,20 @@ def _recognize(
             profile = resolve_image_profile(cfg.profile)
             validate_execution_image_count(source_paths, config=cfg)
             try:
-                with snapshot_image_group(source_paths, config=cfg) as validated_paths:
+                output_path = build_output_path(
+                    source_paths,
+                    profile=profile,
+                    config=cfg,
+                )
+                if output_path is not None:
+                    output_claims.claim(output_path)
+                    # The first existence check can become stale before ownership.
                     output_path = build_output_path(
                         source_paths,
                         profile=profile,
                         config=cfg,
                     )
-                    if output_path is not None:
-                        output_claims.claim(output_path)
-                        # The first existence check can become stale before ownership.
-                        output_path = build_output_path(
-                            source_paths,
-                            profile=profile,
-                            config=cfg,
-                        )
+                with snapshot_image_group(source_paths, config=cfg) as validated_paths:
                     checkpoint_enabled = (
                         output_path is not None
                         and (cfg.resume or _can_checkpoint_image(cfg))

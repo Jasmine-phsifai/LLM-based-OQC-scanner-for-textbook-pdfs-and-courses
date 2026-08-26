@@ -1131,6 +1131,9 @@ keeping zero-call resume history out of current-run totals. #394 then restores
 standard runtime type-hint resolution for the exported `Config`,
 `BatchItemOutcome`, `DashScopeSettings`, and its public `for_region()` factory
 through three direct cycle-free internal imports. A clean installed wheel
-resolves the exact types without loading optional backends. The current queue
-is now the low-priority single-image collision ordering defect. Keep it atomic
-and add no recovery framework without evidence.
+resolves the exact types without loading optional backends. #395 then moves the
+existing single-image output check and process-local claim ahead of image
+snapshotting, so a known collision performs no copy/decode/provider work while
+overwrite and resume behavior remain unchanged. The bounded reproduced queue
+is empty again; use a fresh public-lifecycle audit for the next atomic task
+rather than extending output preflight without evidence.

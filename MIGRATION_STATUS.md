@@ -1819,6 +1819,16 @@ probe, and the complete offline suite passes all 1,848 tests. The remaining
 reproduced queue contains only the low-priority single-image output-collision
 ordering defect.
 
+#395 closes the remaining ordinary-image output-collision ordering defect. The
+single-image facade now performs its existing deterministic output check,
+process-local claim, and second race check before creating or decoding owned
+image snapshots. A known `OUTPUT_EXISTS` therefore performs zero snapshot and
+provider work and preserves the old Markdown. Overwrite, resume state/identity,
+grouped input, memory-only operation, cancellation points, claim release, and
+atomic publication are unchanged. The focused image/output/resume/batch set
+passes 127 tests and the complete offline suite passes all 1,848 tests. The
+bounded reproduced queue is empty again; the next task requires a fresh audit.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

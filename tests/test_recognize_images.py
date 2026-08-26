@@ -589,16 +589,21 @@ def test_provider_reads_validated_snapshot_when_original_changes_after_validatio
                 image.verify()
             return "# Snapshot stayed valid\n"
 
-    output_path_module = importlib.import_module("ocrllm.output.build_output_path")
-    original_build_output_path = output_path_module.build_output_path
+    recognition_module = importlib.import_module("ocrllm.recognize_validated_images")
+    original_recognize = recognition_module.recognize_validated_images
 
-    def corrupt_original_after_snapshot(source_paths, *, profile, config):
+    def corrupt_original_after_snapshot(validated_paths, *, profile, config, **kwargs):
         source.write_bytes(b"corrupt after snapshot validation")
-        return original_build_output_path(source_paths, profile=profile, config=config)
+        return original_recognize(
+            validated_paths,
+            profile=profile,
+            config=config,
+            **kwargs,
+        )
 
     monkeypatch.setattr(
-        output_path_module,
-        "build_output_path",
+        recognition_module,
+        "recognize_validated_images",
         corrupt_original_after_snapshot,
     )
 

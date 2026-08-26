@@ -4035,9 +4035,18 @@ Post-register findings are ordered by demonstrated user impact:
   optional/legacy module set stays unloaded. The focused set passes 141 tests,
   the clean wheel is 304,645 bytes, and the complete offline suite passes all
   1,848 tests.
-- Open, low: ordinary single-image output collision is still checked after a
-  bounded image snapshot/decode. It makes no provider call and preserves the
-  target, but differs from the corrected PDF preflight ordering.
+- #395 closes the low ordinary-image output-collision ordering gap. The
+  existing deterministic output check, process-local claim, and second TOCTOU
+  check now run before image snapshotting or decoding. A known `OUTPUT_EXISTS`
+  performs zero snapshot and provider work while preserving the target.
+  Overwrite, resume identity/state validation, memory-only recognition,
+  cancellation points, grouped sources, and final atomic publication keep
+  their existing behavior. The focused image/output/resume/batch set passes
+  127 tests, and the complete offline suite passes all 1,848 tests.
+
+The bounded reproduced queue is empty again. Select the next iteration through
+a fresh public-lifecycle audit rather than extending output preflight
+speculatively.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
