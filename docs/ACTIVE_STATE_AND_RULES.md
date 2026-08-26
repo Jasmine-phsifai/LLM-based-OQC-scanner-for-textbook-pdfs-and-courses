@@ -304,6 +304,16 @@ Invalid saved content raises `RESUME_STATE_INVALID` before source snapshotting,
 media work, or provider dispatch and leaves journal bytes unchanged. Generic
 `RecognitionResult`, provider dispatch, retry/fallback policy, state schema,
 and frozen worker/contracts are unchanged.
+#447 re-proves the active temporal selector's end-of-stream boundary without a
+runtime or test change. The scanner explicitly samples `frame_count - 1`, every
+calibrated segmentation closes on the last candidate, and the density cap maps
+its final output slot to that candidate. Existing public regressions retain a
+change confined to the sixth and final frame of a real MP4 and retain candidate
+99 when 100 candidates are capped to 40. The same audit found a separate open
+legacy defect: its coarse scan does not force the exact final frame and its old
+density-cap formula does not force the final observed candidate. That parent
+defect is recorded in `legacy_app/AGENTS.md` for a separate failing-first atomic
+fix; it does not justify active-library compatibility or another selector.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but

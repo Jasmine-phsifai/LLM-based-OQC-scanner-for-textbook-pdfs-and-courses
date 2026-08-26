@@ -1088,3 +1088,30 @@ the chosen PDF matches the Markdown.
 **Carry-forward judgement. WARNING FOR src/ocrllm.** The active library already
 uses its own atomic Markdown writer. If repair is later approved, keep that
 boundary and add source-bound identity rather than importing this legacy parser.
+
+## 2026-08-27: video tail changes can be omitted before selection
+
+**Observed, not fixed in this audit.** Legacy video coarse scanning builds its
+targets with `range(0, total_frames, coarse_skip)` and does not explicitly add
+`total_frames - 1`. With the default five-second interval, a meaningful board
+change confined to the final almost-five-second tail can therefore remain
+unobserved. The refinement pass only scans gaps between existing candidates and
+does not create a final-candidate-to-EOF gap. Ordinary segmentation correctly
+flushes the last candidate it did observe, so the primary defect is missing EOF
+sampling rather than failure to close a segment.
+
+A second bounded risk remains in the post-calibration density cap: its uniform
+index formula does not force the last selected candidate into the capped output.
+For example, capping 11 candidates to 10 selects indices 0 through 9 and omits
+index 10. No tracked legacy test currently protects explicit EOF sampling or
+this capped endpoint. This entry records the evidence only; the next atomic
+legacy fix should add failing public-path regressions before changing either
+formula, and must not add crop, ROI, perspective correction, another selector,
+or generalized video recovery.
+
+**Carry-forward judgement.** The same omission must not re-emerge in future
+video work. The active `src/ocrllm` path already explicitly samples the exact
+final frame, fails honestly when it cannot decode it, closes the final segment,
+and preserves both endpoints under its density cap; its real-MP4 EOF regression
+and capped-selector regression both pass. No active-library fix or compatibility
+layer is required.
