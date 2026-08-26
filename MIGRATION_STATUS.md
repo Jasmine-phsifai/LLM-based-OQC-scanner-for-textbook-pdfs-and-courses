@@ -1965,3 +1965,13 @@ so those configurations fail at the public call boundary with no filesystem,
 executor, snapshot, or provider side effect. Local OCR and audio-only batches
 keep their existing behavior; no new validator, transaction, provider
 abstraction, retry, or state format was added.
+
+#430 proves the #428 runtime and #429 package-description correction from a clean
+archive of exact commit `c41098896bb4653b72c876b8555ee2ae0f850ce6`. A fresh
+isolated venv installed the 307,837-byte wheel with Pillow 12.3.0 outside the
+repository and without source `PYTHONPATH`. Lightweight import, one-call valid
+injected image batch recognition, and the two zero-directory invalid-provider
+preflight cases passed. Wheel metadata contains the current #427/#428 claims and
+not the stale open-gate sentence; wheel and sdist contain no legacy, tests,
+repository docs, untracked files, or AGENTS instructions. This is targeted
+base/image release evidence, not a full optional-profile or cloud-provider gate.

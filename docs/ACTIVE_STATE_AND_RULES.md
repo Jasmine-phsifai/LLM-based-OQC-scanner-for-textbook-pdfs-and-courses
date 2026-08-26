@@ -184,6 +184,18 @@ before output resolution, snapshotting, directory creation, executor startup,
 or provider dispatch. The shared config is not repeatedly inspected; local OCR
 and audio-only batches retain their existing routes. Invalid image configuration
 is now a top-level preflight error, consistent with the exact-tuple contract.
+#430 release-proves #428 and #429 together from a clean archive of exact commit
+`c41098896bb4653b72c876b8555ee2ae0f850ce6`. The build produced a 307,837-byte
+wheel and 188,728-byte sdist; the wheel remains below the 320 KiB base budget,
+contains the package and `py.typed`, and excludes legacy, tests, repository docs,
+untracked files, `AGENTS.md`, and the package-only active README. Its installed
+metadata contains the corrected #427 closure and #428 preflight claim and omits
+the stale open-gate sentence. From a fresh venv outside the repository with no
+source `PYTHONPATH`, plain import remained lightweight, Pillow 12.3.0 supplied
+the isolated image profile, one injected-provider batch completed in one call,
+and both invalid-provider cases raised their top-level stable codes without
+creating output or temp directories. This is a targeted base/image distribution
+proof, not a repeat of every optional profile or a provider-live test.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
