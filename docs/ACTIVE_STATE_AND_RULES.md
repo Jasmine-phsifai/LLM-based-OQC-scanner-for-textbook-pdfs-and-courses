@@ -6088,6 +6088,34 @@ release-proven。
 共享校验器把一个入口的许可扩散到其他入口，不是兼容层。整段持久化仍只有一个
 slot；repair 继续是未来按失败文字时间范围工作的侧链，不能依赖这里的临时参数。
 
+## Iteration 326: Google Files now obeys the active provider-start gate
+
+The long-audio facade already activated or reused one high-resolution
+`ProviderRequestStartGate`, but the native Google Files adapter never consumed
+its permit. A configured provider-start interval therefore had no effect on
+this shipped route. This is especially unsafe immediately before interval mode,
+where one public operation will serially start several Files lifecycles.
+
+`recognize_uploaded_mp3()` now calls the existing
+`wait_for_provider_request_start()` exactly once after local config/model
+validation and before SDK loading, catalog access, upload, polling, generation,
+and cleanup. The permit represents one complete Files workflow; its internal
+HTTP operations do not each claim another permit. Cancellation at the gate
+remains a zero-provider-call failure, and the facade continues to own gate
+activation/reuse. No second limiter, provider middleware, client reuse, catalog
+cache, interval API, retry, fallback, or provider abstraction was added.
+
+The failing-first regression observed SDK loading without a gate wait; it now
+proves gate-before-SDK order. The adjacent Google audio, whole persistence, and
+gate set passes 58 tests; the complete source suite passes 1,703 tests in 64.94
+seconds. Compilation, lightweight import, frozen `contracts/worker`, and diff
+checks pass without cloud I/O. The missing #325 Chinese diary entry was also
+backfilled from committed test/gate evidence; that documentation omission did
+not affect runtime. A delegated no-download worktree build produces a
+260,782-byte wheel with 258 members and 1,362 bytes of cap headroom; the changed
+adapter is present, tests/docs are absent, and the wheel checker passes. Exact
+clean-installed proof remains pending, so #326 is not yet release-proven.
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

@@ -796,6 +796,15 @@ generic transactions, legacy formats, and worker routing are unchanged. All
 with 1,700 archived tests and one expected skip, a 260,753-byte wheel, every
 profile and local media smoke green, no cloud I/O, and complete cleanup.
 
+#326 fixes one prerequisite before interval dispatch: the Google Files adapter
+now consumes the provider-start gate that `recognize_long_mp3()` already
+activates or reuses. It waits once before SDK/catalog/upload work; one Files
+lifecycle does not claim separate permits for polling, generation, or cleanup.
+The failing-first order regression and 58 adjacent tests pass, as do all 1,703
+source tests. No interval API, retry, fallback, client cache, or second limiter
+was added. The checked worktree wheel is 260,782 bytes; exact clean installed
+proof is pending.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

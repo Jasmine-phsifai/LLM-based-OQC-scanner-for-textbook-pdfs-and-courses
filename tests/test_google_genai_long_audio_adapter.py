@@ -260,6 +260,32 @@ def test_public_long_mp3_runs_one_owned_files_lifecycle(monkeypatch) -> None:
     assert fake.clients[0].closed is True
 
 
+def test_files_workflow_waits_at_active_start_gate_before_sdk(monkeypatch) -> None:
+    fake = _FakeGoogleModule()
+    _install_fake_snapshot(monkeypatch)
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_uploaded_mp3"
+    )
+    starts: list[str] = []
+
+    monkeypatch.setattr(
+        adapter,
+        "wait_for_provider_request_start",
+        lambda cancellation: starts.append("gate"),
+    )
+
+    def load_after_gate():
+        starts.append("sdk")
+        return fake
+
+    monkeypatch.setattr(adapter, "load_google_genai", load_after_gate)
+
+    result = recognize_long_mp3(SOURCE, config=_config())
+
+    assert result.status == "complete"
+    assert starts == ["gate", "sdk"]
+
+
 def test_missing_model_stops_before_upload(monkeypatch) -> None:
     fake = _FakeGoogleModule(served_models=("another-model",))
     _install_fake_snapshot(monkeypatch)

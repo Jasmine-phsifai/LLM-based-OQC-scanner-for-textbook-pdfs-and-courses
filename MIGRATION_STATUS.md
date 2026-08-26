@@ -1384,6 +1384,12 @@ The following directions remain traceable but are not current work:
   pass. Exact commit `e378556` passes the clean installed gate with 1,700
   archived tests and one expected skip, a 260,753-byte wheel, all profiles and
   local media smokes green, no cloud I/O, and complete gate cleanup.
+  #326 fixes the existing Google Files route's silent bypass of the active
+  provider-start gate. One Files lifecycle now claims one permit before SDK and
+  network work; catalog/upload/poll/generate/cleanup are not miscounted as
+  separate starts. All 1,703 source tests pass. Interval dispatch and a second
+  limiter remain unimplemented. The checked worktree wheel is 260,782 bytes;
+  clean installed proof is pending.
 
 ## Obsolete Prose Kept For Trace
 

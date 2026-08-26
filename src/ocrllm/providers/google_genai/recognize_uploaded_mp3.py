@@ -9,6 +9,7 @@ from ...config import Config
 from ...errors import ConfigError, OCRLLMError, ProviderError, ProviderUnavailable
 from ...raise_if_cancelled import raise_if_cancelled
 from ...snapshot_config import snapshot_config
+from ..provider_request_start_gate import wait_for_provider_request_start
 from .close_google_genai_client import close_google_genai_client
 from .google_client_options import google_client_options
 from .google_genai_uploaded_audio_response import (
@@ -65,6 +66,7 @@ def recognize_uploaded_mp3(
     provider_file_cleanup_failed = False
     try:
         try:
+            wait_for_provider_request_start(config.cancellation)
             google_module = load_google_genai()
             api_key = resolve_google_genai_credential(settings)
             client = google_module.Client(

@@ -214,6 +214,9 @@ result = recognize_long_mp3(
   the remote file and closes the client; client close is still attempted if
   remote deletion is interrupted by `KeyboardInterrupt` or `SystemExit`, while
   that exact process-control exception continues to propagate;
+- consumes one configured provider-start permit before SDK and Files workflow
+  work; catalog, upload, polling, generation, and cleanup remain one lifecycle,
+  not separately paced requests;
 - returns an audio result with exact model/usage/source facts and explicit
   cleanup state; with `output_dir`, it first saves the settled paid result,
   atomically publishes `<output_dir>/<audio stem>/result.md`, and then removes
