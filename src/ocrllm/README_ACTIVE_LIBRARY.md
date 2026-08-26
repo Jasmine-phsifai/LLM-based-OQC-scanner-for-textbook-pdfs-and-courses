@@ -646,6 +646,12 @@ paid state and still emit their safe branch summaries. Nested standalone
 publications remain invalid for every outcome. The obscured #343 provider error
 was not reconstructed or replayed, so this correction is failure-evidence proof,
 not a live interval success claim.
+The #344 one-shot verification then returned an actual `video_outcome` for
+model-scoped HTTP 429 quota failures in both the image group and first audio
+interval. It preserved exact call/error facts and audio remote/client cleanup
+without leaking content or leaving residue. No interval settled, so this proves
+the corrected general provider-failure reporting path but does not live-prove
+the narrower retained-sidecar case or the complete interval success path.
 The #186 robustness run retained three equal-luminance color scenes and made one
 image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.

@@ -1469,6 +1469,10 @@ The following directions remain traceable but are not current work:
   emitted. The corrected runner requires state removal only for complete
   interval outcomes and preserves paid state on partial/failed outcomes; the
   obscured provider failure was not replayed or reconstructed.
+  #344 live-proves the corrected runner emits an auditable `video_outcome` for
+  real model-scoped 429 failures in both branches, including exact calls and
+  audio cleanup. No interval settled, so retained-sidecar live proof and the
+  complete interval success gate remain open.
 
 ## Obsolete Prose Kept For Trace
 

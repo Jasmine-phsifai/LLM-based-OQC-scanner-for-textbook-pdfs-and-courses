@@ -6597,6 +6597,31 @@ Files upload timeout 是否稳定复现。精确 HEAD/origin，代理三项和�
 周期的修复，不是放宽成功验收。本次 live 的真实二次分支错误已被旧 runner 遮蔽且临时目录
 按约定清理，不伪造、不从 sidecar Markdown 反推，也不为获得 green 再调一次。
 
+## Iteration 344：修正后 runner 真实保留 provider 失败证据
+
+精确 `9213519f06685b14b172c46f9b83a121ed7ac226` 上只做一次新实测，直接验证
+#343 的 runner 修正。HEAD/origin、tracked clean、两份受保护文件、WinINET/10080 TCP/显式
+代理 HTTPS 均通过。新的 301 秒合成音视频仍含可见内容和全程重复语音，provider-free
+预检保留 5 帧、1 个图片组；参数仍为 3 分钟/2 个预期音频调用，图片/音频分离
+config 都显式选 `gemini-2.5-flash`。没有第二 catalog/runner、retry、fallback、换模或下载。
+
+唯一 runner 在 **26.832s** 后 exit 1，但正确输出 `report_type=video_outcome`，不再退化为
+runner `CONFIG_INVALID`。实时 catalog 为 37。图片 1 组调用 1 次，返回
+`PROVIDER_QUOTA_EXHAUSTED / model / 429 / RESOURCE_EXHAUSTED`。音频 artifact 已抽取，首个
+interval 的 generation 调用 1 次并返回同样的模型级 quota，operation=`generation`、
+`persisted_interval_count=0`、`remote_file_deleted=true`、`provider_client_closed=true`。composition
+未开始，总 generation 调用为 2，usage 未知。sidecar 不存在是因为首个音频切片尚未
+settle，不是清理丢 state；nested result 也不存在。stderr/泄漏/自有残留均为 0。
+
+退出判断：#343 修正的“provider failure 仍必须产出可审计 video outcome”已获真实证明；
+但本次没有 settled slot，因此“失败 outcome 含 paid sidecar”仍是离线回归证明，不写成 live
+已证明。视频 interval 完整成功 gate 仍未关闭。当前是 Google 明确的免费层模型 quota，不是
+代理问题或本地超时；本轮不重试，也不由此增加自动 retry/fallback。
+
+过度设计复查：没有为 live 再改 runtime/runner，没有 quota poller、延时重试、模型轮换、账号池或
+压力测试。这一轮只验证刚修的证据边界并记录明确 quota，不把供应商当前容量问题转成
+library 功能。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

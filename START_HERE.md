@@ -96,7 +96,9 @@ honestly at the first audio Files upload with no settled interval; it was not
 replayed and is not success evidence. #343's separate fresh attempt settled one
 interval, exposing a runner-only defect that mistook required failure state for
 unclean success. The runner now preserves that safe failure evidence while
-still requiring complete outcomes to remove state. Public video resume is not yet exposed.
+still requiring complete outcomes to remove state. #344 live-proves corrected
+provider failures remain auditable `video_outcome` reports, although model quota
+stopped the first audio interval before any state settled. Public video resume is not yet exposed.
 Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval
