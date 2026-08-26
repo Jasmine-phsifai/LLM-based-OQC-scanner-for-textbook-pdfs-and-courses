@@ -21,10 +21,13 @@ As of 2026-08-26:
   intra-request checkpoints are shipped. Its paid live exit smoke remains open.
 - The former standalone Stage 2 vision/audio scaffold was removed. Native
   Google inline short MP3 and Files-based single-request long MP3 paths are
-  implemented and live-proven; both remain memory-only. Combined video now
+  implemented and live-proven. Short MP3 remains memory-only; the standalone
+  long-MP3 facade can optionally publish to a same-name directory and resume
+  an already-settled whole-file request without another provider call. Combined video now
   selects inline audio through 300 seconds or Files above 300 seconds through
   the current 9.5-hour single-request ceiling after one owned decode. Long-audio
-  chunking, resume, and the remaining 9.5-to-10-hour range remain unavailable.
+  interval chunk dispatch/resume and the remaining 9.5-to-10-hour range remain
+  unavailable.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. Its bounded Google exit gate completed 16 pages in two

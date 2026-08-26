@@ -89,7 +89,8 @@ decodes it through lazy `ocrllm[audio]`, and can send one bounded native inline
 request through lazy `ocrllm[google]`. This path remains experimental and
 memory-only despite its successful #069 public-result gate. Stage A2a
 standalone Google Files long-MP3 recognition is also implemented and
-live-proven. `recognize_video()` selects inline audio through 300 seconds or
+live-proven; its whole-file public facade now has optional publication and
+resume. `recognize_video()` selects inline audio through 300 seconds or
 Files above 300 seconds through the current 9.5-hour single-request ceiling.
 A2b now has an internal exact-window planner and one-window temporary MP3
 materializer, but public chunk dispatch, resume, and the remaining private
@@ -196,6 +197,7 @@ result = recognize_long_mp3(
         provider=GoogleGenAISettings(),
         audio_model=AudioModelSettings(name="gemini-2.5-flash"),
         timeout_seconds=600,
+        output_dir="transcripts",
     ),
 )
 ```
@@ -212,11 +214,16 @@ result = recognize_long_mp3(
   the remote file and closes the client; client close is still attempted if
   remote deletion is interrupted by `KeyboardInterrupt` or `SystemExit`, while
   that exact process-control exception continues to propagate;
-- returns an in-memory audio result with exact model/usage/source facts and
-  explicit cleanup state; a successful transcript becomes `partial` with a
-  warning if remote or client cleanup fails;
-- has no chunking, resume, persistence, parallel splitting, fallback, model
-  switching, batch support, worker route, or automatic video integration.
+- returns an audio result with exact model/usage/source facts and explicit
+  cleanup state; with `output_dir`, it first saves the settled paid result,
+  atomically publishes `<output_dir>/<audio stem>/result.md`, and then removes
+  the temporary state;
+- accepts `resume=True` only with that fixed state present and an unpublished
+  final result; an exact whole-file request is published with zero provider
+  calls, while source/model/prompt/transport drift is rejected;
+- has no interval chunk dispatch, overwrite, repair, parallel splitting,
+  fallback, model switching, batch support, worker route, or automatic video
+  integration.
 
 The PDF vision facade:
 

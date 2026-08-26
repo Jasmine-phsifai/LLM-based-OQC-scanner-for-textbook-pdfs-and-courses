@@ -71,7 +71,10 @@ experimental slice is implemented and live-proven through native Google GenAI;
 it remains memory-only and does not provide persistence, resume, groups,
 upload, general-`recognize()` long-audio routing, or worker support. #151 implements and live-proves
 the separate standalone Stage A2a Google Files lifecycle for one MP3 longer
-than 300 seconds; it does not alter A1 or route video. A1 did
+than 300 seconds. Its public whole-file route now optionally publishes one
+same-name-directory result and can reuse one exact settled state with zero new
+provider calls; interval dispatch remains unavailable. It does not alter A1 or
+route video. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
 audio live tests are already authorized without a separate budget request.
 DashScope live work still requires a nonempty recognized credential and an
@@ -6044,6 +6047,39 @@ remain one coherent vertical slice and must not silently introduce interval
 configuration, overwrite, repair, provider fallback, or a generic transaction
 framework. Interval public configuration and dispatch remain a later explicit
 slice of the already selected two-mode product.
+
+## Iteration 325：整段长音频首次接通公开持久化与恢复
+
+本轮把已有的路径、所有权、请求指纹和状态文件能力真正接入公开
+`recognize_long_mp3()`，没有另造编排器。未设置 `output_dir` 时，原有内存返回
+保持不变；设置后，新任务先独占并创建
+`output_dir/<规范化音频名>/`，对源文件只做一次快照，然后通过 Google Files
+完成整段识别。已经付费得到的文本会先原子写入固定临时状态文件，再原子发布
+`result.md`；只有最终文件发布成功后才删除临时状态。最终写入失败或快照清理
+失败时，已结算状态仍保留，下一次 `resume=True` 会重新校验完整源摘要、模型、
+提示版本和传输方式，并以零次新 provider 调用发布同一结果。
+
+个人复查时发现并修正了两个会造成恢复信息失真的缺口：请求指纹原先没有包含
+`transport`，状态槽原先没有保存远端文件删除和 provider 客户端关闭结果。由于
+这是公开消费者恢复原结果必需的事实，本轮把两份内部格式升级为 v2，并只增加
+这三个明确字段，没有加入任意 metadata、通用事务或 provider 抽象。另一个全量
+测试实际暴露的回归是：短音频、batch 和视频音频支路共用了校验器，一度错误地
+获得了持久化许可；现在只有 `recognize_long_mp3()` 显式开启该许可，其余入口仍
+在 provider SDK 加载前拒绝这些选项。
+
+失败先行的公开生命周期测试覆盖状态先于最终发布、发布失败保留付费结果、精确
+恢复零调用、请求不匹配零调用、新任务目录冲突零快照/零调用，以及快照清理失败
+仍保留状态。相关测试共 118 项通过，完整源码测试为 1,702 项通过；编译、轻量
+导入、冻结的 `contracts/worker` 和 diff 检查通过。轻量子代理从当前工作树机械
+构建一次 wheel，得到 260,683 bytes、258 个成员，仍比 256 KiB 上限少 1,461
+bytes，且不包含 tests/docs。代理已启用，`127.0.0.1:10080` 可达；本轮没有调用
+云端 provider。精确提交的干净安装门禁尚待委派，因此这里不提前声称 #325 已
+达到 release-proven。
+
+过度设计复查：本轮没有实现 interval、repair、overwrite、跨进程锁、通用事务、
+重试、fallback、provider class 或 legacy 格式兼容。`allow_persistence` 只是阻止
+共享校验器把一个入口的许可扩散到其他入口，不是兼容层。整段持久化仍只有一个
+slot；repair 继续是未来按失败文字时间范围工作的侧链，不能依赖这里的临时参数。
 
 ## Documentation Rules
 

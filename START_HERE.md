@@ -785,6 +785,16 @@ PyPI HTTPS probes timed out; the unchanged wheelhouse supplied the gate, so no
 HTTP 200 is claimed. The next feature slice is public whole-file persistence
 and resume, not an otherwise unconsumed start-gate wrapper.
 
+#325 makes the public whole-file route that first consumer. With `output_dir`,
+`recognize_long_mp3()` owns one same-name directory, saves the settled paid
+result before atomically publishing `result.md`, and removes temporary state
+only after success. Exact `resume=True` validates source/model/prompt/transport
+identity and publishes with zero new provider calls. The no-output-directory
+behavior remains memory-only. Interval dispatch, repair, overwrite, fallback,
+generic transactions, legacy formats, and worker routing are unchanged. All
+1,702 source tests pass; the 260,683-byte worktree wheel remains under the cap.
+The exact clean installed gate is pending.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

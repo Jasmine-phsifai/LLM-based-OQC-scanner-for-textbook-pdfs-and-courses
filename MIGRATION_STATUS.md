@@ -1374,6 +1374,14 @@ The following directions remain traceable but are not current work:
   Proxy TCP passed but pre-gate proxied PyPI HTTPS probes timed out; the
   unchanged wheelhouse required no download. The next consumer is the existing
   public whole-file long-MP3 route, not a new orchestration wrapper.
+  #325 connects that consumer. `recognize_long_mp3()` keeps its memory-only
+  default, while `output_dir` selects a fixed same-name job directory. One
+  settled whole-file result is saved before atomic `result.md` publication;
+  exact `resume=True` reuses it with zero new provider calls. Request identity
+  now includes transport, and state preserves provider-file/client cleanup
+  facts. Interval dispatch, repair, overwrite, fallback, generalized
+  transactions, and legacy formats remain out of scope. All 1,702 source tests
+  pass; the worktree wheel is 260,683 bytes. Clean installed proof is pending.
 
 ## Obsolete Prose Kept For Trace
 
