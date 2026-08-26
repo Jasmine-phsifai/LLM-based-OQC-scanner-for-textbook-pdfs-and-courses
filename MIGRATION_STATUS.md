@@ -1427,6 +1427,12 @@ The following directions remain traceable but are not current work:
   native Google errors. It records no provider text and changes no retry policy;
   all 1,725 source tests pass. A bounded live resume must identify the actual
   upload exception family before retry/fallback policy is selected.
+  Exact `8a738fa` passes the clean installed gate with 1,724 archived tests and
+  one optional skip, wheel 267,086 bytes, base 1,351,735 bytes, all profiles and
+  smokes green. Live evidence identifies the upload error as `ReadTimeout` with
+  zero new generation calls. #337 maps the fixed HTTP-client timeout MRO family
+  to existing retryable `PROVIDER_TIMEOUT`; all 1,726 source tests pass and no
+  automatic retry/fallback is added.
 
 ## Obsolete Prose Kept For Trace
 

@@ -854,6 +854,12 @@ persisted slot. The sidecar remains reusable; live success is still open.
 error, accepting an ASCII Python identifier and exposing it through the runner
 as `sdk_type` after a second validation. It records no message/module/path and
 does not change retry policy. All 1,725 source tests pass.
+#336 is clean-installed at exact `8a738fa`: 1,724 archived tests pass with one
+optional skip, wheel 267,086 bytes, base 1,351,735 bytes, all profiles and local
+smokes green. Its bounded live resume identified upload `ReadTimeout` with zero
+new generation calls and one persisted slot. #337 maps the common HTTP-client
+timeout MRO family to existing retryable `PROVIDER_TIMEOUT` without importing a
+network SDK or adding automatic retry. All 1,726 source tests pass.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

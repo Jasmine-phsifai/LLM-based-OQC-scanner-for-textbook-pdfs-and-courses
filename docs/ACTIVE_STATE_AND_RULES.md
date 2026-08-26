@@ -6306,6 +6306,32 @@ runner 二次白名单、隐私回归、完整离线测试，且不记录 module
 过度设计复查：没有异常类表、module allowlist、message 解析、traceback、日志系统、
 retry、fallback 或 provider 抽象；只有真实未知分支的一个经两层验证的类名。
 
+精确提交 `8a738fac8f945dcb5679e68531030b4bf40f6ab8` 的干净安装门禁
+退出 0：归档测试 1,724 通过、1 跳过，wheel 267,086 bytes，base 1,351,735
+bytes，八种配置和全部本地媒体 smoke 通过，代理 TCP/HTTPS 200 可达，门禁根清零。
+同一保留 sidecar 的一次真实 resume 随后给出完整安全事实：exit 1、operation
+`upload`、sdk type `ReadTimeout`、request-scope
+`PROVIDER_RESPONSE_INVALID`、本次生成调用 0、已保存窗口 1、客户端关闭成功。
+这证明它是上传传输超时而不是模型、格式解析或 Files processing 错误；本轮停止调用。
+
+## Iteration 337：ReadTimeout 映射为已有可重试 timeout
+
+本轮英文原子目标是：把 #336 实际观察到的 native upload `ReadTimeout` 映射为已有
+稳定 `PROVIDER_TIMEOUT`，同时保留 operation、零调用和 cleanup 事实；成功标准是
+无 HTTPX/Google eager import、相邻和完整测试、clean-wheel 证明，且不加入自动重试、
+延迟、换模型或 fallback。
+
+`map_google_genai_error()` 现在把内建 `TimeoutError` 与异常 MRO 中固定的
+`TimeoutException`、`ConnectTimeout`、`ReadTimeout`、`WriteTimeout`、
+`PoolTimeout` 视为 timeout 家族。它不解析异常 message，不按任意包含 “timeout” 的
+类名猜测，也不导入可选网络库。实际 `ReadTimeout` 因此得到 provider scope、稳定
+`PROVIDER_TIMEOUT` 和既有默认 `retryable=true`；已经正确映射的错误不再需要
+`provider_sdk_type` 诊断字段。
+
+108 项相关测试和 1,726 项完整离线测试通过（66.24 秒）。过度设计复查：没有 SDK
+专属异常依赖、重试循环、退避参数、次数配置、模型切换或 provider 池。是否由库内
+重试、重试几次，以及跨 provider fallback 仍是后续产品决策；当前只修正错误诚实性。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

@@ -30,7 +30,7 @@ def map_google_genai_error(error: object, *, model: str) -> OCRLLMError:
             code="PROVIDER_AUTHENTICATION",
             details=_scoped(details, "credential"),
         )
-    if isinstance(error, TimeoutError) or code in {408, 504} or status == "DEADLINE_EXCEEDED":
+    if _is_timeout_error(error) or code in {408, 504} or status == "DEADLINE_EXCEEDED":
         return ProviderError(
             "The Google GenAI request timed out.",
             code="PROVIDER_TIMEOUT",
@@ -111,6 +111,22 @@ def _safe_exception_type(error: object) -> str | None:
     ):
         return name
     return None
+
+
+def _is_timeout_error(error: object) -> bool:
+    if isinstance(error, TimeoutError):
+        return True
+    timeout_type_names = {
+        "TimeoutException",
+        "ConnectTimeout",
+        "ReadTimeout",
+        "WriteTimeout",
+        "PoolTimeout",
+    }
+    return any(
+        base.__name__ in timeout_type_names
+        for base in type(error).__mro__
+    )
 
 
 def _scoped(details: dict[str, str | int], scope: str) -> dict[str, str | int]:

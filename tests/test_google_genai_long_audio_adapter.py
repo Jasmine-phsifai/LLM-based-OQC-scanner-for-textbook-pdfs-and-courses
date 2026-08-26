@@ -413,6 +413,31 @@ def test_unknown_upload_failure_reports_only_safe_operation(monkeypatch) -> None
     assert fake.events == ["catalog", "upload", "close"]
 
 
+def test_http_client_read_timeout_maps_to_retryable_provider_timeout(
+    monkeypatch,
+) -> None:
+    class ReadTimeout(Exception):
+        pass
+
+    fake = _FakeGoogleModule(
+        upload_error=ReadTimeout("PRIVATE UPLOAD BODY"),
+    )
+    _install_fake_snapshot(monkeypatch)
+    _install_fake_sdk(monkeypatch, fake)
+
+    with pytest.raises(ProviderError) as caught:
+        recognize_long_mp3(SOURCE, config=_config())
+
+    assert caught.value.code == "PROVIDER_TIMEOUT"
+    assert caught.value.retryable is True
+    assert caught.value.details["failure_scope"] == "provider"
+    assert caught.value.details["provider_operation"] == "upload"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert "provider_sdk_type" not in caught.value.details
+    assert "PRIVATE" not in str(caught.value)
+    assert fake.events == ["catalog", "upload", "close"]
+
+
 def test_generation_failure_preserves_primary_when_delete_also_fails(
     monkeypatch,
 ) -> None:
