@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from .config import Config
-from .errors import InvalidSource, OCRLLMError
+from .errors import ConfigError, InvalidSource, OCRLLMError
 from .result import RecognitionResult
 
 
@@ -63,10 +63,12 @@ def _recognize_long_mp3(
         config=cfg,
         allow_persistence=True,
     )
-    validated_interval = validate_long_audio_interval_minutes(
-        interval_minutes,
-        config=cfg,
-    )
+    validated_interval = validate_long_audio_interval_minutes(interval_minutes)
+    if validated_interval is not None and cfg.output_dir is None:
+        raise ConfigError(
+            "Long-audio interval recognition requires Config.output_dir.",
+            code="CONFIG_INVALID",
+        ) from None
     with reuse_or_create_provider_request_start_gate(
         cfg.execution.provider_request_start_interval_seconds
     ):

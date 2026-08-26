@@ -358,9 +358,10 @@ def _install_fake_audio(
         fromlist=["unused"],
     )
     monkeypatch.setattr(video_processor, "recognize_short_mp3", fake_google_audio)
+    monkeypatch.setattr(video_processor, "recognize_long_mp3_whole", reject_long_audio)
     monkeypatch.setattr(
         video_processor,
-        "recognize_uploaded_mp3",
+        "recognize_long_mp3_intervals",
         reject_long_audio,
     )
     return observed
@@ -664,12 +665,13 @@ def test_recognize_video_routes_real_long_audio_to_google_files_once(
             client_closed=True,
         )
 
-    video_processor = importlib.import_module(
-        "ocrllm.processors.recognize_video_mp3"
+    video_processor = importlib.import_module("ocrllm.processors.recognize_video_mp3")
+    whole_processor = importlib.import_module(
+        "ocrllm.processors.recognize_long_mp3_whole"
     )
     monkeypatch.setattr(video_snapshot, "probe_video_mp3", observe_probe)
     monkeypatch.setattr(video_processor, "recognize_short_mp3", reject_short_audio)
-    monkeypatch.setattr(video_processor, "recognize_uploaded_mp3", fake_long_audio)
+    monkeypatch.setattr(whole_processor, "recognize_uploaded_mp3", fake_long_audio)
 
     outcome = recognize_video(
         source,
@@ -691,6 +693,117 @@ def test_recognize_video_routes_real_long_audio_to_google_files_once(
     assert not observed_long_snapshots[0].exists()
     assert probe_calls == observed_long_snapshots
     assert image_provider.calls
+    assert not (outcome.output_root / ".ocrllm-video-audio-resume.json").exists()
+    assert not (outcome.output_root / "audio" / "result.md").exists()
+    assert not (outcome.output_root / "result.md").exists()
+
+
+def test_recognize_video_routes_long_audio_through_ordered_integer_intervals(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_long_audio_mp4(tmp_path / "interval-lecture.mp4")
+    image_provider = _ImageProvider()
+    observed_prompts: list[str] = []
+
+    def fake_interval_audio(snapshot, *, prompt, config):
+        assert snapshot.path.is_file()
+        observed_prompts.append(prompt)
+        return GoogleGenAIUploadedAudioResponse(
+            markdown=f"# Interval {len(observed_prompts)}\n",
+            input_tokens=10,
+            output_tokens=4,
+            remote_file_deleted=True,
+            client_closed=True,
+        )
+
+    interval_processor = importlib.import_module(
+        "ocrllm.processors.recognize_long_mp3_intervals"
+    )
+    monkeypatch.setattr(
+        interval_processor,
+        "recognize_uploaded_mp3",
+        fake_interval_audio,
+    )
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=_audio_config(tmp_path),
+        audio_interval_minutes=3,
+    )
+
+    assert outcome.audio_error is None
+    assert outcome.audio_result is not None
+    assert outcome.audio_result.metadata["provider_call_count"] == 2
+    assert outcome.audio_result.metadata["current_run_provider_call_count"] == 2
+    assert "# Interval 1" in outcome.audio_result.markdown
+    assert "# Interval 2" in outcome.audio_result.markdown
+    assert len(observed_prompts) == 2
+    assert not (outcome.output_root / ".ocrllm-video-audio-resume.json").exists()
+    assert not (outcome.output_root / "audio" / "result.md").exists()
+    assert not (outcome.output_root / "result.md").exists()
+
+
+def test_recognize_video_keeps_paid_interval_prefix_after_later_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ocrllm.audio.load_long_audio_partial_state import (
+        load_long_audio_partial_state,
+    )
+
+    source = _write_long_audio_mp4(tmp_path / "failed-interval-lecture.mp4")
+    image_provider = _ImageProvider()
+    calls = 0
+
+    def fail_second_interval(snapshot, *, prompt, config):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise ProviderError(
+                "Second interval failed.",
+                details={"provider_calls_attempted": 1},
+            )
+        return GoogleGenAIUploadedAudioResponse(
+            markdown="# Paid interval\n",
+            input_tokens=10,
+            output_tokens=4,
+            remote_file_deleted=True,
+            client_closed=True,
+        )
+
+    interval_processor = importlib.import_module(
+        "ocrllm.processors.recognize_long_mp3_intervals"
+    )
+    monkeypatch.setattr(
+        interval_processor,
+        "recognize_uploaded_mp3",
+        fail_second_interval,
+    )
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(provider=image_provider),
+        audio_config=_audio_config(tmp_path),
+        audio_interval_minutes=3,
+    )
+
+    state_path = outcome.output_root / ".ocrllm-video-audio-resume.json"
+    state = load_long_audio_partial_state(state_path)
+    assert calls == 2
+    assert outcome.audio_result is None
+    assert outcome.audio_error is not None
+    assert outcome.audio_error.details["provider_calls_attempted"] == 2
+    assert outcome.audio_error.details["persisted_interval_count"] == 1
+    assert all(item.succeeded for item in outcome.frame_outcomes)
+    assert state is not None
+    assert state.mode == "interval"
+    assert state.interval_minutes == 3
+    assert len(state.slots) == 1
+    assert not (outcome.output_root / "audio" / "result.md").exists()
 
 
 def test_recognize_video_preserves_settled_work_on_final_snapshot_cleanup_failure(
@@ -1399,6 +1512,27 @@ def test_recognize_video_rejects_invalid_audio_config_before_output_or_dispatch(
             output_dir=output_dir,
             image_config=Config(provider=image_provider),
             audio_config=Config(provider=image_provider),
+        )
+
+    assert image_provider.calls == []
+    assert not output_dir.exists()
+
+
+@pytest.mark.parametrize("interval_minutes", (True, 0, -1, 1.5, "5"))
+def test_recognize_video_rejects_invalid_audio_interval_before_source_or_output(
+    tmp_path: Path,
+    interval_minutes,
+) -> None:
+    image_provider = _ImageProvider()
+    output_dir = tmp_path / "output"
+
+    with pytest.raises(ConfigError, match="positive integer"):
+        recognize_video(
+            tmp_path / "not-opened.mp4",
+            output_dir=output_dir,
+            image_config=Config(provider=image_provider),
+            audio_config=_audio_config(tmp_path),
+            audio_interval_minutes=interval_minutes,
         )
 
     assert image_provider.calls == []

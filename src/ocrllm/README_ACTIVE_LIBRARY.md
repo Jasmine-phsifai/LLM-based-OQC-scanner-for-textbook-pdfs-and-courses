@@ -91,9 +91,11 @@ memory-only despite its successful #069 public-result gate. Stage A2a
 standalone Google Files long-MP3 recognition is also implemented and
 live-proven; its whole-file public facade now has optional publication and
 resume. `recognize_video()` selects inline audio through 300 seconds or
-Files above 300 seconds through the current 9.5-hour single-request ceiling.
-A2b now has an internal exact-window planner and one-window temporary MP3
-materializer, but public chunk dispatch, resume, and the remaining private
+whole-file Files above 300 seconds by default. Its optional
+`audio_interval_minutes` selects ordered Files intervals using an exact positive
+integer number of minutes; settled state is written under the video-owned output
+root and removed after a successful clean audio result. Current video calls do
+not consume retained state, so public video resume and the remaining private
 9.5-to-10-hour range remain unavailable. Install `ocrllm[audio]` for both its
 lazy MP3 decoder and interval FFmpeg backend; neither loads during plain import.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
@@ -358,6 +360,8 @@ video_outcome = recognize_video(
         provider=GoogleGenAISettings(),
         audio_model=AudioModelSettings(name="gemini-2.5-flash"),
     ),
+    # Optional: use exact integer-minute Files intervals instead of whole mode.
+    audio_interval_minutes=10,
 )
 if video_outcome.status != "failed":
     video_result = publish_video_result(
@@ -481,6 +485,15 @@ complete. Successful frame-group outcomes must contain exact image
 `VideoRecognitionOutcome` uses an exact lexical artifact layout:
 every retained frame path has parent `output_root / "frames"`, and an audio
 artifact, when present, is exactly `output_root / "audio.mp3"`.
+Long video audio keeps whole-file recognition as the default. Passing
+`audio_interval_minutes` uses the existing serial long-audio interval planner;
+the value must be an exact positive built-in integer. Each paid interval is
+saved immediately to `output_root / ".ocrllm-video-audio-resume.json"`; a later
+failure keeps that state, while clean recognition and snapshot cleanup remove
+it before returning. No nested `audio/result.md` or video `result.md` is
+created. The current public video call cannot consume retained state yet, and
+repair remains a separate future text-range side path rather than a state
+consumer.
 Retained frame indices must be strictly increasing and their timestamps must
 not move backward. Frame-group outcome indices must be the contiguous caller
 order `0..n-1`. Every settled group must also carry valid frame indices and

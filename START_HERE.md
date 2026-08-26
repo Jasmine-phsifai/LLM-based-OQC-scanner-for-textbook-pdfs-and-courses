@@ -84,12 +84,13 @@ longer than the current 9.5-hour single-prompt limit. It owns the source,
 uploads once, waits within the configured timeout, generates once, deletes the
 remote file, and closes the client. #297 integrates these existing short and
 long adapters into `recognize_video()`: one owned extracted MP3 is decoded once,
-then exactly one adapter is selected at 300 seconds. Standalone long audio now
-supports proven whole-file persistence and exact-integer-minute interval resume,
-but video still uses only the memory-only whole-file adapter for long audio;
-connecting those existing processors without duplicating publication/state is
-the next video consumer after the bounded DashScope live exit. Fallback and
-batch/worker support remain later gates. #152 now selects Route B
+then exactly one adapter is selected at 300 seconds. Standalone long audio
+supports proven whole-file persistence and exact-integer-minute interval resume.
+#341 reuses those settlement functions in video without nesting standalone
+publication: whole remains the default, while `audio_interval_minutes` selects
+serial intervals and stores paid prefixes under the video root until clean
+success. Public video resume is not yet exposed. Fallback and batch/worker
+support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval
 length is configurable only in integer minutes and belongs to temporary resume
 state. #304 closes the last identity choice: interval chunks use a private fixed
@@ -874,6 +875,18 @@ smokes green. One bounded caller-owned resume then succeeded against the real
 retained state: catalog 37, total/current calls 2/1, current usage 8,886/572,
 final publication, state removal, and remote/client cleanup proven. The Google
 interval live gate is closed; automatic retry/fallback remains unimplemented.
+
+#339 closes one bounded DashScope connectivity/lifecycle gate with current
+catalog discovery and one `qwen3.5-ocr` formula-board call. #340 preserves the
+compatible endpoint's prompt/completion token counts through the existing
+per-model accounting path and is clean-installed at exact `ec1839c`: 1,745
+archived tests pass with one optional skip, all profiles and media smokes green.
+#341 then connects video-owned long audio to the already-proven whole/interval
+settlement functions. Whole remains the default; `audio_interval_minutes`
+accepts exact positive integer minutes. Paid state stays directly under the
+video output root on failure and is removed after clean recognition/snapshot
+cleanup; no nested standalone Markdown is published. This is future resume
+groundwork, not a public video-resume claim, and repair remains separate.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

@@ -92,10 +92,14 @@ real failure as upload `ReadTimeout` without exposing SDK text. #337 maps that
 family to retryable `PROVIDER_TIMEOUT`; one bounded caller-owned resume then
 reused the settled prefix, made exactly one missing generation call, published
 the final result, and removed temporary state. The Google interval live gate is
-closed. The route does not alter A1 or route video. #339 has now closed the
-already-built Stage M DashScope live gate. The current execution order advances
-to connecting the proven whole/interval long-audio processors to the existing
-video audio branch without changing its independent image configuration.
+closed. #339 then closed the already-built Stage M DashScope live gate. #341
+connects the proven whole/interval settlement functions to the existing video
+audio branch without changing its independent image configuration. Whole remains
+the default; exact positive integer `audio_interval_minutes` enables serial
+intervals. Video owns one temporary sidecar directly under its output root,
+retains paid prefixes on failure, removes it after clean audio/snapshot success,
+and never nests the standalone audio publication. Public video resume is not yet
+available.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -234,9 +238,10 @@ is proven offline, in an installed wheel, and live through Google; it renders al
 pages through PDFium and reuses the image/resume path in serial groups of eight.
 Content repair is not implemented; #120 selected ordinary resume and explicitly
 rejected legacy-Markdown compatibility. With the Stage M DashScope live exit
-closed by #339, the queue now advances to the next video-library consumer:
-preserve the existing separate image/audio configs while allowing a long video's audio
-branch to select the already-proven whole or exact-integer-minute interval path.
+closed by #339, #341 preserves the existing separate image/audio configs while
+allowing a video's audio branch to select the already-proven whole or
+exact-integer-minute interval path. Retained video sidecars are future resume
+groundwork only; the public call cannot consume them yet.
 The built-in Google and DashScope adapters report per-model input/output token
 usage when their endpoint supplies it. Public injected providers
 return Markdown strings and make no token-usage claim. Existing attempt disclosure
@@ -6382,6 +6387,13 @@ Windows 回收站。该操作可恢复，没有永久删除或触碰其他目录
 恢复参数只存在于临时 sidecar，成功后可删除。repair 仍是以后从失败文字提取明确
 时间范围的小侧链，不依赖该 sidecar，也不进入本次主路径。
 
+维护者再次确认：视频音频必须同时支持整段与可配置 interval，两者不自动选择；
+interval 参数只接受整数分钟。临时状态为以后可能的 resume 保存 mode 和分钟数，成功
+生成结果后即可删除；repair 不读取该参数或 sidecar，只从失败切片文字截取时间范围，
+且始终是小型侧链支持而非生产主力。网络前置条件是代理始终开启；下载或联网失败时
+应先检查代理是否被错误关闭，并在显式代理环境中执行。机械下载、轮询和全量打通交给
+轻量执行者，主线程同时做独立代码工作。
+
 当前顺序因此是：①轻量执行者在确认 WinINET、`127.0.0.1:10080` TCP 和显式代理
 HTTPS 后，通过隔离控制器读取 legacy UI 已保存凭据，实时发现 DashScope 模型并执行
 一个有明确调用上限的原子识别；候选优先有公式、LaTeX、Mermaid 或推理价值的较小
@@ -6389,6 +6401,10 @@ HTTPS 后，通过隔离控制器读取 legacy UI 已保存凭据，实时发现
 定义视频 long-audio 窄接缝及输出/state 所有权，随后补一个有可见文字与可听语音的
 301 秒以上 bounded live gate。下载、长门禁和机械等待继续交给轻量执行者；主线程
 同时复核代码与文档。
+
+DashScope 的有针对性候选可包括 `qwen3.5-ocr`、约 27B 的 OCR/通用模型等，但每次仍
+必须由实时 catalog 证明存在并有明确问题目标；普通 OCR 已由 RapidOCR 覆盖，明显更差
+的小模型直接忽略，禁止模型逐个试用或使用各类“最新超大参数旗舰”。
 
 过度设计复查：本轮没有 runtime、API、state schema、provider class、retry、fallback、
 repair parser 或 worker 变更。最危险的两条过度设计路线分别是重复构造视频 provider
@@ -6471,6 +6487,40 @@ image+DashScope、Google、audio+Google、PDF vision、video 和 combined profil
 过度设计复查：没有共享 usage parser、provider 基类、billing ledger、价格表、token
 估算、native/compatible 双 schema、retry、fallback 或 API pool。直接复用现有
 `VisionProviderResponse` 和 per-model accumulator；这是修通已有消费者，不是新框架。
+
+## Iteration 341：视频长音频复用已有 whole/interval 结算
+
+公开视频入口新增可选 `audio_interval_minutes`，只接受精确正整数；配置、分钟数和取消
+信号全部在读源、建目录和 provider dispatch 前验证。省略它时，短音频继续走 inline，
+长音频继续走 whole Files；显式传入时使用现有串行 interval planner/materializer、固定
+上下文 prompt、paid-slot state 和按模型 usage 汇总。图片与音频仍使用两个独立 `Config`。
+
+本轮没有调用 standalone `recognize_long_mp3()`。原 processor 中已有的 whole-slot 结算
+抽到同名 `recognize_long_mp3_whole.py`，standalone 与 video 各自直接消费；已有 interval
+processor 未复制。视频把 sidecar 固定为输出根下
+`.ocrllm-video-audio-resume.json`：whole 或每个 interval 结算后先原子保存；provider、
+materialization 或音频 snapshot 清理失败时保留已付费状态；只有识别和 snapshot 清理均
+成功后才调用共享的 `remove_long_audio_temporary_state()`。删除失败不假装 complete，
+而是保留 state 并返回 partial warning。视频不会生成 `audio/result.md` 或内部
+`result.md`；最终视频 Markdown 仍只能由 caller 显式调用 `publish_video_result()`。
+
+直接回归使用真实 301 秒视频证明 3 分钟 interval 产生两个有序请求、正文和 usage 聚合，
+第二个请求失败时 sidecar 明确保存 mode=interval、minutes=3 和一个 settled slot；五种
+非法值在 source/output/provider 前拒绝。单元回归又证明两次 provider 调用后若音频
+snapshot 清理失败，错误计数为 2 而不是旧代码写死的 1，且 state 保留；state unlink
+失败则结果为 partial。相邻长音频、视频和 runner 集为 **108 passed in 23.72s**；
+完整源码 **1,755 passed in 75.39s**。compileall、轻量 import、七个变更/新增 runtime
+import、diff check 和 frozen `contracts/worker` 均通过。单次 worktree wheel 为
+**268,897 bytes / 266 members**，七个 runtime 均已打包，tests/docs/tools 均未进入，
+wheel checker 和 owned temp 清理通过。精确提交的 clean installed video/combined smoke
+仍是退出条件。
+
+过度设计复查：没有公开视频 resume、state path 字段、第二种 checkpoint、nested
+publication、mode enum、repair parser、provider class、retry、fallback、并行 interval、
+cross-process lock 或事务框架。保留但尚不能由公开视频调用消费的 sidecar 是维护者明确
+要求的 future-resume groundwork，文档不把它冒充已实现恢复。最接近流程偏差的是新
+直接测试没有在第一行 runtime patch 前先单独形成红灯；初次相邻测试仍立即暴露旧 mock
+边界失效并阻止提交，但本轮不会把它写成严格 failing-first 证据。
 
 ## Documentation Rules
 

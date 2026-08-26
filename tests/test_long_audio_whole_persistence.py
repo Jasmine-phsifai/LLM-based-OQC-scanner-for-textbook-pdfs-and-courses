@@ -30,10 +30,14 @@ def _install_fakes(
     provider_calls: list[str],
     *,
     snapshot_cleanup_error: bool = False,
-) -> object:
+) -> tuple[object, object]:
     processor = __import__(
         "ocrllm.processors.recognize_long_mp3",
         fromlist=["recognize_long_mp3"],
+    )
+    whole_processor = __import__(
+        "ocrllm.processors.recognize_long_mp3_whole",
+        fromlist=["recognize_long_mp3_whole"],
     )
 
     @contextmanager
@@ -64,8 +68,8 @@ def _install_fakes(
         )
 
     monkeypatch.setattr(processor, "snapshot_long_mp3", fake_snapshot)
-    monkeypatch.setattr(processor, "recognize_uploaded_mp3", fake_provider)
-    return processor
+    monkeypatch.setattr(whole_processor, "recognize_uploaded_mp3", fake_provider)
+    return processor, whole_processor
 
 
 def _root(output_dir: Path) -> Path:
@@ -82,7 +86,7 @@ def test_new_whole_run_saves_before_atomic_publication_then_removes_state(
 ) -> None:
     output_dir = tmp_path / "out"
     provider_calls: list[str] = []
-    processor = _install_fakes(monkeypatch, provider_calls)
+    processor, whole_processor = _install_fakes(monkeypatch, provider_calls)
     events: list[str] = []
     output_module = __import__(
         "ocrllm.output.write_markdown_atomically",
@@ -103,7 +107,7 @@ def test_new_whole_run_saves_before_atomic_publication_then_removes_state(
         output_module.write_markdown_atomically(path, markdown, overwrite=overwrite)
 
     monkeypatch.setattr(
-        processor,
+        whole_processor,
         "save_long_audio_partial_state_atomically",
         observed_save,
         raising=False,
@@ -136,7 +140,7 @@ def test_failed_publication_preserves_paid_state_for_zero_call_resume(
 ) -> None:
     output_dir = tmp_path / "out"
     provider_calls: list[str] = []
-    processor = _install_fakes(monkeypatch, provider_calls)
+    processor, _ = _install_fakes(monkeypatch, provider_calls)
     output_module = __import__(
         "ocrllm.output.write_markdown_atomically",
         fromlist=["write_markdown_atomically"],
@@ -195,7 +199,7 @@ def test_resume_request_mismatch_stops_before_provider_dispatch(
 ) -> None:
     output_dir = tmp_path / "out"
     provider_calls: list[str] = []
-    processor = _install_fakes(monkeypatch, provider_calls)
+    processor, _ = _install_fakes(monkeypatch, provider_calls)
 
     def fail_publication(*_args, **_kwargs):
         raise OutputError(code="OUTPUT_WRITE_FAILED")
@@ -227,7 +231,7 @@ def test_new_run_collision_stops_before_snapshot_and_provider(
     output_dir = tmp_path / "out"
     _root(output_dir).mkdir(parents=True)
     provider_calls: list[str] = []
-    processor = _install_fakes(monkeypatch, provider_calls)
+    processor, _ = _install_fakes(monkeypatch, provider_calls)
     snapshot_started = False
 
     def fail_snapshot(*_args, **_kwargs):

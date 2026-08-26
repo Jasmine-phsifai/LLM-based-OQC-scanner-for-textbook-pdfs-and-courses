@@ -14,6 +14,7 @@ def recognize_video(
     output_dir: str | Path,
     image_config: Config,
     audio_config: Config,
+    audio_interval_minutes: int | None = None,
 ) -> VideoRecognitionOutcome:
     """Settle independent frame and audio recognition for one local MP4."""
     from .clear_public_error import clear_public_error
@@ -31,6 +32,9 @@ def recognize_video(
     from .validate_cancellation_signal import validate_cancellation_signal
     from .validate_config import validate_config
     from .validate_google_mp3_options import validate_google_mp3_options
+    from .validate_long_audio_interval_minutes import (
+        validate_long_audio_interval_minutes,
+    )
     from .video.extract_video_audio import (
         _extract_video_audio_from_stable_source,
     )
@@ -46,6 +50,9 @@ def recognize_video(
     validate_google_mp3_options(
         (Path("video-audio.mp3"),),
         config=validated_audio_config,
+    )
+    validated_audio_interval = validate_long_audio_interval_minutes(
+        audio_interval_minutes
     )
     validate_cancellation_signal(validated_image_config.cancellation)
     validate_cancellation_signal(validated_audio_config.cancellation)
@@ -113,6 +120,10 @@ def recognize_video(
                         audio_output = recognize_video_mp3(
                             audio_artifact,
                             config=validated_audio_config,
+                            interval_minutes=validated_audio_interval,
+                            state_path=(
+                                output_root / ".ocrllm-video-audio-resume.json"
+                            ),
                         )
                     audio_result = build_recognition_result(
                         audio_output,

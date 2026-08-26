@@ -1442,6 +1442,15 @@ The following directions remain traceable but are not current work:
   exactly one missing call (total/current 2/1), published the result, removed
   state, and proved remote/client cleanup. The Google interval live gate is
   closed; automatic retry/fallback remains a later decision.
+  #339 closes the bounded DashScope catalog/connectivity/lifecycle exit with
+  one non-flagship formula-board request. #340 preserves compatible-endpoint
+  prompt/completion usage through the existing per-model accumulator and passes
+  the exact `ec1839c` clean installed gate. #341 adds one narrow video consumer
+  for the proven long-audio settlement primitives: whole remains default and an
+  exact-positive-integer `audio_interval_minutes` selects serial intervals.
+  Video owns the temporary state path, retains paid prefixes on failure, removes
+  state only after a clean audio snapshot exit, and never creates the standalone
+  `audio/result.md`. Public video resume and repair parsing remain unavailable.
 
 ## Obsolete Prose Kept For Trace
 
