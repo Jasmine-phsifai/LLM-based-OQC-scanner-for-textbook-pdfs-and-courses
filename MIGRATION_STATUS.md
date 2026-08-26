@@ -1459,9 +1459,11 @@ The following directions remain traceable but are not current work:
   maintained Google video runner can pass an exact integer-minute interval,
   require its precomputed audio-call count, keep a caller-owned output directory
   on failure, and reject successful runs that leave the temporary audio sidecar
-  or nested standalone publication. Its bounded live result remains the exit
-  gate and will be recorded in the authoritative state and work diary; this
-  does not claim public video resume.
+  or nested standalone publication. Its one bounded live run settled honestly
+  as failed: the image branch made one unsuccessful call and the first audio
+  interval timed out during Files upload before generation, with zero settled
+  intervals and a closed client. This proves the failure boundary, not the
+  interval success path, and does not claim public video resume.
 
 ## Obsolete Prose Kept For Trace
 

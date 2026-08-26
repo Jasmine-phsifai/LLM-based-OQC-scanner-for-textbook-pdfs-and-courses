@@ -631,6 +631,13 @@ failure the caller-owned directory remains available for bounded inspection of
 the resumable state; the JSON output still exposes only allowlisted error facts
 and never prints the directory or saved Markdown. This is a live-test control,
 not a second public interval or resume API.
+The #342 one-shot 301-second interval run preflighted five retained frames as
+one image group. Its image call failed, and its first audio interval timed out
+during Google Files upload before generation, so no interval settled and no
+sidecar was expected. The runner returned an honest failed outcome after one
+total generation call, with a closed audio client, no composition, no leak,
+and no residue. This proves the bounded failure path, not interval success; it
+was not replayed and does not justify retry or fallback behavior.
 The #186 robustness run retained three equal-luminance color scenes and made one
 image plus one audio call; both returned `PROVIDER_RESPONSE_INVALID`, so the
 top-level outcome honestly remained failed and no token usage was invented.

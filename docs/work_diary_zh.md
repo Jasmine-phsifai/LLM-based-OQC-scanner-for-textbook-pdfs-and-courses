@@ -6088,6 +6088,12 @@ Iteration #312 self-prompt: Determine and implement the narrowest maintainable l
 
 **失败优先证据与实现。** 新回归先在旧 runner 上得到 **4 failed, 34 passed**：CLI 不接参数，无法传入 `recognize_video()` 或指定外层目录，摘要写死一次音频调用且不拒绝剩余 sidecar，失败摘要丢已保存数/操作/SDK 类型。最小修复将 interval minutes、expected calls 和 output dir 三项绑定，只接标准正整数并要求 Files transport。成功使用实报 duration 重算调用数，同时确认 sidecar 和两个禁止的 nested publication 不存在。失败只放行非负 saved count、固定 provider operation 和 ASCII identifier SDK type，不打印 message/path/text。runner 回归为 **38 passed**，相邻 Google video/audio 与公开视频为 **90 passed in 24.54s**。
 
-**当前验证和未完成退出项。** 轻量执行者不编辑仓库地完成全源码 **1,764 passed in 75.07s**；compileall、轻量 `import ocrllm` 与 diff check 通过。主线已逐段审查 diff，没有改 runtime/package API。另一轻量执行者先确认 WinINET/10080 TCP/显式代理 HTTPS 204，不下载地只构建一次 worktree wheel：**268,897 bytes / 266 members**，262 份 Python runtime 与源码精确一致，tests/tools/docs 和 package README 为零，checker 通过，owned temp 已清理。单次真实 Google 长视频尚待完成；本段不伪称 green。真实 controller 必须先检查 WinINET/`127.0.0.1:10080`/显式代理 HTTPS，用已授权的合成可见文字+合成语音长视频，实时 catalog 只验证一个已选模型，不 retry、fallback、switch 或 sweep。
+**离线与打包验证。** 轻量执行者不编辑仓库地完成全源码 **1,764 passed in 75.07s**；compileall、轻量 `import ocrllm` 与 diff check 通过。主线已逐段审查 diff，没有改 runtime/package API。另一轻量执行者先确认 WinINET/10080 TCP/显式代理 HTTPS 204，不下载地只构建一次 worktree wheel：**268,897 bytes / 266 members**，262 份 Python runtime 与源码精确一致，tests/tools/docs 和 package README 为零，checker 通过，owned temp 已清理。
+
+**唯一次真实长视频结果。** 执行者先确认 exact commit/origin，tracked clean 且只有两份受保护未跟踪文件；WinINET、10080 TCP 与显式代理 HTTPS 204 全过。仓库外合成 MP4 为 301 秒，同时含视频流和全程重复语音；独立预检保留 5 帧、1 个图片批次。两次进程启动写法被安全策略在创建进程前拒绝，所以 provider 调用仍为 0；改用可接受的本地启动方式后只运行唯一 runner，不重试、换模、fallback 或另做 catalog。
+
+runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/outcome 均 failed；catalog **37**，图片/音频均选 `gemini-2.5-flash`。preflight 一致报 5 帧/1 批/3 分钟/2 个预期音频调用。图片 1 批发起 1 次、成功 0；controller 未保留该错误的更多安全字段，不猜 code/scope。音频 artifact 已抽取，但第一个 interval 在 Files upload 阶段返回 `PROVIDER_TIMEOUT`，`failure_scope=provider`、`provider_calls_attempted=0`、`persisted_interval_count=0`、`provider_client_closed=true`，无 duration/transport/remote-delete 字段。composition 未开始，总 generation 调用 1，usage 未知。sidecar 不存在不是丢已付费结果，而是根本没有 settled interval；nested results 也不存在。stderr 0 bytes，key/内容/绝对路径/raw provider message 泄漏检查均 false。记录证据后精确删除唯一 owned temp root，最终 process/file 均为 0。
+
+**退出判断。** #342 已完成 runner 表达与诚实失败结算，但没有证明视频 interval 成功路径。代理当时明确正常，所以不得将 upload timeout 归因为“代理没开”；也不因一次失败建设 retry/fallback。后续若再做真实成功 gate，应是新的单问题原子轮次，并先决定是否允许手工重试 upload timeout，不是本轮自动重放。
 
 **过度设计复查。** 没有新 runner、resume reader、state 摘要 schema、文件清单、调用 ledger、provider 基类、过载测试框架、retry/fallback 或自动选模。三参数强绑定是暴力拒绝含糊测试，不是为任意 iterable/config 做兼容。失败时保留目录是 paid state 的必要生命周期，不会扩展成通用 artifact 系统。repair 仍是以失败文字时间范围为输入的小侧链，不依赖这些参数或 state。

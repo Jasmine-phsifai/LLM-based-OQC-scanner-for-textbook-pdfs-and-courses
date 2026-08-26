@@ -91,8 +91,10 @@ publication: whole remains the default, while `audio_interval_minutes` selects
 serial intervals and stores paid prefixes under the video root until clean
 success. #342 extends only the maintained redacted Google video runner so one
 bounded live gate can require an exact interval and exact audio-call count while
-retaining caller-owned failure state for inspection. Public video resume is not
-yet exposed. Fallback and batch/worker
+retaining caller-owned failure state for inspection. Its sole live run failed
+honestly at the first audio Files upload with no settled interval; it was not
+replayed and is not success evidence. Public video resume is not yet exposed.
+Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval
 length is configurable only in integer minutes and belongs to temporary resume

@@ -6552,8 +6552,19 @@ raw response。
 video/audio 与公开视频集 **90 passed in 24.54s**，全量离线 **1,764 passed in
 75.07s**；compileall、轻量 import 与 diff check 也通过。只构建一次的 worktree wheel 为
 **268,897 bytes / 266 members**，262 份 Python runtime 与 `src/ocrllm` 精确对应，tests/tools/docs
-和 package README 均未进入，checker 通过且自有临时目录已清理。真实 Google 证据仍是本轮
-退出条件，未运行前不得写成已通过。
+和 package README 均未进入，checker 通过且自有临时目录已清理。
+
+精确提交 `231f9755f66d6436ada6fb6436580a84368bee32` 上的唯一次真实 gate 以失败结束，
+没有重放。代理三项检查全过；301 秒合成视频含可见内容和全程重复语音，独立预检
+保留 5 帧并形成 1 个图片批次。runner 在 **497.118s** 后 exit 1，实时 catalog 为
+37，图片/音频均用 `gemini-2.5-flash`。图片分支发出 1 次但未成功；外层未保留它的
+更多安全错误字段，因此不推测原因。音频在第一个 interval 的 Files upload 上返回
+`PROVIDER_TIMEOUT / provider / upload`，generation 调用 **0**，`persisted_interval_count=0`，
+`provider_client_closed=true`。composition 未开始，总 generation 调用为 1，token usage 未知。
+失败后 sidecar 不存在是因为没有任何 settled slot，两个 nested result 也不存在。stderr
+为空，无 key/内容/绝对路径/raw message 泄漏，owned process/file 最终均为 0。这证明 runner
+能诚实结算一次多分支失败，但没有关闭视频 interval 成功 gate；不得从这一次失败加
+retry、fallback 或模型 sweep。
 
 过度设计复查：没有新建 interval-only runner、公开 resume、state parser、第二批处理抽象、
 provider 基类、调用 ledger、retry、fallback、模型 sweep 或压力框架。caller-owned 目录只在
