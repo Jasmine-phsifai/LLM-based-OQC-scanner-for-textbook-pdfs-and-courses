@@ -639,8 +639,10 @@ recognized duration and interval, and a passing outcome must have removed the
 video audio sidecar without creating a nested standalone `result.md`. On a
 failure the caller-owned directory remains available for bounded inspection of
 the resumable state; the JSON output still exposes only allowlisted error facts
-and never prints the directory or saved Markdown. This is a live-test control,
-not a second public interval or resume API.
+and never prints the directory or saved Markdown. Every JSON outcome and runner
+failure also reports total monotonic `elapsed_seconds`, so timing survives the
+disposable outer harness without exposing wall-clock metadata. This is a
+live-test control, not a second public interval or resume API.
 The #342 one-shot 301-second interval run preflighted five retained frames as
 one image group. Its image call failed, and its first audio interval timed out
 during Google Files upload before generation, so no interval settled and no

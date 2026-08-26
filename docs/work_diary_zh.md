@@ -6201,3 +6201,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **差异与判断。** legacy 的主要 SDK client 没有统一 HTTP timeout，只有 Files readiness 的 600 秒期限；图片/文本默认最多 6 次、长音频最多 4 次同模重试，并按真实错误决定是否换候选。active 把 `(0, 600]` 秒 timeout 明确交给调用者，同时对 upload/readiness/generation 做一次调用结算、远端文件清理和脱敏 typed error，不在 adapter 内重试或换模。路线 A 是因 #351 timeout 改成 compatibility endpoint 或复制 legacy retry；路线 B 是保留已证明正确的 native transport，把一次失败交给 caller；选 B。#351 gate 自选 240 秒却没有精确阶段计时，不能据此改产品默认 timeout，更不能声称 native SDK 不可用。
 
 **过度设计复查与证据边界。** 本轮没有 provider 调用、运行时代码、测试、第二 transport、SDK wrapper、retry、模型队列或 provider 基类。没有为了“和 parent 一样”复制 legacy 的自动六次重试，也没有把 active 的远端清理和诚实计数删掉；这些是 library 生命周期，不是扩展能力。另一名轻量执行者独立只读追踪 config→router→processor→provider，与主线得到相同结论。已有 #350 全量和 #349 wheel gate 针对相同代码，无代码变化所以不机械重复测试。
+
+## #353 — 2026-08-26：Google 视频 runner 自己保留总耗时
+
+**本轮英文原子任务。** `Atomic task — Iteration #353: make the maintained Google video smoke runner preserve its own total elapsed time after #351’s outer harness lost that evidence. Context: #351 produced a valid redacted outcome, but exact elapsed time could not be recovered because timing existed only in the disposable caller; repeated provider timeout diagnosis needs durable, secret-safe timing without relying on agent discipline. Success means adding one monotonic elapsed_seconds field to every runner JSON exit path, proving it for success and failure without changing provider calls or product runtime, and documenting the evidence boundary. This matters because real API tests are only useful when their failure timing survives handoff.`
+
+**两条路线和失败优先证据。** 路线 A 给 catalog、图片、upload、processing、generation 分别建 timing schema；路线 B 只保留整个 runner 总耗时；选 B，因为 #351 只证明外层丢了总时间，现有 `stage`/`operation` 已负责失败定位。新测试要求成功 `video_outcome` 和意外 `runner_failure` 都带三位小数耗时；旧工具精确得到 **2 failed, 38 passed**，连 timing 模块都不存在。
+
+**实现与验证。** `main()` 在参数验证完成后读取一次 `time.monotonic()`，所有 JSON 出口在打印前计算一次差值；既有 summary 不改字段语义。runner 集合为 **40 passed**。轻量执行者完成 active 全量 **1,771 passed in 85.58s**；package/runner compileall、diff check 和冻结 `contracts/worker` 边界均通过，没有 legacy 测试、provider、下载或安装。
+
+**过度设计复查。** 没有 stage timer、trace/span、墙钟、日志文件、stderr 捕获器、telemetry 类或 library 公共字段。总耗时覆盖 preflight、catalog、识别、组合和安全汇总，所以只能解释“这次 runner 总共多久”，不能伪称某次 API 调用时长。本轮只修维护测试工具和测试，未改 provider timeout、重试、模型选择或产品运行时。

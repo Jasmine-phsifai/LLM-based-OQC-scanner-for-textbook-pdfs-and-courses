@@ -7,6 +7,7 @@ import json
 import math
 import sys
 import tempfile
+import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -655,6 +656,7 @@ def _safe_error(
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
+    started_at = time.monotonic()
     try:
         summary = run_google_genai_video_smoke(arguments)
     except _LiveSmokeFailure as failure:
@@ -663,6 +665,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 code="UNEXPECTED_SAFE_FAILURE",
                 stage=failure.stage,
                 calls=None,
+                started_at=started_at,
             )
         return _report_failure(
             code=failure.error.code,
@@ -672,29 +675,40 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if failure.stage == "video_preflight"
                 else _error_call_count(failure.error)
             ),
+            started_at=started_at,
         )
     except OCRLLMError as error:
         return _report_failure(
             code=error.code,
             stage=None,
             calls=_error_call_count(error),
+            started_at=started_at,
         )
     except Exception:
         return _report_failure(
             code="UNEXPECTED_SAFE_FAILURE",
             stage=None,
             calls=None,
+            started_at=started_at,
         )
+    summary["elapsed_seconds"] = _elapsed_seconds(started_at)
     print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
     return 0 if summary["status"] == "passed" else 1
 
 
-def _report_failure(*, code: str, stage: str | None, calls: int | None) -> int:
+def _report_failure(
+    *,
+    code: str,
+    stage: str | None,
+    calls: int | None,
+    started_at: float,
+) -> int:
     print(
         json.dumps(
             {
                 "report_type": "runner_failure",
                 "status": "failed",
+                "elapsed_seconds": _elapsed_seconds(started_at),
                 "error": {
                     "code": code,
                     "stage": stage,
@@ -706,6 +720,11 @@ def _report_failure(*, code: str, stage: str | None, calls: int | None) -> int:
         )
     )
     return 1
+
+
+def _elapsed_seconds(started_at: float) -> float:
+    """Return stable total runner time without exposing wall-clock metadata."""
+    return round(time.monotonic() - started_at, 3)
 
 
 if __name__ == "__main__":

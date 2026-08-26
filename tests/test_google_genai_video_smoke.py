@@ -1144,6 +1144,8 @@ def test_video_smoke_main_redacts_unexpected_failure(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     secret = "PRIVATE UNEXPECTED VIDEO FAILURE"
+    monotonic_values = iter((100.0, 102.3456))
+    monkeypatch.setattr(smoke.time, "monotonic", lambda: next(monotonic_values))
     monkeypatch.setattr(
         smoke,
         "run_google_genai_video_smoke",
@@ -1171,6 +1173,7 @@ def test_video_smoke_main_redacts_unexpected_failure(
     assert json.loads(raw) == {
         "report_type": "runner_failure",
         "status": "failed",
+        "elapsed_seconds": 2.346,
         "error": {
             "code": "UNEXPECTED_SAFE_FAILURE",
             "stage": None,
@@ -1179,3 +1182,42 @@ def test_video_smoke_main_redacts_unexpected_failure(
     }
     assert secret not in raw
     assert "private-name.mp4" not in raw
+
+
+def test_video_smoke_main_reports_elapsed_time_on_outcome(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monotonic_values = iter((20.0, 20.1254))
+    monkeypatch.setattr(smoke.time, "monotonic", lambda: next(monotonic_values))
+    monkeypatch.setattr(
+        smoke,
+        "run_google_genai_video_smoke",
+        lambda arguments: {
+            "report_type": "video_outcome",
+            "status": "passed",
+        },
+    )
+
+    assert (
+        smoke.main(
+            [
+                "--image-model",
+                IMAGE_MODEL,
+                "--audio-model",
+                AUDIO_MODEL,
+                "--expected-audio-transport",
+                "google_inline",
+                "--video",
+                "private-name.mp4",
+                "--expected-frame-groups",
+                "1",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out) == {
+        "report_type": "video_outcome",
+        "status": "passed",
+        "elapsed_seconds": 0.125,
+    }

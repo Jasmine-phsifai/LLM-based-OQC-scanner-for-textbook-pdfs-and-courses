@@ -6817,3 +6817,18 @@ for that gate, but its outer runner did not capture exact stage timing, so there
 is no evidence to change the product default or remove the timeout. Keep native
 `google-genai`; do not add a compatibility transport, automatic retry, model
 switching, or provider abstraction from these timeouts alone.
+
+## Current working update: #353 durable Google video runner timing
+
+#351 lost exact elapsed evidence because timing existed only in its disposable
+outer command. The maintained Google video runner now starts one monotonic clock
+after argument validation and adds rounded three-decimal `elapsed_seconds` to
+both `video_outcome` JSON and every redacted `runner_failure` JSON. It covers
+preflight, catalog, recognition, composition, and safe summary work as one total;
+it does not claim per-stage or provider-call duration and exposes no wall clock.
+
+The two failing-first main-path regressions failed against the old runner, then
+the runner suite passed 40 tests. The complete active offline suite passes 1,771
+tests; compileall for the package and runner, diff validation, and frozen
+`contracts/worker` checks also pass. No library runtime/API, provider call,
+retry, model selection, log file, or stderr-capture layer changed.
