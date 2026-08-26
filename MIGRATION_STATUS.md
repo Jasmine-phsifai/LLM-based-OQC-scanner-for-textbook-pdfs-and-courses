@@ -1726,6 +1726,17 @@ identity, create snapshots, claim targets, roll back work, or add transactions.
 The next evidenced queue item is audio persistence-failure usage and cleanup
 disclosure. The complete offline suite passes all 1,831 tests.
 
+#384 preserves evidence for a paid long-audio slot that cannot be saved. Whole
+and interval persistence callbacks now attach the just-built slot's existing
+model/input/output token row and exact boolean remote/client cleanup facts to
+the original typed save error. Existing error details are not overwritten, and
+provider-call/persisted-prefix counts retain their current owners. The helper
+does not aggregate already-persisted slots or run for provider, materializer,
+publication, or unrelated errors. No return/state schema, retry, provider
+fallback, response cache, or transaction was introduced. The next reproduced
+queue item is short-audio no-speech client-close disclosure before video state
+persistence. The complete offline suite passes all 1,832 tests.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

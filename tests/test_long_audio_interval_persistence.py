@@ -513,3 +513,54 @@ def test_paid_interval_is_saved_before_materializer_cleanup_failure(
     assert captured.value.details["provider_calls_attempted"] == 1
     assert calls == [0]
     assert (output_dir / "lecture" / ".ocrllm-long-audio-resume.json").is_file()
+
+
+def test_interval_state_save_failure_preserves_usage_and_cleanup_facts(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    _interval_processor, materialized, provider_calls = _install_interval_fakes(
+        monkeypatch,
+        tmp_path,
+        ["first", "second", "third"],
+    )
+    processor = __import__(
+        "ocrllm.processors.recognize_long_mp3",
+        fromlist=["recognize_long_mp3"],
+    )
+
+    def fail_state_save(*_args, **_kwargs):
+        raise OutputError(
+            "The long-audio partial state could not be written atomically.",
+            code="OUTPUT_WRITE_FAILED",
+        )
+
+    monkeypatch.setattr(
+        processor,
+        "save_long_audio_partial_state_atomically",
+        fail_state_save,
+    )
+
+    with pytest.raises(OutputError) as captured:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir),
+            interval_minutes=5,
+        )
+
+    assert materialized == [0]
+    assert provider_calls == [0]
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["persisted_interval_count"] == 0
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 100,
+            "output_count": 10,
+            "unit": "tokens",
+        },
+    )
+    assert captured.value.details["remote_file_deleted"] is True
+    assert captured.value.details["provider_client_closed"] is True
+    assert not (output_dir / "lecture").exists()

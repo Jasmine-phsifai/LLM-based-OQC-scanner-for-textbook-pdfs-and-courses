@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from ..audio.attach_long_audio_slot_evidence_to_error import (
+    attach_long_audio_slot_evidence_to_error,
+)
 from ..audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
 from ..audio.build_long_audio_interval_upload_snapshot import (
     build_long_audio_interval_upload_snapshot,
@@ -114,16 +117,20 @@ def recognize_long_mp3_intervals(
                     )
                     raise
                 slots = slots + (slot,)
-                persist_state(
-                    LongAudioPartialState(
-                        state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
-                        identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
-                        mode="interval",
-                        interval_minutes=interval_minutes,
-                        request_fingerprints=plan,
-                        slots=slots,
-                    ),
-                )
+                try:
+                    persist_state(
+                        LongAudioPartialState(
+                            state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
+                            identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+                            mode="interval",
+                            interval_minutes=interval_minutes,
+                            request_fingerprints=plan,
+                            slots=slots,
+                        ),
+                    )
+                except OCRLLMError as error:
+                    attach_long_audio_slot_evidence_to_error(error, slot)
+                    raise
                 persisted_interval_count = len(slots)
         except OCRLLMError as error:
             if "provider_calls_attempted" not in error.details:

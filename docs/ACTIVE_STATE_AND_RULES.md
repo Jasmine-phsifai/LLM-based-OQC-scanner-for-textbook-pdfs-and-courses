@@ -3985,11 +3985,14 @@ Post-register findings are ordered by demonstrated user impact:
   single-item facade, so a later partial sidecar plus existing Markdown rejects
   the tuple before any dispatch or publication. Valid partial-without-output
   and complete-with-output resume behavior remains unchanged.
-- Open, medium-high: whole/interval audio state-save failures report the paid
-  call count but omit already validated token and provider-cleanup facts because
-  no `ProcessorOutput` returns to the outer error boundary. Preserve those
-  settled facts at the failing persistence boundary; do not add retry or a
-  durable transaction protocol.
+- #384 closes the medium-high long-audio persistence-evidence gap. When saving
+  a newly settled whole or interval slot fails, the primary typed persistence
+  error now retains that unsaved slot's validated model usage and exact known
+  remote/client cleanup booleans alongside the existing paid-call count.
+- Open, medium: short Google audio can propagate `NoSpeechDetected` after one
+  dispatch without attaching the adapter's already-known client-close result.
+  Video journaling then stores the cleanup field as unknown. Preserve only that
+  current cleanup fact; inline short audio has no remote file to delete.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4
@@ -7428,3 +7431,24 @@ public regression raises before all batch work, preserves the conflicting files
 byte-for-byte, and the focused image/batch/state set passes 99 tests. With the
 worktree held stable for its runtime-identity checks, the complete offline suite
 passes all 1,831 tests.
+
+## Current working update: #384 retains unsaved long-audio settlement evidence
+
+Whole and interval public regressions inject a typed state-save failure only
+after one fake Google Files response has been parsed into a validated settled
+slot. Before this fix, both errors disclosed one attempted provider call, and
+interval also disclosed zero persisted windows, but neither retained the known
+model token counts or successful remote-file/client cleanup. No resumable state
+or final Markdown survived, so the caller would have to repay without complete
+evidence of the lost call.
+
+One narrow `attach_long_audio_slot_evidence_to_error()` now reads only the
+newly settled slot whose persistence callback failed. It adds the existing
+public-safe `settled_model_usage` row and only cleanup values that are exact
+booleans; existing same-named error details remain primary. Whole and interval
+invoke it only around `persist_state(...)`, so provider, response parsing,
+materializer cleanup, already-persisted prefixes, and publication errors keep
+their prior boundaries. No `ProcessorOutput` is fabricated, no state/return
+schema changes, and no retry, fallback, response cache, or transaction is
+added. The focused long-audio/video persistence set passes 124 tests, and the
+complete offline suite passes all 1,832 tests.

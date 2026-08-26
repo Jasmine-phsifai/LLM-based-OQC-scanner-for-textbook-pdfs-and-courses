@@ -322,6 +322,16 @@ def test_whole_state_save_failure_reports_the_completed_provider_call(
         )
 
     assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 101,
+            "output_count": 17,
+            "unit": "tokens",
+        },
+    )
+    assert captured.value.details["remote_file_deleted"] is True
+    assert captured.value.details["provider_client_closed"] is True
     assert provider_calls == [MODEL]
     assert not _root(output_dir).exists()
 

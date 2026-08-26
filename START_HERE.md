@@ -1110,8 +1110,9 @@ introduced.
 the fixed Markdown, fixed resume sidecar, and current UUID-shaped atomic sibling
 before provider dispatch. The exact atomic-path check is shared with long audio,
 removing #378's duplicate constants and path-unit code. The next queue is:
-preserve audio usage/cleanup facts when state persistence itself fails. #382
-already closes selected-frame position honesty, and #383 now rejects a batch
-whose later valid partial sidecar conflicts with existing Markdown before any
-dispatch. Keep the next item atomic and do not widen it into transactions,
-eager identity snapshots, provider retry, or a durable response protocol.
+#384 now preserves the newly settled long-audio slot's token and exact cleanup
+facts when its state save fails. #382 already closes selected-frame position
+honesty, and #383 rejects a later batch state/output conflict before dispatch.
+The next proven item is the short-audio no-speech client-close fact lost before
+video journaling; keep it atomic and do not invent remote-file cleanup for
+inline audio, retries, transactions, or a durable response protocol.
