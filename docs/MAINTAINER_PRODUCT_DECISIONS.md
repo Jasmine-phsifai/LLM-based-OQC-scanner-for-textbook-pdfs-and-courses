@@ -445,6 +445,21 @@ is often accepted.
 
 ## Video recognition direction
 
+- **Open video-resume terminal decision (#345).** Do not add an audio-only
+  `resume=True` to `recognize_video()`: current video state cannot preserve paid
+  image groups, short audio, source identity, or a terminal cleanup boundary.
+  Choose one product endpoint before authorizing a schema or API:
+
+  1. recommended: keep the current recognize/compose/publish calls low-level and
+     non-resumable, and later add one high-level resumable video job owning a
+     fixed `result.md` plus one video journal; atomic final publication removes
+     its temporary state;
+  2. keep the current three-step lifecycle resumable, but add explicit
+     finalize/discard operations and make callers own crash-before-publish and
+     stale-state cleanup semantics.
+  Until the maintainer selects one, public video resume is deferred and no
+  durable frame-group schema is implemented without a consumer.
+
 - Video is the next active library line. Start with local parsing, then migrate
   the main legacy negative-feedback frame comparison and retained-image
   behavior before provider recognition.

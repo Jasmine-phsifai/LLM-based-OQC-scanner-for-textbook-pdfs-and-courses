@@ -1473,6 +1473,11 @@ The following directions remain traceable but are not current work:
   real model-scoped 429 failures in both branches, including exact calls and
   audio cleanup. No interval settled, so retained-sidecar live proof and the
   complete interval success gate remain open.
+  #345 defers an audio-only video resume after proving it would replay paid
+  image groups and lacks short-audio/source/finalization state. The maintainer
+  must choose a high-level fixed-result resumable job (recommended) or preserve
+  the three-step API with explicit finalize/discard before a video journal or
+  durable frame-group unit gains an authorized consumer.
 
 ## Obsolete Prose Kept For Trace
 

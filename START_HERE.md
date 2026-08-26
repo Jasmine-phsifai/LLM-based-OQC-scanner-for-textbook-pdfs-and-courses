@@ -98,7 +98,11 @@ interval, exposing a runner-only defect that mistook required failure state for
 unclean success. The runner now preserves that safe failure evidence while
 still requiring complete outcomes to remove state. #344 live-proves corrected
 provider failures remain auditable `video_outcome` reports, although model quota
-stopped the first audio interval before any state settled. Public video resume is not yet exposed.
+stopped the first audio interval before any state settled. #345 proves public
+video resume cannot honestly be audio-only: paid frame groups, short audio, source
+identity, and one terminal state-cleanup owner are missing. Its high-level fixed-
+result job versus three-step finalize/discard decision remains open. Public video
+resume is not yet exposed.
 Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval

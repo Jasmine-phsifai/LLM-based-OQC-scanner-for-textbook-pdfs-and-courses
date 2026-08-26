@@ -6622,6 +6622,41 @@ settle，不是清理丢 state；nested result 也不存在。stderr/泄漏/自�
 压力测试。这一轮只验证刚修的证据边界并记录明确 quota，不把供应商当前容量问题转成
 library 功能。
 
+## Iteration 345：公开 video resume 先缺统一终点，不做音频单支伪恢复
+
+#343 的真实失败证明 video-owned 音频 state 确实可以保留 paid prefix，但当前代码不能因此
+直接加一个 `resume=True`。主线和两份独立只读审计确认：视频根目录只保留 JPEG 和 MP3
+本地媒体；图片组 Markdown、失败/未发送 suffix、calls/usage、模型/request identity 与精确时间分组只在
+`VideoRecognitionOutcome` 内存中。短音频没有 state。whole/interval 长音频有可复用的精确 state，但
+`recognize_video_mp3()` 固定 `saved_state=None`，而且音频分支成功就删 state，即使后续图片分支
+使整个视频 partial。
+
+输出所有权也不支持半恢复：`prepare_video_media()` 只允许新建同名根，无 MP4 size/SHA、帧选择
+版本、帧 hash/时间或 group plan manifest；已保留 `audio.mp3` 也会被现有抽取器的“目标已存在”
+规则拒绝。音频 request fingerprint 只绑定抽取后 MP3 字节，不证明这个根属于本次 MP4/帧计划。
+因此“只恢复音频，全量重跑图片”会把一个重复付费的流程误命名为 video resume，不接受。
+
+两条真正可行路线：
+
+1. **高层统一 job（当前推荐）。** 保持现有 `recognize_video()` / compose / caller-chosen publish 为非恢复低层
+   API；以后另建一个拥有固定 `result.md` 和单一 video journal 的高层 resumable job。只有原子发布
+   成功才是删除图片/短音频/长音频临时 state 的统一终点。
+2. **继续三段式。** 让现有识别 outcome 可恢复，但必须新增显式 finalize/discard 生命周期，由 caller
+   决定 state 何时删除。这会让每个调用者承担 crash-before-publish 与永久残留 state 语义。
+
+路线 1 有更清晰的产品终点，但它仍是新 checkpoint 架构，未获维护者明确选择前不实现。
+第一个合法实现前置应是持久化一个精确 paid frame-group unit，绑定源字节、帧索引/时间/分组、
+provider/model/request identity、Markdown、call/token 与 status；但这也必须属于被选中的统一生命周期，
+不先建一个无消费者的 schema。
+
+退出判断：本轮延期公开 video resume，并请维护者在上述两种终点中选择。这不是 workload
+阻塞，而是缺少会改变公开 API、state 清理时机和崩溃语义的产品决定。同时开放的 Google quota
+不影响此代码级结论。本轮不改 runtime/tests，不运行 provider 或重复全量。
+
+过度设计复查：明确拒绝音频单支 flag、每图片组嵌套 Markdown/sidecar 树、通用媒体 journal、旧 legacy
+checkpoint、repair 联动、跨进程事务、retry/fallback 和无消费者 schema。规划一个统一 video journal
+只是当前推荐路线，不把它写成已授权实现。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical

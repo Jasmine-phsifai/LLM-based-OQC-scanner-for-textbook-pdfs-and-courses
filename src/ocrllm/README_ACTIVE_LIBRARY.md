@@ -98,6 +98,11 @@ root and removed after a successful clean audio result. Current video calls do
 not consume retained state, so public video resume and the remaining private
 9.5-to-10-hour range remain unavailable. Install `ocrllm[audio]` for both its
 lazy MP3 decoder and interval FFmpeg backend; neither loads during plain import.
+An audio-only resume flag would still replay paid image groups and cannot bind
+an existing output root to the source video or short-audio result. A public
+video resume therefore waits for a maintainer choice between one high-level
+fixed-result resumable job and explicit finalize/discard semantics for the
+current three-step API; no unconsumed video journal is shipped.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
 legacy-Markdown repair, so ordinary image-sidecar resume remains its recovery
 path.

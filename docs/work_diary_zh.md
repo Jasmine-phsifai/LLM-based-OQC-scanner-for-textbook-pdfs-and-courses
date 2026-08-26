@@ -6119,3 +6119,15 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **精确真实结果。** runner 在 **26.832s** 后 exit **1**，这次是 `report_type=video_outcome`、status/outcome failed，不再是 `CONFIG_INVALID`。catalog **37**，图片/音频都显式用 `gemini-2.5-flash`；preflight 5 帧/1 组/3 分钟/2 个预期音频调用。图片 1 次返回 `PROVIDER_QUOTA_EXHAUSTED`、scope `model`、HTTP 429、status `RESOURCE_EXHAUSTED`。音频 artifact 存在，首个 interval 的 generation 也发起 1 次并返回同样 quota；operation `generation`、persisted 0、remote file deleted true、client closed true。composition not_started/assets 0，总 generation calls 2，usage 未知。sidecar 和 nested result 都不存在；没有 settled slot，因为 quota 发生在首个切片结算前。stderr 0，credential/fixture/绝对路径/raw message 泄漏均 false，精确清理后 owned process/file 0/0。
 
 **证据限制和过度设计复查。** 真实 provider failure 已证明修正后 runner 会产生可审计 outcome，但没有 paid sidecar，所以“含一个 settled slot 的失败”仍只有离线证明；不把它写成 live proven。interval 完整成功门仍未关闭。代理明确正常，且 provider 明确给出模型级 quota，所以不诊断为代理或本地超时。本轮没有改代码、重试、quota polling、模型轮换、fallback 或 API pool。
+
+## #345 — 2026-08-26：公开 video resume 必须先选统一终点
+
+**本轮英文原子任务。** `Atomic task — Iteration #345: determine the smallest honest public video-resume slice that can consume the paid interval state already produced by recognize_video(). Context: #341 stores exact whole/interval state under the video output root, #343 proved that paid prefixes can survive a real failure, but callers still cannot resume them; Google quota now makes further live repetition low-value. Success means reconciling current authority, tracing the existing standalone long-audio resume and video ownership lifecycles, identifying the minimum public contract and pre-dispatch invariants, proving whether implementation can reuse current state primitives without a second checkpoint/publication tree, and recording a concrete implement-or-defer decision. This matters because retaining paid work without a supported consumer is a temporary product gap, while exposing resume prematurely could couple video layout, image replay, and provider behavior into an overdesigned recovery system.`
+
+**假设、两条初始路线与分工。** 初始假设是可以模仿 standalone long audio，给视频加一个严格 bool resume。主线提出两条：A 只恢复音频，图片重跑；B 先证明能恢复全部 paid 分支。选 B，因为 A 会把重复付费的过程误称为 video resume。两个轻量只读审计分别检查完整 lifecycle 和持久化缺口；主线独立复核公开入口、media ownership、frame grouping、standalone audio resume、state identity 和 outcome。
+
+**确定事实。** 现有失败根保留 JPEG/MP3，但没有持久化图片正文、组计划/结果、错误/未发送 suffix、calls/usage 或源视频身份。帧文件名只有 index，timestamp 也只在内存 outcome。短音频完全没 state。长音频 state 能精确复用 whole/interval，但 video 固定传 `saved_state=None`，且音频成功就删 state，不等图片或最终 Markdown。新建-only 视频根、已存在音频目标和没有 MP4/帧 manifest 使同一输出目录无法安全重入。
+
+**两条真可行路线和推荐。** 路线 1（推荐）是未来另建一个拥有固定 `result.md` 和单一 video journal 的高层 resumable job，将原子发布作为删除全部临时 state 的终点，保持现有 recognize/compose/publish 为低层非恢复 API。路线 2 继续三段式，但必须加显式 finalize/discard 并把 crash-before-publish/state 残留义务交给 caller。路线 1 产品语义更清晰，但是新 checkpoint 架构；未得维护者选择前不实现。
+
+**第一可执行红灯与过度设计复查。** 最终红灯应是第一次各结算图片组 0/音频切片 0 后在后缀失败，第二次同源/同 config 只调缺失的图片组 1/音频切片 1，并最终原子发布。当前第一原子前置会是 durable exact paid frame-group unit，但不在无消费者时先建 schema。本轮拒绝 audio-only flag、嵌套每组 Markdown/sidecar、通用 media journal、legacy checkpoint、repair、跨进程事务、retry/fallback。本轮无 runtime/tests/provider 变更，不重复全量。
