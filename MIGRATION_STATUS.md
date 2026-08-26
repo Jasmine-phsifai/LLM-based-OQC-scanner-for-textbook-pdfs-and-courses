@@ -1920,3 +1920,14 @@ The journal retained the settled audio, full frame, and audio artifact without
 publishing a final result. No resume was attempted because the missing image
 would require another provider call. Runtime, API, state, dependencies, and
 tests are unchanged; the publication-failure/zero-call-resume gate remains open.
+
+#422 investigates the legacy PDF repair feature without porting it. Legacy
+repair trusts localized failure comments and a caller-selected PDF, has no
+source identity or direct repair tests, can emit markers its own regex cannot
+parse, and rewrites Markdown non-atomically. Active PDF recognition instead
+publishes no partial Markdown on failure and relies on ordinary image-sidecar
+resume. A material product choice is now recorded: either approve a separate
+source-bound `*_board.partial.md` whose successful range complement drives a
+small current-config repair operation, or keep repair unavailable. Runtime,
+public API, output layout, state, provider behavior, tests, legacy code, worker,
+and frozen contracts remain unchanged until that choice is made.

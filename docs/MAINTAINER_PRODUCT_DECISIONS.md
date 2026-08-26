@@ -753,3 +753,24 @@ is often accepted.
   whole/interval long-audio processors in video without nesting the standalone
   audio publication or creating provider generalization. Repair remains a later
   narrow side path.
+
+## Open PDF repair artifact choice (#422)
+
+- The active library still does not implement PDF repair and still rejects
+  legacy localized repair Markdown. Current fail-fast PDF recognition publishes
+  no partial Markdown, so a repair parser alone would have no library-owned
+  input.
+- Route A (recommended) introduces a separate source-bound
+  `*_board.partial.md`. It contains only strict library schema/source identity
+  plus already-settled `ocrllm:pdf-pages` ranges. Repair validates the current
+  PDF, computes the missing complement, uses the caller's current `Config`, and
+  atomically promotes to the canonical Markdown when complete. It stores no old
+  provider/model/prompt/batch parameters and does not consume image sidecars.
+- Route B keeps repair unavailable and retains ordinary image-sidecar resume or
+  an explicit fresh run as the only recovery choices.
+- Do not use the canonical final path for incomplete content, accept legacy
+  comments, widen `recognize_batch()`, or implement a parser/producer without a
+  matching end-to-end consumer. The detailed bounded plan is
+  [`plan_pdf_repair_side_path.md`](plan_pdf_repair_side_path.md).
+- This is a material output-contract choice. No runtime implementation begins
+  until the maintainer selects Route A or Route B.
