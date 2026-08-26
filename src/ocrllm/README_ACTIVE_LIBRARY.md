@@ -112,8 +112,10 @@ audio-client close preserves the existing warning and exposes
 provider-error details are not lifted into the combined result. If recognized
 or no-speech short audio settles but its journal update fails, the typed save
 error retains the known provider-call and client-close facts; a recognized
-settlement also retains current model usage. It does not claim an unsaved
-resumable unit.
+or exact Google no-speech settlement also retains current model usage. Exact
+no-speech usage is saved with the audio state, but a zero-call resume does not
+relabel that history as current usage. It does not claim an unsaved resumable
+unit.
 The current three-step API remains non-resumable and gains no finalize/discard
 protocol.
 The first PDFium vision slice is implemented and live-proven. #120 rejected
@@ -204,6 +206,8 @@ The experimental direct Google short-audio facade:
 - returns an in-memory `RecognitionResult` with `source_type="audio"`, exact
   provider/model/call metadata, duration and byte size, and nullable per-model
   input/output token usage;
+- retains the same provider-reported per-model token row on an exact typed
+  no-speech result instead of dropping the completed call's accounting;
 - preserves a successfully parsed transcript as `partial`, with an explicit
   warning and `provider_client_closed=False`, if only SDK client cleanup fails;
   an earlier provider error remains primary and records the cleanup failure;
@@ -274,9 +278,11 @@ original choice.
   if publication succeeds but temporary-state removal fails, the published
   result is returned as `partial` with `resume_state_removed=False` and one
   warning, and the caller owns cleanup of the retained sidecar;
-- records a paid whole-file no-speech outcome in the same temporary state;
+- records a paid whole-file no-speech outcome and its provider-reported token
+  usage in the same temporary state;
   explicit resume then raises the same typed no-speech result with zero new
-  provider calls, and the internal sentinel is never published as Markdown;
+  provider calls and no false current-run usage, and the internal sentinel is
+  never published as Markdown;
 - accepts `resume=True` only with that fixed state present and an unpublished
   final result; an exact whole-file or interval prefix is reused with zero calls
   for settled work, while source/model/prompt/transport/interval drift is rejected;

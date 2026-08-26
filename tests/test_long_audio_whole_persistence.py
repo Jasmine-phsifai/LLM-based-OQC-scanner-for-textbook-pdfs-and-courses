@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import pytest
 
 from ocrllm import AudioModelSettings, Config, GoogleGenAISettings, recognize_long_mp3
+from ocrllm.audio.load_long_audio_partial_state import load_long_audio_partial_state
 from ocrllm.errors import (
     NoSpeechDetected,
     OutputError,
@@ -259,6 +260,14 @@ def test_whole_no_speech_is_settled_and_replayed_without_provider_call(
                 "provider": "google",
                 "model": MODEL,
                 "provider_calls_attempted": 1,
+                "settled_model_usage": (
+                    {
+                        "model": MODEL,
+                        "input_count": 101,
+                        "output_count": 17,
+                        "unit": "tokens",
+                    },
+                ),
                 "remote_file_deleted": True,
                 "provider_client_closed": True,
             }
@@ -277,8 +286,20 @@ def test_whole_no_speech_is_settled_and_replayed_without_provider_call(
         )
 
     assert first_error.value.details["provider_calls_attempted"] == 1
+    assert first_error.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 101,
+            "output_count": 17,
+            "unit": "tokens",
+        },
+    )
     assert provider_calls == [MODEL]
     assert _state_path(output_dir).is_file()
+    saved_state = load_long_audio_partial_state(_state_path(output_dir))
+    assert saved_state is not None
+    assert saved_state.slots[0].input_tokens == 101
+    assert saved_state.slots[0].output_tokens == 17
     assert not (_root(output_dir) / "result.md").exists()
 
     with pytest.raises(NoSpeechDetected) as resumed_error:
@@ -288,6 +309,7 @@ def test_whole_no_speech_is_settled_and_replayed_without_provider_call(
         )
 
     assert resumed_error.value.details["provider_calls_attempted"] == 0
+    assert "settled_model_usage" not in resumed_error.value.details
     assert resumed_error.value.details["remote_file_deleted"] is True
     assert resumed_error.value.details["provider_client_closed"] is True
     assert provider_calls == [MODEL]

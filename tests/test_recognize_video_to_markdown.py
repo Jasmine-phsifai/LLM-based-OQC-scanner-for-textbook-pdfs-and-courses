@@ -507,6 +507,14 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
             details={
                 "provider_calls_attempted": 1,
                 "provider_client_closed": client_closed,
+                "settled_model_usage": (
+                    {
+                        "model": "test-audio-model",
+                        "input_count": 17,
+                        "output_count": 5,
+                        "unit": "tokens",
+                    },
+                ),
             }
         )
 
@@ -546,6 +554,13 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
         "model": "test-audio-model",
         "provider_call_count": 1,
         "provider_client_closed": client_closed,
+        "current_model_token_usage": (
+            {
+                "model": "test-audio-model",
+                "input_tokens": 17,
+                "output_tokens": 5,
+            },
+        ),
     }
     assert "remote_file_deleted" not in saved.metadata
     assert saved.warnings == (
@@ -569,6 +584,7 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
     assert result.status == "partial"
     assert result.metadata["audio_error_code"] == "NO_SPEECH_DETECTED"
     assert result.metadata["current_run_provider_call_count"] == 0
+    assert "current_model_token_usage" not in result.metadata
     assert "NO_SPEECH_DETECTED" in result.markdown
     cleanup_warning = (
         "The Google GenAI client could not be closed after recognition."
@@ -621,6 +637,14 @@ def test_short_audio_settlement_save_failure_preserves_paid_evidence(
                 details={
                     "provider_calls_attempted": 1,
                     "provider_client_closed": False,
+                    "settled_model_usage": (
+                        {
+                            "model": "test-audio-model",
+                            "input_count": 17,
+                            "output_count": 5,
+                            "unit": "tokens",
+                        },
+                    ),
                 }
             )
         return GoogleGenAIAudioResponse(
@@ -658,17 +682,14 @@ def test_short_audio_settlement_save_failure_preserves_paid_evidence(
     assert captured.value.code == "OUTPUT_WRITE_FAILED"
     assert captured.value.details["provider_calls_attempted"] == 1
     assert captured.value.details["provider_client_closed"] is False
-    if settlement == "recognized":
-        assert captured.value.details["settled_model_usage"] == (
-            {
-                "model": "test-audio-model",
-                "input_count": 17,
-                "output_count": 5,
-                "unit": "tokens",
-            },
-        )
-    else:
-        assert "settled_model_usage" not in captured.value.details
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": "test-audio-model",
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        },
+    )
     assert audio_calls == 1
     journals = _root_journals(output_root)
     assert len(journals) == 1

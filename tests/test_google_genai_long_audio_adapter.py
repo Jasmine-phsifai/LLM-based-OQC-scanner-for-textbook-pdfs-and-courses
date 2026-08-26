@@ -20,6 +20,7 @@ from ocrllm.errors import (
     Cancelled,
     ConfigError,
     InvalidSource,
+    NoSpeechDetected,
     OutputError,
     ProviderError,
     ProviderUnavailable,
@@ -82,11 +83,13 @@ class _Models:
         *,
         served_models: tuple[str, ...] = (MODEL,),
         input_token_limit: object = None,
+        text: str = "long transcript",
         generate_error: Exception | None = None,
     ) -> None:
         self.events = events
         self.served_models = served_models
         self.input_token_limit = input_token_limit
+        self.text = text
         self.generate_error = generate_error
         self.generate_calls: list[dict[str, object]] = []
 
@@ -107,7 +110,7 @@ class _Models:
         if self.generate_error is not None:
             raise self.generate_error
         return SimpleNamespace(
-            text="long transcript",
+            text=self.text,
             candidates=(),
             prompt_feedback=None,
             usage_metadata=SimpleNamespace(
@@ -149,6 +152,7 @@ class _FakeGoogleModule:
         get_states: tuple[str, ...] = (),
         served_models: tuple[str, ...] = (MODEL,),
         input_token_limit: object = None,
+        text: str = "long transcript",
         upload_error: Exception | None = None,
         generate_error: Exception | None = None,
         delete_error: BaseException | None = None,
@@ -166,6 +170,7 @@ class _FakeGoogleModule:
             self.events,
             served_models=served_models,
             input_token_limit=input_token_limit,
+            text=text,
             generate_error=generate_error,
         )
         self.close_error = close_error
@@ -258,6 +263,28 @@ def test_public_long_mp3_runs_one_owned_files_lifecycle(monkeypatch) -> None:
     assert "NOSPEECH4OCRLLM" in contents[0]
     assert contents[1].name == "files/owned-test-file"
     assert fake.clients[0].closed is True
+
+
+def test_files_no_speech_preserves_usage_and_cleanup(monkeypatch) -> None:
+    fake = _FakeGoogleModule(text="NOSPEECH4OCRLLM")
+    _install_fake_snapshot(monkeypatch)
+    _install_fake_sdk(monkeypatch, fake)
+
+    with pytest.raises(NoSpeechDetected) as captured:
+        recognize_long_mp3(SOURCE, config=_config())
+
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert captured.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 101,
+            "output_count": 17,
+            "unit": "tokens",
+        },
+    )
+    assert captured.value.details["remote_file_deleted"] is True
+    assert captured.value.details["provider_client_closed"] is True
+    assert fake.events == ["catalog", "upload", "generate", "delete", "close"]
 
 
 def test_files_workflow_waits_at_active_start_gate_before_sdk(monkeypatch) -> None:

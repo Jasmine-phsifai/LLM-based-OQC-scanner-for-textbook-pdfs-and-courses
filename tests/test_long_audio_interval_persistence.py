@@ -428,12 +428,22 @@ def _no_speech(
     *,
     remote_file_deleted: bool = True,
     provider_client_closed: bool = True,
+    input_tokens: int = 100,
+    output_tokens: int = 10,
 ) -> NoSpeechDetected:
     return NoSpeechDetected(
         details={
             "provider": "google",
             "model": MODEL,
             "provider_calls_attempted": 1,
+            "settled_model_usage": (
+                {
+                    "model": MODEL,
+                    "input_count": input_tokens,
+                    "output_count": output_tokens,
+                    "unit": "tokens",
+                },
+            ),
             "remote_file_deleted": remote_file_deleted,
             "provider_client_closed": provider_client_closed,
         }
@@ -450,7 +460,7 @@ def test_no_speech_interval_is_settled_and_not_recalled_on_resume(
         tmp_path,
         [
             "first",
-            _no_speech(),
+            _no_speech(input_tokens=101, output_tokens=11),
             ProviderError(
                 code="PROVIDER_UNAVAILABLE",
                 details={"provider_calls_attempted": 1},
@@ -464,6 +474,14 @@ def test_no_speech_interval_is_settled_and_not_recalled_on_resume(
             interval_minutes=5,
         )
     assert first_error.value.details["provider_calls_attempted"] == 3
+    assert first_error.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 201,
+            "output_count": 21,
+            "unit": "tokens",
+        },
+    )
 
     _processor, materialized, calls = _install_interval_fakes(
         monkeypatch,
@@ -480,6 +498,12 @@ def test_no_speech_interval_is_settled_and_not_recalled_on_resume(
     assert result.markdown == "first\n\nthird"
     assert result.metadata["provider_call_count"] == 3
     assert result.metadata["current_run_provider_call_count"] == 1
+    assert result.metadata["current_model_token_usage"] == (
+        {"model": MODEL, "input_tokens": 100, "output_tokens": 10},
+    )
+    assert result.metadata["historical_model_token_usage"] == (
+        {"model": MODEL, "input_tokens": 201, "output_tokens": 21},
+    )
 
 
 def test_all_no_speech_resume_replays_typed_result_without_provider_calls(
@@ -491,9 +515,17 @@ def test_all_no_speech_resume_replays_typed_result_without_provider_calls(
         monkeypatch,
         tmp_path,
         [
-            _no_speech(remote_file_deleted=False),
-            _no_speech(provider_client_closed=False),
-            _no_speech(),
+            _no_speech(
+                remote_file_deleted=False,
+                input_tokens=100,
+                output_tokens=10,
+            ),
+            _no_speech(
+                provider_client_closed=False,
+                input_tokens=101,
+                output_tokens=11,
+            ),
+            _no_speech(input_tokens=102, output_tokens=12),
         ],
     )
     with pytest.raises(NoSpeechDetected) as first_error:
@@ -503,6 +535,14 @@ def test_all_no_speech_resume_replays_typed_result_without_provider_calls(
             interval_minutes=5,
         )
     assert first_error.value.details["provider_calls_attempted"] == 3
+    assert first_error.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 303,
+            "output_count": 33,
+            "unit": "tokens",
+        },
+    )
     assert first_error.value.details["remote_file_deleted"] is False
     assert first_error.value.details["provider_client_closed"] is False
 
@@ -518,6 +558,7 @@ def test_all_no_speech_resume_replays_typed_result_without_provider_calls(
         )
 
     assert resumed_error.value.details["provider_calls_attempted"] == 0
+    assert "settled_model_usage" not in resumed_error.value.details
     assert resumed_error.value.details["remote_file_deleted"] is False
     assert resumed_error.value.details["provider_client_closed"] is False
     assert materialized == []

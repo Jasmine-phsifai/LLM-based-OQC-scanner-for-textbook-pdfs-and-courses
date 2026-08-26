@@ -33,9 +33,10 @@ As of 2026-08-26:
   and temporary journal and resumes only missing image/audio units; the
   three-step video API remains the lower-level non-resumable surface. If a
   short-audio unit settles but its journal update fails, the persistence error
-  retains the known call and client-cleanup evidence; a recognized settlement
-  also retains current model usage. It does not claim that the unit can be
-  resumed.
+  retains the known call and client-cleanup evidence; a recognized or exact
+  Google no-speech settlement also retains current model usage. Exact no-speech
+  usage is saved with resumable audio state but is not relabelled as current on
+  a zero-call resume. An unsaved unit is never claimed as resumable.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. An existing final Markdown target is rejected before

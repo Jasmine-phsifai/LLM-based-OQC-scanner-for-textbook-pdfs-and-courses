@@ -485,6 +485,14 @@ def test_google_audio_no_speech_preserves_exact_client_close_outcome(
     assert caught.value.details["model"] == MODEL
     assert caught.value.details["provider_calls_attempted"] == 1
     assert caught.value.details["provider_client_closed"] is expected_closed
+    assert caught.value.details["settled_model_usage"] == (
+        {
+            "model": MODEL,
+            "input_count": 17,
+            "output_count": 5,
+            "unit": "tokens",
+        },
+    )
     assert "remote_file_deleted" not in caught.value.details
     assert caught.value.details.get(
         "provider_client_cleanup_failed",

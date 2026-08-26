@@ -4015,8 +4015,16 @@ Post-register findings are ordered by demonstrated user impact:
   the typed persistence error now retains the exact known call count and client
   cleanup fact; recognized settlement also retains current model usage. No false
   short state is claimed, so later resume honestly requires another call.
-- Open, medium: an exact Google no-speech response can include token usage, but
-  short/whole/interval audio currently drop it before error/state composition.
+- #392 closes the medium exact Google no-speech accounting gap. The native
+  parser keeps its validated provider-reported usage in the existing safe error
+  vocabulary; whole, interval, and video audio state retain it without a schema
+  change. Mixed and all-silent interval composition count only this invocation,
+  while zero-call resume never relabels saved history as current usage. The
+  focused lifecycle set passes 213 tests and the complete offline suite passes
+  all 1,842. One bounded authorized live silent-audio request reached Google
+  once and returned the honest `PROVIDER_RESPONSE_INVALID` branch rather than
+  exact no-speech, so the corrected sentinel accounting remains causally proven
+  offline and is not misreported as a live no-speech result.
 - Open, medium-low: `typing.get_type_hints()` fails for the exported `Config`,
   `BatchItemOutcome`, and `DashScopeSettings` classes because three annotation
   names exist only under `TYPE_CHECKING` in an installed package.

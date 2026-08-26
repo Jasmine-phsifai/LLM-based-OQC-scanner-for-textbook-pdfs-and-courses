@@ -9,6 +9,9 @@ from .audio.snapshot_long_mp3 import LongMP3Snapshot
 from .audio.snapshot_short_mp3 import ShortMP3Snapshot
 from .audio.snapshot_video_mp3 import snapshot_video_mp3
 from .audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT
+from .aggregate_current_model_token_usage import (
+    aggregate_current_model_token_usage,
+)
 from .attach_current_model_token_usage_to_error import (
     attach_current_model_token_usage_to_error,
 )
@@ -167,11 +170,14 @@ def _recognize_short(
             config=config,
         )
     except NoSpeechDetected as error:
+        current_usage = aggregate_current_model_token_usage((), (error,))
         metadata = {
             "provider": "google",
             "model": audio.model,
             "provider_call_count": error.details.get("provider_calls_attempted", 1),
         }
+        if current_usage:
+            metadata["current_model_token_usage"] = current_usage
         warnings = ["No recognizable speech was detected."]
         client_closed = error.details.get("provider_client_closed")
         if type(client_closed) is bool:
@@ -212,6 +218,10 @@ def _recognize_short(
                     "provider_client_closed",
                     client_closed,
                 )
+            attach_current_model_token_usage_to_error(
+                persistence_error,
+                current_usage,
+            )
             raise
         raise
     output = build_short_mp3_processor_output(short_snapshot, response, config=config)

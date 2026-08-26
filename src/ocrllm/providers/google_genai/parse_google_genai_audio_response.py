@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from ...attach_current_model_token_usage_to_error import (
+    attach_current_model_token_usage_to_error,
+)
 from ...errors import NoSpeechDetected, OCRLLMError, ProviderError
 from ..validate_provider_markdown import validate_provider_markdown
 from .google_genai_audio_response import GoogleGenAIAudioResponse
@@ -21,9 +24,20 @@ def parse_google_genai_audio_response(
     stripped = parsed.text.strip()
     folded_sentinel = NO_SPEECH_SENTINEL.casefold()
     if stripped.casefold() == folded_sentinel:
-        raise NoSpeechDetected(
+        error = NoSpeechDetected(
             details={"provider": "google", "model": model}
-        ) from None
+        )
+        attach_current_model_token_usage_to_error(
+            error,
+            (
+                {
+                    "model": model,
+                    "input_tokens": parsed.input_tokens,
+                    "output_tokens": parsed.output_tokens,
+                },
+            ),
+        )
+        raise error from None
     if folded_sentinel in parsed.text.casefold():
         raise ProviderError(
             "Google GenAI returned an invalid no-speech marker.",

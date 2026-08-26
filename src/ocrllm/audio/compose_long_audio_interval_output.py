@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from ..attach_current_model_token_usage_to_error import (
+    attach_current_model_token_usage_to_error,
+)
 from ..errors import NoSpeechDetected
 from ..processor_output import ProcessorOutput
 from .aggregate_long_audio_cleanup import aggregate_long_audio_cleanup
@@ -27,7 +30,7 @@ def compose_long_audio_interval_output(
         tuple(slot.provider_client_cleanup_succeeded for slot in slots)
     )
     if not spoken_markdown:
-        raise NoSpeechDetected(
+        error = NoSpeechDetected(
             details={
                 "provider": slots[0].provider,
                 "model": slots[0].model,
@@ -35,7 +38,12 @@ def compose_long_audio_interval_output(
                 "remote_file_deleted": remote_file_deleted,
                 "provider_client_closed": provider_client_closed,
             }
-        ) from None
+        )
+        attach_current_model_token_usage_to_error(
+            error,
+            _aggregate_usage(slots[0].model, current_usage),
+        )
+        raise error from None
     current_slot_count = len(current_usage)
     historical_slots = slots[:-current_slot_count] if current_slot_count else slots
     warnings = tuple(warning for slot in slots for warning in slot.warnings)

@@ -1125,7 +1125,9 @@ composition, including zero-call resume, without copying generic error details.
 #390 then moves the existing PDF output check and process-local claim before
 snapshot/PDFium work, so a known collision refuses without backend work. #391's
 fresh audit then closes paid short-audio evidence loss when video journal saving
-fails after recognition. The current queue is: preserve Google no-speech token
-usage across short/whole/interval audio; repair three installed public class
-type-hint resolutions; then align single-image collision ordering. Keep each
-atomic and add no recovery framework without evidence.
+fails after recognition. #392 preserves provider-reported token usage on exact
+Google no-speech across short, whole, interval, and video audio state while
+keeping zero-call resume history out of current-run totals. The current queue is:
+repair three installed public class type-hint resolutions, then align
+single-image collision ordering. Keep each atomic and add no recovery framework
+without evidence.

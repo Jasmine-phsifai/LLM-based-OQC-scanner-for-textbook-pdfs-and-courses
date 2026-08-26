@@ -1791,6 +1791,22 @@ type-hint resolution, then single-image output-collision ordering.
 The focused lifecycle set passes 143 tests and the complete offline suite passes
 all 1,841.
 
+#392 closes exact Google no-speech token loss without changing no-speech into a
+success response. The existing safe `settled_model_usage` vocabulary now carries
+the parser's validated per-model counts. Whole and interval slots plus video
+short-audio metadata retain those counts; mixed and all-silent interval results
+aggregate only the current invocation, and zero-call resume exposes no false
+current usage. Older or synthetic no-speech errors without usage remain valid
+with unknown counts. No error schema, state version, retry, provider fallback,
+new response type, or accounting framework was added. The next reproduced queue
+is installed public class type-hint resolution, then single-image
+output-collision ordering. The focused lifecycle set passes 213 tests and the
+complete offline suite passes all 1,842.
+A single authorized live `gemini-2.5-flash` request accepted a validated
+1.2-second synthetic silent MP3 but ended honestly as
+`PROVIDER_RESPONSE_INVALID` after one call, not as exact no-speech; it was not
+retried and therefore does not claim live proof of the corrected sentinel path.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

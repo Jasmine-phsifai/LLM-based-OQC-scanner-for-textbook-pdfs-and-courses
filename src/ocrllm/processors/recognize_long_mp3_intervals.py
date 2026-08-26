@@ -110,7 +110,7 @@ def recognize_long_mp3_intervals(
                         model=model,
                         error=error,
                     )
-                    current_usage.append((None, None))
+                    current_usage.append((slot.input_tokens, slot.output_tokens))
                 except OCRLLMError as error:
                     attempted = error.details.get("provider_calls_attempted", 0)
                     error._add_safe_detail(
