@@ -844,12 +844,12 @@ another generation with request-scope `PROVIDER_RESPONSE_INVALID`, zero current
 calls, and no remote-file fact. #335 adds one safe fixed `provider_operation`
 detail to mapped SDK exceptions so a bounded follow-up can distinguish catalog,
 upload, processing, and generation without provider text. All 1,725 source
-tests pass; no retry/fallback policy changed. The live success gate remains open.
+tests pass; no retry/fallback policy changed. The live gate remained open here.
 #335 is clean-installed at exact `d2819c0`: 1,724 archived tests pass with one
 optional skip, wheel 266,993 bytes, base 1,351,006 bytes, all profiles and local
 smokes green. One auditable retained-state resume then identified the real
 failure as `provider_operation=upload`, with zero new generation calls and one
-persisted slot. The sidecar remains reusable; live success is still open.
+persisted slot. The sidecar remained reusable at this point.
 #336 adds only `provider_sdk_type` for an otherwise-unclassified native Google
 error, accepting an ASCII Python identifier and exposing it through the runner
 as `sdk_type` after a second validation. It records no message/module/path and
@@ -860,6 +860,12 @@ smokes green. Its bounded live resume identified upload `ReadTimeout` with zero
 new generation calls and one persisted slot. #337 maps the common HTTP-client
 timeout MRO family to existing retryable `PROVIDER_TIMEOUT` without importing a
 network SDK or adding automatic retry. All 1,726 source tests pass.
+#337 is clean-installed at exact `90fd0e4`: 1,725 archived tests pass with one
+optional skip, wheel 267,184 bytes, base 1,352,572 bytes, all profiles and local
+smokes green. One bounded caller-owned resume then succeeded against the real
+retained state: catalog 37, total/current calls 2/1, current usage 8,886/572,
+final publication, state removal, and remote/client cleanup proven. The Google
+interval live gate is closed; automatic retry/fallback remains unimplemented.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

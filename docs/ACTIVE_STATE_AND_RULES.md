@@ -86,9 +86,12 @@ one real 601-second, two-window input but ended honestly as
 the live gate. #332 preserves exact safe failure progress for the next bounded
 attempt. #333 then preserved real v3 state with one of two windows settled;
 bounded resume attempts kept that prefix but failed before another generation.
-#335 adds only a safe native-operation discriminator so the next live attempt
-can identify catalog, upload, processing, or generation without exposing SDK
-text. The live gate remains open. The route does not alter A1 or route video. A1 did
+#335 adds only a safe native-operation discriminator, and #336 identified the
+real failure as upload `ReadTimeout` without exposing SDK text. #337 maps that
+family to retryable `PROVIDER_TIMEOUT`; one bounded caller-owned resume then
+reused the settled prefix, made exactly one missing generation call, published
+the final result, and removed temporary state. The Google interval live gate is
+closed. The route does not alter A1 or route video. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
 audio live tests are already authorized without a separate budget request.
 DashScope live work may reuse the credential stored by the legacy UI for one
@@ -6331,6 +6334,27 @@ bytes，八种配置和全部本地媒体 smoke 通过，代理 TCP/HTTPS 200 �
 108 项相关测试和 1,726 项完整离线测试通过（66.24 秒）。过度设计复查：没有 SDK
 专属异常依赖、重试循环、退避参数、次数配置、模型切换或 provider 池。是否由库内
 重试、重试几次，以及跨 provider fallback 仍是后续产品决策；当前只修正错误诚实性。
+
+精确提交 `90fd0e44e86cead4e2f67c0d8b43edf887e9b3ea` 的委派干净安装
+门禁退出 0：归档测试 1,725 通过、1 跳过，wheel 267,184 bytes，base
+1,352,572 bytes，八种配置与全部本地媒体 smoke 通过，代理 TCP/HTTPS 200 可达，
+门禁根清零且没有云端调用。
+
+同一真实 sidecar 随后执行一次由调用者明确授权的 resume，exit 0：实时 catalog
+返回 37 个模型，`gemini-2.5-flash` 总生成调用 2、本次调用 1，证明已保存 slot 0
+没有重放；本次 usage 为 input 8,886 / output 572。最终 `result.md` 发布，sidecar
+删除，transport 为 `google_files`，远端文件删除和 runner 内部客户端关闭门禁通过。
+没有 fallback、换模型或库内自动重试。Google interval 的真实持久化/resume 成功
+门禁至此关闭。
+
+完成后的纯合成测试根最初因执行器删除安全策略未清理；主线程只读验证它是系统
+TEMP 的直接子目录、任务 marker 存在、恰有一个结果且没有 sidecar 后，将它送入
+Windows 回收站。该操作可恢复，没有永久删除或触碰其他目录。
+
+产品判断：这个真实 `ReadTimeout` 证明 caller-owned bounded retry/resume 有价值，
+但一次成功不自动选择库内“重试六次”。自动次数、退避和 multi-provider fallback
+仍应在 provider 泛化阶段依据更多实际错误分别决定；当前路线已经做到错误诚实、
+付费前缀不丢和恢复不重放。
 
 ## Documentation Rules
 

@@ -1417,12 +1417,12 @@ The following directions remain traceable but are not current work:
   resume; all 1,724 source tests pass. The live resume preserved slot 0 but
   failed before a new generation with zero current calls. #335 adds only a safe
   fixed native-operation discriminator for mapped SDK failures; all 1,725
-  source tests pass. Retry/fallback remains unchanged and live success is open.
+  source tests pass. Retry/fallback remained unchanged and live success was open.
   Exact commit `d2819c0` passes the clean installed gate with 1,724 archived
   tests and one optional skip, wheel 266,993 bytes, base 1,351,006 bytes, all
   profiles/smokes green, and cleanup complete. A retained-state live resume
   then proved the zero-call failure occurs in Files `upload`; slot 0 remains
-  reusable and the live success gate remains open.
+  reusable and the live success gate remained open at that point.
   #336 adds one twice-validated ASCII SDK class name only for otherwise unknown
   native Google errors. It records no provider text and changes no retry policy;
   all 1,725 source tests pass. A bounded live resume must identify the actual
@@ -1433,6 +1433,12 @@ The following directions remain traceable but are not current work:
   zero new generation calls. #337 maps the fixed HTTP-client timeout MRO family
   to existing retryable `PROVIDER_TIMEOUT`; all 1,726 source tests pass and no
   automatic retry/fallback is added.
+  Exact `90fd0e4` passes the clean installed gate with 1,725 archived tests and
+  one optional skip, wheel 267,184 bytes, base 1,352,572 bytes, all profiles and
+  smokes green. One bounded caller-owned live resume then reused slot 0 and made
+  exactly one missing call (total/current 2/1), published the result, removed
+  state, and proved remote/client cleanup. The Google interval live gate is
+  closed; automatic retry/fallback remains a later decision.
 
 ## Obsolete Prose Kept For Trace
 
