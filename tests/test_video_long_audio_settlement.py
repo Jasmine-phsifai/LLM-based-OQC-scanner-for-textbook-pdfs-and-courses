@@ -49,6 +49,25 @@ def _settled_output(*, calls: int) -> ProcessorOutput:
     )
 
 
+def _partial_settled_output(*, calls: int) -> ProcessorOutput:
+    return ProcessorOutput(
+        media_type="audio",
+        markdown="# Settled audio\n",
+        status="partial",
+        warnings=("The provider client could not be closed.",),
+        metadata={
+            "provider": "google",
+            "model": "test-audio-model",
+            "transport": "google_files",
+            "provider_call_count": calls,
+            "current_run_provider_call_count": calls,
+            "current_model_token_usage": (),
+            "remote_file_deleted": True,
+            "provider_client_closed": False,
+        },
+    )
+
+
 def test_video_interval_snapshot_cleanup_failure_keeps_state_and_exact_call_count(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -133,4 +152,41 @@ def test_video_long_audio_state_unlink_failure_returns_partial_result(
     assert result.warnings == (
         "The temporary long-audio resume state could not be removed.",
     )
+    assert state_path.read_text(encoding="utf-8") == "settled"
+
+
+def test_video_partial_long_audio_result_keeps_settled_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    processor = __import__(
+        "ocrllm.processors.recognize_video_mp3",
+        fromlist=["recognize_video_mp3"],
+    )
+    state_path = tmp_path / ".ocrllm-video-audio-resume.json"
+
+    @contextmanager
+    def clean_snapshot(*_args, **_kwargs):
+        yield _snapshot(tmp_path)
+
+    def settle_intervals(*_args, **kwargs):
+        kwargs["state_path"].write_text("settled", encoding="utf-8")
+        return _partial_settled_output(calls=2), 2
+
+    monkeypatch.setattr(processor, "snapshot_video_mp3", clean_snapshot)
+    monkeypatch.setattr(
+        processor,
+        "recognize_long_mp3_intervals",
+        settle_intervals,
+    )
+
+    result = recognize_video_mp3(
+        tmp_path / "audio.mp3",
+        config=_config(tmp_path),
+        interval_minutes=3,
+        state_path=state_path,
+    )
+
+    assert result.status == "partial"
+    assert result.metadata["provider_client_closed"] is False
     assert state_path.read_text(encoding="utf-8") == "settled"

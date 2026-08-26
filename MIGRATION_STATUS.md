@@ -1488,6 +1488,10 @@ The following directions remain traceable but are not current work:
   audio/image/PDF/video/combined-media smokes passed. Pillow 12.3.0 was supplied
   as the declared compatible wheel through the active proxy; no dependency bound,
   persistent installer configuration, or provider behavior changed.
+  #350 makes the existing video sidecar lifecycle match that contract: complete
+  clean long-audio results remove state, while partial provider-cleanup results
+  return unchanged and retain settled state. It adds no video resume consumer,
+  state format, retry, or provider behavior.
 
 ## Obsolete Prose Kept For Trace
 

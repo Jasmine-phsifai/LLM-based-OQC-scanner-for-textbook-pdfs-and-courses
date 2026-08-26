@@ -32,7 +32,7 @@ def recognize_video_mp3(
     """Decode once, select one route, and keep the recognition in memory."""
     raise_if_cancelled(config.cancellation)
     processor_output: ProcessorOutput | None = None
-    long_audio_settled = False
+    long_audio_route_selected = False
     try:
         snapshot_context = (
             snapshot_video_mp3(
@@ -86,7 +86,7 @@ def recognize_video_mp3(
                         state_path=state_path,
                         saved_state=None,
                     )
-                long_audio_settled = True
+                long_audio_route_selected = True
     except OutputError as error:
         if processor_output is not None:
             metadata = processor_output.metadata
@@ -100,6 +100,6 @@ def recognize_video_mp3(
                 error._add_safe_detail("provider_client_cleanup_failed", True)
         raise
     assert processor_output is not None
-    if long_audio_settled:
+    if long_audio_route_selected and processor_output.status == "complete":
         return remove_long_audio_temporary_state(state_path, processor_output)
     return processor_output

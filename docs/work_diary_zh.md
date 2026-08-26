@@ -6171,3 +6171,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **完整证据。** exact HEAD/origin 是 `3c09cde999036b2984eb3526c45fa84897d867a9`。clean archive 为 **1,768 passed, 1 skipped**；构建 wheel 269,222 bytes。base、audio、image、image+DashScope、Google、audio+Google、PDF vision、video、video+audio+image 全部在隔离目标中安装成功，本地媒体 smoke 和冻结边界检查全部通过。临时根已删除，仓库最终只保留两份既有受保护未跟踪文件。没有调用 provider，因此本轮不是 Google live 成功证据。
 
 **文档修正和过度设计复查。** 根 README 与 active-library README 原先仍说 interval/resume 未实现、9.5 到 10 小时不可用，已按当前代码改为：整段上限 9.5 小时，显式正整数分钟 interval 上限 10 小时；standalone 可恢复，当前 video 三段接口不可恢复，未来采用已选定的高层固定结果任务。没有增加安装器、依赖 fallback、Pillow 特判、缓存管理器、provider retry 或第二次真实调用。临时 wheel 注入解决一次发布验证，不进入产品运行时。
+
+## #350 — 2026-08-26：partial 视频音频结果不再丢失已结算状态
+
+**本轮英文原子任务。** `Atomic task — Iteration #350: identify and close the smallest remaining correctness gap in the already-built video interval path without beginning the future resumable-video architecture. Context: the package/install gate is now green, the current three-step video API is intentionally non-resumable, and prior live attempts exposed real provider failures rather than a verified complete interval run. Success means reconciling current authority and queue, tracing the existing video interval validation/settlement path for one concrete defect or missing invariant, adding the narrowest failing-first regression and fix if proven, and recording/pushing one coherent change. This matters because mature behavior should be honest and deterministic before a larger recovery API is introduced.`
+
+**发现和两条路线。** 视频长音频已经生成正文，但远端文件删除或 provider client 关闭失败时，既有构造器会诚实返回 `status="partial"`。旧 `recognize_video_mp3()` 只要长音频函数返回就无条件删除 whole/interval sidecar，违反权威文档“clean audio/snapshot success 后才删”的规则。路线 A 是按每种 cleanup warning 分别判断；路线 B 是直接使用已有的 `ProcessorOutput.status` 边界，只让 complete 删除、partial 保留；选 B，因为状态已经是唯一真实结算，不需要另一套错误分类。
+
+**失败优先修复和复核。** 新 interval 回归让 provider client cleanup 失败、正文与两次调用已经结算，并要求 sidecar 留存；旧代码精确得到 **1 failed, 2 passed**，文件确实被删。实现只把 `long_audio_settled` 改成如实命名的 `long_audio_route_selected`，并给清理增加 `processor_output.status == "complete"` 条件。修复后视频结算、公开 video、whole/interval 持久化邻近集合 **54 passed in 25.46s**，维护的 Google video runner 离线集合 **39 passed**。轻量执行者完成 active 全量 **1,770 passed in 88.17s**；compileall、轻量 import、diff check 和冻结 `contracts/worker` 边界均通过。另一名只读执行者独立检查验证顺序、整数 interval、9.5/10 小时分路、中途保存和当前无 resume 消费者边界，没有发现第二个可复现缺口。
+
+**过度设计复查。** 没有添加错误枚举、cleanup 分类器、resume reader、sidecar schema、重试、fallback、provider 基类或视频 job。partial 输出的正文、warnings 和 metadata 原样返回，只是不再删除现有文件。#349 已在紧邻提交完成全 profile 隔离安装，本轮一行运行时条件不机械重复 wheel gate，也没有调用处于额度失败状态的真实 provider。

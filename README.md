@@ -27,8 +27,8 @@ As of 2026-08-26:
   calls. Combined video selects inline audio through 300 seconds, whole-file
   Files requests above that through 9.5 hours by default, or explicit serial
   intervals through the private 10-hour product ceiling. Video retains settled
-  interval prefixes after failure, but the current three-step video API does not
-  yet expose resume.
+  interval prefixes after failure or a partial provider-cleanup result, but the
+  current three-step video API does not yet expose resume.
 - The first PDFium vision slice is implemented and live-proven. `recognize(one.pdf)`
   uses serial eight-page image groups, ordinary image resume sidecars, and
   stable range markers. Its bounded Google exit gate completed 16 pages in two

@@ -235,6 +235,12 @@ passed. It staged the already-declared compatible Pillow 12.3.0 wheel through th
 active proxy without changing package bounds or persistent pip configuration;
 no provider was called.
 
+#350 fixes one video-owned state lifecycle mismatch: a long-audio result marked
+partial because provider cleanup did not finish no longer deletes its settled
+whole/interval sidecar. Only a complete clean result removes that state. The
+current video API still cannot consume it; this is honest preservation for the
+later selected high-level resume job, not a new resume surface.
+
 #138 makes the public video outcome reject
 frame/audio paths outside its exact lexical `output_root/frames/*` and optional
 `output_root/audio.mp3` layout before composition. #139 makes composed

@@ -6761,3 +6761,20 @@ declared Pillow 12.3.0 wheel was staged through the active proxy without changin
 dependency bounds or persistent pip configuration. This is package and local
 media evidence only; no provider was called and it does not replace the still-open
 bounded live-video interval success gate.
+
+## Current working update: #350 preserve partial video audio state
+
+The video-owned long-audio processor previously removed its whole/interval
+sidecar after any returned `ProcessorOutput`, including `status="partial"` from
+a provider file-cleanup or client-close failure. That contradicted the existing
+rule that only a clean audio result may remove temporary state. It now removes
+state only for an exact complete long-audio result; partial results and their
+warnings/metadata return unchanged with the settled state retained. This does
+not make the current three-step video API resumable or add a state consumer.
+
+The regression failed against the old deletion condition and now passes. The
+focused video/long-audio lifecycle set passes 54 tests, the maintained video
+smoke-runner set passes 39 tests, and the complete active offline suite passes
+1,770 tests. Compileall, lightweight import, diff validation, and the frozen
+`contracts/worker` boundary also pass. No provider was called and #349's package
+gate was not repeated for this one-condition source correction.

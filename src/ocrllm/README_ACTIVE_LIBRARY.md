@@ -94,8 +94,9 @@ resume. `recognize_video()` selects inline audio through 300 seconds or
 whole-file Files above 300 seconds by default. Its optional
 `audio_interval_minutes` selects ordered Files intervals using an exact positive
 integer number of minutes; settled state is written under the video-owned output
-root and removed after a successful clean audio result. Current video calls do
-not consume retained state, so public video resume remains unavailable;
+root and removed only after a complete clean audio result. Failed and partial
+audio outcomes retain any settled state. Current video calls do not consume
+retained state, so public video resume remains unavailable;
 interval mode nevertheless accepts sources through the private 10-hour product
 ceiling. Install `ocrllm[audio]` for both its
 lazy MP3 decoder and interval FFmpeg backend; neither loads during plain import.
