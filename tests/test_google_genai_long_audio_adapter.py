@@ -394,6 +394,24 @@ def test_upload_failure_has_no_remote_cleanup_or_generation(monkeypatch) -> None
     assert fake.events == ["catalog", "upload", "close"]
 
 
+def test_unknown_upload_failure_reports_only_safe_operation(monkeypatch) -> None:
+    fake = _FakeGoogleModule(
+        upload_error=RuntimeError("PRIVATE UPLOAD BODY"),
+    )
+    _install_fake_snapshot(monkeypatch)
+    _install_fake_sdk(monkeypatch, fake)
+
+    with pytest.raises(ProviderError) as caught:
+        recognize_long_mp3(SOURCE, config=_config())
+
+    assert caught.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert caught.value.details["provider_operation"] == "upload"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert "PRIVATE" not in str(caught.value)
+    assert fake.files.delete_calls == []
+    assert fake.events == ["catalog", "upload", "close"]
+
+
 def test_generation_failure_preserves_primary_when_delete_also_fails(
     monkeypatch,
 ) -> None:

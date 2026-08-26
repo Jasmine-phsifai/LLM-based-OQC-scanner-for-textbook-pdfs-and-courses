@@ -282,12 +282,22 @@ def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
         for name in ("provider_calls_attempted", "persisted_interval_count")
         if type(error.details.get(name)) is int and error.details[name] >= 0
     }
+    operation = error.details.get("provider_operation")
+    if operation not in {
+        "client_setup",
+        "catalog",
+        "upload",
+        "processing",
+        "generation",
+    }:
+        operation = None
     return _report_failure(
         code=error.code,
         scope=scope,
         stage=stage,
         cleanup=cleanup or None,
         progress=progress or None,
+        operation=operation,
     )
 
 
@@ -298,6 +308,7 @@ def _report_unexpected_failure(stage: str | None) -> int:
         stage=stage,
         cleanup=None,
         progress=None,
+        operation=None,
     )
 
 
@@ -308,6 +319,7 @@ def _report_failure(
     stage: str | None,
     cleanup: dict[str, bool] | None,
     progress: dict[str, int] | None,
+    operation: str | None,
 ) -> int:
     summary: dict[str, object] = {
         "status": "failed",
@@ -317,6 +329,8 @@ def _report_failure(
             "stage": stage,
         },
     }
+    if operation is not None:
+        summary["error"]["operation"] = operation
     if cleanup is not None:
         summary["cleanup"] = cleanup
     if progress is not None:

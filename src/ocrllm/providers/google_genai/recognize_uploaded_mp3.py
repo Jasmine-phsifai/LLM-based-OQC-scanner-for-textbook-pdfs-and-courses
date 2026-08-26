@@ -64,6 +64,7 @@ def recognize_uploaded_mp3(
     remote_file_deleted = False
     client_closed = False
     provider_file_cleanup_failed = False
+    provider_operation = "client_setup"
     try:
         try:
             wait_for_provider_request_start(config.cancellation)
@@ -76,6 +77,7 @@ def recognize_uploaded_mp3(
                     timeout_seconds=config.timeout_seconds,
                 ),
             )
+            provider_operation = "catalog"
             catalog_rows = tuple(client.models.list())
             served_models = parse_google_genai_model_catalog(catalog_rows)
             if model not in served_models:
@@ -98,8 +100,10 @@ def recognize_uploaded_mp3(
                     model=model,
                 )
                 raise_if_cancelled(config.cancellation)
+                provider_operation = "upload"
                 uploaded = client.files.upload(file=snapshot.path)
                 uploaded_name = _remote_file_name(uploaded)
+                provider_operation = "processing"
                 ready_file = _wait_until_active(
                     client,
                     uploaded,
@@ -108,6 +112,7 @@ def recognize_uploaded_mp3(
                     cancellation=config.cancellation,
                 )
                 raise_if_cancelled(config.cancellation)
+                provider_operation = "generation"
                 provider_calls_attempted = 1
                 raw_response = client.models.generate_content(
                     model=model,
@@ -121,6 +126,10 @@ def recognize_uploaded_mp3(
             public_error = error
         except Exception as error:
             public_error = map_google_genai_error(error, model=model)
+            public_error._add_safe_detail(
+                "provider_operation",
+                provider_operation,
+            )
     finally:
         try:
             if uploaded is not None:

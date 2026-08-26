@@ -1414,7 +1414,10 @@ The following directions remain traceable but are not current work:
   #333's later retained live state proves slot 0 complete after one Google call
   (usage 12,688/65,494) while slot 1 and final publication remain open. #334
   adds only safe maintenance-runner access to the existing public interval
-  resume; all 1,724 source tests pass. One live resume is the next evidence.
+  resume; all 1,724 source tests pass. The live resume preserved slot 0 but
+  failed before a new generation with zero current calls. #335 adds only a safe
+  fixed native-operation discriminator for mapped SDK failures; all 1,725
+  source tests pass. Retry/fallback remains unchanged and live success is open.
 
 ## Obsolete Prose Kept For Trace
 

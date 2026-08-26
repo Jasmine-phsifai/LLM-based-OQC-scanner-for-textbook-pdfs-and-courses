@@ -84,7 +84,11 @@ isolated install profile, and local media smokes. #331 reached Google Files with
 one real 601-second, two-window input but ended honestly as
 `PROVIDER_RESPONSE_INVALID`; it published no result and therefore does not close
 the live gate. #332 preserves exact safe failure progress for the next bounded
-attempt. The route does not alter A1 or route video. A1 did
+attempt. #333 then preserved real v3 state with one of two windows settled;
+bounded resume attempts kept that prefix but failed before another generation.
+#335 adds only a safe native-operation discriminator so the next live attempt
+can identify catalog, upload, processing, or generation without exposing SDK
+text. The live gate remains open. The route does not alter A1 or route video. A1 did
 not wait on the independent Stage M paid image smoke. Bounded Google image and
 audio live tests are already authorized without a separate budget request.
 DashScope live work may reuse the credential stored by the legacy UI for one
@@ -6229,6 +6233,44 @@ usage 和清理门禁保持不变。
 state schema、识别器、重试、fallback、provider class 或 repair。下一步只允许同一
 轻量执行者用保留的 source/sidecar 发起一次 resume；根据已验证的一槽状态，产品
 证据预期总调用 2、本次调用 1。
+
+该提交第一次干净门禁在归档测试 1,723 通过、1 跳过以及 base/audio/image/
+image+DashScope 配置通过后，因 wheelhouse 缺少 `google-genai` 停在 Google 配置；
+代理 TCP/HTTPS 当时正常，门禁根已清理。后续轻量执行者通过代理把当前声明的
+`google-genai 2.20.0` CPython 3.10 依赖闭包补进保留 wheelhouse（共 34 个 wheel），
+但再次启动门禁时主线程已经开始 #335，tracked tree 不再干净，所以门禁按设计在
+归档前退出。两次都没有云端调用，不能声称 #334 release-proven；补齐的 wheelhouse
+可以供 #335 提交后的精确干净门禁使用。
+
+真实 resume 的执行证据也被收紧。一次直接调用因执行器给 output parent 错加前导
+空格而以 `RESUME_STATE_INVALID` 在路径 preflight 拒绝；纠正后的离线规划、preflight
+和 loader 全部通过。真正 resume 随后返回 request-scope
+`PROVIDER_RESPONSE_INVALID`、`provider_calls_attempted=0`、
+`persisted_interval_count=1`、`provider_client_closed=true`，没有远端文件清理字段。
+因此已付费 slot 0 未重放，但 slot 1 也未进入生成，结果和 sidecar 状态保持不变。
+
+## Iteration 335：未知 Google SDK 错误保留安全操作阶段
+
+本轮英文原子目标是：针对真实的零生成失败，只增加一个不会泄露 provider 文本的
+生命周期判别，先知道异常发生在第二次 catalog、upload、processing 还是 generation，
+再决定重试或换模型；成功标准是 generic upload 异常的失败先行回归、runner 白名单、
+完整离线测试和发布门禁，且不改变错误策略。
+
+`recognize_uploaded_mp3()` 在现有顺序内维护一个局部固定枚举：`client_setup`、
+`catalog`、`upload`、`processing`、`generation`。只有普通 SDK 异常进入现有
+`map_google_genai_error()` 后，才把当前值作为 `provider_operation` 安全详情；已有
+typed OCRLLM 错误、异常文本、类名、status 映射、调用数和清理优先级不变。live
+runner 只允许这五个常量进入错误 JSON，其他值全部丢弃。
+
+legacy 复查最初误判为 Files state `FAILED`；个人复核用“remote deletion 字段缺失”
+反证后撤回：只要 upload 返回对象，任何后续失败都会附加该布尔字段。当前真实证据
+只说明异常发生在 upload 对象返回前或第二次 catalog，具体原因仍未知。legacy 对
+未知异常也只做文本/类型启发式分类，没有证明该情况应重试或换模型，因此本轮不移植
+其重试循环。
+
+41 项相关测试和 1,725 项完整离线测试通过（65.09 秒）。过度设计复查：没有新增
+异常类、SDK 文本记录、通用状态机、retry、fallback、provider class 或代理逻辑；
+一个局部枚举是由真实失败直接要求的最小可观测事实。
 
 ## Documentation Rules
 

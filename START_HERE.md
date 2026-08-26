@@ -839,7 +839,12 @@ published result. The delegated wrapper lost stdout/return-code evidence while
 the owned process continued, so failure type and cleanup remain unknown; no
 second request was started. #334 adds only a maintenance-runner `--resume` flag
 for that existing public route. It does not parse state or add recovery logic;
-all 1,724 source tests pass. One retained-state live resume remains required.
+all 1,724 source tests pass. A real resume preserved slot 0 but failed before
+another generation with request-scope `PROVIDER_RESPONSE_INVALID`, zero current
+calls, and no remote-file fact. #335 adds one safe fixed `provider_operation`
+detail to mapped SDK exceptions so a bounded follow-up can distinguish catalog,
+upload, processing, and generation without provider text. All 1,725 source
+tests pass; no retry/fallback policy changed. The live success gate remains open.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

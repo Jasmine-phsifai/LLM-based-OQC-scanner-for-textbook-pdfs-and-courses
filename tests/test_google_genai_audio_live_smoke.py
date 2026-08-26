@@ -452,6 +452,7 @@ def test_audio_live_smoke_reports_default_disposition_and_cleanup(
             details={
                 "remote_file_deleted": True,
                 "provider_client_closed": True,
+                "provider_operation": "upload",
             },
         )
 
@@ -467,6 +468,7 @@ def test_audio_live_smoke_reports_default_disposition_and_cleanup(
         },
         "error": {
             "code": "PROVIDER_RESPONSE_INVALID",
+            "operation": "upload",
             "scope": "request",
             "stage": "recognition",
         },
