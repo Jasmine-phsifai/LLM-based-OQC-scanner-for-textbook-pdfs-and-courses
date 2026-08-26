@@ -196,6 +196,15 @@ the isolated image profile, one injected-provider batch completed in one call,
 and both invalid-provider cases raised their top-level stable codes without
 creating output or temp directories. This is a targeted base/image distribution
 proof, not a repeat of every optional profile or a provider-live test.
+#431 closes the corresponding ordinary single-image configuration-preflight
+gap. `recognize()` now applies the existing strict vision-provider validator
+before output resolution, temporary snapshot creation, or source reads. Missing
+providers and injected objects without callable `recognize_images` retain their
+stable `CONFIG_MISSING` / `CONFIG_INVALID` errors, zero-call draft evidence, and
+single `fix_request` attempt entry while creating neither configured output nor
+temporary directories. Local OCR remains provider-free, built-in providers keep
+their existing validation, and no resolved-provider cache or second validator
+was introduced.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4147,6 +4156,14 @@ Post-register findings are ordered by demonstrated user impact:
   local OCR and audio-only batches are unchanged. Focused image/batch/config
   coverage passes 139 tests and the complete provider-free suite passes all
   1,873 tests.
+- #431 closes the medium single-image configuration-preflight gap. The same
+  existing strict vision validator now rejects a missing provider or injected
+  object without callable `recognize_images` before output/temp directory
+  creation, source snapshotting, or dispatch. Existing zero-call draft and
+  `fix_request` attempt evidence remains intact; local OCR and valid built-in or
+  injected providers keep their routes. Focused adjacent coverage passes 157
+  tests, independent review passes 115 tests, and the complete provider-free
+  suite passes all 1,875 tests.
 
 The bounded reproduced queue is empty again. Select the next iteration through
 a fresh public-lifecycle audit rather than extending output preflight

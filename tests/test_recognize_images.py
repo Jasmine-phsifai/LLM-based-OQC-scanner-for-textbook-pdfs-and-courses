@@ -293,6 +293,47 @@ def test_missing_provider_is_a_typed_configuration_failure(tmp_path):
     assert captured.value.code == "CONFIG_MISSING"
 
 
+@pytest.mark.parametrize(
+    ("provider", "expected_code"),
+    (
+        (None, "CONFIG_MISSING"),
+        (object(), "CONFIG_INVALID"),
+    ),
+)
+def test_single_image_preflights_invalid_provider_before_output_work(
+    tmp_path,
+    provider,
+    expected_code,
+):
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+
+    with pytest.raises(ConfigError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert captured.value.code == expected_code
+    assert captured.value.details["workflow_pass"] == "draft"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert [dict(attempt) for attempt in captured.value.details["model_attempts"]] == [
+        {
+            "model": None,
+            "outcome": expected_code,
+            "disposition": "fix_request",
+            "provider_calls_attempted": 0,
+        }
+    ]
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
 def test_non_config_argument_is_rejected_before_source_or_provider_work(tmp_path):
     provider = RecordingProvider()
 

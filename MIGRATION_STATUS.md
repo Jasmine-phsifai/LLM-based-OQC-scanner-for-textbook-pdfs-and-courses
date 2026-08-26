@@ -1975,3 +1975,12 @@ preflight cases passed. Wheel metadata contains the current #427/#428 claims and
 not the stale open-gate sentence; wheel and sdist contain no legacy, tests,
 repository docs, untracked files, or AGENTS instructions. This is targeted
 base/image release evidence, not a full optional-profile or cloud-provider gate.
+
+#431 closes the single-image counterpart of #428. Public `recognize()` now
+strictly validates the configured vision route before resolving or creating an
+output directory, preparing a configured temporary directory, reading or
+snapshotting the image, or dispatching a provider. Missing and structurally
+invalid providers retain `CONFIG_MISSING` / `CONFIG_INVALID`, zero attempted
+calls, the existing draft/fix-request evidence, and create no configured
+directories. Local OCR and valid built-in/injected routes remain unchanged; no
+provider resolution cache, framework, retry, or new validator was added.
