@@ -228,6 +228,13 @@ perspective transform, inferred video board ROI, ROI-only candidate JPEGs, and
 ROI-based occlusion rejection were removed; size-only full-field downscaling
 remains allowed.
 
+#357 re-audits that removal after an explicit maintainer clarification. No
+executable corner/ROI/contour crop or perspective warp remains in either
+product. It deletes the last unused legacy Canny/contour config object and
+renames misleading “crop and resize” progress/docs to complete-frame resize.
+The active video writer still re-encodes the decoded full frame at identical
+dimensions, and PDF rendering still scales the complete page uniformly.
+
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install
 profile succeeded, and local audio, image, PDF, video, and combined-media smokes

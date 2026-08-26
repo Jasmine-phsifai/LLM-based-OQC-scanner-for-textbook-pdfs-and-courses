@@ -461,6 +461,10 @@ is often accepted.
   pages must preserve the complete source frame/page. Size-only downscaling is
   allowed when it preserves the full field of view. Comparison thumbnails used
   only for bounded frame selection are not recognition crops.
+  #357 removed the last unused legacy Canny/contour configuration fields and
+  corrected remaining runtime/documentation wording that called full-frame
+  resizing a crop. Stable legacy phase keys remain only for checkpoint layout;
+  they do not select a geometry-changing operation.
 
 - **Resolved video-resume terminal decision (#345/#347): Route A.** Do not add an audio-only
   `resume=True` to `recognize_video()`: current video state cannot preserve paid

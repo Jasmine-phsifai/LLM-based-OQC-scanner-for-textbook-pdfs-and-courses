@@ -266,15 +266,6 @@ class SocialConfig:
 
 
 @dataclass
-class ImagingConfig:
-    """图像预处理参数配置（降噪、Canny 边缘检测、最小轮廓面积比等）。"""
-    denoise_kernel_size: int = 3
-    canny_low: int = 50
-    canny_high: int = 150
-    min_contour_area_ratio: float = 0.1
-
-
-@dataclass
 class AppConfig:
     """应用全局配置。"""
 
@@ -287,7 +278,6 @@ class AppConfig:
     concurrency: ConcurrencyConfig = field(default_factory=ConcurrencyConfig)
     paths: PathConfig = field(default_factory=PathConfig)
     video: VideoConfig = field(default_factory=VideoConfig)
-    imaging: ImagingConfig = field(default_factory=ImagingConfig)
     social: SocialConfig = field(default_factory=SocialConfig)
     shot_detection: ShotDetectionConfig = field(default_factory=ShotDetectionConfig)
 

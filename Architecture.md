@@ -171,7 +171,6 @@ src/
 │
 ├── imaging/            图像处理 —— 纯函数，无 I/O，无外部进程
 │   ├── resize.rs       等比缩放 + JPEG 编码
-│   ├── preprocess.rs   Canny 边缘检测 + 自动裁剪 + HEIC 转换
 │   └── ocr.rs          本地 ONNX OCR (ort crate, feature gate, 默认不编译)
 │
 ├── media/              音视频处理 —— 调用外部 ffmpeg 二进制
@@ -192,7 +191,6 @@ src/
 │       ├── phase.rs    VideoPhase trait
 │       ├── phase1_audio.rs      音频提取
 │       ├── phase2_frames.rs     智能抽帧
-│       ├── phase3_preprocess.rs 帧裁剪缩放
 │       ├── phase4_llm.rs        LLM 板书识别
 │       └── phase5_asr.rs        语音识别
 │
@@ -324,7 +322,6 @@ Layer 3  util/writer.rs            文件 I/O，依赖 markdown + progress
          media/ffmpeg.rs           子进程调用，跨平台路径查找
 
 Layer 4  imaging/resize.rs         纯函数图像处理
-         imaging/preprocess.rs     Canny + 裁剪
          media/audio_split.rs     依赖 ffmpeg + progress
          media/video_frame.rs     依赖 ffmpeg + imaging
 

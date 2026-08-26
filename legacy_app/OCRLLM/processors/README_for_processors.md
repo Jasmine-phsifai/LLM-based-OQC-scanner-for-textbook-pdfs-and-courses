@@ -8,8 +8,8 @@
 |------|------|
 | `base.py` | **处理器基类** — 依赖注入 (config, LLM, reporter, tracker, API pool)、进度报告、协作取消、并发 Future 迭代等通用逻辑。 |
 | `pdf.py` | **PDF 处理器** — 两种模式: (1) OCR 模式: RapidOCR + GapTree 排版; (2) 公式模式: LLM 多模态识别，支持断点续传和增量写入。 |
-| `board.py` | **板书处理器** — 多图上下文连续识别。预处理 → 分批 → LLM 多模态请求（保留对话历史提升连贯性）→ 合并 Markdown。 |
-| `video.py` | **视频处理器** — 5 阶段管线: 音频提取 → 智能抽帧 (变化检测 + pHash) → 裁剪缩放 → LLM 板书识别 → ASR 语音识别。内置复杂的帧变化检测算法。 |
+| `board.py` | **板书处理器** — 多图上下文连续识别。完整图片准备 → 分批 → LLM 多模态请求（保留对话历史提升连贯性）→ 合并 Markdown。 |
+| `video.py` | **视频处理器** — 5 阶段管线: 音频提取 → 智能抽帧 (变化检测 + pHash) → 完整帧等比例缩放 → LLM 板书识别 → ASR 语音识别。内置复杂的帧变化检测算法，不做黑板定位、ROI 裁剪或透视矫正。 |
 | `video_pipeline.py` | **视频阶段管线框架** — `VideoPhase` 基类定义阶段生命周期 (should_run / can_resume / on_resume / execute)，`VideoProcessContext` 传递阶段间数据。 |
 | `audio.py` | **语音处理器** — 自动选择短音频直接 ASR 或长音频异步任务。支持热词、分段并行识别、SSL 重试。 |
 | `future_formats.py` | **扩展格式处理器** — DOCX/PPTX/DOC/PPT/HTML 处理器。DOCX/PPTX 通过 XML 解析提取文本，DOC/PPT 通过 OLE2 二进制解析。不需要 API Key。 |
@@ -36,7 +36,7 @@ result = proc.process(pdf_path="book.pdf", need_formula=True)
 |:---:|------|------|
 | 1 | `AudioExtractPhase` | ffmpeg 提取音频 |
 | 2 | `FrameExtractPhase` | 智能抽帧（变化检测 + pHash 去重） |
-| 3 | `FramePreprocessPhase` | 裁剪 + 缩放 |
+| 3 | `FrameResizePhase` | 完整帧等比例缩放（不裁剪） |
 | 4 | `BoardRecognizePhase` | LLM 视觉识别 |
 | 5 | `AudioRecognizePhase` | 语音识别 |
 

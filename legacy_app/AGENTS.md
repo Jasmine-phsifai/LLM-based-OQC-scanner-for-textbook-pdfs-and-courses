@@ -954,3 +954,25 @@ checked and already retains complete video frames and PDF-rendered pages; it has
 no analogous corner/ROI/perspective stage today. Do not add one later. Frame
 selection may use private comparison thumbnails, but every image sent to OCR or
 published as a retained asset must preserve the complete source field of view.
+
+## 2026-08-26: deleted crop configuration and wording survived module removal
+
+**Observed and fixed.** The executable corner/ROI/perspective module was already
+gone, but `ImagingConfig` still exposed four unused denoise/Canny/contour fields,
+and the video progress surface still called complete-frame resizing “crop and
+resize.” The imaging and processor READMEs also described the deleted module as
+present. These leftovers could mislead a later maintainer into rebuilding the
+rejected operation.
+
+**Change and verification.** The unused config class and `AppConfig.imaging`
+field were deleted. The private resize class/function, runtime labels, and
+current READMEs and resume-chain guide now say complete-frame
+aspect-preserving resize; stable phase-3 keys and manifests were left unchanged.
+A regression proves that an actual downscale preserves the aspect ratio and both
+outer image edges, and another proves the deleted crop config is absent.
+
+**Carry-forward judgement. WARNING FOR src/ocrllm.** The active package still
+contains no such config or executable geometry-changing stage. Keep it that way:
+comparison thumbnails may be resized privately, and full pages/frames may be
+uniformly bounded, but never expose corner, contour, ROI, or perspective options
+for recognition inputs.

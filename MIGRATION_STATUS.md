@@ -1532,6 +1532,14 @@ crop/perspective module, board ROI detector/config, ROI occlusion rejection,
 GUI toggle, and CLI option are gone. Only a read-only historical manifest field
 is accepted for repair identity; it cannot select the deleted behavior.
 
+#357 confirms by a fresh executable-path audit that neither legacy nor the
+active package retained automatic corner, contour, ROI crop, or perspective
+correction. The unused legacy denoise/Canny/contour config object is now also
+deleted, misleading crop labels are corrected, and an actual downscale
+regression preserves aspect ratio and both outer edges. Full-frame resizing,
+video time-point selection, and complete-page PDF rendering remain; none is a
+blackboard crop.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

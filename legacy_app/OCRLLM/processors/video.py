@@ -3,7 +3,7 @@
 
 Phase 1: 音频提取
 Phase 2: 智能抽帧（粗扫 + 变化区间细扫 + pHash 去重）
-Phase 3: 裁剪 + 缩放
+Phase 3: 完整帧等比例缩放
 Phase 4: 大模型板书/课件识别 + 热词提取
 Phase 5: 热词辅助语音识别（可选）
 
@@ -420,7 +420,7 @@ class VideoProcessor(BaseProcessor):
     ) -> dict:
         """执行录课视频处理。
 
-        视频含两条互不依赖的管线：frames（抽帧 → 预处理 → 板书识别）和
+        视频含两条互不依赖的管线：frames（抽帧 → 完整帧缩放 → 板书识别）和
         audio（提取音频 → 语音识别）。两者可以单独重跑，重跑一条永远不会删掉
         另一条的产物。
 
@@ -1078,13 +1078,13 @@ class VideoProcessor(BaseProcessor):
         if len(best_selected) > target_high:
             step = len(best_selected) / target_high
             best_selected = [best_selected[int(i * step)] for i in range(target_high)]
-            logger.info("[VIDEO] 安全上限裁剪: → %d帧", len(best_selected))
+            logger.info("[VIDEO] 安全上限均匀下采样: → %d帧", len(best_selected))
 
         return best_selected
 
-    # ---- Phase 3: 裁剪 + 缩放（非破坏性，保留原始帧） ----
-    def _phase3_preprocess(self, frame_results: list[dict], output_dir: str) -> list[str]:
-        self._report(3, 5, "裁剪+缩放...")
+    # ---- Phase 3: 完整帧等比例缩放（不裁剪，保留原始帧） ----
+    def _phase3_resize_full_frames(self, frame_results: list[dict], output_dir: str) -> list[str]:
+        self._report(3, 5, "完整帧缩放...")
         self._clear_phase3_artifacts(output_dir)
         temp_dir = ensure_dir(self._phase3_dir(output_dir))
         workers = resolve_workers(self.cfg.concurrency.video_resize_workers, len(frame_results), hard_cap=8)
@@ -1119,7 +1119,7 @@ class VideoProcessor(BaseProcessor):
                 self.tracker.update_phase(
                     "phase3",
                     done,
-                    f"裁剪缩放: {done}/{len(frame_results)}",
+                    f"完整帧缩放: {done}/{len(frame_results)}",
                     total=len(frame_results),
                 )
         finally:
@@ -1643,7 +1643,7 @@ class VideoProcessor(BaseProcessor):
     def _prune_completed_outputs(self, context: VideoProcessContext):
         """成功完成后清理中间产物。
 
-        只删除「不花钱就能重建」的东西：mp3 可以再从视频里抽，帧和预处理图可以再抽一次。
+        只删除「不花钱就能重建」的东西：mp3 可以再从视频里抽，帧和完整帧缩放图可以再生成。
         识别结果（板书 MD、录音 MD、热词表）一律保留 —— 它们是花过钱的产物，而且是
         另一条管线以后单独重跑时的输入。
         """

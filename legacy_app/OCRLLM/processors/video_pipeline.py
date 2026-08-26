@@ -258,11 +258,11 @@ class FrameExtractPhase(VideoPhase):
         return True
 
 
-class FramePreprocessPhase(VideoPhase):
-    """阶段 3 — 帧裁剪缩放预处理。"""
+class FrameResizePhase(VideoPhase):
+    """阶段 3 — 完整帧等比例缩放。"""
     phase_id = 3
     phase_key = "phase3"
-    phase_name = "板书·裁剪缩放"
+    phase_name = "板书·完整帧缩放"
 
     def phase_total(self, processor: VideoProcessor, context: VideoProcessContext) -> int:
         """返回帧数量。"""
@@ -271,7 +271,7 @@ class FramePreprocessPhase(VideoPhase):
         return len(context.frame_results)
 
     def can_resume(self, processor: VideoProcessor, context: VideoProcessContext) -> bool:
-        """检查预处理后的图片是否全部存在。"""
+        """检查完整帧缩放图片是否全部存在。"""
         if context.frame_results is None:
             context.frame_results = processor._load_frame_info_if_valid(context.info_path)
         if context.frame_results is None:
@@ -283,14 +283,14 @@ class FramePreprocessPhase(VideoPhase):
         return True
 
     def on_resume(self, processor: VideoProcessor, context: VideoProcessContext):
-        """恢复时加载已有预处理路径。"""
+        """恢复时加载已有完整帧缩放路径。"""
         if context.frame_results is None:
             context.frame_results = processor._load_frame_info(context.info_path)
         context.processed_paths = processor._load_phase3_processed_paths(context.output_dir, context.frame_results)
         super().on_resume(processor, context)
 
     def execute(self, processor: VideoProcessor, context: VideoProcessContext) -> bool:
-        """执行帧预处理。"""
+        """执行完整帧等比例缩放。"""
         if context.frame_results is None:
             context.frame_results = processor._load_frame_info(context.info_path)
         processor._clear_invalidated_phase_artifacts(
@@ -300,7 +300,7 @@ class FramePreprocessPhase(VideoPhase):
         )
         context.board_md = None
         context.hotwords = []
-        context.processed_paths = processor._phase3_preprocess(context.frame_results, context.output_dir)
+        context.processed_paths = processor._phase3_resize_full_frames(context.frame_results, context.output_dir)
         return True
 
 
@@ -356,8 +356,8 @@ class BoardRecognizePhase(VideoPhase):
         if context.processed_paths is None:
             context.processed_paths = processor._load_phase3_processed_paths(context.output_dir, context.frame_results)
         if context.processed_paths is None:
-            logger.warning("[VIDEO] 预处理产物缺失，重新执行 Phase 3 以保持识别一致性")
-            context.processed_paths = processor._phase3_preprocess(context.frame_results, context.output_dir)
+            logger.warning("[VIDEO] 完整帧缩放产物缺失，重新执行 Phase 3 以保持识别一致性")
+            context.processed_paths = processor._phase3_resize_full_frames(context.frame_results, context.output_dir)
 
         # 清理产物前先把上一次写了一半的板书 MD 拆成批次，避免重复付费识别。
         restored_slots: dict[int, str] = {}
@@ -449,7 +449,7 @@ def build_video_phase_chain(context: VideoProcessContext) -> list[VideoPhase]:
     phases: list[VideoPhase] = [
         AudioExtractPhase(),
         FrameExtractPhase(),
-        FramePreprocessPhase(),
+        FrameResizePhase(),
         BoardRecognizePhase(),
         AudioRecognizePhase(),
     ]

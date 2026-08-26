@@ -875,6 +875,13 @@ automatic/manual quadrilateral crop, ROI detector, ROI-based occlusion filter,
 configuration fields, GUI checkbox, and CLI flag are removed. A historical
 `skip_preprocess` field remains readable only inside old board-repair manifests;
 it cannot activate cropping and new manifests record `full-frame-resize-v1`.
+#357 rechecked every executable path after the maintainer restated this rule.
+No corner detector, contour/ROI crop, or perspective rectifier remains in
+legacy or active code. The final unused legacy Canny/contour configuration was
+deleted, and runtime/docs no longer misname complete-frame resizing as cropping.
+Active comparison thumbnails remain selection-only; retained video JPEGs keep
+the decoded frame dimensions, and PDF pages render at one uniform full-page
+scale. Do not reintroduce geometry-changing recognition preprocessing.
 Focused full-frame and neighboring regressions pass, the maintained active
 suite passes 1,769 tests, and the bounded legacy suite passes 281 tests with one
 expected skip after excluding the deferred real social-download E2E and the

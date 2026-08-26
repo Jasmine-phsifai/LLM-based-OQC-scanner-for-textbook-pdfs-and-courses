@@ -18,7 +18,7 @@
 3. 一旦发现某个已完成阶段无法恢复，必须同时做三件事：
    - 从内存 completed 集中移除该阶段及其下游阶段
    - 删除这些失效阶段的下游产物
-   - 立刻把裁剪后的 completed 集重新写回 checkpoint
+   - 立刻把修剪后的 completed 集重新写回 checkpoint
 
 ## PDF 链条
 
@@ -45,7 +45,7 @@
 
 视频含两条互不依赖的管线。步骤编号 1~5 仍是稳定的 checkpoint 标识，但归属关系是：
 audio 管线 = 步骤 1（提取音频）、5（语音识别）；frames 管线 = 步骤 2（抽帧）、
-3（裁剪缩放）、4（大模型识别）。归属定义在
+3（完整帧等比例缩放）、4（大模型识别）。归属定义在
 `processors/video_pipeline_selection.py::VideoPipelineSelection`。
 
 ### Video 保存什么
@@ -87,7 +87,7 @@ audio 管线 = 步骤 1（提取音频）、5（语音识别）；frames 管线 
 
 - 上游步骤重跑时，同管线的下游产物不能继续留在输出目录里冒充有效结果。
 - 一条管线的重跑永远不删另一条管线的产物。
-- 完成后的清理只删「不花钱就能重建」的东西（mp3、提取帧、预处理图、frame_info.json）。
+- 完成后的清理只删「不花钱就能重建」的东西（mp3、提取帧、完整帧缩放图、frame_info.json）。
   板书 MD、录音 MD、热词表任何情况下都不删——它们是花过钱的产物，也是另一条管线
   单独重跑时的输入。`cleanup_intermediates=False`（GUI 的「保留中间文件」）可完全关闭清理。
 - 音频缺失时步骤 5 会重新提取音频，而不是静默跳过并上报成功。
@@ -98,7 +98,7 @@ audio 管线 = 步骤 1（提取音频）、5（语音识别）；frames 管线 
 - core/incremental_writer.py: PDF 增量内容落盘
 - processors/pdf.py: PDF checkpoint 契约、批次恢复、输出恢复
 - processors/video.py: Video checkpoint 契约、下游产物清理
-- processors/video_pipeline.py: phase 级恢复、失效裁剪和重跑
+- processors/video_pipeline.py: phase 级恢复、失效状态修剪和重跑
 - gui/app.py: GUI 恢复入口
 
 ## 仍然刻意保留的现实约束

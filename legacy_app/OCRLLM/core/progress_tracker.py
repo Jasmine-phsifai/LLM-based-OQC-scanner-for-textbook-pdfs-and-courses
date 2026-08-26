@@ -303,7 +303,7 @@ class ProgressTracker:
         phase_names = {
             "phase1": "音频提取",
             "phase2": "智能抽帧",
-            "phase3": "裁剪缩放",
+            "phase3": "完整帧缩放",
             "phase4": "大模型识别",
             "phase5": "语音识别",
             "phase4_hotwords": "提取热词",
