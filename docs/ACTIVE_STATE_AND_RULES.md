@@ -161,6 +161,19 @@ replace-failure regression proves the original Markdown bytes survive, the
 temporary sibling is removed, the error propagates, and the one successful
 provider call is not reported as published. Legacy PDF source identity remains
 weak; active PDF repair and its Route A/Route B choice remain unchanged.
+#427 closes the high-level video live publication/resume gate through the
+current public `recognize_video_to_markdown()` facade. A controlled 1280x720
+four-second video preserved all four frame edges and contained both readable
+text and synthetic speech. After live catalog discovery confirmed explicit
+`gemini-2.5-flash`, exactly one Google image request and one Google short-audio
+request settled without retry, model switching, or fallback. A disposable
+runner then injected one final-publication failure only after both branch
+states were durable; the next public `resume=True` invocation made zero
+provider calls, published nonempty Markdown containing both recognized
+branches, and removed the journal. The source, retained frame, and audio
+artifact remained available. This is lifecycle evidence, not a transcription-
+quality benchmark, and it adds no production retry, fallback, provider
+framework, test hook, crop/ROI path, or second resume abstraction.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but

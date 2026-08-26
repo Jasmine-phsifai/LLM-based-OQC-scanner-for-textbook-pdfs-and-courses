@@ -1944,3 +1944,14 @@ original Markdown byte-for-byte and removing the temporary sibling. No helper,
 grammar, provider, active-library, output-layout, state, worker, or frozen
 boundary changed; legacy PDF source identity and the active artifact choice
 remain open.
+
+#427 closes the public high-level video publication-failure/zero-call-resume
+live gate. One authorized controlled 1280x720 complete-frame video used the
+live-discovered explicit `gemini-2.5-flash` model for exactly one image request
+and one short-audio request, without retry, model switch, or fallback. Both
+branches settled before a disposable runner injected final-publication failure;
+the next `recognize_video_to_markdown(..., resume=True)` call replayed neither
+provider, published nonempty combined Markdown, and removed the journal. The
+retained image included all four source edges. This changes no runtime, API,
+state, dependency, worker, provider policy, or crop/ROI boundary; it proves the
+already-shipped lifecycle through the current importable facade.

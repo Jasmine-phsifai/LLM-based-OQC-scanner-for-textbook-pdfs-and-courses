@@ -113,7 +113,12 @@ one complete black frame and one short synthetic-audio request. The image
 returned honest `PROVIDER_RESPONSE_INVALID/missing_text`; audio settled as
 `NO_SPEECH_DETECTED`, and the journal preserved that audio state and both media
 artifacts without publishing. It was not retried or resumed, so the high-level
-live publication/resume gate remains open. The current
+live publication/resume gate remained open at that point. #427 closes it with
+one controlled readable 1280x720 complete-frame video: exactly one live Google
+image request and one short-audio request settled, an injected final-publication
+failure occurred only after both states were durable, and public `resume=True`
+then published both branches with zero provider calls and removed the journal.
+The current
 recognize/compose/publish calls remain the non-resumable low-level API. The same
 iteration makes duration validation route-aware: whole Google Files remains
 limited to 9.5 hours, while explicitly selected integer-minute interval mode
@@ -720,10 +725,10 @@ PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 
 The defect register is only in `docs/ACTIVE_STATE_AND_RULES.md`. D1-D7,
-F1-F4, and G1-G10 are closed in offline code and tests, and #339 closed the
-bounded Stage M live exit. The open provider gate is the high-level video
-publication-failure/zero-call-resume proof; #419 refreshed honest failure
-evidence but did not close it.
+F1-F4, and G1-G10 are closed in offline code and tests, #339 closed the bounded
+Stage M live exit, and #427 closed the high-level video publication-failure /
+zero-call-resume live proof. Earlier #419 and #421 runs remain useful honest
+provider-failure evidence rather than successful gate evidence.
 
 ## Legacy Application
 
