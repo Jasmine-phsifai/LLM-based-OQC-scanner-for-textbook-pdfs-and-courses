@@ -6317,3 +6317,13 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **失败优先、实现与自我纠错。** 新公共组合回归先精确得到 A、C、B。实现删除按成功/错误分开的两个列表，在遍历每个有序 frame outcome 时立即通过现有适配器提取已校验行，音频分支随后加入，最后只调用一次 #362 的模型聚合器。第一版把错误适配器调用写成只传 `errors=`，漏掉必需的空 `results` 参数，邻近集合立即暴露 13 项失败；修正后新回归又发现测试把默认 provider error code 写死，随即改为读取错误对象自身 code。没有隐藏这两次未提交反馈，也没有为此改变公共签名或新建 helper。
 
 **验证与过度设计复查。** 视频 compose/publish/recognize、模型聚合和候选切换集合最终为 **70 passed in 25.84s**。轻量执行者在测试子进程中补入现有 Node 路径后，完整全量 **1,779 passed in 86.47s**；明确排除 Node 的集合 **1,777 passed in 86.12s**。compileall、diff check 和冻结 `contracts/worker` 边界均通过；没有 provider 调用、安装或下载。实现没有改变 Markdown、error code、status、assets、warnings、hotwords、调用总数、unknown 语义、provider 或发布行为；没有触碰高层 video journal、resume、repair、路径框架或冻结目录。路径别名缺陷不在本轮顺手修复，防止把两个独立所有权问题合并成模糊“大修”。
+
+## #364 — 2026-08-26：不存在的保留音频路径也不能被别名写成 Markdown
+
+**本轮英文原子任务。** `Atomic task — Iteration #364: prevent publish_video_result() from writing Markdown through a lexical alias of the reserved video media paths. Context: #363’s independent publication audit proved that a silent video’s nonexistent output_root/audio.mp3 can be reached as frames/../audio.mp3, bypassing the current early return and creating a false MP3 artifact. Success means a failing-first public regression, one narrow path-identity correction that still catches existing hard-link aliases, unchanged atomic publication behavior for valid targets, full offline verification, and a committed/pushed record. This matters because a library must never publish Markdown under a filename reserved for media.`
+
+**失败优先证据与路线。** 无音频 outcome 的 `output_root/audio.mp3` 尚不存在；公共发布目标传入 `output_root/frames/../audio.mp3` 时，旧实现因为 `lexists(target)` 为假而提前返回，测试精确得到 **DID NOT RAISE**，并把 Markdown 写到了真实的保留音频路径。路线 A 只做字符串 `abspath/normpath`；路线 B 在本地函数中用 `Path.resolve(strict=False)` 比较尚不存在的目标身份，同时保留 `samefile()` 处理已存在硬链接；选择 B。它还能正确处理已存在父目录的链接，但没有扩展为仓库级路径规范化框架。
+
+**实现与个人复核。** 发布器在不存在目标的快速返回前解析目标和所有保留媒体路径；相同身份立即抛出脱敏的 `OUTPUT_PATH_INVALID`，解析本身失败也暴力拒绝。随后原有 `lexists/samefile` 分支不变。新增无音频词法别名回归证明错误路径不产生文件；个人复查又发现原“alias”测试其实只覆盖 `..`，因此补充真实本地硬链接回归，直接证明 `samefile()` 责任仍在。没有改变合法目标的进程内 claim、overwrite 或原子写顺序。
+
+**验证与过度设计复查。** 视频发布直接集合 **10 passed in 0.08s**，publish/compose/video/atomic-write 邻近集合 **65 passed in 24.72s**。轻量执行者发现第一次全量收集与主线新增硬链接测试重叠后没有沿用旧数字，等待稳定并重跑：最终 Node 完整全量 **1,781 passed in 87.48s**，明确排除 Node 的集合 **1,779 passed in 85.52s**。compileall、diff check 和冻结 `contracts/worker` 边界均通过；没有 provider 调用、安装或下载。本轮没有通用 canonicalizer、transaction、跨进程锁、第二套输出所有权、后缀白名单或 video journal；只关闭一个已公开复现的保留媒体身份漏洞。

@@ -1569,9 +1569,13 @@ selection, call accounting, state, retry, or provider contract.
 #363 keeps that ordering contract when settled video frame groups interleave
 results and errors. Composition now gathers each group's validated token rows
 in caller order and performs one final model merge, so success A, failure B,
-success C remains A, B, C rather than A, C, B. The independently reproduced
-nonexistent reserved-audio lexical-alias publication bug remains open for the
-next atomic fix.
+success C remains A, B, C rather than A, C, B.
+
+#364 closes the independently reproduced reserved-audio alias defect. A silent
+video still has no `audio.mp3`, but publication now resolves nonexistent target
+identities before its fast path, so `frames/../audio.mp3` cannot receive
+Markdown. Existing hard-link alias protection and valid atomic publication are
+unchanged; no generalized path or ownership framework was introduced.
 
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as

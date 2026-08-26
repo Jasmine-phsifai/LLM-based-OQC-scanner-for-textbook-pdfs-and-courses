@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 from pathlib import Path
 
 import pytest
@@ -159,6 +160,36 @@ def test_publish_video_result_rejects_alias_of_retained_asset(
 
     assert captured.value.code == "OUTPUT_PATH_INVALID"
     assert retained_frame.read_bytes() == original_bytes
+
+
+def test_publish_video_result_rejects_hard_link_to_retained_asset(
+    tmp_path: Path,
+) -> None:
+    outcome = _outcome(tmp_path)
+    retained_frame = outcome.retained_frames[0].path
+    target = tmp_path / "retained-frame-alias.md"
+    os.link(retained_frame, target)
+
+    with pytest.raises(OutputError) as captured:
+        publish_video_result(outcome, target, overwrite=True)
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert target.read_bytes() == retained_frame.read_bytes()
+
+
+def test_publish_video_result_rejects_nonexistent_reserved_audio_alias(
+    tmp_path: Path,
+) -> None:
+    outcome = _outcome(tmp_path)
+    reserved_audio = outcome.output_root / "audio.mp3"
+    target = outcome.output_root / "frames" / ".." / "audio.mp3"
+
+    assert not reserved_audio.exists()
+    with pytest.raises(OutputError) as captured:
+        publish_video_result(outcome, target)
+
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert not reserved_audio.exists()
 
 
 def test_publish_video_result_write_failure_preserves_existing_target(

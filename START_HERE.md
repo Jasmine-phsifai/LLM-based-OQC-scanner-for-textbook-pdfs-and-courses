@@ -268,8 +268,14 @@ and provider behavior are unchanged. No billing subsystem was added.
 successful and failed frame groups now contribute their validated usage in
 settled group order before the audio branch, instead of grouping all successes
 ahead of all errors. No result content, status, calls, provider, or publication
-behavior changed. A separately reproduced lexical alias around the reserved
-silent-video `audio.mp3` path remains the next atomic publication defect.
+behavior changed.
+
+#364 closes the separately reproduced publication defect around a silent
+video's reserved but nonexistent `audio.mp3`. Lexical aliases such as
+`frames/../audio.mp3` are resolved and rejected before the nonexistent-target
+fast path, while the existing filesystem-identity check still protects retained
+hard-link aliases. Valid atomic publication is unchanged; no general path or
+transaction framework was added.
 
 #349 then release-proves exact post-removal commit `3c09cde` from a clean
 archive: 1,768 tests passed with one skip, every maintained isolated install

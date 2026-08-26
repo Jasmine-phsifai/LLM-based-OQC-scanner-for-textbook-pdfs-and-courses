@@ -73,13 +73,24 @@ def _reject_reserved_video_media_target(
             code="OUTPUT_PATH_INVALID",
         ) from None
     try:
+        resolved_target = target.resolve(strict=False)
+        if any(
+            resolved_target == reserved.resolve(strict=False)
+            for reserved in reserved_paths
+        ):
+            raise OutputError(
+                "The video Markdown output cannot use a reserved media path.",
+                code="OUTPUT_PATH_INVALID",
+            ) from None
         if not os.path.lexists(target):
             return
         aliases_reserved_media = any(
             os.path.lexists(asset) and os.path.samefile(target, asset)
             for asset in reserved_paths
         )
-    except (OSError, ValueError) as error:
+    except OutputError:
+        raise
+    except (OSError, RuntimeError, ValueError) as error:
         raise OutputError(
             "The video Markdown output could not be compared with reserved media.",
             code="OUTPUT_PATH_INVALID",

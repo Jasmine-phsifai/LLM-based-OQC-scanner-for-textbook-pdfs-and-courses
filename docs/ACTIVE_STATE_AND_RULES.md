@@ -7027,9 +7027,27 @@ executable supplied only to the test subprocess; the explicit non-Node suite
 passes 1,777 tests. Compileall, diff validation, and frozen-boundary checks pass
 without provider calls.
 
-One separate publication defect remains open for the next atomic correction:
-for a silent video, the reserved but nonexistent `output_root/audio.mp3` can be
-reached through a lexical alias such as `frames/../audio.mp3`. The current
-nonexistent-target fast path returns before filesystem alias comparison and can
-publish Markdown at that reserved media name. Fix path identity narrowly; do
-not add a generalized path or ownership framework.
+## Current working update: #364 reserved video media aliases cannot receive Markdown
+
+`publish_video_result()` already rejected an exact retained asset and used
+`samefile()` for an existing filesystem alias, but it returned early when the
+target did not exist. For a silent video, the reserved but nonexistent
+`output_root/audio.mp3` could therefore be reached as `frames/../audio.mp3`, and
+the publisher created Markdown under the reserved MP3 name.
+
+Publication now resolves the target and every reserved media identity without
+requiring the final file to exist before taking that fast path. A lexical alias
+or an alias through an existing parent is rejected as `OUTPUT_PATH_INVALID`;
+the existing `samefile()` check remains responsible for already-existing hard
+links. Resolution failures are also rejected with the same typed, redacted path
+error. Valid targets retain the existing claim, overwrite, and atomic-write
+behavior. A failing-first public regression proves the nonexistent silent-audio
+alias creates no file.
+
+The focused publish, compose, video, and atomic-output set passes 65 tests.
+This is one local identity correction, not a generalized path canonicalizer,
+transaction layer, cross-process lock, or second output-ownership system.
+The complete offline suite passes all 1,781 tests with the known Node
+executable supplied only to the test subprocess; the explicit non-Node suite
+passes 1,779 tests. Compileall, diff validation, and frozen-boundary checks pass
+without provider calls.
