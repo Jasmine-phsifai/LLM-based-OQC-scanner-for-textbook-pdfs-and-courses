@@ -205,6 +205,13 @@ single `fix_request` attempt entry while creating neither configured output nor
 temporary directories. Local OCR remains provider-free, built-in providers keep
 their existing validation, and no resolved-provider cache or second validator
 was introduced.
+#433 extends that same direct-facade preflight to PDF vision before output
+resolution, source reads, PDF snapshotting, PDFium inspection, or page
+rendering. Missing providers and injected objects without callable
+`recognize_images` retain the established zero-call draft and `fix_request`
+evidence while creating neither configured output nor temporary directories.
+The shared check still returns immediately for local OCR, and the PDF processor
+does not gain its own validator, provider abstraction, or alternate route.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4164,6 +4171,14 @@ Post-register findings are ordered by demonstrated user impact:
   injected providers keep their routes. Focused adjacent coverage passes 157
   tests, independent review passes 115 tests, and the complete provider-free
   suite passes all 1,875 tests.
+- #433 closes the medium PDF configuration-preflight gap. Direct PDF vision
+  formerly created configured output/temp directories, opened PDFium twice,
+  and rendered the first page group before its child image call rejected a
+  missing or structurally invalid provider. The direct facade now performs the
+  same strict vision check before output, source, backend, or render work while
+  preserving zero-call draft/fix-request evidence. Focused adjacent coverage
+  passes 207 tests, independent review passes 139 and 86 tests, and the complete
+  provider-free suite passes all 1,877 tests.
 
 The bounded reproduced queue is empty again. Select the next iteration through
 a fresh public-lifecycle audit rather than extending output preflight

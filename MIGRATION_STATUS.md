@@ -1984,3 +1984,12 @@ invalid providers retain `CONFIG_MISSING` / `CONFIG_INVALID`, zero attempted
 calls, the existing draft/fix-request evidence, and create no configured
 directories. Local OCR and valid built-in/injected routes remain unchanged; no
 provider resolution cache, framework, retry, or new validator was added.
+
+#433 applies the same direct-facade boundary to PDF vision. A missing provider
+or injected object without callable `recognize_images` now fails before output
+or temporary directory creation, PDF source reads/snapshotting, PDFium
+inspection, page rendering, or dispatch. Existing `CONFIG_MISSING` /
+`CONFIG_INVALID`, zero-call draft evidence, and the `fix_request` attempt entry
+remain stable. Local OCR continues through its existing provider-free route;
+the PDF processor, batch contract, worker boundary, and state formats are
+unchanged.

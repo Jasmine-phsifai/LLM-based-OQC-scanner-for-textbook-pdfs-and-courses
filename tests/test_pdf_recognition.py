@@ -18,6 +18,7 @@ import pytest
 from ocrllm import (
     Cancelled,
     Config,
+    ConfigError,
     GoogleGenAISettings,
     InvalidSource,
     OutputError,
@@ -354,6 +355,60 @@ def test_existing_pdf_output_rejects_before_snapshot_or_backend_inspection(
     assert calls == {"snapshot": 0, "inspect": 0}
     assert provider.calls == []
     assert target.read_text(encoding="utf-8") == "original"
+
+
+@pytest.mark.parametrize(
+    ("provider", "expected_code"),
+    (
+        (None, "CONFIG_MISSING"),
+        (object(), "CONFIG_INVALID"),
+    ),
+)
+def test_pdf_preflights_invalid_provider_before_output_or_backend_work(
+    tmp_path: Path,
+    monkeypatch,
+    provider,
+    expected_code: str,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=1)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    processor = importlib.import_module("ocrllm.processors.recognize_pdf")
+    inspect_calls = 0
+    inspect_pdf = processor.inspect_pdf
+
+    def count_inspection(snapshot_path):
+        nonlocal inspect_calls
+        inspect_calls += 1
+        return inspect_pdf(snapshot_path)
+
+    monkeypatch.setattr(processor, "inspect_pdf", count_inspection)
+
+    with pytest.raises(ConfigError) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert captured.value.code == expected_code
+    assert captured.value.details["workflow_pass"] == "draft"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert [dict(attempt) for attempt in captured.value.details["model_attempts"]] == [
+        {
+            "model": None,
+            "outcome": expected_code,
+            "disposition": "fix_request",
+            "provider_calls_attempted": 0,
+        }
+    ]
+    assert inspect_calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
 
 
 def test_public_pdf_provider_receives_all_four_page_corners(

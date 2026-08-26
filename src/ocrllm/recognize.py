@@ -76,34 +76,36 @@ def _recognize(
     current_model_attempts = None
     processor_output: ProcessorOutput | None = None
 
+    if media_type in {"image", "pdf"}:
+        from .providers.validate_vision_provider_config import (
+            validate_vision_provider_config,
+        )
+
+        try:
+            validate_vision_provider_config(
+                cfg,
+                require_injected_callable=True,
+            )
+        except ConfigError as error:
+            error._add_safe_detail("workflow_pass", "draft")
+            error._add_safe_detail("provider_calls_attempted", 0)
+            error._add_safe_detail(
+                "model_attempts",
+                (
+                    {
+                        "model": None,
+                        "outcome": error.code,
+                        "disposition": "fix_request",
+                        "provider_calls_attempted": 0,
+                    },
+                ),
+            )
+            raise
+
     with reuse_or_create_provider_request_start_gate(
         cfg.execution.provider_request_start_interval_seconds
     ):
         if media_type == "image":
-            from .providers.validate_vision_provider_config import (
-                validate_vision_provider_config,
-            )
-
-            try:
-                validate_vision_provider_config(
-                    cfg,
-                    require_injected_callable=True,
-                )
-            except ConfigError as error:
-                error._add_safe_detail("workflow_pass", "draft")
-                error._add_safe_detail("provider_calls_attempted", 0)
-                error._add_safe_detail(
-                    "model_attempts",
-                    (
-                        {
-                            "model": None,
-                            "outcome": error.code,
-                            "disposition": "fix_request",
-                            "provider_calls_attempted": 0,
-                        },
-                    ),
-                )
-                raise
             profile = resolve_image_profile(cfg.profile)
             validate_execution_image_count(source_paths, config=cfg)
             try:
