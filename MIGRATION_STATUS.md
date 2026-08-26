@@ -1937,3 +1937,10 @@ range repair now writes one existing single-page failure marker per unresolved
 page, keeping all remaining pages discoverable by the unchanged parser. This
 does not port repair, change the active output contract, or resolve the open
 partial-artifact choice; legacy identity and publication weaknesses remain.
+
+#426 reuses the existing legacy atomic text writer for the final PDF repair
+publication. Injected replacement failure now propagates while preserving the
+original Markdown byte-for-byte and removing the temporary sibling. No helper,
+grammar, provider, active-library, output-layout, state, worker, or frozen
+boundary changed; legacy PDF source identity and the active artifact choice
+remain open.

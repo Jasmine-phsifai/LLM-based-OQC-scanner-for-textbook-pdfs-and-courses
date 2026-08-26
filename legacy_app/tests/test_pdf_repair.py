@@ -1,3 +1,4 @@
+import importlib
 from pathlib import Path
 
 import pytest
@@ -73,3 +74,52 @@ def test_pdf_repair_rewrites_partial_range_and_keeps_failures_discoverable(
     assert content.index(page_2_marker) < content.index(page_4_marker)
     assert "第 2, 4 页识别失败" not in content
     assert PDFProcessor.find_failed_pages(str(md_path)) == [2, 4]
+
+
+def test_pdf_repair_preserves_original_when_atomic_replace_fails(
+    tmp_path: Path, monkeypatch
+):
+    pdf_path = tmp_path / "book.pdf"
+    md_path = tmp_path / "book.md"
+    image_path = tmp_path / "page-1.png"
+    original_markdown = (
+        "Before repair\r\n\r\n"
+        "<!-- 第 1 页识别失败: initial provider failure -->\r\n\r\n"
+        "After repair\r\n"
+    ).encode("utf-8")
+    pdf_path.write_bytes(b"fake pdf")
+    md_path.write_bytes(original_markdown)
+    image_path.write_bytes(b"fake image")
+
+    render_calls = []
+
+    def fake_render(_pdf_path, **kwargs):
+        render_calls.append(kwargs["page_range"])
+        return [str(image_path)]
+
+    def fail_replace(_source, _target):
+        raise OSError("injected atomic replace failure")
+
+    monkeypatch.setattr("OCRLLM.processors.pdf.pdf_to_images", fake_render)
+    atomic_writer = importlib.import_module("OCRLLM.core.write_text_atomically")
+    monkeypatch.setattr(atomic_writer.os, "replace", fail_replace)
+
+    llm = _ScriptedPDFLLM()
+    processor = PDFProcessor.__new__(PDFProcessor)
+    processor.cfg = AppConfig().with_updates(
+        paths={"output_dir": str(tmp_path), "temp_dir": str(tmp_path)},
+    )
+    processor.llm = llm
+    processor.api_pool = None
+    processor.reporter = ProgressReporter()
+    processor._report = lambda *_args: None
+    processor._check_cancelled = lambda: None
+    processor._report_content = lambda *_args: None
+
+    with pytest.raises(OSError, match="injected atomic replace failure"):
+        processor.repair(str(pdf_path), str(md_path), prompt_template="page={page_range}")
+
+    assert md_path.read_bytes() == original_markdown
+    assert list(tmp_path.glob(".ocrllm-text-*.tmp")) == []
+    assert render_calls == [(1, 1)]
+    assert llm.page_calls == [(1, [str(image_path)])]

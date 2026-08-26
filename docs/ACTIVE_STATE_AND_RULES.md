@@ -154,6 +154,13 @@ remaining failure, in page order, so the next legacy repair pass can discover
 all of them. The parser grammar, provider calls, active library, and open Route
 A/Route B choice are unchanged; legacy PDF identity and non-atomic publication
 remain separate known weaknesses.
+#426 closes the proven legacy PDF publication weakness without changing its
+repair semantics. `PDFProcessor.repair()` now reuses the existing legacy
+UTF-8/fsync/atomic-replace writer already used by audio, board, and video. A
+replace-failure regression proves the original Markdown bytes survive, the
+temporary sibling is removed, the error propagates, and the one successful
+provider call is not reported as published. Legacy PDF source identity remains
+weak; active PDF repair and its Route A/Route B choice remain unchanged.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -781,8 +788,9 @@ producer emits only successful `ocrllm:pdf-pages start=N end=M` sections and
 publishes no final PDF Markdown when a group fails; therefore no active failed
 range currently exists for repair to discover after sidecar loss. Legacy repair
 auto-detects localized Chinese failure comments, but those comments are not a
-stable active identity and legacy publishes them with a non-atomic direct write.
-Do not copy that regex or silently invent failure identity.
+stable active identity. #426 later made legacy publication atomic without
+changing that identity weakness. Do not copy the regex or silently invent
+failure identity.
 
 #080 withdrew #079's initial recommendation to add one failed-range marker and
 publish the settled prefix. The active PDF loop is serial and fail-fast. In a

@@ -28,6 +28,7 @@ from OCRLLM.core.provider_selection import (
 from OCRLLM.core.provider_errors import is_provider_setup_error
 from OCRLLM.core.task_runner import CancelledError, ProgressReporter
 from OCRLLM.core.progress_tracker import ProgressTracker
+from OCRLLM.core.write_text_atomically import write_text_atomically
 from OCRLLM.core.utils import (
     batch_list,
     concat_md_files,
@@ -800,7 +801,7 @@ class PDFProcessor(BaseProcessor):
                 )
             content = content.replace(m.group(0), "\n\n" + replacement + "\n\n", 1)
 
-        Path(md_path).write_text(content, encoding="utf-8")
+        write_text_atomically(md_path, content)
         logger.info(
             "[PDF-REPAIR] 修复完成: %d/%d 页成功, %d 页仍失败 -> %s",
             len(results), len(failed_pages), len(still_failed), md_path,

@@ -1055,3 +1055,36 @@ into this marker correction.
 PDF repair path and must not copy this localized grammar. If its separate
 partial-artifact choice is approved, every artifact it emits must be consumable
 by the same strict schema, with source identity and atomic publication.
+
+## 2026-08-27: PDF repair bypassed the shared atomic text writer
+
+**Observed and fixed.** PDF repair was the remaining media-repair path that
+published with direct `Path.write_text()`. A successful provider response
+followed by an encoding, flush, fsync, or replacement failure could therefore
+truncate or partially expose the only existing Markdown. Audio, board, and
+video repair already used `core/write_text_atomically.py`.
+
+`PDFProcessor.repair()` now calls that existing writer once after its unchanged
+marker transformation. No second writer, transaction, lock, retry, or state
+protocol was added. A production-path regression injects `os.replace` failure
+after one successful page recognition and requires the exception to propagate,
+the original CRLF Markdown bytes to remain exact, the temporary sibling to be
+removed, and render/provider counts to remain one each. Before the fix, the
+test failed because PDF bypassed the injected atomic boundary and published
+normally.
+
+**Verification.** PDF repair, the writer's encoding/fsync/replace regressions,
+and failure propagation passed 18/18; `compileall` and `git diff --check` passed.
+An independent review reran the same 18 tests and found no blocker. The bounded
+provider-free legacy gate selected 36 tracked files, excluded three real social
+E2E files plus live Google discovery, and passed 268/268 with no skip or
+provider access; the protected untracked test was not collected.
+
+**Still open.** PDF repair continues to trust a caller-selected PDF and
+localized page markers without source identity. Atomic publication prevents a
+torn replacement; it does not claim cross-process coordination or prove that
+the chosen PDF matches the Markdown.
+
+**Carry-forward judgement. WARNING FOR src/ocrllm.** The active library already
+uses its own atomic Markdown writer. If repair is later approved, keep that
+boundary and add source-bound identity rather than importing this legacy parser.
