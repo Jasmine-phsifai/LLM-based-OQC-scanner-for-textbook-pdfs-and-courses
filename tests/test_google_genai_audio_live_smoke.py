@@ -176,6 +176,163 @@ def test_audio_live_smoke_long_mode_requires_complete_deleted_files_lifecycle(
     assert source not in raw
 
 
+def test_audio_live_smoke_interval_mode_requires_explicit_long_output_boundary(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(SystemExit):
+        smoke.parse_arguments(
+            [
+                "--model",
+                MODEL,
+                "--audio",
+                "lecture.mp3",
+                "--interval-minutes",
+                "6",
+                "--output-dir",
+                str(tmp_path),
+            ]
+        )
+    with pytest.raises(SystemExit):
+        smoke.parse_arguments(
+            [
+                "--model",
+                MODEL,
+                "--audio",
+                "lecture.mp3",
+                "--long",
+                "--interval-minutes",
+                "6",
+            ]
+        )
+    with pytest.raises(SystemExit):
+        smoke.parse_arguments(
+            [
+                "--model",
+                MODEL,
+                "--audio",
+                "lecture.mp3",
+                "--long",
+                "--interval-minutes",
+                "0",
+                "--output-dir",
+                str(tmp_path),
+            ]
+        )
+
+
+def test_audio_live_smoke_interval_mode_reports_only_safe_two_call_facts(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    secret = "unit-test-google-interval-secret"
+    transcript = "PRIVATE INTERVAL TRANSCRIPT"
+    source = "private-interval-audio-name.mp3"
+    output_dir = tmp_path / "published"
+    output_path = output_dir / "private-interval-audio-name" / "result.md"
+    output_path.parent.mkdir(parents=True)
+    output_path.write_text(transcript, encoding="utf-8")
+    monkeypatch.setenv("GOOGLE_API_KEY", secret)
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda settings, timeout_seconds: (MODEL,),
+    )
+
+    def fake_long_recognize(
+        actual_source,
+        *,
+        config,
+        interval_minutes,
+    ):
+        assert str(actual_source) == source
+        assert config.output_directory() == output_dir
+        assert interval_minutes == 6
+        return SimpleNamespace(
+            markdown=transcript,
+            source_type="audio",
+            status="complete",
+            output_path=output_path,
+            metadata=MappingProxyType(
+                {
+                    "provider": "google",
+                    "model": MODEL,
+                    "transport": "google_files",
+                    "provider_call_count": 2,
+                    "current_run_provider_call_count": 2,
+                    "duration_seconds": 601.0,
+                    "byte_size": 4096,
+                    "remote_file_deleted": True,
+                    "provider_client_closed": True,
+                    "current_model_token_usage": (
+                        {"model": MODEL, "input_tokens": 202, "output_tokens": 19},
+                    ),
+                }
+            ),
+        )
+
+    monkeypatch.setattr(smoke, "recognize_long_mp3", fake_long_recognize)
+
+    assert smoke.main(
+        [
+            "--model",
+            MODEL,
+            "--audio",
+            source,
+            "--timeout",
+            "9",
+            "--long",
+            "--interval-minutes",
+            "6",
+            "--output-dir",
+            str(output_dir),
+        ]
+    ) == 0
+    raw = capsys.readouterr().out.strip()
+    assert json.loads(raw)["recognition"] == {
+        "current_run_provider_call_count": 2,
+        "input_tokens": 202,
+        "interval_minutes": 6,
+        "model": MODEL,
+        "output_tokens": 19,
+        "provider_call_count": 2,
+        "remote_file_deleted": True,
+        "result_published": True,
+        "transport": "google_files",
+    }
+    assert secret not in raw
+    assert transcript not in raw
+    assert source not in raw
+    assert str(output_dir) not in raw
+
+
+def test_audio_live_interval_summary_rejects_unremoved_temporary_state(
+    tmp_path: Path,
+) -> None:
+    output_path = tmp_path / "lecture" / "result.md"
+    output_path.parent.mkdir()
+    output_path.write_text("private transcript", encoding="utf-8")
+    (output_path.parent / ".ocrllm-long-audio-resume.json").write_text(
+        "private state",
+        encoding="utf-8",
+    )
+    result = SimpleNamespace(
+        source_type="audio",
+        status="complete",
+        output_path=output_path,
+        metadata=MappingProxyType({}),
+    )
+
+    with pytest.raises(ConfigError):
+        smoke._safe_recognition_summary(
+            result,
+            MODEL,
+            require_google_files=True,
+            interval_minutes=6,
+            expected_output_dir=tmp_path,
+        )
+
+
 @pytest.mark.parametrize("failure_stage", ["catalog", "recognition"])
 def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
     failure_stage, monkeypatch, capsys

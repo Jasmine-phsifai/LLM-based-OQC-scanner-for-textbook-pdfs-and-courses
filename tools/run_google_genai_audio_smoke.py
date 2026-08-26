@@ -1,4 +1,4 @@
-"""Run one bounded, credential-safe Google GenAI short-audio live gate."""
+"""Run one bounded, credential-safe Google GenAI audio live gate."""
 
 from __future__ import annotations
 
@@ -42,11 +42,28 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Use the standalone Google Files route and require more than 300 seconds.",
     )
-    return parser.parse_args(argv)
+    parser.add_argument("--interval-minutes", type=_positive_integer)
+    parser.add_argument("--output-dir", type=Path)
+    arguments = parser.parse_args(argv)
+    if arguments.interval_minutes is not None and not arguments.long:
+        parser.error("--interval-minutes requires --long")
+    if (arguments.interval_minutes is None) != (arguments.output_dir is None):
+        parser.error("--interval-minutes and --output-dir must be used together")
+    return arguments
+
+
+def _positive_integer(raw: str) -> int:
+    try:
+        value = int(raw)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a positive integer") from None
+    if value <= 0 or str(value) != raw:
+        raise argparse.ArgumentTypeError("must be a positive integer") from None
+    return value
 
 
 def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, object]:
-    """Run current catalog discovery and one short-MP3 recognition call."""
+    """Run catalog discovery and one selected public audio workflow."""
     settings = GoogleGenAISettings()
     try:
         models = list_google_genai_models(settings, arguments.timeout)
@@ -63,19 +80,29 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
             ),
         ) from None
     try:
-        recognize_audio = recognize_long_mp3 if arguments.long else recognize
-        result = recognize_audio(
-            arguments.audio,
-            config=Config(
-                provider=settings,
-                audio_model=AudioModelSettings(name=arguments.model),
-                timeout_seconds=arguments.timeout,
-            ),
+        config = Config(
+            provider=settings,
+            audio_model=AudioModelSettings(name=arguments.model),
+            timeout_seconds=arguments.timeout,
+            output_dir=arguments.output_dir,
         )
+        if arguments.long:
+            if arguments.interval_minutes is None:
+                result = recognize_long_mp3(arguments.audio, config=config)
+            else:
+                result = recognize_long_mp3(
+                    arguments.audio,
+                    config=config,
+                    interval_minutes=arguments.interval_minutes,
+                )
+        else:
+            result = recognize(arguments.audio, config=config)
         recognition = _safe_recognition_summary(
             result,
             arguments.model,
             require_google_files=arguments.long,
+            interval_minutes=arguments.interval_minutes,
+            expected_output_dir=arguments.output_dir,
         )
     except OCRLLMError as error:
         raise _LiveSmokeFailure("recognition", error) from None
@@ -94,11 +121,36 @@ def _safe_recognition_summary(
     model: str,
     *,
     require_google_files: bool = False,
+    interval_minutes: int | None = None,
+    expected_output_dir: Path | None = None,
 ) -> dict[str, object]:
+    if (interval_minutes is None) != (expected_output_dir is None):
+        raise ConfigError(
+            "Google interval audio summary inputs are inconsistent.",
+            code="CONFIG_INVALID",
+        ) from None
     metadata = result.metadata
-    if result.source_type != "audio" or result.output_path is not None:
+    if result.source_type != "audio":
         raise ConfigError(
             "Google audio live recognition returned an unexpected result boundary.",
+            code="CONFIG_INVALID",
+        ) from None
+    output_path = result.output_path
+    if interval_minutes is None:
+        if output_path is not None:
+            raise ConfigError(
+                "Google audio live recognition returned an unexpected result boundary.",
+                code="CONFIG_INVALID",
+            ) from None
+    elif (
+        not isinstance(output_path, Path)
+        or output_path.name != "result.md"
+        or output_path.parent.parent != expected_output_dir
+        or not output_path.is_file()
+        or (output_path.parent / ".ocrllm-long-audio-resume.json").exists()
+    ):
+        raise ConfigError(
+            "Google interval audio did not publish and clean temporary state.",
             code="CONFIG_INVALID",
         ) from None
     if metadata.get("provider") != "google" or metadata.get("model") != model:
@@ -133,9 +185,20 @@ def _safe_recognition_summary(
             "Google long-audio live recognition did not complete its Files lifecycle.",
             code="CONFIG_INVALID",
         ) from None
-    if call_count != 1 or type(call_count) is not int:
+    expected_calls = (
+        1
+        if interval_minutes is None
+        else math.ceil(duration_seconds / (interval_minutes * 60))
+    )
+    if call_count != expected_calls or type(call_count) is not int:
         raise ConfigError(
-            "Google audio live recognition did not report exactly one provider call.",
+            "Google audio live recognition returned an unexpected provider call count.",
+            code="CONFIG_INVALID",
+        ) from None
+    current_run_calls = metadata.get("current_run_provider_call_count")
+    if interval_minutes is not None and current_run_calls != expected_calls:
+        raise ConfigError(
+            "Google interval audio returned an unexpected current-run call count.",
             code="CONFIG_INVALID",
         ) from None
     if (
@@ -166,6 +229,10 @@ def _safe_recognition_summary(
     if require_google_files:
         summary["transport"] = "google_files"
         summary["remote_file_deleted"] = True
+    if interval_minutes is not None:
+        summary["current_run_provider_call_count"] = current_run_calls
+        summary["interval_minutes"] = interval_minutes
+        summary["result_published"] = True
     return summary
 
 
