@@ -44,11 +44,14 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--interval-minutes", type=_positive_integer)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--resume", action="store_true")
     arguments = parser.parse_args(argv)
     if arguments.interval_minutes is not None and not arguments.long:
         parser.error("--interval-minutes requires --long")
     if (arguments.interval_minutes is None) != (arguments.output_dir is None):
         parser.error("--interval-minutes and --output-dir must be used together")
+    if arguments.resume and arguments.interval_minutes is None:
+        parser.error("--resume requires interval mode")
     return arguments
 
 
@@ -85,6 +88,7 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
             audio_model=AudioModelSettings(name=arguments.model),
             timeout_seconds=arguments.timeout,
             output_dir=arguments.output_dir,
+            resume=arguments.resume,
         )
         if arguments.long:
             if arguments.interval_minutes is None:
@@ -103,6 +107,7 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
             require_google_files=arguments.long,
             interval_minutes=arguments.interval_minutes,
             expected_output_dir=arguments.output_dir,
+            resume=arguments.resume,
         )
     except OCRLLMError as error:
         raise _LiveSmokeFailure("recognition", error) from None
@@ -123,6 +128,7 @@ def _safe_recognition_summary(
     require_google_files: bool = False,
     interval_minutes: int | None = None,
     expected_output_dir: Path | None = None,
+    resume: bool = False,
 ) -> dict[str, object]:
     if (interval_minutes is None) != (expected_output_dir is None):
         raise ConfigError(
@@ -196,7 +202,12 @@ def _safe_recognition_summary(
             code="CONFIG_INVALID",
         ) from None
     current_run_calls = metadata.get("current_run_provider_call_count")
-    if interval_minutes is not None and current_run_calls != expected_calls:
+    if interval_minutes is not None and (
+        type(current_run_calls) is not int
+        or current_run_calls < 0
+        or current_run_calls > expected_calls
+        or (not resume and current_run_calls != expected_calls)
+    ):
         raise ConfigError(
             "Google interval audio returned an unexpected current-run call count.",
             code="CONFIG_INVALID",
@@ -233,6 +244,7 @@ def _safe_recognition_summary(
         summary["current_run_provider_call_count"] = current_run_calls
         summary["interval_minutes"] = interval_minutes
         summary["result_published"] = True
+        summary["resume"] = resume
     return summary
 
 

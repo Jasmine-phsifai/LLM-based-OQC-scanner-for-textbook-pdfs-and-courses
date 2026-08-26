@@ -1411,6 +1411,10 @@ The following directions remain traceable but are not current work:
   Exact commit `8b37e81` passes the clean installed gate with 1,722 archived
   tests and one optional skip, a 266,940-byte wheel, 1,350,517-byte base target,
   all profiles and local media smokes green, no cloud I/O, and complete cleanup.
+  #333's later retained live state proves slot 0 complete after one Google call
+  (usage 12,688/65,494) while slot 1 and final publication remain open. #334
+  adds only safe maintenance-runner access to the existing public interval
+  resume; all 1,724 source tests pass. One live resume is the next evidence.
 
 ## Obsolete Prose Kept For Trace
 

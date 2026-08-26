@@ -194,6 +194,10 @@ def test_audio_live_smoke_interval_mode_requires_explicit_long_output_boundary(
         )
     with pytest.raises(SystemExit):
         smoke.parse_arguments(
+            ["--model", MODEL, "--audio", "lecture.mp3", "--resume"]
+        )
+    with pytest.raises(SystemExit):
+        smoke.parse_arguments(
             [
                 "--model",
                 MODEL,
@@ -298,12 +302,73 @@ def test_audio_live_smoke_interval_mode_reports_only_safe_two_call_facts(
         "provider_call_count": 2,
         "remote_file_deleted": True,
         "result_published": True,
+        "resume": False,
         "transport": "google_files",
     }
     assert secret not in raw
     assert transcript not in raw
     assert source not in raw
     assert str(output_dir) not in raw
+
+
+def test_audio_live_smoke_interval_resume_reports_reused_call_boundary(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "published"
+    output_path = output_dir / "lecture" / "result.md"
+    output_path.parent.mkdir(parents=True)
+    output_path.write_text("synthetic transcript", encoding="utf-8")
+    monkeypatch.setattr(
+        smoke,
+        "list_google_genai_models",
+        lambda settings, timeout_seconds: (MODEL,),
+    )
+
+    def fake_resume(actual_source, *, config, interval_minutes):
+        assert config.resume is True
+        return SimpleNamespace(
+            source_type="audio",
+            status="complete",
+            output_path=output_path,
+            metadata=MappingProxyType(
+                {
+                    "provider": "google",
+                    "model": MODEL,
+                    "transport": "google_files",
+                    "provider_call_count": 2,
+                    "current_run_provider_call_count": 1,
+                    "duration_seconds": 601.0,
+                    "byte_size": 4096,
+                    "remote_file_deleted": True,
+                    "provider_client_closed": True,
+                    "current_model_token_usage": (
+                        {"model": MODEL, "input_tokens": 100, "output_tokens": 10},
+                    ),
+                }
+            ),
+        )
+
+    monkeypatch.setattr(smoke, "recognize_long_mp3", fake_resume)
+    arguments = smoke.parse_arguments(
+        [
+            "--model",
+            MODEL,
+            "--audio",
+            "lecture.mp3",
+            "--long",
+            "--interval-minutes",
+            "6",
+            "--output-dir",
+            str(output_dir),
+            "--resume",
+        ]
+    )
+    summary = smoke.run_google_genai_audio_smoke(arguments)
+
+    assert summary["recognition"]["provider_call_count"] == 2
+    assert summary["recognition"]["current_run_provider_call_count"] == 1
+    assert summary["recognition"]["resume"] is True
 
 
 def test_audio_live_interval_summary_rejects_unremoved_temporary_state(

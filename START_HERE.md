@@ -833,6 +833,14 @@ Exact commit `8b37e81` passes the clean installed gate: 1,722 archived tests pas
 with one optional skip; wheel 266,940 bytes; base 1,350,517 bytes; all profiles
 and local media smokes green; no cloud I/O; complete cleanup.
 
+#333 preserves the later live failure root and proves one of two interval slots
+is settled in v3 state: one Google generation call, usage 12,688/65,494, and no
+published result. The delegated wrapper lost stdout/return-code evidence while
+the owned process continued, so failure type and cleanup remain unknown; no
+second request was started. #334 adds only a maintenance-runner `--resume` flag
+for that existing public route. It does not parse state or add recovery logic;
+all 1,724 source tests pass. One retained-state live resume remains required.
+
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a
 timeout marker; an owned local parent/descendant probe also proved exact

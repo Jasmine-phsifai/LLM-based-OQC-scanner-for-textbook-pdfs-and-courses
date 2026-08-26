@@ -6198,6 +6198,38 @@ legacy UI 凭据可用于一次一个、已声明调用上限的原子试验；�
 有理由的约 27B OCR/推理候选，禁止默认追逐最新超大旗舰，也不测试明显弱于
 RapidOCR 的普通 OCR 模型。
 
+## Iteration 333：保留的真实 sidecar 证明第一个 interval 已结算
+
+本轮仍使用同一模型、601 秒合成音频、6 分钟 interval 和最多两个窗口，不重试、
+不换模型。轻量执行者错误地把 runner 包在只捕获内存输出的子进程中，外层会话在
+约 60 秒后丢失且没有保存 return code；最初因此错误报告“没有 JSON，任务结束”。
+只读进程核查发现该任务的两个 Python 子进程仍在运行，所以没有启动第二次请求，
+也没有终止它们，而是等待原进程自然结束。
+
+结束后没有 `result.md`，但保留了 266,688-byte regular sidecar。只读取结构字段
+而不读取或输出 transcript、指纹、源摘要、路径或凭据，确认 state v3、identity
+v2、interval=6、计划 2 个窗口、已持久化 1 个 slot。slot 0 完成，调用 1 次，
+input/output usage 为 12,688/65,494，warning 数为 0；清理布尔值没有记录，因此
+保持未知。该证据证明第一次窗口没有丢失，并形成真实 resume 输入；它不证明第二
+窗口失败类型，也不关闭 live gate。
+
+过度设计复查：没有为丢失 stdout 增加仓库级进程控制器、日志数据库或通用 gate
+框架。修正仅是以后由执行者保留 return code/安全摘要，并在失败时保留 sidecar。
+
+## Iteration 334：维护 runner 可以调用现有 interval resume
+
+本轮英文原子目标是：让同一安全 runner 对已经存在的真实 interval sidecar 调用
+现有 public `Config.resume=True`，成功时报告总调用和本次调用，且不读取 sidecar
+来发明第二套恢复逻辑。`--resume` 只允许与 long interval/output 配套；新任务仍
+要求本次调用数等于计划窗口数，resume 接受严格非负且不大于总窗口数的本次调用
+数，并显式输出 `resume` 布尔值。总调用数、发布、state 删除、Files transport、
+usage 和清理门禁保持不变。
+
+16 项 runner 测试和 1,724 项完整离线测试通过（64.91 秒）。没有修改 public API、
+state schema、识别器、重试、fallback、provider class 或 repair。下一步只允许同一
+轻量执行者用保留的 source/sidecar 发起一次 resume；根据已验证的一槽状态，产品
+证据预期总调用 2、本次调用 1。
+
 ## Documentation Rules
 
 The `docs/` directory contains both current policy and immutable historical
