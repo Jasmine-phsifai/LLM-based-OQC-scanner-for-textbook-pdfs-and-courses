@@ -104,7 +104,12 @@ identity, and one terminal state-cleanup owner are missing. #347 selected the
 high-level fixed-result Route A, and #374 implements it as
 `recognize_video_to_markdown()`: one temporary journal preserves settled image
 and short/whole/interval audio work until atomic `result.md` publication. The
-current recognize/compose/publish calls remain the non-resumable low-level API. The same
+first bounded #377 live attempt reached its first image request after controlled
+media preflight and catalog/model validation, then returned an honest
+provider-scoped `PROVIDER_TIMEOUT` with one attempted call. It settled neither
+image nor audio recognition, published no result, and was not replayed; the
+high-level live success/resume gate therefore remains open. The current
+recognize/compose/publish calls remain the non-resumable low-level API. The same
 iteration makes duration validation route-aware: whole Google Files remains
 limited to 9.5 hours, while explicitly selected integer-minute interval mode
 accepts the private product ceiling of 10 hours.

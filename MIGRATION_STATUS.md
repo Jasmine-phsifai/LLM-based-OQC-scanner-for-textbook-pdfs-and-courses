@@ -1648,6 +1648,16 @@ Exact runtime commit `5be9402` passes the maintained clean installed gate:
 wheel and all eight optional/combined profiles install, and the local combined
 video smoke completes without a provider call.
 
+#377 makes the first bounded live call through that high-level facade. A
+controlled 12-second video preflighted to one retained-frame group and one short
+audio artifact before credentials or provider dispatch. Live Google catalog and
+explicit `gemini-2.5-flash` validation succeeded, but the first image request
+ended as provider-scoped `PROVIDER_TIMEOUT` after exactly one attempted call.
+The journal correctly contained the complete media plan with no image slot, no
+settled short-audio result, and no final digest; `result.md` was absent. The
+attempt was not retried or model-switched. This proves honest failure and state
+retention, not live publication or zero-call resume, so that gate remains open.
+
 Some old statements were removed from the navigation surface because they were
 contradictory, not because their history was unimportant. Treat these as
 **obsolete**, not current guidance:

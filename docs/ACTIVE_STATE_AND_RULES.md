@@ -102,7 +102,14 @@ and never nests the standalone audio publication. #374 now exposes the
 high-level `recognize_video_to_markdown()` consumer: it owns fixed `result.md`
 and one temporary journal, validates saved source/media/request identity before
 resumed dispatch, and reuses settled image plus short/whole/interval audio work
-without replay. The current three-step API remains non-resumable. #347 closed
+without replay. #377's first bounded live facade attempt passed provider-free
+one-group/short-audio preflight and live catalog/model validation, then ended
+honestly with provider-scoped `PROVIDER_TIMEOUT` on the first image call. No
+image slot or audio recognition was settled, no final Markdown was published,
+and the journal retained only the complete media plan. The attempt was not
+replayed, so the live publication-failure/zero-call-resume gate remains open;
+this evidence does not justify retry or provider-framework changes. The current
+three-step API remains non-resumable. #347 closed
 the former terminal choice in favor of that high-level job. It also corrects the
 private duration boundary: whole Google Files requests still stop at 9.5 hours,
 while explicitly selected integer-minute interval mode admits sources through
