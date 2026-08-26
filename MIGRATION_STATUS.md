@@ -2021,3 +2021,14 @@ Explicitly cancelled pending audio and terminal absent/no-speech/completed
 states remain credential-free. Ready-but-unsettled short/whole/interval resume
 is separately reproduced and remains the next narrow ordering item; #439 does
 not add a generalized audio-state classifier or claim that seam closed.
+
+#440 closes that final reproduced ordering seam. One internal predicate derives
+whether provider work remains directly from the existing audio state: pending,
+unset short state, or an incomplete long-audio prefix requires preflight;
+absent and fully settled states do not. High-level resume now rejects a missing
+Google key before new source snapshotting, retained-audio validation/decode,
+interval materialization, or pending image dispatch, preserving the journal,
+artifact bytes, and exact zero-call evidence. The predicate also replaces the
+duplicate final-settlement classification. Public signatures, state schema,
+provider policy, retry/fallback behavior, and frozen worker/contracts remain
+unchanged.

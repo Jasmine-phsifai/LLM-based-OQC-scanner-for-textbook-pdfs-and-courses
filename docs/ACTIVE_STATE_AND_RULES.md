@@ -242,10 +242,19 @@ source snapshotting, extraction, audio decode, interval materialization, or a
 pending image call. Pending audio that is explicitly cancelled still skips the
 credential and media work. Absent, no-speech, fully settled, and final-journal-
 cleanup resumes remain credential-free. A separately reproduced ready-but-
-unsettled short/whole/interval seam remains open: those states still validate
-and decode their retained audio, and interval may materialize a window, before
-adapter-time missing-key rejection. It requires its own exact settled-state
-predicate and was not hidden inside #439.
+unsettled short/whole/interval seam was left for the next atomic correction.
+#440 closes that seam with one internal interpretation of the existing durable
+state: pending audio, ready short audio without `short_state`, and ready
+whole/interval audio with an incomplete saved slot prefix require credential
+preflight; absent and fully settled audio do not. High-level resume applies that
+predicate after strict journal/finalization validation but before a new source
+snapshot, retained-audio decode, interval materialization, or pending image
+dispatch. Missing credentials retain `CONFIG_MISSING`, exact zero-call evidence,
+the unchanged journal, and the retained audio bytes. The same predicate now
+defines whether a final journal is fully settled, removing the only duplicate
+classification without changing the state schema or public API. Pre-cancelled,
+absent, no-speech, recognized short, and complete whole/interval resumes remain
+credential-free.
 Bounded Google image and audio live tests are
 already authorized without a separate budget request. DashScope live work may
 reuse the credential stored by the legacy UI for one declared atomic trial, but
@@ -4239,12 +4248,14 @@ Post-register findings are ordered by demonstrated user impact:
   and terminal audio states remain credential-free. Focused adjacent coverage
   passes 122 tests, independent review passes five exact controls, and the
   complete provider-free suite passes all 1,885 tests.
-
-The next reproduced item is ready-but-unsettled video audio resume: short state
-without `short_state`, or whole/interval state without every settled slot, still
-performs retained-audio validation/decode and can materialize an interval before
-adapter-time missing-key rejection. Address it from the existing state fields;
-do not introduce a second resume flag or generic provider-state framework.
+- #440 closes ready-but-unsettled short/whole/interval resume from those same
+  durable fields. Missing credentials now fail before new source/media/image
+  work while terminal states remain credential-free. Each new fixture first
+  passes the real resume validator with production request fingerprints and a
+  coherent controlled duration, so the early-failure tripwire cannot hide an
+  identity mismatch. Focused adjacent coverage passes 137 tests, independent
+  state review passes 23 tests, and the complete provider-free suite passes all
+  1,888 tests.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4

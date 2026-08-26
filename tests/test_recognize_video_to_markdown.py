@@ -887,11 +887,18 @@ def test_no_speech_state_survives_publication_failure_and_resume_uses_zero_calls
     )
     assert not (output_root / "result.md").exists()
 
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    resume_audio_config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="test-audio-model"),
+        temp_dir=tmp_path / "audio-snapshots",
+    )
     result = _public_facade()(
         source,
         output_dir=output_parent,
         image_config=image_config,
-        audio_config=audio_config,
+        audio_config=resume_audio_config,
         resume=True,
     )
 
@@ -1580,6 +1587,13 @@ def test_long_audio_modes_resume_from_the_single_video_journal_after_publish_fai
     assert not (output_root / "result.md").exists()
     assert not tuple(output_root.rglob(".ocrllm-long-audio-resume.json"))
     assert not tuple(output_root.rglob(".ocrllm-video-audio-resume.json"))
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    resume_audio_config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="test-audio-model"),
+        temp_dir=tmp_path / "audio-snapshots",
+    )
 
     if interval_minutes is not None:
         with pytest.raises(ResumeStateError) as mismatch:
@@ -1587,7 +1601,7 @@ def test_long_audio_modes_resume_from_the_single_video_journal_after_publish_fai
                 source,
                 output_dir=output_parent,
                 image_config=Config(provider=image_provider),
-                audio_config=_audio_config(tmp_path),
+                audio_config=resume_audio_config,
                 audio_interval_minutes=interval_minutes + 1,
                 resume=True,
             )
@@ -1599,7 +1613,7 @@ def test_long_audio_modes_resume_from_the_single_video_journal_after_publish_fai
         source,
         output_dir=output_parent,
         image_config=Config(provider=image_provider),
-        audio_config=_audio_config(tmp_path),
+        audio_config=resume_audio_config,
         resume=True,
     )
 
@@ -1901,6 +1915,221 @@ def test_pending_audio_resume_rejects_missing_credential_before_new_media_work(
     assert not (output_root / "result.md").exists()
 
 
+@pytest.mark.parametrize(
+    ("mode", "interval_minutes"),
+    (("short", None), ("whole", None), ("interval", 5)),
+)
+def test_ready_unsettled_audio_resume_rejects_missing_credential_before_new_work(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mode: str,
+    interval_minutes: int | None,
+) -> None:
+    source = tmp_path / f"ready-{mode}.mp4"
+    source.write_bytes(f"stable-ready-{mode}-video".encode("ascii"))
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    media_calls = _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=True,
+    )
+    cancellation = Event()
+    cancellation.set()
+    image_provider = _ImageProvider()
+    image_config = Config(provider=image_provider)
+    audio_config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="test-audio-model"),
+        temp_dir=tmp_path / "audio-snapshots",
+        cancellation=cancellation,
+    )
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    interval_kwargs = (
+        {}
+        if interval_minutes is None
+        else {"audio_interval_minutes": interval_minutes}
+    )
+
+    with pytest.raises(Cancelled):
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+            **interval_kwargs,
+        )
+
+    artifact = output_root / "audio.mp3"
+    shutil.copyfile(_VALID_SHORT_MP3, artifact)
+    raw = artifact.read_bytes()
+    artifact_identity = build_owned_media_fingerprint(
+        artifact,
+        byte_size=len(raw),
+        sha256=hashlib.sha256(raw).hexdigest(),
+    )
+    duration_seconds = 30.0 if mode == "short" else 601.0
+    long_state = None
+    if mode in {"whole", "interval"}:
+        if mode == "whole":
+            request_fingerprints = (
+                fingerprint_long_audio_request(
+                    source_sha256=artifact_identity.sha256,
+                    mode="whole",
+                    provider="google",
+                    model="test-audio-model",
+                    transport="google_files",
+                ),
+            )
+        else:
+            assert interval_minutes is not None
+            windows = build_long_audio_interval_windows(
+                duration_seconds=duration_seconds,
+                interval_minutes=interval_minutes,
+            )
+            request_fingerprints = tuple(
+                fingerprint_long_audio_request(
+                    source_sha256=artifact_identity.sha256,
+                    mode="interval",
+                    provider="google",
+                    model="test-audio-model",
+                    transport="google_files",
+                    window=window,
+                )
+                for window in windows
+            )
+        slots = ()
+        if mode == "interval":
+            markdown = "# Settled interval prefix\n"
+            slots = (
+                LongAudioSettledSlot(
+                    window_index=0,
+                    request_fingerprint=request_fingerprints[0],
+                    markdown=markdown,
+                    markdown_sha256=hashlib.sha256(
+                        markdown.encode("utf-8")
+                    ).hexdigest(),
+                    provider="google",
+                    model="test-audio-model",
+                    transport="google_files",
+                    provider_calls_attempted=1,
+                    input_tokens=7,
+                    output_tokens=2,
+                    status="complete",
+                    warnings=(),
+                    provider_file_cleanup_succeeded=True,
+                    provider_client_cleanup_succeeded=True,
+                ),
+            )
+        long_state = LongAudioPartialState(
+            state_version=LONG_AUDIO_PARTIAL_STATE_VERSION,
+            identity_version=LONG_AUDIO_REQUEST_IDENTITY_VERSION,
+            mode=mode,
+            interval_minutes=interval_minutes,
+            request_fingerprints=request_fingerprints,
+            slots=slots,
+        )
+    ready = VideoAudioState(
+        state="ready",
+        mode=mode,
+        interval_minutes=interval_minutes,
+        model="test-audio-model",
+        artifact=artifact_identity,
+        duration_seconds=duration_seconds,
+        long_state=long_state,
+    )
+    from ocrllm.video_job_journal import VideoJobJournal
+
+    journal_path = _root_journals(output_root)[0]
+    VideoJobJournal(
+        journal_path,
+        load_video_job_state(journal_path),
+    ).persist_audio(ready)
+    assert load_video_job_state(journal_path).audio == ready
+
+    resume_validation = __import__(
+        "ocrllm.validate_video_job_resume",
+        fromlist=["validate_video_job_resume"],
+    )
+    snapshot_module = __import__(
+        "ocrllm.video.snapshot_video_source",
+        fromlist=["snapshot_video_source"],
+    )
+    validation_ready = VideoAudioState(
+        state="ready",
+        mode=mode,
+        interval_minutes=interval_minutes,
+        model="test-audio-model",
+        artifact=artifact_identity,
+        duration_seconds=duration_seconds,
+    )
+
+    def validate_ready_artifact(
+        path: Path,
+        *,
+        config: Config,
+        interval_minutes: int | None,
+    ) -> VideoAudioState:
+        assert path == artifact
+        assert config.audio_model.name == "test-audio-model"
+        assert interval_minutes == ready.interval_minutes
+        assert path.read_bytes() == raw
+        return validation_ready
+
+    monkeypatch.setattr(
+        resume_validation,
+        "prepare_video_job_audio_state",
+        validate_ready_artifact,
+    )
+    with snapshot_module.snapshot_video_source(
+        source,
+        snapshot_parent=output_root.parent,
+    ) as snapshot_path:
+        validated_frames = resume_validation.validate_video_job_resume(
+            load_video_job_state(journal_path),
+            source_path=source,
+            snapshot_path=snapshot_path,
+            output_root=output_root,
+            image_config=image_config,
+            audio_config=audio_config,
+            audio_interval_minutes=interval_minutes,
+        )
+    assert len(validated_frames) == 1
+
+    snapshot_calls = 0
+
+    @contextmanager
+    def reject_snapshot(*_args, **_kwargs):
+        nonlocal snapshot_calls
+        snapshot_calls += 1
+        raise AssertionError("missing credential reached ready-audio resume work")
+        yield  # pragma: no cover - makes this an explicit context manager
+
+    monkeypatch.setattr(snapshot_module, "snapshot_video_source", reject_snapshot)
+    cancellation.clear()
+
+    with pytest.raises(ConfigError) as captured:
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+            resume=True,
+            **interval_kwargs,
+        )
+
+    assert captured.value.code == "CONFIG_MISSING"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert snapshot_calls == 0
+    assert media_calls == {"prepare": 1, "extract": 0}
+    assert len(image_provider.groups) == 1
+    assert load_video_job_state(journal_path).audio == ready
+    assert artifact.read_bytes() == raw
+    assert not (output_root / "result.md").exists()
+
+
 def test_cancellation_during_settled_frame_stops_finalization_and_resumes_zero_call(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1975,11 +2204,18 @@ def test_cancellation_during_settled_frame_stops_finalization_and_resumes_zero_c
     assert saved.audio.state == "absent"
 
     cancellation.clear()
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    resume_audio_config = Config(
+        provider=GoogleGenAISettings(),
+        audio_model=AudioModelSettings(name="test-audio-model"),
+        temp_dir=tmp_path / "audio-snapshots",
+    )
     result = _public_facade()(
         source,
         output_dir=output_parent,
         image_config=image_config,
-        audio_config=audio_config,
+        audio_config=resume_audio_config,
         resume=True,
     )
 

@@ -264,6 +264,9 @@ def _resume_video_job(
         validate_video_job_resume,
     )
     from .video.snapshot_video_source import snapshot_video_source
+    from .video_audio_requires_credential_preflight import (
+        video_audio_requires_credential_preflight,
+    )
     from .video_job_journal import VideoJobJournal
     from .video_job_state import VIDEO_JOB_RESULT_NAME, VIDEO_JOB_STATE_NAME
 
@@ -276,7 +279,7 @@ def _resume_video_job(
         journal.state,
         result_path=output_root / VIDEO_JOB_RESULT_NAME,
     )
-    if journal.state.audio.state == "pending":
+    if video_audio_requires_credential_preflight(journal.state.audio):
         if audio_cancelled is None:
             audio_cancelled = _read_cancellation(audio_config)
         if audio_cancelled is None:

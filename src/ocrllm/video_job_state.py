@@ -14,6 +14,9 @@ from .contracts.source_fingerprint import SourceFingerprint
 from .freeze_json_value import JSONValue, freeze_json_value
 from .image_request_identity import ImageRequestIdentity
 from .image_resume_state import ImageResumeState
+from .video_audio_requires_credential_preflight import (
+    video_audio_requires_credential_preflight,
+)
 
 
 VIDEO_JOB_STATE_VERSION = "ocrllm.video-job.v1"
@@ -261,15 +264,4 @@ def _is_fully_settled(state: VideoJobState) -> bool:
         for group in state.frame_groups
     ):
         return False
-    audio = state.audio
-    if audio.state == "absent":
-        return True
-    if audio.state != "ready":
-        return False
-    if audio.mode == "short":
-        return audio.short_state is not None
-    return (
-        audio.long_state is not None
-        and len(audio.long_state.slots)
-        == len(audio.long_state.request_fingerprints)
-    )
+    return not video_audio_requires_credential_preflight(state.audio)
