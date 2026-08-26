@@ -792,8 +792,9 @@ only after success. Exact `resume=True` validates source/model/prompt/transport
 identity and publishes with zero new provider calls. The no-output-directory
 behavior remains memory-only. Interval dispatch, repair, overwrite, fallback,
 generic transactions, legacy formats, and worker routing are unchanged. All
-1,702 source tests pass; the 260,683-byte worktree wheel remains under the cap.
-The exact clean installed gate is pending.
+1,702 source tests pass. Exact commit `e378556` passes the clean installed gate
+with 1,700 archived tests and one expected skip, a 260,753-byte wheel, every
+profile and local media smoke green, no cloud I/O, and complete cleanup.
 
 #296 previously completed only the local status-channel prerequisite. Python standard-library
 `subprocess.run()` preserved exact child exits 0 and 7, stdout, stderr, and a

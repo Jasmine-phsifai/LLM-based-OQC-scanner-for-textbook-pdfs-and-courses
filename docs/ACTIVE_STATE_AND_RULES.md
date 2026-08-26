@@ -6073,8 +6073,15 @@ slice of the already selected two-mode product.
 导入、冻结的 `contracts/worker` 和 diff 检查通过。轻量子代理从当前工作树机械
 构建一次 wheel，得到 260,683 bytes、258 个成员，仍比 256 KiB 上限少 1,461
 bytes，且不包含 tests/docs。代理已启用，`127.0.0.1:10080` 可达；本轮没有调用
-云端 provider。精确提交的干净安装门禁尚待委派，因此这里不提前声称 #325 已
-达到 release-proven。
+云端 provider。精确提交 `e378556` 的纠正后干净安装门禁退出码为 0：归档测试
+1,700 项通过、1 项可选集成测试在收集时跳过；保留输出没有打印测试名，门禁
+依赖未安装 RapidOCR，而仓库唯一收集期可选模块正是 RapidOCR 集成测试。wheel
+为 260,753 bytes，距离
+256 KiB 上限还有 1,391 bytes；所有隔离依赖配置及本地音频、PDF、视频和组合
+smoke 均通过，门禁临时目录已清理，保留 wheelhouse 未改变。最初一次启动被
+Windows 执行策略挡在脚本加载前，没有运行测试或构建；随后仅用非持久化的
+`-ExecutionPolicy Bypass` 纠正启动，没有修改系统策略或门禁脚本。#325 已达到
+release-proven。
 
 过度设计复查：本轮没有实现 interval、repair、overwrite、跨进程锁、通用事务、
 重试、fallback、provider class 或 legacy 格式兼容。`allow_persistence` 只是阻止

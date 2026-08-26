@@ -1381,7 +1381,9 @@ The following directions remain traceable but are not current work:
   now includes transport, and state preserves provider-file/client cleanup
   facts. Interval dispatch, repair, overwrite, fallback, generalized
   transactions, and legacy formats remain out of scope. All 1,702 source tests
-  pass; the worktree wheel is 260,683 bytes. Clean installed proof is pending.
+  pass. Exact commit `e378556` passes the clean installed gate with 1,700
+  archived tests and one expected skip, a 260,753-byte wheel, all profiles and
+  local media smokes green, no cloud I/O, and complete gate cleanup.
 
 ## Obsolete Prose Kept For Trace
 
