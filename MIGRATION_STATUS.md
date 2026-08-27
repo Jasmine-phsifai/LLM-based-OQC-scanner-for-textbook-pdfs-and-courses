@@ -2431,3 +2431,12 @@ signature, journal schema, provider policy, retry/fallback, dependency, crop/ROI
 legacy, or frozen-boundary change was made. A priority re-audit also reconfirmed
 that commit `3c09cde` already removed the legacy crop module and all executable
 wiring, while active video and PDF retain complete frames/pages.
+
+#519 makes multi-group local-OCR video warnings independent of internal batch
+size. Only repeated copies of the fixed local-OCR limitation are removed, and
+only after the existing #518 evidence gate proves every retained frame belongs
+to one complete uniform local-OCR set. Other local per-group warnings, provider
+warnings, partial/mixed outcomes, and later audio warnings retain their original
+multiplicity. The video owner set passes 107 tests and the default suite passes
+1,926 tests. No public API, state, provider, dependency, retry/fallback,
+crop/ROI, legacy, or frozen-boundary change was made.

@@ -9342,3 +9342,20 @@ Legacy full-frame regressions pass 4 tests and active video/PDF four-corner
 regressions pass 2 tests. Full-frame resize, selection-only thumbnails,
 temporal frame choice, and whole-page PDF rendering remain necessary and are
 not spatial crop operations.
+
+## Current working update: #519 deduplicates only the video local-OCR limitation
+
+#519 closes the warning-semantics counterpart of #518. Two successful local-OCR
+frame groups formerly exposed the same job-level limitation warning twice, so a
+user-visible result changed merely because the retained frames crossed the
+internal image-group boundary.
+
+The video composer now removes only later copies of
+`LOCAL_OCR_LIMITATION_WARNING`, and only inside the already-proven complete,
+uniform, zero-network local-frame evidence branch whose image count equals the
+retained full-frame count. Arbitrary identical local per-group warnings remain
+duplicated. Provider, partial, mixed, and incomplete-evidence frame outcomes do
+not enter the rule, and audio warnings are appended afterward without change.
+No generic warning normalizer, warning type, state field, or provider rule was
+added. The adjacent video owner set passes 107 tests and the complete default
+suite passes 1,926 tests.

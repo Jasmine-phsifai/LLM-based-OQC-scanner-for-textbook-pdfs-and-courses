@@ -120,6 +120,58 @@ def test_compose_video_result_keeps_frames_and_audio_separate(tmp_path: Path) ->
     )
 
 
+def test_compose_video_result_only_deduplicates_local_ocr_limitation(
+    tmp_path: Path,
+) -> None:
+    from ocrllm.local_ocr.recognize_images_with_rapidocr import (
+        LOCAL_OCR_LIMITATION_WARNING,
+    )
+
+    first = _frame(tmp_path / "video" / "frames" / "frame-1.jpg", 0, 0.0)
+    second = _frame(tmp_path / "video" / "frames" / "frame-2.jpg", 10, 5.0)
+    per_group_warning = "A distinct warning with per-group meaning."
+
+    def local_result(
+        markdown: str,
+        index: int,
+        timestamp: float,
+    ) -> RecognitionResult:
+        return RecognitionResult(
+            markdown=markdown,
+            source_type="image",
+            warnings=(LOCAL_OCR_LIMITATION_WARNING, per_group_warning),
+            metadata={
+                "video_frame_indices": (index,),
+                "video_frame_timestamps_seconds": (timestamp,),
+                "recognition_mode": "ocr",
+                "ocr_engine": "rapidocr",
+                "ocr_engine_version": "3.9.test",
+                "image_count": 1,
+                "retained_line_count": 1,
+                "provider_call_count": 0,
+                "network_call_count": 0,
+            },
+        )
+
+    local_outcome = VideoRecognitionOutcome(
+        output_root=tmp_path / "video",
+        retained_frames=(first, second),
+        frame_outcomes=(
+            BatchItemOutcome(index=0, result=local_result("First.", 0, 0.0)),
+            BatchItemOutcome(index=1, result=local_result("Second.", 10, 5.0)),
+        ),
+        audio_error=VideoError("No stream.", code="VIDEO_NO_AUDIO_STREAM"),
+    )
+
+    local_composed = compose_video_result(local_outcome)
+
+    assert local_composed.warnings == (
+        LOCAL_OCR_LIMITATION_WARNING,
+        per_group_warning,
+        per_group_warning,
+    )
+
+
 @pytest.mark.parametrize("partial_branch", ["frame", "audio"])
 def test_compose_video_result_preserves_partial_child_status(
     tmp_path: Path,

@@ -100,6 +100,19 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
                     for key, value in frame_evidence.items()
                 }
             )
+            from .local_ocr.recognize_images_with_rapidocr import (
+                LOCAL_OCR_LIMITATION_WARNING,
+            )
+
+            limitation_warning_seen = False
+            local_ocr_warnings: list[str] = []
+            for warning in warnings:
+                if warning == LOCAL_OCR_LIMITATION_WARNING:
+                    if limitation_warning_seen:
+                        continue
+                    limitation_warning_seen = True
+                local_ocr_warnings.append(warning)
+            warnings = local_ocr_warnings
     if image_provider_client_cleanup_failed:
         metadata["image_provider_client_closed"] = False
     if outcome.snapshot_cleanup_error is not None:
