@@ -684,6 +684,15 @@ one provider call, input/output usage 150/10, and a credential-scoped invalid-ke
 failure. Its recognized text was validated internally but not published, so the
 gate proves this bounded result path rather than transcription quality.
 
+For the runner's explicit long-audio interval mode, a fully reused
+`--resume` result can have zero current provider calls and no current token
+usage. Its safe JSON preserves the historical total and reports
+`current_run_provider_call_count=0`, but omits `input_tokens` and
+`output_tokens`; it does not relabel saved historical usage or invent zero-token
+provider work. Fresh and partially resumed interval runs still require one
+validated current-model usage row. This runner does not expose whole-mode
+resume; the library facade's broader resume contract remains separate.
+
 ## Bounded Google Combined-Video Live Smoke
 
 Install `ocrllm[video,image,audio,google]` and run one authorized MP4 through

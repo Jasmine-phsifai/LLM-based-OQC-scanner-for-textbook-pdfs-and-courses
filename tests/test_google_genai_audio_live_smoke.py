@@ -384,6 +384,73 @@ def test_audio_live_smoke_interval_resume_reports_reused_call_boundary(
     assert summary["recognition"]["resume"] is True
 
 
+def test_audio_live_smoke_interval_resume_accepts_fully_reused_result(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    output_dir = tmp_path / "published"
+    output_path = output_dir / "lecture" / "result.md"
+    output_path.parent.mkdir(parents=True)
+    output_path.write_text("synthetic transcript", encoding="utf-8")
+
+    def fake_fully_reused(actual_source, *, config, interval_minutes):
+        assert str(actual_source) == "lecture.mp3"
+        assert config.resume is True
+        assert config.output_directory() == output_dir
+        assert interval_minutes == 6
+        return SimpleNamespace(
+            source_type="audio",
+            status="complete",
+            output_path=output_path,
+            metadata=MappingProxyType(
+                {
+                    "provider": "google",
+                    "model": MODEL,
+                    "transport": "google_files",
+                    "provider_call_count": 2,
+                    "current_run_provider_call_count": 0,
+                    "duration_seconds": 601.0,
+                    "byte_size": 4096,
+                    "remote_file_deleted": True,
+                    "provider_client_closed": True,
+                    "current_model_token_usage": (),
+                }
+            ),
+        )
+
+    monkeypatch.setattr(smoke, "recognize_long_mp3", fake_fully_reused)
+
+    assert smoke.main(
+        [
+            "--model",
+            MODEL,
+            "--audio",
+            "lecture.mp3",
+            "--long",
+            "--interval-minutes",
+            "6",
+            "--output-dir",
+            str(output_dir),
+            "--resume",
+        ]
+    ) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "status": "passed",
+        "model": MODEL,
+        "recognition": {
+            "provider_call_count": 2,
+            "current_run_provider_call_count": 0,
+            "model": MODEL,
+            "transport": "google_files",
+            "remote_file_deleted": True,
+            "interval_minutes": 6,
+            "result_published": True,
+            "resume": True,
+        },
+    }
+
+
 def test_audio_live_interval_summary_rejects_unremoved_temporary_state(
     tmp_path: Path,
 ) -> None:

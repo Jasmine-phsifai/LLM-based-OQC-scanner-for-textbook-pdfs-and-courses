@@ -196,30 +196,44 @@ def _safe_recognition_summary(
             "Google interval audio returned an unexpected current-run call count.",
             code="CONFIG_INVALID",
         ) from None
-    if (
-        type(usage) is not tuple
-        or len(usage) != 1
-        or not isinstance(usage[0], Mapping)
-        or usage[0].get("model") != model
-    ):
-        raise ConfigError(
-            "Google audio live recognition returned unexpected per-model usage.",
-            code="CONFIG_INVALID",
-        ) from None
-    input_tokens = usage[0].get("input_tokens")
-    output_tokens = usage[0].get("output_tokens")
-    if not _is_optional_token_count(input_tokens) or not _is_optional_token_count(
-        output_tokens
-    ):
-        raise ConfigError(
-            "Google audio live recognition returned invalid token usage.",
-            code="CONFIG_INVALID",
-        ) from None
+    fully_reused_interval = (
+        interval_minutes is not None and resume and current_run_calls == 0
+    )
+    token_summary: dict[str, object] = {}
+    if fully_reused_interval:
+        if type(usage) is not tuple or usage:
+            raise ConfigError(
+                "Google audio live recognition returned unexpected per-model usage.",
+                code="CONFIG_INVALID",
+            ) from None
+    else:
+        if (
+            type(usage) is not tuple
+            or len(usage) != 1
+            or not isinstance(usage[0], Mapping)
+            or usage[0].get("model") != model
+        ):
+            raise ConfigError(
+                "Google audio live recognition returned unexpected per-model usage.",
+                code="CONFIG_INVALID",
+            ) from None
+        input_tokens = usage[0].get("input_tokens")
+        output_tokens = usage[0].get("output_tokens")
+        if not _is_optional_token_count(input_tokens) or not _is_optional_token_count(
+            output_tokens
+        ):
+            raise ConfigError(
+                "Google audio live recognition returned invalid token usage.",
+                code="CONFIG_INVALID",
+            ) from None
+        token_summary = {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+        }
     summary = {
         "provider_call_count": call_count,
         "model": model,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
+        **token_summary,
     }
     if require_google_files:
         summary["transport"] = "google_files"

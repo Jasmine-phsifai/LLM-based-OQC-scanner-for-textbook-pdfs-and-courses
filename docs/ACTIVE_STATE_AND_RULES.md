@@ -9440,7 +9440,27 @@ token, runtime API, provider policy, or live request was added. Runner coverage
 passes 32 tests, the adjacent runner/adapter set passes 139 tests, and the
 complete default suite passes 1,924 tests.
 
-Open follow-up: a fully reused whole/interval long-audio result can correctly
-make zero current provider calls and expose no current usage row, while the
-direct audio runner still expects one row. Fix that reporting boundary
-separately; do not restore a catalog request or invent usage for reused work.
+Open follow-up: a fully reused interval long-audio result can correctly make
+zero current provider calls and expose no current usage row, while the direct
+audio runner still expects one row. The runner does not expose whole-mode
+resume. Fix that reporting boundary separately; do not restore a catalog
+request or invent usage for reused work.
+
+## Current working update: #525 reports fully reused interval audio honestly
+
+#525 fixes only the maintained Google audio smoke runner's safe summary. The
+public interval facade can reuse every settled window with total historical
+`provider_call_count` intact, `current_run_provider_call_count=0`, and an empty
+`current_model_token_usage`. The runner formerly rejected that valid complete
+result because it required exactly one current model-usage row.
+
+The summary now accepts an exact empty usage tuple only when interval mode,
+explicit resume, and zero current calls are all proven together. It preserves
+the total and current call counts, model, interval, publication, and Google
+Files cleanup facts while omitting input/output token fields. Fresh work and
+partial resume still require one validated current model row; no historical
+usage is relabelled as current and no zero token count is invented. The runner
+still does not expose whole-mode resume. This is a maintenance-tool correction,
+not a runtime API, state, provider, retry/fallback, or accounting-framework
+change. The adjacent audio owner set passes 116 tests and the complete default
+suite passes 1,925 tests.

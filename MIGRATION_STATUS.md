@@ -2473,5 +2473,16 @@ catalog request plus at most one generation; long-audio modes lose only the
 extra runner preflight. Safe runner output no longer publishes a redundant
 catalog count. No runtime API, retry, cache, fallback, dependency, legacy,
 crop/ROI, or frozen-boundary change was made. The adjacent set passes 139 tests
-and the default suite passes 1,924 tests. Fully reused long-audio runner usage
-reporting remains a separate open defect.
+and the default suite passes 1,924 tests. Fully reused interval-audio runner
+usage reporting remains a separate open defect; the runner does not expose
+whole-mode resume.
+
+#525 makes the maintained Google audio runner accept one already-valid public
+outcome: an explicit interval resume that reuses every settled window, reports
+zero current calls, and therefore has no current token-usage row. The safe
+summary keeps total/current calls and lifecycle facts but omits input/output
+tokens instead of inventing zero or replaying historical usage. Fresh and
+partially resumed runs retain the exact one-current-model-row requirement. No
+public runtime API, state, dependency, provider policy, retry/fallback, legacy,
+crop/ROI, or frozen-boundary change was made. The adjacent audio owner set
+passes 116 tests and the complete default suite passes 1,925 tests.
