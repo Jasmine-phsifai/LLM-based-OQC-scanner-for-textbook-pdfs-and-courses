@@ -25,31 +25,39 @@ def prepare_video_media(
     source: str | Path,
     *,
     output_dir: str | Path,
+    cancellation: object | None = None,
 ) -> Iterator[tuple[Path, tuple[RetainedVideoFrame, ...]]]:
-    """Yield one stable MP4 path and its published representative JPEGs."""
+    """Yield stable media while honoring whole-job cancellation between stages."""
     output_directory = coerce_video_output_directory(output_dir)
     source_path = Path(source)
     target_root = output_directory / normalize_output_stem(source_path.stem)
     _preflight_video_output(target_root)
 
     with claim_output_target(target_root):
+        from ..raise_if_cancelled import raise_if_cancelled
+
         _preflight_video_output(target_root)
+        raise_if_cancelled(cancellation)
         with snapshot_video_source(
             source_path,
             snapshot_parent=target_root.parent,
         ) as snapshot_path:
+            raise_if_cancelled(cancellation)
             video_info = inspect_video(snapshot_path)
+            raise_if_cancelled(cancellation)
             cv2 = load_opencv()
             candidates = scan_video_frame_candidates(
                 snapshot_path,
                 video_info=video_info,
                 cv2=cv2,
             )
+            raise_if_cancelled(cancellation)
             selected = select_video_frame_candidates(
                 candidates,
                 duration_seconds=video_info.duration_seconds,
                 cv2=cv2,
             )
+            raise_if_cancelled(cancellation)
             retained_frames = write_selected_video_frames(
                 snapshot_path,
                 selected,

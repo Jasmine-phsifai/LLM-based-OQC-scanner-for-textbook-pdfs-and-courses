@@ -74,7 +74,7 @@ def _install_preparation_fakes(
     )
 
     @contextmanager
-    def prepare_once(_source, *, output_dir):
+    def prepare_once(_source, *, output_dir, cancellation=None):
         assert Path(output_dir) == output_parent
         frame = RetainedVideoFrame(
             frame_index=0,

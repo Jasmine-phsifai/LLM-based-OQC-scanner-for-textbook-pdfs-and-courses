@@ -2208,3 +2208,14 @@ missing image/audio work. Only that current-tense instruction changed;
 historical iteration records remain intact. Runtime, API, tests, state,
 provider behavior, dependencies, legacy formats, worker/contracts, retry, and
 fallback are unchanged.
+
+#495 stops the high-level video job before decoding when its image and audio
+configs share one cancellation signal and that signal becomes set during the
+request-owned source snapshot. Media preparation checks only at existing stage
+boundaries; it does not interrupt the snapshot copy or backend calls. Separate
+branch signals retain their independent settlement behavior. The public facade,
+state schema, provider policy, complete-frame path, and frozen worker/contracts
+remain unchanged; the complete provider-free suite passes all 1,918 tests.
+The final wheel was also installed offline outside the checkout; its public
+shared-cancellation smoke passed and a plain import kept optional media/provider
+modules unloaded.

@@ -8803,3 +8803,33 @@ invocations, introduce retry/fallback, or change runtime code. Failed audio
 usage remains evidence on the failed invocation; the later successful result
 continues to report only its current invocation. The focused high-level,
 low-level, state, and pre-dispatch video set passes 94 tests.
+
+## Current working update: #495 stops shared-cancelled video before decoding
+
+The high-level resumable video facade now carries one whole-job cancellation
+signal into media preparation only when the image and audio configurations
+refer to the exact same signal object. A public failure-first regression sets
+that shared signal while the request-owned video snapshot is being created.
+Previously the job still entered video inspection, candidate scanning,
+selection, and retained-frame writing before either branch observed the
+cancellation.
+
+`prepare_video_media()` now checks that optional whole-job signal before and
+after the snapshot and between its existing inspect, scan, select, and write
+stages. The reproduced request raises the existing typed `CANCELLED` before video decoding,
+makes zero provider calls, publishes no video root or journal, and lets the
+existing snapshot context perform cleanup. Distinct image and audio signals
+remain independent and are not combined: cancelling one branch must not stop
+the other branch's shared-media consumer. Cancellation does not interrupt an
+in-progress source copy, OpenCV operation, or FFmpeg process.
+
+No background task, cancellation coordinator, state field, retry/fallback,
+provider framework, crop/ROI path, or public facade parameter was added. The
+focused high-level/low-level/extraction set passes 94 tests, compileall passes,
+and the exact-final provider-free suite passes all 1,918 tests. An offline wheel
+(313,175 bytes) installed outside the checkout also passes the public shared-
+cancellation smoke, while plain import leaves OpenCV, PyAV, pydub, miniaudio,
+Google GenAI, and OpenAI unloaded. The first complete
+run exposed only one old test fake that did not accept the new optional internal
+keyword; updating that shared fake closed all seven parametrized failures
+without adding runtime compatibility code.

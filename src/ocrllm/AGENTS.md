@@ -76,6 +76,10 @@ branch in a partial outcome. Pre-cancelled audio skips extraction; both signals
 already set stop before source/output work. Preserve this without adding a new
 status, exception carrier, coordinator, checkpoint, or extractor cancellation
 API.
+#495 additionally stops high-level media preparation between existing stages
+when both branch configs reference the exact same cancellation signal. Distinct
+signals remain independent; do not turn this into source-copy/backend
+interruption or a cancellation coordinator.
 #146 proves `publish_video_result()` is present and usable in the clean wheel.
 Future publication work should not add another build harness or repeat this
 proof unless the public surface, manifest, or runtime dependency boundary

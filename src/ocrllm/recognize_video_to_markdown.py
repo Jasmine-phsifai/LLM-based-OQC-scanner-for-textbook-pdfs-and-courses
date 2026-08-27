@@ -166,9 +166,14 @@ def _start_video_job(
     journal = None
     result = None
     try:
+        # Shared media may stop early only when cancellation applies to both branches.
+        shared_cancellation = image_config.cancellation
+        if shared_cancellation is not audio_config.cancellation:
+            shared_cancellation = None
         with prepare_video_media(
             source_path,
             output_dir=output_parent,
+            cancellation=shared_cancellation,
         ) as (snapshot_path, frames):
             byte_size, sha256 = hash_video_snapshot(snapshot_path)
             source_identity = build_owned_media_fingerprint(

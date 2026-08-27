@@ -119,7 +119,7 @@ def _install_one_frame_media(
     )
 
     @contextmanager
-    def prepare_once(_source, *, output_dir):
+    def prepare_once(_source, *, output_dir, cancellation=None):
         calls["prepare"] += 1
         if calls["prepare"] != 1:
             raise AssertionError("resume reselected already-journaled video frames")
@@ -182,6 +182,55 @@ def test_recognize_video_to_markdown_has_the_fixed_keyword_contract() -> None:
         assert signature.parameters[name].kind is inspect.Parameter.KEYWORD_ONLY
     assert signature.parameters["audio_interval_minutes"].default is None
     assert signature.parameters["resume"].default is False
+
+
+def test_shared_cancellation_during_video_snapshot_stops_before_decode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "lecture.mp4"
+    source.write_bytes(b"stable-video-source")
+    output_parent = tmp_path / "output"
+    cancellation = Event()
+    image_provider = _ImageProvider()
+    preparation = __import__(
+        "ocrllm.video.prepare_video_media",
+        fromlist=["prepare_video_media"],
+    )
+
+    @contextmanager
+    def cancel_after_snapshot(_source, *, snapshot_parent):
+        snapshot = tmp_path / "owned-video-snapshot.mp4"
+        snapshot.write_bytes(source.read_bytes())
+        cancellation.set()
+        yield snapshot
+
+    def reject_video_decode(*_args, **_kwargs):
+        raise AssertionError("shared cancellation reached video decoding")
+
+    monkeypatch.setattr(
+        preparation,
+        "snapshot_video_source",
+        cancel_after_snapshot,
+    )
+    monkeypatch.setattr(preparation, "inspect_video", reject_video_decode)
+
+    with pytest.raises(Cancelled):
+        _public_facade()(
+            source,
+            output_dir=output_parent,
+            image_config=Config(
+                provider=image_provider,
+                cancellation=cancellation,
+            ),
+            audio_config=_audio_config(
+                tmp_path,
+                cancellation=cancellation,
+            ),
+        )
+
+    assert image_provider.groups == []
+    assert not (output_parent / source.stem).exists()
 
 
 @pytest.mark.parametrize(
@@ -392,7 +441,7 @@ def test_recoverable_audio_gap_keeps_one_journal_and_resume_reuses_images(
     )
 
     @contextmanager
-    def prepare_once(_source, *, output_dir):
+    def prepare_once(_source, *, output_dir, cancellation=None):
         nonlocal prepare_calls
         prepare_calls += 1
         if prepare_calls != 1:
@@ -668,7 +717,7 @@ def test_later_frame_failure_reports_earlier_frames_and_settled_audio(
             )
 
     @contextmanager
-    def prepare_nine_frames(_source, *, output_dir):
+    def prepare_nine_frames(_source, *, output_dir, cancellation=None):
         assert Path(output_dir) == output_parent
         frames = tuple(
             RetainedVideoFrame(
