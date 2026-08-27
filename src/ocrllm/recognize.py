@@ -295,6 +295,15 @@ def _recognize(
                 if current_model_attempts is not None:
                     error._add_safe_detail("model_attempts", current_model_attempts)
                 if processor_output is not None:
+                    if cfg.image_mode == "ocr":
+                        from .attach_settled_local_ocr_evidence_to_error import (
+                            attach_settled_local_ocr_evidence_to_error,
+                        )
+
+                        attach_settled_local_ocr_evidence_to_error(
+                            error,
+                            processor_output.metadata,
+                        )
                     from .attach_current_model_token_usage_to_error import (
                         attach_current_model_token_usage_to_error,
                     )
@@ -393,6 +402,15 @@ def _recognize(
             error,
             processor_output.metadata.get("current_model_token_usage"),
         )
+        if cfg.image_mode == "ocr":
+            from .attach_settled_local_ocr_evidence_to_error import (
+                attach_settled_local_ocr_evidence_to_error,
+            )
+
+            attach_settled_local_ocr_evidence_to_error(
+                error,
+                processor_output.metadata,
+            )
         if processor_output.metadata.get("provider_client_closed") is False:
             error._add_safe_detail("provider_client_closed", False)
         raise

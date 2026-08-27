@@ -430,6 +430,16 @@ user callback; injected-provider identity is unchanged. Ordinary uncancelled
 batches still receive the complete source/output preflight. No cancellation
 coordinator, transaction, second batch abstraction, or new public type was
 added.
+#463 preserves a bounded proof of completed local OCR when a later owned-image
+snapshot cleanup or final Markdown/state publication step raises the original
+typed error. Alongside exact zero provider calls, the error now carries only
+the already-public `ocr_engine`, `ocr_engine_version`, `image_count`, and
+`retained_line_count` facts from the settled `ProcessorOutput`. It does not
+copy recognized Markdown, confidence values, warnings, arbitrary metadata, or
+historical resume data. Initialization, inference, no-text, cancellation, and
+provider-backed paths remain unchanged. One narrow helper serves the two real
+post-settlement error boundaries; no generic result-to-error copier, lifecycle
+ledger, retry, or new state field was added.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

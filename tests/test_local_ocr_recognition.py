@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import shutil
 import threading
 from collections.abc import Sequence
 from pathlib import Path
@@ -13,6 +14,7 @@ from ocrllm.errors import (
     DependencyMissing,
     NoTextDetected,
     OCRBackendError,
+    OutputError,
 )
 from ocrllm.local_ocr.parse_rapidocr_result import parse_rapidocr_result
 from write_test_image import write_test_image
@@ -156,6 +158,84 @@ def test_local_ocr_writes_only_final_markdown_atomically(tmp_path, monkeypatch) 
         result.output_path.name,
         "board_board.ocrllm-state.json",
     }
+
+
+def test_local_ocr_snapshot_cleanup_failure_preserves_completed_evidence(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "snapshots"
+    _install_fake_engine(
+        monkeypatch,
+        [FakeRapidOCRResult(("Offline OCR",), (0.9,))],
+    )
+    snapshot_module = importlib.import_module("ocrllm.imaging.snapshot_image_group")
+    real_rmtree = shutil.rmtree
+
+    def fail_normal_cleanup(path, *args, **kwargs):
+        if not kwargs.get("ignore_errors", False):
+            raise PermissionError("test-only retained local OCR handle")
+        return real_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(snapshot_module.shutil, "rmtree", fail_normal_cleanup)
+
+    with pytest.raises(OutputError) as caught:
+        recognize(
+            source,
+            config=Config(
+                image_mode="ocr",
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert caught.value.code == "OUTPUT_WRITE_FAILED"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert caught.value.details["ocr_engine"] == "rapidocr"
+    assert caught.value.details["ocr_engine_version"] == "3.9.test"
+    assert caught.value.details["image_count"] == 1
+    assert caught.value.details["retained_line_count"] == 1
+    assert tuple(output_dir.iterdir()) == ()
+
+
+def test_local_ocr_publication_failure_preserves_completed_evidence(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    _install_fake_engine(
+        monkeypatch,
+        [FakeRapidOCRResult(("Offline OCR",), (0.9,))],
+    )
+
+    def fail_publication(*_args, **_kwargs):
+        raise OutputError(
+            "The final Markdown could not be published.",
+            code="OUTPUT_WRITE_FAILED",
+        )
+
+    monkeypatch.setattr(
+        "ocrllm.output.write_markdown_atomically.write_markdown_atomically",
+        fail_publication,
+    )
+
+    with pytest.raises(OutputError) as caught:
+        recognize(
+            source,
+            config=Config(image_mode="ocr", output_dir=output_dir),
+        )
+
+    assert caught.value.code == "OUTPUT_WRITE_FAILED"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert caught.value.details["ocr_engine"] == "rapidocr"
+    assert caught.value.details["ocr_engine_version"] == "3.9.test"
+    assert caught.value.details["image_count"] == 1
+    assert caught.value.details["retained_line_count"] == 1
+    assert not (output_dir / "board_board.md").exists()
+    assert (output_dir / "board_board.ocrllm-state.json").is_file()
 
 
 def test_missing_local_ocr_dependency_is_typed_and_writes_nothing(

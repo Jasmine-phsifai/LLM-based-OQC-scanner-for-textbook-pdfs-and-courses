@@ -341,7 +341,9 @@ The direct facade now also has an available explicit local-OCR mode backed by
 lazy maintained RapidOCR/ONNX Runtime dependencies in the `ocr` extra. It makes
 zero provider/network calls and warns that OCR text extraction is not equivalent
 to formula/table/layout-aware vision. Its clean committed and fresh-extra gates
-pass.
+pass. If inference settles but owned snapshot cleanup or final publication
+fails, the typed error retains the engine/version and image/retained-line counts
+without embedding recognized text or confidence data.
 The adapter requires an explicit matching region and endpoint, disables OpenAI
 SDK retries, and builds Base64 data URLs rather than sending local paths. The
 v17 evidence candidate uses one

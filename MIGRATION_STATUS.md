@@ -20,6 +20,11 @@ inspection, credentials, executors, or providers. It returns the existing
 ordered cancellation/not-attempted outcomes and exact zero-call evidence;
 ordinary uncancelled full preflight is unchanged.
 
+#463 keeps four stable settled local-OCR facts on snapshot-cleanup and final
+publication errors: engine, engine version, image count, and retained-line
+count. Recognized text and the rest of result metadata remain outside errors;
+provider, state, and public API behavior are unchanged.
+
 The repository has two boundaries:
 
 | Boundary | Status | Use |
