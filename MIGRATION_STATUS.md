@@ -2677,3 +2677,18 @@ secrecy, process cleanup, and temporary cleanup passed. This closes the local-
 fix verification but not current generation/transcription evidence; the
 already-covered external catalog refusal warrants no product change or
 immediate retry/model sweep.
+
+#561 proves that the #558 MP3 admission correction is present and functional in
+a freshly built, externally installed distribution rather than only in the
+source checkout. A clean archive of exact pushed commit
+`991b1f068fa094aedb5a90a3abebed89ac4c3727` produced one 315,138-byte wheel;
+the maintained wheel checker, no-dependency external install, and one isolated
+installed probe all passed. Plain import remained lightweight, every `ocrllm`
+module came from the target, and the installed public snapshot path accepted
+the unchanged 1,986,191-byte real archive MP3 with decoded duration
+123.97066666666667 seconds. Snapshot cleanup, source identity, privacy scans,
+repository boundaries, and proof-root cleanup passed. No provider, network,
+credential, runtime, API, test, dependency, packaging, or frozen-boundary
+change was needed. This targeted installed proof does not supersede or replay
+#555's broader nine-profile gate. Suitable authorized data in `D:\archieve`
+must be reused before considering any crawl or download.

@@ -10282,3 +10282,35 @@ FAILED_PRECONDITION mapping and accurately reports zero recognition calls, so
 no runtime, test, API, state, dependency, retry, fallback, provider, or decoder
 change is justified. Repeating Google immediately, bypassing catalog, or trying
 models one by one would only replay the same external refusal.
+
+## Current working update: #561 proves the MP3 correction from an installed wheel
+
+#561 rebuilt the exact pushed `991b1f068fa094aedb5a90a3abebed89ac4c3727`
+tree through a clean `git archive`, checked its single 315,138-byte wheel, and
+installed that wheel once into a disposable external target with dependency and
+index access disabled. The wheel has 306 members, SHA-256
+`D8A4A9DC29618FB4A190160A705A404A9159ADF9D2077D99FCDF0CB08E79D90C`,
+and no tests, repository documentation, legacy files, bytecode, or native
+binary. Package and distribution origins, plus every loaded `ocrllm` module,
+were inside the external target rather than the source checkout.
+
+One isolated `python -I` probe first confirmed that plain `import ocrllm` did
+not load miniaudio, its native module, Google, OpenCV, NumPy, Pillow, or
+imageio-ffmpeg. It then used the installed public short-MP3 snapshot path on the
+same unchanged 1,986,191-byte archive file that exposed #558. The installed
+decoder contained the 2,304-frame and 8% limits, fully decoded and accepted the
+source, and returned the decoded duration 123.97066666666667 seconds. Its owned
+snapshot was a distinct regular file with matching bytes and disappeared when
+the context closed. Source hash, size, modification time, and NTFS identity
+were unchanged; the exact proof root was removed with zero residue.
+
+This is a distribution and import-boundary proof, not a provider run or a new
+claim about all optional dependency profiles. One read-only verifier command
+used the nonexistent PowerShell `Select-Object -Single` option and produced no
+facts; only that inspection was corrected, without rebuilding, reinstalling,
+or rerunning the probe. No product defect was reproduced, so runtime, tests,
+API, dependency policy, provider behavior, and packaging code remain unchanged.
+The broader nine-profile clean-distribution gate remains the #555 evidence and
+should not be replayed for this audio-only correction. Existing authorized
+media under `D:\archieve` remains the first test source; do not crawl or
+download substitutes when a suitable local file already exists.
