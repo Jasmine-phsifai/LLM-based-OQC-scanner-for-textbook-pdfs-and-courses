@@ -2497,3 +2497,15 @@ and generation regressions pass and no live replay was made. No public API,
 retry/fallback, model switch, state, dependency, legacy, crop/ROI, or frozen
 boundary changed. The adjacent owner set passes 99 tests and the complete
 default suite passes 1,926 tests.
+
+#527 refreshes one real full-frame Google image through the direct runner. The
+1600x1000 four-corner fixture returned typed HTTP 400 /
+`FAILED_PRECONDITION` before a successful result, with no leaks or residue. Its
+safe JSON omitted the adapter's call accounting, so the recorded execution
+cannot establish whether generation was dispatched. The image adapter now
+retains local client-setup/catalog/generation operation for mapped SDK failures,
+and the runner exposes only that allowlist plus exact nonnegative attempted
+calls. Offline regressions prove catalog 0 versus generation 1; the live request
+was not replayed. No public API, crop/ROI, retry/fallback, state, dependency,
+legacy, or frozen boundary changed. The adjacent owner set passes 82 tests and
+the complete default suite passes 1,926 tests.

@@ -652,6 +652,16 @@ choose another model, send an extra invalid-key probe, or fall back to another
 transport. The historical one-image, eight-image, and credential gates remain
 recorded.
 
+The #527 post-reduction refresh used one independently decoded 1600x1000 PNG
+with nonblank content in every corner. It returned HTTP 400 /
+`FAILED_PRECONDITION` without a successful result; the then-current runner
+omitted attempted-generation accounting, so that historical JSON cannot prove
+whether generation was dispatched. Image SDK failures now retain only the
+local `client_setup`, `catalog`, or `generation` operation, and the runner emits
+that allowlist with an exact nonnegative attempted-call count. Offline tests
+prove catalog 0 versus generation 1. The request was not replayed, so #527 is
+failure-path evidence rather than recognition-quality evidence.
+
 ## Bounded Google Short-Audio Live Smoke
 
 Install `ocrllm[audio,google]`, set `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) in

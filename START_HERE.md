@@ -198,6 +198,9 @@ request below 20,000,000 bytes.
 short MP3 received typed HTTP 400 / `FAILED_PRECONDITION` before generation,
 and the resulting narrow fix preserves the short-audio SDK operation without
 retrying or changing provider policy.
+#527 likewise refreshed one full-frame direct image: the service returned typed
+HTTP 400 / `FAILED_PRECONDITION`, and the resulting correction restores exact
+failure call accounting plus local SDK operation without replaying the request.
 #068 first returned honest `PROVIDER_QUOTA_EXHAUSTED` / `model` on
 `gemini-3.1-pro-preview`. #069 then selected `gemini-2.5-flash`: a
 3.468888889-second, 26,488-byte synthetic MP3 produced one successful public

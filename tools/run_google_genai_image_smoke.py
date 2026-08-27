@@ -122,12 +122,17 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
+    operation = error.details.get("provider_operation")
+    if operation not in {"client_setup", "catalog", "generation"}:
+        operation = None
     return _report_failure(
         code=error.code,
         scope=error.details.get("failure_scope"),
         stage=stage,
         http_status=error.details.get("http_status"),
         provider_status=error.details.get("provider_status"),
+        provider_calls_attempted=error.details.get("provider_calls_attempted"),
+        operation=operation,
     )
 
 
@@ -146,6 +151,8 @@ def _report_failure(
     stage: str | None,
     http_status: object = None,
     provider_status: object = None,
+    provider_calls_attempted: object = None,
+    operation: str | None = None,
 ) -> int:
     error_summary = {
         "code": code,
@@ -161,12 +168,19 @@ def _report_failure(
         and provider_status.replace("_", "").isalnum()
     ):
         error_summary["provider_status"] = provider_status
+    if operation is not None:
+        error_summary["operation"] = operation
+    summary: dict[str, object] = {
+        "status": "failed",
+        "error": error_summary,
+    }
+    if type(provider_calls_attempted) is int and provider_calls_attempted >= 0:
+        summary["progress"] = {
+            "provider_calls_attempted": provider_calls_attempted,
+        }
     print(
         json.dumps(
-            {
-                "status": "failed",
-                "error": error_summary,
-            },
+            summary,
             sort_keys=True,
             separators=(",", ":"),
         )

@@ -9488,3 +9488,29 @@ replace this historical output with the new field. No retry/fallback, error
 policy, public API, dependency, state, or provider framework was added.
 The adjacent Google audio/error owner set passes 99 tests and the complete
 default suite passes 1,926 tests.
+
+## Current working update: #527 refreshes live direct-image failure evidence
+
+#527 runs the maintained Google direct-image runner exactly once from #526's
+clean commit. Proxy and private credential preflight passed. The disposable
+1600x1000 PNG decoded independently, retained non-background content in all
+four corners, was 47,939 bytes, and had SHA-256
+`5b16d84ffe86c7b69efd90fc69fe82a7379e8495aa652da75c19e4a6e8726b3b`.
+The request ended after 5.150 seconds as typed `PROVIDER_REQUEST_INVALID`, HTTP
+400, provider status `FAILED_PRECONDITION`, request scope. Stderr, credential,
+path, known image-text leaks, retry, model switch, fallback, owned process, and
+temporary residue were absent. This is pre-success failure evidence, not image
+recognition or quality proof.
+
+The live runner omitted `provider_calls_attempted`, so the historical output
+cannot prove whether generation was dispatched. This regressed the established
+image failure-honesty boundary after #524 collapsed runner stages. The image
+adapter now attaches its local `client_setup`, `catalog`, or `generation`
+operation to mapped SDK failures, and the runner publishes only that allowlist
+plus an exact nonnegative call count under `progress`. Offline catalog and
+generation regressions prove 0/catalog and 1/generation respectively; model
+absence also preserves zero calls. Do not replay #527 merely to make the live
+record contain the new fields. No crop/ROI, retry/fallback, provider policy,
+public API, state, dependency, or tracing framework was added. The adjacent
+image/error owner set passes 82 tests and the complete default suite passes
+1,926 tests.

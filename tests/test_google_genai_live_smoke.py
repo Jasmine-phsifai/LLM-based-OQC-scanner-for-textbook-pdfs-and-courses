@@ -181,6 +181,8 @@ def test_image_live_smoke_reports_sanitized_provider_failure_stage(
                 "failure_scope": "provider",
                 "http_status": 400,
                 "provider_status": "FAILED_PRECONDITION",
+                "provider_operation": "catalog",
+                "provider_calls_attempted": 0,
                 "raw_response": secret,
             },
         )
@@ -196,10 +198,12 @@ def test_image_live_smoke_reports_sanitized_provider_failure_stage(
         "error": {
             "code": "PROVIDER_UNAVAILABLE",
             "http_status": 400,
+            "operation": "catalog",
             "provider_status": "FAILED_PRECONDITION",
             "scope": "provider",
             "stage": "recognition",
         },
+        "progress": {"provider_calls_attempted": 0},
         "status": "failed",
     }
     assert secret not in raw
@@ -222,6 +226,7 @@ def test_image_live_smoke_reports_facade_model_failure(monkeypatch, capsys):
             "scope": "model",
             "stage": "recognition",
         },
+        "progress": {"provider_calls_attempted": 0},
         "status": "failed",
     }
 

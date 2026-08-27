@@ -848,6 +848,7 @@ def test_public_google_catalog_failure_reports_zero_recognition_calls(
 
     assert catalog_failure.value.code == "PROVIDER_NETWORK"
     assert catalog_failure.value.details["provider_calls_attempted"] == 0
+    assert catalog_failure.value.details["provider_operation"] == "catalog"
     assert fake.models.generate_calls == []
     assert fake.clients[0].closed is True
 
@@ -877,6 +878,7 @@ def test_public_google_generate_failure_reports_one_recognition_call(
 
     assert generate_failure.value.code == "PROVIDER_NETWORK"
     assert generate_failure.value.details["provider_calls_attempted"] == 1
+    assert generate_failure.value.details["provider_operation"] == "generation"
     assert fake.clients[0].closed is True
 
 

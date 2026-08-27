@@ -65,6 +65,7 @@ def recognize_images(
     response: VisionProviderResponse | None = None
     public_error: OCRLLMError | None = None
     client_closed = True
+    provider_operation = "client_setup"
     try:
         try:
             client = google_module.Client(
@@ -74,6 +75,7 @@ def recognize_images(
                     timeout_seconds=config.timeout_seconds,
                 ),
             )
+            provider_operation = "catalog"
             served_models = parse_google_genai_model_catalog(client.models.list())
             if model not in served_models:
                 public_error = ProviderUnavailable(
@@ -86,6 +88,7 @@ def recognize_images(
                 )
             else:
                 raise_if_cancelled(config.cancellation)
+                provider_operation = "generation"
                 sdk_contents = _sdk_contents(google_module, request.contents)
                 provider_calls_attempted = 1
                 raw_response = client.models.generate_content(
@@ -97,6 +100,10 @@ def recognize_images(
             public_error = error
         except Exception as error:
             public_error = map_google_genai_error(error, model=model)
+            public_error._add_safe_detail(
+                "provider_operation",
+                provider_operation,
+            )
     finally:
         close_error = close_google_genai_client(client)
         client_closed = close_error is None
