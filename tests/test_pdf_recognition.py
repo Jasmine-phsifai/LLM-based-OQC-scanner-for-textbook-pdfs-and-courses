@@ -719,6 +719,62 @@ def test_cancel_after_first_pdf_group_resumes_without_replaying_it(
     assert len(tuple((output_dir / "book_board").glob("*.ocrllm-state.json"))) == 2
 
 
+def test_cancel_after_final_pdf_group_blocks_parent_publication_and_resumes(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=1)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    output_dir = tmp_path / "output"
+    state_directory = output_dir / "book_board"
+    cancellation = threading.Event()
+    provider = _RecordingProvider()
+    processor = importlib.import_module("ocrllm.processors.recognize_pdf")
+    snapshot_pdf = processor.snapshot_pdf
+
+    @contextmanager
+    def cancel_after_snapshot_exit(*args, **kwargs):
+        with snapshot_pdf(*args, **kwargs) as snapshot:
+            yield snapshot
+        cancellation.set()
+
+    monkeypatch.setattr(processor, "snapshot_pdf", cancel_after_snapshot_exit)
+
+    with pytest.raises(Cancelled) as interrupted:
+        recognize(
+            source,
+            config=_pdf_config(
+                provider,
+                output_dir=output_dir,
+                cancellation=cancellation,
+            ),
+        )
+
+    assert len(provider.calls) == 1
+    assert interrupted.value.details["provider_calls_attempted"] == 1
+    assert not (output_dir / "book_board.md").exists()
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 1
+    assert len(tuple(state_directory.glob("*.md"))) == 1
+
+    monkeypatch.setattr(processor, "snapshot_pdf", snapshot_pdf)
+    cancellation.clear()
+    resumed = recognize(
+        source,
+        config=_pdf_config(
+            provider,
+            output_dir=output_dir,
+            resume=True,
+            cancellation=cancellation,
+        ),
+    )
+
+    assert len(provider.calls) == 1
+    assert resumed.status == "complete"
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert resumed.output_path == output_dir / "book_board.md"
+    assert resumed.output_path.read_text(encoding="utf-8") == resumed.markdown
+
+
 def test_second_pdf_group_provider_failure_keeps_first_state_and_resumes(
     tmp_path: Path,
     monkeypatch,

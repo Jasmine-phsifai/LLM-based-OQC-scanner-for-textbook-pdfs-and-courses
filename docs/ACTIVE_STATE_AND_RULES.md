@@ -440,6 +440,23 @@ historical resume data. Initialization, inference, no-text, cancellation, and
 provider-backed paths remain unchanged. One narrow helper serves the two real
 post-settlement error boundaries; no generic result-to-error copier, lifecycle
 ledger, retry, or new state field was added.
+#464 closes a final-publication cancellation gap in the shipped PDF facade.
+If cancellation arrives after the final image group and PDF snapshot have
+settled but before aggregate Markdown publication, the public call now raises
+the existing `Cancelled` error with the exact settled provider-call and token
+evidence. It keeps the child Markdown and image sidecar, does not publish the
+aggregate PDF Markdown, and a later `resume=True` call can reuse that child
+with zero new provider calls. This reuses the facade's existing image/PDF
+publication gate; no rollback, transaction, cancellation coordinator, or PDF
+state field was added.
+One separately reproduced standalone-audio defect remains queued after #464:
+an incomplete interval resume with a missing Google credential currently
+snapshots the full source, materializes the next interval, and loads the SDK
+before returning `CONFIG_MISSING` with zero provider calls. The saved prefix is
+not lost and no result is falsely published. The next atomic correction should
+preflight the credential only after strict state/mode validation proves that
+one or more intervals are still missing, preserving credential-free zero-call
+publication for fully settled resumes.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

@@ -344,7 +344,7 @@ def _recognize(
 
     assert processor_output is not None
     try:
-        if media_type == "image":
+        if media_type in {"image", "pdf"}:
             raise_if_cancelled(cfg.cancellation)
         if output_path is not None and resume_identity is not None:
             # The state file is kept after publication: it is what lets a repeated
