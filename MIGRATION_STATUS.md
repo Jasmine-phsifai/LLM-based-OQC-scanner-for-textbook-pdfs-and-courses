@@ -2304,3 +2304,14 @@ mistook its intentional input `source.mp3` for snapshot residue, so this is not
 a clean stress-gate pass and was not replayed. No boundedness or cleanup product
 defect was reproduced; 51 focused tests and compileall pass with no runtime,
 API, dependency, provider, or frozen-boundary change.
+
+#505 narrows #502 without closing the fresh-download gate. One literal
+`imageio-ffmpeg>=0.6,<0.7` pip resolution selected the canonical 0.6.0 Windows
+wheel (31,246,824 bytes, SHA-256
+`02fa47c83703c37df6bfe4896aab339013f62bf02c5ebf2dce6da56af04ffc0a`).
+Its disposable local install imported version 0.6.0 and ran the bundled FFmpeg
+7.1 executable. Pip explicitly used cached metadata and wheel bytes, however,
+so this proves the declaration, platform tag, artifact, and basic runtime are
+valid but not that current network delivery succeeds. The exact #502 venv pip
+version remains unknown; no pin, pip-upgrade, cache, gate, product, provider, or
+dependency change follows.

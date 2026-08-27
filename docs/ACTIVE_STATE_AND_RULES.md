@@ -9074,3 +9074,28 @@ generic streaming/subprocess machinery, or a permanent stress harness from
 this evidence. The focused planner/materializer/persistence/probe set passes 51
 tests and compileall passes; runtime, API, dependency, provider, retry/fallback,
 crop/ROI, legacy, and frozen boundaries are unchanged.
+
+## Current working update: #505 validates the audio wheel, not fresh delivery
+
+One delegated disposable pip diagnostic used the literal declared requirement
+`imageio-ffmpeg>=0.6,<0.7`, zero retries, the existing 30-second timeout, and no
+alternate index, mirror, find-links, version, platform, interpreter, or cache
+change. Proxy TCP and an explicit proxied PyPI HTTPS HEAD succeeded. Pip selected
+`imageio_ffmpeg-0.6.0-py3-none-win_amd64.whl`, 31,246,824 bytes, SHA-256
+`02fa47c83703c37df6bfe4896aab339013f62bf02c5ebf2dce6da56af04ffc0a`.
+That exact name, size, and hash match the prior successful wheelhouse evidence.
+A local no-index/no-dependency install into a disposable venv imported version
+0.6.0 and ran its 87,638,016-byte bundled FFmpeg 7.1 executable successfully.
+
+This is not fresh delivery evidence: pip explicitly printed `Using cached` for
+both metadata and the 31.2 MB wheel. The preceding `pip cache list` only said
+that no locally built wheels were cached; it did not identify the cache backend,
+so do not infer more. The current base environment runs pip 26.0.1 and reports
+an ensurepip bundle at 23.0.1, but the exact #502 profile-venv pip version was
+not captured; no causal version claim follows. The result rules out an invalid
+declared range, Python floor, Windows tag, corrupt canonical artifact, or basic
+installed runtime. It does not close the fresh dependency-delivery gate or
+authorize an immediate full replay, pip-upgrade step, cache manager, wheelhouse,
+vendoring, mirror fallback, pin change, or second installer. No provider,
+credential, runtime, dependency, gate, API, legacy, crop/ROI, or frozen-boundary
+change occurred; the disposable root and processes were cleaned.

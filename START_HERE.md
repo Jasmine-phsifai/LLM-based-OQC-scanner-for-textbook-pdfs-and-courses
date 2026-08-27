@@ -63,10 +63,13 @@ profile then stopped because pip reported no available
 `imageio-ffmpeg>=0.6,<0.7` distribution for `audio`; no optional-profile smoke
 or later profile ran. Proxy reachability and an explicit PyPI HTTPS HEAD had
 passed, so this is current dependency-resolution/delivery failure evidence,
-not proof of package incompatibility or a complete current release pass. #484
-separately proved that a current wheel works with an existing declared OCR
-stack. Retry the full proof only through the maintained gate when there is new
-delivery evidence.
+not proof of package incompatibility or a complete current release pass. #505
+later resolved, locally installed, imported, and executed the exact valid
+`imageio-ffmpeg 0.6.0` Windows wheel, but pip explicitly used its cache; this
+rules out an invalid requirement/platform combination without proving a fresh
+network transfer. #484 separately proved that a current wheel works with an
+existing declared OCR stack. Retry the full proof only through the maintained
+gate when there is new delivery evidence.
 
 Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and
