@@ -284,6 +284,16 @@ is often accepted.
   and resubmit those ranges without depending on retained mode/interval state.
   It does not accept legacy formats, perform broad fuzzy recovery, or justify a
   second checkpoint architecture.
+- **#564 keeps #152 deferred until it has a real library-owned input.** Active
+  long-audio failures preserve temporary resume state but do not publish a
+  failure-text result containing concrete time ranges; `result.md` is published
+  only after every request settles. Legacy repair cannot fill this gap because
+  it finds localized segment-index markers and then requires a separate
+  splitter/identity manifest to recover the saved windows. Do not export or
+  parse active resume state for repair, port the legacy manifest, or invent a
+  failure document merely to create a repair consumer. Implement the narrow
+  range-parser/resubmission side path only after another active capability owns
+  and publishes exact source-bound failed-time-range text.
 - **#312 A2b media backend boundary.** The first interval materializer uses the
   same FFmpeg re-encode shape proven by legacy Google audio: exact physical
   window, mono 16 kHz, 64 kbps MP3. `ocrllm[audio]` includes the already pinned

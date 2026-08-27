@@ -2718,3 +2718,16 @@ claim can be made and the call was not replayed. Scripts and report were
 removed; the previously recorded empty owned TEMP directory remains. No
 runtime, test, API, scorer, dependency, provider, or frozen-boundary change was
 justified.
+
+#564 confirms that active audio repair still has no valid library-owned input
+artifact and must remain deferred. Long-audio failures preserve temporary
+whole/interval resume state but publish no failed-time-range Markdown;
+`result.md` appears only after complete settlement. Legacy repair is not a
+portable substitute: its text parser identifies localized segment numbers and
+requires `.audio-repair.json` for saved windows and identity. Porting that
+manifest, exposing active state, or inventing a failure document would violate
+the settled small-side-path boundary. Repair may begin only when an active
+producer independently publishes exact source-bound failed-time-range text.
+The focused interval, whole, and video-audio persistence suites pass 38 tests;
+no runtime, API, test, provider, dependency, legacy, archive, or frozen code
+changed.

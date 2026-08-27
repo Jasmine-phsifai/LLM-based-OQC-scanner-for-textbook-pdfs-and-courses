@@ -10399,3 +10399,34 @@ quality package to the wheel, broaden the 13-call runner, retain recognized
 content, or replay the provider merely to diagnose this disposable scoring
 failure. A future separately justified quality run must decide and preflight
 the exact safe scorer-failure evidence it needs before spending its one call.
+
+## Current working update: #564 keeps audio repair deferred without a consumer
+
+#564 audited the active audio failure-to-recovery path before adding any repair
+code. The active long-audio public path writes temporary state after each
+settled whole request or interval, preserves that state when a later operation
+fails, and publishes `result.md` only after the complete plan settles. It does
+not publish a library-owned failure-text result containing a concrete failed
+time range. Short audio remains an in-memory result and likewise provides no
+such repair input. The existing resume path is therefore the only current
+production recovery consumer.
+
+Personal review and an independent read-only legacy audit reached the same
+boundary. Legacy short-audio output writes localized failed/unfinished segment
+markers plus `meta:segment` comments, but its parser extracts only 1-based
+segment indices. `repair()` must then load `.audio-repair.json` to recover exact
+logical and physical windows and validate source, transformed input, splitter,
+request, and Markdown identity. This is precisely the retained-parameter
+sidecar contract the maintainer rejected for the new library; it is evidence
+about the old failure, not an API to port.
+
+The narrow repair side path therefore remains deferred until an active
+capability independently owns and publishes exact source-bound failed-time-
+range text. Do not manufacture that producer, expose the temporary resume
+journal, port the legacy manifest, add fuzzy localized parsing, or build a
+second checkpoint system merely to make repair implementable. The focused
+long-audio interval, whole-file, and video-audio persistence suites pass **38
+tests** and confirm the current publication/state facts. No runtime, public API,
+test, provider, dependency, archive, legacy, crop/ROI, or frozen-boundary code
+changed. Existing authorized media under `D:\archieve` remains the preferred
+future real-test source; this investigation required no crawling or download.
