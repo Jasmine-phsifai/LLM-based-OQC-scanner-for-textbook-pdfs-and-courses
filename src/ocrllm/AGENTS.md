@@ -42,7 +42,8 @@ outcome remained honestly failed. A future live recheck is warranted only after
 a relevant boundary or runtime change; it must retain the exact yielded session,
 validate redacted safe JSON before cleanup, and must not be repeated merely to
 turn typed failures green. Final publication is shipped in #144/#146 below;
-video recovery/resume remains unavailable and must not copy legacy formats.
+high-level journal-backed video recovery/resume is shipped in #374 and must not
+copy legacy formats. The low-level three-step video API remains non-resumable.
 Do not add adapter retry, automatic model switching, or provider pooling.
 #138 requires exact lexical artifact layout in every public video outcome:
 frames use `output_root/frames/*` and optional audio uses

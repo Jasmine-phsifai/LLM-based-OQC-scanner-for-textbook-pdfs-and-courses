@@ -2115,3 +2115,13 @@ stable request metadata, while injected providers retain caller Config
 identity. Late cancellation, image state, PDF/audio/video paths, public API,
 and provider policy are unchanged. The complete provider-free suite passes all
 1,897 tests with no skips.
+
+#453 corrects one operative package instruction that still said all video
+recovery/resume was unavailable. Current code and tests already distinguish the
+non-resumable low-level `recognize_video()` / compose / caller-chosen publish
+steps from the journal-backed high-level `recognize_video_to_markdown()` facade,
+which owns fixed `result.md`, accepts explicit `resume=True`, and reuses only
+missing image/audio work. Only that current-tense instruction changed;
+historical iteration records remain intact. Runtime, API, tests, state,
+provider behavior, dependencies, legacy formats, worker/contracts, retry, and
+fallback are unchanged.
