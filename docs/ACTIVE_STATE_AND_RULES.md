@@ -9993,3 +9993,42 @@ set passes 102 tests. No product defect was reproduced, so runtime, tests,
 public API, state, dependency, provider, legacy, crop/ROI, migration, and frozen
 boundaries remain unchanged. Do not add an audio-provider bypass, automatic
 fallback, new frame-only entry point, or provider framework from this proof.
+
+## Current working update: #553 stops before a false two-group live claim
+
+#553 tested whether one bounded silent archive-derived video could close the
+remaining real two-frame-group final-publication gap. Ten existing, full,
+decodable 1920x1080 archive JPEGs were ordered into exactly one disposable
+49.96-second H.264 MP4. The build used no crop, ROI, corner detection,
+perspective transform, resize, content display, OCR, crawl, download, or archive
+write. The 939,552-byte fixture had one video stream, no audio stream, 1,250
+frames, and passed complete decoding plus public `inspect_video()` at
+1920x1080. Its bytes and every source identity remained unchanged during the
+probe.
+
+The one provider-free production extraction retained only seven full 1920x1080
+frames, at 5.0, 15.0, 20.0, 25.04, 30.0, 40.0, and 49.92 seconds. The resulting
+plan was one group `[7]`, not the required two groups `[8,2]`. The fixture
+command also requested `yuv420p`, while independent FFprobe reported the actual
+pixel format as `yuvj420p`. Both conditions were declared before execution, so
+the workflow stopped immediately without rebuilding, tuning thresholds, or
+substituting another fixture. Credentials read, child launches, public live
+calls, and DashScope/Google recognition dispatches were all exactly zero.
+
+This is not a product defect. Negative-feedback selection is expected to remove
+similar candidates, and an input slideshow count is not evidence of the
+retained-frame count. The current two-group live publication gap therefore
+remains open; #553 must not be cited as provider or publication evidence. The
+high-level video, low-level video, and DashScope owner set passes 99 tests. One
+earlier test command named a nonexistent standalone finalize test file and
+stopped before collection; the real finalize owners are in the high-level video
+test file, and the corrected existing-file command passed.
+
+The proxy/listener preflight passed without changing settings. A sanitized
+durable report was captured before the exact fixture/output/report roots were
+ownership-checked and removed; matching temporary-root and process residue was
+zero. Git, the frozen directories, and the two protected untracked files stayed
+unchanged. No runtime, test, API, state, dependency, provider, legacy,
+crop/ROI, migration, or frozen-boundary change was justified. Do not modify the
+selector, force-retain slideshow frames, add a live-test mode, or build a
+permanent fixture runner merely to turn this bounded gate green.
