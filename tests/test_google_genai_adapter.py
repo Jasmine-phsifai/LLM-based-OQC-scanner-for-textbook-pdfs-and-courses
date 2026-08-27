@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+import httpx
 import pytest
 
 import ocrllm
@@ -592,6 +593,27 @@ def test_google_transport_errors_keep_timeout_and_network_codes(raw, code):
 
     assert mapped.code == code
     assert mapped.details["failure_scope"] == "provider"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        httpx.ConnectError("PRIVATE-GOOGLE-CONNECT-41aa"),
+        httpx.RemoteProtocolError("PRIVATE-GOOGLE-DISCONNECT-41aa"),
+    ],
+)
+def test_google_httpx_transport_failure_is_a_retryable_network_error(raw):
+    mapper = importlib.import_module(
+        "ocrllm.providers.google_genai.map_google_genai_error"
+    )
+
+    mapped = mapper.map_google_genai_error(raw, model=MODEL)
+
+    assert mapped.code == "PROVIDER_NETWORK"
+    assert mapped.retryable is True
+    assert mapped.details["failure_scope"] == "provider"
+    assert "PRIVATE-GOOGLE" not in str(mapped)
+    assert "PRIVATE-GOOGLE" not in repr(mapped.details)
 
 
 def test_google_resolves_as_builtin_and_capability_is_honest():

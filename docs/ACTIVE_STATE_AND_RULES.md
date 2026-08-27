@@ -471,6 +471,18 @@ This adds one check at the actual sidecar-to-publication boundary, not checks
 after every filesystem operation or a cancellation coordinator. Fresh batch
 and high-level video audits remained clean, and the bounded reproduced queue is
 empty again.
+#468 closes a native Google transport-classification defect inherited from the
+SDK boundary. The current Google GenAI client uses `httpx`; a real
+`httpx.RemoteProtocolError` formerly fell through as non-retryable
+`PROVIDER_RESPONSE_INVALID` even though it represents a transient connection
+failure. The mapper now recognizes the SDK's `httpx.NetworkError` and
+`httpx.ProtocolError` families without importing `httpx` into the runtime module,
+and returns secret-safe, provider-scoped, retryable `PROVIDER_NETWORK`. Built-in
+timeouts keep their more specific timeout code, HTTP/status mappings are
+unchanged, and plain `import ocrllm` still does not load `httpx`. The audit also
+identified legacy-backed `FAILED_PRECONDITION` billing text and JSON error text
+inside a nominal response as separate investigation candidates; neither is
+called a current defect or changed without its own reproduction.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

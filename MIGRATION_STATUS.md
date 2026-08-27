@@ -42,6 +42,13 @@ cancelled call reports settled evidence, and a cleared resume publishes with
 zero new provider calls. Fresh batch and high-level video audits found no
 separate ordinary defect; the bounded reproduced queue is empty again.
 
+#468 maps the native Google SDK's `httpx.NetworkError` and
+`httpx.ProtocolError` families to the existing provider-scoped, retryable
+`PROVIDER_NETWORK` result. Real connect and remote-protocol failures formerly
+fell through as non-retryable invalid response. The mapper adds no runtime
+`httpx` import, retry loop, provider abstraction, or error-text retention;
+timeout and HTTP/status mappings remain unchanged.
+
 The repository has two boundaries:
 
 | Boundary | Status | Use |

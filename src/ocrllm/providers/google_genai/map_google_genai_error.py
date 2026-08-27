@@ -36,7 +36,7 @@ def map_google_genai_error(error: object, *, model: str) -> OCRLLMError:
             code="PROVIDER_TIMEOUT",
             details=_scoped(details, "provider"),
         )
-    if isinstance(error, ConnectionError):
+    if _is_network_error(error):
         return ProviderError(
             "The Google GenAI service could not be reached.",
             code="PROVIDER_NETWORK",
@@ -125,6 +125,16 @@ def _is_timeout_error(error: object) -> bool:
     }
     return any(
         base.__name__ in timeout_type_names
+        for base in type(error).__mro__
+    )
+
+
+def _is_network_error(error: object) -> bool:
+    if isinstance(error, ConnectionError):
+        return True
+    return any(
+        base.__module__ == "httpx"
+        and base.__name__ in {"NetworkError", "ProtocolError"}
         for base in type(error).__mro__
     )
 
