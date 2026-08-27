@@ -10235,3 +10235,21 @@ zero failures or skips. No second live request was made after the zero-dispatch
 failure, so #558 fixes local admission but does not claim a refreshed current
 Google catalog or generation result. It adds no decoder, bitstream parser,
 retry, provider policy, framework, state, API, dependency, or media conversion.
+
+## Current working update: #559 stopped in the disposable controller
+
+#559 attempted the declared post-#558 Google short-audio refresh after the
+three-minute heartbeat interval. Git was synchronized and clean at full commit
+`0b2e52f0a2ff2b14c1a766cf936db4f56fca8e9b`; the proxy was enabled and exactly
+one `127.0.0.1:10080` listener was present. The disposable controller, however,
+compared that full HEAD string for exact equality with the expected short form
+`0b2e52f`. It therefore reported `unexpected_repo_head` and stopped safely.
+
+No source file was opened, no credential was read, no OCRLLM child or maintained
+runner was launched, and no catalog or provider request occurred. The owned
+report root was removed with zero residue. This is a controller assertion error,
+not a library defect, source rejection, Google result, or post-fix live proof.
+The iteration did not rerun after its predeclared harness-failure stop rule. A
+future bounded attempt must compare the full expected commit or use an explicit
+prefix relation before launching its sole child; this does not justify a
+permanent controller, compatibility layer, runtime/test change, or API retry.

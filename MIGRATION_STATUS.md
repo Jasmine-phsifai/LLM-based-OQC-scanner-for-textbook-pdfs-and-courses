@@ -2656,3 +2656,11 @@ local preflights pass, the focused owner set passes 117 tests, and the complete
 provider-free suite passes 1,933 tests with zero failures or skips. No second
 live request, transport/provider change, retry, model switch, state, API,
 dependency, alternate decoder, or framework was added.
+
+#559 did not reach the planned post-fix Google short-audio request. A disposable
+controller compared full HEAD `0b2e52f0a2ff2b14c1a766cf936db4f56fca8e9b`
+against short expected text `0b2e52f` by exact equality and stopped with
+`unexpected_repo_head`. Proxy/listener preflight passed, but source access,
+credential access, child launch, catalog, and provider dispatch were all zero;
+owned residue was removed. This is harness error only, so runtime, tests, API,
+dependencies, provider behavior, and the open post-#558 live gate are unchanged.
