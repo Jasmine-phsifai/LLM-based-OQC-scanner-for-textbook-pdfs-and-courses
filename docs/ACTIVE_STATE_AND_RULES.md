@@ -9536,3 +9536,36 @@ thumbnails remain selection-only and retained recognition images remain
 complete re-decoded frames. No runtime, public API, dependency, state,
 provider, crop/ROI, legacy, or frozen-boundary change was made. The complete
 provider-free suite passes 1,926 tests; compileall and diff checks pass.
+
+## Current working update: #530 clean distribution again stops at OCR resolution
+
+#530 runs the unchanged maintained clean-distribution gate exactly once from
+clean commit `0cf04ebb4a313a45a79adb5621ff0916d565edfd`. The gate remains Git
+blob SHA-1 `f108e16d302b12d7c74ad7202b0f07e560ececeb` and file SHA-256
+`9dccc4894731dc46c67c54dcb89d51e875dee1be501661d480a2aa0824405fa5`.
+WinINET, the configured proxy listener, and an explicit proxied PyPI HTTPS HEAD
+passed before the sole run. The gate exited 1 after 197.991 seconds within its
+caller-owned 3,600-second bound and removed its proof root, archive, and owned
+processes.
+
+The clean archive reported 1,925 passed and one optional real-RapidOCR skip in
+88.15 seconds. Fixture verification, compileall, wheel build/file selection,
+base installation, metadata, both import budgets, and the `audio` and `image`
+profiles passed. Those two installs explicitly used cached artifacts and added
+91,516,061 and 17,316,345 bytes. The `ocr` profile's pip 23.0.1 then reported
+no available `opencv-python>=4.13,<4.14` distribution and exited before its
+metadata/import, real-OCR smoke, or size measurement; the six later profiles
+did not run. Exact wheel/base bytes were not printed because the gate emits
+them only after complete success.
+
+This does not invalidate the tested OpenCV range. One separately bounded fresh
+CPython 3.10/pip 23.0.1 metadata query through the same active proxy exited 0
+in 6.356 seconds and listed 4.13.0.90 and 4.13.0.92; the maintained environment
+also runs 4.13.0.92, and historical clean OCR/video gates used that version.
+Classify #530 as another transient or index-state-dependent OCR dependency
+discovery failure, not a package, platform, or pin defect. Do not rerun merely
+for green evidence or change pip, pin, index, mirror, cache, retry, timeout, or
+installer from this result. #460 remains the last complete nine-profile proof;
+the current fresh-delivery gate remains open. No provider API or credential was
+used, and no runtime, test, dependency declaration, public API, legacy,
+crop/ROI, or frozen-boundary change was made.

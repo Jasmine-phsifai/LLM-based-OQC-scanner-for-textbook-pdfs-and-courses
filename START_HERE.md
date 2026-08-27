@@ -86,6 +86,15 @@ metadata-only checks found the official 3.9.2 `py3-none-any` wheel and both pip
 index-state-dependent rather than a proven pin/platform defect. Do not replay
 the same gate merely to replace this result or change pip/index/cache/retry.
 #460 remains the last complete nine-profile proof.
+#530 repeats the unchanged maintained gate once from exact current commit
+`0cf04eb`. Archive, build/base, import budgets, and cached `audio`/`image`
+profiles pass, but the `ocr` profile's pip 23.0.1 reports no OpenCV candidate
+and stops before its smoke or six later profiles. A single fresh pip 23.0.1
+metadata query through the same active proxy immediately lists compatible
+4.13.0.90 and 4.13.0.92, so this remains transient/index-state-dependent
+fresh-delivery failure rather than a pin or package defect. Do not change the
+pin, pip, index, cache, retry, mirror, timeout, or installer to hide it; #460
+remains the last complete nine-profile proof.
 
 Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and

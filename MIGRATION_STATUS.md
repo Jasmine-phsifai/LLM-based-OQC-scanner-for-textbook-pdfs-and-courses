@@ -2520,3 +2520,16 @@ off-by-one correction: backend-dependent deduplication must not silently relax
 the resource ceiling. No runtime, API, threshold, dependency, state, provider,
 crop/ROI, legacy, or frozen-boundary change was made. The complete
 provider-free suite passes 1,926 tests.
+
+#530 runs the unchanged maintained clean-distribution gate once from exact
+commit `0cf04eb`. Archive tests are 1,925 passed/one optional RapidOCR skip;
+fixture, compile, wheel/base, metadata, import budgets, and cached `audio` and
+`image` profiles pass. The `ocr` profile's pip 23.0.1 then reports no candidate
+for the existing `opencv-python>=4.13,<4.14` range, so its smoke and six later
+profiles do not run. The gate exits 1 in 197.991 seconds and completely cleans
+its owned roots/processes. A separate single fresh pip 23.0.1 metadata query
+through the same proxy lists 4.13.0.90 and 4.13.0.92 in 6.356 seconds; current
+and historical runtime evidence also uses 4.13.0.92. This is transient or
+index-state-dependent dependency discovery, not a proven pin/package defect.
+#460 remains the last complete nine-profile proof. No runtime, test,
+dependency, API, provider, legacy, crop/ROI, or frozen-boundary change was made.
