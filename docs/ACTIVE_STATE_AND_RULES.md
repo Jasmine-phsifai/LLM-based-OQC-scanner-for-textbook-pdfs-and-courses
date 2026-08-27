@@ -9893,3 +9893,54 @@ does not justify a replay or permanent runner. Runtime changes are limited to
 discarding one no-longer-exact safe detail; one focused test file is added. No
 public API, state, dependency, provider, legacy, crop/ROI, migration, or
 frozen-boundary change was made.
+
+## Current working update: #551 publishes one real eight-page DashScope PDF
+
+#551 closes a narrower current-publication evidence gap without reopening the
+completed P1-c design. Eight existing full 1920x1080 archive JPEGs from one
+frame collection were assembled outside the repository and archive into one
+temporary 200-DPI, eight-page PDF. No media was crawled, downloaded, displayed,
+cropped, resized, OCRed during selection, or written back to the archive.
+Independent PDFium inspection reported exactly eight 691.2x388.8-point pages;
+the production renderer formed one group of eight complete 1921x1080 page
+images and removed every rendered image after consumption.
+
+One child made exactly one public `recognize()` call with DashScope Beijing and
+`qwen3.5-ocr`. There was no separate catalog request, retry, resume, second
+child, candidate model, model switch, or fallback. The call completed in
+15.344 seconds and returned one complete public PDF result with
+`page_count=8`, `pdf_group_count=1`, provider `dashscope`, model
+`qwen3.5-ocr`, and `current_run_provider_call_count=1`. The 1,439-byte final
+Markdown existed and its SHA-256 exactly matched the Markdown returned by the
+public result. One complete child sidecar and one child Markdown existed before
+cleanup; no page PNG or PDF snapshot residue remained.
+
+The disposable reporter did not preserve enough structure to prove token usage,
+the child sidecar's saved call count, or client-close truth. Its `[]` usage row
+could mean absent, non-tuple, or empty metadata; it read a nonexistent
+`result.provider_calls_attempted` sidecar path instead of
+`result.metadata.current_run_provider_call_count`; and it did not directly
+capture client cleanup. Those values remain unknown and are not product-defect
+evidence. The reporter also synthesized a `[8]` group-size field rather than
+reading the product's integer `pages_per_group`; the real one-group/eight-page
+fact is independently established by inspection, rendering, and public result
+counts.
+
+Three preliminary disposable-controller attempts stopped before any child or
+provider call because the controller used the wrong Python environment or the
+wrong legacy QSettings key. Repository review established the actual
+DashScope location as `QSettings("OCRLLM", "QCR")`, key `ui/api_key`; the
+earlier `ui/dashscope_api_key` instruction was incorrect. All preliminary and
+final exact GUID roots were ownership-checked and removed. The eight archive
+sources and generated PDF stayed byte-identical during their use, the durable
+safe report contained neither credential nor absolute media path, and the Git
+tree stayed unchanged apart from the two protected pre-existing untracked
+files.
+
+The PDF and DashScope owner sets pass 36 and 192 tests respectively. No live
+failure or library defect was reproduced, so this iteration makes no runtime,
+test, API, state, dependency, provider, legacy, crop/ROI, migration, or frozen
+change. Do not convert the one-shot reporter ambiguities into telemetry fields,
+a permanent live runner, retry, repair, provider generalization, or another PDF
+abstraction. The separate #550 choice about a narrow secondary video-branch
+error summary remains open and unchanged.
