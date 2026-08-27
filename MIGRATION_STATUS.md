@@ -2664,3 +2664,16 @@ against short expected text `0b2e52f` by exact equality and stopped with
 credential access, child launch, catalog, and provider dispatch were all zero;
 owned residue was removed. This is harness error only, so runtime, tests, API,
 dependencies, provider behavior, and the open post-#558 live gate are unchanged.
+
+#560 completes the post-#558 local-admission live proof. One corrected disposable
+controller required full HEAD
+`27e50346e9a1f01ca4453a5c8038cd20ac8e717b`, reused the same unchanged real
+archive MP3, and launched the maintained Google short-audio runner exactly once.
+The public path crossed snapshot/full decode and reached the live catalog, which
+returned exact safe `PROVIDER_REQUEST_INVALID`, HTTP 400,
+`FAILED_PRECONDITION`, `operation=catalog`, and
+`provider_calls_attempted=0` in 2.594 seconds. Source identity, credential
+secrecy, process cleanup, and temporary cleanup passed. This closes the local-
+fix verification but not current generation/transcription evidence; the
+already-covered external catalog refusal warrants no product change or
+immediate retry/model sweep.

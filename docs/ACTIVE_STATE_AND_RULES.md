@@ -10253,3 +10253,32 @@ The iteration did not rerun after its predeclared harness-failure stop rule. A
 future bounded attempt must compare the full expected commit or use an explicit
 prefix relation before launching its sole child; this does not justify a
 permanent controller, compatibility layer, runtime/test change, or API retry.
+
+## Current working update: #560 reaches the live Google audio catalog
+
+#560 closes only the post-#558 local-admission proof. After the heartbeat
+interval, full HEAD and `origin/master` were exactly
+`27e50346e9a1f01ca4453a5c8038cd20ac8e717b`; the corrected disposable
+controller required that full value rather than comparing it with a short hash.
+It reused the same unchanged 1,986,191-byte archive MP3. Proxy preflight passed
+with exactly one listener, the credential remained in memory, and exactly one
+maintained short-audio runner child launched. There was no separate catalog,
+retry, second child, model switch, fallback, transport change, conversion, or
+content publication.
+
+The child completed in 2.594 seconds with exit 1 and empty stderr. Its exact safe
+result was `PROVIDER_REQUEST_INVALID`, HTTP 400, provider status
+`FAILED_PRECONDITION`, scope `request`, stage `recognition`, operation `catalog`,
+and `provider_calls_attempted=0`. This proves the #558 source now passes the
+library snapshot/full-decode admission and reaches adapter-owned live catalog
+discovery. It does not prove current model availability, generation dispatch,
+transcription quality, or no-speech behavior.
+
+The source's SHA-256, size, modification time, regular-file status, and
+non-reparse status stayed unchanged. Secret, path, and content scans passed;
+the child exited, the exact report root was removed, and owned process/temp
+residue was zero. The current result matches the already-covered catalog
+FAILED_PRECONDITION mapping and accurately reports zero recognition calls, so
+no runtime, test, API, state, dependency, retry, fallback, provider, or decoder
+change is justified. Repeating Google immediately, bypassing catalog, or trying
+models one by one would only replay the same external refusal.
