@@ -8734,3 +8734,25 @@ the same mapping and reported the exact total of one, and existing regressions
 cover mapping-backed call evidence. No reporter was persisted and no runtime,
 test, retry policy, provider abstraction, error code, media path, dependency,
 or state format changed.
+
+## Current working update: #491 clean distribution still stops at OCR delivery
+
+One unmodified default clean-archive gate ran from exact commit `6bbc761` after
+confirming the configured WinINET proxy and an explicit proxied PyPI HTTPS
+response. Archive pytest completed with 1,915 passed and one expected optional
+RapidOCR skip; fixtures, compile, wheel construction and checks, base install,
+metadata, both import budgets, and the installed audio and image profiles all
+passed. Audio and image installation deltas were 91,504,139 and 17,304,423
+bytes. The run made no provider or cloud call and read no credential.
+
+The OCR profile again stopped while streaming `onnxruntime-1.23.2` from
+`files.pythonhosted.org`, with pip exit 2 after a read timeout. Its metadata,
+real OCR smoke, and delta were not reached; `image,dashscope`, `google`,
+`audio,google`, `pdf-vision`, `video`, and `video,audio,image` did not start.
+The exact disposable proof root was removed and no matching process remained.
+This is fresh evidence that clean dependency delivery remains open, not evidence
+of a package/runtime defect; #484 still separately proves the wheel against an
+existing compatible OCR stack. Do not change dependency pins, timeout, index,
+mirror, cache, or product behavior to conceal this result. The gate also does
+not yet exercise the newer `video,ocr,audio,google` union; prove that as a
+separate atomic release check rather than expanding this failed run retroactively.

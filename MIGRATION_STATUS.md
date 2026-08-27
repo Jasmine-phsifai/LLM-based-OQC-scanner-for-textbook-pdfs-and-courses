@@ -10,14 +10,13 @@ file and that file differ, that file wins.
 Last synchronized: 2026-08-27.
 
 Current distribution evidence: #460 remains the last complete nine-profile
-clean gate. #483's later maintained run passed archive tests plus the installed
-base, audio, and image profiles, then stopped when pip timed out while reading
+clean gate. #491's exact-current maintained run passed archive tests plus the
+installed base, audio, and image profiles, then again stopped while streaming
 `onnxruntime-1.23.2` for the OCR profile; later profiles did not run, so it is
-not a complete current release pass. #484 separately installed the then-current
-wheel with `--no-deps` into an existing declared OCR stack and completed the
-generated-image public OCR smoke. That proves package/runtime compatibility,
-not fresh dependency delivery. Retry the full proof only through the maintained
-gate when there is new delivery evidence.
+not a complete current release pass. #484 separately proved that a current
+wheel works with an existing declared OCR stack. That establishes package/runtime
+compatibility, not fresh dependency delivery. Retry the full proof only through
+the maintained gate when there is new delivery evidence.
 
 #461 keeps the existing local-OCR cancellation behavior but makes its public
 error evidence exact: cancellation between ordered images now reports zero
