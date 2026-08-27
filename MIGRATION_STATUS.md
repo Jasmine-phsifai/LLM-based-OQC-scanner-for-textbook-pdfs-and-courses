@@ -2628,3 +2628,17 @@ branch's code or operation; #550's bounded diagnostics choice remains open.
 Source integrity and cleanup passed, the focused 107-test owner set passed, and
 no runtime, API, state, dependency, retry, fallback, grouping, provider, crop,
 legacy, or frozen-boundary change was warranted.
+
+#557 completes one real sixteen-page DashScope PDF through the public facade.
+Sixteen complete archive frames were embedded at 200 DPI without crop or
+resampling; PDFium saw sixteen realistic pages and production formed two serial
+groups of eight. One fresh public job using `qwen3.5-ocr` completed in 33.922
+seconds with exactly two provider requests, two complete child sidecars,
+ordered page-range markers, and a 3,150-byte final Markdown whose digest
+matched the returned result. The conditional resume phase was not launched
+because fresh recognition did not fail. Direct child-Markdown count, token
+usage, sidecar-local call fields,
+and client-close truth remain unavailable due to bounded reporter scope; they
+are not reported as zero. Source integrity and cleanup passed, the focused 88-
+test owner set passed, and no runtime, API, state, dependency, retry, repair,
+provider, crop, legacy, or frozen-boundary change was warranted.

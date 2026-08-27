@@ -10149,3 +10149,46 @@ Automatic retry, adaptive group sizing, a new error carrier, model switching,
 or a provider framework would turn one correctly reported service response into
 new policy without evidence that the response is transient; ordinary explicit
 resume remains the existing recovery route.
+
+## Current working update: #557 publishes a real two-group DashScope PDF
+
+#557 closes the current DashScope two-group final-publication evidence gap with
+one fresh public `recognize()` call. Sixteen existing complete 1920x1080 archive
+JPEGs from one frame collection were embedded without crop or resampling into a
+disposable 200-DPI PDF outside the repository and archive. PDFium independently
+reported sixteen approximately 691.2x388.8-point pages. The production first
+eight-page render produced complete 1921x1080 page images and a serialized
+request of about 9,027,680 bytes, below the existing 20 MiB limit. Source-image
+and PDF identities remained unchanged.
+
+One child used Beijing DashScope `qwen3.5-ocr`, one configured output root, and
+no separate catalog request, retry, fallback, candidate, model switch, patch,
+mock, alternate endpoint, or second provider. The public call completed in
+33.922 seconds with exactly two serial provider calls and returned one complete
+PDF result: sixteen pages, two groups of eight, two complete child sidecars,
+ordered page-range markers, and one 3,150-byte final Markdown whose SHA-256
+exactly matched the returned Markdown. Rendered PNG and PDF snapshot residue
+were zero. Because the fresh call completed, the predeclared conditional
+`resume=True` phase was correctly not launched; this run is publication proof,
+not live failure-resume proof.
+
+The disposable reporter did not directly count Markdown files inside the PDF
+state directory. Its `markdown_file_count=1` counted only the final Markdown in
+the output root. It also read child call counts from the historical wrong
+`sidecar.result.provider_calls_attempted` path, and normalized public token usage
+to null unless the raw value was an exact tuple. Consequently the child
+Markdown count, child-sidecar call fields, current token usage, and explicit
+client-close truth remain unavailable rather than zero or absent. The complete
+result, exact two-call public total, two complete sidecars, final digest, and
+marker ordering are independently retained facts.
+
+The focused PDF resume/publication, DashScope adapter, and request-builder set
+passes 88 tests. The exact fixture, output, and report roots were removed after
+safe evidence capture; source integrity, secret/path/content scanning, owned
+process cleanup, and frozen/repository boundaries passed. No runtime, test,
+API, state, dependency, provider, PDF repair, legacy, crop/ROI, or frozen change
+was justified. Do not rerun merely to manufacture an incomplete response, force
+the conditional resume branch, fill missing telemetry, or create a permanent
+live controller. Existing public resume remains directly covered by failure-
+then-resume owner tests and should receive another live proof only when a future
+bounded fresh run naturally leaves the required settled prefix.
