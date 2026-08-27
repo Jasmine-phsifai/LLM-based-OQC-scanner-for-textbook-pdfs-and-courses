@@ -9154,3 +9154,34 @@ Two unrelated approximately 49.8 MB historical gate roots from earlier work
 were discovered with no owning process; two exact PowerShell cleanup commands
 were blocked before execution by the host policy, so those old disposable
 roots remain. #460 is still the last complete nine-profile proof.
+
+## Current working update: #511 isolates current OCR transfer throughput
+
+#511 did not replay or modify the nine-profile gate. WinINET remained enabled
+at the configured local proxy, its listener accepted TCP connections, and
+Python proxy discovery returned that endpoint. Source inspection confirms that
+both current pip and the pip 23.0.1 bundle used by new profile venvs retain the
+same trusted-environment proxy discovery path; `Start-Process` does not clear
+the caller environment. The gate's 14 controller tests pass and its PowerShell
+AST has no errors. There is therefore no current evidence that the gate disables
+or bypasses the configured proxy.
+
+Authoritative PyPI metadata identifies the exact previously selected wheel as
+`onnxruntime-1.23.2-cp310-cp310-win_amd64.whl`, 13,467,651 bytes, SHA-256
+`0be6a37a45e6719db5120e9986fcd30ea205ac8103fd1fb74b6c33348327a0cc`.
+Through the explicit configured proxy, its HEAD returned HTTP 200 with no
+redirect in 1.28 seconds. One subsequent no-retry body transfer reached only
+1,421,453 bytes in approximately 120 seconds before its controller bound ended.
+The partial artifact failed the expected size/hash checks and its owned
+temporary directory was removed. The mechanical controller failed to preserve
+the exact curl exit code and body-response status, so those values remain
+unknown rather than being inferred.
+
+This is current evidence of low artifact-body throughput, not proof of an
+invalid dependency, incompatible wheel, proxy-propagation defect, or gate-code
+failure. #460 remains the last complete nine-profile proof and #508 remains the
+latest full-gate attempt. Do not hide the open gate by changing the dependency,
+pip seed, cache/index/mirror, retry count, 30-second read timeout, 1,200-second
+profile bound, wheelhouse policy, or installer. A later complete proof must use
+the maintained gate after genuinely improved delivery conditions; HEAD success
+or an incomplete manual transfer is not a release pass.

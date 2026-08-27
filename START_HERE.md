@@ -68,6 +68,13 @@ incompatibility or a complete current release pass. #484 separately proved
 that a current wheel works with an existing declared OCR stack. Do not hide the
 open fresh-delivery gate by changing the pin, pip, cache, index, mirror, retry,
 or timeout, or by substituting installed-stack evidence.
+#511 narrows that blocker without replaying the gate: WinINET and the local
+proxy listener were active, Python/pip proxy discovery resolved that proxy,
+and the exact ONNX Runtime wheel returned a proxied HTTP 200 HEAD. One bounded
+proxied body transfer nevertheless delivered only 1,421,453 of 13,467,651
+bytes in about 120 seconds. This is current low-throughput delivery evidence,
+not a gate-code, dependency, or compatibility defect; the full gate remains
+open and its installation policy is unchanged.
 
 Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and

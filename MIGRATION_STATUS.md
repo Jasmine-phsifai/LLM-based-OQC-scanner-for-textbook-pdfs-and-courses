@@ -10,13 +10,18 @@ file and that file differ, that file wins.
 Last synchronized: 2026-08-27.
 
 Current distribution evidence: #460 remains the last complete nine-profile
-clean gate. #496's maintained run from exact commit `9545ce3` passed archive tests plus the
-installed base, audio, and image profiles, then again stopped while streaming
-`onnxruntime-1.23.2` for the OCR profile; later profiles did not run, so it is
+clean gate. #508's maintained run from exact commit `6034c74` passed archived
+tests, the installed base, audio, and image profiles under recorded pip 23.0.1,
+then stopped at the existing 1,200-second bound while streaming
+`onnxruntime-1.23.2` for the OCR profile. Later profiles did not run, so it is
 not a complete current release pass. #484 separately proved that a current
 wheel works with an existing declared OCR stack. That establishes package/runtime
 compatibility, not fresh dependency delivery. Retry the full proof only through
 the maintained gate when there is new delivery evidence.
+#511 confirms that the active WinINET proxy and local listener are visible to
+Python/pip and that the exact OCR wheel's proxied HEAD returns 200, but one
+bounded body transfer reached only 1,421,453 of 13,467,651 bytes in about 120
+seconds. Fresh delivery therefore remains open; no installer policy changed.
 
 #461 keeps the existing local-OCR cancellation behavior but makes its public
 error evidence exact: cancellation between ordered images now reports zero
@@ -2340,3 +2345,19 @@ the last complete nine-profile proof. Two process-free historical gate roots
 were separately found under the system temporary directory; host execution
 policy blocked both exact cleanup commands before launch, so they remain as a
 known environment residue rather than being attributed to #508.
+
+#511 diagnoses the current OCR delivery boundary without rerunning the full
+gate. WinINET remained enabled at the configured local proxy, the listener was
+reachable, and both current pip plus the bundled pip 23.0.1 request code use
+Windows proxy discovery. The authoritative PyPI record selected the same
+`onnxruntime-1.23.2-cp310-cp310-win_amd64.whl`, with 13,467,651 expected bytes
+and SHA-256 `0be6a37a45e6719db5120e9986fcd30ea205ac8103fd1fb74b6c33348327a0cc`.
+Its proxied HEAD returned HTTP 200 in 1.28 seconds, but one no-retry proxied
+body transfer reached only 1,421,453 bytes in approximately 120 seconds before
+the controller bound ended; the incomplete bytes did not match the expected
+size or hash and were removed. The controller did not capture the exact curl
+exit code or body-response status, so neither is inferred. Fourteen gate tests
+and PowerShell parsing pass. This supports a current external throughput
+constraint rather than a requirement, proxy-propagation, or gate-code defect;
+it does not close the clean gate or authorize pin, pip, cache, index, mirror,
+retry, timeout, wheelhouse, or installer changes.
