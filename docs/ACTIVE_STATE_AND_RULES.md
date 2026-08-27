@@ -542,8 +542,10 @@ Beijing-region pool slot, and called public `recognize()` once with explicit
 `qwen3.5-ocr` and the committed formula-board fixture. The leased credential
 validated the model through the real compatibility catalog and then completed
 exactly one recognition call. The final pool report was selection 1, success 1,
-failure 0, and in-flight 0; the provider client closed. Provider token counts
-were absent and remain unknown rather than zero. No OCR body, credential,
+failure 0, and in-flight 0; the provider client closed. Its disposable
+controller reported token counts as unknown, but #475 later proved that was a
+controller normalization limitation rather than provider or library behavior.
+No OCR body, credential,
 authorization header, source/output path, or raw response was retained or
 published. An earlier controller preflight found no environment or `.env`
 credential and made zero provider requests; it is not a failed provider run.
@@ -562,6 +564,19 @@ later image failure, audio reuse, pool outage, and lease accounting at their
 own public boundaries. Adding a fifth large media/provider fake would duplicate
 those same state transitions rather than expose a new defect. No runtime, API,
 journal, test, retry, fallback, or provider call was added.
+#475 corrects #473's token-evidence interpretation without changing runtime.
+One bounded, non-replayed `qwen3.5-ocr` call wrapped only the existing raw parser
+in memory and observed a standard OpenAI SDK `CompletionUsage` object with
+`prompt_tokens=4357`, `completion_tokens=285`, and `total_tokens=4642`; its
+field set contained exactly those three names and no extra usage keys. The
+active DashScope parser already maps the first two counts directly into the
+library's input/output usage, while #340 deliberately forbids deriving either
+side from `total_tokens`. Public frozen metadata represents nested usage rows
+as `mappingproxy`; #473's disposable controller expected an ordinary `dict`
+and therefore printed nulls. Existing SDK-object and public-result regressions
+prove the standard fields survive into per-model aggregation. No parser,
+metadata contract, total-token inference, usage-details schema, retry, fallback,
+or second live probe was added.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import
