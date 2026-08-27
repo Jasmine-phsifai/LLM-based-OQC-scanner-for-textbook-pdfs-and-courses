@@ -41,26 +41,24 @@ def recognize_images(
             code="CONFIG_INVALID",
         ) from None
 
-    model = resolve_dashscope_model(config.vision_model.name, settings=settings)
-    request = build_dashscope_image_request(
-        image_paths,
-        prompt=prompt,
-        model=model,
-        settings=settings,
-        cancellation=config.cancellation,
-    )
+    model = resolve_dashscope_model(config.vision_model.name)
     raise_if_cancelled(config.cancellation)
 
     credential_lease: _DashScopeCredentialLease | None = None
     if settings.credential_pool is None:
         api_key = resolve_dashscope_credential(settings)
     else:
-        credential_lease = settings.credential_pool._acquire(
-            model=model,
-            cancellation=config.cancellation,
-        )
+        try:
+            credential_lease = settings.credential_pool._acquire(
+                model=model,
+                cancellation=config.cancellation,
+            )
+        except OCRLLMError as error:
+            error._add_safe_detail("provider_calls_attempted", 0)
+            raise
         api_key = credential_lease.api_key
 
+    request = None
     openai_module: object | None = None
     client: object | None = None
     provider_response: VisionProviderResponse | None = None
@@ -68,7 +66,26 @@ def recognize_images(
     client_closed = True
     try:
         try:
-            openai_module = load_openai()
+            model = resolve_dashscope_model(
+                model,
+                settings=settings,
+                catalog_api_key=api_key,
+            )
+            raise_if_cancelled(config.cancellation)
+            request = build_dashscope_image_request(
+                image_paths,
+                prompt=prompt,
+                model=model,
+                settings=settings,
+                cancellation=config.cancellation,
+            )
+        except OCRLLMError as error:
+            error._add_safe_detail("provider_calls_attempted", 0)
+            public_error = error
+
+        try:
+            if public_error is None:
+                openai_module = load_openai()
         except OCRLLMError as error:
             public_error = error
         except Exception:
@@ -102,6 +119,7 @@ def recognize_images(
                 public_error = error
 
         if public_error is None:
+            assert request is not None
             try:
                 raw_response = (
                     client.chat.completions.with_raw_response.create(**request.kwargs)

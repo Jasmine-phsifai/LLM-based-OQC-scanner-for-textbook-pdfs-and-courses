@@ -15,7 +15,12 @@ _CATALOG_CACHE: dict[str, tuple[frozenset[str], float]] = {}
 _CATALOG_LOCK = Lock()
 
 
-def resolve_dashscope_model(configured_model: str | None, *, settings=None) -> str:
+def resolve_dashscope_model(
+    configured_model: str | None,
+    *,
+    settings=None,
+    catalog_api_key: str | None = None,
+) -> str:
     """Return the caller's model, checking the provider catalog when available."""
     if configured_model is not None and type(configured_model) is not str:
         raise ConfigError(
@@ -28,7 +33,14 @@ def resolve_dashscope_model(configured_model: str | None, *, settings=None) -> s
     # unknown means "the provider does not serve this", never "this repository
     # has not heard of it".
     if settings is not None and model != DEFAULT_DASHSCOPE_MODEL:
-        catalog = fetch_dashscope_model_catalog(settings)
+        catalog = (
+            fetch_dashscope_model_catalog(settings)
+            if catalog_api_key is None
+            else fetch_dashscope_model_catalog(
+                settings,
+                catalog_api_key=catalog_api_key,
+            )
+        )
         if catalog is None:
             raise ProviderError(
                 "The DashScope model catalog is temporarily unavailable.",
@@ -45,7 +57,11 @@ def resolve_dashscope_model(configured_model: str | None, *, settings=None) -> s
     return model
 
 
-def fetch_dashscope_model_catalog(settings) -> frozenset[str] | None:
+def fetch_dashscope_model_catalog(
+    settings,
+    *,
+    catalog_api_key: str | None = None,
+) -> frozenset[str] | None:
     """Return a fresh catalog, or the last success during a refresh outage."""
     cache_key = settings.base_url
     now = monotonic()
@@ -59,8 +75,16 @@ def fetch_dashscope_model_catalog(settings) -> frozenset[str] | None:
 
     from urllib.request import Request, urlopen
     from .resolve_dashscope_credential import resolve_dashscope_credential
+    from .validate_dashscope_api_key import validate_dashscope_api_key
 
-    api_key = resolve_dashscope_credential(settings)
+    api_key = (
+        resolve_dashscope_credential(settings)
+        if catalog_api_key is None
+        else validate_dashscope_api_key(
+            catalog_api_key,
+            field_name="leased DashScope catalog credential",
+        )
+    )
     try:
         request = Request(
             f"{settings.base_url.rstrip('/')}/models",

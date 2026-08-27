@@ -522,6 +522,19 @@ tests mock the catalog and hide that call order. This is the next bounded
 DashScope defect: one pool lease must cover catalog validation and recognition,
 including every failure cleanup path, without a second lease, retry, fallback,
 or provider-generalization change.
+#472 closes that reproduced pool/catalog blocker. Pooled DashScope provider
+resolution now performs only local model normalization; the adapter acquires
+one model-aware lease, passes that already-validated credential into the
+existing catalog parser, and retains the same lease through request building
+and recognition. Catalog absence, outage, and cancellation before SDK loading
+all report zero recognition calls and release the lease exactly once. Model
+absence does not count as a credential failure; a provider-scoped catalog
+outage records one pool failure without blocking or quarantining the credential;
+successful catalog plus recognition records one selection and one success.
+Single-key preflight, default-model bypass, catalog caching, candidate/scout
+ordering, and provider-call accounting remain unchanged. No second catalog
+lease, credential cache, retry, fallback, generalized lifecycle object, or live
+provider call was added.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

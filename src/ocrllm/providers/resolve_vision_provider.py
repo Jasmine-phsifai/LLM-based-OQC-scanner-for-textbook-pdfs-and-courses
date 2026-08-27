@@ -28,7 +28,9 @@ def resolve_vision_provider(config: Config) -> ResolvedVisionProvider:
             name="dashscope",
             model=resolve_dashscope_model(
                 config.vision_model.name,
-                settings=provider,
+                # A pooled request must lease exactly one credential inside
+                # the adapter before its authenticated catalog check.
+                settings=provider if provider.credential_pool is None else None,
             ),
             built_in=True,
         )

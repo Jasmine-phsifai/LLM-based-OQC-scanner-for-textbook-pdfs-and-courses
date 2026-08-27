@@ -126,7 +126,7 @@ def _serve_model_catalog(monkeypatch, *models: str) -> None:
     monkeypatch.setattr(
         resolver,
         "fetch_dashscope_model_catalog",
-        lambda settings: frozenset(models),
+        lambda settings, **kwargs: frozenset(models),
     )
 
 

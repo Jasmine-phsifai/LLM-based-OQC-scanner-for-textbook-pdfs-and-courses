@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import threading
 import time
 from types import SimpleNamespace
@@ -19,6 +20,7 @@ from ocrllm import (
     ProviderError,
     ProviderPermissionDenied,
     RateLimited,
+    VisionModelSettings,
     recognize,
 )
 from ocrllm.errors import ConfigError, QuotaExhausted
@@ -447,6 +449,20 @@ class _FakeOpenAI:
         return _FakeClient(self.state)
 
 
+class _CatalogResponse:
+    def __init__(self, model: str) -> None:
+        self._payload = json.dumps({"data": [{"id": model}]}).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception, traceback):
+        return False
+
+    def read(self, limit: int) -> bytes:
+        return self._payload[:limit]
+
+
 def _pooled_config(pool: DashScopeCredentialPool, *, scout: bool = False) -> Config:
     return Config(
         provider=DashScopeSettings(
@@ -457,6 +473,172 @@ def _pooled_config(pool: DashScopeCredentialPool, *, scout: bool = False) -> Con
             standalone_sign_scout_model="qwen-vl-max" if scout else None,
         )
     )
+
+
+def _explicit_pooled_config(
+    pool: DashScopeCredentialPool,
+    *,
+    workspace: str,
+    cancellation: object | None = None,
+) -> Config:
+    return Config(
+        provider=DashScopeSettings(
+            region="cn-beijing",
+            base_url=(
+                f"https://{workspace}.cn-beijing.maas.aliyuncs.com"
+                "/compatible-mode/v1"
+            ),
+            credential_pool=pool,
+        ),
+        vision_model=VisionModelSettings(name="qwen-vl-max"),
+        cancellation=cancellation,
+    )
+
+
+def test_public_explicit_model_uses_one_pool_lease_for_catalog_and_recognition(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    from urllib import request as urllib_request
+
+    source = write_test_image(tmp_path / "board.png", size=(12, 13))
+    pool = _pool(1)
+    fake_openai = _FakeOpenAI()
+    adapter = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
+    monkeypatch.setattr(adapter, "load_openai", lambda: fake_openai)
+    catalog_keys: list[str] = []
+
+    def return_catalog(request, *, timeout):
+        catalog_keys.append(request.get_header("Authorization"))
+        return _CatalogResponse("qwen-vl-max")
+
+    monkeypatch.setattr(urllib_request, "urlopen", return_catalog)
+    config = _explicit_pooled_config(
+        pool,
+        workspace="offline-success",
+    )
+
+    result = recognize(source, config=config)
+
+    assert result.markdown == "# Pooled board\n"
+    assert catalog_keys == ["Bearer pool-secret-key-0"]
+    assert fake_openai.state.keys == ["pool-secret-key-0"]
+    assert [call["model"] for call in fake_openai.state.calls] == ["qwen-vl-max"]
+    slot = pool.snapshot().slots[0]
+    assert slot.in_flight == 0
+    assert slot.selection_count == 1
+    assert slot.success_count == 1
+    assert slot.failure_count == 0
+    assert "pool-secret-key-0" not in repr(result)
+
+
+def test_pooled_catalog_model_absence_releases_lease_without_sdk_or_failure(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    from urllib import request as urllib_request
+
+    source = write_test_image(tmp_path / "board.png", size=(12, 13))
+    pool = _pool(1)
+    adapter = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
+    monkeypatch.setattr(
+        adapter,
+        "load_openai",
+        lambda: pytest.fail("an absent catalog model must stop before SDK loading"),
+    )
+    monkeypatch.setattr(
+        urllib_request,
+        "urlopen",
+        lambda request, *, timeout: _CatalogResponse("another-model"),
+    )
+
+    with pytest.raises(ConfigError, match="DashScope does not serve") as captured:
+        recognize(
+            source,
+            config=_explicit_pooled_config(pool, workspace="offline-absent"),
+        )
+
+    assert captured.value.details["provider_calls_attempted"] == 0
+    slot = pool.snapshot().slots[0]
+    assert slot.in_flight == 0
+    assert slot.selection_count == 1
+    assert slot.success_count == 0
+    assert slot.failure_count == 0
+
+
+def test_pooled_catalog_outage_releases_lease_before_sdk_loading(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    from urllib import request as urllib_request
+
+    source = write_test_image(tmp_path / "board.png", size=(12, 13))
+    pool = _pool(1)
+    adapter = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
+    monkeypatch.setattr(
+        adapter,
+        "load_openai",
+        lambda: pytest.fail("a catalog outage must stop before SDK loading"),
+    )
+
+    def raise_catalog_outage(request, *, timeout):
+        raise OSError("offline outage")
+
+    monkeypatch.setattr(urllib_request, "urlopen", raise_catalog_outage)
+
+    with pytest.raises(ProviderError) as captured:
+        recognize(
+            source,
+            config=_explicit_pooled_config(pool, workspace="offline-outage"),
+        )
+
+    assert captured.value.code == "PROVIDER_CATALOG_UNAVAILABLE"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    slot = pool.snapshot().slots[0]
+    assert slot.in_flight == 0
+    assert slot.selection_count == 1
+    assert slot.success_count == 0
+    assert slot.failure_count == 1
+
+
+def test_pooled_cancellation_during_catalog_releases_lease_before_sdk_loading(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    from urllib import request as urllib_request
+
+    source = write_test_image(tmp_path / "board.png", size=(12, 13))
+    pool = _pool(1)
+    cancellation = threading.Event()
+    adapter = importlib.import_module("ocrllm.providers.dashscope.recognize_images")
+    monkeypatch.setattr(
+        adapter,
+        "load_openai",
+        lambda: pytest.fail("catalog cancellation must stop before SDK loading"),
+    )
+
+    def cancel_after_catalog(request, *, timeout):
+        cancellation.set()
+        return _CatalogResponse("qwen-vl-max")
+
+    monkeypatch.setattr(urllib_request, "urlopen", cancel_after_catalog)
+
+    with pytest.raises(Cancelled) as captured:
+        recognize(
+            source,
+            config=_explicit_pooled_config(
+                pool,
+                workspace="offline-cancelled",
+                cancellation=cancellation,
+            ),
+        )
+
+    assert captured.value.details["provider_calls_attempted"] == 0
+    slot = pool.snapshot().slots[0]
+    assert slot.in_flight == 0
+    assert slot.selection_count == 1
+    assert slot.success_count == 0
+    assert slot.failure_count == 0
 
 
 def test_public_recognition_shares_pool_across_primary_and_scout_calls(
@@ -474,7 +656,7 @@ def test_public_recognition_shares_pool_across_primary_and_scout_calls(
     monkeypatch.setattr(
         resolver,
         "fetch_dashscope_model_catalog",
-        lambda settings: frozenset({"qwen-vl-max"}),
+        lambda settings, **kwargs: frozenset({"qwen-vl-max"}),
     )
 
     result = recognize(source, config=_pooled_config(pool, scout=True))
