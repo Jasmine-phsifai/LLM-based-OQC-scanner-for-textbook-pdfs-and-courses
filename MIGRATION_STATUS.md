@@ -91,6 +91,17 @@ remain per-group. A real nine-page 8+1 run recognized all pages with RapidOCR
 reported exactly one invariant warning. No generic warning framework, public
 API, state format, provider behavior, crop/ROI path, or dependency was added.
 
+#516 preserves the same stable local-OCR evidence if a PDF snapshot fails while
+exiting after all child groups have settled. Previously that public error kept
+zero provider calls and the settled-group count but lost engine/version and
+summed image/retained-line counts. Final composition and error attachment now
+share one private evidence aggregator rather than duplicating the #514 rules.
+A real nine-page 8+1 run retained RapidOCR 3.9.2, 9 images, and 18 lines on the
+injected cleanup failure; `resume=True` then published with no RapidOCR reload
+and zero provider/network calls. The full default suite passes 1,924 tests. No
+public API, state schema, provider, warning, repair, crop/ROI, dependency,
+legacy, or frozen-boundary behavior changed.
+
 The repository has two boundaries:
 
 | Boundary | Status | Use |

@@ -9269,3 +9269,26 @@ or public API. A real nine-page full-frame PDF run crossed the 8+1 boundary,
 recognized all nine pages with RapidOCR 3.9.2, produced one limitation warning,
 made zero provider/network calls, and left no rendered PNG residue. Focused and
 adjacent PDF/local-OCR/resume tests pass.
+
+## Current working update: #516 preserves local-OCR evidence on PDF cleanup failure
+
+#516 closes the error-path counterpart of #514. When every local-OCR PDF group
+had settled but the enclosing PDF snapshot failed during context exit,
+`recognize_pdf()` correctly retained the child states and reported zero provider
+calls plus the settled-group count, but it discarded the settled engine,
+version, image count, and retained-line count before the public error crossed
+the facade. A failure-first nine-page 8+1 regression reproduced the missing
+`ocr_engine` exactly.
+
+The stable aggregation rule introduced by #514 is now one private pure function
+used by both final PDF composition and PDF failure evidence. It still requires
+every result to be local OCR, one uniform nonempty engine/version, positive
+image and retained-line counts, and exact zero network calls. The error path
+passes that result through the existing settled-local-OCR evidence owner, so it
+does not overwrite more specific error details or add a second schema. A real
+nine-page full-frame PDF completed both groups with RapidOCR 3.9.2 before an
+injected snapshot-exit failure; the error retained 9 images and 18 lines, and a
+subsequent `resume=True` invocation published in 0.582987 seconds without
+loading RapidOCR or making provider/network calls. The complete default suite
+passes 1,924 tests. Public APIs, state, warning semantics, provider behavior,
+dependencies, repair, crop/ROI, legacy, and frozen boundaries are unchanged.

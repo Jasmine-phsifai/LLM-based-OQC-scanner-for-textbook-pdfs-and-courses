@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
+from ..aggregate_local_ocr_result_evidence import (
+    aggregate_local_ocr_result_evidence,
+)
+from ..attach_settled_local_ocr_evidence_to_error import (
+    attach_settled_local_ocr_evidence_to_error,
+)
 from ..errors import OCRLLMError
 from ..result import RecognitionResult
 
@@ -33,6 +39,10 @@ def attach_pdf_settled_work(
         local_calls = 0
     error._add_safe_detail("provider_calls_attempted", settled_calls + local_calls)
     error._add_safe_detail("settled_pdf_group_count", len(settled_results))
+    attach_settled_local_ocr_evidence_to_error(
+        error,
+        aggregate_local_ocr_result_evidence(settled_results),
+    )
 
     existing_usage = error.details.get("settled_model_usage", ())
     if type(existing_usage) is tuple:

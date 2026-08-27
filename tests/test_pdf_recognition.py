@@ -361,6 +361,85 @@ def test_memory_only_pdf_snapshot_exit_preserves_settled_cleanup_evidence(
     assert set(tmp_path.iterdir()) == {source}
 
 
+def test_pdf_snapshot_cleanup_failure_preserves_settled_local_ocr_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=9)
+    source = _write_pdf_placeholder(tmp_path / "notes.pdf")
+    output_dir = tmp_path / "output"
+    local_ocr = importlib.import_module(
+        "ocrllm.local_ocr.recognize_images_with_rapidocr"
+    )
+    calls: list[Path] = []
+
+    class RecordingEngine:
+        def __call__(self, path: Path):
+            calls.append(path)
+            return SimpleNamespace(txts=(f"Page {len(calls)}",), scores=(0.9,))
+
+    engine = RecordingEngine()
+    monkeypatch.setattr(local_ocr, "load_rapidocr", lambda: lambda **_: engine)
+    monkeypatch.setattr(local_ocr, "resolve_rapidocr_version", lambda: "3.9.test")
+    processor = importlib.import_module("ocrllm.processors.recognize_pdf")
+    snapshot_pdf = processor.snapshot_pdf
+    cleanup_error = OutputError(
+        "test-only PDF snapshot cleanup failure",
+        retryable=True,
+    )
+
+    @contextmanager
+    def fail_after_snapshot_exit(*args, **kwargs):
+        with snapshot_pdf(*args, **kwargs) as snapshot:
+            yield snapshot
+        raise cleanup_error
+
+    monkeypatch.setattr(processor, "snapshot_pdf", fail_after_snapshot_exit)
+
+    with pytest.raises(OutputError) as captured:
+        recognize(
+            source,
+            config=Config(image_mode="ocr", output_dir=output_dir),
+        )
+
+    assert captured.value is cleanup_error
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert captured.value.details["settled_pdf_group_count"] == 2
+    assert captured.value.details["ocr_engine"] == "rapidocr"
+    assert captured.value.details["ocr_engine_version"] == "3.9.test"
+    assert captured.value.details["image_count"] == 9
+    assert captured.value.details["retained_line_count"] == 9
+    assert len(calls) == 9
+    assert not (output_dir / "notes_board.md").exists()
+    state_directory = output_dir / "notes_board"
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 2
+
+    monkeypatch.setattr(processor, "snapshot_pdf", snapshot_pdf)
+
+    def fail_if_rapidocr_reloads():
+        raise AssertionError("settled local OCR groups must be reused")
+
+    monkeypatch.setattr(local_ocr, "load_rapidocr", fail_if_rapidocr_reloads)
+    resumed = recognize(
+        source,
+        config=Config(image_mode="ocr", output_dir=output_dir, resume=True),
+    )
+
+    assert len(calls) == 9
+    assert resumed.status == "complete"
+    assert resumed.metadata["recognition_mode"] == "ocr"
+    assert resumed.metadata["ocr_engine"] == "rapidocr"
+    assert resumed.metadata["ocr_engine_version"] == "3.9.test"
+    assert resumed.metadata["image_count"] == 9
+    assert resumed.metadata["retained_line_count"] == 9
+    assert resumed.metadata["provider_call_count"] == 0
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert resumed.metadata["network_call_count"] == 0
+    assert resumed.warnings == (local_ocr.LOCAL_OCR_LIMITATION_WARNING,)
+    assert resumed.output_path == output_dir / "notes_board.md"
+    assert resumed.output_path.read_text(encoding="utf-8") == resumed.markdown
+
+
 def test_existing_pdf_output_rejects_before_snapshot_or_backend_inspection(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
