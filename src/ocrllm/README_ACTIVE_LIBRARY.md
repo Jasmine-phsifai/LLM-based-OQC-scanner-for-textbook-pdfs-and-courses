@@ -321,6 +321,10 @@ The PDF vision facade:
 - renders one page at a time and at most eight PNGs per ordinary image request;
 - uses the image facade and its sidecars unchanged, so resume reuses settled
   groups without another provider call;
+- accepts provider-free `Config(image_mode="ocr")` when the `ocr` extra is
+  installed; final PDF metadata aggregates the uniform RapidOCR engine/version,
+  image count, retained-line count, and exact zero-network fact from every
+  settled group;
 - retains a first-group sidecar when child Markdown publication fails without
   misreporting the intentionally nonempty state directory as a cleanup failure;
   the typed publication error also retains validated current-run per-model token
@@ -332,7 +336,8 @@ The PDF vision facade:
 - publishes stable `ocrllm:pdf-pages` range markers in source order and removes
   rendered PNGs after each group;
 - creates no PDF-specific provider, checkpoint schema, worker contract, page
-  selector, password input, partial-success setting, text mode, or retry path;
+  selector, password input, partial-success setting, PDF text-layer mode, or
+  retry path;
 - is rejected by `recognize_batch()` in this first slice.
 
 Neither direct audio path nor the PDF path is registered in the frozen 20-entry

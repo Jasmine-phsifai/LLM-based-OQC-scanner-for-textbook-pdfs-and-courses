@@ -9220,3 +9220,34 @@ The expanded Google runner/adapter set passes 113 tests. Compilation and
 lightweight import remain clean. No production mapper, API,
 provider behavior, retry/fallback, dependency, legacy, crop/ROI, or frozen
 boundary changed.
+
+## Current working update: #514 preserves PDF local-OCR evidence
+
+#514 first rejected two duplicate or unsupported directions. The recorded
+Google `400 / FAILED_PRECONDITION` billing candidate had already been audited by
+#290/#477 and remains code-only legacy evidence, so no payment-text mapping was
+added. Legacy PDF processing likewise has no text-layer publication: its
+non-formula route renders pages and runs RapidOCR, while its text-layer sampling
+only emits a scanned-PDF warning. Direct PDFium text extraction would therefore
+be a new capability stronger than legacy and remains deferred pending an
+explicit product contract, especially for blank or formula-only pages.
+
+The fresh shipped-surface audit instead proved an existing route:
+`recognize(one_pdf, Config(image_mode="ocr"))` already processes complete
+PDFium-rendered pages through the local image strategy, publishes ordered range
+markers, and reuses completed image sidecars. A real two-page, 41,286-byte PDF
+completed with RapidOCR 3.9.2 in 3.682405 seconds, recognized both controlled
+text pages, reported zero provider/network calls, published byte-matching final
+Markdown, removed every rendered PNG, and resumed in 0.110239 seconds while an
+injected guard made any RapidOCR reload fail.
+
+That run exposed one user-visible evidence loss: the final PDF composer discarded
+the local engine/version, image count, retained-line count, and zero-network
+facts already present in every child result. A nine-page public regression first
+failed on the absent `recognition_mode`. The composer now preserves only the
+uniform stable local-OCR fields, sums image and retained-line counts, and records
+zero network calls; it does not aggregate confidence telemetry or introduce a
+PDF-specific state/provider/mode. The focused regression passes, and the PDF,
+local-OCR, real RapidOCR, and local-resume owner set passes 44 tests. Full-frame rendering,
+dependencies, public signatures, retry/fallback, legacy, and frozen boundaries
+are unchanged.

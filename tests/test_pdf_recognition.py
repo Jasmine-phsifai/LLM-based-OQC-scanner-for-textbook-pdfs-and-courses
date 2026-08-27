@@ -243,6 +243,46 @@ def test_public_pdf_uses_two_ordered_bounded_image_groups(
     assert result.metadata["current_run_provider_call_count"] == 2
 
 
+def test_public_pdf_preserves_aggregated_local_ocr_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=9)
+    source = _write_pdf_placeholder(tmp_path / "notes.pdf")
+    local_ocr = importlib.import_module(
+        "ocrllm.local_ocr.recognize_images_with_rapidocr"
+    )
+    calls: list[Path] = []
+
+    class RecordingEngine:
+        def __call__(self, path: Path):
+            calls.append(path)
+            return SimpleNamespace(
+                txts=(f"Page {len(calls)}",),
+                scores=(0.9,),
+            )
+
+    engine = RecordingEngine()
+    monkeypatch.setattr(local_ocr, "load_rapidocr", lambda: lambda **_: engine)
+    monkeypatch.setattr(local_ocr, "resolve_rapidocr_version", lambda: "3.9.test")
+
+    result = recognize(source, config=Config(image_mode="ocr"))
+
+    assert len(calls) == 9
+    assert result.status == "complete"
+    assert result.source_type == "pdf"
+    assert result.metadata["page_count"] == 9
+    assert result.metadata["pdf_group_count"] == 2
+    assert result.metadata["recognition_mode"] == "ocr"
+    assert result.metadata["ocr_engine"] == "rapidocr"
+    assert result.metadata["ocr_engine_version"] == "3.9.test"
+    assert result.metadata["image_count"] == 9
+    assert result.metadata["retained_line_count"] == 9
+    assert result.metadata["provider_call_count"] == 0
+    assert result.metadata["current_run_provider_call_count"] == 0
+    assert result.metadata["network_call_count"] == 0
+
+
 def test_memory_only_pdf_snapshot_exit_preserves_settled_cleanup_evidence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

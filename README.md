@@ -197,6 +197,17 @@ Use `image_config=Config(image_mode="ocr")` with the separate Google
 retained frames; local OCR remains ordered text extraction rather than a
 formula, table, or layout-equivalent replacement for a vision model.
 
+For provider-free RapidOCR over complete PDF-rendered pages:
+
+```powershell
+pip install ".[pdf-vision,ocr]"
+```
+
+Call `recognize(one_pdf, config=Config(image_mode="ocr"))`. PDFium still renders
+the complete pages in bounded ordered groups; the final result reports zero
+provider/network calls and aggregates the local OCR engine/version, image count,
+and retained-line count across those groups.
+
 For DashScope frame recognition with independent Google audio recognition:
 
 ```powershell
@@ -321,8 +332,10 @@ print(result.markdown)
 ```
 
 The same facade accepts one PDF when `ocrllm[pdf-vision]` is installed. It uses
-the configured vision provider and board profile; no separate PDF provider
-protocol exists.
+either the configured vision provider or provider-free
+`Config(image_mode="ocr")` when the `ocr` extra is also installed. Both routes
+process complete rendered pages through the existing image path; no separate PDF
+provider protocol or PDF text-layer mode exists.
 
 An injected provider is an integration seam, not live quality evidence. The
 provider must return one Markdown `str` synchronously. Resume requires its

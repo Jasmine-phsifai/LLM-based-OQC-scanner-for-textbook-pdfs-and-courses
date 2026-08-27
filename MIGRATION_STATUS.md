@@ -70,6 +70,18 @@ distinguishes a hypothetical error-shaped false success from correct OCR of the
 same JSON. A real SDK-object regression preserves that structured recognition
 text and its token counts. Reconsider only with a live non-text discriminator.
 
+#514 proves and corrects the already-routable provider-free PDF/local-OCR slice.
+`recognize(one_pdf, Config(image_mode="ocr"))` already rendered complete pages in
+bounded groups and reused ordinary image sidecars, but final PDF composition
+dropped each settled group's local engine/version, image and retained-line
+counts, and zero-network fact. The composer now preserves only those uniform,
+stable facts and sums the two counts. A nine-page public regression proves the
+8+1 path with zero provider/network calls. A separate real two-page PDF run used
+RapidOCR 3.9.2, recognized both pages, published ordered Markdown, left no
+rendered PNGs, and resumed without loading RapidOCR again. Direct PDF text-layer
+extraction remains a separate unapproved capability; no PDF mode, classifier,
+provider, dependency, checkpoint, or worker surface was added.
+
 The repository has two boundaries:
 
 | Boundary | Status | Use |
