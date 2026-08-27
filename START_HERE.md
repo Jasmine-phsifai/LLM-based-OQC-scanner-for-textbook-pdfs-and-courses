@@ -75,6 +75,17 @@ proxied body transfer nevertheless delivered only 1,421,453 of 13,467,651
 bytes in about 120 seconds. This is current low-throughput delivery evidence,
 not a gate-code, dependency, or compatibility defect; the full gate remains
 open and its installation policy is unchanged.
+#520 runs the unchanged maintained gate once from exact commit `fc0ad66` after
+proxy/listener/proxied-PyPI preflight passed. Archive tests reported 1,925
+passes and one optional real-RapidOCR skip; fixture, compile, wheel/base,
+metadata, import budgets, and cached `audio`/`image` profiles passed. The `ocr`
+profile's fresh pip 23.0.1 install then returned no available `rapidocr>=3.9,<4`
+version and stopped before its smoke and the six later profiles. Immediate
+metadata-only checks found the official 3.9.2 `py3-none-any` wheel and both pip
+26.0.1 and a fresh pip 23.0.1 could list it, so the gate failure is transient or
+index-state-dependent rather than a proven pin/platform defect. Do not replay
+the same gate merely to replace this result or change pip/index/cache/retry.
+#460 remains the last complete nine-profile proof.
 
 Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and

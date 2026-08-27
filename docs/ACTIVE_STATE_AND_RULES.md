@@ -9359,3 +9359,34 @@ not enter the rule, and audio warnings are appended afterward without change.
 No generic warning normalizer, warning type, state field, or provider rule was
 added. The adjacent video owner set passes 107 tests and the complete default
 suite passes 1,926 tests.
+
+## Current working update: #520 refreshes but does not close the clean gate
+
+#520 runs the unchanged maintained clean-distribution gate exactly once from
+commit `fc0ad660efd89fc013127eba3cd3b9decfccdaa1`. The gate file has Git blob
+SHA-1 `f108e16d302b12d7c74ad7202b0f07e560ececeb` and file SHA-256
+`9dccc4894731dc46c67c54dcb89d51e875dee1be501661d480a2aa0824405fa5`.
+WinINET, the configured proxy listener, and an explicit proxied PyPI HEAD all
+passed before the sole 210.618-second run.
+
+The clean archive reported 1,925 passed and one skipped real-RapidOCR test in
+86.56 seconds. Fixture verification, compileall, wheel build/file selection,
+base install, metadata, and both import-budget environments passed. The fresh
+`audio` and `image` profiles used pip 23.0.1 and passed install plus their
+available smokes at 91,515,331 and 17,315,615 added bytes, but all their
+artifacts were cache-backed. The `ocr` profile then failed normally, not by
+timeout: pip 23.0.1 reported no matching `rapidocr>=3.9,<4` distribution.
+Its metadata/import/smoke/size and the six later profiles did not run. Exact
+wheel/base bytes are unavailable because the gate prints them only after every
+profile succeeds. The proof root, archive, and owned processes were removed;
+provider calls and credential access were zero.
+
+The dependency declaration is not disproven. Official metadata exposes
+RapidOCR 3.9.2 as one 27,275,208-byte `py3-none-any` wheel compatible with the
+gate's CPython 3.10/Windows environment. Immediately afterward, ordinary pip
+26.0.1 and one fresh seeded pip 23.0.1 both listed versions through 3.9.2; the
+latter succeeded once in 18.361 seconds. Therefore classify the gate failure as
+transient or index-state-dependent, not a package-tag, Python-version, or proven
+pip-parser defect. Do not rerun solely to replace the red result, or change the
+pin, pip, cache, index, mirror, retry, timeout, or installer. #460 remains the
+last complete nine-profile proof.

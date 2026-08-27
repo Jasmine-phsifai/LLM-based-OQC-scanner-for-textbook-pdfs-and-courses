@@ -2440,3 +2440,15 @@ warnings, partial/mixed outcomes, and later audio warnings retain their original
 multiplicity. The video owner set passes 107 tests and the default suite passes
 1,926 tests. No public API, state, provider, dependency, retry/fallback,
 crop/ROI, legacy, or frozen-boundary change was made.
+
+#520 refreshes the exact current clean-distribution evidence without changing
+the gate. Commit `fc0ad66` passed archived tests (1,925 plus one optional real
+RapidOCR skip), fixture/compile, wheel/base, metadata/import budgets, and cached
+fresh-venv `audio`/`image` profiles. The `ocr` profile's pip 23.0.1 install then
+reported no `rapidocr>=3.9,<4` version and stopped before its smoke and six later
+profiles. Official metadata and immediate one-shot pip 26.0.1 plus fresh pip
+23.0.1 queries all exposed compatible RapidOCR 3.9.2, so this is transient or
+index-state-dependent delivery evidence, not authority to change the valid pin
+or installation policy. Cleanup and zero-provider boundaries passed. #460 is
+still the last complete nine-profile proof; no runtime, test, dependency, gate,
+provider, API, legacy, crop/ROI, or frozen-boundary change was made.
