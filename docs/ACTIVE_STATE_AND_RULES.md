@@ -8889,3 +8889,48 @@ low-level regression; its independently checked import origin is the disposable
 target, and plain import leaves OpenCV, PyAV, pydub, miniaudio, Google GenAI,
 and OpenAI unloaded. Pytest reported one unexpanded warning on that one-test
 installed run; the captured output did not identify its category or message.
+
+## Current working update: #498 fixes discontinuous selector fallback
+
+A provider-free real-media stress probe exercised public
+`extract_video_frames()` on one ten-hour, 320x180, 0.2-fps MP4 encoded with
+`mpeg4 -g 1`
+with changing full-frame content. The 36,897,408-byte source reported exactly
+7,200 frames and 36,000 seconds. The real scanner produced 7,200 unique ordered
+candidates from index 0/time 0 through index 7199/time 35,995. Their two
+thumbnail arrays totalled exactly 140,083,200 bytes, or 19,456 bytes each,
+matching #198's representation measurement. Exact 0.2 fps puts the final frame
+on the five-second grid, so this realizes 7,200 rather than #198's conservative
+7,201-candidate preflight bound.
+
+The old negative-feedback fallback retained only 100 frames, or 10/hour,
+despite the declared 28--40/hour target. A compact deterministic one-hour
+regression reproduced the discontinuity: ten attempts returned counts
+`100, 100, 7, 100, 100, 100, 100, 100, 7, 100` for a target of 28--40. The old
+midpoint-distance rule chose seven, even though its already-supported uniform
+cap could reduce the content-richer 100-frame set to the exact upper target.
+
+The selector now remembers only the smallest overfull set. An in-band set still
+returns immediately; when no attempt is in-band but at least one is overfull,
+the existing endpoint-preserving cap reduces that smallest set to
+`target_high`; if every attempt is underfull, the existing closest-count result
+is unchanged. It does not merge candidate sets, add feedback attempts, sample
+raw frames outside negative feedback, change thresholds, or add another
+ranking abstraction.
+
+The corrected public ten-hour run scanned the same 7,200 candidates and
+retained exactly 400 strictly ordered 320x180 JPEGs, totalling 5,362,684 bytes,
+including final index 7199/time 35,995. It exited zero in 11.297 seconds with
+empty stderr, no request snapshot or staging residue, and no network/provider
+or unrelated recognition backend loaded. The first measurement wrapper hung
+after its successful child had already emitted terminal JSON, so no OS peak
+memory or direct exit code is claimed from that first run; the corrected rerun
+captured exit zero and intentionally did not repeat the optional peak probe.
+The sparse, low-resolution, `-g 1` fixture is seek-friendly and establishes no
+HD or long-GOP throughput SLA. The focused extraction/video/resume set passes
+103 tests, compileall passes, and the complete provider-free suite passes all
+1,920 tests. An offline 313,332-byte wheel installed outside the checkout
+passes the deterministic fallback regression, resolves both package and
+distribution origins from the disposable target, and keeps optional media and
+provider modules unloaded during plain import. Its one-test pytest summary was
+`1 passed, 1 warning`; the captured result did not expand that warning.

@@ -84,6 +84,10 @@ interruption or a cancellation coordinator.
 Both public video facades stop before decoding when one shared whole-job signal
 is set during the source snapshot; distinct branch signals still require shared
 media and retain their independent settlement behavior.
+#498 keeps negative-feedback density fallback content-preserving. If the ten
+attempts find both overfull and underfull sets but no in-band set, uniformly cap
+the smallest overfull set to the existing upper target; do not choose the
+underfull set, merge sets, add attempts, or create another ranking policy.
 #146 proves `publish_video_result()` is present and usable in the clean wheel.
 Future publication work should not add another build harness or repeat this
 proof unless the public surface, manifest, or runtime dependency boundary

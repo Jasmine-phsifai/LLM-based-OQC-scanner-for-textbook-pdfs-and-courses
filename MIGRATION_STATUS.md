@@ -2241,3 +2241,19 @@ added; the complete provider-free suite passes all 1,919 tests.
 An offline 313,258-byte wheel installed outside the checkout also passes the
 new public low-level cancellation regression, and plain import keeps optional
 media/provider modules unloaded.
+
+#498 stress-proves the public full-frame selector on one favorable ten-hour,
+320x180, 0.2-fps MP4 encoded with `mpeg4 -g 1` and fixes one reproduced
+feedback fallback.
+The real scan held 7,200 candidates / 140,083,200 thumbnail bytes, matching
+#198's representation bound, but old feedback jumped between overfull and
+underfull choices and retained only 100 frames (10/hour). A deterministic
+one-hour trace reproduced counts `100,100,7,100,100,100,100,100,7,100` against
+the 28--40/hour target. The selector now remembers the smallest overfull set
+and applies its existing uniform upper cap when no in-band set exists; in-band
+and all-underfull behavior is unchanged. The final real run retained 400
+ordered full-size frames including the final candidate in 11.297 seconds, with
+no snapshot/staging residue or provider/network work. This is not a long-GOP or
+HD throughput SLA; the complete provider-free suite passes all 1,920 tests.
+An offline 313,332-byte wheel installed outside the checkout also passes the
+deterministic fallback regression and retains lightweight plain import.

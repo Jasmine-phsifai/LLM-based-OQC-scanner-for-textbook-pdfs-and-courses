@@ -778,6 +778,47 @@ def test_extract_video_frames_density_cap_keeps_video_ending() -> None:
     )
 
 
+def test_density_fallback_caps_overfull_set_instead_of_using_sparse_set() -> None:
+    import cv2
+    import numpy as np
+
+    from ocrllm.video.select_video_frame_candidates import select_video_frame_candidates
+    from ocrllm.video.video_frame_candidate import VideoFrameCandidate
+
+    black_luminance = np.zeros((128, 128), dtype=np.uint8)
+    changed_luminance = black_luminance.copy()
+    changed_luminance[:, :45] = 255
+    black_color = np.zeros((32, 32, 3), dtype=np.uint8)
+    changed_color = black_color.copy()
+    changed_color[:, :11] = 255
+    candidates = tuple(
+        VideoFrameCandidate(
+            frame_index=index,
+            timestamp_seconds=float(index * 36),
+            luminance_thumbnail=(
+                changed_luminance if index % 2 else black_luminance
+            ),
+            color_thumbnail=changed_color if index % 2 else black_color,
+        )
+        for index in range(100)
+    )
+
+    selected = select_video_frame_candidates(
+        candidates,
+        duration_seconds=3600.0,
+        cv2=cv2,
+    )
+
+    selected_indices = tuple(candidate.frame_index for candidate in selected)
+    assert len(selected_indices) == 40
+    assert selected_indices[0] == 0
+    assert selected_indices[-1] == 99
+    assert all(
+        selected_indices[index] < selected_indices[index + 1]
+        for index in range(len(selected_indices) - 1)
+    )
+
+
 def test_extract_video_frames_maximum_segment_rounds_up() -> None:
     import cv2
     import numpy as np

@@ -34,6 +34,7 @@ def select_video_frame_candidates(
     high_sensitivity = 4.0
     best = candidates
     best_distance = float("inf")
+    smallest_overfull: tuple[VideoFrameCandidate, ...] | None = None
 
     for _ in range(_MAX_FEEDBACK_ATTEMPTS):
         sensitivity = (low_sensitivity + high_sensitivity) / 2.0
@@ -48,6 +49,11 @@ def select_video_frame_candidates(
         if distance < best_distance:
             best = selected
             best_distance = distance
+        if len(selected) > target_high and (
+            smallest_overfull is None
+            or len(selected) < len(smallest_overfull)
+        ):
+            smallest_overfull = selected
         if target_low <= len(selected) <= target_high:
             return selected
         if len(selected) < target_low:
@@ -55,6 +61,8 @@ def select_video_frame_candidates(
         else:
             low_sensitivity = sensitivity
 
+    if smallest_overfull is not None:
+        best = smallest_overfull
     if len(best) <= target_high:
         return best
     final_index = len(best) - 1
