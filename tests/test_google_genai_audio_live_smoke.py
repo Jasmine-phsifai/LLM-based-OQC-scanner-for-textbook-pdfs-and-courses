@@ -492,6 +492,7 @@ def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
                 "failure_scope": "provider",
                 "http_status": 400,
                 "provider_status": "FAILED_PRECONDITION",
+                "provider_operation": "catalog",
                 "raw_response": secret,
             },
         )
@@ -507,6 +508,7 @@ def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
         "error": {
             "code": "PROVIDER_UNAVAILABLE",
             "http_status": 400,
+            "operation": "catalog",
             "provider_status": "FAILED_PRECONDITION",
             "scope": "provider",
             "stage": "recognition",

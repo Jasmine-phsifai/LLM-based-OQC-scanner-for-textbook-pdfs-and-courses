@@ -194,6 +194,10 @@ catalog internally, so one routine run no longer lists models twice or reports
 a redundant count. The smallest native Google short-audio
 direct API is live-proven for one memory-only MP3 and a bounded native inline
 request below 20,000,000 bytes.
+#526 later refreshed that path once after redundant catalog removal: the valid
+short MP3 received typed HTTP 400 / `FAILED_PRECONDITION` before generation,
+and the resulting narrow fix preserves the short-audio SDK operation without
+retrying or changing provider policy.
 #068 first returned honest `PROVIDER_QUOTA_EXHAUSTED` / `model` on
 `gemini-3.1-pro-preview`. #069 then selected `gemini-2.5-flash`: a
 3.468888889-second, 26,488-byte synthetic MP3 produced one successful public

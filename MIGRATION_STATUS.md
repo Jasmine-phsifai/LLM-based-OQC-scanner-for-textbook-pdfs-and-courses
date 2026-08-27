@@ -2486,3 +2486,14 @@ partially resumed runs retain the exact one-current-model-row requirement. No
 public runtime API, state, dependency, provider policy, retry/fallback, legacy,
 crop/ROI, or frozen-boundary change was made. The adjacent audio owner set
 passes 116 tests and the complete default suite passes 1,925 tests.
+
+#526 refreshes the direct Google short-audio live boundary once. A valid local
+3.53-second MP3 returned typed HTTP 400 / `FAILED_PRECONDITION` before any
+generation call, with safe output and complete cleanup. The result exposed that
+short audio, unlike the existing Files path, did not retain whether an SDK
+failure occurred during client setup, catalog, or generation. The adapter now
+attaches exactly that local operation to mapped SDK failures; formal catalog
+and generation regressions pass and no live replay was made. No public API,
+retry/fallback, model switch, state, dependency, legacy, crop/ROI, or frozen
+boundary changed. The adjacent owner set passes 99 tests and the complete
+default suite passes 1,926 tests.

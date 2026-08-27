@@ -9440,11 +9440,11 @@ token, runtime API, provider policy, or live request was added. Runner coverage
 passes 32 tests, the adjacent runner/adapter set passes 139 tests, and the
 complete default suite passes 1,924 tests.
 
-Open follow-up: a fully reused interval long-audio result can correctly make
-zero current provider calls and expose no current usage row, while the direct
-audio runner still expects one row. The runner does not expose whole-mode
-resume. Fix that reporting boundary separately; do not restore a catalog
-request or invent usage for reused work.
+#524 recorded one follow-up: a fully reused interval long-audio result can
+correctly make zero current provider calls and expose no current usage row,
+while the direct audio runner still expected one row. The runner does not expose
+whole-mode resume. #525 below closes that reporting defect without restoring a
+catalog request or inventing usage for reused work.
 
 ## Current working update: #525 reports fully reused interval audio honestly
 
@@ -9464,3 +9464,27 @@ still does not expose whole-mode resume. This is a maintenance-tool correction,
 not a runtime API, state, provider, retry/fallback, or accounting-framework
 change. The adjacent audio owner set passes 116 tests and the complete default
 suite passes 1,925 tests.
+
+## Current working update: #526 refreshes live short-audio failure evidence
+
+#526 runs the maintained Google short-audio runner exactly once from #525's
+clean commit after confirming the configured proxy and an authorized private
+credential. A disposable, independently decoded 3.53-second mono MP3 reached
+the native Google path. The request returned in 3.688 seconds as typed
+`PROVIDER_REQUEST_INVALID`, HTTP 400, provider status `FAILED_PRECONDITION`,
+request scope, with zero generation calls. Stderr, credential/path/transcript
+leaks, timeout, retry, model switch, fallback, owned process, and disposable
+residue were all absent. This is fresh pre-generation failure evidence, not
+audio-recognition success or proof that the model currently accepts audio.
+
+The live safe output still could not distinguish client setup from catalog
+because short audio did not attach its internal provider operation. The adapter
+now tracks only `client_setup`, `catalog`, and `generation`, and attaches the
+current allowlisted value when mapping an SDK exception. Offline formal-SDK
+regressions prove catalog HTTP/status/call/cleanup facts and generation network
+failures retain their correct operation; the existing runner allowlist exposes
+the field without raw provider text. Do not replay the live request merely to
+replace this historical output with the new field. No retry/fallback, error
+policy, public API, dependency, state, or provider framework was added.
+The adjacent Google audio/error owner set passes 99 tests and the complete
+default suite passes 1,926 tests.

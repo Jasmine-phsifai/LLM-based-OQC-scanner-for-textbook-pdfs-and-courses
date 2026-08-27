@@ -684,6 +684,16 @@ one provider call, input/output usage 150/10, and a credential-scoped invalid-ke
 failure. Its recognized text was validated internally but not published, so the
 gate proves this bounded result path rather than transcription quality.
 
+The #526 post-reduction refresh used one independently decoded 3.53-second MP3
+and stopped before generation with HTTP 400 / `FAILED_PRECONDITION` and zero
+generation calls. The runner output was leak-free and typed, but the then-current
+short-audio adapter did not disclose whether the SDK failure occurred during
+client setup or catalog. Mapped SDK failures now carry only the allowlisted
+local operation (`client_setup`, `catalog`, or `generation`), which the runner
+can print without provider text. The request was not replayed after this
+diagnostic correction, so #526 remains failure-path evidence rather than an
+audio-recognition success claim.
+
 For the runner's explicit long-audio interval mode, a fully reused
 `--resume` result can have zero current provider calls and no current token
 usage. Its safe JSON preserves the historical total and reports

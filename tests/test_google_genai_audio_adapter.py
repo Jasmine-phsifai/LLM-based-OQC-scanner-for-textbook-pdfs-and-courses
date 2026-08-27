@@ -303,6 +303,37 @@ def test_google_audio_adapter_checks_catalog_before_generate(monkeypatch) -> Non
     assert fake.clients[0].closed is True
 
 
+def test_google_audio_adapter_catalog_sdk_failure_preserves_safe_operation(
+    monkeypatch,
+) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    fake = _FakeGoogleModule()
+
+    class CatalogSDKError(Exception):
+        code = 400
+        status = "FAILED_PRECONDITION"
+        message = "private catalog response details"
+
+    def fail_catalog():
+        raise CatalogSDKError()
+
+    fake.models.list = fail_catalog
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+
+    with pytest.raises(ProviderError) as caught:
+        recognize(FIXTURE, config=_config())
+
+    assert caught.value.code == "PROVIDER_REQUEST_INVALID"
+    assert caught.value.details["http_status"] == 400
+    assert caught.value.details["provider_status"] == "FAILED_PRECONDITION"
+    assert caught.value.details["provider_operation"] == "catalog"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert fake.models.generate_calls == []
+    assert fake.clients[0].closed is True
+
+
 def test_google_audio_sdk_content_failure_is_not_counted_as_dispatch(monkeypatch) -> None:
     adapter = importlib.import_module(
         "ocrllm.providers.google_genai.recognize_short_mp3"
@@ -504,6 +535,7 @@ def test_serial_audio_batch_preserves_item_call_counts_and_order(
     assert outcomes[1].error is not None
     assert outcomes[1].error.code == "PROVIDER_NETWORK"
     assert outcomes[1].error.details["provider_calls_attempted"] == 1
+    assert outcomes[1].error.details["provider_operation"] == "generation"
     assert "PRIVATE SECOND AUDIO FAILURE" not in str(outcomes[1].error)
     assert type(outcomes[2].error) is Cancelled
     assert "provider_calls_attempted" not in outcomes[2].error.details
