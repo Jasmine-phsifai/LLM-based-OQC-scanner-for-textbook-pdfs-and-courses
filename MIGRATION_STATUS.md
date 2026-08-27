@@ -2464,3 +2464,14 @@ zero residue passed in a 13.188-second public call. This does not claim broad
 OCR quality, long-video stress, provider behavior, resume, or clean installation.
 No runtime, test, fixture, API, dependency, provider, crop/ROI, legacy, gate, or
 frozen-boundary change was made.
+
+#524 removes one redundant Google catalog request from each maintained direct
+image/audio live runner. Current-catalog membership and long-audio model-limit
+metadata remain enforced inside the public facades, so this is ownership
+reduction rather than relaxed validation. Image/short-audio success now uses one
+catalog request plus at most one generation; long-audio modes lose only the
+extra runner preflight. Safe runner output no longer publishes a redundant
+catalog count. No runtime API, retry, cache, fallback, dependency, legacy,
+crop/ROI, or frozen-boundary change was made. The adjacent set passes 139 tests
+and the default suite passes 1,924 tests. Fully reused long-audio runner usage
+reporting remains a separate open defect.

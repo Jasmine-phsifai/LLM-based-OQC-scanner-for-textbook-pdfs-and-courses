@@ -643,12 +643,14 @@ python tools/run_google_genai_image_smoke.py `
   --timeout 120
 ```
 
-The routine script performs current catalog discovery and one single-image
-public recognition. It prints only a bounded JSON summary with a safe
-catalog/model-selection/recognition failure stage, never recognized Markdown,
-paths, credentials, or provider text. It does not retry, cache, choose another
-model, send an extra invalid-key probe, or fall back to another transport. The
-historical one-image, eight-image, and credential gates remain recorded.
+The routine script performs one single-image public recognition. The public
+Google adapter owns the current-catalog check, so the runner does not send a
+second catalog request merely to report a catalog count. It prints only a
+bounded JSON summary with the safe `recognition` runner stage, never recognized
+Markdown, paths, credentials, or provider text. It does not retry, cache,
+choose another model, send an extra invalid-key probe, or fall back to another
+transport. The historical one-image, eight-image, and credential gates remain
+recorded.
 
 ## Bounded Google Short-Audio Live Smoke
 
@@ -664,12 +666,13 @@ python tools/run_google_genai_audio_smoke.py `
   --timeout 120
 ```
 
-The script performs current catalog discovery and one recognition call. It
-prints only a bounded JSON summary of status, call count, nullable token usage,
-and typed error code/scope; a failure also identifies `catalog`,
-`model_selection`, or `recognition` as the safe runner stage and preserves only
-an allowlisted numeric HTTP status and short structured provider status when
-the mapper supplies them. It never prints
+The script performs one public audio workflow. Its selected public facade owns
+the current-catalog check, so the runner does not add another catalog request
+or expose a redundant catalog count. It prints only a bounded JSON summary of
+status, call count, nullable token usage, and typed error code/scope; a failure
+uses `recognition` as the safe runner stage and preserves only an allowlisted
+numeric HTTP status and short structured provider status when the mapper
+supplies them. It never prints
 the transcript, source path, credential, or raw provider response and does not
 retry, choose another model, upload through the Files API, or fall back to
 another transport. Credential-error behavior remains independently covered by

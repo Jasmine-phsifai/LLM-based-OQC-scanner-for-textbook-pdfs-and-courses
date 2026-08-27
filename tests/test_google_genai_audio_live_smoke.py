@@ -53,29 +53,60 @@ def test_audio_live_smoke_cli_reports_missing_credential_without_network(tmp_pat
         "error": {
             "code": "CONFIG_MISSING",
             "scope": None,
-            "stage": "catalog",
+            "stage": "recognition",
         },
+        "progress": {"provider_calls_attempted": 0},
         "status": "failed",
     }
     assert not source_path.exists()
+
+
+def test_audio_live_smoke_delegates_catalog_validation_to_public_recognition(
+    monkeypatch,
+) -> None:
+    assert not hasattr(smoke, "list_google_genai_models")
+    monkeypatch.setattr(
+        smoke,
+        "recognize",
+        lambda source, *, config: SimpleNamespace(
+            source_type="audio",
+            output_path=None,
+            metadata=MappingProxyType(
+                {
+                    "provider": "google",
+                    "model": MODEL,
+                    "provider_call_count": 1,
+                    "duration_seconds": 1.0,
+                    "byte_size": 10,
+                    "current_model_token_usage": (
+                        {"model": MODEL, "input_tokens": 3, "output_tokens": 2},
+                    ),
+                }
+            ),
+        ),
+    )
+
+    summary = smoke.run_google_genai_audio_smoke(
+        smoke.parse_arguments(["--model", MODEL, "--audio", "one.mp3"])
+    )
+
+    assert summary == {
+        "status": "passed",
+        "model": MODEL,
+        "recognition": {
+            "provider_call_count": 1,
+            "model": MODEL,
+            "input_tokens": 3,
+            "output_tokens": 2,
+        },
+    }
 
 
 def test_audio_live_smoke_outputs_no_transcript_path_or_secret(monkeypatch, capsys):
     secret = "unit-test-google-audio-secret"
     transcript = "PRIVATE AUDIO TRANSCRIPT"
     source = "private-audio-name.mp3"
-    list_api_keys = []
     monkeypatch.setenv("GOOGLE_API_KEY", secret)
-
-    def fake_list(settings, timeout_seconds):
-        list_api_keys.append(settings.api_key)
-        if settings.api_key is not None:
-            raise ProviderError(
-                code="PROVIDER_AUTHENTICATION",
-                details={"failure_scope": "credential"},
-            )
-        assert timeout_seconds == 9.0
-        return (MODEL,)
 
     def fake_recognize(actual_source, *, config):
         assert str(actual_source) == source
@@ -98,7 +129,6 @@ def test_audio_live_smoke_outputs_no_transcript_path_or_secret(monkeypatch, caps
             ),
         )
 
-    monkeypatch.setattr(smoke, "list_google_genai_models", fake_list)
     monkeypatch.setattr(smoke, "recognize", fake_recognize)
 
     assert smoke.main(
@@ -106,7 +136,6 @@ def test_audio_live_smoke_outputs_no_transcript_path_or_secret(monkeypatch, caps
     ) == 0
     raw = capsys.readouterr().out.strip()
     assert json.loads(raw) == {
-        "catalog_count": 1,
         "model": MODEL,
         "recognition": {
             "input_tokens": 21,
@@ -116,7 +145,6 @@ def test_audio_live_smoke_outputs_no_transcript_path_or_secret(monkeypatch, caps
         },
         "status": "passed",
     }
-    assert list_api_keys == [None]
     assert secret not in raw
     assert transcript not in raw
     assert source not in raw
@@ -128,11 +156,6 @@ def test_audio_live_smoke_long_mode_requires_complete_deleted_files_lifecycle(
 ) -> None:
     transcript = "PRIVATE LONG AUDIO TRANSCRIPT"
     source = "private-long-audio-name.mp3"
-    monkeypatch.setattr(
-        smoke,
-        "list_google_genai_models",
-        lambda settings, timeout_seconds: (MODEL,),
-    )
 
     def fake_long_recognize(actual_source, *, config):
         assert str(actual_source) == source
@@ -237,11 +260,6 @@ def test_audio_live_smoke_interval_mode_reports_only_safe_two_call_facts(
     output_path.parent.mkdir(parents=True)
     output_path.write_text(transcript, encoding="utf-8")
     monkeypatch.setenv("GOOGLE_API_KEY", secret)
-    monkeypatch.setattr(
-        smoke,
-        "list_google_genai_models",
-        lambda settings, timeout_seconds: (MODEL,),
-    )
 
     def fake_long_recognize(
         actual_source,
@@ -319,11 +337,6 @@ def test_audio_live_smoke_interval_resume_reports_reused_call_boundary(
     output_path = output_dir / "lecture" / "result.md"
     output_path.parent.mkdir(parents=True)
     output_path.write_text("synthetic transcript", encoding="utf-8")
-    monkeypatch.setattr(
-        smoke,
-        "list_google_genai_models",
-        lambda settings, timeout_seconds: (MODEL,),
-    )
 
     def fake_resume(actual_source, *, config, interval_minutes):
         assert config.resume is True
@@ -398,9 +411,8 @@ def test_audio_live_interval_summary_rejects_unremoved_temporary_state(
         )
 
 
-@pytest.mark.parametrize("failure_stage", ["catalog", "recognition"])
 def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
-    failure_stage, monkeypatch, capsys
+    monkeypatch, capsys
 ):
     secret = "PRIVATE-GOOGLE-STAGE-FAILURE"
     source = "private-stage-source.mp3"
@@ -417,15 +429,9 @@ def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
             },
         )
 
-    def fake_list(settings, timeout_seconds):
-        if failure_stage == "catalog":
-            raise failure()
-        return (MODEL,)
-
     def fake_recognize(actual_source, *, config):
         raise failure()
 
-    monkeypatch.setattr(smoke, "list_google_genai_models", fake_list)
     monkeypatch.setattr(smoke, "recognize", fake_recognize)
 
     assert smoke.main(["--model", MODEL, "--audio", source]) == 1
@@ -436,7 +442,7 @@ def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
             "http_status": 400,
             "provider_status": "FAILED_PRECONDITION",
             "scope": "provider",
-            "stage": failure_stage,
+            "stage": "recognition",
         },
         "status": "failed",
     }
@@ -449,7 +455,7 @@ def test_audio_live_smoke_omits_untrusted_provider_status_fields(
 ):
     secret = "PRIVATE STATUS WITH PUNCTUATION!"
 
-    def fail_catalog(settings, timeout_seconds):
+    def fail_recognition(actual_source, *, config):
         raise ProviderError(
             code="PROVIDER_REQUEST_INVALID",
             details={
@@ -459,7 +465,7 @@ def test_audio_live_smoke_omits_untrusted_provider_status_fields(
             },
         )
 
-    monkeypatch.setattr(smoke, "list_google_genai_models", fail_catalog)
+    monkeypatch.setattr(smoke, "recognize", fail_recognition)
 
     assert smoke.main(["--model", MODEL, "--audio", "private.mp3"]) == 1
     raw = capsys.readouterr().out
@@ -467,7 +473,7 @@ def test_audio_live_smoke_omits_untrusted_provider_status_fields(
         "error": {
             "code": "PROVIDER_REQUEST_INVALID",
             "scope": "request",
-            "stage": "catalog",
+            "stage": "recognition",
         },
         "status": "failed",
     }
@@ -477,12 +483,6 @@ def test_audio_live_smoke_omits_untrusted_provider_status_fields(
 def test_audio_live_smoke_reports_default_disposition_and_cleanup(
     monkeypatch, capsys
 ):
-    monkeypatch.setattr(
-        smoke,
-        "list_google_genai_models",
-        lambda settings, timeout_seconds: (MODEL,),
-    )
-
     def fail_after_owned_cleanup(actual_source, *, config):
         raise ProviderError(
             code="PROVIDER_RESPONSE_INVALID",
@@ -518,12 +518,6 @@ def test_audio_live_smoke_reports_default_disposition_and_cleanup(
 def test_audio_live_smoke_reports_safe_interval_failure_progress(
     monkeypatch, capsys
 ):
-    monkeypatch.setattr(
-        smoke,
-        "list_google_genai_models",
-        lambda settings, timeout_seconds: (MODEL,),
-    )
-
     def fail_after_one_settled_interval(actual_source, *, config, interval_minutes):
         raise ProviderError(
             code="PROVIDER_RESPONSE_INVALID",
@@ -574,20 +568,23 @@ def test_audio_live_smoke_reports_safe_interval_failure_progress(
     assert "private-output" not in raw
 
 
-def test_audio_live_smoke_reports_missing_model_selection_stage(monkeypatch, capsys):
-    monkeypatch.setattr(
-        smoke,
-        "list_google_genai_models",
-        lambda settings, timeout_seconds: ("another-model",),
-    )
+def test_audio_live_smoke_reports_facade_model_failure(monkeypatch, capsys):
+    def fail_model_selection(source, *, config):
+        raise ProviderError(
+            code="PROVIDER_UNAVAILABLE",
+            details={"failure_scope": "model", "provider_calls_attempted": 0},
+        )
+
+    monkeypatch.setattr(smoke, "recognize", fail_model_selection)
 
     assert smoke.main(["--model", MODEL, "--audio", "private-source.mp3"]) == 1
     assert json.loads(capsys.readouterr().out) == {
         "error": {
-            "code": "CONFIG_INVALID",
-            "scope": None,
-            "stage": "model_selection",
+            "code": "PROVIDER_UNAVAILABLE",
+            "scope": "model",
+            "stage": "recognition",
         },
+        "progress": {"provider_calls_attempted": 0},
         "status": "failed",
     }
 
@@ -599,11 +596,6 @@ def test_audio_live_smoke_reports_sanitized_source_failure(monkeypatch, capsys):
     def raise_source_failure(actual_source, *, config):
         raise InvalidSource(secret, code="SOURCE_NOT_FOUND")
 
-    monkeypatch.setattr(
-        smoke,
-        "list_google_genai_models",
-        lambda settings, timeout_seconds: (MODEL,),
-    )
     monkeypatch.setattr(smoke, "recognize", raise_source_failure)
 
     assert smoke.main(["--model", MODEL, "--audio", source]) == 1
@@ -620,22 +612,15 @@ def test_audio_live_smoke_reports_sanitized_source_failure(monkeypatch, capsys):
     assert source not in raw
 
 
-@pytest.mark.parametrize("failure_stage", ["catalog", "recognition"])
 def test_audio_live_smoke_reports_sanitized_unexpected_failure(
-    failure_stage, monkeypatch, capsys
+    monkeypatch, capsys
 ):
     secret = "PRIVATE-UNEXPECTED-FAILURE"
     source = "private-unexpected-source.mp3"
 
-    def fake_list(settings, timeout_seconds):
-        if failure_stage == "catalog":
-            raise RuntimeError(secret)
-        return (MODEL,)
-
     def raise_unexpected_failure(actual_source, *, config):
         raise RuntimeError(secret)
 
-    monkeypatch.setattr(smoke, "list_google_genai_models", fake_list)
     monkeypatch.setattr(smoke, "recognize", raise_unexpected_failure)
 
     assert smoke.main(["--model", MODEL, "--audio", source]) == 1
@@ -644,7 +629,7 @@ def test_audio_live_smoke_reports_sanitized_unexpected_failure(
         "error": {
             "code": "UNEXPECTED_SAFE_FAILURE",
             "scope": None,
-            "stage": failure_stage,
+            "stage": "recognition",
         },
         "status": "failed",
     }

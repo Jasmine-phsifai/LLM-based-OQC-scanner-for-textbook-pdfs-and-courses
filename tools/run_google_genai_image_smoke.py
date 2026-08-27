@@ -13,7 +13,6 @@ from ocrllm import (
     Config,
     GoogleGenAISettings,
     VisionModelSettings,
-    list_google_genai_models,
     recognize,
 )
 from ocrllm.errors import ConfigError, OCRLLMError
@@ -38,22 +37,8 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def run_google_genai_image_smoke(arguments: argparse.Namespace) -> dict[str, object]:
-    """Run current catalog discovery and one image recognition call."""
+    """Run one public image recognition with adapter-owned catalog validation."""
     settings = GoogleGenAISettings()
-    try:
-        models = list_google_genai_models(settings, arguments.timeout)
-    except OCRLLMError as error:
-        raise _LiveSmokeFailure("catalog", error) from None
-    except Exception:
-        raise _LiveSmokeFailure("catalog", None) from None
-    if arguments.model not in models:
-        raise _LiveSmokeFailure(
-            "model_selection",
-            ConfigError(
-                "The requested Google model is absent from the current catalog.",
-                code="CONFIG_INVALID",
-            ),
-        ) from None
     try:
         result = recognize(
             arguments.image,
@@ -70,7 +55,6 @@ def run_google_genai_image_smoke(arguments: argparse.Namespace) -> dict[str, obj
         raise _LiveSmokeFailure("recognition", None) from None
     return {
         "status": "passed",
-        "catalog_count": len(models),
         "model": arguments.model,
         "recognition": recognition,
     }

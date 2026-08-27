@@ -14,7 +14,6 @@ from ocrllm import (
     AudioModelSettings,
     Config,
     GoogleGenAISettings,
-    list_google_genai_models,
     recognize,
     recognize_long_mp3,
 )
@@ -66,22 +65,8 @@ def _positive_integer(raw: str) -> int:
 
 
 def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, object]:
-    """Run catalog discovery and one selected public audio workflow."""
+    """Run one public audio workflow with adapter-owned catalog validation."""
     settings = GoogleGenAISettings()
-    try:
-        models = list_google_genai_models(settings, arguments.timeout)
-    except OCRLLMError as error:
-        raise _LiveSmokeFailure("catalog", error) from None
-    except Exception:
-        raise _LiveSmokeFailure("catalog", None) from None
-    if arguments.model not in models:
-        raise _LiveSmokeFailure(
-            "model_selection",
-            ConfigError(
-                "The requested Google model is absent from the current catalog.",
-                code="CONFIG_INVALID",
-            ),
-        ) from None
     try:
         config = Config(
             provider=settings,
@@ -115,7 +100,6 @@ def run_google_genai_audio_smoke(arguments: argparse.Namespace) -> dict[str, obj
         raise _LiveSmokeFailure("recognition", None) from None
     return {
         "status": "passed",
-        "catalog_count": len(models),
         "model": arguments.model,
         "recognition": recognition,
     }

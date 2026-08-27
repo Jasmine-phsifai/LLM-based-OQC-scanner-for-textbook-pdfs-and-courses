@@ -188,7 +188,10 @@ refresh found 37 models and completed one call with usage 595/443, with no retry
 or retained sensitive/output data. #115 makes Google image failures equally
 honest about dispatch: catalog/model-selection and other pre-generate failures
 report zero recognition calls, while a failure inside `generate_content`
-reports one. The smallest native Google short-audio
+reports one. #524 later removes the maintained direct image/audio runners'
+separate catalog request; their public facades still enforce the current
+catalog internally, so one routine run no longer lists models twice or reports
+a redundant count. The smallest native Google short-audio
 direct API is live-proven for one memory-only MP3 and a bounded native inline
 request below 20,000,000 bytes.
 #068 first returned honest `PROVIDER_QUOTA_EXHAUSTED` / `model` on

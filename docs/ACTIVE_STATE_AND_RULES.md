@@ -9420,3 +9420,27 @@ root, controller, and owned processes. This is one controlled pipeline/lifecycle
 proof, not general lecture-quality, long-duration performance, installation,
 provider robustness, or resume evidence. No permanent video fixture, new gate
 profile, runtime code, dependency, or API was added.
+
+## Current working update: #524 removes duplicate Google catalog requests from direct runners
+
+#524 removes the direct image/audio smoke runners' outer
+`list_google_genai_models()` call. The public image, short-audio, and long-audio
+facades already perform mandatory current-catalog validation before generation;
+uploaded long audio also consumes catalog input-token-limit metadata. The
+runner-owned request therefore duplicated an unstable provider operation and
+could happen before the facade's local-media validation.
+
+The public facades remain the sole owner of catalog validation. Direct image and
+short-audio success now require one catalog request plus at most one generation
+instead of two catalog requests plus generation. Whole/interval long audio no
+longer receives an extra leading runner catalog request; each actual facade
+operation retains its existing validation. Safe failures are reported at the
+single `recognition` runner stage. No retry, cache, fallback, shared catalog
+token, runtime API, provider policy, or live request was added. Runner coverage
+passes 32 tests, the adjacent runner/adapter set passes 139 tests, and the
+complete default suite passes 1,924 tests.
+
+Open follow-up: a fully reused whole/interval long-audio result can correctly
+make zero current provider calls and expose no current usage row, while the
+direct audio runner still expects one row. Fix that reporting boundary
+separately; do not restore a catalog request or invent usage for reused work.
