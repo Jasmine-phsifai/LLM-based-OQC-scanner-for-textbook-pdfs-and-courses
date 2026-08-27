@@ -8934,3 +8934,34 @@ passes the deterministic fallback regression, resolves both package and
 distribution origins from the disposable target, and keeps optional media and
 provider modules unloaded during plain import. Its one-test pytest summary was
 `1 passed, 1 warning`; the captured result did not expand that warning.
+
+## Current working update: #499 finds no new video preflight or output defect
+
+Two bounded read-only audits and a personal call-graph review compared the
+current public video output lifecycle with its media-preflight ordering. No
+reproducible defect remains in either boundary. `extract_video_frames()` still
+rejects an existing same-stem target, stages every complete full-frame JPEG,
+and publishes the directory only after all writes validate. The low-level
+`recognize_video()` and journal-backed `recognize_video_to_markdown()` reject or
+resume existing roots according to their separate documented contracts; their
+shared-media cancellation behavior remains the exact-object rule closed by
+#495/#497.
+
+The apparent alternative of reporting a missing video before a missing Google
+audio credential is not a correction. Both video facades intentionally finish
+deterministic configuration and credential preflight before media decoding or
+filesystem creation, and direct regressions require that zero-side-effect
+ordering. Ten focused output/preflight cases pass. The distribution README and
+package README already distinguish the non-resumable low-level API from the
+high-level journal resume path, and the short-audio late-cancellation behavior
+already has both prose and a direct public regression.
+
+No runtime, test, API, dependency, provider, retry/fallback, crop/ROI, legacy,
+or frozen-boundary change follows from this clean audit. Do not add a generic
+output transaction, alternate preflight precedence, duplicate resume layer, or
+another cancellation abstraction without failure-first evidence. The repeated
+fresh OCR dependency-delivery timeout remains external evidence and must not be
+replayed immediately or concealed by package changes. The only currently
+identified material feature decision is still the separate PDF partial-artifact
+Route A/Route B choice in `docs/MAINTAINER_PRODUCT_DECISIONS.md`; #499 does not
+infer that decision.
