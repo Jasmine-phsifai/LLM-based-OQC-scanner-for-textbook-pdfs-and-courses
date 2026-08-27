@@ -2570,3 +2570,14 @@ only fixed `reason="incomplete"`; its stable code, retryability, and all other
 response paths are unchanged. The failing-first regression, 21 focused tests,
 the complete 55-test DashScope/PDF owner set, and all 1,927 offline tests pass;
 compileall and diff hygiene pass.
+
+#544 clean-archives exact commit `f03499f` and closes #543's targeted installed
+proof without changing runtime. One local build produced a 314,931-byte,
+306-entry universal wheel below the 320 KiB ceiling with the changed parser and
+no legacy/tests/repository docs/AGENTS/bytecode/native payload. One
+`--no-deps --no-index` target install and one external `python -I` probe passed:
+package/distribution origins were inside the target, plain import loaded none
+of nine heavy/legacy module families, and the installed parser returned exact
+`PROVIDER_RESPONSE_INVALID`, the preserved incomplete message,
+`retryable=False`, and `reason="incomplete"`. Cleanup and repository identity
+passed. This does not close the separate fresh optional-profile delivery gate.

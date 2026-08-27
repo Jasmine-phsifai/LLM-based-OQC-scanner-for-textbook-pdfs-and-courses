@@ -9657,3 +9657,27 @@ policy, or provider framework. A failing-first public-adapter regression proves
 the missing reason; 21 focused error/disposition tests and the 55-test complete
 DashScope/PDF owner set pass. The complete offline suite passes all 1,927 tests;
 compileall and diff hygiene pass.
+
+## Current working update: #544 installs the exact #543 wheel
+
+#544 closes only #543's missing installed-artifact proof. A delegated offline
+workflow archived exact synchronized commit
+`f03499f62881f9b7a197f2aa5f76bce403e3c1a0`, excluding both pre-existing
+untracked files. Exactly one local no-isolation build produced
+`ocrllm-0.1.0-py3-none-any.whl`, 314,931 bytes and 306 entries. It is 12,749
+bytes below the 320 KiB base-wheel ceiling, contains the package, `py.typed`,
+and the changed DashScope parser, and excludes legacy, tests, repository docs,
+`AGENTS.md`, protected untracked names, bytecode, and native payloads.
+
+Exactly one `--no-deps --no-index` target installation and one external
+`python -I` probe then exited zero. Both package and distribution origins were
+inside the disposable target. Plain `import ocrllm` left Pillow, PDFium,
+OpenAI, HTTPX, OpenCV, miniaudio, Google GenAI, PyQt6, and `legacy_app`
+unloaded. Directly invoking the installed DashScope parser on the reproduced
+non-string finish-reason shape returned exact `PROVIDER_RESPONSE_INVALID`, the
+existing incomplete-response message, `retryable=False`, and only fixed
+`provider=dashscope`, requested model, and `reason=incomplete` details. The
+validated GUID root was removed and independently confirmed absent; tracked,
+index, remote, and protected-untracked state remained unchanged. This is a
+targeted base-wheel proof, not a fresh optional-dependency or nine-profile gate,
+and it adds no runner, retry, provider, API, or product change.
