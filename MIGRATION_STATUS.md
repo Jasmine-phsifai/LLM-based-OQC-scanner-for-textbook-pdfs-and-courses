@@ -1265,6 +1265,10 @@ The following directions remain traceable but are not current work:
   metadata. The secondary installed-target ceiling becomes 2 MiB while the
   tighter 320 KiB wheel, lazy-import, native-payload, profile, and smoke gates
   remain unchanged.
+  Exact product commit `478ca70` passes the corrected full gate: 1,897 archived
+  tests pass with one optional RapidOCR skip; the 311,384-byte wheel,
+  1,597,408-byte base target, both import budgets, all eight installed profiles,
+  and all local media/combined smokes pass with no provider call.
   #312 adds the next internal A2b seam without exposing chunked recognition:
   one validated interval window materializes one request-owned temporary MP3
   beside an already-owned source, using the legacy-proven Google shape of mono

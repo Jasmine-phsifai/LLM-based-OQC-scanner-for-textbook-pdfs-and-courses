@@ -379,6 +379,11 @@ bytecode at 702,572 bytes, and distribution metadata at about 72 KiB, with no
 other payload. The compressed base-wheel ceiling remains 320 KiB and is the
 tighter growth signal; all lazy-import, wheel-content, profile, and
 native-payload rules remain unchanged.
+#459's exact product commit `478ca70` then passes the complete maintained gate:
+1,897 archived tests pass with one optional RapidOCR skip, the wheel is 311,384
+bytes, the base target is 1,597,408 bytes, both import budgets pass, and all
+eight installed profiles complete their local image/audio/PDF/video/combined
+smokes without credentials or provider calls.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

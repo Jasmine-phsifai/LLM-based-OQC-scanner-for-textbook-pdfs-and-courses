@@ -869,6 +869,10 @@ documentation leaked into the base wheel. The secondary installed-size ceiling
 is therefore 2 MiB. The tighter 320 KiB compressed-wheel ceiling and every
 import, metadata, optional-profile, local-media, and native-payload check remain
 unchanged.
+The exact product commit `478ca70` passes the corrected complete gate: 1,897
+archived tests pass with one optional RapidOCR skip; the 311,384-byte wheel,
+1,597,408-byte base target, both import budgets, all eight installed profiles,
+and every local media/combined smoke pass without a provider call.
 
 #312 begins executable A2b interval work without adding the public chunked
 recognition route. One exact planner window can now materialize one temporary
