@@ -2292,3 +2292,15 @@ package incompatibility evidence. There was no retry, provider call, gate or
 dependency change, or disposable residue. #460 remains the last complete
 nine-profile proof; #484 separately remains installed-stack compatibility
 evidence.
+
+#504 adds real near-ceiling component evidence without changing the product.
+One 143,996,624-byte, 35,999.0-second MP3 passed interval-mode snapshot and full
+streaming decode; 60 ordered ten-minute windows were planned, and the final
+35,370--35,999-second window materialized in 0.904 seconds as a 5,033,132-byte,
+629.0-second mono 16 kHz MP3. Only one interval temporary existed, interval and
+snapshot cleanup completed, socket attempts were zero, and the disposable root
+was removed. The controller nevertheless exited 1 after these facts because it
+mistook its intentional input `source.mp3` for snapshot residue, so this is not
+a clean stress-gate pass and was not replayed. No boundedness or cleanup product
+defect was reproduced; 51 focused tests and compileall pass with no runtime,
+API, dependency, provider, or frozen-boundary change.

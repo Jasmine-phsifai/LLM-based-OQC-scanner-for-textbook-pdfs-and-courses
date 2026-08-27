@@ -396,6 +396,14 @@ near 35.4 MiB for 301-second, one-hour, and 9.5-hour files. Keep full streaming
 decode and metadata/frame-count validation; do not replace them with metadata-
 only probing, another decoder, or generic streaming machinery. The 2 GB bound,
 Files lifecycle, video routing, #127, and #152 remain unchanged.
+#504 separately proves the existing materializer can seek to and re-encode the
+final context-padded interval of one real 35,999-second owned MP3: the 629-second
+mono 16 kHz segment was about 5.0 MB, only one interval temporary existed, and
+both interval and owned snapshot cleanup completed. The disposable controller
+still exited 1 because it misclassified its intentional input `source.mp3` as
+snapshot residue after those checks. Treat this as component evidence, not a
+clean stress-gate pass; do not replay it merely to turn the harness green or
+add an interval cap, memory telemetry, or permanent stress framework.
 #256 records one bounded real one-hour Google Files failure and fixes only the
 diagnostics it exposed. On provider failure after resource creation, preserve
 safe positive `remote_file_deleted` and `provider_client_closed` evidence, and

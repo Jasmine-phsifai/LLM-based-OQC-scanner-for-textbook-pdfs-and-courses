@@ -9048,3 +9048,29 @@ edit, runtime change, or residue. #460 therefore remains the last complete
 nine-profile gate, and #484 remains the separate installed-stack compatibility
 proof. Do not conceal #502 by substituting another wheel size or by immediately
 replaying the download.
+
+## Current working update: #504 proves late interval materialization components
+
+One provider-free disposable run generated a 143,996,624-byte mono MP3 whose
+full streaming decode was 35,999.0 seconds. The real interval-mode snapshot
+copied and decoded it in 4.536 seconds, admitted it above the whole-route
+9.5-hour ceiling and below the private ten-hour ceiling, and the existing
+planner produced 60 ordered ten-minute windows. Materializing only the final
+window sought to source second 35,370 and streamed through second 35,999 in
+0.904 seconds. The resulting 5,033,132-byte MP3 decoded as exactly 629.0
+seconds, mono 16 kHz, and matched its 64 kbps output envelope. Exactly one
+interval temporary existed while yielded; it and the owned snapshot were gone
+after their contexts, the snapshot directory was empty, socket attempts were
+zero, and the disposable root was removed.
+
+This is component evidence rather than a clean stress-gate pass. After every
+product assertion had passed, the disposable controller counted its intentional
+input named `source.mp3` as snapshot residue and exited 1 before its final PASS
+assignment and provider-module check. It was not rerun. The active code already
+uses 1 MiB snapshot/hash loops, 4,096-frame decode reads, an FFmpeg child, and
+path-based Files upload; no whole-source Python allocation or cleanup defect was
+reproduced. Do not add an interval cap, a second decoder, memory telemetry,
+generic streaming/subprocess machinery, or a permanent stress harness from
+this evidence. The focused planner/materializer/persistence/probe set passes 51
+tests and compileall passes; runtime, API, dependency, provider, retry/fallback,
+crop/ROI, legacy, and frozen boundaries are unchanged.
