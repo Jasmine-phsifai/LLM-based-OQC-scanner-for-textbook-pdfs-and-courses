@@ -9762,3 +9762,30 @@ four ordering/full-frame/Unicode regressions pass. The exact GUID root is
 absent; repository state is unchanged. This is real sustained lifecycle
 evidence, not a general throughput guarantee and not authority to add tunable
 sampling, a second scene detector, or performance instrumentation.
+
+## Current working update: #548 proves real multi-hour audio extraction
+
+#548 runs the provider-free public `extract_video_audio()` exactly once against
+the same 2,665,023,982-byte, 9,683.53-second archive MP4 used in #547. The input
+audio is AAC, 48 kHz stereo, and 9,683.498167 seconds. The actual C: snapshot
+and output volume had 103,490,240,512 free bytes before launch; an initial D:
+free-space reading was rejected before the public call because it measured the
+wrong volume. The source digest matched #547 and unrelated live legacy UI/API
+processes were left untouched.
+
+The one call completed in 19.016 seconds and atomically published a
+38,734,640-byte MP3: 16 kHz, mono, 32,000 bps, and 9,683.498938 seconds. Its
+duration differs from the source audio by only 0.000771 seconds, and an
+independent complete FFmpeg decode exited zero. The lowest safely sampled free
+space was about 100.78 GB. After return there were zero request-owned video
+snapshots, zero audio staging files, zero unexpected artifacts, and zero
+relevant extraction processes. Source size, mtime, and digest were unchanged.
+
+No network, credential, provider, audio interval, frame extraction, crop,
+resize, archive write, runtime edit, or permanent runner was involved. Six
+focused atomic-publication/snapshot/error-cleanup tests pass. The fixed
+600-second bound has ample evidence for this input, so do not add adaptive
+timeouts, extraction chunking, or performance instrumentation from this run.
+The exact GUID root is absent and repository/frozen state is unchanged. This is
+long-artifact lifecycle proof, not whole/interval Google recognition or general
+10-hour/codec throughput proof.
