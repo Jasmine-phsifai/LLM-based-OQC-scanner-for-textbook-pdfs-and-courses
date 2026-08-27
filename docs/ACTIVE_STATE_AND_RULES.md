@@ -372,8 +372,13 @@ from an intentionally shorter valid file.
 The compressed base-wheel growth budget is 320 KiB. #327 replaces the former
 256 KiB line only after a 266,903-byte worktree audit found exclusively expected
 active runtime modules and no tests, documentation, dependency, or binary
-payload. The dependency-empty base target remains capped at 1.5 MiB, and all
-lazy-import, wheel-content, profile, and native-payload rules remain unchanged.
+payload. The dependency-empty base target is capped at 2 MiB. #459 raises that
+secondary installed-size ceiling from 1.5 MiB only after the exact clean archive
+measured 300 expected Python sources at 822,396 bytes, their installer-generated
+bytecode at 702,572 bytes, and distribution metadata at about 72 KiB, with no
+other payload. The compressed base-wheel ceiling remains 320 KiB and is the
+tighter growth signal; all lazy-import, wheel-content, profile, and
+native-payload rules remain unchanged.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

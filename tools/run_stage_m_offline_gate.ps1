@@ -9,7 +9,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$baseTargetMaximumBytes = 1572864
+$baseTargetMaximumBytes = 2097152
 
 function Assert-LastExitCode {
     param([string]$Message)
@@ -239,7 +239,7 @@ try {
     Assert-LastExitCode 'isolated base wheel install failed'
     $installedBytes = Get-DirectoryByteCount $targetDir
     if ($installedBytes -gt $baseTargetMaximumBytes) {
-        throw "base target exceeds 1.5 MiB: $installedBytes"
+        throw "base target exceeds 2 MiB: $installedBytes"
     }
 
     $baseProbe = @'
@@ -832,7 +832,7 @@ def fake_google_audio(snapshot, *, prompt, config):
     assert snapshot.duration_seconds > 0
     assert snapshot.path.parent.parent == root / 'audio-snapshots'
     assert type(config.provider) is GoogleGenAISettings
-    assert config.provider.api_key is None
+    assert config.provider.api_key == 'offline-package-probe'
     assert config.audio_model.name == 'gemini-offline-package-probe'
     observed_audio_snapshots.append(snapshot.path)
     return GoogleGenAIAudioResponse(
@@ -861,7 +861,7 @@ outcome = recognize_video(
         temp_dir=root / 'image-snapshots',
     ),
     audio_config=Config(
-        provider=GoogleGenAISettings(),
+        provider=GoogleGenAISettings(api_key='offline-package-probe'),
         audio_model=AudioModelSettings(name='gemini-offline-package-probe'),
         temp_dir=root / 'audio-snapshots',
     ),
