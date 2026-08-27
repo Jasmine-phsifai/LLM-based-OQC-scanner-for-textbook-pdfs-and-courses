@@ -9025,3 +9025,26 @@ runtime, error mapping, API, dependency, retry/fallback, provider framework,
 crop/ROI, legacy, or frozen boundary changed. Do not reinterpret the old generic
 code as `FAILED_PRECONDITION`, and do not replay #501 solely to fill the new
 fields.
+
+## Current working update: #502 refreshes clean-distribution failure evidence
+
+One unchanged maintained gate ran from exact commit `603216c` after proxy TCP
+reachability and an explicit proxied PyPI HTTPS HEAD both succeeded. The Git
+archive included #501's Google image runner and regression. Its isolated source
+run completed with 1,919 tests passed and one optional real-RapidOCR integration
+skip; fixture equivalence, compile, clean wheel construction and selection,
+base no-dependency installation, outside-repository import, metadata for all
+eight extras, and both import budgets also passed.
+
+The first optional profile, `audio`, then failed before its metadata or smoke
+checks because pip reported no matching distribution for
+`imageio-ffmpeg>=0.6,<0.7`. No later optional profile started. This single
+result does not prove that the declared range is incompatible: the package is
+known to exist in current installed profiles, while a successful endpoint HEAD
+does not prove that pip received a usable project index and artifact response.
+It is fresh dependency-resolution/delivery failure evidence. There was no
+retry, source/pin/cache/timeout change, provider call, credential access, gate
+edit, runtime change, or residue. #460 therefore remains the last complete
+nine-profile gate, and #484 remains the separate installed-stack compatibility
+proof. Do not conceal #502 by substituting another wheel size or by immediately
+replaying the download.

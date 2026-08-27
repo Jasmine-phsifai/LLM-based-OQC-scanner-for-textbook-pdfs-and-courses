@@ -56,13 +56,17 @@ from ocrllm import Config, GoogleGenAISettings, VisionModelSettings, recognize
 ```
 
 Current distribution evidence: #460 remains the last complete nine-profile
-clean gate. #496's maintained run from exact commit `9545ce3` passed archive tests plus the
-installed base, audio, and image profiles, then again stopped while streaming
-`onnxruntime-1.23.2` for the OCR profile; later profiles did not run, so it is
-not a complete current release pass. #484 separately proved that a current
-wheel works with an existing declared OCR stack. That establishes package/runtime
-compatibility, not fresh dependency delivery. Retry the full proof only through
-the maintained gate when there is new delivery evidence.
+clean gate. #502's one maintained run from exact commit `603216c` passed 1,919
+archived tests with one optional real-RapidOCR skip, fixture and compile checks,
+the clean wheel/base install, metadata, and import budgets. Its first optional
+profile then stopped because pip reported no available
+`imageio-ffmpeg>=0.6,<0.7` distribution for `audio`; no optional-profile smoke
+or later profile ran. Proxy reachability and an explicit PyPI HTTPS HEAD had
+passed, so this is current dependency-resolution/delivery failure evidence,
+not proof of package incompatibility or a complete current release pass. #484
+separately proved that a current wheel works with an existing declared OCR
+stack. Retry the full proof only through the maintained gate when there is new
+delivery evidence.
 
 Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and

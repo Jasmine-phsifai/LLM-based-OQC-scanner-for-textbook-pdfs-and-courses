@@ -2280,3 +2280,15 @@ exact structured status retrospectively. The runner now preserves only a
 validated 100--599 HTTP status and a short ASCII alphanumeric/underscore
 provider status on future failures. Library runtime and provider mapping are
 unchanged; all 17 runner tests pass.
+
+#502 runs the unchanged clean-distribution gate once from exact commit
+`603216c`. The archived source completed 1,919 tests with one optional
+real-RapidOCR skip; fixture, compile, wheel/base install, metadata, and import
+budgets passed. The first optional `audio` profile then failed during pip
+resolution because no `imageio-ffmpeg>=0.6,<0.7` distribution was returned, so
+none of the optional profile smokes or later profiles ran. Proxy and explicit
+PyPI HTTPS preflight were reachable, but that does not turn the failure into
+package incompatibility evidence. There was no retry, provider call, gate or
+dependency change, or disposable residue. #460 remains the last complete
+nine-profile proof; #484 separately remains installed-stack compatibility
+evidence.
