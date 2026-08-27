@@ -9627,3 +9627,23 @@ API, state schema, provider, dependency, retry/fallback, legacy, crop/ROI, or
 frozen-boundary code changed. The adjacent 63 tests pass; the complete
 provider-free suite passes 1,926 tests with no skips, and compileall/diff checks
 pass.
+
+## Current working update: #535 bounds cross-media batch collision handling
+
+#535 resolves an interrupted batch-preflight question without changing the
+runtime. `recognize_batch()` dispatches MP3 items only through the memory-only
+short-audio path, whose existing validator rejects `output_dir`, `resume`, and
+`overwrite`. The persistent whole/interval Files route remains the separate
+`recognize_long_mp3()` facade and is not reachable from batch execution. Image
+batch targets are `<output_dir>/<stem>_<profile>.md`; standalone persistent
+long audio uses `<output_dir>/<stem>/result.md`.
+
+An image and same-stem MP3 therefore cannot currently resolve to one
+batch-owned output target. The existing duplicate-target preflight correctly
+covers targets that actually resolve, while adding an audio target planner,
+long-audio batch route, transaction, or lock would manufacture new behavior to
+solve a nonexistent collision. If persistent audio is deliberately added to
+batch later, complete target resolution must precede all dispatch at that time.
+The existing image collision, short-audio persistence-option, and serial audio
+batch tests pass (3 tests). No runtime, test, public API, state, provider,
+dependency, retry/fallback, legacy, crop/ROI, or frozen-boundary code changed.
