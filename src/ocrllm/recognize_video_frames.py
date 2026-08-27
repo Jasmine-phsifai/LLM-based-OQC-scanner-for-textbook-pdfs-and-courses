@@ -14,9 +14,10 @@ def recognize_video_frames(
 ) -> list[BatchItemOutcome]:
     """Recognize ordered retained JPEGs in groups of at most eight.
 
-    This boundary is memory-only. Composition and publication are separate
-    public steps; video recovery remains unavailable. Each outcome corresponds
-    to one image group, not one individual frame.
+    This low-level boundary is memory-only and non-resumable. Composition and
+    caller-chosen publication are separate public steps; use the high-level
+    ``recognize_video_to_markdown()`` facade for journal-backed resume. Each
+    outcome corresponds to one image group, not one individual frame.
     """
     from .providers.validate_vision_provider_config import (
         validate_vision_provider_config,
