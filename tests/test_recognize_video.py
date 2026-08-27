@@ -635,6 +635,70 @@ def test_recognize_video_runs_real_media_and_keeps_providers_separate(
     assert composed.metadata["current_run_provider_call_count"] == 2
 
 
+def test_recognize_video_combines_local_ocr_with_independent_audio(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_mp4(tmp_path / "lecture.mp4")
+    observed_audio = _install_fake_audio(monkeypatch)
+    local_ocr = importlib.import_module(
+        "ocrllm.local_ocr.recognize_images_with_rapidocr"
+    )
+    recognized_bytes: list[bytes] = []
+
+    class FakeResult:
+        txts = ("Local OCR frame",)
+        scores = (0.99,)
+
+    class FakeEngine:
+        def __call__(self, path: Path):
+            recognized_bytes.append(path.read_bytes())
+            return FakeResult()
+
+    monkeypatch.setattr(local_ocr, "load_rapidocr", lambda: lambda **_: FakeEngine())
+    monkeypatch.setattr(local_ocr, "resolve_rapidocr_version", lambda: "3.9.test")
+
+    outcome = recognize_video(
+        source,
+        output_dir=tmp_path / "output",
+        image_config=Config(image_mode="ocr"),
+        audio_config=_audio_config(tmp_path),
+    )
+
+    assert outcome.status == "complete"
+    assert outcome.frame_error is None
+    assert all(item.succeeded for item in outcome.frame_outcomes)
+    assert [
+        item.result.markdown for item in outcome.frame_outcomes if item.result
+    ] == ["Local OCR frame"]
+    assert all(
+        item.result is not None
+        and item.result.metadata["recognition_mode"] == "ocr"
+        and item.result.metadata["provider_call_count"] == 0
+        and item.result.metadata["network_call_count"] == 0
+        for item in outcome.frame_outcomes
+    )
+    assert recognized_bytes == [
+        frame.path.read_bytes() for frame in outcome.retained_frames
+    ]
+    assert len(observed_audio) == 1
+    assert outcome.audio_result is not None
+    assert outcome.audio_result.metadata["provider_call_count"] == 1
+
+    composed = compose_video_result(outcome)
+    assert composed.status == "complete"
+    assert "Local OCR frame" in composed.markdown
+    assert composed.metadata["current_run_provider_call_count"] == 1
+    assert composed.metadata["current_model_token_usage"] == (
+        {
+            "model": "test-audio-model",
+            "input_tokens": 7,
+            "output_tokens": 2,
+        },
+    )
+    assert not observed_audio[0].exists()
+
+
 def test_recognize_video_routes_real_long_audio_to_google_files_once(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

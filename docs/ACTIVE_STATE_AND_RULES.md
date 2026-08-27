@@ -8674,3 +8674,29 @@ carrier, provider behavior, retry, or cancellation framework changed. Persistent
 long audio and high-level video may stop publication after saving paid work and
 later resume with zero calls; do not infer the same terminal shape where no
 recovery path exists.
+
+## Current working update: #489 directly proves local-OCR/Google video separation
+
+The low-level public `recognize_video()` path now has direct evidence for the
+exact mixed configuration that was previously only compositionally supported:
+`Config(image_mode="ocr")` for complete retained video frames and an independent
+Google configuration for short audio. One bounded generated 900x220 MP4 ran
+through real FFmpeg/OpenCV frame and audio extraction, real RapidOCR 3.9.2 /
+ONNX Runtime 1.23.2 inference, native Google request construction and response
+parsing against a one-call fake SDK, composition, and cleanup. RapidOCR
+recognized `OCRLLM 2026`; every retained JPEG kept the complete 900x220 frame;
+the image branch reported zero provider/network calls; the audio branch made
+exactly one generation call, preserved 17/5 tokens, and closed its client. The
+composed video therefore reported one provider call and only the audio model's
+token row.
+
+A compact permanent public-video regression reuses the existing real-media and
+audio fixtures, substitutes only a deterministic local-OCR engine, and locks
+byte-identical retained-frame input plus zero-image/one-audio call accounting.
+The existing optional integration continues to own real RapidOCR inference,
+and native Google adapter tests own SDK request/response behavior; the larger
+189-line cross-extra scaffold was removed after review. No cloud/provider call,
+runtime adapter, provider framework, combined configuration, retry, fallback,
+crop/ROI stage, dependency extra, or state format was added. The package README
+now states the already-supported `video,ocr,audio,google` extras union and the
+two independent configs.

@@ -452,6 +452,12 @@ an adversarial integrity guarantee. MP4 display-rotation metadata
 is applied by the pinned OpenCV backend: `VideoInfo` dimensions and retained
 JPEG pixels both use the decoded display orientation rather than the encoded
 landscape storage dimensions.
+
+The image branch may instead use provider-free local OCR while the audio branch
+continues to use Google: pass `image_config=Config(image_mode="ocr")`, keep the
+separate Google `audio_config`, and install the union
+`ocrllm[video,ocr,audio,google]`. This combination retains complete video frames,
+makes zero image-provider/network calls, and does not change the audio provider.
 `extract_video_frames()` adds five-second coarse thumbnails, bounded
 count-driven negative-feedback selection, and ordered immutable
 `RetainedVideoFrame` records. Coarse seeks use presentation time and each
