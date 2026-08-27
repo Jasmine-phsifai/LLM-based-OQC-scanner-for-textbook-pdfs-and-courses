@@ -9681,3 +9681,23 @@ validated GUID root was removed and independently confirmed absent; tracked,
 index, remote, and protected-untracked state remained unchanged. This is a
 targeted base-wheel proof, not a fresh optional-dependency or nine-profile gate,
 and it adds no runner, retry, provider, API, or product change.
+
+## Current working update: #545 archive video is outside the bounded live gate
+
+#545 attempted only to select a real archive input for one high-level
+DashScope-image plus native-Google-audio video proof. Read-only FFprobe evidence
+found exactly two MP4 files under the authorized archive; both are approximately
+2.7-hour lectures, and the shorter is about 9,684 seconds, 2.67 GB, 1920x1080,
+H.264 with AAC audio. The production five-second scan would expose roughly
+1,938 candidate timestamps before negative-feedback selection, so neither file
+meets the iteration's explicit 5--300-second and one-image-group-of-eight bound.
+
+No media was viewed, extracted, clipped, transcoded, recognized, downloaded, or
+modified. No credential, child process, output root, or provider request was
+created; DashScope and Google calls are exactly zero. The adjacent public video
+facade, frame, Google-audio-adapter, and DashScope-adapter set passes 116 tests.
+This is an unavailable bounded fixture, not a library defect or live success.
+Do not add a test clipping mode, weaken full-frame selection, or turn this into
+an unbounded long-video run. A future real split-provider gate needs a naturally
+bounded authorized video with audio, or a separate explicit decision to exercise
+the complete long-video route.
