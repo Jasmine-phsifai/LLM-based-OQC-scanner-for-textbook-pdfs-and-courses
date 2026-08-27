@@ -549,6 +549,19 @@ published. An earlier controller preflight found no environment or `.env`
 credential and made zero provider requests; it is not a failed provider run.
 There was no retry, second model, fallback, second credential probe, tracked
 runner change, or temporary repository artifact.
+#474 confirms that #472's later pooled-catalog boundary composes with the
+high-level separate-provider video journal without another runtime change.
+`recognize_video_to_markdown()` catches an image-side catalog failure, still
+settles and persists the independent Google audio branch, then raises the image
+error with both branches' current evidence. A pooled catalog outage contributes
+zero image-recognition calls while releasing its one lease; a successful short
+audio branch contributes one call and a reusable `short_state`. Explicit resume
+retries only the missing image work and reuses audio with zero current audio
+calls. Existing tests already prove the zero-call image-side branch settlement,
+later image failure, audio reuse, pool outage, and lease accounting at their
+own public boundaries. Adding a fifth large media/provider fake would duplicate
+those same state transitions rather than expose a new defect. No runtime, API,
+journal, test, retry, fallback, or provider call was added.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import
