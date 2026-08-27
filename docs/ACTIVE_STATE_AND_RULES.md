@@ -535,6 +535,20 @@ Single-key preflight, default-model bypass, catalog caching, candidate/scout
 ordering, and provider-call accounting remain unchanged. No second catalog
 lease, credential cache, retry, fallback, generalized lifecycle object, or live
 provider call was added.
+#473 live-proves #472 without widening the maintained runner or package API.
+One disposable, secret-safe controller read the already-authorized legacy Qt
+credential in memory, inherited the enabled WinINET proxy, created one
+Beijing-region pool slot, and called public `recognize()` once with explicit
+`qwen3.5-ocr` and the committed formula-board fixture. The leased credential
+validated the model through the real compatibility catalog and then completed
+exactly one recognition call. The final pool report was selection 1, success 1,
+failure 0, and in-flight 0; the provider client closed. Provider token counts
+were absent and remain unknown rather than zero. No OCR body, credential,
+authorization header, source/output path, or raw response was retained or
+published. An earlier controller preflight found no environment or `.env`
+credential and made zero provider requests; it is not a failed provider run.
+There was no retry, second model, fallback, second credential probe, tracked
+runner change, or temporary repository artifact.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import
