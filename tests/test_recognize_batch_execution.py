@@ -163,6 +163,33 @@ def test_pre_cancelled_image_batch_creates_no_output_or_temp_directories(tmp_pat
     assert not temp_dir.exists()
 
 
+def test_pre_cancelled_image_batch_does_not_read_missing_source(tmp_path):
+    source = tmp_path / "missing.png"
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    cancellation = threading.Event()
+    cancellation.set()
+    provider = NumberedProvider()
+
+    outcomes = recognize_batch(
+        (source,),
+        config=Config(
+            provider=provider,
+            cancellation=cancellation,
+            output_dir=output_dir,
+            temp_dir=temp_dir,
+        ),
+    )
+
+    assert len(outcomes) == 1
+    assert outcomes[0].error is not None
+    assert outcomes[0].error.code == "CANCELLED"
+    assert outcomes[0].error.details["provider_calls_attempted"] == 0
+    assert provider.calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
 @pytest.mark.parametrize(
     "build_sources",
     (
@@ -209,12 +236,15 @@ def test_batch_preflights_invalid_image_provider_before_output_work(
     source = write_test_image(tmp_path / "source.png")
     output_dir = tmp_path / "output"
     temp_dir = tmp_path / "temp"
+    cancellation = threading.Event()
+    cancellation.set()
 
     with pytest.raises(ConfigError) as caught:
         recognize_batch(
             (source,),
             config=Config(
                 provider=provider,
+                cancellation=cancellation,
                 output_dir=output_dir,
                 temp_dir=temp_dir,
             ),
@@ -303,11 +333,17 @@ def test_batch_rejects_non_path_group_member_before_provider_or_output(tmp_path)
     source = write_test_image(tmp_path / "source.png")
     output_dir = tmp_path / "output"
     provider = NumberedProvider()
+    cancellation = threading.Event()
+    cancellation.set()
 
     with pytest.raises(InvalidSource):
         recognize_batch(
             ((source, 7),),
-            config=Config(provider=provider, output_dir=output_dir),
+            config=Config(
+                provider=provider,
+                cancellation=cancellation,
+                output_dir=output_dir,
+            ),
         )
 
     assert provider.calls == 0

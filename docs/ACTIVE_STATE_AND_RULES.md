@@ -418,6 +418,18 @@ boundary now adds `0` without changing provider-backed cancellation. The
 focused local-OCR and batch set passes 43 tests. No cancellation coordinator,
 provider wrapper, engine interruption, state field, or cleanup framework was
 added.
+#462 aligns exact-tuple batch pre-cancellation with #452's direct-image
+boundary. Batch preflight still validates the complete outer tuple, every
+member's path/media shape, and deterministic image-provider or audio-option
+configuration first. If the shared signal is already set, it now returns the
+same ordered first-item `CANCELLED` plus undispatched outcomes before source
+stat/decode, MP3 probing, output/resume-target inspection, audio credential
+resolution, executor creation, or provider work. The first error reports exact
+zero calls. Built-in provider configuration is snapshotted before observing a
+user callback; injected-provider identity is unchanged. Ordinary uncancelled
+batches still receive the complete source/output preflight. No cancellation
+coordinator, transaction, second batch abstraction, or new public type was
+added.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

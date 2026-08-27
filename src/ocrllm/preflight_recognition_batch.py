@@ -34,9 +34,7 @@ def preflight_recognition_batch(
     """Return normalized groups after complete read-only batch validation."""
     groups = _normalize_batch_shape(sources)
     media_types: list[str] = []
-    resolved_targets: list[Path] = []
     image_provider_validated = False
-    audio_credential_validated = False
 
     for source_paths in groups:
         media_type = validate_same_type_group(source_paths)
@@ -48,6 +46,23 @@ def preflight_recognition_batch(
                     require_injected_callable=True,
                 )
                 image_provider_validated = True
+        elif media_type == "pdf":
+            raise InvalidSource(
+                "recognize_batch() does not accept PDF sources in this release.",
+                code="SOURCE_INVALID",
+            ) from None
+        else:
+            validate_google_mp3_options(source_paths, config=config)
+
+    if groups:
+        from .raise_if_cancelled import raise_if_cancelled
+
+        raise_if_cancelled(config.cancellation)
+
+    resolved_targets: list[Path] = []
+    audio_credential_validated = False
+    for source_paths, media_type in zip(groups, media_types):
+        if media_type == "image":
             validate_execution_image_count(source_paths, config=config)
             output_path = resolve_output_path(
                 source_paths,
@@ -65,13 +80,7 @@ def preflight_recognition_batch(
                         output_path,
                     )
                 resolved_targets.append(output_path)
-        elif media_type == "pdf":
-            raise InvalidSource(
-                "recognize_batch() does not accept PDF sources in this release.",
-                code="SOURCE_INVALID",
-            ) from None
         else:
-            validate_google_mp3_options(source_paths, config=config)
             if not audio_credential_validated:
                 from .providers.google_genai.resolve_google_genai_credential import (
                     resolve_google_genai_credential,

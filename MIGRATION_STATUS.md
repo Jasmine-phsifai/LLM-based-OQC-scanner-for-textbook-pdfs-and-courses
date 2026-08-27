@@ -14,6 +14,12 @@ error evidence exact: cancellation between ordered images now reports zero
 provider calls from the local-OCR routing boundary. No provider, state, or API
 contract changed.
 
+#462 preserves exact-tuple and member-shape batch validation but stops an
+already-cancelled valid batch before source/media reads, output/resume-target
+inspection, credentials, executors, or providers. It returns the existing
+ordered cancellation/not-attempted outcomes and exact zero-call evidence;
+ordinary uncancelled full preflight is unchanged.
+
 The repository has two boundaries:
 
 | Boundary | Status | Use |

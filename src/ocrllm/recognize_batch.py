@@ -44,7 +44,24 @@ def recognize_batch(
     from .validate_config import validate_config
 
     cfg = validate_config(config)
-    normalized_sources = preflight_recognition_batch(sources, config=cfg)
+    if cfg.cancellation is not None:
+        from .providers.dashscope.provider_settings import DashScopeSettings
+        from .providers.google_genai.provider_settings import GoogleGenAISettings
+
+        if type(cfg.provider) in {DashScopeSettings, GoogleGenAISettings}:
+            from .snapshot_config import snapshot_config
+
+            cfg = snapshot_config(cfg)
+    try:
+        normalized_sources = preflight_recognition_batch(sources, config=cfg)
+    except Cancelled as error:
+        from .clear_public_error import clear_public_error
+
+        error._add_safe_detail("provider_calls_attempted", 0)
+        clear_public_error(error)
+        outcomes = [BatchItemOutcome(index=0, error=error)]
+        _append_not_attempted(outcomes, len(sources), first_index=1)
+        return outcomes
     gate = ProviderRequestStartGate(
         cfg.execution.provider_request_start_interval_seconds
     )

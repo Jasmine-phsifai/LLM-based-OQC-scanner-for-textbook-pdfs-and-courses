@@ -156,7 +156,10 @@ The current image facade:
   and preflights every source and resolved output target before any batch-created
   filesystem or provider work. Valid jobs remain ordered and fail-fast, report
   one `BatchItemOutcome` per source, and retain output-target ownership until
-  every dispatched batch item settles;
+  every dispatched batch item settles. An already-cancelled batch still
+  validates the complete tuple/member shape and deterministic configuration,
+  then returns ordered cancellation/not-attempted outcomes before source reads,
+  output/resume inspection, audio credential resolution, or executor creation;
 - applies one high-resolution monotonic provider-start interval to every
   draft/review/scout call in a direct operation or across one concurrent batch.
 - distinguishes provider permission, suspension, concurrency, quota,
