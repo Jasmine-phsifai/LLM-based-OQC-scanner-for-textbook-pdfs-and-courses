@@ -823,6 +823,10 @@ uv run --no-project --isolated --with 'Pillow==12.3.0' `
 & 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests
 ```
 
+The pytest command includes two real Node worker-harness checks. `node` must be
+on `PATH` or installed beside the selected Python interpreter; missing Node is
+a gate failure and is not skipped.
+
 Before reporting completion, run the maintained clean-archive gate:
 
 ```powershell

@@ -16,9 +16,7 @@ CANCELLATION_ENTRYPOINT = (
 
 
 def _run_node_scenario(scenario: str, entrypoint: Path, temporary_root: Path) -> dict:
-    node = shutil.which("node")
-    if node is None:
-        raise AssertionError("Phase 2 Node gate requires a Node executable")
+    node = _find_node_executable()
     completed = subprocess.run(
         [
             node,
@@ -38,6 +36,19 @@ def _run_node_scenario(scenario: str, entrypoint: Path, temporary_root: Path) ->
     assert completed.returncode == 0, completed.stdout + completed.stderr
     assert completed.stderr == ""
     return json.loads(completed.stdout)
+
+
+def _find_node_executable() -> str:
+    """Find Node on PATH or beside the Python environment running this gate."""
+    node = shutil.which("node")
+    if node is not None:
+        return node
+    sibling = Path(sys.executable).with_name(
+        "node.exe" if sys.platform == "win32" else "node"
+    )
+    if sibling.is_file():
+        return str(sibling)
+    raise AssertionError("Phase 2 Node gate requires a Node executable")
 
 
 def test_node_harness_validates_fixture_stdout_and_unicode_round_trip(tmp_path) -> None:

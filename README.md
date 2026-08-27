@@ -400,6 +400,10 @@ Offline active-library checks:
 & 'D:\Anaconda\envs\OCRLLM\python.exe' -c "import sys,time; sys.path.insert(0, 'src'); t=time.perf_counter(); import ocrllm; print(round(time.perf_counter()-t, 4), len(sys.modules), [m for m in ('PIL','openai','httpx','onnxruntime') if m in sys.modules])"
 ```
 
+The complete pytest gate requires a real Node executable for its two worker
+harness checks. Keep `node` on `PATH` or install it beside the selected Python
+interpreter; the gate fails rather than skipping when Node is absent.
+
 The clean Git-archive wheel, isolated-install, outside-repository import, and
 heavy-module checks are defined in
 [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md). Do not

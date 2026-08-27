@@ -7181,6 +7181,10 @@ source of current truth.
 & 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests
 ```
 
+The complete pytest gate includes two real Node harness checks. `node` must be
+available on `PATH` or installed beside the selected Python interpreter;
+absence is a hard gate failure, not a skip.
+
 Import-weight check:
 
 ```powershell
