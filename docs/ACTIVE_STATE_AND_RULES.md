@@ -8597,3 +8597,24 @@ DashScope profile, when it later runs, proves public pool type availability and
 offline SDK construction; the one-lease catalog-plus-recognition behavior stays
 directly covered by archived source tests rather than a duplicated installed
 fake-provider flow.
+
+## Current working update: #484 current wheel runs with existing OCR dependencies
+
+Without replaying #483 or accessing a package index, a delegated local inventory
+found four existing Conda environments containing the declared compatible OCR
+runtime: RapidOCR 3.9.2, ONNX Runtime 1.23.2, and Pillow 12.3.0. Exact current
+HEAD built a 312,917-byte wheel with already-installed build tooling. Only that
+wheel was installed with `--no-deps` into a disposable target; an outside-checkout
+process loaded `ocrllm` from that target, kept heavy OCR modules absent before
+the OCR call, and completed the maintained generated-image public recognition
+smoke with one retained line. The runtime also reported OpenCV 4.13.0.92,
+NumPy 2.2.6, and OmegaConf 2.3.1. No network, provider, credential, or model
+download ran, and the temporary target was removed.
+
+This proves current-package compatibility with an already-present declared OCR
+stack; it does not close #483's clean dependency-delivery gate or prove that a
+fresh environment can currently download every wheel. Do not copy packages,
+add a local-environment fallback to the product, weaken the `ocr` extra, or call
+this a full release pass. A later ordinary clean gate may retry after new time
+or delivery evidence; meanwhile the OCR runtime itself is not implicated by the
+single PyPI read timeout.
