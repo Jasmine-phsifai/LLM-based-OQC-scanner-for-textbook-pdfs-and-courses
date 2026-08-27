@@ -130,6 +130,10 @@ def test_archive_and_profile_installs_use_the_existing_process_bound() -> None:
     """Network stages are bounded and archived pytest startup stays visible."""
 
     script = GATE_SCRIPT.read_text(encoding="utf-8")
+    profile_install = script.split(
+        "$profilePython = Join-Path $profileVenv 'Scripts\\python.exe'",
+        maxsplit=1,
+    )[1].split("$expectedCsv =", maxsplit=1)[0]
 
     assert script.count("Invoke-BoundedProcess `") == 2
     assert "archived-source dependency preparation and pytest" in script
@@ -143,6 +147,14 @@ def test_archive_and_profile_installs_use_the_existing_process_bound() -> None:
     assert "'--retries', '0'," in script
     assert "'--timeout', '30'," in script
     assert "-TimeoutSeconds $OptionalProfileInstallTimeoutSeconds" in script
+    pip_version_probe = "& $profilePython -m pip --version"
+    assert profile_install.count(pip_version_probe) == 1
+    assert (
+        profile_install.index("site-packages lookup failed: $profile")
+        < profile_install.index(pip_version_probe)
+        < profile_install.index("Invoke-BoundedProcess `")
+    )
+    assert 'profile pip version probe failed: $profile' in profile_install
 
 
 def test_base_wheel_check_uses_a_python_file_instead_of_multiline_c() -> None:

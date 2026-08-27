@@ -2315,3 +2315,12 @@ so this proves the declaration, platform tag, artifact, and basic runtime are
 valid but not that current network delivery succeeds. The exact #502 venv pip
 version remains unknown; no pin, pip-upgrade, cache, gate, product, provider, or
 dependency change follows.
+
+#506 makes future optional-profile install failures identify their actual
+resolver. Each freshly created profile venv now emits its own
+`python -m pip --version` immediately before the unchanged bounded pip install,
+with the existing exit checker. A failure-first ordering assertion is green;
+14 gate-controller tests, PowerShell AST parsing, compileall, and 25 adjacent
+packaging/dependency/media tests pass. No full gate, network, pip upgrade,
+dependency, cache/index, runtime, API, provider, or frozen-boundary change was
+made; #502 remains unresolved delivery evidence.

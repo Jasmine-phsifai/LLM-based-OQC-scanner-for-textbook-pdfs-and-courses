@@ -379,6 +379,8 @@ print(sorted(declared_extras))
             $sitePackages = (& $profilePython -I -c `
                 'import site; print(site.getsitepackages()[0])').Trim()
             Assert-LastExitCode "site-packages lookup failed: $profile"
+            & $profilePython -m pip --version
+            Assert-LastExitCode "profile pip version probe failed: $profile"
             $baselineBytes = Get-DirectoryByteCount $sitePackages
             $installRequirement = '"' + "$($wheel.FullName)[$profile]" + '"'
             Invoke-BoundedProcess `

@@ -9099,3 +9099,24 @@ authorize an immediate full replay, pip-upgrade step, cache manager, wheelhouse,
 vendoring, mirror fallback, pin change, or second installer. No provider,
 credential, runtime, dependency, gate, API, legacy, crop/ROI, or frozen-boundary
 change occurred; the disposable root and processes were cleaned.
+
+## Current working update: #506 records the resolver used by each profile
+
+The maintained clean-distribution gate now runs the newly created optional
+profile venv's own `python -m pip --version` after site-packages discovery and
+immediately before its bounded install. The existing exit checker makes an
+unusable profile pip fail at that exact stage. This closes only the diagnostic
+gap exposed by #502/#505: a future `versions: none`, timeout, or resolver error
+will carry the actual pip version and path that made the decision instead of
+being attributed to the base interpreter or an inferred ensurepip seed.
+
+A failure-first controller assertion reproduced the missing probe and now locks
+its exact order and one-per-profile-loop placement. All 14 gate-controller
+tests pass, PowerShell AST parsing reports zero errors, compileall passes, and
+the adjacent packaging/dependency/materializer set passes 25 tests. The full
+nine-profile gate was deliberately not replayed, so #502's delivery failure and
+#460's last-complete status remain unchanged. Do not turn this two-line probe
+into command/environment dumping, a pip upgrade, resolver report, installer
+abstraction, cache/index/mirror/pin/retry/timeout change, or another gate. No
+network, provider, credential, runtime, API, dependency, legacy, crop/ROI, or
+frozen-boundary change occurred.
