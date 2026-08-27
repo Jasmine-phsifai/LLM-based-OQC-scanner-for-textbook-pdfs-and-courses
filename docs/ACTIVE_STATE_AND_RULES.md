@@ -8965,3 +8965,32 @@ replayed immediately or concealed by package changes. The only currently
 identified material feature decision is still the separate PDF partial-artifact
 Route A/Route B choice in `docs/MAINTAINER_PRODUCT_DECISIONS.md`; #499 does not
 infer that decision.
+
+## Current working update: #500 refreshes real Google short-audio failure evidence
+
+One bounded credential-isolated runner used a disposable 6.723220-second,
+81,859-byte speech MP3 synthesized offline through Windows System.Speech. The
+MP3 passed full local decode before any provider work. The configured proxy and
+credential were available, catalog discovery reached Google, and explicit
+`gemini-2.5-flash` was served. The maintained public runner then made exactly
+one short-audio recognition call and terminated after 127.688 seconds with
+typed `PROVIDER_TIMEOUT`, provider scope, recognition stage, and
+`provider_calls_attempted=1`.
+
+This is honest robustness evidence, not transcription success. No retry, model
+switch, fallback, second call, or stress loop followed. Exit was 1, stderr was
+empty, and safe scans found no credential, source path, or transcript leak.
+The disposable root was removed, no owned process remained, and the repository
+stayed unchanged. The short-audio error payload did not expose a positive
+client-closed boolean, so record it as unavailable rather than inferring it;
+this inline route creates no remote file. The adapter still attempts local
+client close in `finally` and separately
+flags an actual close failure, but #500 does not broaden generic error metadata
+solely to make the live report greener.
+
+The maintained runner plus adjacent success/cancellation lifecycle tests pass
+18 tests; timeout/network mapping and provider-error cleanup tests pass six.
+No runtime, test, API, dependency, retry/fallback, provider framework, crop/ROI,
+legacy, or frozen-boundary change is justified by this correctly bounded
+failure. A later ordinary audio success may use one new speech-bearing request
+after service recovery; do not immediately replay #500 or substitute a tone.

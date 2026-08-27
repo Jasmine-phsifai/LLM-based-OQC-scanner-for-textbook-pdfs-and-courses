@@ -2257,3 +2257,14 @@ no snapshot/staging residue or provider/network work. This is not a long-GOP or
 HD throughput SLA; the complete provider-free suite passes all 1,920 tests.
 An offline 313,332-byte wheel installed outside the checkout also passes the
 deterministic fallback regression and retains lightweight plain import.
+
+#500 refreshes the real native-Google short-audio boundary with one disposable
+6.723220-second speech MP3 synthesized locally through Windows System.Speech.
+The source fully decoded before the maintained runner discovered the requested
+`gemini-2.5-flash` model and made exactly one recognition call. Google ended
+that call as an honestly mapped `PROVIDER_TIMEOUT` after 127.688 seconds; the
+error reports provider scope and one attempted call. There was no retry, model
+switch, fallback, stderr, credential/path/transcript leak, owned residue, or
+second invocation. The safe public payload did not expose a positive client-
+closed boolean, so it is not claimed; inline audio creates no remote file to
+clean up. Runtime and package boundaries remain unchanged.
