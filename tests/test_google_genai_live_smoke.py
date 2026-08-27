@@ -148,7 +148,12 @@ def test_image_live_smoke_reports_sanitized_provider_failure_stage(
         return ProviderError(
             secret,
             code="PROVIDER_UNAVAILABLE",
-            details={"failure_scope": "provider", "raw_response": secret},
+            details={
+                "failure_scope": "provider",
+                "http_status": 400,
+                "provider_status": "FAILED_PRECONDITION",
+                "raw_response": secret,
+            },
         )
 
     def fake_list(settings, timeout_seconds):
@@ -167,6 +172,8 @@ def test_image_live_smoke_reports_sanitized_provider_failure_stage(
     assert json.loads(raw) == {
         "error": {
             "code": "PROVIDER_UNAVAILABLE",
+            "http_status": 400,
+            "provider_status": "FAILED_PRECONDITION",
             "scope": "provider",
             "stage": failure_stage,
         },

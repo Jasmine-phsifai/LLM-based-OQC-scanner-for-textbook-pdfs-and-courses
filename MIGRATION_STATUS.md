@@ -2268,3 +2268,15 @@ switch, fallback, stderr, credential/path/transcript leak, owned residue, or
 second invocation. The safe public payload did not expose a positive client-
 closed boolean, so it is not claimed; inline audio creates no remote file to
 clean up. Runtime and package boundaries remain unchanged.
+
+#501 attempts one current native-Google image refresh with the committed
+2560x1600 formula board. Manifest SHA-256, 116,507-byte size, dimensions, and
+PNG format matched before the run. The sole catalog request ended in 4.547
+seconds as redacted `PROVIDER_REQUEST_INVALID` at catalog stage; recognition
+calls were exactly zero, and no retry, model switch, fallback, leak, or residue
+followed. Because the old safe image runner discarded the mapper's already-
+redacted HTTP/provider status fields, this evidence cannot distinguish the
+exact structured status retrospectively. The runner now preserves only a
+validated 100--599 HTTP status and a short ASCII alphanumeric/underscore
+provider status on future failures. Library runtime and provider mapping are
+unchanged; all 17 runner tests pass.

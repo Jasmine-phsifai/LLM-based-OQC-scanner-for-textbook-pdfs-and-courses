@@ -142,6 +142,8 @@ def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
         code=error.code,
         scope=error.details.get("failure_scope"),
         stage=stage,
+        http_status=error.details.get("http_status"),
+        provider_status=error.details.get("provider_status"),
     )
 
 
@@ -153,16 +155,33 @@ def _report_unexpected_failure(stage: str | None) -> int:
     )
 
 
-def _report_failure(*, code: str, scope: object, stage: str | None) -> int:
+def _report_failure(
+    *,
+    code: str,
+    scope: object,
+    stage: str | None,
+    http_status: object = None,
+    provider_status: object = None,
+) -> int:
+    error_summary = {
+        "code": code,
+        "scope": scope,
+        "stage": stage,
+    }
+    if type(http_status) is int and 100 <= http_status <= 599:
+        error_summary["http_status"] = http_status
+    if (
+        type(provider_status) is str
+        and provider_status.isascii()
+        and len(provider_status) <= 128
+        and provider_status.replace("_", "").isalnum()
+    ):
+        error_summary["provider_status"] = provider_status
     print(
         json.dumps(
             {
                 "status": "failed",
-                "error": {
-                    "code": code,
-                    "scope": scope,
-                    "stage": stage,
-                },
+                "error": error_summary,
             },
             sort_keys=True,
             separators=(",", ":"),

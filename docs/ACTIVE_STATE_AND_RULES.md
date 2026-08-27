@@ -8994,3 +8994,34 @@ No runtime, test, API, dependency, retry/fallback, provider framework, crop/ROI,
 legacy, or frozen-boundary change is justified by this correctly bounded
 failure. A later ordinary audio success may use one new speech-bearing request
 after service recovery; do not immediately replay #500 or substitute a tone.
+
+## Current working update: #501 preserves safe image-catalog failure status
+
+One credential-isolated current-catalog image runner used the committed
+formula board after verifying its manifest SHA-256, 116,507-byte size,
+2560x1600 dimensions, and PNG format. Credential and configured proxy checks
+passed. The maintained runner was launched exactly once with explicit
+`gemini-2.5-flash` and a 120-second bound. Its catalog request terminated in
+4.547 seconds as redacted `PROVIDER_REQUEST_INVALID`, request scope, catalog
+stage. Recognition calls were exactly zero. No retry, model switch, fallback,
+replay, stderr, credential/path/recognized-text leak, disposable residue, or
+owned process followed. This is catalog-failure evidence, not image-recognition
+or formula-quality evidence.
+
+The run exposed one diagnostic-tool defect: `map_google_genai_error()` already
+retains allowlisted numeric `http_status` and short structured
+`provider_status`, but `run_google_genai_image_smoke.py` discarded them when
+printing its safe terminal JSON. The exact status from #501 is therefore
+irrecoverable and must not be guessed. A failure-first regression reproduced
+that loss for both catalog and recognition stages. The runner now includes only
+a 100--599 exact integer HTTP status and an ASCII, at-most-128-character
+alphanumeric/underscore provider status. It still excludes raw SDK messages,
+response bodies, credentials, paths, and recognized Markdown.
+
+All 17 image-runner tests pass, including both failure stages; fixture and
+runner preflight verification passed 28 tests before the live call, and focused
+compilation plus diff checks pass. This is tooling evidence only: no library
+runtime, error mapping, API, dependency, retry/fallback, provider framework,
+crop/ROI, legacy, or frozen boundary changed. Do not reinterpret the old generic
+code as `FAILED_PRECONDITION`, and do not replay #501 solely to fill the new
+fields.
