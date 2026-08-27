@@ -9292,3 +9292,27 @@ subsequent `resume=True` invocation published in 0.582987 seconds without
 loading RapidOCR or making provider/network calls. The complete default suite
 passes 1,924 tests. Public APIs, state, warning semantics, provider behavior,
 dependencies, repair, crop/ROI, legacy, and frozen boundaries are unchanged.
+
+## Current working update: #517 keeps local-OCR error evidence in one scope
+
+#517 corrects one ambiguity introduced when #516's settled-result evidence met
+a later child OCR failure. In a nine-page 8+1 local-OCR PDF, pages 1--8 could
+settle and page 9 could raise `OCR_NO_TEXT` with its own `image_count=1`.
+Independent per-field attachment then preserved that primary count while adding
+the first group's `retained_line_count=8` and engine-version fields, producing
+one flat public detail record whose numbers described different page ranges.
+
+The existing four-field settled local-OCR bundle is now atomic: after validating
+the whole bundle, the owner attaches all four fields only when the primary error
+owns none of their names. A child OCR failure therefore keeps its own engine,
+image count, and confidence plus the orthogonal zero-call and settled-group
+facts; no new `settled_ocr_*` schema or range ledger was added. Post-settlement
+publication and cleanup failures still receive the complete four-field bundle.
+A real nine-page full-frame PDF with eight text pages and one blank page proved
+that the first call ran nine local images, and `resume=True` reused the first
+eight while running only page 9 again. Both errors remained coherent, no parent
+Markdown or rendered PNG residue appeared, and provider calls remained zero.
+The complete default suite passes 1,925 tests; a fresh no-deps installed wheel
+also passes the pure-Python bundle probe and lightweight-import check. Public
+APIs, state, providers, dependencies, repair, warning semantics, crop/ROI,
+legacy, and frozen boundaries are unchanged.

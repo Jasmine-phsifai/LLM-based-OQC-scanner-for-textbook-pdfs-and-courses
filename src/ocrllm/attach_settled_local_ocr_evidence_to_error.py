@@ -37,6 +37,7 @@ def attach_settled_local_ocr_evidence_to_error(
         ("image_count", image_count),
         ("retained_line_count", retained_line_count),
     )
+    if any(key in error.details for key, _value in evidence):
+        return
     for key, value in evidence:
-        if key not in error.details:
-            error._add_safe_detail(key, value)
+        error._add_safe_detail(key, value)

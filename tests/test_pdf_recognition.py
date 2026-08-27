@@ -21,6 +21,7 @@ from ocrllm import (
     ConfigError,
     GoogleGenAISettings,
     InvalidSource,
+    NoTextDetected,
     OutputError,
     PDFError,
     RecognitionExecutionPolicy,
@@ -438,6 +439,84 @@ def test_pdf_snapshot_cleanup_failure_preserves_settled_local_ocr_evidence(
     assert resumed.warnings == (local_ocr.LOCAL_OCR_LIMITATION_WARNING,)
     assert resumed.output_path == output_dir / "notes_board.md"
     assert resumed.output_path.read_text(encoding="utf-8") == resumed.markdown
+
+
+def test_later_pdf_local_ocr_failure_keeps_one_detail_scope_and_resumes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=9)
+    source = _write_pdf_placeholder(tmp_path / "notes.pdf")
+    output_dir = tmp_path / "output"
+    state_directory = output_dir / "notes_board"
+    local_ocr = importlib.import_module(
+        "ocrllm.local_ocr.recognize_images_with_rapidocr"
+    )
+    calls: list[str] = []
+    factory_calls = 0
+
+    class RecordingEngine:
+        ninth_page_has_text = False
+
+        def __call__(self, path: Path):
+            name = Path(path).name
+            calls.append(name)
+            if name == "page-000009.png" and not self.ninth_page_has_text:
+                return SimpleNamespace(txts=(), scores=())
+            return SimpleNamespace(txts=(Path(path).stem,), scores=(0.9,))
+
+    engine = RecordingEngine()
+
+    def load_engine():
+        nonlocal factory_calls
+        factory_calls += 1
+        return lambda **_: engine
+
+    monkeypatch.setattr(local_ocr, "load_rapidocr", load_engine)
+    monkeypatch.setattr(local_ocr, "resolve_rapidocr_version", lambda: "3.9.test")
+
+    with pytest.raises(NoTextDetected) as captured:
+        recognize(
+            source,
+            config=Config(image_mode="ocr", output_dir=output_dir),
+        )
+
+    assert dict(captured.value.details) == {
+        "engine": "rapidocr",
+        "image_count": 1,
+        "minimum_confidence": 0.5,
+        "provider_calls_attempted": 0,
+        "settled_pdf_group_count": 1,
+    }
+    assert calls == [
+        *(f"page-{page_number:06d}.png" for page_number in range(1, 9)),
+        "page-000009.png",
+    ]
+    assert factory_calls == 2
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 1
+    assert not tuple(state_directory.glob("page-*.png"))
+    assert not (output_dir / "notes_board.md").exists()
+
+    engine.ninth_page_has_text = True
+    resumed = recognize(
+        source,
+        config=Config(image_mode="ocr", output_dir=output_dir, resume=True),
+    )
+
+    assert calls[-1] == "page-000009.png"
+    assert len(calls) == 10
+    assert factory_calls == 3
+    assert resumed.status == "complete"
+    assert resumed.metadata["recognition_mode"] == "ocr"
+    assert resumed.metadata["image_count"] == 9
+    assert resumed.metadata["retained_line_count"] == 9
+    assert resumed.metadata["provider_call_count"] == 0
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert resumed.metadata["network_call_count"] == 0
+    assert resumed.warnings == (local_ocr.LOCAL_OCR_LIMITATION_WARNING,)
+    assert resumed.output_path == output_dir / "notes_board.md"
+    assert resumed.output_path.read_text(encoding="utf-8") == resumed.markdown
+    assert len(tuple(state_directory.glob("*.ocrllm-state.json"))) == 2
 
 
 def test_existing_pdf_output_rejects_before_snapshot_or_backend_inspection(

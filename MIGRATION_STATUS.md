@@ -102,6 +102,18 @@ and zero provider/network calls. The full default suite passes 1,924 tests. No
 public API, state schema, provider, warning, repair, crop/ROI, dependency,
 legacy, or frozen-boundary behavior changed.
 
+#517 prevents the PDF error path from combining fields that describe different
+local-OCR groups. If a later child OCR error already owns any name from the
+four-field settled bundle, none of that unscoped bundle is attached; the error
+still reports exact provider calls and settled PDF group count. Fully settled
+post-processing failures continue to receive all four stable fields. A real
+eight-text-plus-one-blank PDF proved that resume reused pages 1--8 and reran
+only page 9, with coherent `OCR_NO_TEXT` details and zero provider calls. The
+default suite passes 1,925 tests, and a fresh no-deps installed wheel passes the
+pure-Python helper and lightweight-import probes. No new detail schema, public
+API, state, provider, dependency, repair, warning, crop/ROI, legacy, or frozen
+behavior was added.
+
 The repository has two boundaries:
 
 | Boundary | Status | Use |
