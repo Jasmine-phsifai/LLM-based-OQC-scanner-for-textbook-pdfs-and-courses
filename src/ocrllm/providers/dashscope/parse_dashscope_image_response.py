@@ -49,16 +49,17 @@ def parse_dashscope_image_response(
             code="PROVIDER_RESPONSE_INVALID",
             details=details,
         ) from None
-    if type(finish_reason) is not str or finish_reason != "stop":
-        failure_kind = (
-            "truncated"
-            if type(finish_reason) is str and finish_reason == "length"
-            else "incomplete"
-        )
+    if type(finish_reason) is str and finish_reason == "length":
         raise ProviderError(
-            f"DashScope returned an {failure_kind} image-recognition response.",
+            "DashScope returned a truncated image-recognition response.",
             code="PROVIDER_RESPONSE_INVALID",
             details=details,
+        ) from None
+    if type(finish_reason) is not str or finish_reason != "stop":
+        raise ProviderError(
+            "DashScope returned an incomplete image-recognition response.",
+            code="PROVIDER_RESPONSE_INVALID",
+            details={**details, "reason": "incomplete"},
         ) from None
     if refusal is not None:
         raise ProviderError(

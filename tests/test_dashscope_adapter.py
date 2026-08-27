@@ -995,6 +995,23 @@ def test_truncated_response_never_succeeds(tmp_path, monkeypatch) -> None:
     assert truncated.value.code == "PROVIDER_RESPONSE_INVALID"
 
 
+def test_incomplete_response_carries_fixed_safe_reason(tmp_path, monkeypatch) -> None:
+    source = write_test_image(tmp_path / "board.png", size=(11, 11))
+    client = FakeClient(response=_response(finish_reason=None))
+    _install_fake_openai(monkeypatch, client)
+
+    with pytest.raises(ProviderError) as captured:
+        recognize(
+            source,
+            config=Config(provider=_settings()),
+        )
+
+    assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.details["reason"] == "incomplete"
+    assert captured.value.retryable is False
+    assert client.closed is True
+
+
 def test_successful_dashscope_image_discloses_client_close_failure(
     tmp_path,
     monkeypatch,

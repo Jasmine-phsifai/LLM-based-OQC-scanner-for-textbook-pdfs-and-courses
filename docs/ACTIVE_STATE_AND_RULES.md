@@ -9627,3 +9627,33 @@ API, state schema, provider, dependency, retry/fallback, legacy, crop/ROI, or
 frozen-boundary code changed. The adjacent 63 tests pass; the complete
 provider-free suite passes 1,926 tests with no skips, and compileall/diff checks
 pass.
+
+## Current working update: #543 classifies a reproduced DashScope incomplete response
+
+#543 independently repeats the realistic 16-page DashScope PDF execution from
+#542 with a corrected durable temporary report. Sixteen authorized complete
+1920x1080 archive frames were wrapped in a 200-DPI PDF without crop or resample;
+the production first-group request was 7,654,560 bytes. One public `recognize()`
+job attempted exactly two serial eight-page requests. The first group settled
+and published one complete image sidecar; the second again failed, this time
+with the exact public message `DashScope returned an incomplete
+image-recognition response.` The final error honestly retained two attempted
+calls and one settled PDF group, published no aggregate Markdown, left no
+rendered/snapshot residue, preserved every source, and cleaned both disposable
+roots. There was no retry, resume, model switch, fallback, repair, or second
+live job.
+
+The live branch is narrower than a timeout, HTTP error, raw partial-response
+header, `length` truncation, refusal, or missing text: the compatible endpoint
+returned a parsed choice whose finish reason was neither exact `stop` nor
+`length`. The parser already emitted a distinct safe sentence, but supplied no
+stable machine-readable detail, forcing callers to parse English. It now adds
+only fixed `reason="incomplete"` to that observed branch. The stable
+`PROVIDER_RESPONSE_INVALID` code, nonretryable disposition, message, client
+cleanup, PDF checkpoint/resume behavior, and every other DashScope response
+branch remain unchanged. This mirrors the existing fixed safe Google response
+reasons without adding a new code, raw finish-reason exposure, automatic
+policy, or provider framework. A failing-first public-adapter regression proves
+the missing reason; 21 focused error/disposition tests and the 55-test complete
+DashScope/PDF owner set pass. The complete offline suite passes all 1,927 tests;
+compileall and diff hygiene pass.

@@ -2557,3 +2557,16 @@ and leaves no segment. Real MP3 cleanup, snapshot ownership, and ordinary
 failure resume remain with their existing owners; no duplicate fixture or
 coordinator was added. The adjacent set passes 63 tests and the complete
 provider-free suite passes 1,926 tests with no skips.
+
+#543 repeats one realistic 16-page, 200-DPI DashScope PDF through exactly two
+serial `qwen3.5-ocr` requests. The first group settled with one complete
+sidecar; the second again returned `PROVIDER_RESPONSE_INVALID`, now captured as
+the exact safe public `incomplete image-recognition response` branch. Calls 2,
+settled groups 1, source integrity, no aggregate publication, zero
+rendered/snapshot residue, and disposable-root cleanup were proven without
+retry, resume, switch, fallback, or repair. Because the branch previously
+required English-message parsing, the DashScope response parser now attaches
+only fixed `reason="incomplete"`; its stable code, retryability, and all other
+response paths are unchanged. The failing-first regression, 21 focused tests,
+the complete 55-test DashScope/PDF owner set, and all 1,927 offline tests pass;
+compileall and diff hygiene pass.
