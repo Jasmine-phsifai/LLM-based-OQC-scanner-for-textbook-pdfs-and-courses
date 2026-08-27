@@ -28,6 +28,10 @@ or independently reorder it.
   to a lightweight subagent. While that workflow runs, the primary agent should
   advance an independent read-only audit, focused regression, or documentation
   task instead of polling or repeating the same procedure.
+- Prefer already-authorized media under the maintainer's local `D:\archieve`
+  tree for bounded image, audio, PDF, and video execution. Do not crawl or
+  download replacement media when a suitable local source already exists, and
+  never publish its course content or identifying path in tracked records.
 - Treat the maintainer's proxy as always enabled and as the normal
   external-download path. A reported network failure should first trigger a
   check that the proxy was not accidentally disabled or dropped from the child
