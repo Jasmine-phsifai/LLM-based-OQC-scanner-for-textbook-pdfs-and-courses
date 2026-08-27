@@ -9944,3 +9944,52 @@ change. Do not convert the one-shot reporter ambiguities into telemetry fields,
 a permanent live runner, retry, repair, provider generalization, or another PDF
 abstraction. The separate #550 choice about a narrow secondary video-branch
 error summary remains open and unchanged.
+
+## Current working update: #552 completes one real DashScope frame-only video
+
+#552 exercises the current high-level video facade to a final published result
+without replaying the known Google catalog failure. Six existing full,
+decodable 1920x1080 JPEGs from one archive frame collection were ordered into
+one disposable 29.96-second, 1920x1080 H.264 MP4 with no audio stream. The
+fixture retained every complete source frame spatially: no crop, ROI, corner
+detection, perspective transform, or resize was used. No media was crawled,
+downloaded, displayed, recognized during selection, or written back to the
+archive. The generated MP4 passed complete decoding and public
+`inspect_video()` before provider credentials were read.
+
+One child called public `recognize_video_to_markdown()` exactly once. Its image
+config selected DashScope Beijing `qwen3.5-ocr`; its independently valid audio
+config selected Google `gemini-2.5-flash`. Production retained six ordered
+complete 1920x1080 JPEGs in one group. DashScope settled that group in exactly
+one recognition dispatch, and the final result reported 13,164 input plus 561
+output tokens for `qwen3.5-ocr`. Audio extraction classified the fixture as
+`audio_state="absent"`; no `audio.mp3` or audio slot existed and no Google audio
+recognition was dispatched. This does not claim that no unrelated HTTP action
+occurred outside the recorded recognition boundary.
+
+The 28.907-second public call returned status `complete`, six frame assets,
+one successful and zero failed frame groups, and
+`current_run_provider_call_count=1`. It atomically published a 7,438-byte
+`result.md` whose SHA-256 matched the Markdown returned by the public result.
+The temporary journal was removed after publication. No audio file, request
+snapshot, staging file, image/audio temporary file, or unexpected Markdown
+remained. The public metadata omitted `image_provider_client_closed`; cleanup
+truth is therefore unobserved, not `true` or `false`.
+
+The six archive sources and generated fixture stayed byte-identical through
+the live run. The durable safe report contained no credential, absolute media
+path, or recognized content. Every exact fixture/output/report root passed
+direct-system-TEMP ownership and reparse checks, was removed after evidence
+capture, and left no matching residue or owned process. Git remained unchanged
+apart from the two protected pre-existing untracked files.
+
+One disposable controller first failed to parse because PowerShell stripped
+embedded quotes. That happened before credential access, child launch, or
+provider dispatch. Its one permitted correction fed the same controller over a
+safe boundary; only the later child made the sole public/provider run. This is
+test-harness evidence, not an OCRLLM defect or reason to add a permanent runner.
+The no-audio, composition, publication, high-level journal, and DashScope owner
+set passes 102 tests. No product defect was reproduced, so runtime, tests,
+public API, state, dependency, provider, legacy, crop/ROI, migration, and frozen
+boundaries remain unchanged. Do not add an audio-provider bypass, automatic
+fallback, new frame-only entry point, or provider framework from this proof.
