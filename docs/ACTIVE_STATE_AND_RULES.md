@@ -496,6 +496,17 @@ adding a content blacklist. One real SDK-object regression preserves the exact
 JSON and 10/20 token counts. A future live 200/error-envelope reproduction must
 bring a non-text upstream signal before this decision changes; text matching,
 retry, fallback, and provider framework work remain out of scope.
+#470 makes the shipped DashScope compatibility-catalog parser reject a
+structurally incomplete response instead of silently caching its valid-looking
+subset. The `/compatible-mode/v1/models` response must be an object containing
+a `data` list, and every row must contain a non-empty string `id`; otherwise the
+existing catalog-outage path serves an earlier successful cache or reports
+retryable `PROVIDER_CATALOG_UNAVAILABLE`. This does not add pagination: the
+compatibility endpoint has returned 239 and 241 models in bounded live runs,
+but Alibaba does not document its pagination contract. Alibaba's separately
+documented `/api/v1/models` endpoint uses a different `output.models` and
+page-number schema and is not mixed into this adapter. No retry, fallback,
+provider abstraction, catalog-response publication, or live call was added.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

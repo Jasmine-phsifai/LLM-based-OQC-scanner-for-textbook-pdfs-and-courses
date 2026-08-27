@@ -69,12 +69,17 @@ def fetch_dashscope_model_catalog(settings) -> frozenset[str] | None:
         )
         with urlopen(request, timeout=5.0) as response:
             payload = json.loads(response.read(2_000_000).decode("utf-8"))
-        rows = payload.get("data", payload) if isinstance(payload, dict) else payload
-        names = frozenset(
-            row.get("id")
-            for row in rows
-            if isinstance(row, dict) and isinstance(row.get("id"), str)
-        )
+        if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+            raise ValueError("DashScope returned a malformed model catalog.")
+        model_names: list[str] = []
+        for row in payload["data"]:
+            if not isinstance(row, dict):
+                raise ValueError("DashScope returned a malformed model catalog row.")
+            model_name = row.get("id")
+            if not isinstance(model_name, str) or not model_name:
+                raise ValueError("DashScope returned a model row without an id.")
+            model_names.append(model_name)
+        names = frozenset(model_names)
     except Exception:
         with _CATALOG_LOCK:
             latest_cached = _CATALOG_CACHE.get(cache_key)

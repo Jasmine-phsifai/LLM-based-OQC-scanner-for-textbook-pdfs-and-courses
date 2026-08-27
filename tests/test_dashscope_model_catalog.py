@@ -33,6 +33,11 @@ class _CatalogResponse:
         return self._payload[:limit]
 
 
+class _RawCatalogResponse(_CatalogResponse):
+    def __init__(self, payload: object) -> None:
+        self._payload = json.dumps(payload).encode("utf-8")
+
+
 @pytest.fixture(autouse=True)
 def _reset_dashscope_model_catalog_cache():
     with resolver._CATALOG_LOCK:
@@ -116,6 +121,24 @@ def test_unknown_model_fails_closed_when_catalog_has_never_succeeded(
     assert disposition.action == "retry"
     assert disposition.scope == "provider"
     assert disposition.retryable is True
+
+
+def test_malformed_catalog_row_cannot_become_a_partial_catalog(monkeypatch) -> None:
+    from urllib import request as urllib_request
+
+    monkeypatch.setattr(
+        urllib_request,
+        "urlopen",
+        lambda request, *, timeout: _RawCatalogResponse(
+            {"data": [{"id": "valid-model"}, {"name": "missing-id"}]}
+        ),
+    )
+
+    with pytest.raises(ProviderError) as captured:
+        resolver.resolve_dashscope_model("another-model", settings=_settings())
+
+    assert captured.value.code == "PROVIDER_CATALOG_UNAVAILABLE"
+    assert captured.value.retryable is True
 
 
 def test_credential_error_propagates_without_catalog_outage_mapping(
