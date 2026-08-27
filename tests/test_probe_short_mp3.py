@@ -118,7 +118,7 @@ def test_probe_short_mp3_rejects_zero_decoded_frames(monkeypatch) -> None:
     assert caught.value.details == {}
 
 
-def test_probe_short_mp3_rejects_reported_and_decoded_frame_mismatch(
+def test_probe_short_mp3_uses_fully_decoded_duration_within_padding(
     monkeypatch,
 ) -> None:
     _install_fake_backend(
@@ -127,13 +127,80 @@ def test_probe_short_mp3_rejects_reported_and_decoded_frame_mismatch(
         decoded_frames=3000,
     )
 
-    with pytest.raises(InvalidSource, match="metadata does not match") as caught:
+    assert probe_module.probe_short_mp3(Path("owned-snapshot.mp3")) == 300.0
+
+
+def test_probe_short_mp3_accepts_two_mpeg_frames_of_padding(monkeypatch) -> None:
+    _install_fake_backend(
+        monkeypatch,
+        reported_frames=242304,
+        decoded_frames=240000,
+        sample_rate=48000,
+    )
+
+    assert probe_module.probe_short_mp3(Path("owned-snapshot.mp3")) == 5.0
+
+
+def test_probe_short_mp3_accepts_exact_relative_padding_boundary(monkeypatch) -> None:
+    _install_fake_backend(
+        monkeypatch,
+        reported_frames=28800,
+        decoded_frames=26496,
+        sample_rate=48000,
+    )
+
+    assert probe_module.probe_short_mp3(Path("owned-snapshot.mp3")) == 0.552
+
+
+def test_probe_short_mp3_rejects_material_frame_count_difference(
+    monkeypatch,
+) -> None:
+    _install_fake_backend(
+        monkeypatch,
+        reported_frames=242305,
+        decoded_frames=240000,
+        sample_rate=48000,
+    )
+
+    with pytest.raises(InvalidSource, match="differs materially") as caught:
         probe_module.probe_short_mp3(Path("owned-snapshot.mp3"))
 
     assert caught.value.code == "SOURCE_INVALID"
     assert caught.value.details == {
-        "reported_frame_count": 3001,
-        "decoded_frame_count": 3000,
+        "reported_frame_count": 242305,
+        "decoded_frame_count": 240000,
+    }
+
+
+def test_probe_short_mp3_rejects_above_relative_padding_boundary(monkeypatch) -> None:
+    _install_fake_backend(
+        monkeypatch,
+        reported_frames=28799,
+        decoded_frames=26495,
+        sample_rate=48000,
+    )
+
+    with pytest.raises(InvalidSource, match="differs materially") as caught:
+        probe_module.probe_short_mp3(Path("owned-snapshot.mp3"))
+
+    assert caught.value.code == "SOURCE_INVALID"
+
+
+def test_probe_short_mp3_rejects_large_relative_difference(monkeypatch) -> None:
+    _install_fake_backend(
+        monkeypatch,
+        reported_frames=2305,
+        decoded_frames=1,
+        sample_rate=48000,
+    )
+
+    with pytest.raises(InvalidSource, match="differs materially") as caught:
+        probe_module.probe_short_mp3(Path("owned-snapshot.mp3"))
+
+    assert caught.value.code == "SOURCE_INVALID"
+    assert caught.value.details == {
+        "reported_frame_count": 2305,
+        "decoded_frame_count": 1,
     }
 
 
@@ -166,9 +233,9 @@ def test_probe_short_mp3_redacts_backend_and_snapshot_failures(
 
 @pytest.mark.parametrize(
     "fixture_name",
-    ["valid_cbr.mp3", "valid_vbr.mp3", "valid_id3.mp3"],
+    ["valid_cbr.mp3", "valid_vbr.mp3", "valid_id3.mp3", "incomplete_tail.mp3"],
 )
-def test_probe_short_mp3_fully_decodes_committed_valid_fixtures(
+def test_probe_short_mp3_fully_decodes_committed_accepted_fixtures(
     fixture_name,
 ) -> None:
     pytest.importorskip("miniaudio")
@@ -186,7 +253,7 @@ def test_probe_short_mp3_fully_decodes_committed_valid_fixtures(
 
 @pytest.mark.parametrize(
     "fixture_name",
-    ["one_frame.mp3", "incomplete_tail.mp3", "corrupted_middle.mp3"],
+    ["one_frame.mp3", "corrupted_middle.mp3"],
 )
 def test_probe_short_mp3_rejects_committed_invalid_fixtures(fixture_name) -> None:
     pytest.importorskip("miniaudio")

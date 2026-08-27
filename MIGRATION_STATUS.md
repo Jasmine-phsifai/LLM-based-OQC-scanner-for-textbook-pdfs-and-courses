@@ -2642,3 +2642,17 @@ and client-close truth remain unavailable due to bounded reporter scope; they
 are not reported as zero. Source integrity and cleanup passed, the focused 88-
 test owner set passed, and no runtime, API, state, dependency, retry, repair,
 provider, crop, legacy, or frozen-boundary change was warranted.
+
+#558 fixes a real short-audio admission defect exposed before the planned
+Google request. One unchanged 1,986,191-byte archive MP3 stopped with typed
+`SOURCE_INVALID` and zero provider dispatch because its fully decoded frame
+count differed from miniaudio metadata by 2,001 frames. A twenty-file archive
+sample then showed exact equality in zero files while every file fully decoded;
+observed differences were 465--2,304 frames. The shared bounded-memory MP3
+decoder now accepts only differences within both 2,304 PCM frames and 8% of the
+larger count, while keeping decoded duration authoritative and preserving all
+zero-frame, malformed, decode, size, and duration rejection. All twenty real
+local preflights pass, the focused owner set passes 117 tests, and the complete
+provider-free suite passes 1,933 tests with zero failures or skips. No second
+live request, transport/provider change, retry, model switch, state, API,
+dependency, alternate decoder, or framework was added.

@@ -374,10 +374,11 @@ are recorded in `docs/legacy_filetrans_codex_debug_record.md`.
 - The first executable probe uses lazy `miniaudio>=1.71,<2` under `[audio]`.
   It consumes MP3-specific metadata on the immutable snapshot, then fully
   exhausts the MP3 stream while discarding PCM chunks and counting decoded
-  frames. The selected decoder reports exact frame equality for the committed
-  valid CBR, VBR, and ID3 fixtures, so any reported/decoded mismatch is rejected.
-  The provider duration boundary is enforced on decoded duration; the probe
-  never silently switches protocols.
+  frames. Real archive evidence shows that the selected decoder's reported and
+  streamed counts can differ by up to two 1,152-sample frames on otherwise
+  fully decodable MP3s. The probe accepts only differences within both that
+  absolute bound and an 8% relative bound, then enforces the provider duration
+  boundary on decoded duration; it never silently switches protocols.
 - Do not require or bundle FFmpeg for A1. The tested `imageio-ffmpeg` Windows
   binary is about 87.6 MB and GPLv3-configured, while no system FFmpeg exists on
   the target machine; full FFmpeg decode also accepts clean EOF truncation. Keep

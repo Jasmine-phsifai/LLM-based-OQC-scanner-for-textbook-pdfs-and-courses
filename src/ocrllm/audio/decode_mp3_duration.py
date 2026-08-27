@@ -9,6 +9,9 @@ from ..errors import InvalidSource
 
 
 STREAM_FRAMES_PER_READ = 4096
+# A bounded 20-file archive probe stayed within 2,304 PCM frames and 6.43%.
+MAX_MP3_PADDING_PCM_FRAMES = 2304
+MAX_MP3_PADDING_RATIO = 0.08
 
 
 def decode_mp3_duration(snapshot_path: Path, *, backend: object) -> float:
@@ -54,9 +57,17 @@ def decode_mp3_duration(snapshot_path: Path, *, backend: object) -> float:
             "The MP3 source contains no decodable audio frames.",
             code="SOURCE_INVALID",
         ) from None
-    if decoded_frame_count != reported_frame_count:
+    frame_count_difference = abs(reported_frame_count - decoded_frame_count)
+    frame_count_ratio = frame_count_difference / max(
+        reported_frame_count,
+        decoded_frame_count,
+    )
+    if (
+        frame_count_difference > MAX_MP3_PADDING_PCM_FRAMES
+        or frame_count_ratio > MAX_MP3_PADDING_RATIO
+    ):
         raise InvalidSource(
-            "The MP3 source metadata does not match its decoded audio.",
+            "The MP3 source metadata differs materially from its decoded audio.",
             code="SOURCE_INVALID",
             details={
                 "reported_frame_count": reported_frame_count,

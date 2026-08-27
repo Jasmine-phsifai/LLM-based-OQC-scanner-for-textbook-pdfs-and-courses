@@ -1,5 +1,6 @@
 {
   "schema": "ocrllm.a1-mp3-fixtures.v1",
+  "validation_contract": "accept means accepted by the decoder contract, not a claim of pristine MPEG bitstream provenance",
   "synthetic_input": "sine=frequency=997:sample_rate=44100:duration=0.500",
   "generator": {
     "ffmpeg_version": "ffmpeg version 7.1-essentials_build-www.gyan.dev Copyright (c) 2000-2024 the FFmpeg developers",
@@ -135,7 +136,7 @@
     },
     {
       "filename": "incomplete_tail.mp3",
-      "validation": "reject",
+      "validation": "accept",
       "byte_size": 2273,
       "sha256": "33aa807e989fb2e77147af6deb856da5d46dd41c2627826c008f18f0bfc4b6c1",
       "channel_count": 1,

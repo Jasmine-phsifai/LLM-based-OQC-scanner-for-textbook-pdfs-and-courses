@@ -603,8 +603,9 @@ the real 9.5-hour A2a ceiling. Fresh processes stayed near a 35.4 MiB peak for
 301 seconds, one hour, and 9.5 hours while file size grew from 1.2 to 136.8 MB;
 the snapshot copy and decoded samples are both consumed in fixed chunks and all
 temporary roots were removed. Keep complete streaming decode because it catches
-metadata/frame-count mismatch. That iteration changed no Files, chunking,
-video-routing, or cancellation behavior.
+material metadata/frame-count differences; #558 later added a two-frame and 8%
+allowance after exact equality rejected ordinary archive MP3s. That iteration
+changed no Files, chunking, video-routing, or cancellation behavior.
 
 #247 adds the missing public consumer proof for the opposite partial-video
 direction. A real MP4 whose frames succeed and whose audio provider fails once

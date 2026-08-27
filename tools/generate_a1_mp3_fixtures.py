@@ -11,11 +11,21 @@ from typing import Any
 
 
 _SYNTHETIC_INPUT = "sine=frequency=997:sample_rate=44100:duration=0.500"
-_VALID_FILENAMES = ("valid_cbr.mp3", "valid_vbr.mp3", "valid_id3.mp3")
-_INVALID_FILENAMES = (
+_FIXTURE_FILENAMES = (
+    "valid_cbr.mp3",
+    "valid_vbr.mp3",
+    "valid_id3.mp3",
     "one_frame.mp3",
     "incomplete_tail.mp3",
     "corrupted_middle.mp3",
+)
+_ACCEPTED_FILENAMES = frozenset(
+    {
+        "valid_cbr.mp3",
+        "valid_vbr.mp3",
+        "valid_id3.mp3",
+        "incomplete_tail.mp3",
+    }
 )
 
 
@@ -78,7 +88,7 @@ def generate_a1_mp3_fixtures(*, ffmpeg: Path, output_directory: Path) -> None:
     import miniaudio
 
     fixtures = []
-    for filename in _VALID_FILENAMES + _INVALID_FILENAMES:
+    for filename in _FIXTURE_FILENAMES:
         path = mp3_directory / filename
         info = miniaudio.mp3_get_file_info(str(path))
         stream = miniaudio.mp3_stream_file(str(path), frames_to_read=4096)
@@ -92,7 +102,9 @@ def generate_a1_mp3_fixtures(*, ffmpeg: Path, output_directory: Path) -> None:
         fixtures.append(
             {
                 "filename": filename,
-                "validation": "accept" if filename in _VALID_FILENAMES else "reject",
+                "validation": (
+                    "accept" if filename in _ACCEPTED_FILENAMES else "reject"
+                ),
                 "byte_size": len(data),
                 "sha256": hashlib.sha256(data).hexdigest(),
                 "channel_count": info.nchannels,
@@ -110,6 +122,10 @@ def generate_a1_mp3_fixtures(*, ffmpeg: Path, output_directory: Path) -> None:
     ).stdout.splitlines()[0]
     manifest: dict[str, Any] = {
         "schema": "ocrllm.a1-mp3-fixtures.v1",
+        "validation_contract": (
+            "accept means accepted by the decoder contract, not a claim of "
+            "pristine MPEG bitstream provenance"
+        ),
         "synthetic_input": _SYNTHETIC_INPUT,
         "generator": {
             "ffmpeg_version": version_output,

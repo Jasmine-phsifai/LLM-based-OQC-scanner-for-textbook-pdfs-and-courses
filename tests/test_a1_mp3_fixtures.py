@@ -12,6 +12,10 @@ def test_a1_mp3_fixture_manifest_matches_every_committed_artifact() -> None:
     manifest = json.loads((FIXTURE_ROOT / "manifest.json").read_text("utf-8"))
 
     assert manifest["schema"] == "ocrllm.a1-mp3-fixtures.v1"
+    assert manifest["validation_contract"] == (
+        "accept means accepted by the decoder contract, not a claim of "
+        "pristine MPEG bitstream provenance"
+    )
     assert manifest["synthetic_input"] == (
         "sine=frequency=997:sample_rate=44100:duration=0.500"
     )

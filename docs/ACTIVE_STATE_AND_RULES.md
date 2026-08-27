@@ -366,9 +366,13 @@ unlimited paid run; the canonical Beijing endpoint is already confirmed.
 The A1 probe uses lazy `miniaudio>=1.71,<2` for MP3-specific metadata plus
 bounded-memory full decode. FFmpeg, PyAV, Mutagen, and external executable
 requirements remain outside the A1 runtime. The probe rejects malformed or
-undecodable audio, zero decoded frames, and declared/decoded frame mismatch; it
-does not claim that every frame-aligned MP3 truncation can be distinguished
-from an intentionally shorter valid file.
+undecodable audio, zero decoded frames, and a declared/decoded difference
+greater than either 2,304 PCM frames or 8% of the larger count. Both limits must
+hold. This narrow allowance covers differences observed across real archive
+MP3s without letting a tiny decoded stream hide behind the absolute allowance;
+decoded frames remain authoritative for duration. It does not claim that every
+frame-aligned MP3 truncation can be distinguished from an intentionally shorter
+valid file.
 The compressed base-wheel growth budget is 320 KiB. #327 replaces the former
 256 KiB line only after a 266,903-byte worktree audit found exclusively expected
 active runtime modules and no tests, documentation, dependency, or binary
@@ -1835,10 +1839,11 @@ snapshot plus full decode in 0.622 / 1.017 / 4.867 seconds. A second measurement
 series saw the same flat peak delta across 301 seconds, one hour, and 34,199
 seconds. Every owned snapshot and outer temporary root was removed.
 
-Keep the complete streaming decode: it rejects metadata/frame-count mismatch,
-including an independently attempted binary-concatenation artifact, without
-trusting duration metadata alone. Do not replace it with metadata-only probing,
-another decoder, or a generalized stream layer. The separate 2 GB source bound,
+Keep the complete streaming decode: it rejects material metadata/frame-count
+differences beyond the 2,304-frame and 8% allowances, including an independently
+attempted binary-concatenation artifact, without trusting duration metadata
+alone. Do not replace it with metadata-only probing, another decoder, or a
+generalized stream layer. The separate 2 GB source bound,
 Google Files lifecycle, 9.5-hour A2a ceiling, token-limit preflight, and lazy
 imports remain unchanged; no provider call, chunking, video routing, #127, or
 #152 behavior follows. Long/short audio neighbors pass 102 tests.
@@ -10192,3 +10197,41 @@ the conditional resume branch, fill missing telemetry, or create a permanent
 live controller. Existing public resume remains directly covered by failure-
 then-resume owner tests and should receive another live proof only when a future
 bounded fresh run naturally leaves the required settled prefix.
+
+## Current working update: #558 removes exact MP3 frame-count false rejection
+
+#558 made exactly one maintained Google short-audio runner invocation on an
+unchanged existing archive MP3. Proxy and the sole local listener were healthy,
+the credential was injected only into that child, and no download, conversion,
+retry, model switch, fallback, or second runner was used. The runner stopped in
+219 ms with typed `SOURCE_INVALID` before SDK/catalog/provider dispatch. Its
+safe JSON contained only the code and recognition stage; stderr was empty,
+source SHA-256/size/mtime stayed unchanged, and owned process/report residue was
+zero.
+
+Local reproduction identified a product defect rather than a Google failure.
+Miniaudio reported 5,952,593 PCM frames but fully streamed 5,950,592 frames for
+the 1,986,191-byte source. The old exact-equality guard rejected that 2,001-frame
+(about 0.042-second) difference even though miniaudio, FFprobe, and FFmpeg could
+fully decode the file. A read-only sample of twenty archive MP3s from eighteen
+directories found exact equality in zero files; all twenty fully decoded with
+differences of 465--2,304 frames, and the public local preflight now accepts all
+twenty with durations from 0.491 to 294.949 seconds.
+
+`decode_mp3_duration()` still fully streams the owned snapshot and rejects bad
+metadata, decode errors, empty chunks, zero decoded frames, material count
+differences, source-size violations, and decoded-duration violations. It now
+accepts a count difference only when both the absolute difference is at most
+2,304 PCM frames and the relative difference is at most 8%; decoded duration,
+not metadata duration, remains authoritative. The relative cap prevents a tiny
+decoded stream from hiding behind the absolute allowance. The synthetic
+incomplete-tail fixture is explicitly decoder-accepted within that narrow
+allowance rather than described as pristine; the zero-frame and middle-damaged
+fixtures remain rejected.
+
+The final focused short/long probe, snapshot, Google adapter/runner, and fixture
+set passes 117 tests; the complete provider-free suite passes 1,933 tests with
+zero failures or skips. No second live request was made after the zero-dispatch
+failure, so #558 fixes local admission but does not claim a refreshed current
+Google catalog or generation result. It adds no decoder, bitstream parser,
+retry, provider policy, framework, state, API, dependency, or media conversion.
