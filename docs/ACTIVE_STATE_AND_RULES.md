@@ -384,6 +384,23 @@ native-payload rules remain unchanged.
 bytes, the base target is 1,597,408 bytes, both import budgets pass, and all
 eight installed profiles complete their local image/audio/PDF/video/combined
 smokes without credentials or provider calls.
+#460 restores current clean-install coverage for the already-public `ocr` extra
+instead of treating the archived suite's optional RapidOCR skip as product
+proof. A fresh official resolution exposed `opencv-python 5.0.0.93` through
+RapidOCR's unbounded transitive lower limit, while all maintained OCR evidence
+uses the tested 4.13 line. The `ocr` extra now declares the same
+`opencv-python>=4.13,<4.14` range as video. The first exact installed run then
+proved a second upstream metadata gap: RapidOCR accepts OmegaConf 2.0, but on
+Windows that version rejects RapidOCR's own `WindowsPath` model directory and
+prevents both default and configured construction. Isolated version trials
+prove 2.0.6, 2.1.2, and 2.2.0 fail while 2.2.2, 2.2.3, and 2.3.x construct;
+the extra therefore also declares `omegaconf>=2.2.2,<3`. The one maintained
+release gate adds a ninth `ocr` profile with a 512 MiB installed ceiling and
+runs one real RapidOCR/ONNX public
+`recognize(..., Config(image_mode="ocr"))` call over a generated image after
+blocking Requests network access. It does not add a
+model downloader, cache API, second release runner, private quality fixture, or
+local-OCR runtime behavior.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

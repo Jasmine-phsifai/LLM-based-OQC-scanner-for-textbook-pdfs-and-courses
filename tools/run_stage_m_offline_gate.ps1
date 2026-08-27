@@ -328,6 +328,7 @@ print(sorted(declared_extras))
         $profileLimits = @{
             'audio' = 104857600
             'image' = 26214400
+            'ocr' = 536870912
             'image,dashscope' = 67108864
             'google' = 67108864
             'audio,google' = 146800640
@@ -338,6 +339,14 @@ print(sorted(declared_extras))
         $expectedDistributions = @{
             'audio' = @('miniaudio', 'imageio-ffmpeg')
             'image' = @('Pillow')
+            'ocr' = @(
+                'Pillow',
+                'rapidocr',
+                'onnxruntime',
+                'opencv-python',
+                'numpy',
+                'omegaconf'
+            )
             'image,dashscope' = @('Pillow', 'openai')
             'google' = @('google-genai')
             'audio,google' = @('miniaudio', 'imageio-ffmpeg', 'google-genai')
@@ -354,6 +363,7 @@ print(sorted(declared_extras))
         foreach ($profile in @(
             'audio',
             'image',
+            'ocr',
             'image,dashscope',
             'google',
             'audio,google',
@@ -436,6 +446,15 @@ print(result.status)
 '@
                 $imageSmoke | & $profilePython -I - $imageFixture
                 Assert-LastExitCode 'generated image recognition smoke failed'
+            }
+
+            if ($profile -eq 'ocr') {
+                $ocrFixture = Join-Path $profileVenv 'generated-ocr.png'
+                $ocrSmoke = Join-Path $sourceRoot (
+                    'tools\run_installed_local_ocr_smoke.py'
+                )
+                & $profilePython -I $ocrSmoke $ocrFixture
+                Assert-LastExitCode 'installed local OCR recognition smoke failed'
             }
 
             if ($profile -eq 'audio') {

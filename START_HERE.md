@@ -874,6 +874,18 @@ archived tests pass with one optional RapidOCR skip; the 311,384-byte wheel,
 1,597,408-byte base target, both import budgets, all eight installed profiles,
 and every local media/combined smoke pass without a provider call.
 
+#460 reconnects the shipped `ocr` extra to that maintained gate as a ninth
+profile. A fresh official resolution otherwise selects untested
+`opencv-python 5.0.0.93` through RapidOCR's transitive lower bound, so the extra
+now explicitly shares the proven `opencv-python>=4.13,<4.14` range. The first
+isolated install also selected allowed OmegaConf 2.0.0, which reproducibly
+rejects RapidOCR's Windows model `Path`; direct trials establish 2.2.2 as the
+first working non-excluded line, so `ocr` declares `omegaconf>=2.2.2,<3`. Its
+installed smoke uses real RapidOCR/ONNX over one generated image with Requests
+network access blocked; the archived-source RapidOCR skip is no longer the only
+current release evidence. No OCR model downloader, cache surface, private
+fixture, or second gate is added.
+
 #312 begins executable A2b interval work without adding the public chunked
 recognition route. One exact planner window can now materialize one temporary
 mono 16 kHz / 64 kbps MP3 beside an already-owned source and remove it after

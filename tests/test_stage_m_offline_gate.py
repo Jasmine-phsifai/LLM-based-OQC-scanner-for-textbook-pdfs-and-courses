@@ -14,6 +14,9 @@ import pytest
 
 GATE_SCRIPT = Path(__file__).parents[1] / "tools" / "run_stage_m_offline_gate.ps1"
 WHEEL_CHECKER = Path(__file__).parents[1] / "tools" / "check_built_wheel.py"
+OCR_SMOKE = (
+    Path(__file__).parents[1] / "tools" / "run_installed_local_ocr_smoke.py"
+)
 
 
 def _run_bounded_process(tmp_path: Path, invocation: str) -> subprocess.CompletedProcess:
@@ -265,3 +268,25 @@ def test_audio_profiles_include_the_interval_backend_and_bounded_smoke() -> None
     assert "'audio' = @('miniaudio', 'imageio-ffmpeg')" in script
     assert "'audio,google' = @('miniaudio', 'imageio-ffmpeg', 'google-genai')" in script
     assert "materialize_long_audio_interval" in script
+
+
+def test_ocr_profile_runs_real_installed_inference_without_network() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+    smoke = OCR_SMOKE.read_text(encoding="utf-8")
+
+    assert OCR_SMOKE.is_file()
+    assert "'ocr' = 536870912" in script
+    assert "'ocr' = @(" in script
+    assert "'onnxruntime'," in script
+    assert "'opencv-python'," in script
+    assert "'omegaconf'" in script
+    assert "if ($profile -eq 'ocr')" in script
+    assert "tools\\run_installed_local_ocr_smoke.py" in script
+    assert "ImageFont.load_default(size=64)" in smoke
+    assert "requests.sessions.Session.request = reject_network" in smoke
+    assert 'result = recognize(image_path, config=Config(image_mode="ocr"))' in smoke
+    assert 'assert "OCRLLM" in result.markdown' in smoke
+    assert 'assert result.metadata["provider_call_count"] == 0' in smoke
+    assert 'assert result.metadata["network_call_count"] == 0' in smoke
+    assert 'metadata.version("omegaconf")' in smoke
+    assert "installed local OCR recognition smoke failed" in script

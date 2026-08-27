@@ -44,6 +44,8 @@ ocr = [
     "Pillow>=10.4,<13",
     "rapidocr>=3.9,<4",
     "onnxruntime>=1.23,<2",
+    "opencv-python>=4.13,<4.14",
+    "omegaconf>=2.2.2,<3",
 ]
 
 [tool.hatch.version]
