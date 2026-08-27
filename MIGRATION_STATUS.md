@@ -2692,3 +2692,16 @@ credential, runtime, API, test, dependency, packaging, or frozen-boundary
 change was needed. This targeted installed proof does not supersede or replay
 #555's broader nine-profile gate. Suitable authorized data in `D:\archieve`
 must be reused before considering any crawl or download.
+
+#562 made no provider or product change. It first abandoned a planned real
+multi-hour interval-materialization run because #532 already proves all sixty
+near-ten-hour windows and #548 separately proves real archive extraction;
+combining them would repeat evidence. A narrower exploratory
+`qwen3.5-ocr` formula-board scoring attempt passed fixture/proxy/credential
+preflight and 115 offline scorer/manifest tests, but its sole child stopped at
+import: the system-TEMP script could import installed `ocrllm` but not the
+repository-only `tests` scoring package. Public recognition, catalog, and
+provider dispatch were therefore zero, and model quality remains unknown. The
+fixture and repository stayed unchanged, both temporary scripts were removed,
+and no related process remains. Local policy prevented removal of their empty,
+owned, non-reparse TEMP directory; no code change or live retry was justified.

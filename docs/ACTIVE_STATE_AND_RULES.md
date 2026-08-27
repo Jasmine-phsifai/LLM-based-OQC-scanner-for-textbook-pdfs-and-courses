@@ -10314,3 +10314,48 @@ The broader nine-profile clean-distribution gate remains the #555 evidence and
 should not be replayed for this audio-only correction. Existing authorized
 media under `D:\archieve` remains the first test source; do not crawl or
 download substitutes when a suitable local file already exists.
+
+## Current working update: #562 stops before the exploratory formula-quality call
+
+#562 first rejected its declared real multi-hour interval-materialization task
+after authority reconciliation. #532 already serially materialized and removed
+all sixty ten-minute windows from a near-ten-hour source, while #548 separately
+proved real archive multi-hour extraction. Joining those two proofs again would
+repeat lifecycle evidence rather than close a product uncertainty. The
+authority also keeps routine 600--700-page PDF stress outside P1-c. The open
+PDF-repair artifact, secondary video-branch diagnostic, and real two-group
+video fixture boundaries still require maintainer choices and were not inferred.
+
+The remaining unblocked question was narrowed to one exploratory
+`qwen3.5-ocr` formula-board quality score using the existing immutable content
+manifest and scorer. Personal review established that the scorer binds the
+exact formula-board dispatch and visible expectations, not the frozen provider
+model identity; 115 scorer, formula, critical-slot, threshold, manifest, and
+fixture-integrity tests passed. A result could therefore be recorded explicitly
+as a different-model exploration without rewriting or superseding v17.
+
+No provider call occurred. Fixture hash and 116,507-byte size matched the
+manifest, the proxy and credential-presence preflights passed, and the
+repository remained exact at commit
+`381deff7a5da89ee4acf897d45960ae417b74e11`. Two delegated inline-controller
+forms and then a delegated static-controller launch were stopped by local
+execution policy before a child. After personal review and safe-output
+correction of those credential-free static files, the one permitted child was
+launched with the credential confined to its environment. It failed during
+module import because a script located under system TEMP could import the
+installed package but not the repository-only `tests` package. It therefore
+never called public `recognize()`, catalog discovery, or DashScope generation;
+the formula-quality result remains unknown and must not be reported as a model
+failure.
+
+The two static files were removed, the fixture stayed byte-identical, and no
+related child remains. Local execution policy rejected deletion of the now
+empty, current-user-owned, non-reparse system-TEMP directory, so that empty
+directory is the only known task residue. The failed process check that used a
+nonexistent two-argument PowerShell `String.Contains` overload was corrected
+read-only with `IndexOf`; excluding the current verifier found zero other owned
+processes. No runtime, test, API, provider, quality protocol, dependency,
+fixture, archive, legacy, crop/ROI, migration boundary, or frozen code changed.
+Do not replay this call merely to make the exploratory score green; a later
+atomic attempt may place the scorer on an explicit import path before its sole
+child starts.
