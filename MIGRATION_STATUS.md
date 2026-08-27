@@ -1279,6 +1279,13 @@ The following directions remain traceable but are not current work:
   runs real RapidOCR/ONNX with Requests network blocked under the existing
   512 MiB OCR ceiling; no second gate, model downloader, or runtime OCR change
   is added.
+  Exact product commit `c6a62cf` passes the expanded clean gate: 1,899 archived
+  tests pass with one optional source-environment RapidOCR skip; the 311,402-byte
+  wheel, 1,597,516-byte base target, all nine isolated profiles, and all local
+  media smokes pass. The installed OCR profile performs real generated-image
+  recognition with RapidOCR 3.9.2, ONNX Runtime 1.23.2, OpenCV 4.13.0.92,
+  NumPy 2.2.6, and OmegaConf 2.3.1 while Requests is blocked and provider calls
+  remain zero; its 328,909,525-byte delta stays within the 512 MiB ceiling.
   #312 adds the next internal A2b seam without exposing chunked recognition:
   one validated interval window materializes one request-owned temporary MP3
   beside an already-owned source, using the legacy-proven Google shape of mono

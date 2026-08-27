@@ -401,6 +401,15 @@ runs one real RapidOCR/ONNX public
 blocking Requests network access. It does not add a
 model downloader, cache API, second release runner, private quality fixture, or
 local-OCR runtime behavior.
+#460's exact product commit `c6a62cf` passes the expanded maintained gate:
+1,899 archived tests pass with one optional source-environment RapidOCR skip;
+the 311,402-byte wheel, 1,597,516-byte base target, base import checks, all nine
+isolated profiles, and every local media smoke pass. The installed `ocr` profile
+uses RapidOCR 3.9.2, ONNX Runtime 1.23.2, OpenCV 4.13.0.92, NumPy 2.2.6, and
+OmegaConf 2.3.1 to recognize the generated image with Requests blocked and zero
+provider calls; its 328,909,525-byte delta remains below the 512 MiB ceiling.
+This closes the current installed-local-OCR release evidence gap without
+claiming a quality benchmark or provider connectivity proof.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

@@ -885,6 +885,12 @@ installed smoke uses real RapidOCR/ONNX over one generated image with Requests
 network access blocked; the archived-source RapidOCR skip is no longer the only
 current release evidence. No OCR model downloader, cache surface, private
 fixture, or second gate is added.
+Exact product commit `c6a62cf` then passes the complete expanded gate: 1,899
+archived tests pass with one optional source-environment RapidOCR skip; the
+311,402-byte wheel, 1,597,516-byte base target, all nine isolated profiles, and
+all local media smokes pass. The installed OCR smoke performs real recognition
+with RapidOCR 3.9.2, ONNX Runtime 1.23.2, OpenCV 4.13.0.92, NumPy 2.2.6, and
+OmegaConf 2.3.1 while Requests is blocked and provider calls remain zero.
 
 #312 begins executable A2b interval work without adding the public chunked
 recognition route. One exact planner window can now materialize one temporary
