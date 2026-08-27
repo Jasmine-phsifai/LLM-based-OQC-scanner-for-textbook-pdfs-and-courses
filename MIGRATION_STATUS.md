@@ -10,7 +10,7 @@ file and that file differ, that file wins.
 Last synchronized: 2026-08-27.
 
 Current distribution evidence: #460 remains the last complete nine-profile
-clean gate. #491's exact-current maintained run passed archive tests plus the
+clean gate. #496's maintained run from exact commit `9545ce3` passed archive tests plus the
 installed base, audio, and image profiles, then again stopped while streaming
 `onnxruntime-1.23.2` for the OCR profile; later profiles did not run, so it is
 not a complete current release pass. #484 separately proved that a current
@@ -2219,3 +2219,13 @@ remain unchanged; the complete provider-free suite passes all 1,918 tests.
 The final wheel was also installed offline outside the checkout; its public
 shared-cancellation smoke passed and a plain import kept optional media/provider
 modules unloaded.
+
+#496 refreshes the current clean-distribution evidence from exact commit
+`9545ce312f491c3d4135c40568a94f0d18ca7f9f`. One unmodified maintained gate
+passed 1,917 archived tests with one expected optional-RapidOCR skip, fixtures,
+compilation, wheel/base checks, metadata, both import budgets, and the installed
+audio and image profiles. The first failure was again pip exit 2 while streaming
+`onnxruntime-1.23.2` from `files.pythonhosted.org`; OCR runtime proof and the six
+later profiles did not run. The proxy was enabled and reachable, provider calls
+were zero, the disposable root and processes were removed, and runtime,
+dependencies, gate code, frozen boundaries, and protected files are unchanged.

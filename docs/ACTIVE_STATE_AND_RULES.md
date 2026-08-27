@@ -8833,3 +8833,32 @@ Google GenAI, and OpenAI unloaded. The first complete
 run exposed only one old test fake that did not accept the new optional internal
 keyword; updating that shared fake closed all seven parametrized failures
 without adding runtime compatibility code.
+
+## Current working update: #496 refreshes the clean-delivery blocker
+
+One unmodified default clean-archive gate ran from exact commit `9545ce3` after
+confirming that WinINET proxying was enabled, the local proxy endpoint was
+reachable, and an explicit proxied PyPI headers-only request returned HTTP 200.
+Archive pytest reported 1,917 passed and one expected optional-RapidOCR skip in
+95.88 seconds. Fixture verification, compilation, wheel construction and
+contents, base installation outside the checkout, metadata, both import
+budgets, and the installed audio and image profiles passed. Their incremental
+sizes were 91,505,413 and 17,305,697 bytes.
+
+The first failure was again the OCR profile installation: pip exited 2 after a
+read timeout while streaming `onnxruntime-1.23.2` from
+`files.pythonhosted.org`. OCR metadata, its real local-recognition smoke, and
+its installed delta were not reached; `image,dashscope`, `google`,
+`audio,google`, `pdf-vision`, `video`, and `video,audio,image` did not start.
+The runner reports exact wheel/base sizes only after full success, so this run
+proves their enforced limits but does not invent exact byte counts. It made
+zero provider/cloud calls, removed the exact disposable root, left no gate
+process, and did not alter proxy configuration.
+
+This repeats an external fresh-dependency delivery failure, not an OCRLLM
+runtime or dependency-contract failure. #484 and #492 still prove the current
+wheel against an existing compatible OCR stack and the documented mixed local-
+OCR/Google union, but neither substitutes for fresh delivery. Do not change the
+ONNX Runtime pin, index, mirror, timeout, cache policy, package behavior, or
+gate merely to conceal the timeout, and do not launch repeated downloads in
+the same iteration.

@@ -56,7 +56,7 @@ from ocrllm import Config, GoogleGenAISettings, VisionModelSettings, recognize
 ```
 
 Current distribution evidence: #460 remains the last complete nine-profile
-clean gate. #491's exact-current maintained run passed archive tests plus the
+clean gate. #496's maintained run from exact commit `9545ce3` passed archive tests plus the
 installed base, audio, and image profiles, then again stopped while streaming
 `onnxruntime-1.23.2` for the OCR profile; later profiles did not run, so it is
 not a complete current release pass. #484 separately proved that a current
