@@ -307,6 +307,8 @@ def _report_typed_failure(error: OCRLLMError, stage: str | None) -> int:
         progress=progress or None,
         operation=operation,
         exception_type=exception_type,
+        http_status=error.details.get("http_status"),
+        provider_status=error.details.get("provider_status"),
     )
 
 
@@ -331,19 +333,31 @@ def _report_failure(
     progress: dict[str, int] | None,
     operation: str | None,
     exception_type: str | None,
+    http_status: object = None,
+    provider_status: object = None,
 ) -> int:
+    error_summary: dict[str, object] = {
+        "code": code,
+        "scope": scope,
+        "stage": stage,
+    }
     summary: dict[str, object] = {
         "status": "failed",
-        "error": {
-            "code": code,
-            "scope": scope,
-            "stage": stage,
-        },
+        "error": error_summary,
     }
+    if type(http_status) is int and 100 <= http_status <= 599:
+        error_summary["http_status"] = http_status
+    if (
+        type(provider_status) is str
+        and provider_status.isascii()
+        and len(provider_status) <= 128
+        and provider_status.replace("_", "").isalnum()
+    ):
+        error_summary["provider_status"] = provider_status
     if operation is not None:
-        summary["error"]["operation"] = operation
+        error_summary["operation"] = operation
     if exception_type is not None:
-        summary["error"]["sdk_type"] = exception_type
+        error_summary["sdk_type"] = exception_type
     if cleanup is not None:
         summary["cleanup"] = cleanup
     if progress is not None:

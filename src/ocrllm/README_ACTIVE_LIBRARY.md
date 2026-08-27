@@ -662,7 +662,9 @@ python tools/run_google_genai_audio_smoke.py `
 The script performs current catalog discovery and one recognition call. It
 prints only a bounded JSON summary of status, call count, nullable token usage,
 and typed error code/scope; a failure also identifies `catalog`,
-`model_selection`, or `recognition` as the safe runner stage. It never prints
+`model_selection`, or `recognition` as the safe runner stage and preserves only
+an allowlisted numeric HTTP status and short structured provider status when
+the mapper supplies them. It never prints
 the transcript, source path, credential, or raw provider response and does not
 retry, choose another model, upload through the Files API, or fall back to
 another transport. Credential-error behavior remains independently covered by

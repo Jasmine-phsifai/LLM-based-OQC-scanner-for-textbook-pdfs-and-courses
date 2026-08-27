@@ -409,7 +409,12 @@ def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
         return ProviderError(
             secret,
             code="PROVIDER_UNAVAILABLE",
-            details={"failure_scope": "provider", "raw_response": secret},
+            details={
+                "failure_scope": "provider",
+                "http_status": 400,
+                "provider_status": "FAILED_PRECONDITION",
+                "raw_response": secret,
+            },
         )
 
     def fake_list(settings, timeout_seconds):
@@ -428,6 +433,8 @@ def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
     assert json.loads(raw) == {
         "error": {
             "code": "PROVIDER_UNAVAILABLE",
+            "http_status": 400,
+            "provider_status": "FAILED_PRECONDITION",
             "scope": "provider",
             "stage": failure_stage,
         },
@@ -435,6 +442,36 @@ def test_audio_live_smoke_reports_sanitized_provider_failure_stage(
     }
     assert secret not in raw
     assert source not in raw
+
+
+def test_audio_live_smoke_omits_untrusted_provider_status_fields(
+    monkeypatch, capsys
+):
+    secret = "PRIVATE STATUS WITH PUNCTUATION!"
+
+    def fail_catalog(settings, timeout_seconds):
+        raise ProviderError(
+            code="PROVIDER_REQUEST_INVALID",
+            details={
+                "failure_scope": "request",
+                "http_status": True,
+                "provider_status": secret,
+            },
+        )
+
+    monkeypatch.setattr(smoke, "list_google_genai_models", fail_catalog)
+
+    assert smoke.main(["--model", MODEL, "--audio", "private.mp3"]) == 1
+    raw = capsys.readouterr().out
+    assert json.loads(raw) == {
+        "error": {
+            "code": "PROVIDER_REQUEST_INVALID",
+            "scope": "request",
+            "stage": "catalog",
+        },
+        "status": "failed",
+    }
+    assert secret not in raw
 
 
 def test_audio_live_smoke_reports_default_disposition_and_cleanup(

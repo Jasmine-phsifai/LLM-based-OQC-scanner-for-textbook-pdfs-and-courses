@@ -2361,3 +2361,17 @@ and PowerShell parsing pass. This supports a current external throughput
 constraint rather than a requirement, proxy-propagation, or gate-code defect;
 it does not close the clean gate or authorize pin, pip, cache, index, mirror,
 retry, timeout, wheelhouse, or installer changes.
+
+#512 refreshes the real native-Google short-audio boundary after #500's timeout.
+One disposable 3.53-second mono speech MP3 was synthesized locally, fully
+decoded, and sent through the maintained public runner exactly once after proxy
+and credential preflight. The live catalog request ended in 2.485 seconds as
+redacted `PROVIDER_REQUEST_INVALID`, request scope, with recognition calls zero;
+stderr, credential/path/transcript leaks, owned residue, retry, model switch,
+and fallback were all absent. As in #501's former image runner, the audio runner
+discarded the mapper's already-safe HTTP/provider status fields, so the exact
+live structured status is irrecoverable and is not guessed. The runner now
+preserves only exact integer 100--599 HTTP status and at-most-128-character ASCII
+alphanumeric/underscore provider status for both catalog and recognition
+failures. Production mapping, runtime APIs, dependencies, and provider policy
+are unchanged; focused runner/adapter coverage passes 71 tests.

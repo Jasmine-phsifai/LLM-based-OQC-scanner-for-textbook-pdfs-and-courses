@@ -9185,3 +9185,38 @@ pip seed, cache/index/mirror, retry count, 30-second read timeout, 1,200-second
 profile bound, wheelhouse policy, or installer. A later complete proof must use
 the maintained gate after genuinely improved delivery conditions; HEAD success
 or an incomplete manual transfer is not a release pass.
+
+## Current working update: #512 preserves safe audio-runner provider status
+
+#512 first withdrew a proposed mixed local-OCR/audio resume test because #493
+already owns that exact regression and #503 already rejected duplicating its
+generic token/asset assertions. It then used the maintainer-authorized routine
+Google robustness path instead. A disposable, locally synthesized speech MP3
+was 3.53 seconds, 28,464 bytes, mono at 22,050 Hz, fully decoded before
+credential access, and contained no user recording. WinINET and the configured
+proxy listener were available. The maintained public audio runner was invoked
+exactly once with explicit `gemini-2.5-flash` and its current-catalog check.
+
+The catalog request ended after 2.485 seconds as redacted
+`PROVIDER_REQUEST_INVALID`, request scope, catalog stage. Recognition calls were
+zero. There was no retry, second runner, model switch, fallback, invalid-key
+probe, stderr, credential/path/transcript leak, owned process, or disposable
+residue. This is current catalog-failure evidence, not audio-recognition success
+or model-capability evidence. The exact structured Google status cannot be
+recovered retrospectively because the pre-#512 audio runner discarded it; do
+not guess it or replay the request merely to fill that field.
+
+The live result proved the same diagnostic-tool gap that #501 already fixed for
+the image runner. `map_google_genai_error()` retains allowlisted `http_status`
+and `provider_status`, but the audio runner emitted neither. A failure-first
+test reproduced the loss at both catalog and recognition stages. The runner now
+includes `http_status` only for exact integers from 100 through 599 and includes
+`provider_status` only for nonempty ASCII alphanumeric/underscore text of at
+most 128 characters. Boolean/out-of-range statuses, punctuation, non-ASCII,
+messages, bodies, credentials, paths, transcripts, and arbitrary details remain
+excluded. The two failure-first cases plus the hostile-status omission case
+pass; the adjacent audio/image runner and audio adapter set passes 71 tests.
+The expanded Google runner/adapter set passes 113 tests. Compilation and
+lightweight import remain clean. No production mapper, API,
+provider behavior, retry/fallback, dependency, legacy, crop/ROI, or frozen
+boundary changed.
