@@ -8862,3 +8862,30 @@ OCR/Google union, but neither substitutes for fresh delivery. Do not change the
 ONNX Runtime pin, index, mirror, timeout, cache policy, package behavior, or
 gate merely to conceal the timeout, and do not launch repeated downloads in
 the same iteration.
+
+## Current working update: #497 aligns low-level shared cancellation
+
+The low-level public `recognize_video()` facade now carries one whole-job
+cancellation signal into shared media preparation only when its independent
+image and audio configurations refer to the exact same object. A public
+failure-first regression sets that signal while the request-owned source
+snapshot is yielded. Previously this facade still entered `inspect_video()`
+and would continue frame scanning, selection, and retained-frame writing before
+both branches later observed cancellation.
+
+The correction reuses #495's existing internal safe-stage checks and raises the
+existing typed `CANCELLED` before video decoding, provider work, or output-root
+publication. The snapshot context still cleans its owned file. Different image
+and audio signals pass no whole-job signal into media preparation, so one
+cancelled branch still preserves and settles the other through the established
+Route A outcome. Both already-set signals retain their earlier pre-source exit.
+
+No public parameter, helper abstraction, state, thread, backend interruption,
+retry/fallback, provider framework, crop/ROI path, or dependency was added. The
+focused low-level/high-level/extraction/resume set passes 102 tests, compileall
+passes, and the complete provider-free suite passes all 1,919 tests. An offline
+313,258-byte wheel installed outside the checkout passes the same public
+low-level regression; its independently checked import origin is the disposable
+target, and plain import leaves OpenCV, PyAV, pydub, miniaudio, Google GenAI,
+and OpenAI unloaded. Pytest reported one unexpanded warning on that one-test
+installed run; the captured output did not identify its category or message.

@@ -2229,3 +2229,15 @@ audio and image profiles. The first failure was again pip exit 2 while streaming
 later profiles did not run. The proxy was enabled and reachable, provider calls
 were zero, the disposable root and processes were removed, and runtime,
 dependencies, gate code, frozen boundaries, and protected files are unchanged.
+
+#497 closes the low-level counterpart of #495. Public `recognize_video()` now
+passes a cancellation signal into shared media preparation only when the image
+and audio configs reference the exact same object. If that signal becomes set
+during the request-owned snapshot, the call raises typed `CANCELLED` before
+video decoding, provider work, or output publication, and snapshot cleanup
+still completes. Distinct signals preserve Route A branch independence. No
+public parameter, state, retry/fallback, crop/ROI, or backend interruption was
+added; the complete provider-free suite passes all 1,919 tests.
+An offline 313,258-byte wheel installed outside the checkout also passes the
+new public low-level cancellation regression, and plain import keeps optional
+media/provider modules unloaded.

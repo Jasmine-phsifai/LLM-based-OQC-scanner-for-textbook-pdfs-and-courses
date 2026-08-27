@@ -82,9 +82,14 @@ def recognize_video(
 
     settled_outcome: VideoRecognitionOutcome | None = None
     try:
+        # Shared media may stop early only when cancellation applies to both branches.
+        shared_cancellation = validated_image_config.cancellation
+        if shared_cancellation is not validated_audio_config.cancellation:
+            shared_cancellation = None
         with prepare_video_media(
             source,
             output_dir=output_dir,
+            cancellation=shared_cancellation,
         ) as (snapshot_path, retained_frames):
             output_root = retained_frames[0].path.parent.parent
             audio_artifact: Path | None = None

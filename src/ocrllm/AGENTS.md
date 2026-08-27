@@ -80,6 +80,10 @@ API.
 when both branch configs reference the exact same cancellation signal. Distinct
 signals remain independent; do not turn this into source-copy/backend
 interruption or a cancellation coordinator.
+#497 applies that same exact-object rule to low-level `recognize_video()`.
+Both public video facades stop before decoding when one shared whole-job signal
+is set during the source snapshot; distinct branch signals still require shared
+media and retain their independent settlement behavior.
 #146 proves `publish_video_result()` is present and usable in the clean wheel.
 Future publication work should not add another build harness or repeat this
 proof unless the public surface, manifest, or runtime dependency boundary

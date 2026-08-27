@@ -565,6 +565,57 @@ def test_both_pre_cancelled_video_branches_stop_before_source_or_output(
     assert not output_dir.exists()
 
 
+def test_shared_cancellation_during_video_snapshot_stops_before_decode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "lecture.mp4"
+    source.write_bytes(b"stable-video-source")
+    output_dir = tmp_path / "output"
+    cancellation = Event()
+    image_provider = _ImageProvider()
+    preparation = importlib.import_module("ocrllm.video.prepare_video_media")
+
+    @contextmanager
+    def cancel_after_snapshot(_source, *, snapshot_parent):
+        snapshot = tmp_path / "owned-video-snapshot.mp4"
+        snapshot.write_bytes(source.read_bytes())
+        try:
+            cancellation.set()
+            yield snapshot
+        finally:
+            snapshot.unlink(missing_ok=True)
+
+    def reject_video_decode(*_args, **_kwargs):
+        raise AssertionError("shared cancellation reached video decoding")
+
+    monkeypatch.setattr(
+        preparation,
+        "snapshot_video_source",
+        cancel_after_snapshot,
+    )
+    monkeypatch.setattr(preparation, "inspect_video", reject_video_decode)
+
+    with pytest.raises(Cancelled):
+        recognize_video(
+            source,
+            output_dir=output_dir,
+            image_config=Config(
+                provider=image_provider,
+                cancellation=cancellation,
+            ),
+            audio_config=Config(
+                provider=GoogleGenAISettings(api_key="test-only-google-key"),
+                audio_model=AudioModelSettings(name="test-audio-model"),
+                cancellation=cancellation,
+            ),
+        )
+
+    assert image_provider.calls == []
+    assert not (output_dir / source.stem).exists()
+    assert not (tmp_path / "owned-video-snapshot.mp4").exists()
+
+
 def test_audio_cancellation_outranks_silent_stream_absence(
     tmp_path: Path,
 ) -> None:
