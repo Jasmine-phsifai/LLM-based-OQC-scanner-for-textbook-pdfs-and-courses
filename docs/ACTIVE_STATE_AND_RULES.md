@@ -8634,3 +8634,22 @@ resumable, add automatic fallback, worker routing, repair, a second state
 consumer, or any runtime behavior. Public import, lightweight-import, and
 high-level video-facade coverage passes 51 tests. Do not add a README parser or
 documentation framework for this three-sentence scope correction.
+
+## Current working update: #486 makes current distribution evidence discoverable
+
+`START_HERE.md` and `MIGRATION_STATUS.md` now distinguish the last complete
+nine-profile #460 gate from current evidence near the beginning of each
+navigation file. They state that #483 passed archived tests and the installed
+base, audio, and image profiles before external ONNX Runtime delivery timed out,
+so later profiles did not run and the result is not a complete current release
+pass. They also state that #484's `--no-deps` wheel proof established
+compatibility with an existing declared OCR stack, not fresh dependency
+delivery. `START_HERE.md` no longer calls historical #305 the latest delegated
+run.
+
+The detailed #460 history remains intact; no iteration chronology was copied
+into either navigation file. Targeted searches find exactly one compact current-
+distribution paragraph in each file and none of the obsolete #305 superlative.
+This changes no gate, dependency, runtime, test, provider, or release claim. Do
+not duplicate these facts into more navigation sections or create a documentation
+test framework for this bounded correction.

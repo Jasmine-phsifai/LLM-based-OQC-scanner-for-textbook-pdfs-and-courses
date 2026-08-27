@@ -55,6 +55,16 @@ Minimal import example:
 from ocrllm import Config, GoogleGenAISettings, VisionModelSettings, recognize
 ```
 
+Current distribution evidence: #460 remains the last complete nine-profile
+clean gate. #483's later maintained run passed archive tests plus the installed
+base, audio, and image profiles, then stopped when pip timed out while reading
+`onnxruntime-1.23.2` for the OCR profile; later profiles did not run, so it is
+not a complete current release pass. #484 separately installed the then-current
+wheel with `--no-deps` into an existing declared OCR stack and completed the
+generated-image public OCR smoke. That proves package/runtime compatibility,
+not fresh dependency delivery. Retry the full proof only through the maintained
+gate when there is new delivery evidence.
+
 Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and
 Phase 2A image-library completion are GO. Stage M has shipped lazy DashScope
@@ -833,7 +843,7 @@ Before reporting completion, run the maintained clean-archive gate:
 & .\tools\run_stage_m_offline_gate.ps1
 ```
 
-The latest delegated run (#305, exact commit `efa7069`) proved and propagated
+#305's delegated run (exact commit `efa7069`) proved and propagated
 the active `127.0.0.1:10080` proxy, passed 1,558 archived tests with one skip,
 and built the wheel. It then exposed a Windows PowerShell argument bug in the
 gate's multiline wheel-content probe before any install profile began. #306
