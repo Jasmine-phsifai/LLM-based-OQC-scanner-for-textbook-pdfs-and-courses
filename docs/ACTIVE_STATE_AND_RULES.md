@@ -8700,3 +8700,37 @@ runtime adapter, provider framework, combined configuration, retry, fallback,
 crop/ROI stage, dependency extra, or state format was added. The package README
 now states the already-supported `video,ocr,audio,google` extras union and the
 two independent configs.
+
+## Current working update: #490 live-proves mixed-video failure settlement
+
+One bounded real-service run exercised the #489 configuration without changing
+runtime code. A secret-isolated controller read the already-authorized Google
+credential from legacy QSettings only into one child process, after confirming
+WinINET proxy, TCP, and proxied HTTPS reachability. The live native catalog
+contained 38 `generateContent` models and explicit `gemini-2.5-flash`. One
+authorized generated 1000x300 MP4 then ran through public `recognize_video()`:
+real RapidOCR 3.9.2 recognized the `OCRLLM 2026` marker from one complete
+1000x300 retained frame with zero image-provider/network calls, while the
+independent Google short-audio branch entered exactly one generation request.
+
+Google returned typed `PROVIDER_RATE_LIMITED` at generation. There was no retry,
+model switch, fallback, second dispatch, or image-provider call; installed
+`google-genai 2.9.0` independently confirms that the library's omitted
+`retry_options` selects the SDK's one-attempt strategy. The video outcome was
+honestly partial and remained composable, with total current provider calls of
+one and no invented token row. The Google client closed, inline audio required
+no remote-file cleanup, source/audio snapshots were removed, the credential and
+path leak scans were negative, and the exact disposable root was deleted. The
+offline speech synthesizer was unavailable inside that controller, so the
+audio was an audible synthetic tone; this run proves transport, error mapping,
+independent settlement, accounting, and cleanup rather than transcription
+quality. `PROVIDER_RATE_LIMITED` retains its existing retryable provider-cooldown
+disposition for a later caller; the library itself did not retry.
+
+The disposable reporter initially displayed the audio call count as unknown
+because it accepted only mutable `dict` details while public error details are
+an immutable mapping. This was not a library defect: public composition consumed
+the same mapping and reported the exact total of one, and existing regressions
+cover mapping-backed call evidence. No reporter was persisted and no runtime,
+test, retry policy, provider abstraction, error code, media path, dependency,
+or state format changed.
