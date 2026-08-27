@@ -9733,3 +9733,32 @@ for cross-branch settlement and Google catalog mapping pass; the prior adjacent
 116-test set also passes. Both disposable GUID roots are absent and source/repo
 integrity is unchanged. This proves the split settlement and honest partial
 state, not successful Google audio recognition.
+
+## Current working update: #547 proves real multi-hour frame extraction
+
+#547 runs the provider-free public video path once against the shorter real
+archive MP4: 2,665,023,982 bytes, 9,683.53 seconds, 291,004 frames at about
+30.0514 FPS, and 1920x1080. Preflight confirmed the prior source digest,
+OpenCV 4.13.0, more than 103 GB free on the snapshot volume, and no relevant
+process or temp residue. No network, credential, provider, audio extraction,
+crop, resize, transcode, or archive write occurred.
+
+One `inspect_video()` completed in 0.329 seconds. One
+`extract_video_frames()` completed in 55.375 seconds and returned an exact
+tuple of 82 strictly ordered retained frames, inside the fixed 75--108 target
+for this duration. Every retained JPEG is nonempty and decodes to the original
+1920x1080 dimensions; together they use 23,421,340 bytes. The final retained
+frame is exact source frame 291003 at 9,683.499 seconds, preserving the ending.
+The request-owned 2.67 GB snapshot and atomic frame staging directory were both
+absent when the public call returned, and the source size, mtime, and digest
+remained unchanged.
+
+A disposable verifier's direct `cv2.imread()` could not traverse the long
+Unicode output path, while Python byte I/O plus `cv2.imdecode()` verified all
+82 files without rerunning extraction. The product already uses Python path I/O
+with OpenCV byte encoding for this Windows limitation, so this is not a product
+defect and adds no compatibility wrapper. Five density/snapshot regressions and
+four ordering/full-frame/Unicode regressions pass. The exact GUID root is
+absent; repository state is unchanged. This is real sustained lifecycle
+evidence, not a general throughput guarantee and not authority to add tunable
+sampling, a second scene detector, or performance instrumentation.
