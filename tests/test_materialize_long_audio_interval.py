@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from ocrllm import DependencyMissing, InvalidSource
+from ocrllm import DependencyMissing, InvalidSource, OutputError
 from ocrllm.audio.build_long_audio_interval_windows import LongAudioIntervalWindow
 from ocrllm.audio.decode_mp3_duration import decode_mp3_duration
 from ocrllm.audio.materialize_long_audio_interval import (
@@ -183,6 +183,45 @@ def test_materialize_long_audio_interval_cleans_after_consumer_failure(
             raise RuntimeError("consumer failed")
 
     assert not segment.exists()
+
+
+def test_materialize_long_audio_interval_does_not_hide_cleanup_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source.mp3"
+    source.write_bytes(b"owned source")
+    module = __import__(
+        "ocrllm.audio.materialize_long_audio_interval",
+        fromlist=["unused"],
+    )
+    real_unlink = Path.unlink
+
+    def fake_run(command, **_kwargs):
+        Path(command[-1]).write_bytes(b"segment")
+        return subprocess.CompletedProcess(command, 0)
+
+    def deny_interval_cleanup(path: Path, *args, **kwargs) -> None:
+        if path.name.startswith(".ocrllm-long-audio-interval-"):
+            raise PermissionError("test-only retained interval handle")
+        real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(
+        module,
+        "load_audio_ffmpeg_executable",
+        lambda: Path("ffmpeg-test"),
+    )
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(Path, "unlink", deny_interval_cleanup)
+
+    with pytest.raises(OutputError) as captured:
+        with materialize_long_audio_interval(source, window=_window()) as segment:
+            assert segment.is_file()
+
+    assert captured.value.code == "OUTPUT_WRITE_FAILED"
+    assert source.read_bytes() == b"owned source"
+    assert segment.read_bytes() == b"segment"
+    real_unlink(segment)
 
 
 def test_materialize_long_audio_interval_maps_ffmpeg_rejection_and_cleans(
