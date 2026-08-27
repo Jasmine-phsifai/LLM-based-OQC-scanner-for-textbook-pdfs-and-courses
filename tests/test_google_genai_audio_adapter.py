@@ -359,6 +359,48 @@ def test_public_google_audio_result_usage_order_and_snapshot_cleanup(
     assert list(temp_dir.glob("ocrllm-audio-*")) == []
 
 
+def test_short_audio_preserves_result_when_cancelled_during_synchronous_call(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    adapter = importlib.import_module(
+        "ocrllm.providers.google_genai.recognize_short_mp3"
+    )
+    cancellation = Event()
+    fake = _FakeGoogleModule()
+    generate_content = fake.models.generate_content
+
+    def set_cancellation_then_return_response(*, model, contents):
+        cancellation.set()
+        return generate_content(model=model, contents=contents)
+
+    monkeypatch.setattr(
+        fake.models,
+        "generate_content",
+        set_cancellation_then_return_response,
+    )
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+    temp_dir = tmp_path / "snapshots"
+
+    result = recognize(
+        FIXTURE,
+        config=_config(cancellation=cancellation, temp_dir=temp_dir),
+    )
+
+    assert cancellation.is_set()
+    assert result.status == "complete"
+    assert result.markdown == "synthetic speech"
+    assert result.output_path is None
+    assert fake.models.list_calls == 1
+    assert len(fake.models.generate_calls) == 1
+    assert result.metadata["provider_call_count"] == 1
+    assert result.metadata["current_model_token_usage"] == (
+        {"model": MODEL, "input_tokens": 17, "output_tokens": 5},
+    )
+    assert fake.clients[0].closed is True
+    assert list(temp_dir.glob("ocrllm-audio-*")) == []
+
+
 def test_successful_short_audio_discloses_client_close_failure(
     tmp_path,
     monkeypatch,

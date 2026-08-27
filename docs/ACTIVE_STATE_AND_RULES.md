@@ -8653,3 +8653,24 @@ distribution paragraph in each file and none of the obsolete #305 superlative.
 This changes no gate, dependency, runtime, test, provider, or release claim. Do
 not duplicate these facts into more navigation sections or create a documentation
 test framework for this bounded correction.
+
+## Current working update: #487 locks memory-only short-audio settlement-first
+
+The direct native Google short-MP3 facade preserves a valid response when its
+cancellation signal becomes set only during the one synchronous provider call.
+It still rejects an already-set signal before snapshotting and checks again
+immediately before dispatch. Once dispatch has begun, the SDK call is not
+interruptible; throwing after its valid return would discard the only paid
+transcript because this public facade has no persistence or resume carrier.
+
+A new public fake-SDK regression sets the real `Event` inside the sole
+generation call and proves the result remains complete and memory-only with one
+call, exact 17/5 token usage, a closed client, and no snapshot residue. The
+focused short-audio, batch, low-level video, and high-level video set passes 132
+tests. Two legacy short-ASR checkpoint regressions independently pass and retain
+settled output before propagating cancellation, but their durable terminal
+raise is not copied into this non-persistent API. No runtime code, state, error
+carrier, provider behavior, retry, or cancellation framework changed. Persistent
+long audio and high-level video may stop publication after saving paid work and
+later resume with zero calls; do not infer the same terminal shape where no
+recovery path exists.

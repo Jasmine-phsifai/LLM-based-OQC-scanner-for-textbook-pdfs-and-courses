@@ -202,6 +202,15 @@ is often accepted.
   own duration ceiling or its file-size, transport-envelope, and token limits.
 - Preflight all applicable limits before dispatch. A duration-valid file is not
   automatically valid for a particular provider request.
+- **#094 selects settlement-first for direct memory-only short audio.** An
+  already-set cancellation signal stops before snapshotting or dispatch. Once
+  the one synchronous provider call has begun, it is not interruptible; if the
+  signal becomes set during that call and a valid response returns, preserve
+  and return the paid transcript, token usage, and cleanup facts. Do not add a
+  post-return cancellation check that discards the only result. Persistent long
+  audio and high-level video may instead raise cancellation after saving settled
+  work because they have an explicit zero-call recovery path; that does not
+  authorize state or a result-bearing cancellation wrapper for this direct API.
 - #208 found a concrete gap in that target: the shipped A2a path currently
   preflights Google's provider-wide 9.5-hour duration and 2 GB file limits, but
   not the selected model's input-token limit. [Google's audio documentation](https://ai.google.dev/gemini-api/docs/audio)
