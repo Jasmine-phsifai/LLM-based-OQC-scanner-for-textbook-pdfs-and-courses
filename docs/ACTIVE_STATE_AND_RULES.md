@@ -507,6 +507,21 @@ but Alibaba does not document its pagination contract. Alibaba's separately
 documented `/api/v1/models` endpoint uses a different `output.models` and
 page-number schema and is not mixed into this adapter. No retry, fallback,
 provider abstraction, catalog-response publication, or live call was added.
+#471 leaves the DashScope catalog cache keyed by endpoint after an explicit
+credential-scope audit. Alibaba documents that API keys inherit workspace model
+permissions, but does not document whether the OpenAI-compatible `/models`
+response is filtered by those permissions. Without that missing fact, adding
+secret hashes or pool-specific cache partitions would encode an unproven
+assumption. A bounded comparison of two authorized same-region workspaces is
+the evidence gate if this risk is reopened; raw credentials must never become
+cache keys or evidence. The audit did reproduce a separate earlier blocker:
+an uncached explicit non-default model combined with
+`DashScopeCredentialPool` reaches catalog validation before a lease exists, so
+single-credential resolution raises `CONFIG_INVALID` before HTTP. Existing pool
+tests mock the catalog and hide that call order. This is the next bounded
+DashScope defect: one pool lease must cover catalog validation and recognition,
+including every failure cleanup path, without a second lease, retry, fallback,
+or provider-generalization change.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import
