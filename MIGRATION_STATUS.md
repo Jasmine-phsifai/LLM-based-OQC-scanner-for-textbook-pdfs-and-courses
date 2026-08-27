@@ -7,7 +7,12 @@ file and that file differ, that file wins.
 
 ## Current Status
 
-Last synchronized: 2026-08-26.
+Last synchronized: 2026-08-27.
+
+#461 keeps the existing local-OCR cancellation behavior but makes its public
+error evidence exact: cancellation between ordered images now reports zero
+provider calls from the local-OCR routing boundary. No provider, state, or API
+contract changed.
 
 The repository has two boundaries:
 

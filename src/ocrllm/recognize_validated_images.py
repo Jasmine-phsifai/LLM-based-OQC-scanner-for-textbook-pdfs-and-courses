@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .config import Config
-from .errors import OutputError
+from .errors import Cancelled, OutputError
 from .processor_output import ProcessorOutput
 
 if TYPE_CHECKING:
@@ -27,11 +27,15 @@ def recognize_validated_images(
             recognize_images_with_rapidocr,
         )
 
-        output = recognize_images_with_rapidocr(
-            validated_paths,
-            profile=profile,
-            config=config,
-        )
+        try:
+            output = recognize_images_with_rapidocr(
+                validated_paths,
+                profile=profile,
+                config=config,
+            )
+        except Cancelled as error:
+            error._add_safe_detail("provider_calls_attempted", 0)
+            raise
         if slot_checkpoint is not None:
             try:
                 slot_checkpoint.verify_snapshots()

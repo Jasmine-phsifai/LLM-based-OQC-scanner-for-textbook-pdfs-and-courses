@@ -410,6 +410,14 @@ OmegaConf 2.3.1 to recognize the generated image with Requests blocked and zero
 provider calls; its 328,909,525-byte delta remains below the 512 MiB ceiling.
 This closes the current installed-local-OCR release evidence gap without
 claiming a quality benchmark or provider connectivity proof.
+#461 makes cancellation inside an ordered local-OCR image group disclose the
+same exact zero-provider-call fact as other local-OCR terminal paths. The
+RapidOCR loop already stopped before the next image, but its public
+`Cancelled` error omitted `provider_calls_attempted`; the local-OCR routing
+boundary now adds `0` without changing provider-backed cancellation. The
+focused local-OCR and batch set passes 43 tests. No cancellation coordinator,
+provider wrapper, engine interruption, state field, or cleanup framework was
+added.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

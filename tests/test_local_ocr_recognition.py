@@ -306,7 +306,7 @@ def test_local_ocr_honors_cancellation_between_ordered_images(
         cancellation=cancellation,
     )
 
-    with pytest.raises(Cancelled):
+    with pytest.raises(Cancelled) as caught:
         recognize(
             (first, second),
             config=Config(image_mode="ocr", cancellation=cancellation),
@@ -314,3 +314,4 @@ def test_local_ocr_honors_cancellation_between_ordered_images(
 
     assert len(engine.calls) == 1
     assert not engine.calls[0].exists()
+    assert caught.value.details["provider_calls_attempted"] == 0
