@@ -7876,3 +7876,7 @@ runner 在 **497.118s** 后 exit **1**，`report_type=video_outcome`、status/ou
 **实际调用与输出边界。** `preflight_recognition_batch()` 对 MP3 只调用现有短音频选项校验、凭据解析和本地探测；目标列表只收集图片 Markdown。`_recognize()` 的 batch 音频分支固定调用 `recognize_validated_short_mp3()`，其结果只在内存返回。更强的事实是短音频校验明确拒绝 `output_dir`、`resume` 和 `overwrite`，所以同一个共享 `Config` 不能一边让图片持久化、一边让 batch MP3 持久化。可保存结果的 whole/interval Google Files 路径只由独立 `recognize_long_mp3()` 暴露，batch 无法路由过去。图片当前解析为 `<output_dir>/<stem>_board.md`，独立长音频为 `<output_dir>/<stem>/result.md`，两者也不是同一目标。因此维护者所说的“同名图片/音频极端冲突”是未来若把持久音频有意加入 batch 时才需要重新执行的规则，不是当前缺陷。
 
 **验证与过度设计判断。** 现有图片同目标零调用拒绝、短音频拒绝持久化选项、串行短音频 batch 顺序/失败诚实三项回归为 **3 passed in 0.19s**。两个独立只读审计与本人逐段检查一致，没有运行 provider、联网、读取凭据或创建媒体。当前 duplicate-target preflight 保留不动；若未来 batch 真正获得持久音频，届时必须把它的实际 resolved targets 加入完整预检。现在添加音频 target、长音频 batch、通用 planner、transaction、跨进程锁或第二套 batch 抽象，都会先扩大产品再防御新扩大面，正是过度设计。本轮只澄清权威决定和导航文档，不修改 runtime、test、API、state、provider、dependency、legacy、crop/ROI 或 frozen 边界。
+
+## #536 — 2026-08-28：撤销组合式防御测试并收回重复文档
+
+维护者指出 heartbeat 再次滑向“原子弹发射井”式过度设计后，本轮立即停止并撤销尚未提交的“有效图片后跟损坏 MP3”组合回归；该测试没有复现缺陷，只把已有的后续成员预检与损坏 MP3 拒绝做了低价值笛卡尔积。正在运行的完整回归也随即停止，没有把算力结果包装成继续保留测试的理由。随后复查 #535：一个无运行时变化的结论被复制进五份文档，共增加 54 行。现在仅在 `MAINTAINER_PRODUCT_DECISIONS.md` 保留压缩后的未来实现边界，在本日记保留调查证据；删除 `ACTIVE_STATE_AND_RULES.md`、`MIGRATION_STATUS.md` 和 `START_HERE.md` 的重复副本。本轮净删除重复内容，不改 runtime、test、API、provider、state、dependency、legacy 或 crop/ROI 边界。后续不得为已有单项拒绝规则建立未观察到故障的组合矩阵；优先回到真实图片、音频、PDF、视频运行暴露的问题。

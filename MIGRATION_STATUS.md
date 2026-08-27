@@ -2557,12 +2557,3 @@ and leaves no segment. Real MP3 cleanup, snapshot ownership, and ordinary
 failure resume remain with their existing owners; no duplicate fixture or
 coordinator was added. The adjacent set passes 63 tests and the complete
 provider-free suite passes 1,926 tests with no skips.
-
-#535 clarifies rather than expands batch collision handling. Batch MP3 items use
-only the memory-only short-audio route, which rejects persistence options;
-standalone persistent long audio is not reachable through `recognize_batch()`.
-Thus an image and same-stem MP3 cannot currently share a batch-owned output
-target. Existing duplicate rejection remains limited to targets that actually
-resolve. No audio target planner, long-audio batch route, transaction, lock,
-runtime, test, API, state, provider, dependency, legacy, or crop/ROI change was
-added. The three adjacent owner tests pass.

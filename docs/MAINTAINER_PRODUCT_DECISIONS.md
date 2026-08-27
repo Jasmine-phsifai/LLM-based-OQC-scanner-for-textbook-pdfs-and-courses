@@ -124,16 +124,10 @@ is often accepted.
   folder beside the source. Cross-media name collisions are therefore unusual.
   Prefer simple duplicate rejection and normal active-call protection over a
   speculative cross-process transaction or locking system.
-- **#535 clarifies the current applicability of that rule.** The public batch
-  route accepts only memory-only short MP3 recognition and rejects
-  `output_dir`, `resume`, and `overwrite` for any such item. Persistent long
-  audio remains a separate `recognize_long_mp3()` facade and is not reachable
-  through `recognize_batch()`. Consequently, an image and same-stem MP3 cannot
-  currently resolve to one batch-owned output target. Keep duplicate rejection
-  for targets that really resolve (currently image items); do not invent batch
-  audio persistence or a generalized cross-media planner merely to create and
-  then defend against this collision. If persistent audio is intentionally
-  added to batch later, its complete resolved targets must join preflight then.
+- **#535 bounds that rule to real targets.** Batch MP3 is memory-only and
+  persistent long audio is a separate facade, so no cross-media batch target
+  currently exists. If persistent audio intentionally joins batch later, add
+  its actual resolved targets to preflight then; do not add a planner now.
 - #071 removed the obsolete lazy-iterator machinery while retaining the
   batch-lifetime output owner for valid concurrent execution and race protection;
   do not replace it with speculative cross-process coordination.

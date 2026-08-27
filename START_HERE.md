@@ -1348,10 +1348,3 @@ two missing windows, publishes ordered Markdown, and removes state. Existing
 owners retain real-media cleanup and source/snapshot responsibilities, avoiding
 a duplicate integration fixture or second recovery design. The full
 provider-free suite passes 1,926 tests.
-
-#535 records the exact scope of batch output-collision handling. Short MP3 items
-inside `recognize_batch()` are memory-only and reject persistence options;
-persistent long audio remains a separate facade. A same-stem image/MP3 tuple
-therefore has no shared batch-owned target today. Duplicate rejection continues
-to cover targets that actually resolve, without adding an audio output planner,
-long-audio batch support, transaction, or lock.
