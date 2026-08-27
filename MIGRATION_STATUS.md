@@ -7,21 +7,19 @@ file and that file differ, that file wins.
 
 ## Current Status
 
-Last synchronized: 2026-08-27.
+Last synchronized: 2026-08-28.
 
-Current distribution evidence: #460 remains the last complete nine-profile
-clean gate. #508's maintained run from exact commit `6034c74` passed archived
-tests, the installed base, audio, and image profiles under recorded pip 23.0.1,
-then stopped at the existing 1,200-second bound while streaming
-`onnxruntime-1.23.2` for the OCR profile. Later profiles did not run, so it is
-not a complete current release pass. #484 separately proved that a current
-wheel works with an existing declared OCR stack. That establishes package/runtime
-compatibility, not fresh dependency delivery. Retry the full proof only through
-the maintained gate when there is new delivery evidence.
-#511 confirms that the active WinINET proxy and local listener are visible to
-Python/pip and that the exact OCR wheel's proxied HEAD returns 200, but one
-bounded body transfer reached only 1,421,453 of 13,467,651 bytes in about 120
-seconds. Fresh delivery therefore remains open; no installer policy changed.
+Current distribution evidence: #555 is the latest complete nine-profile clean
+gate. The unchanged maintained script ran once from exact commit
+`e9d49b06fabd4c8c0aba5cdd40ef2006213405b3`, passed 1,927 archived tests with
+one optional RapidOCR skip, wheel/base and import checks, then fresh install and
+smoke for all nine declared runtime profiles under pip 23.0.1. It emitted its
+final success marker, no gate failure line, and cleaned its owned root and
+processes. The outer controller did not retain the native process handle, so
+the exact numeric gate exit is unknown rather than inferred. #508, #520, and
+#530 remain useful transient delivery history but are no longer current release
+blockers. No dependency, installer, cache, index, retry, timeout, or gate policy
+changed to obtain this result.
 
 #461 keeps the existing local-OCR cancellation behavior but makes its public
 error evidence exact: cancellation between ordered images now reports zero
@@ -2598,3 +2596,20 @@ The separate choice of whether to expose one safe secondary-branch error
 summary remains open in the authority. The new regression, the 65-test owner
 set, all 1,928 provider-free tests, compileall, diff hygiene, and frozen-boundary
 checks pass.
+
+#555 restores a current complete clean-distribution proof without changing the
+package or its installer policy. The unchanged maintained gate ran once from
+exact commit `e9d49b06fabd4c8c0aba5cdd40ef2006213405b3` after active-proxy and
+proxied-PyPI preflight. It completed in 1,072.220 seconds: 1,927 archived tests
+passed with one optional RapidOCR skip; fixture and compile checks passed; the
+314,990-byte wheel, 1,619,344-byte base install, metadata, and import budgets
+passed; and all nine declared runtime profiles installed and passed their
+smokes under pip 23.0.1. Installed deltas stayed within their bounds, including
+328,929,917 bytes for `ocr` and 272,681,250 bytes for the combined
+`video,audio,image` profile. The gate emitted its exact final success marker and
+no failure line. The outer watchdog lost the native process handle, so the
+numeric gate exit is honestly unknown; the controller's own zero is not used as
+evidence. The current proof root, report root, and related processes were
+removed. Two unrelated proof roots that predated the run were left untouched.
+No credentials, provider recognition, media, dependency change, pin, cache,
+index, retry, timeout, mirror, or gate edit was involved.

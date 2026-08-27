@@ -55,46 +55,20 @@ Minimal import example:
 from ocrllm import Config, GoogleGenAISettings, VisionModelSettings, recognize
 ```
 
-Current distribution evidence: #460 remains the last complete nine-profile
-clean gate. #508's one maintained run from exact commit `6034c74` passed 1,919
-archived tests with one optional real-RapidOCR skip, fixture and compile checks,
-the clean wheel/base install, metadata, and import budgets. Fresh `audio` and
-`image` profiles passed under pip 23.0.1 with installed deltas of 91,506,201 and
-17,306,485 bytes. The next `ocr` profile used the same pip, began downloading
-the declared ONNX Runtime 1.23.2 Windows wheel, and reached the gate's 1,200-
-second install timeout; its smoke and the six later profiles did not run. This
-is current dependency-delivery failure evidence, not proof of package
-incompatibility or a complete current release pass. #484 separately proved
-that a current wheel works with an existing declared OCR stack. Do not hide the
-open fresh-delivery gate by changing the pin, pip, cache, index, mirror, retry,
-or timeout, or by substituting installed-stack evidence.
-#511 narrows that blocker without replaying the gate: WinINET and the local
-proxy listener were active, Python/pip proxy discovery resolved that proxy,
-and the exact ONNX Runtime wheel returned a proxied HTTP 200 HEAD. One bounded
-proxied body transfer nevertheless delivered only 1,421,453 of 13,467,651
-bytes in about 120 seconds. This is current low-throughput delivery evidence,
-not a gate-code, dependency, or compatibility defect; the full gate remains
-open and its installation policy is unchanged.
-#520 runs the unchanged maintained gate once from exact commit `fc0ad66` after
-proxy/listener/proxied-PyPI preflight passed. Archive tests reported 1,925
-passes and one optional real-RapidOCR skip; fixture, compile, wheel/base,
-metadata, import budgets, and cached `audio`/`image` profiles passed. The `ocr`
-profile's fresh pip 23.0.1 install then returned no available `rapidocr>=3.9,<4`
-version and stopped before its smoke and the six later profiles. Immediate
-metadata-only checks found the official 3.9.2 `py3-none-any` wheel and both pip
-26.0.1 and a fresh pip 23.0.1 could list it, so the gate failure is transient or
-index-state-dependent rather than a proven pin/platform defect. Do not replay
-the same gate merely to replace this result or change pip/index/cache/retry.
-#460 remains the last complete nine-profile proof.
-#530 repeats the unchanged maintained gate once from exact current commit
-`0cf04eb`. Archive, build/base, import budgets, and cached `audio`/`image`
-profiles pass, but the `ocr` profile's pip 23.0.1 reports no OpenCV candidate
-and stops before its smoke or six later profiles. A single fresh pip 23.0.1
-metadata query through the same active proxy immediately lists compatible
-4.13.0.90 and 4.13.0.92, so this remains transient/index-state-dependent
-fresh-delivery failure rather than a pin or package defect. Do not change the
-pin, pip, index, cache, retry, mirror, timeout, or installer to hide it; #460
-remains the last complete nine-profile proof.
+Current distribution evidence: #555 is the latest complete nine-profile clean
+gate. The unchanged maintained gate ran once from exact commit
+`e9d49b06fabd4c8c0aba5cdd40ef2006213405b3` through the active proxy. It passed
+1,927 archived tests with one optional real-RapidOCR skip, fixture and compile
+checks, wheel/base install, metadata and import budgets, then fresh install and
+smoke for `audio`, `image`, `ocr`, `image,dashscope`, `google`,
+`audio,google`, `pdf-vision`, `video`, and `video,audio,image` under pip 23.0.1.
+The wheel was 314,990 bytes and the base installed delta was 1,619,344 bytes.
+The run emitted the gate's final success marker and no gate failure line, then
+removed its owned proof root and processes. The outer watchdog failed to retain
+the native process handle, so its exact numeric exit code is unknown and must
+not be reconstructed from the controller's own zero. This evidence supersedes
+#460 as the current complete distribution proof; the transient delivery stops
+in #508, #520, and #530 remain history rather than current blockers.
 
 Current phase: **Phase 1 maturation, Stage M offline implementation complete**. Phase 0
 contract honesty, the Phase 1 image gate, the Phase 2 development worker, and

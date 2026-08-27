@@ -10067,3 +10067,40 @@ silently widen this result into permission to clip or transcode private media,
 drop audio, raise the live-call bound, force selector output, or add archive
 discovery to the library. The real two-group final-publication gap remains open
 until its fixture/source policy is selected separately.
+
+## Current working update: #555 restores a current complete nine-profile proof
+
+#555 runs the unchanged maintained clean-distribution gate exactly once from
+commit `e9d49b06fabd4c8c0aba5cdd40ef2006213405b3`. The gate script remained the
+reviewed Git blob `f108e16d302b12d7c74ad7202b0f07e560ececeb`
+(SHA-256 `9DCCC4894731DC46C67C54DCB89D51E875DEE1BE501661D480A2AA0824405FA5`).
+The active proxy had one listener and a proxied PyPI HEAD returned 200 before
+the single run; no pip, index, cache, mirror, dependency, pin, retry, timeout,
+or gate setting changed.
+
+The run took 1,072.220 seconds. Archive tests reported 1,927 passed and one
+optional real-RapidOCR skip; fixture and compile checks passed. The universal
+wheel was 314,990 bytes and the clean base installed delta was 1,619,344 bytes.
+Base import/metadata and both import-time budgets passed. All nine fresh pip
+23.0.1 profiles then installed and passed their exact smokes: `audio`
+91,516,943 bytes, `image` 17,317,227, `ocr` 328,929,917,
+`image,dashscope` 41,893,253, `google` 42,035,050, `audio,google`
+130,645,260, `pdf-vision` 25,515,968, `video` 254,809,064, and
+`video,audio,image` 272,681,250. The gate emitted its exact final success marker
+for the tested commit and no gate failure line. Because the outer watchdog did
+not retain the native process handle, the exact numeric gate exit is unknown;
+its controller-level zero is not treated as the gate exit. The final marker is
+produced only after every asserted stage and profile smoke has passed.
+
+Credential/QSettings reads and real provider-recognition calls were zero. The
+gate's owned proof root, outer report root, and related processes were removed.
+Two unrelated gate proof roots already present before launch remain untouched,
+so this is not a claim that the entire system temporary directory is clean.
+The tracked tree, frozen directories, and protected untracked files remained
+unchanged by execution. #555 supersedes #460 as the latest complete distribution
+proof and turns #508/#520/#530 into historical transient-delivery evidence. No
+runtime, test, public API, dependency, provider, media, legacy, crop/ROI, or
+frozen-boundary change was justified. Adding a downloader, prefetch layer,
+alternate installer, permanent retry policy, or second distribution runner to
+avoid those old delivery failures would be over-design; the maintained gate is
+the single release proof.
