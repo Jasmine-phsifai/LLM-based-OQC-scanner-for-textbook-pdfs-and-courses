@@ -8574,3 +8574,26 @@ tests with zero failures or skips. No retry, fallback, provider ledger, generic
 response wrapper, state schema, or blocked-response speculation was added.
 The bounded reproduced defect is closed; return to a fresh public-lifecycle or
 still-open bounded live gate rather than extending shared-parser failures.
+
+## Current working update: #483 clean distribution gate stopped at OCR download
+
+One unmodified maintained clean-archive gate ran from exact commit
+`b5a4abc406b466829aec310d9c8511ed0aed086d` after confirming the configured
+WinINET proxy was enabled and reachable. Archived-source pytest completed with
+1,913 passed and one expected optional RapidOCR skip; fixture verification,
+compileall, clean wheel construction and base installation, lightweight import,
+and the isolated audio and image profiles all passed. No provider or cloud
+request ran.
+
+The following `ocr` profile did not install because pip timed out after 30
+seconds while reading `onnxruntime-1.23.2` from `files.pythonhosted.org`. The
+gate exited 2, removed its proof root and child processes, and did not begin the
+later DashScope, Google, PDF, video, or combined profiles. This is external
+dependency-delivery evidence, not a source, package manifest, OCR runtime, or
+provider failure, and it is not a complete current-HEAD release pass. Do not
+immediately replay it or change dependency pins, pip timeout, index, mirror,
+cache, gate structure, or product code from this single result. The installed
+DashScope profile, when it later runs, proves public pool type availability and
+offline SDK construction; the one-lease catalog-plus-recognition behavior stays
+directly covered by archived source tests rather than a duplicated installed
+fake-provider flow.
