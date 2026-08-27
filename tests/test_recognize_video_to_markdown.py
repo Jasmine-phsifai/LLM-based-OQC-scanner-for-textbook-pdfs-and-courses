@@ -522,6 +522,110 @@ def test_recoverable_audio_gap_keeps_one_journal_and_resume_reuses_images(
     assert _root_journals(output_root) == ()
 
 
+def test_local_ocr_frames_survive_audio_failure_and_resume_only_audio(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "local-ocr-resume.mp4"
+    source.write_bytes(b"stable-video-for-local-ocr-resume")
+    output_parent = tmp_path / "output"
+    output_root = output_parent / source.stem
+    media_calls = _install_one_frame_media(
+        monkeypatch,
+        source=source,
+        output_parent=output_parent,
+        has_audio_stream=True,
+    )
+    local_ocr = __import__(
+        "ocrllm.local_ocr.recognize_images_with_rapidocr",
+        fromlist=["recognize_images_with_rapidocr"],
+    )
+    job_audio = __import__(
+        "ocrllm.recognize_video_job_audio",
+        fromlist=["recognize_video_job_audio"],
+    )
+    recognized_bytes: list[bytes] = []
+    audio_calls = 0
+
+    def recognize_frame(path: Path):
+        recognized_bytes.append(path.read_bytes())
+        return SimpleNamespace(
+            txts=("Local OCR settled frame",),
+            scores=(0.99,),
+        )
+
+    def recognize_audio(_snapshot, *, prompt, config):
+        nonlocal audio_calls
+        audio_calls += 1
+        if audio_calls == 1:
+            raise ProviderUnavailable(
+                "The audio provider is temporarily unavailable.",
+                details={"provider_calls_attempted": 1},
+            )
+        return GoogleGenAIAudioResponse(
+            markdown="# Audio recovered\n",
+            input_tokens=7,
+            output_tokens=2,
+            client_closed=True,
+        )
+
+    monkeypatch.setattr(
+        local_ocr,
+        "load_rapidocr",
+        lambda: lambda **_: recognize_frame,
+    )
+    monkeypatch.setattr(
+        local_ocr,
+        "resolve_rapidocr_version",
+        lambda: "3.9.test",
+    )
+    monkeypatch.setattr(job_audio, "recognize_short_mp3", recognize_audio)
+    facade = _public_facade()
+    image_config = Config(image_mode="ocr")
+    audio_config = _audio_config(tmp_path)
+
+    with pytest.raises(ProviderUnavailable) as captured:
+        facade(
+            source,
+            output_dir=output_parent,
+            image_config=image_config,
+            audio_config=audio_config,
+        )
+
+    assert captured.value.code == "PROVIDER_UNAVAILABLE"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    retained_frame = output_root / "frames" / "frame-00000000.jpg"
+    assert recognized_bytes == [retained_frame.read_bytes()]
+    journals = _root_journals(output_root)
+    assert len(journals) == 1
+    saved = load_video_job_state(journals[0])
+    image_state = saved.frame_groups[0].image_state
+    assert image_state is not None
+    assert "Local OCR settled frame" in image_state.markdown
+    assert image_state.metadata["recognition_mode"] == "ocr"
+    assert image_state.metadata["provider_call_count"] == 0
+    assert image_state.metadata["network_call_count"] == 0
+    assert saved.audio.short_state is None
+    assert not (output_root / "result.md").exists()
+
+    result = facade(
+        source,
+        output_dir=output_parent,
+        image_config=image_config,
+        audio_config=audio_config,
+        resume=True,
+    )
+
+    assert "Local OCR settled frame" in result.markdown
+    assert "Audio recovered" in result.markdown
+    assert result.metadata["current_run_provider_call_count"] == 1
+    assert media_calls == {"prepare": 1, "extract": 1}
+    assert audio_calls == 2
+    assert len(recognized_bytes) == 1
+    assert result.output_path == output_root / "result.md"
+    assert _root_journals(output_root) == ()
+
+
 def test_later_frame_failure_reports_earlier_frames_and_settled_audio(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

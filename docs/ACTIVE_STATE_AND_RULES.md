@@ -8782,3 +8782,24 @@ add another hundreds-of-megabytes profile to the full gate without evidence of
 a dependency-resolution conflict. The focused packaging/gate set passes 15
 tests, and a rebuilt 313,029-byte wheel contains both the command and boundary
 text in its distribution `METADATA`; that verification root was removed.
+
+## Current working update: #493 locks mixed local-OCR video resume
+
+The high-level `recognize_video_to_markdown()` facade now has a direct public
+regression for complete retained frames recognized with local OCR while the
+independent Google audio branch fails retryably and later resumes. The first
+invocation saves the local OCR Markdown, processor identity, warning, and exact
+zero provider/network facts in the existing image state; its audio error reports
+one attempted provider call, leaves the prepared MP3 unsettled, withholds
+`result.md`, and retains the single journal. The explicit resume validates the
+same source, retained JPEG bytes, and OCR request identity, reconstructs the
+image result without loading or running RapidOCR again, dispatches only audio,
+publishes both sections, and deletes the journal.
+
+The regression uses the existing one-frame media seam and asserts that the OCR
+snapshot bytes equal the retained complete JPEG. It does not copy the real-media
+corner fixture, add a journal field, retain failed-attempt usage across separate
+invocations, introduce retry/fallback, or change runtime code. Failed audio
+usage remains evidence on the failed invocation; the later successful result
+continues to report only its current invocation. The focused high-level,
+low-level, state, and pre-dispatch video set passes 94 tests.
