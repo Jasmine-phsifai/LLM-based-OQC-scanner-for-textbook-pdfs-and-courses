@@ -2452,3 +2452,15 @@ index-state-dependent delivery evidence, not authority to change the valid pin
 or installation policy. Cleanup and zero-provider boundaries passed. #460 is
 still the last complete nine-profile proof; no runtime, test, dependency, gate,
 provider, API, legacy, crop/ROI, or frozen-boundary change was made.
+
+#521 proves the current high-level video facade once with actual RapidOCR 3.9.2
+and real locally generated media. The unpatched selector naturally retained 10
+full 960x540 frames as 8+2 groups; both completed, final scoped local evidence
+reported 10 images/20 lines/zero frame network calls, and the invariant warning
+appeared once. One independently injected audio success solely owned the final
+provider call and 7/2 token usage. Eleven ordered assets, result publication,
+four-corner preservation, journal/snapshot/staging cleanup, zero sockets, and
+zero residue passed in a 13.188-second public call. This does not claim broad
+OCR quality, long-video stress, provider behavior, resume, or clean installation.
+No runtime, test, fixture, API, dependency, provider, crop/ROI, legacy, gate, or
+frozen-boundary change was made.

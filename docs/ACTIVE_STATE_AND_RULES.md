@@ -9390,3 +9390,33 @@ transient or index-state-dependent, not a package-tag, Python-version, or proven
 pip-parser defect. Do not rerun solely to replace the red result, or change the
 pin, pip, cache, index, mirror, retry, timeout, or installer. #460 remains the
 last complete nine-profile proof.
+
+## Current working update: #521 proves real local OCR in the video facade
+
+#521 runs `recognize_video_to_markdown()` exactly once on a disposable local
+60-second, 960x540, 1-fps text video without patching frame selection, media
+preparation, RapidOCR, composition, publication, state, or cleanup. The source
+was 668,369 bytes with SHA-256
+`fe6a5775ddf0ab0f5d6a5991b22c9d751f96485a8443c1572f811a9c3ddec920`.
+Natural selection retained ordered indices 0, 5, 10, 20, 25, 30, 35, 45, 50,
+and 59, so the public job exercised two real local-OCR groups of 8+2.
+
+RapidOCR 3.9.2 completed both groups in the sole 13.188-second public call and
+retained 20 lines. The final result was complete and published byte-matching
+Markdown. Its scoped facts report local OCR, engine/version, 10 images, 20
+lines, and zero frame-network calls; unscoped `network_call_count` is absent.
+An independently injected short-audio response ran once and solely accounts for
+the final one provider call and `test-audio-model` 7/2 token row. The fixed local
+OCR limitation appears exactly once. Python socket connection attempts were
+zero.
+
+All 10 retained JPEG assets decoded at 960x540, followed by one 60.032-second
+audio asset. For each Markdown-reported source frame index, all four 48x48
+corner patches were compared to the matching decoded source frame; the maximum
+mean absolute channel error across 40 comparisons was 1.472946 under the
+predeclared 20.0 JPEG tolerance. Success retained frames, audio, and `result.md`
+while removing the root journal, audio/request snapshots, staging, temporary
+root, controller, and owned processes. This is one controlled pipeline/lifecycle
+proof, not general lecture-quality, long-duration performance, installation,
+provider robustness, or resume evidence. No permanent video fixture, new gate
+profile, runtime code, dependency, or API was added.
