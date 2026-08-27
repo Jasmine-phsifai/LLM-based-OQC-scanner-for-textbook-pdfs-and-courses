@@ -9701,3 +9701,35 @@ Do not add a test clipping mode, weaken full-frame selection, or turn this into
 an unbounded long-video run. A future real split-provider gate needs a naturally
 bounded authorized video with audio, or a separate explicit decision to exercise
 the complete long-video route.
+
+## Current working update: #546 proves real split-provider video settlement
+
+#546 uses one disposable 124.012-second MP4 assembled outside the repository
+from the complete authorized archive JPEG and complete authorized short MP3
+already proven in #537/#538. There was no crop, resize, source clipping, content
+inspection, download, archive write, or product test mode. Production inspection
+reported 1920x1080, 3,100 frames at 25 FPS, and production negative-feedback
+selection retained five ordered full 1920x1080 frames in one image group.
+
+Exactly one public `recognize_video_to_markdown()` call used independent configs:
+DashScope Beijing `qwen3.5-ocr` for images and native Google
+`gemini-2.5-flash` for audio. DashScope settled the five-frame group in one
+recognition call and one complete draft slot, with 10,565 input and 103 output
+tokens. The extracted 496,736-byte MP3 was journaled as short audio at 124.032
+seconds. Google then failed before generation during its catalog operation with
+HTTP 400 `FAILED_PRECONDITION`; the public nonretryable
+`PROVIDER_REQUEST_INVALID` kept `provider_calls_attempted=1` for the paid image
+branch and preserved its usage in `settled_model_usage`. The job retained its
+journal and settled image state, published no false `result.md`, and left no
+snapshot/staging residue.
+
+There was no retry, resume, second child, model switch, fallback, repair,
+interval route, permanent runner, or runtime change. Two disposable reporting
+issues occurred after durable evidence existed: an outer wrapper observed a
+nonzero child exit after report publication, and its extra MP3-duration probe
+omitted a required backend. Neither changes the production journal/error facts
+and neither justifies product machinery or a live replay. Two focused regressions
+for cross-branch settlement and Google catalog mapping pass; the prior adjacent
+116-test set also passes. Both disposable GUID roots are absent and source/repo
+integrity is unchanged. This proves the split settlement and honest partial
+state, not successful Google audio recognition.
