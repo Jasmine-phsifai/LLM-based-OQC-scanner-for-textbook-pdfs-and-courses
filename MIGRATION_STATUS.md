@@ -49,6 +49,13 @@ fell through as non-retryable invalid response. The mapper adds no runtime
 `httpx` import, retry loop, provider abstraction, or error-text retention;
 timeout and HTTP/status mappings remain unchanged.
 
+#469 deliberately does not port the legacy JSON-error-text blacklist. Native
+Google response text is normal candidate content, and HTTP errors raise before
+response construction; no finish, usage, model, header, or candidate metadata
+distinguishes a hypothetical error-shaped false success from correct OCR of the
+same JSON. A real SDK-object regression preserves that structured recognition
+text and its token counts. Reconsider only with a live non-text discriminator.
+
 The repository has two boundaries:
 
 | Boundary | Status | Use |

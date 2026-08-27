@@ -281,6 +281,39 @@ def test_google_response_returns_text_and_optional_usage():
     assert without_usage.output_tokens is None
 
 
+def test_google_normal_candidate_preserves_error_shaped_json_transcription():
+    from google.genai import types
+
+    parser = importlib.import_module(
+        "ocrllm.providers.google_genai.parse_google_genai_response"
+    )
+    transcription = (
+        '{"error":{"code":400,"status":"INVALID_ARGUMENT",'
+        '"message":"json failed"}}'
+    )
+    response = types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(
+                    role="model",
+                    parts=[types.Part(text=transcription)],
+                ),
+                finish_reason="STOP",
+            )
+        ],
+        usage_metadata=types.GenerateContentResponseUsageMetadata(
+            prompt_token_count=10,
+            candidates_token_count=20,
+        ),
+    )
+
+    parsed = parser.parse_google_genai_response(response, model=MODEL)
+
+    assert parsed.markdown == transcription
+    assert parsed.input_tokens == 10
+    assert parsed.output_tokens == 20
+
+
 def test_google_response_falls_back_to_candidate_parts_and_maps_safety_block():
     parser = importlib.import_module(
         "ocrllm.providers.google_genai.parse_google_genai_response"

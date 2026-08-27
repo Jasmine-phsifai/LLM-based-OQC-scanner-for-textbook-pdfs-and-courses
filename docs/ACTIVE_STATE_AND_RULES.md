@@ -483,6 +483,19 @@ unchanged, and plain `import ocrllm` still does not load `httpx`. The audit also
 identified legacy-backed `FAILED_PRECONDITION` billing text and JSON error text
 inside a nominal response as separate investigation candidates; neither is
 called a current defect or changed without its own reproduction.
+#469 resolves the JSON-text candidate as an explicit no-port decision. In
+`google-genai 2.9.0`, non-2xx HTTP results raise before a
+`GenerateContentResponse` exists, while `.text` is only the concatenation of
+normal first-candidate text parts. A `STOP` candidate that transcribes an exact
+error-shaped JSON object is structurally identical to one hypothetical false
+success: finish reason, content role, usage, model metadata, response ID, and
+headers provide no provider-error discriminator. The legacy rule originated
+with synthetic fakes and has no captured live response or incident evidence.
+The active parser therefore keeps legitimate JSON recognition text instead of
+adding a content blacklist. One real SDK-object regression preserves the exact
+JSON and 10/20 token counts. A future live 200/error-envelope reproduction must
+bring a non-text upstream signal before this decision changes; text matching,
+retry, fallback, and provider framework work remain out of scope.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import
