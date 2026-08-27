@@ -82,6 +82,15 @@ rendered PNGs, and resumed without loading RapidOCR again. Direct PDF text-layer
 extraction remains a separate unapproved capability; no PDF mode, classifier,
 provider, dependency, checkpoint, or worker surface was added.
 
+#515 removes group-count-dependent warning noise from that same existing PDF
+slice. An all-local-OCR PDF now reports the exact invariant local-OCR limitation
+once even when its pages span multiple 8-page groups. Other duplicate local-OCR
+warnings remain ordered and repeated, and provider-backed duplicate warnings
+remain per-group. A real nine-page 8+1 run recognized all pages with RapidOCR
+3.9.2, made zero provider/network calls, left no rendered PNG residue, and
+reported exactly one invariant warning. No generic warning framework, public
+API, state format, provider behavior, crop/ROI path, or dependency was added.
+
 The repository has two boundaries:
 
 | Boundary | Status | Use |

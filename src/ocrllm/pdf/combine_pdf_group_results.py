@@ -22,6 +22,9 @@ def combine_pdf_group_results(
     if not results or len(results) != len(page_ranges):
         raise ValueError("PDF group results and ranges must be nonempty and aligned")
 
+    all_local_ocr = all(
+        result.metadata.get("recognition_mode") == "ocr" for result in results
+    )
     sections: list[str] = []
     current_run_calls = 0
     warnings: list[str] = []
@@ -59,7 +62,7 @@ def combine_pdf_group_results(
         metadata["provider"] = providers[0]
     if len(models) == len(results) and len(set(models)) == 1:
         metadata["model"] = models[0]
-    if all(result.metadata.get("recognition_mode") == "ocr" for result in results):
+    if all_local_ocr:
         engines = tuple(result.metadata.get("ocr_engine") for result in results)
         engine_versions = tuple(
             result.metadata.get("ocr_engine_version") for result in results
@@ -97,6 +100,19 @@ def combine_pdf_group_results(
                     "network_call_count": 0,
                 }
             )
+        from ..local_ocr.recognize_images_with_rapidocr import (
+            LOCAL_OCR_LIMITATION_WARNING,
+        )
+
+        limitation_warning_seen = False
+        local_ocr_warnings: list[str] = []
+        for warning in warnings:
+            if warning == LOCAL_OCR_LIMITATION_WARNING:
+                if limitation_warning_seen:
+                    continue
+                limitation_warning_seen = True
+            local_ocr_warnings.append(warning)
+        warnings = local_ocr_warnings
     return ProcessorOutput(
         media_type="pdf",
         markdown="\n\n".join(sections) + "\n",

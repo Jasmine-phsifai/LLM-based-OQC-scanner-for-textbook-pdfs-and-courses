@@ -9251,3 +9251,21 @@ PDF-specific state/provider/mode. The focused regression passes, and the PDF,
 local-OCR, real RapidOCR, and local-resume owner set passes 44 tests. Full-frame rendering,
 dependencies, public signatures, retry/fallback, legacy, and frozen boundaries
 are unchanged.
+
+## Current working update: #515 deduplicates only the PDF local-OCR limitation
+
+#515 fixes a small result-semantics defect exposed by #514's nine-page, 8+1
+local-OCR PDF path. Every settled local-OCR child correctly carries the same
+job-level limitation warning, but the PDF composer formerly repeated it once
+per fixed-size child group. The composer now keeps that exact invariant warning
+only once when every child is local OCR. It deliberately preserves duplicate
+warnings with any other text, and preserves all provider-backed per-group
+warning multiplicity, because equal provider cleanup warnings can describe
+distinct group failures.
+
+The correction is local to the existing PDF composer. It adds no generic
+warning registry, warning type, new result field, provider rule, state format,
+or public API. A real nine-page full-frame PDF run crossed the 8+1 boundary,
+recognized all nine pages with RapidOCR 3.9.2, produced one limitation warning,
+made zero provider/network calls, and left no rendered PNG residue. Focused and
+adjacent PDF/local-OCR/resume tests pass.

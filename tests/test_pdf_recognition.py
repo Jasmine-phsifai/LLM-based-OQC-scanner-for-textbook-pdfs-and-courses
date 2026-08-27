@@ -281,6 +281,7 @@ def test_public_pdf_preserves_aggregated_local_ocr_evidence(
     assert result.metadata["provider_call_count"] == 0
     assert result.metadata["current_run_provider_call_count"] == 0
     assert result.metadata["network_call_count"] == 0
+    assert result.warnings == (local_ocr.LOCAL_OCR_LIMITATION_WARNING,)
 
 
 def test_memory_only_pdf_snapshot_exit_preserves_settled_cleanup_evidence(
@@ -535,6 +536,7 @@ def test_pdf_group_combination_preserves_partial_image_status() -> None:
             RecognitionResult(
                 markdown="second",
                 source_type="image",
+                warnings=(warning,),
             ),
         ),
         ((1, 8), (9, 16)),
@@ -542,7 +544,32 @@ def test_pdf_group_combination_preserves_partial_image_status() -> None:
     )
 
     assert combined.status == "partial"
-    assert combined.warnings == (warning,)
+    assert combined.warnings == (warning, warning)
+
+
+def test_pdf_group_combination_only_deduplicates_local_ocr_limitation() -> None:
+    local_ocr = importlib.import_module(
+        "ocrllm.local_ocr.recognize_images_with_rapidocr"
+    )
+    per_group_warning = "A distinct warning with per-group meaning."
+    result = RecognitionResult(
+        markdown="local OCR",
+        source_type="image",
+        warnings=(local_ocr.LOCAL_OCR_LIMITATION_WARNING, per_group_warning),
+        metadata={"recognition_mode": "ocr"},
+    )
+
+    combined = combine_pdf_group_results(
+        (result, result),
+        ((1, 8), (9, 9)),
+        profile="board",
+    )
+
+    assert combined.warnings == (
+        local_ocr.LOCAL_OCR_LIMITATION_WARNING,
+        per_group_warning,
+        per_group_warning,
+    )
 
 
 def test_public_pdf_resumes_mixed_partial_and_complete_google_image_groups(
