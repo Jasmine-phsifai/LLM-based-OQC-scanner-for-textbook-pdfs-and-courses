@@ -10359,3 +10359,43 @@ fixture, archive, legacy, crop/ROI, migration boundary, or frozen code changed.
 Do not replay this call merely to make the exploratory score green; a later
 atomic attempt may place the scorer on an explicit import path before its sole
 child starts.
+
+## Current working update: #563 completes recognition but not formula scoring
+
+#563 corrected only #562's disposable import boundary before any new child: the
+reviewed, credential-free controller explicitly placed the exact repository
+`src` and root on the child import path. Both static files parsed before launch;
+the 116,507-byte formula-board fixture still matched its manifest digest, one
+proxy listener was present, and Git was synchronized at exact commit
+`40b04272aad34481bd9844e61f14f9f1245b053f`. The existing v7 scorer and
+manifest remained unchanged.
+
+The one permitted child used current repository `ocrllm`, public `recognize()`,
+Beijing DashScope, explicit `qwen3.5-ocr`, board profile, English and Chinese
+input-language hints, one draft, no review pass, thinking disabled, high-
+resolution images enabled, and a 180-second bound. Public recognition completed
+in 3.542 seconds with exactly one current and aggregate provider call. It
+reported 4,367 input and 297 output tokens for `qwen3.5-ocr`; provider and model
+identity were correct, source bytes were unchanged, and stderr was empty.
+`provider_client_closed` was absent and therefore remains unknown.
+
+The post-call v7 scorer raised before producing a quality report. The disposable
+child deliberately exposed only `QUALITY_SCORING_FAILED`, retained no recognized
+Markdown, and had no safe exception-category discriminator. Current evidence
+therefore cannot distinguish model output outside the strict formula dialect
+from another scorer/post-processing exception. This is neither a numerical
+quality failure nor a product recognition failure, and no score, missing
+formula, LaTeX accuracy, or comparative model claim may be inferred. The call
+was not replayed.
+
+The controller's durable allowlisted report contained neither credential nor
+repository path; stdout was 471 bytes and stderr zero. Both scripts and the
+report were removed, the fixture digest remained unchanged, and no related
+child remained. The already-recorded current-user-owned, non-reparse system-
+TEMP root remains empty because local execution policy still rejects directory
+deletion. No runtime, test, API, provider, scorer, fixture, dependency, archive,
+legacy, crop/ROI, migration boundary, or frozen code changed. Do not add the
+quality package to the wheel, broaden the 13-call runner, retain recognized
+content, or replay the provider merely to diagnose this disposable scoring
+failure. A future separately justified quality run must decide and preflight
+the exact safe scorer-failure evidence it needs before spending its one call.

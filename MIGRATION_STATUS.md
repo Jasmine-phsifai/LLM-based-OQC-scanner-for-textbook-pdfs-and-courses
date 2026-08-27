@@ -2705,3 +2705,16 @@ provider dispatch were therefore zero, and model quality remains unknown. The
 fixture and repository stayed unchanged, both temporary scripts were removed,
 and no related process remains. Local policy prevented removal of their empty,
 owned, non-reparse TEMP directory; no code change or live retry was justified.
+
+#563 completed one current-repository public DashScope recognition after fixing
+only the disposable scorer import path before child launch. Explicit Beijing
+`qwen3.5-ocr` returned a complete image result in 3.542 seconds with exactly one
+provider call and 4,367 input / 297 output tokens; fixture identity, source
+immutability, credential redaction, and stderr checks passed. The unchanged v7
+formula scorer then returned only the safe harness code
+`QUALITY_SCORING_FAILED`. Because recognized Markdown and a safe exception
+category were intentionally not retained, no numerical formula/LaTeX quality
+claim can be made and the call was not replayed. Scripts and report were
+removed; the previously recorded empty owned TEMP directory remains. No
+runtime, test, API, scorer, dependency, provider, or frozen-boundary change was
+justified.
