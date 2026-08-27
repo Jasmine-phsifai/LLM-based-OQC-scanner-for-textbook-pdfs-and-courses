@@ -10032,3 +10032,38 @@ unchanged. No runtime, test, API, state, dependency, provider, legacy,
 crop/ROI, migration, or frozen-boundary change was justified. Do not modify the
 selector, force-retain slideshow frames, add a live-test mode, or build a
 permanent fixture runner merely to turn this bounded gate green.
+
+## Current working update: #554 finds no unmodified two-group archive candidate
+
+#554 follows #553 by testing the narrower real-media route rather than building
+another slideshow. The bounded candidate contract required an existing regular
+MP4 under `D:\archieve`, one video stream, no audio stream, duration from 1,160
+through 1,485 seconds, size no greater than 2 GiB, and a successful public
+`inspect_video()`. Only a candidate meeting those metadata conditions could
+receive one production `extract_video_frames()` probe, and that probe would
+still have to retain 9--16 complete frames before any later live work.
+
+The archive contained exactly two regular MP4 files. Public inspection succeeded
+for both, but both had an audio stream, both were outside the duration window,
+and both exceeded 2 GiB. Independent aggregate enumeration confirmed two regular
+MP4s, both larger than 2 GiB and neither empty. The metadata-qualified count was
+therefore zero: production extraction, snapshots, retained outputs, credentials,
+network access, public live calls, and provider dispatches were all zero. No
+private media path or content was returned or recorded.
+
+This disproves only the bounded unmodified-candidate route; it is not evidence
+against video parsing or publication. It supplies no retained-frame, grouping,
+dimension, or source-integrity facts because no source crossed metadata
+preflight. Inspection, extraction, and frame-group owner tests pass 49 tests.
+One initial test command guessed two nonexistent standalone owner filenames and
+stopped before collection; repository search located the owners in the existing
+extraction and recognition-frame files, and the corrected command passed.
+
+The exact temporary report root was ownership-checked and removed; no snapshot,
+staging, output, matching-root, or process residue remained. Git and frozen
+boundaries stayed unchanged. No runtime, test, API, state, dependency, provider,
+legacy, crop/ROI, migration, or frozen-boundary change was justified. Do not
+silently widen this result into permission to clip or transcode private media,
+drop audio, raise the live-call bound, force selector output, or add archive
+discovery to the library. The real two-group final-publication gap remains open
+until its fixture/source policy is selected separately.
