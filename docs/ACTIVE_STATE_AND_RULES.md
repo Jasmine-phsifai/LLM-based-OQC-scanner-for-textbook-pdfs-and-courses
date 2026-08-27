@@ -10104,3 +10104,48 @@ frozen-boundary change was justified. Adding a downloader, prefetch layer,
 alternate installer, permanent retry policy, or second distribution runner to
 avoid those old delivery failures would be over-design; the maintained gate is
 the single release proof.
+
+## Current working update: #556 exercises a second original multi-hour video
+
+#556 runs the public high-level `recognize_video_to_markdown()` exactly once on
+the other original full archive MP4 rather than clipping or rebuilding a test
+video. The source was 2,698,631,669 bytes, 9,809.12 seconds, 1920x1080, 294,611
+frames, and had one audio stream. Its full SHA-256, size, and modification time
+were unchanged after inspection and recognition. There was no crawl, download,
+crop, ROI, resize, transcode, preliminary extraction, preliminary catalog call,
+retry, resume, second child, model switch, fallback, or endpoint/SDK change.
+The image config was Beijing DashScope `qwen3.5-ocr`; the separate whole-audio
+config was native Google `gemini-2.5-flash`.
+
+Production retained 104 ordered complete 1920x1080 JPEGs, 33,721,399 bytes in
+total, and planned thirteen serial groups of eight. It also extracted and fully
+decoded one 39,236,912-byte, 9,809.088-second MP3 before image dispatch and
+journaled it as ready whole audio. The first two image groups settled complete.
+The third DashScope request returned the existing nonretryable
+`PROVIDER_RESPONSE_INVALID` incomplete-response branch, so groups 3--12 stayed
+undispatched. The public primary error retained an exact three attempted calls
+and settled `qwen3.5-ocr` usage of 33,556 input and 1,033 output tokens. No
+`result.md` or final digest existed; the journal retained two settled image
+groups, the complete media plan, and the ready audio artifact without a settled
+long-audio slot. This is honest partial-work evidence, not final publication.
+
+Review of the unchanged aggregator establishes only that the secondary audio
+evidence contributed an exact zero attempted calls; otherwise the primary
+three-call total would have been removed. The safe public error still does not
+identify whether audio stopped in local validation, Google client/catalog,
+upload, processing, or generation, and no explicit DashScope client-close fact
+was captured. Do not infer the secondary code or operation from the empty long
+state. This second real multi-group run reinforces, but does not resolve, #550's
+open choice about one narrow safe secondary-branch error summary.
+
+The 107-test high-level video, aggregation, DashScope, and long-audio owner set
+passes. The single child completed in 138.719 seconds without timeout or
+stdout/stderr. After the durable safe report was recovered, the exact output,
+harness, and report roots were ownership-checked and removed; matching process,
+snapshot, staging, and task-root residue was zero. Unrelated processes and
+temporary roots were untouched. No runtime, test, API, state, dependency,
+provider, legacy, crop/ROI, migration, or frozen-boundary change was justified.
+Automatic retry, adaptive group sizing, a new error carrier, model switching,
+or a provider framework would turn one correctly reported service response into
+new policy without evidence that the response is transient; ordinary explicit
+resume remains the existing recovery route.

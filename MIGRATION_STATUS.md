@@ -2613,3 +2613,18 @@ evidence. The current proof root, report root, and related processes were
 removed. Two unrelated proof roots that predated the run were left untouched.
 No credentials, provider recognition, media, dependency change, pin, cache,
 index, retry, timeout, mirror, or gate edit was involved.
+
+#556 runs the high-level importable video facade once on the archive's second
+original full multi-hour MP4. The unchanged 2,698,631,669-byte, 9,809.12-second
+source naturally produced 104 complete 1920x1080 frames in thirteen groups of
+eight and one fully decoded 39,236,912-byte whole-audio MP3. DashScope
+`qwen3.5-ocr` settled two groups; the third request returned the existing
+nonretryable incomplete-response error. The public error reported exactly three
+attempted calls and 33,556 input / 1,033 output settled tokens. Ten groups stayed
+undispatched, audio had no settled long slot, and no final Markdown was
+published. The journal therefore preserved useful partial work without false
+success. The safe primary error still cannot identify the secondary audio
+branch's code or operation; #550's bounded diagnostics choice remains open.
+Source integrity and cleanup passed, the focused 107-test owner set passed, and
+no runtime, API, state, dependency, retry, fallback, grouping, provider, crop,
+legacy, or frozen-boundary change was warranted.
