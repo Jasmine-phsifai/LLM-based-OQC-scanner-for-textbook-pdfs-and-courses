@@ -449,14 +449,17 @@ aggregate PDF Markdown, and a later `resume=True` call can reuse that child
 with zero new provider calls. This reuses the facade's existing image/PDF
 publication gate; no rollback, transaction, cancellation coordinator, or PDF
 state field was added.
-One separately reproduced standalone-audio defect remains queued after #464:
-an incomplete interval resume with a missing Google credential currently
-snapshots the full source, materializes the next interval, and loads the SDK
-before returning `CONFIG_MISSING` with zero provider calls. The saved prefix is
-not lost and no result is falsely published. The next atomic correction should
-preflight the credential only after strict state/mode validation proves that
-one or more intervals are still missing, preserving credential-free zero-call
-publication for fully settled resumes.
+#465 closes the separately reproduced standalone-audio failure-order defect.
+After strict persisted-state and whole/interval-mode validation, a resume with
+fewer settled slots than request fingerprints now resolves the Google
+credential before source snapshotting, interval materialization, SDK loading,
+or provider work. Missing credentials retain `CONFIG_MISSING`, exact zero-call
+evidence, the paid prefix byte-for-byte, and no published result. Fully settled
+whole and interval states remain credential-free and publish with zero new
+provider calls. The adapter still resolves the credential again at dispatch;
+no secret cache, generalized resume predicate, SDK wrapper, retry, or fallback
+was added. The bounded reproduced queue is empty again, so the next iteration
+requires a fresh shipped-surface audit rather than adjacent audio expansion.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

@@ -294,6 +294,9 @@ original choice.
 - accepts `resume=True` only with that fixed state present and an unpublished
   final result; an exact whole-file or interval prefix is reused with zero calls
   for settled work, while source/model/prompt/transport/interval drift is rejected;
+  after strict state and mode validation, an incomplete prefix requires an
+  available Google credential before the source is snapshotted or an interval
+  is materialized, while a fully settled state remains credential-free;
 - interval mode requires `output_dir`, recognizes missing windows serially, and
   saves every settled speech or no-speech window before starting the next one;
   if every window is no-speech, both the initial typed result and exact

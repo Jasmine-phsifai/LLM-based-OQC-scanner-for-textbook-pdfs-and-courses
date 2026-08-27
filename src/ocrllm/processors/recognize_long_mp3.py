@@ -73,6 +73,14 @@ def recognize_validated_long_mp3(
                     "The long-audio partial state belongs to a different mode.",
                     code="RESUME_STATE_MISMATCH",
                 ) from None
+            if saved_state is not None and len(saved_state.slots) < len(
+                saved_state.request_fingerprints
+            ):
+                from ..providers.google_genai.resolve_google_genai_credential import (
+                    resolve_google_genai_credential,
+                )
+
+                resolve_google_genai_credential(config.provider)
             snapshot_context = (
                 snapshot_long_mp3(
                     source_path,

@@ -449,9 +449,16 @@ def test_interval_publication_failure_reports_saved_settlement(
         "write_markdown_atomically",
         write_markdown_atomically,
     )
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     resumed = recognize_long_mp3(
         tmp_path / "lecture.mp3",
-        config=_config(output_dir, resume=True),
+        config=Config(
+            provider=GoogleGenAISettings(),
+            audio_model=AudioModelSettings(name=MODEL),
+            output_dir=output_dir,
+            resume=True,
+        ),
     )
 
     assert resumed.markdown == "first\n\nsecond\n\nthird"
@@ -535,6 +542,83 @@ def test_interval_failure_preserves_prefix_and_resume_uses_saved_parameters(
     assert result.markdown == "first\n\nsecond\n\nthird"
     assert result.metadata["current_run_provider_call_count"] == 2
     assert not state_path.exists()
+
+
+def test_incomplete_interval_resume_missing_credential_stops_before_snapshot(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output_dir = tmp_path / "out"
+    interval_processor, materialized, provider_calls = _install_interval_fakes(
+        monkeypatch,
+        tmp_path,
+        [],
+    )
+
+    def first_then_fail(snapshot, *, prompt, config):
+        index = len(provider_calls)
+        provider_calls.append(index)
+        if index == 0:
+            return SimpleNamespace(
+                markdown="paid first interval",
+                input_tokens=100,
+                output_tokens=10,
+                remote_file_deleted=True,
+                client_closed=True,
+            )
+        raise ProviderError(
+            code="PROVIDER_UNAVAILABLE",
+            details={"provider_calls_attempted": 1},
+        )
+
+    monkeypatch.setattr(
+        interval_processor,
+        "recognize_uploaded_mp3",
+        first_then_fail,
+    )
+    with pytest.raises(ProviderError):
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=_config(output_dir),
+            interval_minutes=5,
+        )
+
+    state_path = output_dir / "lecture" / ".ocrllm-long-audio-resume.json"
+    state_before = state_path.read_bytes()
+    assert materialized == [0, 1]
+    assert provider_calls == [0, 1]
+
+    processor = __import__(
+        "ocrllm.processors.recognize_long_mp3",
+        fromlist=["recognize_long_mp3"],
+    )
+    snapshot_started = False
+
+    def fail_snapshot(*_args, **_kwargs):
+        nonlocal snapshot_started
+        snapshot_started = True
+        raise AssertionError("missing credential must stop before resume snapshot")
+
+    monkeypatch.setattr(processor, "snapshot_long_mp3", fail_snapshot)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    with pytest.raises(ConfigError) as caught:
+        recognize_long_mp3(
+            tmp_path / "lecture.mp3",
+            config=Config(
+                provider=GoogleGenAISettings(),
+                audio_model=AudioModelSettings(name=MODEL),
+                output_dir=output_dir,
+                resume=True,
+            ),
+        )
+
+    assert caught.value.code == "CONFIG_MISSING"
+    assert caught.value.details["provider_calls_attempted"] == 0
+    assert snapshot_started is False
+    assert state_path.read_bytes() == state_before
+    assert not (output_dir / "lecture" / "result.md").exists()
 
 
 def test_resume_rejects_changed_interval_before_materialization_or_provider(

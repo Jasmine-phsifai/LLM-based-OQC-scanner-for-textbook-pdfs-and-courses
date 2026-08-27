@@ -28,11 +28,14 @@ provider, state, and public API behavior are unchanged.
 #464 makes final PDF publication honor a cancellation that arrives after the
 last child group settles. The child Markdown and sidecar remain reusable, the
 aggregate Markdown is withheld, and a cleared `resume=True` call republishes
-with zero new provider calls. The next reproduced queue item is separate:
-incomplete standalone interval-audio resume should reject a missing Google
-credential after strict state validation but before source snapshotting,
-interval materialization, or SDK loading; fully settled resume must remain
-credential-free.
+with zero new provider calls.
+
+#465 makes a valid incomplete standalone interval-audio resume reject a missing
+Google credential after strict state/mode validation but before source
+snapshotting, interval materialization, SDK loading, or provider work. It keeps
+the paid prefix unchanged and reports exact zero calls. Fully settled whole and
+interval resumes remain credential-free and zero-call. The bounded reproduced
+queue is empty again; the next task requires a fresh shipped-surface audit.
 
 The repository has two boundaries:
 
