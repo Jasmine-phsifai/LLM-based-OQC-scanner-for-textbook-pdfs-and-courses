@@ -1328,3 +1328,15 @@ after zero-audio-call journal resume. Its partial status and warning were
 already preserved. True, unknown, and malformed values remain unpromoted. The
 change adds no lifecycle abstraction or state field, and the complete offline
 suite remains 1,864 tests.
+
+#532 completes the provider-free near-ten-hour interval lifecycle left partial
+by #504. A 35,999.0-second source produced 60 ordered ten-minute windows; every
+window materialized and fully decoded serially, never leaving more than one
+interval file, and each context removed its segment before the next began.
+Snapshot, disposable-root, socket, heavy-provider-import, and later owned-
+process checks were clean. The final run used about 554.5 MiB at peak, above the
+disposable controller's requested 400 MiB cap, and two earlier controller-only
+mistakes caused unnecessary source regeneration before any interval work.
+Record those harness defects honestly, but do not rerun or add permanent stress
+machinery: the production lifecycle itself completed without a reproduced
+defect, provider call, credential, dependency, API, or runtime change.

@@ -9569,3 +9569,38 @@ installer from this result. #460 remains the last complete nine-profile proof;
 the current fresh-delivery gate remains open. No provider API or credential was
 used, and no runtime, test, dependency declaration, public API, legacy,
 crop/ROI, or frozen-boundary change was made.
+
+## Current working update: #532 completes the near-ceiling serial interval lifecycle
+
+#532 completes the provider-free all-window evidence left open by #504. At
+exact commit `f7734f97181f9490f875c1163de20a4b0cc631c2`, one final disposable
+controller accepted a 287,993,132-byte mono MP3 whose full decoded duration was
+35,999.0 seconds, snapshotted the same bytes, and planned exactly 60 ordered
+ten-minute windows. The first logical/actual ranges were 0--600/0--630 seconds;
+the last were 35,400--35,999/35,370--35,999 seconds.
+
+Every window then materialized serially through the production context manager
+and fully decoded as mono 16 kHz. Materialization took 31.750 seconds in total,
+0.391--0.657 seconds per window. The largest segment was 5,281,100 bytes;
+decoded duration stayed within 0.15 seconds of each actual range. At most one
+interval file existed, every context exit reduced that count to zero, the
+snapshot root disappeared while the caller source remained, and the outer GUID
+root was finally removed. Python socket connect attempts were zero. A later
+exact command-line query found zero surviving FFmpeg or Python processes owned
+by that GUID root. The run loaded only lightweight local provider-setting
+modules required by `Config`; a fresh-process check confirmed that neither
+`google.genai` nor `openai` was loaded. No provider API or credential was used.
+
+This is strong product lifecycle evidence, but not a perfectly executed stress
+controller. Two earlier disposable attempts failed before materializing any
+window because the controller used the wrong miniaudio attribute and then
+miscounted decoded samples; all three attempts regenerated the large source.
+The final source plus snapshot plus largest interval peaked at 581,267,364 bytes
+(about 554.5 MiB), exceeding the controller's requested 400 MiB bound although
+remaining far below the product's 2 GB source limit and available disk. Do not
+rerun merely to improve harness cleanliness, commit a large fixture, add a
+permanent stress runner, or add memory/process telemetry. No library defect was
+reproduced and no runtime, test, API, dependency, provider, state, retry,
+fallback, legacy, crop/ROI, or frozen-boundary change was made. The 51 focused
+audio lifecycle tests, 21 import-boundary tests, compileall, and diff checks
+pass.

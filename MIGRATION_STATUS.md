@@ -2533,3 +2533,17 @@ and historical runtime evidence also uses 4.13.0.92. This is transient or
 index-state-dependent dependency discovery, not a proven pin/package defect.
 #460 remains the last complete nine-profile proof. No runtime, test,
 dependency, API, provider, legacy, crop/ROI, or frozen-boundary change was made.
+
+#532 closes #504's incomplete all-window component proof without changing the
+product. One 287,993,132-byte, 35,999.0-second MP3 passed interval snapshotting,
+planned 60 ordered ten-minute windows, and materialized plus fully decoded all
+60 serially as mono 16 kHz. Materialization totaled 31.750 seconds, the largest
+segment was 5,281,100 bytes, and at most one interval temporary existed; every
+interval, snapshot, disposable root, and later GUID-owned process check cleaned
+to zero while the caller source survived until outer cleanup. Socket attempts
+and provider calls were zero. The disposable controller itself was imperfect:
+two pre-materialization mistakes caused three source generations, and final
+peak owned bytes were 581,267,364, above its requested 400 MiB test cap but far
+below the 2 GB product source limit. This does not justify a permanent stress
+harness, telemetry, rerun, or runtime change. The focused audio and import sets
+pass 51 and 21 tests respectively; compileall and diff checks pass.
