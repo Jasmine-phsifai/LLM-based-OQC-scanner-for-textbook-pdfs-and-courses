@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import threading
 import traceback
 from pathlib import Path
 
@@ -73,6 +74,32 @@ class HostileErrorCode:
 class HostileString(str):
     def __iter__(self):
         raise RuntimeError("HOSTILE_STRING_SECRET_94a8")
+
+
+def test_pre_cancelled_image_creates_no_output_or_temp_directories(tmp_path):
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    cancellation = threading.Event()
+    cancellation.set()
+    provider = RecordingProvider()
+
+    with pytest.raises(Cancelled) as captured:
+        recognize(
+            source,
+            config=Config(
+                provider=provider,
+                cancellation=cancellation,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
+            ),
+        )
+
+    assert captured.value.code == "CANCELLED"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert provider.calls == []
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
 
 
 def test_provider_raised_cancellation_after_dispatch_counts_one_call(tmp_path):

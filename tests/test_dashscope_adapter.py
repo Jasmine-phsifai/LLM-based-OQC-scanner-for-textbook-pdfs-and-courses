@@ -868,6 +868,8 @@ def test_pre_dispatch_cancellation_makes_zero_sdk_calls(tmp_path, monkeypatch):
     from threading import Event
 
     source = write_test_image(tmp_path / "board.png", size=(11, 11))
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
     cancellation = Event()
     cancellation.set()
 
@@ -882,12 +884,16 @@ def test_pre_dispatch_cancellation_makes_zero_sdk_calls(tmp_path, monkeypatch):
             config=Config(
                 provider=_settings(),
                 cancellation=cancellation,
+                output_dir=output_dir,
+                temp_dir=temp_dir,
             ),
         )
 
     assert captured.value.code == "CANCELLED"
     assert captured.value.details["provider_calls_attempted"] == 0
     assert "model_attempts" not in captured.value.details
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
 
 
 def test_cancellation_during_client_setup_still_prevents_http_dispatch(

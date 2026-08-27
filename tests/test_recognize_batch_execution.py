@@ -136,6 +136,33 @@ def test_batch_accepts_one_exact_tuple_and_preserves_order(tmp_path):
     assert [outcome.succeeded for outcome in outcomes] == [True, True]
 
 
+def test_pre_cancelled_image_batch_creates_no_output_or_temp_directories(tmp_path):
+    source = write_test_image(tmp_path / "source.png")
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    cancellation = threading.Event()
+    cancellation.set()
+    provider = NumberedProvider()
+
+    outcomes = recognize_batch(
+        (source,),
+        config=Config(
+            provider=provider,
+            cancellation=cancellation,
+            output_dir=output_dir,
+            temp_dir=temp_dir,
+        ),
+    )
+
+    assert len(outcomes) == 1
+    assert outcomes[0].error is not None
+    assert outcomes[0].error.code == "CANCELLED"
+    assert outcomes[0].error.details["provider_calls_attempted"] == 0
+    assert provider.calls == 0
+    assert not output_dir.exists()
+    assert not temp_dir.exists()
+
+
 @pytest.mark.parametrize(
     "build_sources",
     (

@@ -2102,3 +2102,16 @@ choice: approve the separate source-bound `*_board.partial.md` vertical slice,
 or preserve no partial artifact and keep resume/fresh recognition as the only
 recovery paths. No parser, producer, public API, state, provider, worker,
 legacy compatibility, retry, fallback, or second checkpoint was added.
+
+#452 stops valid pre-cancelled image work before the provider start gate,
+output/temp directory creation, source snapshotting, or provider dispatch.
+Direct recognition raises typed `CANCELLED`; exact-tuple batch recognition
+keeps the same error in its ordered outcome; both report exact zero provider
+calls and create no configured directories. Existing config/provider/source
+shape validation still wins first; source-byte reads intentionally do not.
+DashScope and Google built-in configs use the existing isolated snapshot before
+the potentially user-defined cancellation callback is observed, preserving
+stable request metadata, while injected providers retain caller Config
+identity. Late cancellation, image state, PDF/audio/video paths, public API,
+and provider policy are unchanged. The complete provider-free suite passes all
+1,897 tests with no skips.

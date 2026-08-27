@@ -157,6 +157,18 @@ Markdown; completed child-group Markdown and image sidecars remain available
 only for ordinary resume. No PDF repair runtime work begins until the
 maintainer explicitly selects the separate source-bound partial artifact
 (Route A) or no partial artifact/manual repair (Route B).
+#452 closes an ordinary pre-cancelled image side-effect gap. Direct image calls
+and exact-tuple batch items formerly created configured output and temporary
+directories before the existing provider-bound cancellation check returned
+`CANCELLED`. The shared image entry now checks the already-validated signal
+before the provider start gate, output resolution, snapshotting, or provider
+work and reports exact zero calls. DashScope and Google built-in configs are
+copied with the existing snapshot helper before observing a user-defined
+callback, so callback mutation cannot diverge request metadata; injected
+providers retain caller-config identity. Invalid config/provider and source-
+shape precedence, late cancellation, PDF/audio/video behavior, state, and
+public APIs are unchanged; a pre-cancelled call does not read a missing or
+damaged image merely to replace cancellation with a source-content error.
 #425 fixes only that proven legacy producer/parser contradiction. A partially
 successful range repair now emits one existing single-page marker for each
 remaining failure, in page order, so the next legacy repair pass can discover
@@ -4359,6 +4371,13 @@ Post-register findings are ordered by demonstrated user impact:
   source/frame/group/image-state validation stays byte-backed. Video-resume
   coverage passes 50 tests, and the complete provider-free suite passes all
   1,888 tests.
+- #452 closes the medium pre-cancelled image side-effect gap. Direct and batch
+  image work now returns typed `CANCELLED` with exact zero-call evidence before
+  the provider start gate or configured output/temp directory creation. The
+  existing built-in config snapshot prevents a cancellation callback from
+  mutating request metadata, and injected-provider Config identity is retained.
+  Focused adjacent coverage passes 185 tests, independent review passes 68,
+  and the complete provider-free suite passes all 1,897 tests.
 
 All seven entries were addressed on 2026-08-18, following Stage 1 of
 `docs/plan_phase1_defects_and_provider_split.md`. Regression coverage for D1-D4

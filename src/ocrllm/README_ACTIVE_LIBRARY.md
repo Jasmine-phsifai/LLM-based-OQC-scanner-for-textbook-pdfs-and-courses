@@ -144,7 +144,12 @@ The current image facade:
   before source/provider work;
 - freshly revalidates an exact public `Config`; injected providers retain the
   caller's config identity, while the built-in adapter uses an isolated,
-  revalidated copy.
+  revalidated copy;
+- rejects an already-set cancellation signal after deterministic config and
+  source-shape validation but before the provider start gate, output/temp
+  directory creation, image snapshotting, or provider work. The typed error
+  reports exact zero calls; built-in provider request metadata is snapshotted
+  before observing a user-defined cancellation callback;
 - rejects groups above `Config.execution.maximum_images_per_request` before
   source/provider work. `recognize_batch()` requires an exact top-level `tuple`,
   preserves the existing per-item atomic path or grouped `Sequence` contract,

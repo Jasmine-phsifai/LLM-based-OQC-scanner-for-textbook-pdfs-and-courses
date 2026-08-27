@@ -101,6 +101,16 @@ def _recognize(
                 ),
             )
             raise
+        if media_type == "image":
+            if type(cfg.provider) in {DashScopeSettings, GoogleGenAISettings}:
+                from .snapshot_config import snapshot_config
+
+                cfg = snapshot_config(cfg)
+            try:
+                raise_if_cancelled(cfg.cancellation)
+            except Cancelled as error:
+                error._add_safe_detail("provider_calls_attempted", 0)
+                raise
 
     with reuse_or_create_provider_request_start_gate(
         cfg.execution.provider_request_start_interval_seconds
