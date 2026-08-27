@@ -2509,3 +2509,14 @@ calls. Offline regressions prove catalog 0 versus generation 1; the live request
 was not replayed. No public API, crop/ROI, retry/fallback, state, dependency,
 legacy, or frozen boundary changed. The adjacent owner set passes 82 tests and
 the complete default suite passes 1,926 tests.
+
+#529 re-audits the shipped negative-feedback video selector after the full-frame
+rule was reconfirmed. The complete 25-test extraction owner, seven focused edge
+cases, and a bounded 80-case deterministic property probe preserve unique
+order, final-candidate retention, and complete-frame handoff; an independent
+audit found no defect. The apparent 10,001-planned/10,000-decoded boundary is
+the existing conservative pre-allocation contract from #148/#183/#198, not an
+off-by-one correction: backend-dependent deduplication must not silently relax
+the resource ceiling. No runtime, API, threshold, dependency, state, provider,
+crop/ROI, legacy, or frozen-boundary change was made. The complete
+provider-free suite passes 1,926 tests.

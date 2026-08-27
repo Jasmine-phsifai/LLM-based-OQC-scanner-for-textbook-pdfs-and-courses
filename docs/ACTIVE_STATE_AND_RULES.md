@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-27 against the
+Status: **authoritative and current.** Last verified 2026-08-28 against the
 working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
@@ -9514,3 +9514,25 @@ record contain the new fields. No crop/ROI, retry/fallback, provider policy,
 public API, state, dependency, or tracing framework was added. The adjacent
 image/error owner set passes 82 tests and the complete default suite passes
 1,926 tests.
+
+## Current working update: #529 re-audits negative-feedback selection boundaries
+
+#529 finds no correction-worthy defect in the current full-frame video
+selector. The complete extraction owner file passes 25 tests; seven focused
+short-stream, VFR, final-frame, density-feedback, cap/fallback, and
+maximum-segment cases pass; a bounded 80-case deterministic property probe
+also preserves nonempty unique order, the exact final candidate, and input
+member identity. An independent read-only audit reaches the same result.
+
+One apparent edge remains intentional. A stream whose conservative plan is
+`ceil(duration / 5) + 1 == 10,001` is rejected before OpenCV allocation even
+when one particular backend might later decode the final probe as a duplicate
+and retain only 10,000 unique candidates. #148, #183, and #198 define this as a
+planned-sample preflight bound; changing it to depend on post-decode
+deduplication would weaken deterministic resource refusal and requires a new
+product decision, not a local off-by-one fix. Do not relax the ceiling, add a
+streaming selector, or change thresholds from this audit. Comparison
+thumbnails remain selection-only and retained recognition images remain
+complete re-decoded frames. No runtime, public API, dependency, state,
+provider, crop/ROI, legacy, or frozen-boundary change was made. The complete
+provider-free suite passes 1,926 tests; compileall and diff checks pass.
