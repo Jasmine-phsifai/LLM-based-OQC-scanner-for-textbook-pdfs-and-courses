@@ -9824,3 +9824,72 @@ runtime, test, API, state, dependency, provider, legacy, crop/ROI, migration,
 or frozen-boundary change was warranted. This repeated structured catalog
 failure does not authorize a REST transport, retry, SDK replacement, model
 sweep, fallback, provider framework, or interval replay.
+
+## Current working update: #550 retains a real multi-hour paid image prefix
+
+#550 runs the public high-level `recognize_video_to_markdown()` once against the
+unchanged 2,665,023,982-byte, 9,683.53-second archive MP4. It uses DashScope
+Beijing `qwen3.5-ocr` for complete retained frames and native Google
+`gemini-2.5-flash` for whole audio, with separate configs and no preliminary
+media extraction, separate catalog request, retry, resume, model switch,
+fallback, or second child. Preflight confirmed the configured proxy/listener,
+more than 103 GB free on the actual temporary/output volume, source identity,
+and zero task residue.
+
+Production retained exactly 82 ordered full 1920x1080 frames, 23,421,340 bytes
+in total, and planned eleven serial groups of 8,8,8,8,8,8,8,8,8,8,2. It also
+extracted and fully decoded one 38,734,640-byte, 9,683.4989375-second MP3 before
+recognition and journaled it as ready whole audio. DashScope groups 0--5 each
+settled one complete slot. The seventh request returned the already-typed
+nonretryable `PROVIDER_RESPONSE_INVALID` incomplete-response branch with fixed
+`reason=incomplete`. The live primary error contained
+`provider_calls_attempted=7`, matching the six settled image calls plus the
+failed seventh image call, and aggregated settled `qwen3.5-ocr` usage of
+101,623 input and 3,185 output tokens. Groups 6--10 remained unsettled, the
+whole-audio state had no settled slot, the journal and both retained media
+artifacts remained, and no final `result.md` was published.
+
+Post-run code review corrects one tempting but unsupported interpretation. The
+high-level settlement function still invokes the independent audio branch after
+a frame error, then raises the frame error as primary. The aggregate-error
+helper copies only call counts, settled token usage, and any known failed client
+cleanup from that secondary branch. The report therefore proves that the audio
+branch ran but cannot establish whether its error carried an exact call count,
+whether the Google adapter was entered, or whether a local snapshot/validation,
+catalog, upload, processing, or generation stage failed. Neither successful nor
+failed DashScope client-close truth was captured. Do not claim that the audio
+adapter was skipped, that Google made zero generation calls, or that any client
+closed successfully.
+
+That review reproduced one exact accounting defect independently of the open
+diagnostics choice. The frame loop had already attached its exact seven-call
+subtotal to the primary error. If the later audio error lacked an exact count,
+the outer aggregation correctly declined to calculate a total but accidentally
+left that earlier subtotal in place. A failure-first regression reproduced the
+false exact value. `OCRLLMError` now has one private discard operation for a
+library-owned detail, and video aggregation removes the earlier
+`provider_calls_attempted` whenever any participating component is unknown.
+Exact all-known totals remain unchanged; the field is omitted rather than
+redefined as a lower bound or nullable estimate.
+
+The run also exposes one bounded public-diagnostics choice beyond that fixed
+accounting defect. Option A keeps the current single primary error and relies on
+the journal plus explicit resume; it is the smallest surface but cannot explain
+the second branch's failure. Option B adds one fixed safe secondary-branch error
+summary while keeping the primary exception, journal, retry policy, and branch
+order unchanged. Do not implement a generalized multi-error carrier, error
+list, provider policy, retry, or fallback. Because even the narrow option adds
+a stable public error field, it awaits an explicit maintainer choice.
+
+The new red regression and the complete 65-test error/high-level-video owner set
+pass; the prior long-video/journal checks and DashScope incomplete-response
+owner remain covered. The complete provider-free suite passes all 1,928 tests;
+compileall, diff hygiene, and frozen-boundary checks pass. The archive source stayed
+unchanged; request snapshot, staging, owned processes, output/report roots, and
+matching temporary residue cleaned to zero. A disposable controller raised
+after its durable report was already published because it attempted Windows
+directory `fsync`; that wrapper-only fault did not alter the OCRLLM outcome and
+does not justify a replay or permanent runner. Runtime changes are limited to
+discarding one no-longer-exact safe detail; one focused test file is added. No
+public API, state, dependency, provider, legacy, crop/ROI, migration, or
+frozen-boundary change was made.

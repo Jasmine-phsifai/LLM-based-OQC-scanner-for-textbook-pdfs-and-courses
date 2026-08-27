@@ -2581,3 +2581,20 @@ of nine heavy/legacy module families, and the installed parser returned exact
 `PROVIDER_RESPONSE_INVALID`, the preserved incomplete message,
 `retryable=False`, and `reason="incomplete"`. Cleanup and repository identity
 passed. This does not close the separate fresh optional-profile delivery gate.
+
+#550 runs the high-level importable video facade once on the unchanged real
+2.7-hour archive MP4. Production retained 82 complete 1920x1080 frames in
+eleven groups and a complete whole-mode MP3. Six DashScope groups settled; the
+seventh returned the existing nonretryable incomplete-response error, leaving
+the paid prefix, full media, and journal without a false final result. Review
+then reproduced one cross-branch accounting defect: if an already-aggregated
+primary frame error had an exact call subtotal but the later independent audio
+error lacked a count, the old helper left that subtotal looking like the whole
+job's exact total. Video aggregation now discards the stale
+`provider_calls_attempted` detail whenever any participating branch count is
+unknown; all-known totals remain unchanged. This adds no public API, error
+class, state, retry, fallback, provider framework, or secondary-error schema.
+The separate choice of whether to expose one safe secondary-branch error
+summary remains open in the authority. The new regression, the 65-test owner
+set, all 1,928 provider-free tests, compileall, diff hygiene, and frozen-boundary
+checks pass.

@@ -54,6 +54,8 @@ def attach_current_video_evidence_to_error(
             "provider_calls_attempted",
             sum(count for count in call_counts if count is not None),
         )
+    else:
+        primary_error._discard_safe_detail("provider_calls_attempted")
 
     usage = aggregate_model_token_usage(usage_rows)
     if usage:

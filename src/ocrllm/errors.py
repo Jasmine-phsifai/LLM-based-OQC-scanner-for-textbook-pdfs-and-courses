@@ -134,6 +134,12 @@ class OCRLLMError(Exception):
         merged_details[key] = value
         self.details = _freeze_redacted_details(merged_details)
 
+    def _discard_safe_detail(self, key: str) -> None:
+        """Remove one no-longer-exact library-owned detail."""
+        merged_details: dict[str, JSONValue] = dict(self.details)
+        merged_details.pop(key, None)
+        self.details = _freeze_redacted_details(merged_details)
+
 
 class ConfigError(OCRLLMError):
     """Configuration is missing or invalid."""
