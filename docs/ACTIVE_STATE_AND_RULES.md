@@ -9316,3 +9316,29 @@ The complete default suite passes 1,925 tests; a fresh no-deps installed wheel
 also passes the pure-Python bundle probe and lightweight-import check. Public
 APIs, state, providers, dependencies, repair, warning semantics, crop/ROI,
 legacy, and frozen boundaries are unchanged.
+
+## Current working update: #518 scopes local-OCR frame evidence in video results
+
+#518 closes the video counterpart of #514 without treating video as one image
+provider result. Settled local-OCR frame groups already retained their engine,
+version, image count, retained-line count, and zero-network facts in child
+results and the resume journal, but `compose_video_result()` discarded them.
+Public fresh-media and audio-failure/resume regressions first failed on the
+missing final evidence.
+
+When every frame group succeeds with one uniform local OCR engine/version and
+the summed image count equals the retained full-frame count, the composer now
+publishes the existing evidence under `video_frame_*` names. It deliberately
+does not publish an unscoped `network_call_count=0`, because the independently
+configured audio branch may make provider calls. It adds no modality graph,
+provider framework, state field, retry/fallback rule, or generic telemetry
+schema. The adjacent video owner set passes 106 tests and the complete default
+suite passes 1,925 tests.
+
+During the maintainer's priority interruption, executable crop paths were
+rechecked. Historical commit `3c09cde` already removed the complete legacy
+corner/ROI/perspective module and wiring; the active library never retained it.
+Legacy full-frame regressions pass 4 tests and active video/PDF four-corner
+regressions pass 2 tests. Full-frame resize, selection-only thumbnails,
+temporal frame choice, and whole-page PDF rendering remain necessary and are
+not spatial crop operations.

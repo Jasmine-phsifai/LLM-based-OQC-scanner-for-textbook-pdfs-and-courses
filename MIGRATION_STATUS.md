@@ -2419,3 +2419,15 @@ preserves only exact integer 100--599 HTTP status and at-most-128-character ASCI
 alphanumeric/underscore provider status for both catalog and recognition
 failures. Production mapping, runtime APIs, dependencies, and provider policy
 are unchanged; focused runner/adapter coverage passes 71 tests.
+
+#518 preserves stable local-OCR frame evidence through final video composition.
+The composer now exposes the already-settled uniform local engine/version and
+summed image/retained-line/zero-network facts under `video_frame_*` keys only
+when every retained frame belongs to that complete evidence set. The prefix is
+required because video audio uses an independent provider and an unscoped zero
+network count would be false. Fresh-media and audio-only-resume owner tests pass;
+106 adjacent video tests and the 1,925-test default suite are green. No public
+signature, journal schema, provider policy, retry/fallback, dependency, crop/ROI,
+legacy, or frozen-boundary change was made. A priority re-audit also reconfirmed
+that commit `3c09cde` already removed the legacy crop module and all executable
+wiring, while active video and PDF retain complete frames/pages.

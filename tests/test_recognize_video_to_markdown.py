@@ -668,6 +668,13 @@ def test_local_ocr_frames_survive_audio_failure_and_resume_only_audio(
     assert "Local OCR settled frame" in result.markdown
     assert "Audio recovered" in result.markdown
     assert result.metadata["current_run_provider_call_count"] == 1
+    assert result.metadata["video_frame_recognition_mode"] == "ocr"
+    assert result.metadata["video_frame_ocr_engine"] == "rapidocr"
+    assert result.metadata["video_frame_ocr_engine_version"] == "3.9.test"
+    assert result.metadata["video_frame_image_count"] == 1
+    assert result.metadata["video_frame_retained_line_count"] == 1
+    assert result.metadata["video_frame_network_call_count"] == 0
+    assert "network_call_count" not in result.metadata
     assert media_calls == {"prepare": 1, "extract": 1}
     assert audio_calls == 2
     assert len(recognized_bytes) == 1

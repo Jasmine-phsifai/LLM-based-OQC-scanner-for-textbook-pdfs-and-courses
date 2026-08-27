@@ -747,6 +747,17 @@ def test_recognize_video_combines_local_ocr_with_independent_audio(
             "output_tokens": 2,
         },
     )
+    assert composed.metadata["video_frame_recognition_mode"] == "ocr"
+    assert composed.metadata["video_frame_ocr_engine"] == "rapidocr"
+    assert composed.metadata["video_frame_ocr_engine_version"] == "3.9.test"
+    assert composed.metadata["video_frame_image_count"] == len(
+        outcome.retained_frames
+    )
+    assert composed.metadata["video_frame_retained_line_count"] == len(
+        outcome.retained_frames
+    )
+    assert composed.metadata["video_frame_network_call_count"] == 0
+    assert "network_call_count" not in composed.metadata
     assert not observed_audio[0].exists()
 
 

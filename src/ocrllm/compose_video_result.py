@@ -27,6 +27,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
 
     sections = ["# Video frames"]
     settled_usage_rows: list[dict[str, str | int | None]] = []
+    settled_frame_results: list[RecognitionResult] = []
     frame_failures: list[dict[str, object]] = []
     provider_call_counts: list[int | None] = []
     warnings: list[str] = []
@@ -43,6 +44,7 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
             ),
         ]
         if item.result is not None:
+            settled_frame_results.append(item.result)
             body.append(item.result.markdown.strip())
             settled_usage_rows.extend(
                 aggregate_current_model_token_usage((item.result,))
@@ -83,6 +85,21 @@ def compose_video_result(outcome: VideoRecognitionOutcome) -> RecognitionResult:
         ),
         "audio_state": outcome.audio_state,
     }
+    if len(settled_frame_results) == len(outcome.frame_outcomes):
+        from .aggregate_local_ocr_result_evidence import (
+            aggregate_local_ocr_result_evidence,
+        )
+
+        frame_evidence = aggregate_local_ocr_result_evidence(
+            settled_frame_results
+        )
+        if frame_evidence.get("image_count") == len(outcome.retained_frames):
+            metadata.update(
+                {
+                    f"video_frame_{key}": value
+                    for key, value in frame_evidence.items()
+                }
+            )
     if image_provider_client_cleanup_failed:
         metadata["image_provider_client_closed"] = False
     if outcome.snapshot_cleanup_error is not None:
