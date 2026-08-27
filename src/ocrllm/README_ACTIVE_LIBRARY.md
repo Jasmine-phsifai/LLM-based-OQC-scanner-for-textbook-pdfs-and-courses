@@ -96,8 +96,9 @@ whole-file Files above 300 seconds by default. Its optional
 `audio_interval_minutes` selects ordered Files intervals using an exact positive
 integer number of minutes; settled state is written under the video-owned output
 root and removed only after a complete clean audio result. Failed and partial
-audio outcomes retain any settled state. Current video calls do not consume
-retained state. The high-level `recognize_video_to_markdown()` call now owns
+audio outcomes retain any settled state. The low-level `recognize_video()` call
+does not consume retained state. The high-level
+`recognize_video_to_markdown()` call now owns
 one complete video journal, validates all saved media/request identity before
 dispatch, and resumes only missing image/audio work;
 interval mode nevertheless accepts sources through the private 10-hour product
@@ -558,9 +559,10 @@ the value must be an exact positive built-in integer. Each paid interval is
 saved immediately to `output_root / ".ocrllm-video-audio-resume.json"`; a later
 failure keeps that state, while clean recognition and snapshot cleanup remove
 it before returning. No nested `audio/result.md` or video `result.md` is
-created. The current public video call cannot consume retained state yet, and
-repair remains a separate future text-range side path rather than a state
-consumer.
+created. The low-level `recognize_video()` call cannot consume retained state;
+use `recognize_video_to_markdown(..., resume=True)` for the library-owned video
+journal and fixed `result.md`. Repair remains a separate future text-range side
+path rather than a state consumer.
 Retained frame indices must be strictly increasing and their timestamps must
 not move backward. Frame-group outcome indices must be the contiguous caller
 order `0..n-1`. Every settled group must also carry valid frame indices and
@@ -599,8 +601,9 @@ recognize again, derive a legacy filename, create resume state, or publish a
 fully failed outcome. The caller owns the complete filename: publication always
 writes UTF-8 Markdown and `.md` is the recommended suffix, but suffixes are not
 validated. This is distinct from the exact library-owned media paths above.
-Automatic fallback, resume, and worker routing remain
-unavailable. Plain
+Automatic fallback and video worker routing remain unavailable. Resume exists
+only through explicit `recognize_video_to_markdown(..., resume=True)`; the
+low-level recognize/compose/publish calls remain non-resumable. Plain
 `import ocrllm` does not import OpenCV, NumPy, imageio-ffmpeg, recognition
 execution helpers, or provider SDKs. The primary single/batch recognition,
 standalone long-MP3, and four video facade functions are bound during package

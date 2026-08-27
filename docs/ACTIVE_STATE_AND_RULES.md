@@ -8618,3 +8618,19 @@ add a local-environment fallback to the product, weaken the `ocr` extra, or call
 this a full release pass. A later ordinary clean gate may retry after new time
 or delivery evidence; meanwhile the OCR runtime itself is not implicated by the
 single PyPI read timeout.
+
+## Current working update: #485 scopes video resume documentation correctly
+
+The active-library README no longer says broadly that current video calls or
+resume are unavailable. Those statements contradicted the shipped high-level
+`recognize_video_to_markdown(..., resume=True)` journal consumer and its #427
+live zero-call publication resume. All three affected passages now state the
+actual boundary: low-level `recognize_video()` and the separate
+recognize/compose/publish flow do not consume retained state, while the
+high-level fixed-result facade owns the resumable journal and `result.md`.
+
+This is a documentation correction only. It does not make the low-level API
+resumable, add automatic fallback, worker routing, repair, a second state
+consumer, or any runtime behavior. Public import, lightweight-import, and
+high-level video-facade coverage passes 51 tests. Do not add a README parser or
+documentation framework for this three-sentence scope correction.
