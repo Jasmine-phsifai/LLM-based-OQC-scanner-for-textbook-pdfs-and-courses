@@ -341,6 +341,60 @@ def test_cancellation_during_final_image_call_preserves_paid_slot_for_resume(
     assert "current_model_token_usage" not in completed_state["result"]["metadata"]
 
 
+def test_cancellation_during_completed_state_save_blocks_markdown_publication(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    source = write_test_image(tmp_path / "board.png")
+    output_dir = tmp_path / "output"
+    output_path = output_dir / "board_board.md"
+    state_path = _state_path(output_dir)
+    cancellation = threading.Event()
+    calls: list[tuple[Path, ...]] = []
+    _install_fake_dashscope(monkeypatch, calls)
+    saver = importlib.import_module("ocrllm.output.save_image_resume_state_atomically")
+    real_save = saver.save_image_resume_state_atomically
+
+    def save_then_cancel(path, state):
+        real_save(path, state)
+        if state.markdown:
+            cancellation.set()
+
+    monkeypatch.setattr(
+        saver,
+        "save_image_resume_state_atomically",
+        save_then_cancel,
+    )
+
+    with pytest.raises(Cancelled) as captured:
+        recognize(
+            source,
+            config=_vision_config(output_dir, cancellation=cancellation),
+        )
+
+    assert captured.value.code == "CANCELLED"
+    assert captured.value.details["provider_calls_attempted"] == 1
+    assert len(calls) == 1
+    assert not output_path.exists()
+    completed_state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert completed_state["result"]["status"] == "complete"
+    assert completed_state["result"]["markdown"] == "# Resumable board\n"
+
+    monkeypatch.setattr(
+        saver,
+        "save_image_resume_state_atomically",
+        real_save,
+    )
+    cancellation.clear()
+    resumed = recognize(source, config=_vision_config(output_dir))
+
+    assert len(calls) == 1
+    assert resumed.markdown == "# Resumable board\n"
+    assert resumed.metadata["current_run_provider_call_count"] == 0
+    assert resumed.output_path == output_path
+    assert output_path.read_text(encoding="utf-8") == resumed.markdown
+
+
 def test_local_ocr_resume_reuses_completed_result_without_backend_call(
     tmp_path,
     monkeypatch,

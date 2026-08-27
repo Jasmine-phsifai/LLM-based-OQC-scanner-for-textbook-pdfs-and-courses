@@ -34,8 +34,13 @@ with zero new provider calls.
 Google credential after strict state/mode validation but before source
 snapshotting, interval materialization, SDK loading, or provider work. It keeps
 the paid prefix unchanged and reports exact zero calls. Fully settled whole and
-interval resumes remain credential-free and zero-call. The bounded reproduced
-queue is empty again; the next task requires a fresh shipped-surface audit.
+interval resumes remain credential-free and zero-call.
+
+#466 makes cancellation arriving during completed image-sidecar persistence
+stop before Markdown publication. The complete sidecar remains reusable, the
+cancelled call reports settled evidence, and a cleared resume publishes with
+zero new provider calls. Fresh batch and high-level video audits found no
+separate ordinary defect; the bounded reproduced queue is empty again.
 
 The repository has two boundaries:
 

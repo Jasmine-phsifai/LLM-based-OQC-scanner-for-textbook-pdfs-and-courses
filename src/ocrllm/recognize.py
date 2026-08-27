@@ -364,6 +364,7 @@ def _recognize(
                     slots=slot_checkpoint.slots,
                 )
                 save_image_resume_state_atomically(resume_state_path, resume_state)
+                raise_if_cancelled(cfg.cancellation)
             if cfg.resume and output_path.exists():
                 from .output.validate_image_resume_output import (
                     validate_image_resume_output,

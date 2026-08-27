@@ -460,6 +460,17 @@ provider calls. The adapter still resolves the credential again at dispatch;
 no secret cache, generalized resume predicate, SDK wrapper, retry, or fallback
 was added. The bounded reproduced queue is empty again, so the next iteration
 requires a fresh shipped-surface audit rather than adjacent audio expansion.
+#466 closes one direct-image cancellation window that existing publication
+tests did not cover. If cancellation arrives while the completed image sidecar
+is being atomically saved, the facade now observes it again before starting
+Markdown publication. The complete sidecar remains reusable, the typed
+`Cancelled` error retains exact settled call/token/cleanup evidence, no
+Markdown is published, and a later clear-signal resume publishes with zero new
+provider calls. Pre-save cancellation still avoids the completed-state write.
+This adds one check at the actual sidecar-to-publication boundary, not checks
+after every filesystem operation or a cancellation coordinator. Fresh batch
+and high-level video audits remained clean, and the bounded reproduced queue is
+empty again.
 The independent `audio` extra is the user-facing audio runtime profile. It now
 contains lazy `miniaudio` for A1/A2 probing and lazy `imageio-ffmpeg` for the
 first A2b interval materializer. The short and whole-file routes still import

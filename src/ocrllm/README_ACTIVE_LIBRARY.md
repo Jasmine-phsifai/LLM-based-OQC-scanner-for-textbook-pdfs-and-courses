@@ -150,6 +150,9 @@ The current image facade:
   directory creation, image snapshotting, or provider work. The typed error
   reports exact zero calls; built-in provider request metadata is snapshotted
   before observing a user-defined cancellation callback;
+- rechecks cancellation after a completed sidecar is atomically saved and
+  before Markdown publication; cancellation in that interval leaves the
+  complete sidecar reusable and a later resume publishes with zero new calls;
 - rejects groups above `Config.execution.maximum_images_per_request` before
   source/provider work. `recognize_batch()` requires an exact top-level `tuple`,
   preserves the existing per-item atomic path or grouped `Sequence` contract,
