@@ -9789,3 +9789,38 @@ timeouts, extraction chunking, or performance instrumentation from this run.
 The exact GUID root is absent and repository/frozen state is unchanged. This is
 long-artifact lifecycle proof, not whole/interval Google recognition or general
 10-hour/codec throughput proof.
+
+## Current working update: #549 reaches the real whole-file Google catalog gate
+
+#549 rebuilds the complete MP3 once from the same unchanged 2.7-hour archive
+video and passes it once to public `recognize_long_mp3()` in whole-file mode
+with persisted output configured. Preflight used the actual C: temporary/output
+volume, confirmed more than 103 GB free, confirmed the configured proxy and
+listener, and reused only authorized archive media. The one extraction took
+19.031 seconds and produced the same 38,734,640-byte, 9,683.498938-second MP3
+shape proven in #548. It passed an independent full decode and remained
+unchanged across recognition.
+
+Exactly one child made exactly one public call with native Google
+`gemini-2.5-flash`, `interval_minutes=None`, and no separate catalog request,
+retry, resume, model switch, fallback, or second child. The internal model
+catalog request returned HTTP 400 `FAILED_PRECONDITION` after 4.078 seconds.
+The library reported nonretryable `ProviderRequestInvalid` /
+`PROVIDER_REQUEST_INVALID`, fixed provider/model, `provider_operation=catalog`,
+`failure_scope=request`, `provider_calls_attempted=0`, and
+`provider_client_closed=true`. It did not upload the MP3 or attempt generation,
+and it produced no `result.md`, resume sidecar, settled slot, or token usage.
+The empty newly created output root was also removed.
+This is honest real-route failure evidence, not successful Google long-audio
+recognition or upload evidence.
+
+Ten focused regressions covering the Files lifecycle, catalog-before-upload,
+advertised model input limits, remote cleanup, whole-file persistence, and
+zero-call recovery pass. The source video, extracted MP3, repository, index,
+and frozen directories remained unchanged; credentials and absolute media
+paths were absent from the durable report; all request snapshots, staging
+files, processes, report files, and exact GUID roots cleaned to zero. No
+runtime, test, API, state, dependency, provider, legacy, crop/ROI, migration,
+or frozen-boundary change was warranted. This repeated structured catalog
+failure does not authorize a REST transport, retry, SDK replacement, model
+sweep, fallback, provider framework, or interval replay.
