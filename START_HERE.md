@@ -1340,3 +1340,11 @@ mistakes caused unnecessary source regeneration before any interval work.
 Record those harness defects honestly, but do not rerun or add permanent stress
 machinery: the production lifecycle itself completed without a reproduced
 defect, provider call, credential, dependency, API, or runtime change.
+
+#533 strengthens one existing interval-cancellation test without changing the
+library. It now proves that cancellation after the first saved slot leaves an
+exact one-slot sidecar and no segment, then explicit resume dispatches only the
+two missing windows, publishes ordered Markdown, and removes state. Existing
+owners retain real-media cleanup and source/snapshot responsibilities, avoiding
+a duplicate integration fixture or second recovery design. The full
+provider-free suite passes 1,926 tests.

@@ -9604,3 +9604,26 @@ reproduced and no runtime, test, API, dependency, provider, state, retry,
 fallback, legacy, crop/ROI, or frozen-boundary change was made. The 51 focused
 audio lifecycle tests, 21 import-boundary tests, compileall, and diff checks
 pass.
+
+## Current working update: #533 locks cancellation cleanup and suffix-only resume
+
+#533 finds no runtime defect after #532's success-path stress proof. The
+production interval loop already persists each settled slot while its one
+materialized segment is open, exits that context and deletes the segment, then
+checks cancellation before the next window. Existing owners separately proved
+real MP3 cleanup, snapshot/source ownership, ordered prefix persistence, and
+provider-failure resume. Repeating those layers in another large-media fixture
+would add cost without a new boundary.
+
+The existing public cancellation regression was narrower than its behavior: it
+checked call, token, persisted-count, and provider-cleanup evidence but not the
+saved sidecar, segment deletion, or later recovery. The same test is renamed
+and extended to load the one-slot state after `CANCELLED`, require no
+`segment-*.mp3`, clear the signal, and resume only missing windows 1 and 2.
+It then requires ordered three-part Markdown, two current-run calls, state
+removal, and no segment residue. This strengthens one owner rather than adding
+a second cancellation abstraction or real-media fixture. No runtime, public
+API, state schema, provider, dependency, retry/fallback, legacy, crop/ROI, or
+frozen-boundary code changed. The adjacent 63 tests pass; the complete
+provider-free suite passes 1,926 tests with no skips, and compileall/diff checks
+pass.

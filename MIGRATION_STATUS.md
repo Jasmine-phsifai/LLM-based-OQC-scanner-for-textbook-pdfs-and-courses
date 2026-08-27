@@ -2547,3 +2547,13 @@ peak owned bytes were 581,267,364, above its requested 400 MiB test cap but far
 below the 2 GB product source limit. This does not justify a permanent stress
 harness, telemetry, rerun, or runtime change. The focused audio and import sets
 pass 51 and 21 tests respectively; compileall and diff checks pass.
+
+#533 tightens the existing public interval-cancellation regression rather than
+changing runtime. After the first settled slot is saved and cancellation stops
+the next window, the test now loads the exact one-slot sidecar, requires the
+finished segment to be absent, clears cancellation, and proves `resume=True`
+materializes only windows 1 and 2, publishes ordered Markdown, removes state,
+and leaves no segment. Real MP3 cleanup, snapshot ownership, and ordinary
+failure resume remain with their existing owners; no duplicate fixture or
+coordinator was added. The adjacent set passes 63 tests and the complete
+provider-free suite passes 1,926 tests with no skips.

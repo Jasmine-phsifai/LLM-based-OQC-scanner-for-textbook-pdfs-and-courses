@@ -838,7 +838,7 @@ def test_paid_interval_is_saved_before_materializer_cleanup_failure(
     assert (output_dir / "lecture" / ".ocrllm-long-audio-resume.json").is_file()
 
 
-def test_cancellation_after_saved_interval_reports_current_settlement(
+def test_cancellation_after_saved_interval_cleans_and_resumes_missing_suffix(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -889,6 +889,37 @@ def test_cancellation_after_saved_interval_reports_current_settlement(
     )
     assert captured.value.details["remote_file_deleted"] is True
     assert captured.value.details["provider_client_closed"] is True
+
+    state_path = output_dir / "lecture" / ".ocrllm-long-audio-resume.json"
+    saved = load_long_audio_partial_state(state_path)
+    assert saved is not None
+    assert len(saved.slots) == 1
+    assert saved.slots[0].window_index == 0
+    assert list(tmp_path.glob("segment-*.mp3")) == []
+
+    cancellation.clear()
+    monkeypatch.setattr(
+        processor,
+        "save_long_audio_partial_state_atomically",
+        state_module.save_long_audio_partial_state_atomically,
+    )
+    _processor, resumed_materialized, resumed_calls = _install_interval_fakes(
+        monkeypatch,
+        tmp_path,
+        ["second", "third"],
+    )
+
+    result = recognize_long_mp3(
+        tmp_path / "lecture.mp3",
+        config=_config(output_dir, resume=True, cancellation=cancellation),
+    )
+
+    assert resumed_materialized == [1, 2]
+    assert resumed_calls == [0, 1]
+    assert result.markdown == "first\n\nsecond\n\nthird"
+    assert result.metadata["current_run_provider_call_count"] == 2
+    assert not state_path.exists()
+    assert list(tmp_path.glob("segment-*.mp3")) == []
 
 
 def test_interval_state_save_failure_preserves_usage_and_cleanup_facts(
