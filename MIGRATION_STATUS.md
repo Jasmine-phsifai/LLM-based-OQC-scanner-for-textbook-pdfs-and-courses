@@ -2324,3 +2324,19 @@ with the existing exit checker. A failure-first ordering assertion is green;
 packaging/dependency/media tests pass. No full gate, network, pip upgrade,
 dependency, cache/index, runtime, API, provider, or frozen-boundary change was
 made; #502 remains unresolved delivery evidence.
+
+#508 runs that unchanged gate once from exact commit `6034c74`. Archived pytest
+reported 1,919 passed and one skipped; fixture, compile, wheel/base, metadata,
+and import-budget stages passed. Fresh `audio` and `image` profiles used pip
+23.0.1 and passed installation, metadata/import, feature smokes, and their size
+limits at 91,506,201 and 17,306,485 added bytes. The `ocr` profile used the same
+pip but reached the existing 1,200-second install timeout while downloading the
+13.5 MB ONNX Runtime 1.23.2 Windows wheel. OCR smoke and the six later profiles
+did not run, and final exact wheel/base sizes were not printed. The current
+proof root and processes were cleaned; provider calls and credential access
+were zero. No retry, pin, pip, cache/index/mirror/timeout, dependency, gate,
+runtime, API, legacy, crop/ROI, or frozen-boundary change followed. #460 remains
+the last complete nine-profile proof. Two process-free historical gate roots
+were separately found under the system temporary directory; host execution
+policy blocked both exact cleanup commands before launch, so they remain as a
+known environment residue rather than being attributed to #508.

@@ -9120,3 +9120,37 @@ into command/environment dumping, a pip upgrade, resolver report, installer
 abstraction, cache/index/mirror/pin/retry/timeout change, or another gate. No
 network, provider, credential, runtime, API, dependency, legacy, crop/ROI, or
 frozen-boundary change occurred.
+
+## Current working update: #508 reaches OCR with exact resolver evidence
+
+One unchanged maintained clean-distribution gate ran exactly once from commit
+`6034c74d2dc257ee7de5b0e71078c47e639ccd2e` after the configured proxy, its TCP
+endpoint, and an explicit proxied PyPI HTTPS HEAD succeeded. The gate script
+blob was `f108e16d302b12d7c74ad7202b0f07e560ececeb`. Archived-source pytest reported
+1,919 passed and one optional real-RapidOCR skip in 86.39 seconds; fixture
+verification, compilation, clean wheel construction and selection, base
+installation, metadata, outside-repository import, and both import budgets
+passed.
+
+The fresh `audio` and `image` profiles each emitted pip 23.0.1 from their own
+Python 3.10 venv before installation. Both installed and passed their
+metadata/import checks; audio's local-media smoke passed with a 91,506,201-byte
+delta, and image's injected-provider feature smoke passed with a 17,306,485-
+byte delta. The `ocr` venv emitted the same pip 23.0.1, processed the current
+wheel, selected `onnxruntime-1.23.2-cp310-cp310-win_amd64.whl`, and then reached
+the unchanged 1,200-second profile-install timeout while downloading that 13.5
+MB artifact. No pip exit code was available because the gate terminated the
+bounded stage. OCR metadata/inference and the six later profiles did not run;
+the script therefore did not print its final exact wheel/base byte counts.
+
+This supersedes #502 only as the newest incomplete distribution result. It
+proves that audio and image are currently deliverable through this workflow and
+identifies the OCR blocker as a pip 23.0.1 dependency-transfer timeout; it does
+not prove a package requirement defect, justify a pin or pip upgrade, or close
+the nine-profile gate. There was no retry, provider/cloud call, credential
+access, cache/index/mirror/timeout change, gate edit, or product change. The
+current run's GUID-scoped proof root, archive, and owned processes were removed.
+Two unrelated approximately 49.8 MB historical gate roots from earlier work
+were discovered with no owning process; two exact PowerShell cleanup commands
+were blocked before execution by the host policy, so those old disposable
+roots remain. #460 is still the last complete nine-profile proof.
