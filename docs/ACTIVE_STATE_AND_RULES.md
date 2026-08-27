@@ -8756,3 +8756,29 @@ existing compatible OCR stack. Do not change dependency pins, timeout, index,
 mirror, cache, or product behavior to conceal this result. The gate also does
 not yet exercise the newer `video,ocr,audio,google` union; prove that as a
 separate atomic release check rather than expanding this failed run retroactively.
+
+## Current working update: #492 proves the documented mixed local/cloud union
+
+The exact current wheel's `video,ocr,audio,google` metadata matches the eight
+requirements declared by the archived `pyproject.toml`. Installed with
+`--no-index --no-deps` into a disposable target over one existing compatible
+environment, the wheel loaded from that target, kept every heavy media/OCR/
+Google dependency absent at plain import, and ran real public video inspection,
+frame extraction, and RapidOCR recognition on a generated 900x220 MP4. The one
+retained JPEG remained 900x220, kept all four colored corner markers, recognized
+`OCRLLM 2026`, and reported zero provider and network calls. The same installed
+package built an `audio/mpeg` Google SDK part from a real 0.5-second MP3 snapshot
+without a provider or network call. The disposable root and processes were
+removed.
+
+This proves that the four extras coexist in one installed runtime; because the
+proof deliberately reused existing dependencies, it does not replace #491's
+still-open fresh-download gate. It also exposed a documentation defect: the
+distribution README selected by `pyproject.toml` omitted this supported union
+even though the package-internal maintainer README recorded it. The root README
+now gives the exact install command and the narrow configuration boundary. Do
+not add an aggregate extra, duplicate the three existing installed smokes, or
+add another hundreds-of-megabytes profile to the full gate without evidence of
+a dependency-resolution conflict. The focused packaging/gate set passes 15
+tests, and a rebuilt 313,029-byte wheel contains both the command and boundary
+text in its distribution `METADATA`; that verification root was removed.

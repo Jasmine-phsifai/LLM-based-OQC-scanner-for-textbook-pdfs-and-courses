@@ -186,6 +186,17 @@ For the complete native-Google combined-video workflow:
 pip install ".[video,image,audio,google]"
 ```
 
+For local RapidOCR on complete video frames with independent Google audio:
+
+```powershell
+pip install ".[video,ocr,audio,google]"
+```
+
+Use `image_config=Config(image_mode="ocr")` with the separate Google
+`audio_config`. The frame branch remains provider-free and receives complete
+retained frames; local OCR remains ordered text extraction rather than a
+formula, table, or layout-equivalent replacement for a vision model.
+
 For DashScope frame recognition with independent Google audio recognition:
 
 ```powershell
