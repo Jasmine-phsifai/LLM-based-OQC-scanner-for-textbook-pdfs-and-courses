@@ -2731,3 +2731,15 @@ producer independently publishes exact source-bound failed-time-range text.
 The focused interval, whole, and video-audio persistence suites pass 38 tests;
 no runtime, API, test, provider, dependency, legacy, archive, or frozen code
 changed.
+
+#565 completes one bounded follow-up quality call without changing the product
+or scorer. A canonical committed-answer score/serialization preflight and 66
+focused tests passed before credential access. One Beijing DashScope
+`qwen3.5-ocr` board call then completed in 3.187 seconds with one provider call
+and 4,367 input / 297 output tokens, exact source identity, repository imports,
+and private output boundaries. Its Markdown raised `ValueError` during scoring,
+so the only supported result is content-free `model_output_invalid`; no score,
+missing-formula claim, or formula-quality pass can be inferred. The call was not
+replayed and no unobserved scorer behavior was redesigned. Both disposable
+scripts and their temporary root were removed; no runtime, scorer, test, API,
+provider, fixture, dependency, legacy, archive, or frozen code changed.

@@ -10430,3 +10430,46 @@ tests** and confirm the current publication/state facts. No runtime, public API,
 test, provider, dependency, archive, legacy, crop/ROI, or frozen-boundary code
 changed. Existing authorized media under `D:\archieve` remains the preferred
 future real-test source; this investigation required no crawling or download.
+
+## Current working update: #565 classifies the formula scorer stop safely
+
+#565 performed the separately justified one-call quality follow-up permitted by
+#563. Before reading a credential, personal review and an independent read-only
+audit separated four outcomes: valid but inaccurate Markdown must return the
+existing score/failure codes; a `ValueError` while scoring arbitrary recognized
+text is only `model_output_invalid`; manifest/dispatch preflight failures are
+harness failures; and unexpected or serializer exceptions remain scorer
+internal failures. Exception messages and recognized Markdown are not safe
+evidence. The committed canonical answer passed score plus serialization, and
+one deliberately invalid restricted-formula input produced the expected
+`ValueError`. The focused scorer, formula, and evidence-helper suites pass **66
+tests**.
+
+After the approximate heartbeat interval, one disposable controller verified
+exact synchronized commit
+`3258b53911cebca4aaed01a1d277c8045a897aac`, the enabled WinINET proxy and
+`127.0.0.1:10080` listener, fixture identity, repository imports, and a nonempty
+QSettings credential before launching one child. The child made exactly one
+public `recognize()` call against Beijing DashScope `qwen3.5-ocr`, board profile,
+English/Chinese input hints, one draft, no review, thinking disabled, and high-
+resolution images enabled. Recognition completed in 3.187 seconds with one
+current and aggregate call and 4,367 input / 297 output tokens. Source identity
+remained exact; `provider_client_closed` was absent and is therefore unknown.
+
+The recognized Markdown then raised `ValueError` in the score phase while the
+same process's canonical score/serializer preflight had passed. The only honest
+quality result is `model_output_invalid`: the output does not satisfy the
+current restricted scoring grammar. It is not a numerical zero, does not name
+any missing formula, and does not prove whether normalization, scoring-view
+construction, or formula parsing rejected it. No content or exception message
+was retained, and the call was not replayed. Consequently no scorer or product
+change is justified from this evidence alone; changing its schema or assigning
+synthetic scores would design against an unobserved input.
+
+Child stdout was 606 bytes, stderr was zero, and scans found no credential or
+path occurrence. Both scripts and their exact owned non-reparse temporary root
+were removed after verifying zero children and zero related processes. No
+runtime, scorer, test, API, provider, fixture, dependency, archive, legacy,
+crop/ROI, migration boundary, or frozen code changed. `qwen3.5-ocr` remains a
+live-working exploratory model but has no passing formula-quality evidence and
+must not be promoted as a formula-quality default from #563 or #565.
