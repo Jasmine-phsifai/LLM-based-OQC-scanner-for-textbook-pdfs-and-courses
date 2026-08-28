@@ -2743,3 +2743,18 @@ missing-formula claim, or formula-quality pass can be inferred. The call was not
 replayed and no unobserved scorer behavior was redesigned. Both disposable
 scripts and their temporary root were removed; no runtime, scorer, test, API,
 provider, fixture, dependency, legacy, archive, or frozen code changed.
+
+#566 maps the active public callable surface to its strongest current real or
+installed evidence and finds no honest reason to replay RapidOCR or spend a
+provider call on pure composition, publication, capability-registry, or error-
+disposition helpers. A read-only `D:\archieve` inventory instead identifies the
+next evidenced format gap: 83 M4A/AAC files totaling 8,884,416,862 bytes, with
+three unchanged complete samples around 2.8 hours each, versus zero WAV files.
+The active library remains deliberately MP3-only and all four WAV/M4A registry
+entries remain deferred; focused routing/validation/registry tests pass 75
+tests. Future audio-format work should investigate one long-M4A vertical slice
+and select native upload or normalization from concrete provider/runtime
+evidence before implementation. It must not infer a generic converter, WAV
+support, the full legacy extension list, a provider framework, or simultaneous
+short/long expansion. No runtime, API, test, capability status, dependency,
+provider, archive, legacy, or frozen code changed.

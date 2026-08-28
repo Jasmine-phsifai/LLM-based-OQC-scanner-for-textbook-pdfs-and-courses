@@ -10473,3 +10473,36 @@ runtime, scorer, test, API, provider, fixture, dependency, archive, legacy,
 crop/ROI, migration boundary, or frozen code changed. `qwen3.5-ocr` remains a
 live-working exploratory model but has no passing formula-quality evidence and
 must not be promoted as a formula-quality default from #563 or #565.
+
+## Current working update: #566 selects M4A as the only evidenced next audio-format gate
+
+#566 abandoned its initial real-RapidOCR replay after reconciling the public
+surface with current evidence. Public image, batch, PDF, short/long MP3, video
+frame, low-level video, high-level video, inspection, extraction, and model-
+catalog paths already have real-media, installed-distribution, or provider-live
+proof. The remaining direct composition/publication helpers are deterministic
+filesystem/result operations already covered offline and indirectly exercised
+by the high-level published lifecycle; the capability registry and provider-
+error disposition are pure queries. Giving each helper an independent provider
+call would not test a new product boundary. The known `get_capabilities` import-
+order collision remains blocked by the frozen worker subtree and was not
+wrapped around.
+
+A read-only aggregate inventory reused authorized `D:\archieve` data and did
+not crawl, download, convert, or publish names or content. It found 1,529 MP3s
+(7,134,655,911 bytes), 83 M4As (8,884,416,862 bytes), and zero WAV/AAC/FLAC/
+OGG/OPUS/WMA files. Three complete M4A samples were MOV/MP4/M4A containers with
+AAC audio and durations of 10,134.890500, 10,128.895833, and 10,127.146333
+seconds; their sizes and mtimes stayed unchanged. This establishes real long-
+M4A demand and no current archive-backed WAV demand.
+
+The active library still deliberately accepts only MP3 audio. Its type routing,
+snapshot filename, bounded decoder, short inline MIME, long upload types, and
+resume fingerprint flow all encode that boundary. Legacy accepts M4A natively
+in its own DashScope path, but that is parent evidence rather than a public
+contract to copy. Therefore the next audio-format investigation, when selected,
+must consider M4A only and first choose one concrete native-upload or
+normalization route. It must not simultaneously add WAV, a generic media
+converter, every legacy extension, provider classes/fallback, or both short and
+long format matrices. No runtime/API/test/dependency/capability status changed;
+the focused current rejection/registry owner set passes 75 tests.
