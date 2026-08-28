@@ -42,6 +42,16 @@ historical claim.
 
 ## Project Posture Changed
 
+**2026-08-28 refactor authority.** The provider-entity/batch refactor is
+approved; see #568 at the end of this file and
+[`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
+Where the narrative below describes `recognize_video_to_markdown`, the video
+journal, or the non-resumable low-level `recognize_video()` as current product
+direction, those passages are superseded as direction (they remain true
+descriptions of the currently shipped code until the refactor's deletion
+phase). The Config-based `recognize`/`recognize_batch`/`recognize_long_mp3`
+line is untouched by this refactor.
+
 The library was built as a feasibility spike: prove that one narrow vertical
 slice (DashScope + image) could carry a stable public contract. That question
 is answered. The contract, quality-gate, and error layers work.
@@ -7532,6 +7542,13 @@ provider abstraction was added.
 
 ## Current working update: #355 video resume must start with paid-work reuse
 
+> **OBSOLETE (2026-08-28; see #568 and
+> [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md)):**
+> the "one video journal" state demand below is superseded by the batch
+> sidecar-plan plus Markdown-marker state model; video resume routes to
+> image-batch and audio-batch resume on one Markdown file. The paid-work-reuse
+> principle survives and is carried by the batch state. Kept as history.
+
 The complete live interval proof does not make the current three-step video API
 resumable. A main-agent code trace and two bounded independent audits compared
 the tempting first step of saving only an already-composed result with the
@@ -7824,6 +7841,13 @@ checks pass without provider calls.
 
 ## Current working update: #371 video-job failure terminal is resolved
 
+> **OBSOLETE (2026-08-28; see #568 and
+> [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md)):**
+> the journal-retention mechanics below are superseded. The terminal principle
+> survives in the refactor: failed batches stay recorded (Markdown markers plus
+> sidecar), nothing silently replays paid work, and exact no-audio/no-speech
+> remain settled terminal absence. Kept as history.
+
 The remaining #355 choice is no longer open. Earlier maintainer authority
 already requires provider outages and exhausted daily quota to be continued
 hours later through resume, with repair only as a small fallback when state is
@@ -7845,6 +7869,14 @@ to publish caller-selected partial outcomes. No journal schema or runtime API
 is implemented in this decision-only iteration.
 
 ## Current working update: #373 fixes the resumable-video public consumer
+
+> **OBSOLETE (2026-08-28; see #568 and
+> [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md)):**
+> the `recognize_video_to_markdown` consumer fixed below is removed by the
+> refactor. The resumable public consumer is now the rewritten
+> `recognize_video` orchestrator (separate `image_providers`/`audio_providers`)
+> plus independent `resume_images_to_markdown`/`resume_audio_to_markdown`/
+> `resume_video` entries. Kept as history.
 
 The future high-level consumer is now fixed as:
 
@@ -7880,6 +7912,12 @@ resume without redispatching settled units; and publish only after #371's
 terminal gate. This planning iteration changed no runtime or public export.
 
 ## Current working update: #374 ships the resumable-video vertical slice
+
+> **OBSOLETE (2026-08-28; see #568 and
+> [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md)):**
+> the shipped facade and its journal described below are scheduled for deletion
+> in the refactor's Phase 7. Until that lands they remain the shipped code;
+> afterward this entry is pure history. Kept as history.
 
 `recognize_video_to_markdown()` implements the exact #373 public contract. One
 normalized source-stem directory owns retained full-frame JPEGs, optional
@@ -10542,3 +10580,70 @@ or a parallel `recognize_long_m4a()`. Do not make `recognize_long_mp3()` lie by
 accepting M4A silently. No runtime/API/test/dependency/capability status changed.
 The existing materializer, interval/whole persistence, Google long-audio
 adapter, source routing, and capability owner set passes 123 tests.
+
+## Current working update: #568 approves the provider-entity and batch refactor
+
+The maintainer approved the next library iteration on 2026-08-28. The full
+authority is
+[`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md);
+this entry is its registration here. Three structural changes:
+
+1. The video pipeline decomposes into public step functions
+   (`inspect_video`, `extract_video_frames`, `dedupe_video_frames`,
+   `extract_video_audio`, `chunk_audio`) plus merged-output batch recognition
+   (`recognize_images_to_markdown`, `recognize_audio_to_markdown`) and a thin
+   resumable `recognize_video` orchestrator. Callers who already extracted
+   frames or audio enter at any step.
+2. Providers become `ProviderEntity` values: one frozen pure-data object per
+   (vendor, model) pair with capability flags, default batch parameters, and a
+   per-canonical-error-code retry policy. Recognition accepts one entity, a
+   flat list (ordered fallback chain), or a nested list (API pool, one thread
+   per sub-list, no spillover between sub-lists). Executable code lives in an
+   adapter registry (`dashscope_openai`, `google_genai`,
+   `openai_compatible` placeholder, `rapidocr_local`); entities never hold
+   callables or secrets. Prefab catalog entries require live verification.
+3. The video job-state layer (`video_job_state.py` and siblings, shipped by
+   #373/#374) is deleted. Video resume routes to image-batch and audio-batch
+   resume on one Markdown file. The state model is a batch sidecar plan
+   (verify-before-pay, byte-identical plan reuse, provider identity excluded
+   from the plan fingerprint so resume may change providers) plus parseable
+   `ocrllm:` slot markers in the Markdown; the experimental repair path is the
+   Markdown-only fallback when the sidecar is lost.
+
+Superseded as direction by this decision: #355's one-video-journal demand,
+#371's journal-retention mechanics, #373's `recognize_video_to_markdown`
+consumer, #374's shipped slice (entries carry OBSOLETE markers). Superseded in
+`MAINTAINER_PRODUCT_DECISIONS.md`: the #345/#347 "keep low-level video
+non-resumable" clause, the #373 consumer shape, the #355 strict journal
+defaults, and the provider-direction caveat that deferred the provider
+abstraction — the ProviderEntity plus adapter-registry design is now the
+authorized form of that deferred target. Also superseded: the
+`recognize_video()` `image_config`/`audio_config` signature (now
+`image_providers`/`audio_providers`, D6).
+
+Carried forward unchanged: full-frame retention (#348), image/audio provider
+separation, paid-work reuse and retain-recoverable-gaps terminal principles,
+`VIDEO_NO_AUDIO_STREAM` as settled absence, the DashScope credential pool as a
+separate key-level layer (entities use one key per `api_key_env` this
+iteration), retry decisions keyed to evidence-backed canonical codes rather
+than a generic count, frozen social-media scope, experimental-only repair, and
+the Config-based public line (`recognize`, `recognize_batch`,
+`recognize_long_mp3`, `recognize_video_frames`).
+
+Behavior-change note: `ProviderEntity.base_url=None` means the documented
+vendor default endpoint (DashScope:
+`https://dashscope.aliyuncs.com/compatible-mode/v1`); explicit `base_url`
+wins and `region` travels in per-call `CallOptions`. This relaxes the
+explicit-endpoint rule for the entity path only.
+
+Default batch size resolves once per run to the minimum
+`default_image_batch_size` across the flattened provider list when not passed
+(D3); failover never re-chunks. Owned intermediates (orchestrator-extracted
+frames/audio) are deleted on success only, kept on failure, and
+`keep_intermediates=True` opts out; caller-supplied media is never deleted
+(D5). Documentation across `README.md`, `START_HERE.md`,
+`MIGRATION_STATUS.md`, `src/ocrllm/README_ACTIVE_LIBRARY.md`,
+`Architecture.md`, `docs/ocrllm_module_target_design.md`, and
+`docs/MAINTAINER_PRODUCT_DECISIONS.md` was aligned with this entry before any
+implementation began. No runtime, test, dependency, or capability status
+changed in this documentation step.

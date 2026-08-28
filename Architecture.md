@@ -17,6 +17,15 @@
 > governed by the execution record and uses PDFium through `pypdfium2` in the
 > Python library. PyMuPDF is not an active option. HarmonyOS/ArkTS work is
 > deferred.
+>
+> Current-implementation note (2026-08-28): the active Python library realizes
+> this document's §4.1 "MD 文件即检查点" doctrine as a batch sidecar plan plus
+> parseable `ocrllm:` Markdown slot markers, with Markdown-marker-only repair
+> as the experimental fallback — see
+> `docs/plan_provider_entity_batch_refactor.md`. The §4.2 retry/fallback
+> concept lands there as per-canonical-code entity retry policies over
+> provider fallback chains and API pools. The Rust text below remains
+> suspended future planning.
 
 # Suspended Future Plan: OCRLLM v3
 

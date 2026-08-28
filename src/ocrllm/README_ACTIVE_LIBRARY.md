@@ -97,7 +97,13 @@ whole-file Files above 300 seconds by default. Its optional
 integer number of minutes; settled state is written under the video-owned output
 root and removed only after a complete clean audio result. Failed and partial
 audio outcomes retain any settled state. The low-level `recognize_video()` call
-does not consume retained state. The high-level
+does not consume retained state.
+**OBSOLETE (2026-08-28; approved, implementation pending):** the
+`recognize_video_to_markdown()` journal facade described next is removed by
+the provider-entity batch refactor; see
+[`docs/plan_provider_entity_batch_refactor.md`](../../docs/plan_provider_entity_batch_refactor.md).
+`recognize_video` becomes the resumable orchestrator and video resume routes
+to image-batch and audio-batch resume on one Markdown file. The high-level
 `recognize_video_to_markdown()` call now owns
 one complete video journal, validates all saved media/request identity before
 dispatch, and resumes only missing image/audio work;
@@ -574,7 +580,13 @@ failure keeps that state, while clean recognition and snapshot cleanup remove
 it before returning. No nested `audio/result.md` or video `result.md` is
 created. The low-level `recognize_video()` call cannot consume retained state;
 use `recognize_video_to_markdown(..., resume=True)` for the library-owned video
-journal and fixed `result.md`. Repair remains a separate future text-range side
+journal and fixed `result.md`.
+**OBSOLETE (2026-08-28; approved, implementation pending):** that journal
+facade is removed by the provider-entity batch refactor; the successors are
+`resume_video` (routing to image-batch and audio-batch resume on one Markdown
+file) and the resumable `recognize_video` orchestrator — see
+[`docs/plan_provider_entity_batch_refactor.md`](../../docs/plan_provider_entity_batch_refactor.md).
+Repair remains a separate future text-range side
 path rather than a state consumer.
 Retained frame indices must be strictly increasing and their timestamps must
 not move backward. Frame-group outcome indices must be the contiguous caller

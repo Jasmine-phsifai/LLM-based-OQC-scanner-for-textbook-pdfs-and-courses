@@ -9,6 +9,15 @@ file and that file differ, that file wins.
 
 Last synchronized: 2026-08-28.
 
+Refactor authority (2026-08-28, approved, implementation pending): the
+provider-entity/batch refactor (#568 in `docs/ACTIVE_STATE_AND_RULES.md`;
+[`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md))
+supersedes the video journal and `recognize_video_to_markdown` descriptions
+below as direction. `recognize_video` becomes the resumable orchestrator with
+separate `image_providers`/`audio_providers`; video resume routes to
+image-batch and audio-batch resume on one Markdown file; the video job-state
+layer is deleted in the refactor's final phase.
+
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit
 `e9d49b06fabd4c8c0aba5cdd40ef2006213405b3`, passed 1,927 archived tests with

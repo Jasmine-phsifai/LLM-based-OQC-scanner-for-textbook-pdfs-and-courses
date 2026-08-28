@@ -31,7 +31,12 @@ As of 2026-08-27:
   interval prefixes after failure or a partial provider-cleanup result. The
   high-level `recognize_video_to_markdown()` facade now owns one fixed result
   and temporary journal and resumes only missing image/audio units; the
-  three-step video API remains the lower-level non-resumable surface. If a
+  three-step video API remains the lower-level non-resumable surface.
+  **OBSOLETE (2026-08-28; approved, implementation pending):** this facade and
+  its journal are replaced by the provider-entity batch refactor — see
+  [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md);
+  `recognize_video` becomes the resumable orchestrator and video resume routes
+  to image-batch and audio-batch resume on one Markdown file. If a
   short-audio unit settles but its journal update fails, the persistence error
   retains the known call and client-cleanup evidence; a recognized or exact
   Google no-speech settlement also retains current model usage. Exact no-speech
@@ -271,6 +276,13 @@ limits. The low-level three-step route itself remains non-resumable.
 complete or partial outcome can be composed or published as final Markdown.
 
 For library-owned persistence, call the high-level facade instead:
+
+> **OBSOLETE (2026-08-28; approved, implementation pending):**
+> `recognize_video_to_markdown` is removed by the provider-entity batch
+> refactor. The successor is the resumable `recognize_video(source, *,
+> image_providers, audio_providers, ...)` orchestrator; see
+> [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md).
+> The example below describes the shipped API until the refactor lands.
 
 ```python
 from ocrllm import recognize_video_to_markdown

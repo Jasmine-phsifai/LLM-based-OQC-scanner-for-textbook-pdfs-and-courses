@@ -444,6 +444,17 @@ is often accepted.
   video, resume, and repair paths are stable. For now, keep provider-specific
   behavior inside the existing provider directories and avoid leaking new
   Google- or DashScope-only branches into shared processors.
+  **OBSOLETE (2026-08-28):** the deferral caveat in this bullet is lifted. The
+  provider-extension target is now activated in a concrete form: the
+  `ProviderEntity` plus adapter-registry design in
+  [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md)
+  (#568 in `ACTIVE_STATE_AND_RULES.md`). That design satisfies this target's
+  constraints: one independently readable adapter per provider family,
+  provider-owned defaults and error mappings, preserved typed error scopes,
+  and no pretense that shared wire compatibility makes providers
+  interchangeable. The "retry decisions must be evidence-backed, not a generic
+  count" rule is preserved: entity retry policies are per canonical error code
+  with bounded attempts, not a blanket retry count.
 - The maintainer has configured the current test account with the existing
   provider sources and an additional free Volcengine OpenAI-compatible source.
   The latter is authorized for future bounded compatibility and robustness
@@ -458,6 +469,16 @@ is often accepted.
 - Resume is the primary recovery path.
 - Repair is a small manual fallback when the resume sidecar/state is missing or
   unusable, or when historical Markdown exists without compatible state.
+- **2026-08-28 batch state model.** The provider-entity refactor
+  ([`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md))
+  realizes this section for merged-Markdown batch recognition as: one sidecar
+  plan per batch run (ordered request fingerprints, index-aligned settled
+  slots, provider identity excluded so resume may change providers) plus
+  parseable `ocrllm:` slot markers in the Markdown. Resume reads the sidecar
+  first; the experimental repair path is the Markdown-marker-only fallback
+  when the sidecar is lost, and it assumes each failed marker is exactly one
+  ocrllm failure. This does not reopen the #120 legacy-Markdown rejection and
+  does not settle the open #422 PDF repair artifact choice.
 - For PDF image batches, repair identifies the failed range from already
   produced Markdown, resubmits only that range, and preserves successful
   content. This supports delayed retry after a provider is down for hours or a
@@ -480,6 +501,17 @@ is often accepted.
 
 ## Video recognition direction
 
+- **2026-08-28 refactor authority.** The provider-entity/batch refactor
+  ([`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md),
+  #568 in `ACTIVE_STATE_AND_RULES.md`) supersedes the video-journal decisions
+  in this section as marked below. The resumable video consumer is now the
+  rewritten `recognize_video(source, *, image_providers, audio_providers, ...)`
+  orchestrator over public step functions; video resume routes to image-batch
+  and audio-batch resume on one Markdown file; the video journal and
+  `recognize_video_to_markdown` are deleted in the refactor's final phase.
+  Full-frame retention, provider separation, paid-work reuse, and
+  retain-recoverable-gaps survive unchanged.
+
 - **Full-image retention is mandatory (#348).** Neither legacy nor the active
   library may detect blackboard corners, infer a board ROI, crop to a contour,
   or apply perspective rectification before recognition. Multiple separated or
@@ -501,7 +533,12 @@ is often accepted.
   again. The result is unchanged: the deleted legacy module has not returned,
   and active video/PDF recognition still receives complete frames/pages.
 
-- **Resolved video-resume terminal decision (#345/#347): Route A.** Do not add an audio-only
+- **Resolved video-resume terminal decision (#345/#347): Route A. OBSOLETE
+  (2026-08-28 refactor; see the authority bullet above).** The "keep the
+  low-level calls non-resumable" clause and the "one video journal" shape are
+  superseded: `recognize_video` becomes the resumable orchestrator and no video
+  journal is built. The rejection of audio-only resume and publication-only
+  recovery survives. Do not add an audio-only
   `resume=True` to `recognize_video()`: current video state cannot preserve paid
   image groups, short audio, source identity, or a terminal cleanup boundary.
   Keep the current recognize/compose/publish calls low-level and non-resumable.
@@ -511,7 +548,10 @@ is often accepted.
   remains deferred until that high-level consumer is implemented, so no durable
   frame-group schema is added in advance.
 
-- **#355 rejects publication-only recovery as that high-level job.** Saving only
+- **#355 rejects publication-only recovery as that high-level job. OBSOLETE
+  (2026-08-28 refactor; see the authority bullet above).** The rejection of
+  publication-only recovery survives; the "one video journal" state demand is
+  superseded by the batch sidecar-plan plus Markdown-marker model. Saving only
   an already-composed Markdown result would cover a narrow crash-before-write
   window but would replay every paid image/audio unit after an earlier failure.
   It would also create a first journal schema that the real resume path must
@@ -523,7 +563,11 @@ is often accepted.
   one-frame-group-only, or publication-only behavior under the name video
   resume.
 
-- **Resolved #355 terminal-failure choice (#371): retain recoverable gaps.** The
+- **Resolved #355 terminal-failure choice (#371): retain recoverable gaps.
+  OBSOLETE (2026-08-28 refactor; see the authority bullet above).** The
+  retain-recoverable-gaps principle survives in the batch engine (failed batches
+  recorded, never silently replayed, terminal absence never retried); the
+  journal-retention mechanics are superseded. The
   maintainer already required supplier outages and exhausted daily quota to be
   continued hours later through resume, with repair only as the small side path
   when state is lost. Therefore, if a frame group or audio unit still lacks
@@ -537,7 +581,10 @@ is often accepted.
   units are all recognized or terminal absence may publish, including a
   `partial` result caused only by no-speech or cleanup warnings.
 
-- **Resolved public consumer shape (#373).** Add one synchronous importable
+- **Resolved public consumer shape (#373). OBSOLETE (2026-08-28 refactor; see
+  the authority bullet above).** `recognize_video_to_markdown` is removed; the
+  resumable consumer is the rewritten `recognize_video` with
+  `image_providers`/`audio_providers`. Add one synchronous importable
   `recognize_video_to_markdown(source, *, output_dir, image_config,
   audio_config, audio_interval_minutes=None, resume=False) -> RecognitionResult`.
   The facade, not either branch `Config`, owns persistence, the normalized
@@ -546,7 +593,11 @@ is often accepted.
   not add `run_video_recognition_job`, `overwrite`, a third cancellation signal,
   or a publication-only/audio-only compatibility stage.
 
-- **#374 implements the resolved consumer and keeps its audio identity narrow.**
+- **#374 implements the resolved consumer and keeps its audio identity narrow.
+  OBSOLETE (2026-08-28 refactor; see the authority bullet above).** The shipped
+  facade and journal are deleted in the refactor's final phase; whole-file
+  default and exact-integer-minute interval audio survive in `chunk_audio` and
+  `recognize_audio_to_markdown`.
   Whole-file audio remains the default; explicit interval mode accepts only a
   positive integer number of minutes. Mode and interval minutes may be kept in
   the temporary journal solely for exact resume and are discarded after final
@@ -556,7 +607,10 @@ is often accepted.
   but that framework starts only after the core library is stable. Current code
   should keep the provider seam usable without implementing the abstraction.
 
-- **Recommended #355 strict defaults unless separately changed.** Bind resume
+- **Recommended #355 strict defaults unless separately changed. OBSOLETE
+  (2026-08-28 refactor; see the authority bullet above).** Journal-digest
+  mechanics are superseded; the strict-identity spirit survives as the batch
+  sidecar's byte-identical plan rule. Bind resume
   to the exact normalized source path, byte size, and SHA-256; a moved source is
   rejected even when byte-identical. Process resumable frame groups serially so
   each settled paid group is durably journaled before the next dispatch. If a
