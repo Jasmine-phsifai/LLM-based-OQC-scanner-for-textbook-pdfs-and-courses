@@ -810,3 +810,29 @@ is often accepted.
   by Route A, or should Route B preserve no partial aggregate Markdown and keep
   manual PDF repair unavailable? Do not infer an answer from another feature's
   reused route letters.
+
+## Open long-M4A public entry choice (#567)
+
+- Real archive evidence now establishes one concrete additional audio format:
+  83 M4A/AAC files exist, including a complete 368.563-second, 7,480,134-byte
+  sample. No WAV files were found, so this choice is M4A-only.
+- The existing production interval materializer successfully converted that
+  complete source once to a fully decoded 368.555-second MP3 without modifying
+  the source or retaining temporary files. This proves a narrow M4A-to-existing-
+  interval route is locally feasible; it does not prove provider acceptance.
+- One bounded Google Files upload attempt stopped before acceptance with the
+  current project-level HTTP 400 `FAILED_PRECONDITION`, the same status recently
+  observed during catalog access. It made zero generation calls and cannot be
+  interpreted as an unsupported-format result. Do not retry or claim native
+  Google M4A support from this run.
+- Route A (recommended) adds an honestly named `recognize_long_audio()` entry
+  for existing MP3 plus M4A only when explicit integer-minute interval mode is
+  selected. Existing `recognize_long_mp3()` remains the stable MP3 entry. M4A
+  windows are normalized by the already-proven MP3 materializer; whole-file
+  native M4A remains deferred.
+- Route B adds a parallel `recognize_long_m4a()` entry with the same interval-
+  only restriction. It is more literal for the first implementation but creates
+  two long-audio public entry families and duplicated documentation.
+- Do not silently make `recognize_long_mp3()` accept M4A, add WAV or every
+  legacy extension, port DashScope FileTrans, add a generic converter/provider
+  framework, or expose whole-file M4A before this API choice is settled.

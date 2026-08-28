@@ -2758,3 +2758,21 @@ evidence before implementation. It must not infer a generic converter, WAV
 support, the full legacy extension list, a provider framework, or simultaneous
 short/long expansion. No runtime, API, test, capability status, dependency,
 provider, archive, legacy, or frozen code changed.
+
+#567 proves that one real long M4A can use the existing interval normalization
+mechanism but does not yet expose it publicly. The smallest archive M4A is a
+complete 7,480,134-byte, 368.563-second AAC-LC source. One production
+materializer pass created a 2,949,452-byte MP3 with 368.555 decoded seconds,
+preserved the source, and removed its owned temporary root. A separate bounded
+Google Files upload stopped before format acceptance at project-level HTTP 400
+`FAILED_PRECONDITION`, made zero generation calls, closed its client, and left
+no remote identity; it is not evidence for or against native M4A support.
+DashScope-native M4A would require the full deferred FileTrans lifecycle rather
+than a MIME-only port. Runtime implementation now waits only on the public-entry
+choice between recommended `recognize_long_audio()` plus the existing stable
+MP3 entry and a parallel `recognize_long_m4a()`. Whole-file M4A, WAV, generic
+conversion, FileTrans, provider generalization, retry, and fallback remain out
+of scope. The existing materializer, interval/whole persistence, Google long-
+audio adapter, routing, and capability owner set passes 123 tests. No runtime,
+API, test, capability, dependency, provider, archive, legacy, or frozen code
+changed.

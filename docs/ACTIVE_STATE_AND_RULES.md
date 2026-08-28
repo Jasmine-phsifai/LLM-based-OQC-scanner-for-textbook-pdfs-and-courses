@@ -10506,3 +10506,39 @@ normalization route. It must not simultaneously add WAV, a generic media
 converter, every legacy extension, provider classes/fallback, or both short and
 long format matrices. No runtime/API/test/dependency/capability status changed;
 the focused current rejection/registry owner set passes 75 tests.
+
+## Current working update: #567 proves M4A interval normalization but leaves its public name open
+
+#567 selected the smallest complete authorized M4A from `D:\archieve` without
+publishing its path or content. It is a 7,480,134-byte, 368.563-second AAC-LC
+stream in an M4A container; FFmpeg fully decoded it and source size, mtime, and
+digest remained unchanged. This is a useful long-audio sample just beyond the
+five-minute route boundary, not a synthetic format fixture.
+
+Legacy review shows that native DashScope M4A is inseparable from the currently
+deferred FileTrans provider slice: model-dependent OSS versus Files upload,
+async submission/polling, task resume, error mapping, and output/state cleanup.
+Porting only its MIME map would not create a functioning library path. Legacy
+Google passes one-window input through unchanged but converts multi-window input
+to MP3; it has no real M4A provider test.
+
+One bounded current Google Files lifecycle attempted to upload the real M4A and
+immediately delete it if accepted. Upload stopped in 4.6 seconds at the same
+project-level HTTP 400 `FAILED_PRECONDITION` recently seen during catalog
+access. No remote identity was created, deletion was therefore inapplicable,
+the client closed, generation calls were zero, and source/privacy checks passed.
+This neither proves nor disproves native M4A support and does not justify a
+retry, model switch, SDK change, or adapter edit.
+
+The provider-free production interval materializer then consumed an owned copy
+of the complete M4A exactly once and emitted a 2,949,452-byte MP3 whose full
+production decode duration was 368.555 seconds. Its exact temporary root was
+removed and the archive source stayed unchanged. The smallest proven runtime
+route is therefore M4A only through the existing MP3 interval materialization,
+not whole-file native upload or DashScope FileTrans. The public name remains the
+material Route A/Route B choice recorded in `MAINTAINER_PRODUCT_DECISIONS.md`:
+recommended generic `recognize_long_audio()` plus the stable existing MP3 entry,
+or a parallel `recognize_long_m4a()`. Do not make `recognize_long_mp3()` lie by
+accepting M4A silently. No runtime/API/test/dependency/capability status changed.
+The existing materializer, interval/whole persistence, Google long-audio
+adapter, source routing, and capability owner set passes 123 tests.
