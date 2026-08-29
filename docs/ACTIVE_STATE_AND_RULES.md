@@ -13024,3 +13024,46 @@ This closes a construction ambiguity without implementing runtime. It adds no
 provider-model type, adapter, preset, credential handling, state schema, API,
 test source, provider call, media work, dependency, frozen-source edit, or old-
 video deletion.
+
+## Current working update: #650 leaves the first image retry maps empty
+
+#650 audits the production parent and active library before assigning numeric
+retry defaults to the first provider-model presets. Legacy native Google has a
+six-total-attempt same-model loop, RetryInfo/exponential waits with a 65-second
+rate-limit floor, model switching, remembered success, and an unavailable-model
+set. The generic compatible path has another six-attempt exponential loop;
+its optional independent-vision branch also contains stream-to-nonstream rescue
+and candidate switching. Recorded incidents prove that temporary failures,
+spent quota, authentication, request errors, and model capability must remain
+distinct. They do not live-prove that those retry counts or waits recover an
+image request, and much of the surrounding state belongs to the legacy UI.
+
+The active adapters already make one request and map vendor evidence into
+canonical codes and safe scopes. Current candidate recovery advances only for
+an explicit candidate list and a narrow model-scoped quota, permission, or
+unavailable failure. `ProviderErrorDisposition` records retry/cooldown/
+quarantine/stop evidence but executes none of it. Existing live Google image
+outcomes include timeout, rate-limit, response-invalid, and repeatedly observed
+project-level `FAILED_PRECONDITION`; each run intentionally made no retry or
+model switch. These runs prove honest mapping, not a successful same-model
+retry. The older #290 sentence that described `FAILED_PRECONDITION` as request-
+scoped is historical and is superseded by #602/#603's current provider-scoped
+`PROVIDER_UNAVAILABLE` mapping.
+
+The first native-Google and DashScope image provider-model presets therefore
+start with empty retry-rule mappings. Missing means one initial dispatch and
+zero extra calls even when canonical evidence says retryable. The approved
+`error`/`next`/`current` labels remain in the eventual finite rule schema, but
+no label/count/wait entry is guessed before a bounded real failure/retry
+comparison. Both first scalar live proofs make at most one generation request
+and do not add a retry executor. A later flat-fallback slice may admit rules one
+at a time; it may not import the legacy six-attempt loops, exponential/65-second
+backoff, success memory, blacklists, automatic catalog chain, GUI notifications,
+or transport fallback.
+
+Focused current canonical-mapping/candidate tests pass **88** with **70
+deselected**; focused legacy Google/independent-vision classifier tests pass
+**36**. Both independent read-only audits reached the same evidence boundary;
+the primary agent reran the tests with the repository environment. No key,
+network, provider call, runtime/test source, API, state, dependency, media,
+legacy source, frozen boundary, or deletion changed.

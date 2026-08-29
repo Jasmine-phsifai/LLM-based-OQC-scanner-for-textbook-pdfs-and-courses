@@ -353,6 +353,18 @@ The proposal also contains several points that must be pruned before code:
    repair, and token persistence in one slice. Each later slice may add only the
    next topology already consumed by a public flow.
 
+#650 fixes the first executable retry seed: both initial image presets start
+with an empty retry-rule mapping. The schema retains the three approved labels,
+but no label/count/wait entry is invented before a bounded real failure proves
+that retrying the same exact provider/model helps. Missing rules mean one
+initial dispatch and zero extra calls. Canonical `retryable=True` and
+`ProviderErrorDisposition` remain evidence, not a numeric retry policy. The
+first scalar Google and DashScope image proofs therefore make at most one
+generation request each and do not implement a retry executor. A later flat-
+fallback slice may admit one rule at a time from real evidence; it must not copy
+legacy six-attempt loops, exponential/65-second backoff, last-success memory,
+unavailable-model blacklists, or stream-to-nonstream transport fallback.
+
 The phrase "traverse the whole list once" is read provisionally as **visit each
 candidate at most once per slot, with its configured finite attempts, and stop
 immediately on the first successful candidate**. Calling later providers after
@@ -1146,15 +1158,24 @@ provider errors. Public retry rules are keyed by canonical codes, not by a raw
 HTTP number shared across vendors.
 
 Every retry count is finite. `-1` or any other infinite-wait spelling is
-rejected. Retry rules contain only non-negative `extra_retries` and
-`wait_seconds`. The initially proposed `error` / `next` / `current` labels are
-removed because all three examples retry the current provider finitely and then
-advance. Final outcome severity is not a retry-rule field.
+rejected. Each populated retry rule contains exactly one of `error`, `next`, or
+`current`, plus non-negative `extra_retries` and `wait_seconds`. The labels
+control reporting category only: finite values control same-provider attempts,
+and an exhausted unresolved slot advances when another candidate exists. They
+do not create label-specific loops or override the complete/partial/total-
+failure result contract.
 
 Do not pre-fill Google and DashScope with identical guessed policies. Start
 from the real mappings and errors already observed in the active and legacy
 paths, then add only rules required by an end-to-end call. Do not invent
 unproven maximums such as 32 retries or 600 seconds.
+
+For the first scalar image proof, both preset mappings are empty. A missing rule
+means one initial dispatch and zero extra calls even when the canonical error is
+marked retryable. Existing live failures prove classification and honest
+settlement, not that an immediate retry succeeds. Numeric rules first belong to
+a later flat-fallback consumer after one bounded real failure/retry comparison;
+the scalar entity proof does not contain a dormant executor.
 
 ### 2.8 Token accounting
 

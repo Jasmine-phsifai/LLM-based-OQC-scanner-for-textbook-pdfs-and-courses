@@ -141,6 +141,11 @@ entity rather than preset mutation. Neither settings equality/hash nor generic
 dataclass serialization is provider/resume identity. Persisted resume identity
 is a secret-free projection of vendor/model and safe output-affecting adapter
 facts; keys, credential pools, and mutable pool health stay runtime-only.
+#650 keeps the first two image preset retry maps empty: a missing canonical-code
+rule means one initial dispatch and zero extra calls, even when the disposition
+is retryable. The three approved reporting labels remain in the later finite
+rule shape, but the first scalar Google/DashScope proofs add no retry executor
+and do not copy legacy six-attempt/backoff/model-memory machinery.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

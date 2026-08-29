@@ -963,6 +963,24 @@ mutable DashScope pool. Therefore future code must not treat settings equality,
 hash, or generic dataclass serialization as provider/resume identity. This is a
 first-slice acceptance rule, not authorization to implement the slice now.
 
+#650 fixes the initial retry-policy contents without undoing the maintainer's
+three-label decision. The first native-Google and DashScope image presets carry
+an empty retry-rule mapping. A missing rule means one initial dispatch and zero
+extra calls; `retryable=True` in a canonical error/disposition does not invent a
+count or wait. The `error`/`next`/`current` labels remain part of the eventual
+finite rule shape, but no entry is populated until a bounded real same-model
+failure/retry comparison proves it useful. Both first scalar live proofs
+therefore make at most one generation request and add no retry executor.
+
+Legacy evidence preserves classification distinctions, not its machinery. Do
+not migrate the generic six-attempt loops, exponential or 65-second waits,
+remembered successful model, unavailable-model set, automatic catalog chain,
+GUI quota notifications, or independent-provider stream/non-stream rescue.
+Current Google/DashScope adapters and dispositions already distinguish request,
+model, provider, credential, and account failures. Existing live timeout,
+rate-limit, response-invalid, and project-precondition outcomes prove honest
+mapping only; none proves a numeric immediate-retry default.
+
 #612 records the latest discussion without authorizing implementation. The
 public frame workflow is `inspect_video -> extract_video_frames ->
 batchify_images`; negative-feedback/similarity selection remains inside

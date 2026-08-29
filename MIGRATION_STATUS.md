@@ -45,6 +45,18 @@ current settings equality/hash vary with keys, `asdict()` contains the key
 field, and a DashScope pool is shared mutable runtime state. No runtime refactor
 or schema change has started.
 
+#650 keeps the first native-Google and DashScope image preset retry maps empty.
+Canonical retryable/disposition evidence does not supply a count or wait:
+missing means one initial request and zero extra calls. The approved
+`error`/`next`/`current` labels remain available for later finite rules, but the
+first scalar image proofs implement no retry executor and make at most one
+generation request each. Legacy classification distinctions remain useful;
+its six-attempt loops, exponential/65-second waits, remembered success,
+blacklists, automatic model chains, GUI notifications, and stream/non-stream
+rescue do not migrate without a bounded real failure/retry proof. Current and
+legacy focused classifier/candidate suites pass 88 and 36 tests respectively;
+no runtime or schema changed.
+
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
 negative-feedback/similarity selection already belongs to the one extraction
