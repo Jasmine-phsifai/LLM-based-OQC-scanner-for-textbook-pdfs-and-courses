@@ -2167,3 +2167,58 @@ attached-result exception, or second accumulator is added. The terminal failed-
 slot accumulator remains separate and contains only genuinely unresolved slots.
 No runtime, API, test, schema implementation, provider, dependency, media, or
 deletion changes in #625.
+
+## #626 Unresolved Slots Publish Recovery Evidence Then Raise
+
+`RecognitionResult(status="partial")` remains a successfully returned usable
+result whose requested content is settled but which carries degradation or
+cleanup warnings. It does not mean that provider-exhausted image groups or audio
+slices are missing. After all ordinary scheduled slots have been allowed to
+settle, any unresolved slot therefore prevents a result return.
+
+The replacement merged recognizer always resolves one output path before
+dispatch. An explicit path wins and omission selects the already-fixed default;
+omission is not an in-memory mode. For ordinary provider exhaustion, execution
+continues through all later slots, persists every settled slot and aggregate
+usage, composes the complete ordered Markdown with exact failed-slot markers,
+ensures the sidecar is current, atomically writes or replaces the Markdown file,
+retains the sidecar, and then raises one operation-level
+`RecognitionIncomplete` with stable code `RECOGNITION_INCOMPLETE`.
+
+The new error is an `OCRLLMError`, not a `ProviderError` and not
+`AllCandidatesExhausted`. The latter describes one model-serving candidate chain
+and currently has account-wide stop meaning; it cannot honestly summarize
+several slots with different terminal causes. `RecognitionIncomplete` is
+retryable only in the public sense that a later explicit resume may use the
+retained state and a newly supplied provider plan. It never re-enters the
+current provider retry table or restarts the just-finished invocation.
+
+Its only new operation-specific detail is ordered `failed_slots`. Each record is
+exactly the absolute zero-based `slot_index`, final attempted vendor and model,
+that slot's canonical terminal code, and its final secret-safe bounded
+description. Records are sorted by slot index. Successfully settled slots and
+successful-fallback history do not enter this terminal accumulator. Existing
+exact call/token/cleanup evidence remains governed by the already-fixed
+aggregate contracts; do not duplicate media paths/ranges/members, Markdown,
+retry history, lane/epoch, timestamps, settings/accounts, raw failures, output
+path, sidecar path, or an attached result in `failed_slots`.
+
+Atomicity is deliberately single-file only. The sidecar is saved before the
+partial Markdown; no cross-file transaction, commit marker, rollback log, or
+lock framework is created. If state persistence fails, do not publish a new
+partial file and preserve the existing typed state/output failure. If Markdown
+publication fails, retain the sidecar and raise the existing
+`OUTPUT_WRITE_FAILED`, attaching the same safe failed-slot summary rather than
+nesting an incomplete error. `RecognitionIncomplete` is raised only after both
+recovery artifacts are durable, so `partial_published`, `resume_available`, and
+path flags are redundant.
+
+Resume alone may replace its prior partial Markdown. Another incomplete resume
+updates state then replaces the partial file and raises again; full completion
+replaces it with complete Markdown, removes temporary state, and returns the
+ordinary result. Exact failed markers also give the experimental repair side
+chain a narrow recovery source if the state is lost, without making repair the
+normal path or adding a generalized parser. Cancellation, preflight/config/
+source failure, and publication failure retain their own typed error families.
+No runtime, API, test, stable-code implementation, schema, provider, dependency,
+media, or deletion changes in #626.

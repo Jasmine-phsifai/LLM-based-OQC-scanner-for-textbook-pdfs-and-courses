@@ -1532,3 +1532,21 @@ lane/epoch, time, settings/account, raw errors, or success rows. Do not add one
 warning per failure, lower a complete result to partial, emit Python warnings as
 the contract, or add callbacks, a diagnostics wrapper, a public attempt type,
 or an attached-result exception.
+
+**#626 fixes the genuinely incomplete merged-run terminal.** Returned partial
+results remain usable settled content with warnings; missing provider-exhausted
+slots do not return a result. Once all ordinary slots finish, save current
+settled state, atomically publish one ordered partial Markdown with exact failed
+markers, retain the sidecar, and raise `RecognitionIncomplete` with stable code
+`RECOGNITION_INCOMPLETE`. Explicit and omitted output paths share this path;
+omission resolves the deterministic default and is not memory-only.
+
+This operation error is not `ProviderError`/`AllCandidatesExhausted`. Its
+ordered `failed_slots` records contain only absolute `slot_index`, final vendor,
+model, canonical code, and final bounded safe description. A later explicit
+resume may be useful, but the error does not restart the exhausted invocation.
+Do not attach a result, output/state paths, media ranges, retry history, lane,
+settings, raw errors, or success rows. Atomicity covers the Markdown write only;
+do not add a two-file transaction. State-write and Markdown-write failures keep
+their existing error families, with the latter retaining state and the safe
+failed-slot summary.

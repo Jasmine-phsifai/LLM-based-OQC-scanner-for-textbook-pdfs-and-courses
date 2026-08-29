@@ -2926,3 +2926,13 @@ description facts; a one-slot call uses zero. It does not duplicate media ranges
 paths, retries, lanes, settings, raw errors, or success rows, and it adds no
 warning per record, result-plus-error wrapper, callback, or public diagnostics
 type. Runtime, APIs, tests, schemas, providers, and media behavior are unchanged.
+
+#626 fixes the future incomplete merged-run contract without implementation.
+After every ordinary slot is attempted, unresolved slots cause durable sidecar
+state plus one atomically written partial Markdown with exact markers, followed
+by operation-level `RecognitionIncomplete` / `RECOGNITION_INCOMPLETE`; they do
+not return a partial result or attached-result exception. Ordered `failed_slots`
+contains only slot index and final vendor/model/canonical-code/safe-description
+facts. Atomicity does not span both files. State/output write failures and
+cancellation retain their own errors, and resume alone replaces the partial.
+Runtime, APIs, tests, stable codes, schemas, providers, and media are unchanged.

@@ -1439,3 +1439,11 @@ merged image/audio result identifies which immutable media slot used fallback.
 The existing plan/sidecar resolves media ranges; no paths, retries, lanes,
 settings, raw errors, callback, diagnostics type, or attached-result exception
 is added. This is documentation-only.
+
+#626 fixes the future incomplete merged-run outcome: persist settled slot state,
+atomically publish one partial Markdown with exact failed markers, retain the
+sidecar, then raise operation-level `RecognitionIncomplete` rather than return a
+partial result or attach a result to an exception. Its ordered `failed_slots`
+contains only slot index plus the final vendor/model/code/safe description.
+There is no cross-file transaction or memory-only omitted-output branch. This is
+documentation-only; the stable error code is not implemented yet.

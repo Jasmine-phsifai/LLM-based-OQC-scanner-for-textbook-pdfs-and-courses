@@ -12338,3 +12338,30 @@ enough, and successful content stays `complete`. No Python-warning contract,
 callback/event channel, public failure type, diagnostics wrapper, or attached-
 result exception is added. #625 changes no runtime, API, test, schema
 implementation, provider, dependency, media, frozen boundary, or deletion.
+
+## Current working update: #626 incomplete merged recognition raises after recovery publication
+
+A returned `RecognitionResult(status="partial")` continues to mean usable
+settled content with degradation/cleanup warnings. It must not conceal missing
+provider-exhausted slots. Future merged recognition always resolves its explicit
+or deterministic default Markdown path; omission is not an in-memory mode.
+
+After all ordinary slots run, any unresolved slots cause this order: persist
+settled slot/usage state, compose exact ordered failed markers, make the sidecar
+current, atomically publish only the Markdown file, retain the sidecar, then
+raise operation-level `RecognitionIncomplete` / `RECOGNITION_INCOMPLETE`.
+There is no Markdown-plus-sidecar transaction. Resume may replace that partial;
+full success replaces it with complete Markdown, removes temporary state, and
+returns normally.
+
+The error is not `ProviderError` or `AllCandidatesExhausted`. Its new detail is
+only ordered `failed_slots`, each containing absolute `slot_index`, final vendor
+and model, canonical code, and last bounded safe description. It indicates that
+later explicit resume is possible but does not restart the current retry loop.
+Do not attach a result, paths, Markdown, media ranges/members, retry history,
+lanes, settings, raw errors, or success rows. State-write failure publishes no
+new partial; Markdown-write failure retains state and raises existing
+`OUTPUT_WRITE_FAILED` with the same safe slot summary. Cancellation and other
+terminal families remain unchanged. #626 changes no runtime, API, test, stable
+code, schema implementation, provider, dependency, media, frozen boundary, or
+deletion.
