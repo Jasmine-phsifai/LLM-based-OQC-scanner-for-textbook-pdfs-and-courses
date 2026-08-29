@@ -20,14 +20,15 @@ is currently reserved. The video job-state layer is deleted after replacement
 merged-image, merged-audio, and resume proof. #569 withdraws the former
 consumer-free provider Phase 1 and exhaustive module blueprint; no refactor
 runtime has shipped. #607 keeps implementation paused and #615 narrows the
-genuine wording conflicts in section 0 of the plan to four: audio-minute
-numeric type, preset quantity, extraction ownership, and complete-schema
-implementation timing. A curated preset classified as unable to think now
-recommends one image when the caller omits batch size; this is neither a
-provider limit nor something inferred from a request-level thinking switch.
-Previously fixed fallback, output,
-adapter/settings, token, resume-routing, and separate-media contracts do not
-need another vote.
+then-current wording conflicts. #627--#642 supersede that old four-item list:
+caller-owned extraction and staged runtime fields are settled, while adapter
+dispatch was explicitly reopened by the maintainer. The current four choices
+are catalog breadth, integer versus exact fractional provider audio defaults,
+controlled built-in binding dispatch versus arbitrary callable leaves, and
+replacement-gated versus immediate deletion of the old video recognition
+family. A curated preset classified as unable to think recommends one image
+when the caller omits batch size; this is neither a provider limit nor something
+inferred from a request-level thinking switch.
 
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
@@ -73,6 +74,26 @@ a different compatible ID-only catalog. The recommended route is transient
 discovery of all current rows plus a small live-proven executable preset set,
 not a checked-in class or preset for every volatile row. Confirm whether "save
 every model" intentionally meant the latter before changing runtime.
+
+### Current provider/media checkpoint (#627--#642)
+
+Runtime implementation remains paused; section 0 of
+[`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
+is the current decision board. Four choices remain: catalog breadth, provider
+audio-default numeric type, controlled bindings versus arbitrary callable
+leaves, and old-video deletion timing.
+
+The fixed destination has no second video black box. Callers visibly compose
+provider-free video inspection/extraction with independent merged-image and
+merged-audio recognition/resume. The old six-symbol video recognition family
+remains shipped but frozen; its verified deletion closure is removed only when
+the selected deletion timing and replacement gates allow it.
+
+After the pause is lifted, the common first runtime gate is one exact native-
+Google image entry and one exact DashScope OpenAI-compatible image entry before
+public merged-interface work. Catalog breadth, fallback/pooling, audio, repair,
+and old-video deletion do not block that proof. Exact downstream contracts stay
+in plan section 0 rather than being duplicated here.
 
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit
@@ -317,8 +338,9 @@ Phase 1 maturation is offline implementation-complete:
   bounded lifetime. No PDF settings, PDF worker contract, repair, PyMuPDF,
   whole-file memory load, or arbitrary page selection was added.
 
-The ordered current work is
-[`#065 Unified Execution Queue`](docs/ACTIVE_STATE_AND_RULES.md#065-unified-execution-queue).
+The ordered current provider/media work is section 0 of
+[`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md),
+subject to the authority file; runtime implementation remains discussion-paused.
 PDF recognition is implemented and live-proven: #078 discovered 37 current
 Google models, then `gemini-2.5-flash` completed 16 pages as exactly two serial
 requests with two complete checkpoints, ordered published output, aggregate
@@ -435,15 +457,17 @@ second defect list in this file.
    current truth, defects, rules, and precedence.
 2. [`docs/MAINTAINER_PRODUCT_DECISIONS.md`](docs/MAINTAINER_PRODUCT_DECISIONS.md)
    for durable maintainer constraints that the authority queue must reflect.
-3. [`START_HERE.md`](START_HERE.md) for the one-screen repository map.
-4. [`docs/plan_phase1_maturation_and_phase2_audio.md`](docs/plan_phase1_maturation_and_phase2_audio.md)
+3. [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
+   for the current provider/media decision board and implementation gate.
+4. [`START_HERE.md`](START_HERE.md) for the one-screen repository map.
+5. [`docs/plan_phase1_maturation_and_phase2_audio.md`](docs/plan_phase1_maturation_and_phase2_audio.md)
    for retained detailed Stage M and Stage A reasoning where not superseded by
    the authority queue.
-5. [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md) for
+6. [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md) for
    execution gates and migrate/rewrite/reject boundaries.
-6. [`src/ocrllm/README_ACTIVE_LIBRARY.md`](src/ocrllm/README_ACTIVE_LIBRARY.md)
+7. [`src/ocrllm/README_ACTIVE_LIBRARY.md`](src/ocrllm/README_ACTIVE_LIBRARY.md)
    and [`src/ocrllm/AGENTS.md`](src/ocrllm/AGENTS.md) for package work.
-7. [`legacy_app/AGENTS.md`](legacy_app/AGENTS.md) for legacy maintenance and
+8. [`legacy_app/AGENTS.md`](legacy_app/AGENTS.md) for legacy maintenance and
    the working diary.
 
 ## Boundary Rules
@@ -455,6 +479,11 @@ second defect list in this file.
   dependencies out of plain `import ocrllm`.
 - `worker/` and `contracts/` are frozen until a real consumer justifies a
   protocol revision in the same slice.
+- The old video recognition/orchestration family remains importable but frozen;
+  do not select or extend it for new work.
+- Replacement provider/media runtime remains discussion-paused. Real defects in
+  retained provider-free inspect/extract may still receive the smallest proven
+  fix; do not use that exception to start the refactor.
 - Active PDF work uses PDFium through `pypdfium2`; do not add PyMuPDF or
   `fitz`.
 - HarmonyOS/ArkTS and the Rust/PyO3 rewrite are deferred/suspended and are not
@@ -475,10 +504,12 @@ Run from the repository root with the maintained environment:
 The clean Git-archive wheel, isolated install, outside-repository import, and
 heavy-module guard are defined in
 [`docs/ocrllm_library_go_no_go.md`](docs/ocrllm_library_go_no_go.md). A
-The bounded DashScope live gate used the approved Beijing endpoint and closed in
+bounded DashScope live gate used the approved Beijing endpoint and closed in
 #339 with one explicit model and one recognition call. Future DashScope quality,
 quota, or error-category probes remain separately bounded. Google image/audio
 robustness tests are authorized without a separate budget request.
+The old combined-video runner is retained as historical evidence only; it is no
+longer a current acceptance gate.
 
 ## History Trace
 

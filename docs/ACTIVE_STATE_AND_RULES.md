@@ -12807,3 +12807,31 @@ deletion or change that gate.
 #642 changes documentation only. It does not change runtime exports, APIs,
 tests, provider behavior, media ownership, state, dependencies, frozen source
 areas, the 34-file deletion manifest, or any unresolved ProviderModel choice.
+
+## Current working update: #643 refreshes the migration navigation without duplicating the plan
+
+`MIGRATION_STATUS.md` no longer presents the #615-era open list as current.
+Caller-owned extraction and staged runtime fields are settled; controlled
+binding dispatch was later reopened. The current four choices are catalog
+breadth, integer versus exact fractional provider audio defaults, controlled
+built-in bindings versus arbitrary callable leaves, and replacement-gated
+versus immediate deletion of the old video recognition family.
+
+The migration map now points directly to section 0 of
+`docs/plan_provider_entity_batch_refactor.md`, states that runtime remains
+discussion-paused, identifies the common first runtime gate as one exact native-
+Google image entry plus one exact DashScope OpenAI-compatible image entry, and
+marks the old combined-video runner as historical evidence rather than a
+current gate. Its read order and boundary rules now include the current plan,
+the frozen old video family, and the narrow allowance for real defects in
+retained provider-free inspect/extract.
+
+An initial accurate but long checkpoint repeated lane, retry, token, output,
+and result contracts already owned by plan section 0. Review removed that
+duplication. The migration file retains only the current choices, fixed
+destination, first gate, and links; it does not become a second architecture
+authority or chronological diary.
+
+#643 changes navigation documentation only. It does not change runtime, public
+API, tests, providers, media, state, dependencies, frozen source areas, deletion
+timing, or any pending maintainer choice.
