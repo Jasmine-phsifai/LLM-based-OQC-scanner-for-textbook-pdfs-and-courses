@@ -11113,9 +11113,11 @@ without owning another journal or lifecycle. Route A, caller composition with
 no public `resume_video`, is recommended because the current evidence does not
 show how a supposedly stateless router could own partial completion, write
 ordering, sidecar discovery, final publication, or cleanup without recreating
-the deleted layer. This remains a recommendation awaiting maintainer
-confirmation. No runtime, export, sidecar, test source, provider call,
-dependency, legacy source, frozen boundary, or deletion gate changed.
+the deleted layer. The maintainer later directly required the stateless route;
+#584 fixes its delegation and #596 fixes its package-root export while keeping
+all listed lifecycle duties out. No runtime, export, sidecar, test source,
+provider call, dependency, legacy source, frozen boundary, or deletion gate
+changed.
 
 ## Current working update: #583 separates merged-media output from cross-media ownership
 
@@ -11167,9 +11169,9 @@ behavior is removed because omission is
 already required to derive a provider-informed value. The maintainer directly
 fixed the behavior behind choice 11: a thin `resume_video` route delegates to
 ordinary image/audio resume and owns no video journal, composition,
-publication, naming, or cleanup. Only package-root export remains open. Choice
-12 was still open at #584; #588 later fixes separate image/audio outputs and
-removes the speculative combined artifact. No runtime, export, test source,
+publication, naming, or cleanup. #596 later fixes its package-root export.
+Choice 12 was still open at #584; #588 later fixes separate image/audio outputs
+and removes the speculative combined artifact. No runtime, export, test source,
 sidecar, provider, dependency, legacy source, frozen boundary, or deletion
 changed.
 
@@ -11479,3 +11481,29 @@ provider model, API, runtime source, test source, dependency, legacy source,
 frozen boundary, or deletion changed.
 Focused output, long-audio ownership, video publication, PDF, and lightweight
 import regressions are **95 passed in 5.21s**.
+
+## Current working update: #596 fixes the package-root video resume route
+
+#596 is a documentation-only public-surface decision under the replacement-API
+implementation pause. It closes choice 11: `resume_video` is one package-root
+public operation that delegates explicit retained-image and extracted-audio
+sources to the ordinary image/audio resume functions. It owns no video journal,
+source discovery, output naming, cross-media composition, publication
+transaction, partial-completion policy, or cleanup lifecycle.
+
+The alternative of documenting only caller composition is rejected because the
+maintainer explicitly required a video resume function, and the current root
+facade already exposes user-facing video operations. This one export does not
+promote image/audio sidecar primitives, persistence helpers, or experimental
+repair helpers to the root. Exact arguments and result aggregation remain owned
+by the underlying public resume slices and their live proofs; #596 does not
+invent them in advance.
+
+The root facade must remain lazy and pass its existing import-order and
+lightweight-import contracts when this slice is implemented. That is an
+acceptance condition, not permission for an import hook, callable-module proxy,
+second video resume engine, generic lifecycle interface, or new result wrapper.
+No `__init__.py`, runtime, public export, signature, state, test source,
+dependency, provider, legacy source, frozen boundary, or deletion changed.
+Focused root-facade, lightweight-import, image-resume, long-audio-resume, and
+cross-branch video-resume regressions are **65 passed in 2.35s**.

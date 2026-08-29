@@ -53,8 +53,8 @@ extract_video_audio
 - Video-derived work reuses image-batch and audio-batch resume. There is no
   third video resume engine. The maintainer explicitly requires a thin
   `resume_video` route to the image/audio resume functions; it owns no journal,
-  publication, naming, or cleanup lifecycle. Whether that convenience is a
-  root public export remains the narrow choice 11 in section 6.
+  publication, naming, or cleanup lifecycle. It is a package-root public
+  operation; internal sidecar helpers remain private.
 - PDF-rendered pages reuse the merged-image batch backend. PDF does not gain a
   separate provider dispatcher.
 - Every retained image is a complete frame or page. No board-corner search,
@@ -380,8 +380,8 @@ suite alone does not prove a provider phase.
 
 ## 6. Maintainer Decisions Still Required
 
-The unresolved parts of these choices are explicit phase gates, not one global
-pause:
+These fixed choices are explicit phase contracts. Closing the final detail does
+not itself lift the maintainer's discussion-first implementation pause:
 
 1. **Fixed flat-list success stop.** Visit each provider at most once per batch
    after its finite retry rule, and stop immediately on the first valid
@@ -436,12 +436,11 @@ pause:
     boundary decision. Keeping them separate would permit incoherent hybrids,
     such as a controlled adapter ID plus an unvalidated generic options bag, or
     an arbitrary callable that still depends on hidden adapter settings.
-11. **Video resume export only.** Fixed behavior: a thin `resume_video` route
-    delegates explicit image and audio sources to their ordinary resume
-    functions and owns no video journal, publication transaction, output
-    naming, composition, or cleanup lifecycle. The only open detail is whether
-    this convenience is exported from the package root or remains a documented
-    caller routing helper.
+11. **Fixed package-root video resume route.** A thin root-exported
+    `resume_video` delegates explicit image and audio sources to their ordinary
+    resume functions and owns no video journal, publication transaction,
+    output naming, composition, or cleanup lifecycle. This does not export
+    internal state/sidecar helpers or settle experimental repair placement.
 12. **Fixed separate media outputs.** "One Markdown" means one output for each
     merged image recognition call and one separate output for each merged audio
     recognition call. Independent recognizers never mutate one target. The
@@ -456,19 +455,19 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | fixed combined choice 8/10 | 11 |
-| Public presets and single-provider merged image + resume | the provider-model gate and fixed choices 3/5/9/12 | 11 |
-| Flat fallback | fixed choices 1/2/4/7/9/12 | 11 |
-| Nested lanes | the complete flat-fallback gate | 11 |
-| Merged audio + resume | fixed choices 4/5/9/12, plus the proven provider boundary | 11 |
-| Video-derived resume/publication and old-chain deletion | 11 and every earlier replacement gate; fixed choice 12 | none |
+| First and second provider-model proofs | fixed combined choice 8/10 | none |
+| Public presets and single-provider merged image + resume | the provider-model gate and fixed choices 3/5/9/12 | none |
+| Flat fallback | fixed choices 1/2/4/7/9/12 | none |
+| Nested lanes | the complete flat-fallback gate | none |
+| Merged audio + resume | fixed choices 4/5/9/12, plus the proven provider boundary | none |
+| Video-derived resume/publication and old-chain deletion | fixed choice 11 and every earlier replacement gate; fixed choice 12 | none |
 
 This ordering does not silently choose an open contract. It prevents an
 unrelated late question from blocking earlier evidence and prevents an early
 class from being built with fields required only by a later phase. In
 particular, fixed choice 3 limits the committed public preset scope without
-blocking one internal live model proof, and choice 11's routing behavior is
-fixed even though its root-export detail remains open.
+blocking one internal live model proof, and choice 11 fixes only one thin root
+route rather than a video lifecycle owner.
 
 Choice 3 is fixed by separating entity identity from shipped convenience. Every
 supplied model is one provider-model entity, while only a small live-proven set
@@ -485,8 +484,8 @@ choices 4 and 6 ask the same provider-list reduction question. #587 merges
 them into choice 4, and #594 fixes the common-minimum rule: omission derives one
 media-appropriate scalar from every candidate before planning. This is one
 product decision, not permission for a generic cross-media planner. Choice
-11's delegation behavior is directly fixed; only export placement remains
-open.
+11's delegation behavior and package-root placement are fixed without deciding
+the import placement of every media or repair helper.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -1029,12 +1028,12 @@ The #582 audit correctly rejected any router that defines partial completion,
 write ordering, sidecar discovery, final publication, or cleanup; those duties
 would recreate a video lifecycle owner, and translating the old journal would
 add a rejected compatibility format. The later direct maintainer wording is
-more specific about the remaining public shape: `resume_video` routes to the
-ordinary image and audio resume functions. #584 therefore fixes that routing
-behavior while leaving only the root-export detail open. #588 fixes separate
-image and audio outputs and removes cross-media composition from the current
-product; it is not a resume responsibility. No runtime, export, sidecar,
-result, or deletion gate changes with this documentation reconciliation.
+more specific about the public shape: `resume_video` routes to the ordinary
+image and audio resume functions. #584 therefore fixes that routing behavior,
+and #596 fixes its package-root export. #588 fixes separate image and audio
+outputs and removes cross-media composition from the current product; it is not
+a resume responsibility. No exact signature, result aggregate, runtime, export,
+sidecar, or deletion changes with this documentation reconciliation.
 
 ### 6.12 Evidence for choice 12 (#583)
 

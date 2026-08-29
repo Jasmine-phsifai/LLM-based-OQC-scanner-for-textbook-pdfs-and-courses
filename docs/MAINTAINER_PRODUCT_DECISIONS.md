@@ -519,10 +519,10 @@ is often accepted.
   replacement has visible image/audio steps and no recognition wrapper. Video-
   derived work reuses image-batch and audio-batch resume. #588 fixes one
   independent merged Markdown per media call; OCRLLM does not add a cross-media
-  final artifact, composer, or shared writer. Whether a named stateless
-  `resume_video` exists remains the explicit choice 11 below. The video journal
-  and `recognize_video_to_markdown` are deleted only after the refactor's
-  replacement gate.
+  final artifact, composer, or shared writer. #596 fixes one named package-root
+  `resume_video` as a stateless route; it is not a new lifecycle owner. The
+  video journal and `recognize_video_to_markdown` are deleted only after the
+  refactor's replacement gate.
   Full-frame retention, provider separation, paid-work reuse, and
   retain-recoverable-gaps survive unchanged.
 
@@ -921,8 +921,8 @@ it is not retained as a compatibility family and is not deleted during this
 discussion pause. A failed batch's final accumulator keeps only that batch's
 last provider, canonical code, and bounded description, not one overflow record
 per attempted provider. The public type name is the implementation-level
-`ProviderModel`, with no duplicate `ProviderEntity` alias. The following
-choice details remain open or are fixed as marked:
+`ProviderModel`, with no duplicate `ProviderEntity` alias. #596 closes the final
+unresolved detail in the following fixed choice list:
 
 1. **Fixed first-success stop:** a flat provider list stops at the first valid
    recognition. "Traverse once" means each provider is reached at most once
@@ -965,11 +965,11 @@ choice details remain open or are fixed as marked:
    persist separate current/history buckets or a per-attempt ledger.
 10. **Merged into choice 8:** field ownership and invocation ownership are one
     decision, not two independently selectable contracts.
-11. **Fixed routing, open export detail:** `resume_video` is a thin route to the
-    ordinary image/audio resume functions and owns no video journal,
-    publication transaction, composition, output naming, or cleanup lifecycle.
-    Should it be exported from the package root, or remain a documented caller
-    composition helper?
+11. **Fixed package-root video resume route:** root-exported `resume_video` is a
+    thin route to the ordinary image/audio resume functions and owns no video
+    journal, publication transaction, composition, output naming, or cleanup
+    lifecycle. This does not export internal sidecar helpers or decide where
+    experimental repair helpers live.
 12. **Fixed separate media outputs:** one merged image call owns one Markdown
     and one merged audio call owns a different Markdown. Independent recognizers
     never mutate the same target. The current product adds no cross-media final
@@ -1153,8 +1153,8 @@ validation, composition, publication, and cleanup. The low-level
 `recognize_video()` is not resumable. #582 therefore rejected any replacement
 router that owns coordination, but its recommendation against the public name
 was superseded by the maintainer's direct instruction that a video resume
-function routes to the ordinary image/audio resume functions. #584 fixes only
-that stateless delegation; package-root export remains open. No runtime/export
+function routes to the ordinary image/audio resume functions. #584 fixes that
+stateless delegation, and #596 fixes its package-root export. No runtime/export
 was changed.
 
 **#583 evidence for choice 12.** Current image and long-audio recognition own
@@ -1182,9 +1182,9 @@ the result. #593 later fixes choice 3 to a small live-proven preset set plus
 explicit construction and live discovery. Former choices 4 and 6 no longer
 offer explicit-only input as an alternative because provider-derived omission
 is fixed. #587 combines them without combining their media planners, and #594
-fixes their common-minimum reduction. Choice 11
-now fixes a stateless route to ordinary image/audio resume and leaves only
-package-root export open. This sequencing changes no runtime or public API.
+fixes their common-minimum reduction. Choice 11 fixes one package-root stateless
+route to ordinary image/audio resume. This sequencing changes no runtime or
+public API.
 
 **#585 combines choices 8 and 10.** The current built-in resolver already uses
 explicit exact-type branches and lazy imports, while Google and DashScope keep
