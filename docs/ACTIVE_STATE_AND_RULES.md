@@ -11854,3 +11854,34 @@ partial-result signature remain later API reviews. #606's 246-entry DashScope
 catalog proof keeps both named model candidates current but resolves none of
 these product conflicts. No runtime, test, dependency, public API, provider
 call, state, legacy source, frozen boundary, or deletion changed in #607.
+
+## Current working update: #608 proves a second real archive frame extraction
+
+#608 selects the second of the two existing MP4s under the authorized read-only
+`D:\archieve` source, rather than replaying #547/#548/#570 on the first file.
+The source was 2,698,631,669 bytes, 9,809.12 seconds, 294,611 frames at about
+30.0344 FPS, H.264 1920x1080 with AAC audio, and used a non-ASCII Windows path.
+One public `inspect_video()` completed in 2.113 seconds. One public
+`extract_video_frames()` completed in 57.633 seconds in an owned system-temp
+directory. There was no audio extraction, recognition, provider request,
+credential access, download, archive write, crop, ROI, or perspective step.
+
+The call returned exactly 104 unique retained JPEGs. Their indices were
+strictly increasing, timestamps were non-retrograde, all 104 decoded from bytes
+at the original 1920x1080 dimensions, and their total size was 33,721,399
+bytes. The final retained index was exact source frame 294,610 at 9,809.088
+seconds. Source size/mtime/ctime remained unchanged; request snapshots and
+atomic staging were absent before outer cleanup; the validated owned scratch
+root was then removed.
+
+The first retained representative was frame 5,106 at about 169.984 seconds.
+Personal review confirms this follows the current selector's documented
+segment-end behavior rather than a decoder or ordering failure. It is retained
+as evidence for the separately paused negative-feedback/similarity review: a
+future content audit should decide whether an opening representative is needed,
+but this run does not authorize another sampling pass or detector. No active
+library defect was reproduced. The complete lightweight-import file passed 14
+tests, and the two exact Unicode-path/negative-feedback frame regressions
+passed with 23 unrelated frame tests deselected. No runtime, test, dependency, public API,
+provider, state, legacy source, frozen boundary, or capability claim changed.
+The provider/media replacement pause and five #607 decisions remain unchanged.

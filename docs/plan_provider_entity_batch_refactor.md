@@ -130,6 +130,20 @@ algorithm review. Existing candidate scanning/selection/writing is evidence,
 not automatic approval to retain or redesign that algorithm. Review it later
 against real archive video frames without restoring any crop/ROI step.
 
+#608 adds a second real-lecture observation for that later review without
+changing the algorithm. Public inspection of a 9,809.12-second, 294,611-frame,
+1920x1080 H.264 MP4 succeeded, and one public extraction retained 104 ordered
+full-frame JPEGs within the current density target. All decoded at 1920x1080,
+and the final retained index was the exact final source frame. The first
+retained representative was frame 5,106 at about 169.984 seconds because the
+current segmenter returns the end candidate for each stable segment. This is
+not by itself a defect: a stable segment is represented, and a visible change
+should create a boundary. It is concrete evidence that the later algorithm
+review must compare whether early transient content can disappear before the
+first retained segment end. Do not add opening-frame pinning, a new cadence, a
+second detector, or adaptive tuning until real frame-content review proves the
+need.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later
