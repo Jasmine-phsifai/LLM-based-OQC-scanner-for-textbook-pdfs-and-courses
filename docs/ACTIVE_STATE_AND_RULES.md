@@ -11802,3 +11802,25 @@ cross-document wording review and `git diff --check` passed. The one directly
 relevant wheel-selection regression also passed, confirming the package-local
 README remains excluded; no runtime test or provider call can add evidence to
 this documentation-only correction.
+
+## Current working update: #606 rechecks the pinned DashScope model without recognition
+
+#606 performs one bounded catalog-only check because the root README's copyable
+combined-video example and the built-in DashScope default both name
+`qwen3.7-plus-2026-05-26`. A credential-isolated child inherited the already
+active proxy only for its lifetime and made exactly one compatible-endpoint
+`GET /models` request. It made zero recognition calls, retries, fallback
+attempts, model switches, or writes. The request completed in 296 ms with exit
+code 0 and returned 246 catalog entries. Both
+`qwen3.7-plus-2026-05-26` and the separately live-proven `qwen3.5-ocr` were
+present.
+
+This evidence closes the narrow staleness question only. There is no retired-
+model defect in the current README example or implicit DashScope baseline, so
+neither is changed merely to follow a newer model. The result does not prove
+recognition quality, quota availability, output completeness, retry behavior,
+or any proposed provider abstraction. No credential, proxy value, endpoint,
+catalog row, path, or response body was emitted or persisted; the owned child
+left no process residue. No runtime, test, dependency, public API, preset,
+state, legacy source, frozen boundary, or deletion changed. The ProviderModel
+and media replacement implementation pause remains in force.
