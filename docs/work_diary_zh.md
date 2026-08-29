@@ -8562,3 +8562,19 @@ legacy Google 是值得保留但不能整套照搬的生产证据：它区分同
 **唯一真实结果。** 维护 runner 使用显式 `gemini-2.5-flash`、120 秒 limit 和公式板；child **2,694 ms / exit 1 / stderr 0 bytes / 未超时**。安全 JSON 精确为 `PROVIDER_UNAVAILABLE`、scope=`provider`、HTTP 400、provider status=`FAILED_PRECONDITION`、operation=`catalog`、stage=`recognition`、`provider_calls_attempted=0`。这证明 #602 新分类已在真实 SDK 异常上生效；它没有证明目录可用、模型存在、generation、图片识别或公式质量。没有 retry、第二 runner、单独 catalog、换模、fallback、转码或识别正文输出。
 
 **完整性和过度设计复查。** fixture 的 size/hash/dimensions/mtime 前后一致；credential/path/recognized-body 泄漏均为 false，runner 进程残留为零，src/tests/tools 无新写入，四个既有未跟踪文件不变。真实结果与离线回归一致，没有新的 library defect，因此本轮不为外部项目状态增加 retry、catalog cache、alternate endpoint、provider pool 或新错误类，也不重复 #602 的 147 项回归。只更新计划、权威和中文日记；无 runtime、test、dependency、public API、state、legacy、frozen 或删除变化。
+
+## #604 — 2026-08-29：停止原定 live batch，重新核对媒体与 provider 方案
+
+**本轮英文原子任务及用户中途改向。** 原先任务是：`Atomic task — Iteration #604: select the next real-runtime maturity gate after #603 without replaying the same Google project failure or starting the paused ProviderModel replacement.` 在尚未调用 provider、尚未改代码时，维护者明确要求“不直接开始执行”，改为反复讨论视频拆分、合并图片/音频输出、provider 实体、fallback/pool、重试、token、resume、repair 和中间文件所有权。本轮随即改写为：`Atomic task — Iteration #604 (user-directed pivot): pause the planned P1-b live batch and reconcile the proposed visible media pipeline and provider-model architecture against the shipped library, preserving confirmed decisions, exposing contradictions, and pruning consumer-free machinery without implementing runtime code.` #603 的真实错误分类验证属于进展；#604 不再执行原定 DashScope 两批图片门。
+
+**本人核对和只读分工。** 三名轻量审计者分别核对当前视频公开面、provider/batch/error/token 复用边界、权威文档冲突；本人复核 `recognize_batch` preflight/并行停止语义、三个视频识别入口、公开 extraction、provider resolver/adapter、canonical error disposition 和 token aggregator。没有读取四个受保护未跟踪文件，没有调用 provider、下载或运行媒体，也没有改 runtime/test。
+
+**当前最大的已实现过度设计。** `recognize_video_frames`、`recognize_video`、`recognize_video_to_markdown` 三个识别入口外，还叠加 video outcome、compose/publish/finalize、独立 journal/state/parser/serializer/resume validator、job frame/audio 和重复的 video MP3 路由。这一族是当前最像“发射井”的实现：同一图片/音频工作拥有多套视频专属生命周期。目标仍是等合并图片、合并音频及各自 resume 真正通过后整体删除，不把它留成兼容家族。`inspect_video`、完整帧提取、candidate scan/select/write、音频提取、snapshot、OpenCV/FFmpeg helper 属于可复用媒体原语，不能按文件名一起删。
+
+**不能原地改 `recognize_batch`。** 当前函数是多个独立任务、每项独立 output/outcome，并在第一个失败后停止新的派发；未来需求是一组图片槽位合并成一个 Markdown，单批失败不阻止后续批次。两者语义不同。后续需要另一个名称清楚的 merged-image 入口，只复用底层 provider call、原子发布和 sidecar 组件；不能悄悄改变现有 public facade。图片合并调用和音频合并调用各自拥有一个 Markdown 和一个 sidecar，两个独立 recognizer 不写同一目标，也不重建跨媒体 transaction/composer。
+
+**已保留的剪枝结论。** 一个 `(vendor, model)` 是同一 `ProviderModel` 数据类型的一个值，不是一个 subclass/文件；执行通过受控 adapter ID 和调用边界的精确 settings，不存 callable、secret 或 generic options bag。provider 形状可在后续分片中逐步做到单值、flat fallback、nested fixed lanes；首个成功立即停止，nested 不跨 lane 救援，失败 batch 不阻止后续 batch。厂商原始错误先映射 canonical OCRLLM code，再执行有限 retry；不复制 raw HTTP 表，不需要 `error/next/current` 状态机。token 按 `(vendor, model)` 累加可信 input/output 和精确 call count，未知不填零，不按图片/窗口分摊，也不建逐尝试账本。
+
+**重新打开而不擅自回答的冲突。** 最新文字把音频默认分钟写成 `float`，但既有决定是整数分钟；把“不能思考”与 batch size 1 绑定没有真实因果证据；“预制各个模型”可能是少量可用入口，也可能是已否决的全目录镜像；成功 fallback 后是返回 warning 还是只在最终 accumulator 记录失败 batch，最新文字与旧 choice 2 有差异；无 `recognize_video` owner 时无法区分并自动删除公开 extract 的调用者文件；`resume_video` 一支成功一支失败时的返回仍未定义；首个内部 `ProviderModel` 是按真实 consumer 渐进加字段，还是先塞入尚无消费者的 audio/retry 字段，也需要确认。负反馈帧校准和相似度核验按维护者要求留到真实帧证据的独立讨论，不在本轮重写。
+
+**过度设计复查。** 最危险的下一步不是某个函数拆得不够细，而是把最终 API pool、retry executor、catalog mirror、durable token ledger、跨媒体 output owner 和 video cleanup lifecycle 一次性做成 ProviderModel 的前置依赖。推荐顺序仍是先证明一个内部 provider-model 图片 consumer，再做单 provider merged image/resume、flat fallback、nested lanes、merged audio/resume，最后删除旧视频族。是否采用这一渐进顺序需要维护者确认；本轮只同步权威、计划、导航、迁移状态和中文日记，不跑测试，因为没有可执行代码变化。

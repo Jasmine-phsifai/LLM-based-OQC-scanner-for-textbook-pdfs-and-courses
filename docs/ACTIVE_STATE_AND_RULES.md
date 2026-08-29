@@ -44,11 +44,12 @@ historical claim.
 
 **2026-08-28 refactor authority, narrowed 2026-08-29.** The
 provider-model/media-batch direction is approved; see #568 and the corrective
-#569/#571 entries at the end of this file and
+#569/#571/#604 entries at the end of this file and
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
-Implementation is paused for the plan's explicit maintainer decisions. The
-former exhaustive module build specification and its consumer-free Phase 1
-are not authorized.
+Implementation is paused by the maintainer's discussion-first instruction;
+#604 records the remaining contradictions and no runtime slice is currently
+authorized. The former exhaustive module build specification and its
+consumer-free Phase 1 are not authorized.
 Where the narrative below describes `recognize_video_to_markdown`, the video
 journal, or the non-resumable low-level `recognize_video()` as current product
 direction, those passages are superseded as direction (they remain true
@@ -11725,3 +11726,54 @@ It does not prove current catalog membership, Google image success, formula
 quality, or any retry/fallback rule. No runtime source, test source, dependency,
 public API, state, legacy source, frozen boundary, or deletion changed. The four
 existing untracked files remained untouched.
+
+## Current working update: #604 pauses execution and reconciles the proposed replacement
+
+#604 supersedes the iteration's initially considered strict-tuple live batch
+with the maintainer's direct request to stop execution and discuss the next
+architecture. No provider call, media extraction, implementation, deletion, or
+test run occurred. Three bounded read-only audits and personal review compared
+the shipped public video surface, provider/error/token seams, batch semantics,
+and current decision documents.
+
+The destination remains one visible caller-composed media flow. The old public
+`recognize_video_frames`, `recognize_video`,
+`recognize_video_to_markdown`, video result/publication helpers, video job
+journal/state/resume family, and duplicated video-audio router are the main
+implemented overdesign area. They remain frozen until replacement merged-image,
+merged-audio, and independent resume gates pass, then are deleted deliberately.
+Provider-free inspection, full-frame extraction, candidate scan/select/write,
+audio extraction, snapshots, and their OpenCV/FFmpeg helpers remain reusable and
+must not be removed merely because their filenames contain `video`.
+
+Current `recognize_batch()` is not the replacement merged-image backend. It
+returns one independent outcome per item, resolves independent targets, and
+stops further dispatch after failure. The replacement needs a separately named
+one-document slot contract whose failures do not stop later slots; it may reuse
+lower-level image calls, atomic publication, and resume primitives without
+changing the existing public facade in place. Image and audio merged calls each
+own a separate Markdown and sidecar. Two independent branch recognizers do not
+share one output target, and no cross-media transaction or composer is revived.
+
+The latest provider proposal is retained as staged direction, not one build
+unit. One exact vendor/model remains one `ProviderModel` value using a controlled
+adapter route and separately supplied exact settings. Flat fallback, nested
+fixed lanes, retry execution, persistent usage, merged image, merged audio, and
+old-video deletion remain separate vertical slices. Raw HTTP numbers first pass
+through vendor-specific canonical mapping. Finite retry rules need no
+`error`/`next`/`current` state machine. A successful fallback returns a result;
+it never raises a terminal exception after success. Only incomplete batches are
+terminal failures.
+
+The latest wording reopens, rather than silently resolves, these details:
+integer versus stated `float` provider audio minutes; evidence-backed image
+defaults versus a blanket one-image default for non-thinking models; a few
+live-proven presets versus a full vendor-catalog mirror; whether successful
+fallbacks retain bounded warnings when the final accumulator is limited to
+failed batches; public extraction cleanup with no job owner; the exact
+`resume_video` partial-result signature; and whether the first internal
+`ProviderModel` contains only immediately consumed fields or the complete final
+schema. The implementation pause remains until the maintainer answers the
+material subset needed by the first slice. Social-media work, crop/ROI, legacy
+format compatibility, arbitrary plugin registries, and a replacement video
+black box remain excluded.

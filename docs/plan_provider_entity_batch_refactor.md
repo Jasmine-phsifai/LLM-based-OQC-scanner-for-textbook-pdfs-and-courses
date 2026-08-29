@@ -59,6 +59,77 @@ returned `PROVIDER_UNAVAILABLE` with provider scope, HTTP 400,
 proves the canonical mapping is now honest in real execution; it does not prove
 catalog availability, model membership, image recognition, or a retry policy.
 
+### #604 discussion checkpoint: preserve the destination, reopen contradictions
+
+The maintainer's latest detailed proposal reconfirms most of sections 2.1-2.9,
+but explicitly pauses implementation for further discussion. It does not
+authorize the previously planned P1-b live batch or the first `ProviderModel`
+runtime slice. This checkpoint separates the stable destination from details
+whose latest wording conflicts with an earlier fixed choice.
+
+The following remain fixed:
+
+- callers compose visible video inspection, extraction, frame retention,
+  batching, image recognition, audio extraction, splitting, and audio
+  recognition; there is no replacement video recognition black box;
+- the old video recognition/journal family is removed only after ordinary
+  merged-image, merged-audio, and their resume paths are proven;
+- existing `recognize_batch()` keeps its current independent-item contract. A
+  future merged-image call is a different API with one ordered slot document;
+  it may reuse lower-level recognition and publication code without silently
+  changing the old facade's meaning;
+- provider input may later be one value, one flat ordered fallback lane, or a
+  nested fixed set of lanes. Flat fallback stops at first success. Nested lanes
+  use fixed assignment and no cross-lane rescue. Failed batches do not stop
+  later batches;
+- adapter-specific failures are mapped to canonical OCRLLM errors before
+  finite retry policy is consulted. Raw HTTP codes are diagnostics, not the
+  cross-vendor policy key;
+- media batches retain exact concrete-tuple validation; provider collections
+  being lists does not weaken that media-source contract;
+- image and audio recognition own separate Markdown targets and separate
+  sidecars. Two independent recognizers never mutate the same output file;
+- full frames/pages remain intact, repair stays experimental, Electron remains
+  a later Python/Rust-backend consumer, and social-media crawling stays frozen.
+
+The following require explicit maintainer confirmation before their slice:
+
+1. The latest wording says `float` for provider default audio minutes, while the
+   previously fixed public and durable contract accepts integer minutes only.
+   This plan continues to use positive `int` until explicitly overturned.
+2. Thinking capability does not establish a safe image batch size. The proposal
+   to default every non-thinking model to one image remains unproven; a preset's
+   suggestion should come from output/context and bounded live evidence.
+3. "Prebuild Google and DashScope models" can mean a few verified convenience
+   presets or a mirror of hundreds of catalog rows. The latter conflicts with
+   the earlier no-indefinite-model-maintenance rule and remains rejected pending
+   a direct reversal of fixed choice 3.
+4. A successful fallback cannot both return a valid result and raise a terminal
+   exception. Earlier choice 2 returns bounded prior-provider evidence with the
+   result. The latest wording that the final accumulator contains only failed
+   batches may instead remove those success warnings; this reporting detail is
+   reopened, but post-success terminal exceptions remain rejected.
+5. "Traverse the list once" continues to mean at most one circular ordered pass
+   while a batch is unresolved. It does not call later providers after success.
+6. Public extraction has caller-owned output. With no recognition wrapper there
+   is no library-owned recognition lifecycle that can later delete it. Only a
+   frame created and rejected inside the same owned retention/deduplication
+   operation may be deleted. A future explicitly approved job wrapper could own
+   a private temporary directory; this plan does not anticipate one.
+7. The exact `resume_video` signature and its one-branch-success/one-branch-
+   failure result remain open. It must not acquire a journal, shared publication
+   target, cleanup ownership, or hidden extraction merely to make the name
+   convenient.
+8. Implementing the complete final `ProviderModel` schema before one consumer
+   uses its retry/audio fields may be another consumer-free foundation. The next
+   discussion must choose between a staged internal value that grows with real
+   slices and a complete up-front value; no runtime class is authorized yet.
+
+The negative-feedback frame calibration and similarity check remain a separate
+algorithm review. Existing candidate scanning/selection/writing is evidence,
+not automatic approval to retain or redesign that algorithm. Review it later
+against real archive video frames without restoring any crop/ROI step.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later

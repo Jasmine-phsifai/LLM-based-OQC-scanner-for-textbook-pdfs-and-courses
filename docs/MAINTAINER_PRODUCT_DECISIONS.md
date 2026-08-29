@@ -1317,3 +1317,36 @@ steps and no replacement video black box is planned; video resume delegates to
 image and audio batch resume; repair is experimental and does not block
 deletion; caller media is never deleted; failed batches retain one terminal
 failure; and social-media work stays frozen.
+
+**#604 reopens only contradictions introduced by the latest detailed proposal.**
+The overall design is still discussion-only. The old video recognition/journal
+family is eventually removed, while provider-free inspection, complete-frame
+retention, and audio extraction remain. The current `recognize_batch()` keeps
+its independent-item contract; future merged-image and merged-audio calls each
+own one ordered Markdown and one sidecar, and never share a target.
+
+No implementation starts until the needed subset of these questions is settled:
+
+1. Does the latest `float` wording intentionally overturn integer-only provider
+   audio minutes, or was it a type slip? Current authority remains integer-only.
+2. Should a non-thinking image model always suggest batch size one, despite no
+   demonstrated relation between thinking support and safe output capacity, or
+   should every preset default remain evidence-backed?
+3. Does "prebuild Google and DashScope models" mean the existing fixed small
+   live-proven preset set, or does it intentionally reopen the rejected full
+   catalog mirror?
+4. When a later provider succeeds, should earlier provider failures remain as
+   bounded warnings on the successful result, or should the final accumulator
+   contain failed batches only? A successful result will not be converted into
+   a terminal exception.
+5. With no `recognize_video` owner, public extraction output is caller-owned.
+   Is that accepted, or is a separately approved job/temp owner actually wanted?
+6. Should the first internal `ProviderModel` contain only fields consumed by the
+   first image slice, or the entire planned image/audio/retry schema before those
+   consumers exist? The staged option is recommended to avoid a second
+   consumer-free foundation.
+
+The negative-feedback/similarity frame algorithm and exact `resume_video`
+partial-result signature remain separate later reviews. They do not authorize a
+new wrapper, shared Markdown writer, video journal, retry executor, nested pool,
+or broad test matrix now.

@@ -15,12 +15,12 @@ provider-model/media-batch refactor (#568/#569 in
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md))
 supersedes the video journal and `recognize_video_to_markdown` descriptions
 below as direction. Public image/audio batch resume replaces the video journal;
-a future `recognize_video` may only be a thin caller with separate
-`image_providers`/`audio_providers`. The video job-state layer is deleted after
-replacement resume proof. #569 withdraws the former
+callers compose visible media steps and no replacement `recognize_video` wrapper
+is currently reserved. The video job-state layer is deleted after replacement
+merged-image, merged-audio, and resume proof. #569 withdraws the former
 consumer-free provider Phase 1 and exhaustive module blueprint; no refactor
-runtime has shipped. Implementation waits on the explicit maintainer choices
-in section 6 of the plan.
+runtime has shipped. #604 keeps implementation paused while the remaining
+wording conflicts in section 0 of the plan are discussed.
 
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit

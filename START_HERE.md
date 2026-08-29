@@ -147,7 +147,10 @@ The current facade remains shipped but frozen until replacement, then the
 duplicated recognition/journal product is deleted rather than retained as a
 compatibility family. Public
 image/audio batch resume replaces the video journal; a future
-`recognize_video` may only be a thin caller of those public steps.
+video workflow is composed by callers from those public steps. No replacement
+`recognize_video` wrapper is currently reserved; the separately discussed thin
+`resume_video` name may delegate only after its input and partial-result
+contract is fixed.
 Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval
