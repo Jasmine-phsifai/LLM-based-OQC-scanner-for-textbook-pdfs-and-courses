@@ -945,10 +945,10 @@ choice details remain open or are fixed as marked:
 6. **Merged into choice 4:** image batch size and audio interval have the same
    unresolved provider-list reduction. They must not expose two independently
    selectable default policies.
-7. Are retry rules reduced to finite `extra_retries` and `wait_seconds`, with
-   outcome reporting kept outside the rule and one universal "exhausted means
-   record and advance" behavior (recommended), or do `error` / `next` /
-   `current` retain distinct control meanings that still need to be specified?
+7. **Fixed finite retry rule:** canonical-code rules contain only non-negative
+   finite `extra_retries` and `wait_seconds`. Outcome reporting stays outside
+   the rule. Exhaustion records the last safe failure and advances. The
+   overlapping `error` / `next` / `current` labels are removed.
 8. **Fixed combined provider-model boundary:** one immutable value contains
     only vendor/model identity, controlled adapter ID, three capabilities,
     capability-dependent defaults, and finite retry rules. An explicit lazy
@@ -1063,7 +1063,9 @@ deferred until one live adapter path needs them; do not add a generic hint
 parser, exponential engine, unbounded retry, or learned policy. The supplied
 `error` / `next` / `current` examples all have the same eventual transition,
 so preserving their labels would duplicate state rather than express behavior.
-This is not maintainer confirmation; choice 7 remains open and no runtime was
+#590 fixes the label-free rule. Existing `ProviderErrorDisposition.action`
+values remain separate canonical evidence for pool behavior such as cooldown,
+quarantine, and stop; they do not become retry-rule fields. No runtime was
 implemented.
 
 **#578 evidence for choice 8.** Active code already separates built-in and
@@ -1242,6 +1244,21 @@ directly. Multi-provider settings association is specified only when that real
 consumer begins and cannot reopen callable/options-bearing model identity. No
 class, resolver, adapter, registry, setting, preset, API, runtime, provider
 call, or test source changed.
+
+**#590 fixes finite retry rules without an action state machine.** Google and
+DashScope adapters first map vendor evidence into canonical OCRLLM codes and
+safe scopes. Existing `ProviderErrorDisposition` then exposes genuinely
+different pool-facing evidence such as cooldown, credential quarantine, stop,
+request correction, or source change; it does not execute the replacement
+dispatcher's same-model retry loop. Each `ProviderModel` retry entry therefore
+stores only `extra_retries` and `wait_seconds`, both finite and non-negative.
+Zero means the initial request only. Waiting occurs before each extra attempt,
+never after exhaustion. Success stops; exhaustion records that provider's last
+safe failure and advances. Final result versus partial/total error is governed
+by recognition outcome, not a severity/action label in retry configuration.
+No `error` / `next` / `current`, exponential engine, retry-hint parser,
+unbounded sentinel, retry engine, dispatcher, model, preset, API, runtime,
+provider call, or test source changed.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

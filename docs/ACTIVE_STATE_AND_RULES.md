@@ -11298,3 +11298,28 @@ association only from its real consumer and may not move generic options or
 secrets into `ProviderModel`. No class, resolver, adapter, registry, setting,
 preset, API, runtime source, provider call, test source, dependency, legacy
 source, frozen boundary, or deletion changed.
+
+## Current working update: #590 removes retry action labels
+
+#590 is a documentation-only policy reduction under the replacement-API
+implementation pause. Provider-model retry entries are now fixed to exactly two
+control values: non-negative finite `extra_retries` and non-negative finite
+`wait_seconds`. Zero extra retries means one initial attempt only. Waiting occurs
+before each additional same-provider/model attempt and never after exhaustion.
+Success stops immediately; exhaustion records that provider's last safe failure
+and advances to the next candidate.
+
+The proposed `error`, `next`, and `current` labels are removed. Every supplied
+example used finite retries and ultimately advanced, so the labels duplicated
+retry count, exhaustion, and final reporting without defining three transitions.
+Whether the overall recognition returns complete, partial, or failed evidence
+belongs to the recognition outcome and remains outside retry configuration.
+
+This does not remove or duplicate the active `ProviderErrorDisposition.action`.
+That existing object describes genuinely distinct canonical pool-facing evidence
+such as retry, cooldown, credential quarantine, stop, request correction, source
+change, or response inspection. It remains separate from a future dispatcher's
+same-model attempt counter. No exponential policy, retry-delay hint parser,
+infinite sentinel, learned policy, retry engine, dispatcher, provider model,
+preset, API, runtime source, provider call, test source, dependency, legacy
+source, frozen boundary, or deletion changed.

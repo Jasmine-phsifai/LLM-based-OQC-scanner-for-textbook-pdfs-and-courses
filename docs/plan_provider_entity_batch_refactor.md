@@ -228,9 +228,10 @@ provider errors. Public retry rules are keyed by canonical codes, not by a raw
 HTTP number shared across vendors.
 
 Every retry count is finite. `-1` or any other infinite-wait spelling is
-rejected. The initially proposed `error` / `next` / `current` labels overlap:
-all three examples retry the current provider and eventually advance. Their
-meaning must be simplified or clarified before code is written.
+rejected. Retry rules contain only non-negative `extra_retries` and
+`wait_seconds`. The initially proposed `error` / `next` / `current` labels are
+removed because all three examples retry the current provider finitely and then
+advance. Final outcome severity is not a retry-rule field.
 
 Do not pre-fill Google and DashScope with identical guessed policies. Start
 from the real mappings and errors already observed in the active and legacy
@@ -404,12 +405,11 @@ pause:
    units and plan builders, but the unresolved provider-list reduction is the
    same decision. Do not ask for or implement two independently selectable
    policies.
-7. **Retry rule meaning.** Recommended: every canonical-code rule contains
-   only finite `extra_retries` and `wait_seconds`. Reporting is determined by
-   the recognition outcome, not repeated in retry configuration. Exhaustion
-   records the last failure and advances to the next provider. Keep `error` /
-   `next` / `current` only if the maintainer assigns them distinct control
-   behavior that is not already expressed by those fields.
+7. **Fixed finite retry rule.** Every canonical-code rule contains only
+   non-negative finite `extra_retries` and `wait_seconds`. Reporting is
+   determined by the recognition outcome, not repeated in retry configuration.
+   Exhaustion records the last safe failure and advances to the next provider.
+   The overlapping `error` / `next` / `current` labels are not retained.
 8. **Fixed provider-model and invocation boundary (includes former choice
    10).** One immutable `ProviderModel` stores only vendor, model, controlled
    adapter ID, three task-capability booleans, capability-dependent nullable
@@ -455,7 +455,7 @@ twelve equal prerequisites:
 | --- | --- | --- |
 | First and second provider-model proofs | fixed combined choice 8/10 | 1–7, 11 |
 | Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choices 9/12 | 1, 2, 4, 7, 11 |
-| Flat fallback | 1, 2, 4, 7, plus fixed choices 9/12 | 11 |
+| Flat fallback | 1, 2, 4, plus fixed choices 7/9/12 | 11 |
 | Nested lanes | the complete flat-fallback gate | 11 |
 | Merged audio + resume | 4, 5, fixed choices 9/12, plus the proven provider boundary | 11 |
 | Video-derived resume/publication and old-chain deletion | 11 and every earlier replacement gate; fixed choice 12 | none |
@@ -812,18 +812,20 @@ Route A is the smallest complete rule:
    normally with bounded earlier-provider evidence; incomplete recognition is
    an error. Retry configuration has no `severity` field.
 
-The proposed `error`, `next`, and `current` labels do not currently describe
+The proposed `error`, `next`, and `current` labels do not describe
 three transitions: every example performs finite same-candidate retries and
 then advances. Retaining them would duplicate retry count, exhaustion, and
-outcome-reporting semantics. Route B keeps an action label or adds independent
+outcome-reporting semantics. The rejected Route B keeps an action label or adds independent
 `retry_current`, `advance_candidate`, and reporting controls. It is justified
 only if a concrete provider error must terminate a lane or remain on one
 candidate after its finite retries; no supplied example or current consumer
 requires that branch.
 
-Choice 7 remains awaiting explicit maintainer confirmation. This evidence does
-not authorize a retry engine, provider dispatcher, new error mapping, retry
-hint parser, preset, or runtime change.
+#590 fixes Route A. The existing `ProviderErrorDisposition.action` remains a
+separate evidence and credential-pool boundary with real distinct meanings such
+as cooldown, quarantine, and stop; it is not copied into `ProviderModel` retry
+configuration. This decision does not implement a retry engine, provider
+dispatcher, new error mapping, retry-hint parser, preset, or runtime change.
 
 ### 6.7 Evidence for choice 8 (#578)
 
