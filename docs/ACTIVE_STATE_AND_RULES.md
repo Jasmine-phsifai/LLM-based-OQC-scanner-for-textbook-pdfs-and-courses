@@ -11211,7 +11211,9 @@ smallest contract consistent with per-model accumulation and honest resume.
 
 Each job sidecar stores one cumulative aggregate per exact `(vendor, model)`:
 exact dispatched calls and nullable input/output tokens. Trustworthy evidence
-from a failed attempt is included and saved before another provider attempt.
+from a failed attempt is included. Under #620 parallel lanes, one narrow state
+owner merges it before that same lane advances; other already-running lanes do
+not form a persistence barrier.
 The value loaded at invocation start is that invocation's historical baseline;
 new work is tracked as an in-memory current delta. Result metadata may show
 both views, but the sidecar does not persist separately labeled current and
@@ -12209,3 +12211,27 @@ cleanup is incomplete. Those are parent warnings, not formats to port. The
 active one-interval cleanup context is the retained implementation precedent.
 No media conversion, provider call, runtime, test, dependency, API, state, or
 frozen boundary changed.
+
+## Current working update: #620 removes the nested-lane epoch barrier
+
+The future nested provider shape has fixed round-robin assignment and one
+serial control flow per lane. A lane may continue after its own current slot is
+settled; it does not wait for every other lane to finish the same conceptual
+round. Ordinary slot failure is recorded and that lane continues. No batch is
+reassigned, rescued across lanes, or stolen by a general scheduler.
+
+All outcomes, sparse resume slots, warnings, terminal failed-batch evidence,
+and token rows remain keyed and published by original batch index rather than
+completion order. Lane-local last-success changes only after success and is
+invocation state, not `ProviderModel`, binding, adapter, global, or epoch state.
+Cancellation stops new work call-wide but preserves every already-dispatched
+paid settlement. Current `recognize_batch()` proves the useful preflight,
+bounded-dispatch, indexed-order, and settlement principles; its global
+fail-fast gate is explicitly not the future pool executor.
+
+At most one slot per lane may be active and total dispatch must remain bounded.
+The later nested-lane slice must decide how its lane count relates to the
+existing execution bound and how resume initializes lane preference from a
+newly supplied plan. #620 does not add a barrier, work-stealing queue, fairness
+policy, per-lane checkpoint, scheduler setting, runtime, API, test, provider
+call, dependency, state format, or deletion.

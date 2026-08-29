@@ -2869,3 +2869,13 @@ materialize one active physical clip and delete it after finite fallback;
 resume retains source/range identity and settled slots, never temporary files.
 Legacy chunk/checkpoint cleanup gaps are recorded as warnings rather than
 formats to port. Runtime, API, tests, media, and provider behavior are unchanged.
+
+#620 confirms the smallest future nested-lane scheduling semantics without
+implementing them. Fixed round-robin lanes are serial internally and advance
+independently; there is no global epoch barrier, cross-lane rescue, dynamic
+stealing, or completion-order publication. Results and sparse state remain
+indexed, ordinary failed slots do not stop later work, and cancellation still
+settles paid in-flight calls. The precise relation between lane count and the
+existing execution bound, plus resume initialization of lane preference, waits
+for the actual nested consumer. Runtime, API, tests, state, providers, and
+migration status remain unchanged.

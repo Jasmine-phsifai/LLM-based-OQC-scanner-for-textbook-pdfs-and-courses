@@ -360,9 +360,12 @@ permission to build infrastructure:
    error after all later slots were attempted. A successful fallback returns a
    normal result with bounded warnings; it does not raise after producing a
    valid slot.
-2. Nested lanes need one scheduling rule. The current recommendation is fixed
-   round-robin assignment with sequential work inside each lane and parallel
-   progress between lanes, without a global epoch barrier or dynamic stealing.
+2. Nested lanes use fixed round-robin assignment with sequential work inside
+   each lane and independent parallel progress between lanes. "Wait for them
+   respectively" means a lane may continue after its own slot is settled; it
+   does not create a global epoch barrier. #620 confirms this from the current
+   ordering, settlement, cancellation, and bounded-execution evidence. Dynamic
+   stealing remains excluded.
 3. The first flat-list slice must decide how exact adapter settings are paired
    with provider-model values. Secrets and mutable client state still cannot
    move into `ProviderModel`; do not create a generic settings mapping before
@@ -1044,8 +1047,9 @@ discussion-first implementation pause:
 9. **Fixed token persistence contract.** The sidecar keeps one cumulative
    aggregate per exact `(vendor, model)`: exact dispatched call count plus
    nullable input/output totals. It includes trustworthy evidence from failed
-   attempts as well as settled slots and is updated before another provider
-   attempt begins. At invocation start, the loaded cumulative value is the
+    attempts as well as settled slots and is merged before that same lane begins
+    another provider attempt; parallel lanes already in flight do not wait. At
+    invocation start, the loaded cumulative value is the
    historical baseline; this invocation's delta remains in memory as current
    usage. Results derive current/history views from those two values. Do not
    persist two labeled buckets or a per-attempt ledger. Slot state remains
@@ -1541,8 +1545,10 @@ exact `(vendor, model)`: exact dispatched call count and nullable input/output
 tokens. Each adapter contributes usage once at its response boundary. A
 response-validation failure may contribute usage when the provider actually
 reported it; a call without trustworthy usage makes the affected cumulative
-dimension unknown rather than zero. Updated cumulative evidence is saved before
-another provider attempt, so a process loss does not erase a paid failed call.
+dimension unknown rather than zero. Updated cumulative evidence is merged by
+one narrow state owner before that same lane advances to another provider
+attempt, so a process loss does not erase a paid failed call. Other lanes may
+already be in flight; this rule is not a global persistence barrier.
 
 The sidecar does not persist separate current and historical aggregates. The
 loaded cumulative value is the next invocation's historical baseline, while
@@ -1919,3 +1925,51 @@ No `AudioPlan`, base media-slice class, public context manager, persistent chunk
 archive, transcript similarity deduplicator, or second checkpoint system is
 authorized. The `AudioSlice` name and minimum facts are recommended for the
 later implementation slice; no runtime or public API changes in #619.
+
+## #620 Nested Lanes Advance Independently
+
+The maintainer's first-epoch wording is interpreted as initial fixed fan-out,
+not a reusable global barrier. A strict barrier would make every lane wait for
+the slowest provider or longest retry sequence and would still need indexed
+settlement, serialized state merging, and deterministic output ordering. It
+adds synchronization without protecting a result. Dynamic work stealing either
+breaks fixed assignment or recreates the same lane semantics behind a more
+general scheduler. Both routes are rejected.
+
+For lane `j`, the immutable slot sequence is `j, j + lane_count, ...`. Each lane
+processes at most one of its slots at a time and may start its next slot only
+after the current slot's result, terminal failure, and usage evidence have been
+settled. Other lanes do not wait for it. An ordinary failed slot does not stop
+later slots in that lane or any other lane, and no slot moves to another lane.
+The lane's remembered starting provider changes only after a valid success; a
+fully failed slot leaves the most recent successful start unchanged.
+
+Completion order is never public order. Execution reserves the complete indexed
+slot table before dispatch, stores every outcome by original batch index, and
+composes Markdown, failed-slot markers, terminal errors, warnings, and stable
+token rows in original order. Parallel completion requires one narrow owner to
+merge and atomically replace sparse resume state; it does not require a
+transaction framework, epoch record, per-lane checkpoint, or completion-order
+ledger. Epoch number and lane-local last-success state are not persisted.
+
+Cancellation remains call-wide control rather than an ordinary batch failure:
+stop new slots and new fallback attempts, settle every already-dispatched paid
+call, and leave unresolved indexed slots resumable. Current `recognize_batch()`
+supplies useful precedents for full preflight, bounded dispatch, indexed
+outcomes, and settlement of dispatched work, but its global fail-fast gate and
+contiguous not-attempted suffix cannot be reused for this continue-after-failure
+scheduler.
+
+Concurrency remains bounded, with at most one active slot per lane and no
+unbounded thread creation. #620 deliberately does not invent a second worker
+setting or silently decide how a future nested API combines outer-list lane
+count with the existing `max_parallel_requests` setting. That exact admission
+rule belongs to the nested-lane implementation slice; it must preserve fixed
+assignment and bounded progress without adding global rounds or fairness/work-
+stealing machinery. Resume bootstrap from a newly supplied provider plan also
+remains slice-local: settled slots are reused, while whether a matching earlier
+success may seed a lane or every lane restarts at its new first binding needs
+the concrete resume schema.
+
+No scheduler, provider plan, runtime, test, state format, public API, provider
+call, dependency, or deletion is added by #620.

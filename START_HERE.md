@@ -1394,3 +1394,11 @@ names the caller-owned source and exact logical/overlap-padded ranges, while
 recognition materializes and removes only its active transport clip. This keeps
 the split visible and resumable without persistent chunks, a job owner, or a
 generic media-plan framework. It is documentation-only.
+
+#620 reads nested provider "epochs" as initial fixed fan-out only. Every lane
+is serial and may advance after its own slot settles, while other lanes continue
+independently. Original batch indexes control merged output and sparse resume
+state; there is no global barrier, cross-lane rescue, work stealing, persisted
+epoch, or completion-order output. The implementation slice still must settle
+how lane count meets the existing concurrency bound and how a resumed call
+initializes lane preference. No scheduler or runtime API exists yet.

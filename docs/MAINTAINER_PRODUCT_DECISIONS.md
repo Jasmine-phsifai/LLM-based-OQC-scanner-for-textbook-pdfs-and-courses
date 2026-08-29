@@ -923,15 +923,16 @@ created. Published retained frames are caller-owned. The old video recognition
 and journal family remains frozen until merged image/audio publication and both
 resume paths are proven, then is deleted in the same transition.
 
-Three implementation-time details are deliberately not hidden inside the fixed
+Two implementation-time details remain deliberately open inside the fixed
 choices below: how a partial merged Markdown is returned or raised after all
-slots run, whether nested lanes advance independently or through a global epoch
-barrier, and how multiple exact adapter-settings objects bind to provider-model
-values. Current recommendations are respectively partial atomic publication
-plus one terminal typed error, lane-local sequential progress with parallel
-lanes and no barrier, and delaying the binding shape until the second live
-transport proves it. None permits secrets, generic parameter lists, or mutable
-clients inside `ProviderModel`.
+slots run, and the exact public constructor/duplicate rules for binding exact
+adapter settings to provider-model values. #620 closes the scheduling reading:
+nested lanes are fixed, serial within a lane, and advance independently between
+lanes; "wait respectively" is not a global epoch barrier. The exact admission
+rule when lane count and an execution bound differ waits for the nested-lane
+consumer rather than creating another scheduler knob now. None of these choices
+permits secrets, generic parameter lists, or mutable clients inside
+`ProviderModel`.
 
 The latest instruction resolves two former choices. The duplicated video
 recognition/journal product is abandoned after its image/audio replacement gate;
