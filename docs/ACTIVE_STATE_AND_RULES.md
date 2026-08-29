@@ -14,17 +14,19 @@ file never overrides a higher-ranked one.
 
 ```text
 1. docs/ACTIVE_STATE_AND_RULES.md     This file. Current truth and rules.
-2. docs/plan_phase1_maturation_and_phase2_audio.md
-                                      Retained detailed Stage M/A plan; #065 in
-                                      this file supersedes conflicting order or
-                                      provider direction.
-3. docs/plan_phase1_defects_and_provider_split.md
+2. docs/plan_provider_entity_batch_refactor.md
+                                      Current discussion-paused provider/media
+                                      board; section 0 controls ordering.
+3. docs/plan_phase1_maturation_and_phase2_audio.md
+                                      Retained detailed Stage M/A plan; the
+                                      current board supersedes conflicting order.
+4. docs/plan_phase1_defects_and_provider_split.md
                                       Stage 1 history; its standalone provider
                                       split is superseded by executable slices.
-4. docs/ocrllm_library_go_no_go.md    Execution contract, gates, boundaries.
+5. docs/ocrllm_library_go_no_go.md    Execution contract, gates, boundaries.
                                       Its dated verification log is history.
-5. MIGRATION_STATUS.md / START_HERE.md  Navigation copies of this state.
-6. docs/phase*, *_decision_*, *_checkpoint_*
+6. MIGRATION_STATUS.md / START_HERE.md  Navigation copies of this state.
+7. docs/phase*, *_decision_*, *_checkpoint_*
                                       Immutable historical records. Never cite
                                       them as current state.
 ```
@@ -707,8 +709,11 @@ See `docs/plan_phase1_maturation_and_phase2_audio.md`.
 
 ## #065 Unified Execution Queue
 
-This is the only current execution order. The shipped public product recognizes
-images through built-in DashScope, native Google GenAI, or an injected vision provider, supports local
+**Historical queue.** This was the sole current execution order when #065 was
+written. Section 0 of `docs/plan_provider_entity_batch_refactor.md` now controls
+provider/media ordering; the body below remains implementation history and
+evidence. The shipped public product recognizes images through built-in
+DashScope, native Google GenAI, or an injected vision provider, supports local
 OCR, file-backed image checkpoint/resume, and a fail-fast batch API whose
 top-level container must be an exact `tuple`. Each tuple item retains the
 existing atomic path or grouped `Sequence` source contract. It also has an experimental, memory-only native
@@ -12859,3 +12864,18 @@ float persistence, old-state migration, or default value is introduced. #644
 changes decision wording only; runtime, API, planner, state, tests, providers,
 media, frozen source areas, deletion timing, and the maintainer's answer remain
 unchanged.
+
+## Current working update: #645 repairs current navigation authority pointers
+
+The opening navigation in `docs/MAINTAINER_PRODUCT_DECISIONS.md`, this file's
+document-precedence table, the current read order in `START_HERE.md`, and the
+package editing entry in `src/ocrllm/AGENTS.md` now agree: this file remains
+authoritative, and section 0 of `docs/plan_provider_entity_batch_refactor.md`
+holds the discussion-paused current provider/media board. Two older START_HERE
+checkpoints now identify `#065 Unified Execution Queue` as their then-current
+order rather than silently presenting it as the current order today.
+
+This is a bounded navigation correction, not a copied queue or a new
+architecture summary. The #065 body remains historical evidence. No maintainer
+decision, runtime, API, provider, media, state, test, frozen source area, or
+deletion gate changes.

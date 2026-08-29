@@ -28,9 +28,12 @@ Read in this order:
 docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
 docs/MAINTAINER_PRODUCT_DECISIONS.md  Maintainer choices preserved across handoffs;
                                       scope changes still require authority updates.
+docs/plan_provider_entity_batch_refactor.md
+                                      Current discussion-paused provider/media
+                                      board; section 0 controls ordering.
 docs/plan_phase1_maturation_and_phase2_audio.md
-                                      Retained Stage M/A detail; authority #065
-                                      controls current ordering and providers.
+                                      Retained Stage M/A detail; the current
+                                      provider/media board supersedes conflicts.
 docs/plan_phase1_defects_and_provider_split.md
                                       Stage 1 history; standalone Stage 2 was
                                       superseded by executable slices.
@@ -220,7 +223,7 @@ clean archive ran 1325 tests with one expected skip, built a 202,692-byte wheel,
 and passed dependency-empty base import plus audio, image, DashScope, Google,
 combined audio+Google, and installed public PDF profiles without provider calls.
 
-The ordered current work is `#065 Unified Execution Queue` in
+At that checkpoint, the ordered work was `#065 Unified Execution Queue` in
 `docs/ACTIVE_STATE_AND_RULES.md`. Its bounded legacy-provider audit and native
 `google-genai` direct-Python image slice are complete. The #067 live gate found
 37 current models; `gemini-2.5-flash` completed one image and one eight-image
@@ -792,9 +795,10 @@ Preserve
 bytes, SHA-256
 `6f0454d634dbe76f68f29c07a4c0ced4a047c080e46bb75dda2cb84ffca3a96b`.
 The clean Git-archive gate at `0278b66` is historical evidence for the image and
-worker boundaries. The current allowed work follows the #065 queue in the
-authority file. The detailed maturation/audio plan is retained as history and
-bounded design evidence where it does not conflict with that queue.
+worker boundaries. The allowed work at that checkpoint followed the #065 queue
+in the authority file. The detailed maturation/audio plan is retained as
+history and bounded design evidence where it does not conflict with current
+authority.
 
 The active library has a region-bound in-memory credential scheduler and
 request/batch image resume. Candidate switching is opt-in, bounded,

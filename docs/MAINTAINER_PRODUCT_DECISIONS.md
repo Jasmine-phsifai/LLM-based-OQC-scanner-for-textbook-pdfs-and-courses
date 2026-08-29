@@ -6,9 +6,11 @@ still decide what is implemented. When an older plan conflicts with a decision
 below, agents must surface the conflict and update the active authority before
 implementing the older plan.
 
-The current ordered execution queue is `#065 Unified Execution Queue` in
-`ACTIVE_STATE_AND_RULES.md`. This file constrains that queue but does not copy
-or independently reorder it.
+[`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md) remains authoritative.
+Current provider/media implementation order is section 0 of
+[`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md),
+and runtime implementation remains discussion-paused. This file preserves
+maintainer constraints but does not copy or independently reorder that board.
 
 ## Planning and documentation
 
