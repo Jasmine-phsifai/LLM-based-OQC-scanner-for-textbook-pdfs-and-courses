@@ -11567,3 +11567,32 @@ No runtime source, test source, dependency, public API, provider-model type,
 preset, generation call, legacy source, frozen boundary, or deletion changed.
 Focused credential precedence, catalog filtering/cleanup, and catalog-failure
 call-accounting regressions are **3 passed in 0.16s**.
+
+## Current working update: #599 selects DashScope as the first proof from live evidence
+
+#599 is a documentation-only correction of the proposed transport order; the
+maintainer's implementation pause remains active. After the three-minute
+boundary, one disposable process read the nonempty legacy-QSettings Google key
+and enabled WinINET proxy without printing either value. It set uppercase
+`HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` only for its lifetime, confirmed the
+proxy endpoint was TCP-reachable, and called public
+`list_google_genai_models()` exactly once with a 30-second timeout.
+
+The correctly routed catalog call returned typed
+`PROVIDER_REQUEST_INVALID` / request scope after about 5.2 seconds. It made no
+generation, upload, `models.get`, `count_tokens`, or retry call and produced no
+catalog count or candidate-membership result. This does not prove that
+`gemini-2.5-flash` is absent or that native Google is unusable. It does prove
+that Google cannot currently close the live-catalog entry gate required for the
+first provider-model proof. The recommendation is now DashScope
+`qwen3.5-ocr` first, using its existing exact settings and prior current-catalog
+formula-board success, then native Google after one later catalog succeeds.
+
+The live failure also exposed that standalone `list_google_genai_models()` does
+not attach a safe `provider_operation`, although the actual image recognition
+adapter already does. This is a narrow existing-library observability defect,
+not permission to build retry, proxy, or provider-model machinery; it is the
+next eligible atomic repair. No runtime source, test source, dependency, public
+API, preset, legacy source, frozen boundary, or deletion changed in #599.
+Focused credential precedence, catalog filtering/cleanup, and catalog-failure
+call-accounting regressions remain **3 passed in 0.16s**.

@@ -386,7 +386,7 @@ vision-call boundary, operation adapters, tests, and prior live evidence. It
 found no additional provider-model field or framework decision that must block
 the first internal proof.
 
-**Route A (recommended): native Google image first.** Use exact candidate
+**Route A (initially recommended, now deferred): native Google image first.** Use exact candidate
 `gemini-2.5-flash` only if live discovery still serves it. The active and legacy
 built-in Google paths already use native `google-genai`; the exact current
 adapter owns catalog validation, request construction, canonical errors, token
@@ -395,12 +395,13 @@ secret, so this is the smallest way to prove that durable model identity and
 runtime settings remain separate. Existing bounded evidence already covers one
 and eight-image requests plus independent audio input for this model.
 
-**Route B: DashScope image first.** Use exact `qwen3.5-ocr` through the existing
+**Route B (recommended after #599): DashScope image first.** Use exact `qwen3.5-ocr` through the existing
 OpenAI-compatible DashScope adapter. It has the strongest direct formula-board
 success evidence, but its region, endpoint, thinking, high-resolution option,
-and optional credential pool make it a broader first settings seam. Under Route
-A it becomes the second transport proof, where those differences can challenge
-the first boundary instead of entering it pre-emptively.
+and optional credential pool make it a broader settings seam. The first slice
+still receives those values through existing exact `DashScopeSettings`; they do
+not enter durable model identity merely because DashScope is first. Native
+Google becomes the second transport proof after its catalog works again.
 
 #598 performed the required catalog-only refresh attempt without lifting the
 implementation pause. The existing `list_google_genai_models()` path made one
@@ -411,8 +412,17 @@ was enabled and its endpoint was reachable, but the child Python process had no
 `gemini-2.5-flash` is absent and does not disqualify Route A. The next live
 probe must pass the already-running system proxy to one child process through a
 temporary environment, make one catalog request, emit only count and exact
-candidate membership, and discard the copied key/proxy environment. It must not
-add automatic Windows-proxy discovery to the library or retry generation.
+candidate membership, and discard the copied key/proxy environment.
+
+#599 performed exactly that corrected probe. The proxy endpoint was reachable,
+the disposable process received only temporary uppercase proxy variables, and
+one `models.list()` call returned typed `PROVIDER_REQUEST_INVALID` / request
+scope after about 5.2 seconds. There was no generation, upload, other catalog
+operation, or retry. This does not prove that `gemini-2.5-flash` is absent, but
+it does leave Route A unable to satisfy its current-catalog entry gate. Route B
+is therefore the evidence-backed first proof; Google follows after a later
+catalog succeeds. Do not add automatic Windows-proxy discovery to the library
+or retry generation to force the former order.
 
 After authorization, the first slice is limited to:
 
@@ -423,7 +433,8 @@ After authorization, the first slice is limited to:
    operation adapter;
 3. focused validation, secret-safe representation, capability-mismatch,
    resolver, response/usage, and typed-error regressions; and
-4. one live-discovered, repo-owned formula-board request through that consumer,
+4. one live-discovered DashScope `qwen3.5-ocr` request for a repo-owned formula
+   board through that consumer,
    with at most one generation call, no retry, fallback, model substitution, or
    second provider.
 

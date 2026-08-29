@@ -1270,14 +1270,15 @@ provider call, or test source changed.
 **#597 records the first implementation entry without lifting the pause.** Two
 read-only audits and the maintainer review found no unresolved field, routing,
 output, retry, token, or resume decision blocking the first internal
-provider-model proof. The recommended order is native Google
+provider-model proof. At #597 the preliminary order was native Google
 `gemini-2.5-flash` first, contingent on current catalog membership, then
 DashScope `qwen3.5-ocr`. Google is the narrower first settings seam and matches
 the native transport already proven in both active and legacy code; DashScope
 then tests whether region, endpoint, thinking, high-resolution options, and
 credential-pool data remain outside durable model identity. The alternative is
 DashScope first because it has the most direct formula-board success evidence.
-No implementation order is authorized until the maintainer selects it.
+#599 below supersedes that preliminary order. No implementation order is
+authorized until the maintainer selects it.
 
 The authorized first slice, whichever transport is selected, contains one
 internal complete `ProviderModel`, one controlled adapter branch, one internal
@@ -1295,6 +1296,19 @@ membership. One later probe may copy the active proxy into one temporary child
 environment and report only catalog count plus exact candidate membership. It
 does not authorize library-level proxy discovery, a second generation attempt,
 or implementation of the replacement API.
+
+**#599 changes the recommendation from Google-first to DashScope-first without
+authorizing implementation.** The corrected one-shot Google catalog probe used
+the enabled, reachable system proxy only in a disposable process and returned
+typed `PROVIDER_REQUEST_INVALID` / request scope after about 5.2 seconds. It
+made zero generation calls and was not retried. This does not establish model
+absence, but it leaves the Google candidate unable to pass the current-catalog
+entry gate. DashScope `qwen3.5-ocr` now supplies the first internal proof because
+it already has current catalog plus formula-board success evidence; native
+Google becomes the second transport proof after its catalog succeeds. Existing
+exact provider settings remain separate in both cases. Do not move region,
+endpoint, thinking, high-resolution, or credential-pool data into
+`ProviderModel` merely because DashScope is first.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
