@@ -932,10 +932,10 @@ product choices remain open:
    common interval the minimum positive integer default across all candidates
    (recommended), or is an explicit interval required? Explicit positive
    minutes and `-1` whole-file mode always win.
-7. Are retry rules reduced to finite extra retries, wait seconds, and reporting
-   severity with one universal "exhausted means record and advance" behavior
-   (recommended), or do `error` / `next` / `current` retain distinct control
-   meanings that still need to be specified?
+7. Are retry rules reduced to finite `extra_retries` and `wait_seconds`, with
+   outcome reporting kept outside the rule and one universal "exhausted means
+   record and advance" behavior (recommended), or do `error` / `next` /
+   `current` retain distinct control meanings that still need to be specified?
 
 **#572 evidence for choices 1 and 2.** Both the active library's same-provider
 model-candidate loop and the legacy DashScope/Google candidate loops stop at
@@ -1004,6 +1004,31 @@ depend on provider scheduling; explicit-only contradicts provider-derived
 splitting. Do not add adaptive shrinking, binary search, hidden whole-to-split
 fallback, or per-provider window queues. This is not maintainer confirmation;
 choice 6 remains open.
+
+**#577 evidence for choice 7.** Active Google and DashScope adapters map raw
+SDK/HTTP evidence to canonical OCRLLM codes before any policy decision. A raw
+Google `429` can mean model quota exhaustion or temporary provider rate
+limiting, and `503` can mean unavailability or high-demand limiting, so raw
+numbers cannot be cross-vendor retry keys. Active adapters make one call and
+the existing disposition object reports evidence only; it is not a retry
+engine. Legacy Google confirms that useful behavior is finite and classified,
+and also exposes a naming trap: its `max_retries` value counts total attempts.
+Recommended: rules are keyed by canonical code and contain only non-negative
+finite `extra_retries` plus non-negative `wait_seconds`; zero means no call
+beyond the initial attempt, and waiting occurs only before an extra same-model
+attempt. A missing rule means zero extra retries. Success stops immediately;
+exhaustion records the last safe failure and advances immediately, while an
+empty remaining lane is a resumable batch failure. Capability, source,
+configuration, and preflight failures remain outside the table and cause zero
+provider calls. Reporting severity is not a rule field: choices 1 and 2 already
+decide whether the final outcome is a completed result with bounded failure
+evidence or an incomplete error. Structured provider retry-delay hints remain
+deferred until one live adapter path needs them; do not add a generic hint
+parser, exponential engine, unbounded retry, or learned policy. The supplied
+`error` / `next` / `current` examples all have the same eventual transition,
+so preserving their labels would duplicate state rather than express behavior.
+This is not maintainer confirmation; choice 7 remains open and no runtime was
+implemented.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

@@ -10937,3 +10937,33 @@ provider value, splitter, fallback, sidecar, runtime, test, dependency, legacy,
 frozen directory, or migration capability changed. The existing interval,
 whole, persistence, resume and video-audio-state regressions are **119 passed
 in 0.60s**.
+
+## Current working update: #577 removes duplicate retry-policy labels
+
+#577 audited the active Google/DashScope canonical error mapping, the
+non-executing provider disposition evidence, the current single-call adapters,
+and legacy Google/Codex retry and switch behavior. Raw HTTP codes are not
+portable policy keys: the same Google status can represent model quota,
+provider rate limiting, ordinary unavailability, or a request problem after
+structured evidence is considered. Future rules therefore begin only after a
+vendor adapter produces a canonical OCRLLM error and safe scope.
+
+The decision-ready Route A gives each canonical-code rule only finite
+`extra_retries` and `wait_seconds`. Zero extra retries means exactly the initial
+call; waiting occurs only before an additional call to the same provider/model.
+After success the lane stops. After exhaustion it records the last safe failure
+and advances immediately; no remaining candidate leaves an honest resumable
+batch failure. Missing rules mean zero extra retries. Capability, source,
+configuration, and preflight errors remain outside the retry table and preserve
+zero-provider-call behavior. Reporting severity is removed because the result
+contract already decides completed-with-warning versus incomplete-error.
+
+The proposed `error`, `next`, and `current` examples all end with the same
+finite-retry-then-advance transition, so keeping all three would duplicate
+state. Generic retry-hint parsing, exponential backoff, infinite waits, learned
+health policy, and post-exhaustion delay are not part of the first slice.
+Choice 7 remains open for explicit maintainer confirmation. This iteration is
+documentation only; no provider class, dispatcher, retry engine, mapping,
+public API, runtime, test, dependency, legacy, frozen directory, or migration
+capability changed. Canonical mapping, provider-boundary, candidate-recognition,
+and lightweight-import regressions are **225 passed in 3.37s**.

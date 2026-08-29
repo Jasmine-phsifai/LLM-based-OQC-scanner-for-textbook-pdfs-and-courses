@@ -341,10 +341,11 @@ Implementation remains paused until these choices are explicit:
    positive integer or `-1` whole-file request wins. Alternative: require an
    explicit interval whenever more than one provider is supplied.
 7. **Retry rule meaning.** Recommended: every canonical-code rule contains
-   only finite extra retries, wait seconds, and reporting severity; exhaustion
-   always records the last failure and advances to the next provider. Keep
-   `error` / `next` / `current` only if the maintainer assigns them distinct
-   control behavior that is not already expressed by those fields.
+   only finite `extra_retries` and `wait_seconds`. Reporting is determined by
+   the recognition outcome, not repeated in retry configuration. Exhaustion
+   records the last failure and advances to the next provider. Keep `error` /
+   `next` / `current` only if the maintainer assigns them distinct control
+   behavior that is not already expressed by those fields.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -619,6 +620,67 @@ the shipped API during the implementation pause.
 Choice 6 remains awaiting explicit maintainer confirmation. This evidence does
 not authorize `split_audio`, provider defaults, audio batching, fallback,
 sidecar changes, or runtime implementation.
+
+### 6.6 Evidence for choice 7 (#577)
+
+The active Google and DashScope adapters already prove that a raw HTTP number
+is not a portable retry key. Google `429` may become model-scoped quota
+exhaustion or provider-scoped rate limiting, while `503` may become ordinary
+unavailability or high-demand rate limiting. DashScope likewise combines the
+structured provider code, status, and safe message evidence before producing a
+canonical OCRLLM provider error. Therefore a future `ProviderModel` rule is
+keyed by the canonical code after adapter mapping; raw status and provider code
+remain bounded diagnostic details.
+
+The active adapters deliberately make one request per adapter call. The
+existing `ProviderErrorDisposition` describes evidence such as retry,
+cooldown, credential quarantine, and failure scope, but does not execute those
+actions. The current image candidate loop only advances for a narrow set of
+model-scoped canonical failures and stops at first success. A replacement
+dispatcher must not layer another ambiguous action vocabulary over these
+facts.
+
+Legacy Google supplies the real behavior worth retaining selectively: it
+distinguishes same-model retry from model switching, uses finite attempts, can
+honor a structured provider retry delay, and changes models only for classified
+failures. Legacy's `max_retries` name actually counts total attempts, while the
+new proposal says "retry six times" after an initial call. The future field is
+therefore named `extra_retries`: zero means one initial call only; `N` means at
+most `N` additional calls to that same provider/model. `wait_seconds` applies
+before each additional call. There is no post-exhaustion sleep.
+
+Route A is the smallest complete rule:
+
+1. Map the vendor failure to one canonical OCRLLM code and safe scope before
+   consulting policy.
+2. Look up that canonical code in the selected `ProviderModel`. A missing rule
+   means zero extra retries. All counts are non-negative and finite; no `-1`,
+   unbounded wait, exponential engine, or dynamically learned policy exists.
+3. Retry only the same provider/model for the configured additional calls. A
+   future adapter may expose a structured vendor retry delay only after one
+   live path proves it; the first slice does not add a generic hint parser.
+4. After success, stop immediately. After exhaustion, retain only the last
+   safe failure for this provider and advance immediately to the next candidate.
+   If the lane has no candidate left, the batch remains an honest resumable
+   failure.
+5. Capability, source, configuration, and preflight validation failures are
+   outside this retry table and retain their zero-provider-call behavior.
+6. Outcome reporting follows choices 1 and 2: completed recognition returns
+   normally with bounded earlier-provider evidence; incomplete recognition is
+   an error. Retry configuration has no `severity` field.
+
+The proposed `error`, `next`, and `current` labels do not currently describe
+three transitions: every example performs finite same-candidate retries and
+then advances. Retaining them would duplicate retry count, exhaustion, and
+outcome-reporting semantics. Route B keeps an action label or adds independent
+`retry_current`, `advance_candidate`, and reporting controls. It is justified
+only if a concrete provider error must terminate a lane or remain on one
+candidate after its finite retries; no supplied example or current consumer
+requires that branch.
+
+Choice 7 remains awaiting explicit maintainer confirmation. This evidence does
+not authorize a retry engine, provider dispatcher, new error mapping, retry
+hint parser, preset, or runtime change.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
