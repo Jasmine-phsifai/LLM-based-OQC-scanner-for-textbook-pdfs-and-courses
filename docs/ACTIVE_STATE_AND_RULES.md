@@ -12835,3 +12835,27 @@ authority or chronological diary.
 #643 changes navigation documentation only. It does not change runtime, public
 API, tests, providers, media, state, dependencies, frozen source areas, deletion
 timing, or any pending maintainer choice.
+
+## Current working update: #644 separates caller audio units from the open provider-default unit
+
+A planned real-video no-crop replay was cancelled before archive access because
+#570 already proves provider-free inspect/frame/audio extraction on real archive
+video, #608 proves 104 retained real-lecture JPEGs all decoded at the complete
+1920x1080 display size, and #609 separately reviews representative source
+content. Repeating an ordinary MP4 would add no new no-crop or lifecycle
+evidence. The negative-feedback algorithm remains the maintainer's later tricky
+review and is not tuned here.
+
+The bounded replacement task instead corrects three stale broad statements in
+`docs/MAINTAINER_PRODUCT_DECISIONS.md`. Exact positive integer minutes and the
+caller-only `-1` sentinel remain fixed for explicit caller input. They do not
+silently settle the future `ProviderModel` default type. Earlier #599/#604/#618
+wording now points to #632, whose only open behavior remains whether a provider
+recommendation of `7.5` is valid and produces exact 450-second slices while
+explicit caller `interval_minutes=7.5` remains invalid.
+
+No rounding, fractional caller input, generalized duration abstraction, binary-
+float persistence, old-state migration, or default value is introduced. #644
+changes decision wording only; runtime, API, planner, state, tests, providers,
+media, frozen source areas, deletion timing, and the maintainer's answer remain
+unchanged.

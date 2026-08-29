@@ -1340,13 +1340,15 @@ exact provider settings remain separate in both cases. Do not move region,
 endpoint, thinking, high-resolution, or credential-pool data into
 `ProviderModel` merely because DashScope is first.
 
-The following are not open implementation shortcuts: audio intervals are
-integer minutes; `-1` means no split only at the call boundary; full frames are
-retained; image/audio providers are separate; callers compose the visible video
-steps and no replacement video black box is planned; video resume delegates to
-image and audio batch resume; repair is experimental and does not block
-deletion; caller media is never deleted; failed batches retain one terminal
-failure; and social-media work stays frozen.
+The following are not open implementation shortcuts: explicit caller audio
+intervals use integer minutes and `-1` means no split only at the call boundary;
+full frames are retained; image/audio providers are separate; callers compose
+the visible video steps and no replacement video black box is planned; video
+resume delegates to image and audio batch resume; repair is experimental and
+does not block deletion; caller media is never deleted; failed batches retain
+one terminal failure; and social-media work stays frozen. This paragraph does
+not close the later `ProviderModel` default-unit question; #632 below is the
+current interpretation.
 
 **#604 reopens only contradictions introduced by the latest detailed proposal.**
 The overall design is still discussion-only. The old video recognition/journal
@@ -1357,8 +1359,10 @@ own one ordered Markdown and one sidecar, and never share a target.
 
 No implementation starts until the needed subset of these questions is settled:
 
-1. Does the latest `float` wording intentionally overturn integer-only provider
-   audio minutes, or was it a type slip? Current authority remains integer-only.
+1. Does the latest `float` wording intentionally create an exact fractional
+   provider default while explicit caller intervals remain integer-only, or was
+   it a type slip? #632 below narrows this to the exact `7.5 -> 450 seconds`
+   behavior; this older checkpoint does not answer it.
 2. Does "prebuild Google and DashScope models" mean the existing fixed small
    live-proven preset set, or does it intentionally reopen the rejected full
    catalog mirror?
@@ -1468,11 +1472,11 @@ candidates once, then freezes ordered groups/windows for fallback and resume.
 The merged image recognizer consumes already-batched exact tuples and does not
 also own an unbatched default-resolution path. Exact image groups are the plan;
 do not add `ImageBatchPlan`, credentials/settings, a provider tree, lane-local
-grouping, or adaptive rebatching. Audio remains integer-minute only unless the
-maintainer explicitly reverses it. Current 30-second overlap requires
-logical/actual range metadata; bare paths are insufficient. #619 selects the
-small audio-specific descriptor below rather than a generic media-plan class or
-hidden recognition-owned splitting.
+grouping, or adaptive rebatching. Explicit caller audio input remains integer-
+minute only; the future provider-default type remains the #632 question. Current
+30-second overlap requires logical/actual range metadata; bare paths are
+insufficient. #619 selects the small audio-specific descriptor below rather
+than a generic media-plan class or hidden recognition-owned splitting.
 
 **#619 selects descriptor-only public audio splitting.** `split_audio` returns
 an exact tuple of immutable `AudioSlice` values containing caller-owned source,
