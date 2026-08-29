@@ -157,6 +157,83 @@ that remains the already documented #170 limitation. It does prove that the
 content in this lecture, so no opening-frame pin, OCR prepass, second detector,
 or threshold change is justified by #608/#609.
 
+### #610 discussion checkpoint: prune the proposed provider/media destination
+
+The maintainer's latest proposal is discussion input, not runtime
+authorization. Read against the shipped source, it confirms the destination
+already recorded below: visible inspect/extract/batchify/recognize composition,
+separate image and audio outputs, merged ordered slots, image/audio resume
+reuse, exact provider-model identities, flat fallback lanes, fixed nested
+lanes, per-`(vendor, model)` usage, experimental repair, and eventual deletion
+of the video recognition/journal family.
+
+The deletion target is the duplicated **recognition** chain, not the readable
+provider-free media implementation. The current public
+`extract_video_frames()` owns one coherent operation: validate and snapshot one
+video, sample comparison thumbnails, select representatives with bounded
+negative feedback, and atomically publish the selected complete JPEG set. Its
+scan, select, and write helpers already have separate files and responsibilities.
+Do not export those internal helpers or require callers to carry thumbnail
+candidates merely to make the public workflow look more granular. A new public
+boundary is justified only when a real caller needs to inspect or alter an
+intermediate result. The obsolete family remains the public
+`recognize_video_frames()` / `recognize_video()` /
+`recognize_video_to_markdown()` paths plus their result composition and video
+journal machinery, after the replacement deletion gate is met.
+
+Provider data is also pruned by lifetime. One immutable `ProviderModel` may
+hold exact vendor/model identity, task capabilities, applicable recommended
+media scalars, a controlled adapter ID, and later proven finite canonical-error
+rules. Secrets, base URL/region, Chat-versus-Responses choice, effort,
+high-resolution flags, timeout, cancellation, prompts, call counters,
+last-success lane state, accumulated errors, and token totals do not all share
+model lifetime. They remain exact adapter settings, call inputs, or run state;
+there is no generic call-parameter `list` or dictionary on the model value.
+
+Raw HTTP numbers remain adapter evidence, not portable retry keys. Current code
+already proves why: native Google HTTP 400 can be provider-scoped
+`FAILED_PRECONDITION`, request-scoped `INVALID_ARGUMENT`, credential failure,
+or unsupported model modality, while DashScope status handling also depends on
+its provider code. Each adapter first emits a canonical OCRLLM error. A later
+fallback executor may apply only finite `extra_retries` and `wait_seconds` to
+that canonical code. The proposed numerical counts are hypotheses until a
+bounded real failure supports them; the overlapping `error` / `next` /
+`current` labels remain unnecessary because exhaustion always either advances
+an unresolved lane or ends it.
+
+Five wording choices therefore remain open, but are now narrowly framed:
+
+1. Keep the public splitter and durable identity in exact integer minutes, or
+   deliberately permit a provider's recommended scalar to be fractional. The
+   current recommendation is integer minutes because accepting `float` without
+   fractional-window behavior would create hidden rounding.
+2. Treat `default_image_batch_size=1` for every non-thinking model as a hard
+   rule, or keep it preset-specific and evidence-backed. The current
+   recommendation is evidence-backed: thinking is not the causal image/output
+   limit, although a specific non-thinking preset may still use one.
+3. Interpret "prebuild Google and DashScope models" as a small live-proven
+   preset set or a volatile full-catalog mirror. The current recommendation,
+   consistent with the no-indefinite-model-maintenance decision, is a small
+   preset set plus discovery and explicit construction.
+4. Keep caller-invoked extraction caller-owned, or authorize a distinct private
+   job/temp owner. With no replacement `recognize_video` wrapper, the phrase
+   "media created by recognize video" has no library owner and cannot authorize
+   deletion. The current recommendation is caller ownership; an application
+   composing the steps may clean its own files.
+5. Design the full eventual schema in this document while adding runtime fields
+   with real consumers, or instantiate every unused retry/audio field in the
+   first class. The current recommendation is full design review plus staged
+   internal runtime fields, followed by public export only when the first
+   merged consumer stabilizes the shape.
+
+A provider-rejected image count does not cause hidden re-batching. The settled
+batch plan and completed slots remain resumable; the adapter returns its honest
+canonical failure with safe provider/model/batch evidence. Whether flat
+fallback may advance on that exact failure waits for real vendor mapping and
+the fallback slice, rather than a new speculative `batch-too-large` framework.
+No runtime source, test, dependency, public API, provider call, or deletion is
+authorized by #610.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later

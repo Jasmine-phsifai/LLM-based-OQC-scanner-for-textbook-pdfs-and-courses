@@ -11912,3 +11912,43 @@ and `ocrllm-i609-` prefix, removed that one directory, and left zero matching
 scratch roots. No runtime, test, dependency, public API, provider, state,
 legacy source, frozen boundary, capability claim, or five-decision status
 changed.
+
+## Current working update: #610 prunes the provider/media proposal without implementation
+
+The maintainer supplied a detailed discussion-only destination for visible
+video media steps, merged image/audio Markdown, image/audio resume reuse,
+provider-model identities, ordered fallback, fixed nested API-pool lanes,
+finite retries, and model-level usage. #610 reconciled that proposal with the
+shipped source and `docs/plan_provider_entity_batch_refactor.md`; it did not
+authorize runtime work.
+
+The eventual deletion target is the duplicated video recognition/journal
+family, not the provider-free extraction core. Current
+`extract_video_frames()` is one coherent caller-visible retention operation,
+while scanning, negative-feedback selection, and atomic complete-JPEG writing
+already live in separate single-responsibility files. Exporting all three
+helpers would expose thumbnail candidates and ordering rules without a proven
+caller. Keep the public extraction operation and remove the recognition family
+only after merged image, merged audio, and resume gates pass.
+
+The provider-model boundary remains lifetime-based. Durable model facts do not
+absorb secrets, exact endpoint/settings, call options, counters, lane memory,
+errors, or token totals. Invocation uses one controlled adapter ID plus exact
+adapter settings; no executable pointer or generic parameter bag is approved.
+Adapters continue to map vendor SDK/HTTP evidence to canonical OCRLLM errors
+before any finite retry rule. Existing Google and DashScope mappings prove one
+HTTP number is not a portable policy key, so the proposed raw-status counts are
+unverified examples rather than defaults.
+
+The five #607 wording choices remain genuinely open and have narrower
+recommendations: preserve integer-minute audio planning unless fractional
+windows are intentionally supported; use evidence-backed image batch defaults
+rather than deriving all non-thinking models as one image; ship a small
+live-proven preset set rather than a catalog mirror; keep public extraction
+caller-owned while no replacement video wrapper exists; and design the eventual
+schema in documentation while adding internal runtime fields only with real
+consumers. A provider-rejected batch count must fail honestly without hidden
+re-batching and leave settled plan/state resumable; its fallback eligibility
+waits for an observed canonical mapping. No runtime, test, dependency, public
+API, provider call, credential, state, legacy source, frozen boundary, or
+capability claim changed.
