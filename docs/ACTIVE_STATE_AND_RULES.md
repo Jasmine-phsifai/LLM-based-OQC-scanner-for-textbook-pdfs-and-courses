@@ -12283,6 +12283,25 @@ error state solely to reconstruct a preference is rejected. #622 changes no
 runtime, API, state schema, fingerprint, test, provider, dependency, frozen
 boundary, or deletion.
 
+## Current working update: #623 makes provider topology exact-list only
+
+Future provider arguments accept exactly one leaf, one nonempty exact built-in
+list of leaves, or one nonempty exact built-in list of nonempty exact built-in
+list lanes. Planning requires exact `ProviderModel` leaves; recognition and
+resume require exact `ProviderBinding` leaves. Provider tuples, list subclasses,
+generators, arbitrary iterables/sequences, empty lanes, mixed depth, depth above
+two collections, and wrong leaf types fail complete preflight before media,
+default resolution, output, or provider work. Media batches remain exact tuples.
+
+The implementation may snapshot a valid public shape once to a private
+tuple-of-tuples and then use only that snapshot. Planning may flatten it only
+to compute the already-decided common minimum; execution preserves lane
+boundaries and order. Do not add a recursive compatibility normalizer, public
+provider-plan object, deep copying, mutation locks, or a second batch
+abstraction. Duplicate-binding behavior remains a later consumer decision.
+#623 changes no runtime, API, test, schema, provider, dependency, media, frozen
+boundary, or deletion.
+
 ## Current working update: #624 rejects only definite same-lane duplicates
 
 Future provider preflight rejects a repeated candidate within one fallback
@@ -12302,21 +12321,20 @@ Every dispatched call and existing `(vendor, model)` token aggregate remains
 honest. #624 changes no runtime, API, test, schema, provider, dependency, media,
 frozen boundary, or deletion.
 
-## Current working update: #623 makes provider topology exact-list only
+## Current working update: #625 gives successful fallback evidence a slot index
 
-Future provider arguments accept exactly one leaf, one nonempty exact built-in
-list of leaves, or one nonempty exact built-in list of nonempty exact built-in
-list lanes. Planning requires exact `ProviderModel` leaves; recognition and
-resume require exact `ProviderBinding` leaves. Provider tuples, list subclasses,
-generators, arbitrary iterables/sequences, empty lanes, mixed depth, depth above
-two collections, and wrong leaf types fail complete preflight before media,
-default resolution, output, or provider work. Media batches remain exact tuples.
+#572/#592 already fixed the broad result rule: complete content returns a normal
+complete result with one warning and ordered provider-failure metadata; only
+unresolved content raises. For a future merged result, each
+`metadata["provider_failures"]` record additionally carries the stable zero-
+based absolute `slot_index` from the immutable media plan, ordered by slot and
+then actual candidate traversal. A one-slot call uses zero.
 
-The implementation may snapshot a valid public shape once to a private
-tuple-of-tuples and then use only that snapshot. Planning may flatten it only
-to compute the already-decided common minimum; execution preserves lane
-boundaries and order. Do not add a recursive compatibility normalizer, public
-provider-plan object, deep copying, mutation locks, or a second batch
-abstraction. Duplicate-binding behavior remains a later consumer decision.
-#623 changes no runtime, API, test, schema, provider, dependency, media, frozen
-boundary, or deletion.
+Do not duplicate media members/ranges/paths, lane/epoch, retry history,
+timestamps, settings/accounts, raw errors, or a success row in each record.
+Vendor, model, canonical code, and the last bounded safe description remain the
+other fields. The media plan/sidecar resolves the slot. One aggregate warning is
+enough, and successful content stays `complete`. No Python-warning contract,
+callback/event channel, public failure type, diagnostics wrapper, or attached-
+result exception is added. #625 changes no runtime, API, test, schema
+implementation, provider, dependency, media, frozen boundary, or deletion.

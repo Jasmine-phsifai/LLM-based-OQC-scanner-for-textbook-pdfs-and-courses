@@ -2917,3 +2917,12 @@ routes and cross-lane reuse remain valid. There is no silent/global deduplicatio
 semantic settings comparison, secret fingerprint, binding registry, or retry-
 budget expansion. Existing call and model-token accounting remains unchanged;
 runtime, APIs, tests, schemas, providers, and media behavior are unchanged.
+
+#625 preserves the already-fixed successful-fallback result contract and closes
+one merged-result association gap without implementation. Each ordered bounded
+`provider_failures` record now includes the immutable media plan's zero-based
+absolute `slot_index`, followed by vendor/model/canonical code/final safe
+description facts; a one-slot call uses zero. It does not duplicate media ranges,
+paths, retries, lanes, settings, raw errors, or success rows, and it adds no
+warning per record, result-plus-error wrapper, callback, or public diagnostics
+type. Runtime, APIs, tests, schemas, providers, and media behavior are unchanged.

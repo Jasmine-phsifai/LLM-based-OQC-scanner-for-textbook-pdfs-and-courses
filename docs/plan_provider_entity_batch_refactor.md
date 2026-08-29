@@ -2136,3 +2136,34 @@ Semantic equality of separately constructed settings, safe settled binding
 labels, globally identical lane policy, and provider-specific quota coordination
 remain deferred until a real consumer proves a need. No runtime, API, test,
 schema, provider, dependency, media, or deletion changes in #624.
+
+## #625 Successful Fallback Records Identify Their Slot
+
+The broad success contract was already fixed by #572/#592: completed content
+returns one ordinary `RecognitionResult(status="complete")`, one bounded human
+warning, and ordered `metadata["provider_failures"]`; only unresolved logical
+content raises. #625 does not reopen that decision or add another result channel.
+
+One merged-result detail was missing. Because one result may contain many image
+groups or audio slices, every successful-fallback failure record also carries
+`slot_index`, the stable zero-based absolute slot index from the immutable media
+plan. A scalar or other one-slot call uses zero. Records are ordered first by
+slot index and then by that slot's actual candidate traversal order. The other
+fields stay exactly vendor, model, canonical code, and the final secret-safe
+bounded description after that candidate exhausts its finite retries.
+
+`slot_index` is sufficient association. Image members, audio logical/actual
+ranges, source paths, filenames, lane/epoch, retry rows, timestamps, settings,
+accounts, raw errors, and winning-provider rows are not copied into every
+failure record. The caller or writer resolves the slot through the already-
+fixed media plan/sidecar. The single human warning is present only when the
+failure tuple is nonempty; do not add one warning per record or change complete
+content to `partial`.
+
+Python warnings/logging and a callback/event channel are not result contracts:
+they can be filtered, reordered, or lost and would add concurrency, exception,
+and persistence behavior. No public `ProviderFailure` type, diagnostics object,
+attached-result exception, or second accumulator is added. The terminal failed-
+slot accumulator remains separate and contains only genuinely unresolved slots.
+No runtime, API, test, schema implementation, provider, dependency, media, or
+deletion changes in #625.

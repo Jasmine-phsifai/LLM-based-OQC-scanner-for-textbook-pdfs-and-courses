@@ -1432,3 +1432,10 @@ also requires the same settings object. Same model with different settings and
 the same route reused across separate nested lanes remain valid. Do not silently
 or globally deduplicate, compare secrets/mutable settings, or multiply finite
 retry blocks. This decision is documentation-only.
+
+#625 keeps successful fallback as a normal complete result and adds only
+`slot_index` to each ordered bounded `metadata["provider_failures"]` record so a
+merged image/audio result identifies which immutable media slot used fallback.
+The existing plan/sidecar resolves media ranges; no paths, retries, lanes,
+settings, raw errors, callback, diagnostics type, or attached-result exception
+is added. This is documentation-only.

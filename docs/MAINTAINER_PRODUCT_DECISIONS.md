@@ -1518,3 +1518,17 @@ settings to guess semantic equality. Keep actual call counts and the existing
 model-level token aggregate; do not add binding/account billing. The old
 primary-name/candidate silent-dedup compatibility path is not a contract for
 the one-source replacement API.
+
+**#625 adds only stable slot association to successful fallback evidence.** The
+fixed #592 behavior remains: complete content returns normally with one warning
+and ordered `metadata["provider_failures"]`; incomplete content raises. In a
+merged result, every failure record also contains the immutable plan's zero-
+based absolute `slot_index` and records are ordered by slot then actual provider
+traversal. Single-slot recognition uses zero.
+
+The record otherwise stays vendor, model, canonical code, and final bounded
+secret-safe description. Do not copy media paths/ranges/members, retry history,
+lane/epoch, time, settings/account, raw errors, or success rows. Do not add one
+warning per failure, lower a complete result to partial, emit Python warnings as
+the contract, or add callbacks, a diagnostics wrapper, a public attempt type,
+or an attached-result exception.
