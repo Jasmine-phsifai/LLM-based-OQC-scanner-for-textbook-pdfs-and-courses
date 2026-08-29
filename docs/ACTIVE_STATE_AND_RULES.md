@@ -10841,3 +10841,36 @@ registry, catalog behavior, adapter, API call, test, dependency, frozen-file,
 legacy, or migration capability change. The existing DashScope catalog,
 caller-selected-model, and lightweight-import regressions are **23 passed in
 0.93s**.
+
+## Current working update: #574 fixes the decision shape for image batch defaults
+
+#574 audited active image limits, caller-created batch groups, source/request
+fingerprints, slot checkpoints, video grouping, PDF grouping, and the legacy
+PDF/board/video batch-size selection and resume evidence. Across those paths,
+ordered group membership is established before provider dispatch and must not
+be silently reinterpreted after paid work has settled. Legacy PDF explicitly
+stores batch size in checkpoint compatibility.
+
+The decision-ready recommendation is one common resolved image batch size. A
+caller-supplied positive integer wins unchanged. If omitted, one provider uses
+its own positive suggested default; flat and nested provider shapes use the
+minimum positive default across all flattened candidates. The number is
+resolved once before grouping and is persisted with exact ordered group
+membership. Fallback and resume reuse those groups; they do not shrink,
+repack, or recompute them from a new provider order. Flattening for the scalar
+calculation does not allow a nested lane to use another lane's providers.
+
+This minimum is only a conservative default, not a hard capability promise.
+A provider rejection remains an honest provider failure. Changing to a smaller
+batch size starts a new slot plan rather than masquerading as resume. Using the
+first provider can produce immutable groups too large for fallbacks; lane-local
+sizes require a variable-window planner and extra persisted mapping; requiring
+an explicit value contradicts the maintainer's defaulting requirement.
+Adaptive shrinking, binary search, dynamic repacking, per-lane batch queues,
+and throughput optimization are rejected.
+
+Choice 4 remains open for explicit maintainer confirmation. This iteration is
+documentation only: no batchifier, provider, fallback, sidecar schema, public
+API, runtime, test, dependency, frozen-file, legacy, or migration capability
+changed. The existing image-limit, video-group, paid-slot-resume, and bounded
+PDF-group regressions are **50 passed in 1.70s**.

@@ -456,6 +456,64 @@ Choice 3 remains awaiting explicit maintainer confirmation. No preset,
 constructor, discovery API, registry, or adapter change is authorized by this
 audit.
 
+### 6.3 Evidence for choice 4 (#574)
+
+Image `batch_size` owns durable slot boundaries; it is not a provider retry
+parameter. The current active code already resolves the strictest applicable
+image count before grouping video frames, preserves caller-created groups in
+`recognize_batch`, fingerprints ordered image sources and request-affecting
+limits, and rejects mismatched resume identity before dispatch. Current legacy
+PDF, board, and video paths likewise select one batch size before creating
+their ordered batches; legacy PDF checkpoints include that size and reject a
+different plan.
+
+The smallest future rule is:
+
+1. A caller-supplied positive integer wins unchanged. Do not silently clamp it
+   to a provider recommendation. Complete source, output, provider-shape, and
+   requested-task capability validation still happens before dispatch.
+2. When omitted for one `ProviderModel`, use that model's positive
+   `default_image_batch_size`.
+3. When omitted for a flat or nested provider shape, flatten only for this
+   calculation and take the minimum positive `default_image_batch_size` across
+   every candidate. This does not permit fallback across nested lanes.
+4. Resolve the number once before grouping sources. Persist the resolved number
+   and exact ordered group membership in the image-batch sidecar; resume reuses
+   them and does not recalculate from a changed provider list.
+5. Fallback always receives the original group. If a provider rejects its image
+   count, map and record that real provider failure and continue only according
+   to the separately approved fallback rule. Exhaustion leaves a resumable
+   failed slot. Choosing a smaller batch size creates a new plan rather than
+   rewriting an existing resume plan.
+
+The minimum is deliberately a conservative default, not a claimed hard vendor
+limit. A real provider may still reject a request for output, context, quota,
+or undocumented reasons. Conversely, an explicit larger value may succeed.
+OCRLLM reports the actual result instead of silently splitting and replaying a
+possibly paid slot.
+
+The alternatives create worse contracts:
+
+- **First-provider default** makes boundaries depend on list order while a lane
+  may start later batches from its remembered successful provider. It can also
+  hand an oversized immutable group to every fallback candidate after the
+  first.
+- **Lane-local defaults** require variable source windows whose boundaries
+  depend on round-robin assignment. Preserving those windows across fallback
+  and resume needs a lane planner and more state before any live nested-lane
+  consumer exists.
+- **Explicit-only for multiple providers** is simpler but contradicts the fixed
+  requirement that OCRLLM derive a provider-informed default when the caller
+  omits the value.
+
+Do not add adaptive shrinking, binary-search retries, dynamic repacking,
+per-lane batch queues, or a throughput optimizer. One validated integer, one
+ordered tuple of groups, and the existing slot-sidecar direction are enough.
+
+Choice 4 remains awaiting explicit maintainer confirmation. This evidence does
+not authorize a batchifier, fallback dispatcher, sidecar schema, or provider
+implementation.
+
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
 replacement gate rather than preserved as a compatibility line; no deletion is

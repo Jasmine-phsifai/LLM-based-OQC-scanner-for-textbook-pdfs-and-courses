@@ -960,6 +960,18 @@ other IDs, and keep vendor discovery as an untrusted query utility rather than
 a preset generator or registry. This is not maintainer confirmation; choice 3
 remains open and no concrete preset has been selected.
 
+**#574 evidence for choice 4.** Current active and legacy resume paths treat
+ordered batch membership as durable work identity, and legacy PDF checkpoints
+include the chosen batch size. Recommended: an explicit positive integer wins
+unchanged; otherwise resolve one default before grouping as the minimum
+positive `default_image_batch_size` across all flattened candidates, persist
+that resolved size and exact groups, and never recalculate or re-batch them
+during fallback or resume. Flattening here does not allow cross-lane fallback.
+First-provider sizing can create oversized fallback groups; lane-local sizing
+needs a variable-window planner and extra state; explicit-only contradicts the
+maintainer's provider-derived-default requirement. This is not maintainer
+confirmation; choice 4 remains open.
+
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
 retained; image/audio providers are separate; video resume delegates to image
