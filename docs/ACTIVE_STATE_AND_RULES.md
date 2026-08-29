@@ -12514,3 +12514,54 @@ grouping and interval identity come from saved ordinary plans, so the route
 accepts no batch-size, interval, or `resume=True` option. Two decision groups
 remain. #633 changes no runtime, export, API, result/error type, validation,
 state, test, provider call, media, dependency, frozen boundary, or deletion.
+
+## Current working update: #634 reconciles the new proposal without implementation
+
+The maintainer has again paused runtime work and asked for discussion plus
+overdesign pruning. Section 0 of
+`docs/plan_provider_entity_batch_refactor.md` is now the only current decision
+board; older numbered discussions remain evidence, not parallel authority.
+
+Personal source review makes the deletion boundary concrete. The obsolete
+family is the shipped video recognition/orchestration surface:
+`recognize_video`, `recognize_video_to_markdown`,
+`recognize_video_frames`, their branch-job helpers, video journal/state,
+video result composition/publication, `VideoRecognitionOutcome`, and the video-
+specific audio recognizer. Provider-free `inspect_video`,
+`extract_video_frames`, `extract_video_audio`, complete-frame selection, and
+`RetainedVideoFrame` remain. `prepare_video_media` currently implements public
+frame extraction and is not deleted merely because the old recognition family
+also calls it. The recommended migration proves merged image, merged audio, and
+their ordinary resume owners, then removes the old family together without a
+compatibility wrapper; immediate removal before replacement remains a direct
+maintainer choice.
+
+No hidden library video lifecycle exists after that replacement. Public
+extraction output is caller-owned. The library removes only rejected candidate
+frames, snapshots, materialized audio slices, and other temporary artifacts
+created and consumed inside one call. A later Python application job may delete
+the extraction outputs it requested, but Electron does not call providers and
+no library `recognize_video` wrapper returns.
+
+Official catalog evidence strengthens, rather than relaxes, #629. Google's
+[Models API](https://ai.google.dev/api/models) cannot supply input modality,
+plain/detail OCR fitness, OCRLLM media defaults, adapter route, or retry policy.
+DashScope's richer
+[native model-list API](https://help.aliyun.com/zh/model-studio/list-models)
+adds modalities, capability tags, context limits, and pricing but still does
+not supply detail-OCR fitness, OCRLLM recommended grouping/minutes, exact
+adapter route, or finite canonical retry values. `features=batch` describes the
+vendor Batch facility, not an image count. A catalog row therefore remains
+discovery data rather than an automatically executable preset.
+
+Five direct questions remain: dynamic catalog plus a small live-proven preset
+set versus a checked-in complete mirror; integer provider audio minutes versus
+the exact `7.5 -> 450 seconds` asymmetric behavior; private controlled adapter
+dispatch versus an early public callable/Protocol; successful fallback result
+metadata versus a post-success exception; and gated old-video deletion versus
+immediate capability removal. The current recommendations are the first option
+in each pair. No runtime work begins until the needed answers arrive.
+
+This iteration adds no runtime, export, API, type, test, preset, provider call,
+credential access, dependency, state, media behavior, frozen-boundary change,
+or deletion.

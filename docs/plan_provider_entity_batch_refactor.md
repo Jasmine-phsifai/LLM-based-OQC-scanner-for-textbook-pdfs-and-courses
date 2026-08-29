@@ -10,70 +10,105 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-29, #633)
+## 0. Current pruning checkpoint (2026-08-29, #634)
 
-This plan remains a discussion record, not implementation authorization. #627
-reconciles the latest proposal with decisions #591--#626 so readers do not have
-to treat older checkpoint questions as current merely because they remain below
-as history.
+This plan remains a discussion record, not implementation authorization. The
+maintainer has paused runtime work while the replacement is reviewed for
+overdesign. Historical questions below remain the reasoning trail; this section
+alone is the current decision board.
 
-The next implementation, if separately authorized, remains only one vertical
-proof: one immutable `ProviderModel` **instance** for one exact vendor/model,
-one controlled `adapter_id`, the existing exact provider settings supplied at
-the call boundary, and one real image consumer. Adding a model means adding or
-constructing another value of the same type; it does not mean creating one
-Python subclass/file per model. Adding a new transport family later means one
-independently readable adapter, not conditionals spread through media code.
+The destination is one visible, caller-composed pair of media flows:
 
-Do not make any of the following prerequisites for that proof:
+```text
+inspect_video -> extract_video_frames -> batchify_images
+              -> merged image recognition/resume/experimental repair
 
-- mirroring every Google or DashScope catalog row as a committed preset;
-- flat fallback, nested provider lanes, lane parallelism, or an API pool;
-- a retry executor or a pre-filled HTTP-status matrix;
-- persistent token ledgers or per-attempt billing records;
-- merged image/audio publication, resume, repair, or public facade rewrites;
-- RapidOCR, VLLM, Ollama, Volcengine, or OpenAI-compatible placeholders.
+extract_video_audio -> split_audio
+                    -> merged audio recognition/resume/experimental repair
+```
 
-After one provider-model/adapter boundary works live, ship only a small set of
-live-proven preset instances. Live discovery plus explicit construction covers
-other model IDs. A raw vendor HTTP code is first mapped by that vendor adapter
-to one canonical OCRLLM error; only a later fallback slice may attach finite
-retry values to that canonical code. A successful fallback returns bounded
-earlier-provider failure evidence with the result; it does not raise a terminal
-exception after producing a valid recognition. Terminal failure reports one
-last safe failure for each unresolved batch.
+PDF reuses the merged image backend after page rendering. Image and audio own
+separate plans, sidecars, Markdown outputs, providers, and resume calls. There
+is no replacement `recognize_video` recognition/lifecycle black box. The thin
+package-root `resume_video` route fixed by #633 delegates exactly one already-
+extracted branch per call and owns no state, composition, or cleanup.
 
-The following are already fixed and are not current questions: the public video
-flow has no replacement `recognize_video` black box; frame selection stays
-inside `extract_video_frames`; published extraction output is caller-owned;
-`resume_video` is a stateless package-root route to the two ordinary media
-resumes; deterministic default output is
-`<normalized-source-identity>_ocrllm.md`; every provider leaf and capability is
-validated before side effects; flat fallback stops at first success; successful
-fallback returns one complete result with bounded failure evidence; unresolved
-slots publish recovery evidence then raise `RecognitionIncomplete`; and image
-and audio retain separate plans, sidecars, and Markdown writers.
+The deletion target is the currently shipped **video recognition/orchestration
+family**: `recognize_video`, `recognize_video_to_markdown`,
+`recognize_video_frames`, their image/audio job helpers, video journal/state,
+video result composition/publication, `VideoRecognitionOutcome`, and the video-
+specific audio recognizer. Keep provider-free `inspect_video`,
+`extract_video_frames`, `extract_video_audio`, complete-frame selection, and
+`RetainedVideoFrame`. `prepare_video_media` currently implements public frame
+extraction and is not deleted merely because old recognition also consumes it.
+The maintained safe sequence proves merged image, merged audio, and both resume
+owners first, then deletes the old family in one migration stage with no
+compatibility wrapper. Immediate capability removal remains an explicit choice
+rather than an inferred consequence of "discard the chain."
 
-The complete nine-field target `ProviderModel` field set is already designed. #628
-separates that design from implementation timing: an unexported, unserialized
-internal proof may add only fields its real image consumer uses, but no public
-constructor or public preset may ship until the complete target shape is present.
-The complete data value does not itself implement audio, retry, fallback, or
-pool behavior.
+Public `extract_*` output is caller-owned because no library recognition
+lifecycle encloses later calls. Only rejected frame candidates, source
+snapshots, materialized audio slices, and other artifacts created and consumed
+inside one library call are automatically removed. A future Python application
+job may own and delete the public extraction outputs it requested; that does not
+restore a library video wrapper or an Electron-owned provider call.
 
-Only these two decision groups remain, ordered by their earliest consumer:
+The provider boundary remains one immutable `ProviderModel` **instance** for
+one exact `(vendor, model)`, not one Python class/file per catalog row. Its
+complete target data is vendor, model, controlled `adapter_id`, three task-
+capability booleans, capability-dependent image/audio defaults, and immutable
+finite canonical retry rules. Runtime secrets and adapter-specific settings
+belong in one short-lived `ProviderBinding(model, settings)`, never in a
+generic parameter list, callable, client, source, output, lane, token, or error
+field. The complete data value does not itself implement splitting, dispatch,
+retry, fallback, pooling, resume, or repair.
 
-1. Whether the latest phrase "prebuild and save Google and DashScope model
-   objects" explicitly reverses transient current-catalog identities plus a
-   small live-proven executable preset set in favor of a checked-in executable
-   mirror. #629 proves the active catalogs cannot populate the complete
-   `ProviderModel` facts, so the mirror remains unauthorized unless the
-   maintainer accepts guessed facts or indefinite per-model maintenance.
-2. Whether `ProviderModel(default_audio_minutes=7.5)` is intended to create
-   exact 450-second slices when the caller omits an interval, even though the
-   explicit public `interval_minutes=7.5` remains invalid. #632 recommends one
-   exact positive-integer minute domain and keeps it authoritative pending this
-   concrete answer; no automatic floor/ceil/round rule is inferred.
+Provider collections retain the fixed scalar/exact-flat-list/exact-nested-list
+shape. Flat lanes stop at first success. Nested lanes have fixed absolute-slot
+assignment and no cross-lane rescue. Canonical OCRLLM errors, not raw HTTP
+numbers, select finite same-candidate retry rules. A media-size rejection does
+not silently re-batch: another candidate may accept the same immutable slot;
+otherwise the unresolved slot remains available for explicit resume with a new
+provider plan. Changing the slot grouping is a new plan, not resume.
+
+Do not make any of the following prerequisites for the first real image proof:
+
+- a checked-in executable mirror of every current vendor model;
+- flat fallback, nested provider lanes, a retry executor, or an API pool;
+- a generic settings/options bag or public callable/plugin protocol;
+- persistent per-attempt token/billing/error ledgers;
+- merged audio, repair, Electron/Rust bindings, local-provider placeholders, or
+  social-media work.
+
+Five decision groups now remain. They are direct answers, not invitations to
+design more alternatives:
+
+1. **Catalog scope.** Keep runtime discovery plus a small live-proven executable
+   preset set (recommended), or intentionally maintain a checked-in executable
+   object for every catalog row despite missing OCR/default/retry facts.
+2. **Audio unit.** Keep provider defaults and caller overrides in one exact
+   positive-integer minute domain (recommended), or allow
+   `default_audio_minutes=7.5` to create exact 450-second slices while explicit
+   caller `interval_minutes=7.5` remains invalid.
+3. **Adapter dispatch.** Resolve controlled `adapter_id` values through private
+   library adapter modules first (recommended), or publish a callable/Protocol
+   extension surface before Google and DashScope prove the common consumer.
+4. **Successful fallback reporting.** Return a complete result with one warning
+   and bounded structured earlier-provider failures (recommended), or throw
+   after valid content has already completed. The latter must define how callers
+   avoid replaying paid successful work; it is not silently inferred from
+   "report all errors."
+5. **Deletion timing.** Prove the two replacement merged/resume owners and then
+   delete the old video family in one stage (recommended), or remove the shipped
+   capability immediately before its replacement exists.
+
+Until the maintainer resumes runtime work, do not implement `ProviderModel`,
+presets, adapter dispatch, merged recognition, retry/fallback, pool execution,
+repair, or old-video deletion. When runtime resumes, only the choices consumed
+by that atomic slice must already be explicit; the unrelated later choices do
+not become a blanket prerequisite. The negative-feedback/similarity frame
+algorithm remains a separate later real-archive review; no crop/ROI/corner-
+detection path may return.
 
 #602 corrects one already-shipped canonical mapping before any retry executor
 exists. Native Google HTTP 400 with exact status `FAILED_PRECONDITION` has now

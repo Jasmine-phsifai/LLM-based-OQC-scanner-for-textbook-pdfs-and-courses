@@ -1498,3 +1498,23 @@ its error unchanged. Resuming both branches means two calls; there is no
 combined outcome, original-video input, auto-detection, journal, output pair,
 sidecar search, scheduling, composition, or cleanup owner. Two decision groups
 remain; no runtime, export, result type, state, provider call, or API changed.
+
+#634 refreshes the current discussion board after the maintainer explicitly
+discarded the duplicate video recognition chain and supplied a fuller provider,
+fallback, pool, lifecycle, and repair proposal. Delete the old recognition/
+orchestration family only; keep provider-free inspection, full-frame extraction,
+audio extraction, selection internals, `RetainedVideoFrame`, and the private
+helpers still consumed by extraction. The recommended migration proves merged
+image/audio plus their ordinary resume owners, then removes the old family
+together without compatibility wrappers. Public extraction remains caller-
+owned; only artifacts created and consumed inside one library call are cleaned
+by the library.
+
+Official Google and DashScope catalog schemas still cannot populate complete
+executable `ProviderModel` facts. Section 0 of
+`docs/plan_provider_entity_batch_refactor.md` is now the sole current board and
+lists five direct choices: catalog mirror scope, fractional provider audio
+minutes, private versus public adapter dispatch, successful-fallback reporting,
+and deletion timing. The first option in each pair is recommended. Runtime work
+remains discussion-paused; no provider class, preset, merged recognizer,
+fallback, pool, repair, or old-video deletion changed.

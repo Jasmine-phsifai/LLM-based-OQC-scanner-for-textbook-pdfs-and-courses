@@ -1669,3 +1669,41 @@ a video journal, shared Markdown, sidecar search, or a `VideoResumeResult`.
 Grouping/splitting identity is already ordinary resume state, so the router has
 no batch-size, interval, original-video, `resume=True`, extraction, composition,
 naming, or cleanup parameter.
+
+**#634 records the newest proposal as pending discussion, not runtime
+authorization.** The visible destination is fixed: callers separately inspect,
+extract full frames, batchify images, extract audio, split audio, and invoke the
+two merged recognizers. PDF reuses the image backend. Public extraction output
+is caller-owned; only one-call temporaries are library-owned. The thin
+`resume_video` route still delegates exactly one already-extracted branch.
+
+The eventual deletion target is the old video recognition/orchestration family,
+not `inspect_video`, `extract_video_frames`, `extract_video_audio`, retained-
+frame selection, or `RetainedVideoFrame`. `prepare_video_media` currently
+implements public frame extraction and is not deleted by name. The recommended
+sequence proves merged image/audio plus their resume owners and then deletes the
+old family together without compatibility wrappers; immediate deletion before a
+replacement remains a direct choice.
+
+Official Google and DashScope catalogs can describe identities and some vendor
+metadata, but cannot populate every OCRLLM capability, recommended media size,
+adapter route, or retry rule. Do not convert every row into a guessed executable
+preset or add a catalog-descriptor framework without a consumer.
+
+The current direct-answer board contains five items, with the first route in
+each pair recommended:
+
+1. runtime discovery plus a few live-proven presets, or a checked-in complete
+   executable catalog mirror;
+2. one integer-minute domain, or exact fractional provider defaults with an
+   intentionally asymmetric caller contract;
+3. private controlled `adapter_id` dispatch, or an early public callable/
+   Protocol extension point;
+4. a complete result carrying bounded earlier-provider failure evidence, or a
+   post-success exception;
+5. replacement-gated deletion, or immediate removal of the current video
+   recognition capability.
+
+Runtime remains maintainer-paused. When it resumes, the choices actually
+consumed by one atomic slice must be explicit first; unrelated later choices do
+not block that slice or justify another all-or-nothing foundation.
