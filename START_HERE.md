@@ -1418,3 +1418,10 @@ call. Settled slots and cumulative usage remain reusable evidence, but they do
 not restore routing; unresolved slots keep their absolute indexes and use the
 current lane count. No provider tree, lane cursor, historical blacklist, or
 binding-plan identity is persisted.
+
+#623 makes provider topology strict without changing code: accept one exact
+model/binding, a nonempty exact built-in flat list, or a nonempty exact built-in
+list of nonempty exact built-in list lanes. Snapshot it once to private tuple
+lanes; reject tuples-as-provider-collections, arbitrary iterables, subclasses,
+empty/mixed/deeper shapes, and wrong leaves before side effects. Media batches
+remain exact tuples. No public provider-plan or recursive normalizer is planned.

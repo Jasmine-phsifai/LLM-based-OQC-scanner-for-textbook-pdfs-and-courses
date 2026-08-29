@@ -2898,3 +2898,13 @@ slots stay complete and retain audit/usage evidence, while unresolved slots use
 their original absolute indexes and the current lane count. Historical settled
 providers do not restore a cursor or blacklist. No provider plan, lane state,
 binding fingerprint, runtime, API, test, or state-schema change is added.
+
+#623 defines only the future provider-container grammar. Provider arguments are
+an exact model/binding leaf, a nonempty exact built-in flat list, or a nonempty
+exact built-in list of nonempty exact built-in list lanes; planning and dispatch
+use their respective exact leaf types. Invalid, lazy, subclassed, empty, mixed,
+or deeper shapes fail complete preflight before side effects, while media
+batches remain exact tuples. A valid shape is privately snapshotted once to
+tuple lanes without a public plan object, recursive compatibility layer, deep
+copy, or mutation locking. Runtime, APIs, tests, schemas, providers, and media
+behavior remain unchanged.

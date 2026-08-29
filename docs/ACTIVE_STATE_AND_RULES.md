@@ -12282,3 +12282,22 @@ binding-plan fingerprints, lane-count identity, cursor migration, and historical
 error state solely to reconstruct a preference is rejected. #622 changes no
 runtime, API, state schema, fingerprint, test, provider, dependency, frozen
 boundary, or deletion.
+
+## Current working update: #623 makes provider topology exact-list only
+
+Future provider arguments accept exactly one leaf, one nonempty exact built-in
+list of leaves, or one nonempty exact built-in list of nonempty exact built-in
+list lanes. Planning requires exact `ProviderModel` leaves; recognition and
+resume require exact `ProviderBinding` leaves. Provider tuples, list subclasses,
+generators, arbitrary iterables/sequences, empty lanes, mixed depth, depth above
+two collections, and wrong leaf types fail complete preflight before media,
+default resolution, output, or provider work. Media batches remain exact tuples.
+
+The implementation may snapshot a valid public shape once to a private
+tuple-of-tuples and then use only that snapshot. Planning may flatten it only
+to compute the already-decided common minimum; execution preserves lane
+boundaries and order. Do not add a recursive compatibility normalizer, public
+provider-plan object, deep copying, mutation locks, or a second batch
+abstraction. Duplicate-binding behavior remains a later consumer decision.
+#623 changes no runtime, API, test, schema, provider, dependency, media, frozen
+boundary, or deletion.

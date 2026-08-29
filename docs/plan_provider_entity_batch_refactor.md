@@ -2055,3 +2055,42 @@ batch" does not mean a batch in a later resume invocation. No candidate tree,
 lane count, cursor, binding object, historical error list, or provider-routing
 fingerprint is persisted. No runtime, API, state schema, test, provider call,
 dependency, or deletion changes in #622.
+
+## #623 Provider Topology Uses Exact Lists
+
+Provider topology and media batches deliberately use different concrete
+containers. Public provider input accepts exactly one leaf, one nonempty exact
+built-in `list` of leaves, or one nonempty exact built-in `list` whose members
+are nonempty exact built-in `list` lanes. Planning leaves are exact
+`ProviderModel` values; recognition and resume leaves are exact
+`ProviderBinding` values. A one-element flat list and a one-lane nested list are
+valid and retain their different fallback-versus-pool meanings.
+
+Complete preflight rejects tuples used as provider collections, list
+subclasses, generators, arbitrary `Iterable`/`Sequence` values, strings,
+mappings, empty outer lists, empty lanes, mixed depths such as
+`[binding, [binding]]`, depths beyond two collections, and the wrong leaf type.
+Rejection occurs before reading or materializing media, resolving omitted
+defaults, creating output, or dispatching a provider. The existing media-batch
+contract remains an exact top-level tuple and is not weakened by this provider
+syntax.
+
+After identifying one of the three accepted shapes, the implementation may
+snapshot it once into a private tuple of tuple lanes: a scalar becomes
+`((leaf,),)`, a flat list becomes `(tuple(leaves),)`, and a nested list becomes
+`tuple(tuple(lane) for lane in lanes)`. All later validation and use sees only
+that snapshot. Planning may temporarily flatten it solely to calculate the
+common minimum default; recognition and resume preserve every lane boundary
+and ordering. This freezes membership and order only: settings are not deeply
+copied, serialized, fingerprinted, or guarded against concurrent caller
+mutation during capture.
+
+This exact-list route matches the requested list/list-of-lists API and keeps
+provider routing visually distinct from tuple media data. Tuple-only provider
+plans would contradict that surface; permissive iterable handling would add
+lazy-consumption and mutation compatibility work with no product need. Do not
+add a recursive normalizer, public `ProviderPlan`, compatibility wrapper,
+second batch abstraction, deep-copy mechanism, or auto-correction of mixed or
+empty shapes. Duplicate bindings remain intentionally undecided for their
+consumer slice. No runtime, API, test, schema, provider, dependency, media, or
+deletion changes in #623.

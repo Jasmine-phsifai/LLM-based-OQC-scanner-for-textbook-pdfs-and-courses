@@ -1488,3 +1488,18 @@ cleanup behavior, source hash, or generic options to `AudioSlice`. Do not add an
 retained chunk archive, cleanup registry, configurable overlap, or transcript
 similarity deduplicator. Legacy's uncleared chunk directory and custom cached
 checkpoint are warnings to avoid, not compatibility formats to migrate.
+
+**#623 fixes the provider topology container syntax.** Provider inputs use the
+maintainer's explicit list notation, not arbitrary iterable compatibility:
+exact scalar leaf, nonempty exact built-in `list[leaf]`, or nonempty exact
+built-in `list[nonempty exact built-in list[leaf]]`. Planning leaves are exact
+`ProviderModel`; recognize/resume leaves are exact `ProviderBinding`. Exact
+media tuples remain a separate contract.
+
+Snapshot a valid shape once to private tuple lanes and never revisit the caller
+lists. Reject tuples used as provider collections, list subclasses, generators,
+custom sequences, empty lanes, mixed or deeper nesting, and wrong leaves during
+complete zero-side-effect preflight. Do not build recursive normalization,
+auto-wrapping, public `ProviderPlan`, deep-copy or concurrent-mutation machinery.
+One-element flat and one-lane nested forms remain valid. Duplicate-binding
+policy is not decided by this container slice.
