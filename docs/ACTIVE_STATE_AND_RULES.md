@@ -12442,3 +12442,28 @@ numeric rules require bounded real failure evidence; 402/409 receive none by
 analogy. Four decision groups remain. No runtime, API, retry executor, preset,
 provider call, state, dependency, media, frozen-boundary, or deletion change in
 #630.
+
+## Current working update: #631 closes nested-lane concurrency and resume preference
+
+For the future replacement merged recognition API, provider topology is the
+only concurrency authority. Scalar and flat shapes are one lane; a nested exact
+list has `len(outer)` lanes, with one through 32 accepted. The API does not take
+or consume current `RecognitionExecutionPolicy.max_parallel_requests`; more than
+32 lanes fail complete preflight with zero media, output, state, or provider
+side effects. Current Config-based APIs remain unchanged.
+
+Each lane processes one fixed absolute-index slot at a time and advances as soon
+as its own slot settles. There is no global epoch, cross-lane rescue, work
+stealing, ready-lane fairness queue, or completion-order publication. Resume
+reuses settled content but starts every newly supplied lane at its first
+binding. Only a new success in that invocation updates the lane's next starting
+binding; an all-failed slot leaves it unchanged. Unresolved absolute indexes use
+the current `index % lane_count`, so only unresolved work may be rerouted by a
+new plan.
+
+No provider tree, lane cursor/count, binding fingerprint, blacklist, cooldown,
+or historical-error routing state is persisted. Request-start pacing remains a
+separate image/audio proof, not a new provider or concurrency field. Three
+decision groups remain. #631 changes no runtime, API, scheduler, validation,
+fingerprint, state, test, provider call, dependency, media behavior, frozen
+boundary, or deletion.

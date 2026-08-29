@@ -10,7 +10,7 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-29, #630)
+## 0. Current pruning checkpoint (2026-08-29, #631)
 
 This plan remains a discussion record, not implementation authorization. #627
 reconciles the latest proposal with decisions #591--#626 so readers do not have
@@ -61,7 +61,7 @@ constructor or public preset may ship until the complete target shape is present
 The complete data value does not itself implement audio, retry, fallback, or
 pool behavior.
 
-Only these four decision groups remain, ordered by their earliest consumer:
+Only these three decision groups remain, ordered by their earliest consumer:
 
 1. Whether the latest phrase "prebuild and save Google and DashScope model
    objects" explicitly reverses transient current-catalog identities plus a
@@ -69,13 +69,9 @@ Only these four decision groups remain, ordered by their earliest consumer:
    mirror. #629 proves the active catalogs cannot populate the complete
    `ProviderModel` facts, so the mirror remains unauthorized unless the
    maintainer accepts guessed facts or indefinite per-model maintenance.
-2. For nested lanes, whether the outer exact list is the sole concurrency
-   authority with the existing 32-lane ceiling, and whether last-success is
-   invocation-only rather than persisted across resume. #621/#622 retain those
-   recommendations pending confirmation.
-3. Whether the latest `float` spelling intentionally reverses positive integer
+2. Whether the latest `float` spelling intentionally reverses positive integer
    provider audio minutes. Integer minutes remain authoritative meanwhile.
-4. The exact stateless `resume_video` arguments and one-branch-failure return
+3. The exact stateless `resume_video` arguments and one-branch-failure return
    shape remain a later API question. They do not block the first provider or
    merged-image slice and do not authorize video state or a result framework.
 
@@ -2038,20 +2034,18 @@ the requested pool and requires queued-lane fairness; requiring equality makes
 the caller state the same number twice. Both dual-control routes add surprise
 without changing fixed assignment.
 
-The current recommendation, pending explicit maintainer confirmation, is that
-the replacement merged API does not expose or consume
+The recommendation later confirmed by #631 is that the replacement merged API
+does not expose or consume
 `max_parallel_requests`. A nested provider plan owns its concurrency and must
 have at most 32 lanes, reusing the existing safety ceiling; an excessive plan
 is rejected during complete preflight with zero provider, media, or output
 work. Scalar and flat fallback plans remain one lane. The shipped Config-based
 APIs and their execution policy remain unchanged.
 
-If the maintainer instead requires the replacement API to accept the existing
-execution policy, the bounded fallback is `lane_count <=
-max_parallel_requests`, with overflow rejected rather than queued or clamped;
-exact equality is unnecessary. Do not introduce a second worker option,
-per-model parallelism field, fair ready-lane queue, dynamic throttle, or
-persisted concurrency identity before a real consumer changes this decision.
+#631 rejects the alternative of carrying the existing execution policy into the
+replacement API. Do not introduce a second worker option, per-model parallelism
+field, fair ready-lane queue, dynamic throttle, or persisted concurrency identity
+before a real consumer changes this decision.
 
 The audit also found a separate current-surface mismatch to preserve for later
 evidence. Request-start pacing is applied before every vision provider method,
@@ -2096,11 +2090,10 @@ resumed invocation runs its current finite policies and records its own current
 delta. If the caller wants a previously successful provider first, the caller
 can place that binding first in the new plan.
 
-This is the current smallest recommendation pending confirmation that "new
-batch" does not mean a batch in a later resume invocation. No candidate tree,
-lane count, cursor, binding object, historical error list, or provider-routing
-fingerprint is persisted. No runtime, API, state schema, test, provider call,
-dependency, or deletion changes in #622.
+This smallest rule is confirmed by #631: "new batch" does not restore a cursor
+from a prior invocation. No candidate tree, lane count, cursor, binding object,
+historical error list, or provider-routing fingerprint is persisted. No runtime,
+API, state schema, test, provider call, dependency, or deletion changes in #622.
 
 ## #623 Provider Topology Uses Exact Lists
 
@@ -2406,3 +2399,45 @@ have no independent legacy evidence and receive no guessed rule.
 #630 closes only the action-label/raw-key question. It implements no retry
 type, executor, provider model, preset, adapter fallback, API, provider call,
 state, dependency, media behavior, frozen-boundary change, or deletion.
+
+## #631 Nested Provider Shape Is The Only Replacement Concurrency Authority
+
+#621 and #622 are now confirmed together rather than left as two implementation
+choices. For the replacement merged recognition API, a scalar or flat provider
+shape is one lane; a nested exact built-in list has exactly
+`lane_count = len(outer_list)` lanes. The API does not accept or consume the
+shipped `RecognitionExecutionPolicy.max_parallel_requests`. Requiring the same
+concurrency twice would create conflicting authority, while applying the old
+default of one would silently serialize an explicitly requested pool.
+
+The existing safety ceiling remains useful without importing the old policy:
+one through 32 lanes are valid, and a larger nested shape is rejected during
+complete preflight before media reads/materialization, output/state writes, or
+provider calls. Each lane has at most one active slot. Its immutable absolute
+slot sequence is `j, j + lane_count, ...`; it advances after its own slot is
+settled and never waits for a global epoch. No slot is rescued by another lane,
+stolen, rebalanced, or ordered publicly by completion time. Ordinary failed
+slots do not stop later fixed slots.
+
+Last-success is invocation-local routing only. Every fresh or resume call starts
+each newly supplied lane at its first binding. A success produced during that
+call rotates the next unresolved slot in that lane to the successful binding; a
+fully failed slot leaves the pointer unchanged. For one slot, traversal is
+circular from that starting point and reaches every binding at most once after
+each binding's own finite retry block.
+
+Resume keeps settled content and its actual vendor/model/call/token evidence,
+but does not restore a provider cursor. Unresolved absolute indexes are assigned
+with the current `index % lane_count`; changing the provider shape may reroute
+only unresolved work. Do not persist a provider tree, lane count, binding
+fingerprint, cursor, blacklist, cooldown, or historical-error routing state.
+Callers who want an old successful route first can place it first in the new
+lane.
+
+This decision does not alter current Config-based `recognize_batch()`, its
+execution fingerprint, or its independent-output concurrency. It also does not
+claim that request-start pacing is uniform across image and audio transports;
+the focused merged-audio proof recorded in #621 remains required. No pool,
+scheduler, queue, runtime API, validation, fingerprint, state schema, test,
+provider call, dependency, media behavior, frozen boundary, or deletion is
+implemented by #631.

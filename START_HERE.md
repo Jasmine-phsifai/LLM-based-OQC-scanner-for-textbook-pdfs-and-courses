@@ -1471,3 +1471,12 @@ canonical code and safe scope; a future rule stores only finite
 exhaustion. Legacy operation-specific counts, stream/protocol fallback,
 exponential waits, blacklists, and duplicate audio loops are not migrated.
 Four decision groups remain; no runtime, retry executor, preset, or API changed.
+
+#631 closes the nested-lane decision. In the replacement merged API, scalar and
+flat provider shapes are one lane and a nested shape has `len(outer)` lanes,
+bounded to 32 by complete preflight. The old `max_parallel_requests` is not a
+second control. Lanes advance independently over fixed absolute indexes with no
+epoch barrier, rescue, work stealing, or fairness queue. Every fresh/resume call
+starts from its newly supplied first binding; settled work is reused, but no
+provider cursor/tree is persisted or inferred. Three decision groups remain;
+no runtime, scheduler, state schema, provider call, or API changed.

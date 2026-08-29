@@ -1559,11 +1559,9 @@ stops at first success, or whether complete fallback returns normally: those
 questions are settled.
 
 The remaining discussion order is: runtime catalog descriptors plus a small
-live-proven preset set versus a checked-in executable mirror; nested-list
-concurrency plus invocation-local lane preference; integer versus float
-provider audio minutes; and only later the exact stateless `resume_video`
-signature. This board is not runtime
-authorization and adds no new framework.
+live-proven preset set versus a checked-in executable mirror; integer versus
+float provider audio minutes; and only later the exact stateless `resume_video`
+signature. This board is not runtime authorization and adds no new framework.
 
 **#628 closes schema-design versus runtime-staging as a false binary.** The
 complete target `ProviderModel` field set remains designed now. The first
@@ -1613,3 +1611,24 @@ Specific counts remain unproven preset data until a bounded real failure
 supports them; raw 402/409 receive no analogical defaults. This closes one
 discussion group without implementing a type, rule table, executor, provider,
 preset, or API.
+
+**#631 makes the nested provider shape the only replacement concurrency
+authority.** Scalar and flat shapes are one lane. A nested exact built-in list
+has `len(outer)` lanes and is accepted only from one through the existing safety
+ceiling of 32. Reject larger shapes during complete preflight. Do not pass the
+old `max_parallel_requests` into this API, require the same number twice, queue
+excess lanes, clamp them, or add per-model parallelism.
+
+Each lane owns immutable absolute slots `j, j + lane_count, ...`, has at most one
+slot active, and advances after its own slot settles. There is no global epoch,
+cross-lane rescue, work stealing, rebalancing, fairness scheduler, or
+completion-order output. A failed slot does not stop later assigned slots.
+
+Provider preference is invocation-local. Every fresh or resume call starts a
+newly supplied lane at its first binding; only success in that call moves the
+next starting point, and a fully failed slot leaves it unchanged. Resume reuses
+settled content/evidence, keeps unresolved absolute indexes, and applies the
+current `index % lane_count`. It does not persist or infer a provider tree,
+lane count/cursor, binding fingerprint, blacklist, cooldown, or error-derived
+routing. The shipped Config-based executor and fingerprint remain unchanged;
+audio request-start pacing stays a separate proof before merged audio.
