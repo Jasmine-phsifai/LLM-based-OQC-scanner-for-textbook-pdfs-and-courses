@@ -234,6 +234,34 @@ the fallback slice, rather than a new speculative `batch-too-large` framework.
 No runtime source, test, dependency, public API, provider call, or deletion is
 authorized by #610.
 
+### #611 transport fact: legacy and active Google both use native google-genai
+
+The maintainer's corrected rule is now resolved from source rather than memory:
+use the access method the legacy parent actually uses. The legacy Google-native
+provider explicitly rejects the OpenAI-compatible endpoint and lazily imports
+the official `google-genai` SDK. Its image and text calls use
+`genai.Client(...).models.generate_content`; its long-audio path uses the same
+client's Files upload/get lifecycle followed by `models.generate_content`.
+
+The active library already matches that transport family. Its Google image and
+inline short-audio adapters use native `google.genai` parts and
+`models.generate_content`; its long-audio adapter uses native Files
+upload/get/delete and generation. No Google OpenAI-compatible endpoint is the
+initial adapter direction. A future endpoint change requires separate real
+evidence rather than an assumed compatibility benefit.
+
+Legacy hybrid mode does not contradict this finding. It deliberately routes
+visual calls through the separately configured legacy `LLMClient`, while
+Google-native code continues to own text and long audio. This is evidence for
+separate image/audio provider selection, not evidence that Google itself is
+accessed through an OpenAI-compatible endpoint.
+
+Do not copy the legacy client's cached SDK client, mutable unavailable-model
+sets, remembered successful model, or embedded retry/model-switch loop into
+`ProviderModel`. The active library's exact-model, per-operation client
+lifecycle remains the smaller adapter boundary. #611 changes no transport or
+runtime code; it makes the source-proven native-SDK choice explicit.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later

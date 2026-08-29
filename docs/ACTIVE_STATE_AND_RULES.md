@@ -11952,3 +11952,28 @@ re-batching and leave settled plan/state resumable; its fallback eligibility
 waits for an observed canonical mapping. No runtime, test, dependency, public
 API, provider call, credential, state, legacy source, frozen boundary, or
 capability claim changed.
+
+## Current working update: #611 verifies the legacy Google transport
+
+#611 resolves the maintainer's earlier correction by reading both codebases,
+not by preserving an assumed endpoint choice. The legacy Google-native
+provider's module contract explicitly says it does not use Google's
+OpenAI-compatible endpoint. It lazily imports official `google-genai`, creates
+`genai.Client`, uses `models.generate_content` for image/text, and uses native
+Files upload/get plus generation for long audio.
+
+The active library already uses that same transport family: native
+`google.genai` image and inline short-audio parts, native
+`models.generate_content`, and native Files upload/get/delete for long audio.
+Its per-operation exact-model client lifecycle is intentionally narrower than
+legacy's cached client, mutable last-success/unavailable-model state, and
+embedded retry/model-switch loop. Those legacy behaviors remain evidence for
+later fallback design, not fields to copy into `ProviderModel`.
+
+Legacy hybrid mode routes visual calls through a separately configured legacy
+provider while retaining native Google text/long-audio calls. It supports the
+already-selected image/audio provider split and does not prove a Google
+OpenAI-compatible transport. Therefore the initial Google adapter direction is
+now explicitly native `google-genai`; changing it later requires separate real
+evidence. No runtime, test, dependency, public API, provider call, credential,
+state, legacy source, frozen boundary, or capability claim changed.
