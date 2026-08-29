@@ -108,10 +108,11 @@ slice:
    current default cannot reconstruct a deleted disposable controller. The
    preset owns the classification and value; an explicit caller size still
    wins.
-3. "Prebuild Google and DashScope models" can mean a few verified convenience
-   presets or a mirror of hundreds of catalog rows. The latter conflicts with
-   the earlier no-indefinite-model-maintenance rule and remains rejected pending
-   a direct reversal of fixed choice 3.
+3. "Prebuild Google and DashScope models" can mean transiently materializing
+   every current catalog descriptor plus a few verified executable presets, or
+   checking hundreds of complete executable presets into source. The latter
+   conflicts with the earlier no-indefinite-model-maintenance rule and remains
+   rejected pending a direct reversal of fixed choice 3.
 4. A successful fallback cannot both return a valid result and raise a terminal
    exception. Earlier choice 2 returns bounded prior-provider evidence with the
    result. The latest wording that the final accumulator contains only failed
@@ -216,9 +217,12 @@ Four wording choices therefore remain open, but are now narrowly framed:
    current recommendation is integer minutes because accepting `float` without
    fractional-window behavior would create hidden rounding.
 2. Interpret "prebuild Google and DashScope models" as a small live-proven
-   preset set or a volatile full-catalog mirror. The current recommendation,
-   consistent with the no-indefinite-model-maintenance decision, is a small
-   preset set plus discovery and explicit construction.
+   executable preset set plus transient discovery of every current catalog row,
+   or as a checked-in executable mirror of a volatile catalog. The current
+   recommendation, consistent with the no-indefinite-model-maintenance decision,
+   is the former. A discovered row is not silently promoted to an executable
+   preset when the catalog lacks OCR/detail-OCR quality, recommended media
+   grouping, or retry facts.
 3. Keep caller-invoked extraction caller-owned, or authorize a distinct private
    job/temp owner. With no replacement `recognize_video` wrapper, the phrase
    "media created by recognize video" has no library owner and cannot authorize
@@ -466,9 +470,10 @@ their relevant runtime slice:
 1. whether provider-recommended audio duration intentionally changes from
    positive integer minutes to `float`, despite the existing integer-only split
    and durable identity contract;
-2. whether the request to prebuild Google/DashScope models intentionally
-   overturns the small live-proven preset set and requires a volatile full-
-   catalog mirror;
+2. whether the request to prebuild Google/DashScope models means transiently
+   materializing all current catalog descriptors alongside a small live-proven
+   executable preset set, or intentionally requires a checked-in executable
+   mirror whose missing OCRLLM fields must be invented;
 3. whether caller-invoked extraction remains caller-owned now that no
    `recognize_video` lifecycle owner exists, or a separately approved private
    job/temp owner is actually wanted;
@@ -1683,3 +1688,46 @@ frozen rather than a target for further fixes or features.
 and audio extraction primitives work independently on one real archive video.
 It does not satisfy the merged-Markdown or image/audio batch-resume gates and
 therefore does not authorize early deletion.
+
+## #616 Official-Catalog Evidence: Discovery Rows Are Not Executable Presets
+
+The current official [Google Models API](https://ai.google.dev/api/models)
+documents identity, version, description, input/output token limits, supported
+generation methods, a thinking flag, and sampling defaults. It does not expose
+input/output media modalities, ordinary OCR versus detail OCR fitness,
+OCRLLM-recommended image batch size, OCRLLM-recommended audio minutes, or a
+per-model retry policy. Model guides document media behavior separately. The
+active parser intentionally keeps only ordered `generateContent` model IDs;
+the long-audio path separately reads the selected row's optional input-token
+limit because that field has a direct proven consumer.
+
+The current official DashScope
+[native model-list API](https://help.aliyun.com/zh/model-studio/list-models)
+is richer: `/api/v1/models` documents capability tags such as `VU`, `ASR`, and
+`Reasoning`, request/response modalities, context and output limits, pricing,
+region/deployment metadata, and pagination. It still does not supply ordinary
+versus detail OCR quality, OCRLLM-recommended image grouping, recommended audio
+minutes, or a per-model retry policy. It is also not the current active
+adapter's endpoint or response contract: that adapter calls the configured
+OpenAI-compatible `/models` URL and deliberately retains exact IDs only.
+Changing catalog transport is a separate live-proven adapter slice, not a
+documentation shortcut.
+
+Therefore three concepts must not be collapsed:
+
+1. a **catalog descriptor** is transient provider metadata and may exist for
+   every currently served model;
+2. an **executable curated preset** supplies the complete OCRLLM capability and
+   default contract and requires official plus bounded live evidence; and
+3. an **explicit custom model** remains possible when the caller supplies the
+   facts absent from the catalog and accepts that contract.
+
+This does not require a new public `DiscoveredProviderModel` class now. Existing
+catalog functions can grow a typed descriptor only when a real catalog consumer
+needs more than identity. A checked-in class or preset per catalog row would
+either invent required fields, mark usable models falsely unsupported, or need
+continuous edits as regional catalogs change. A persistent full-catalog mirror
+therefore remains unrecommended. The maintainer still needs to confirm whether
+"save every model" means bounded runtime/TTL discovery descriptors (compatible
+with this route) or a source-controlled executable mirror (an explicit reversal
+of the earlier maintenance rule).

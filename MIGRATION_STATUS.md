@@ -63,6 +63,17 @@ for a model classified as unable to think recommends batch size one, an
 explicit caller size wins, and provider rejection is reported rather than
 silently re-batching.
 
+#616 narrows, but does not silently decide, preset quantity. Official Google
+catalog rows provide generation actions, token limits, thinking and sampling
+metadata; the newer native DashScope catalog additionally provides capability
+tags, media modalities, context/output limits, pricing, and regional facts.
+Neither supplies ordinary/detail OCR fitness, OCRLLM-recommended media grouping,
+or per-model retry policy, and the active DashScope adapter currently consumes
+a different compatible ID-only catalog. The recommended route is transient
+discovery of all current rows plus a small live-proven executable preset set,
+not a checked-in class or preset for every volatile row. Confirm whether "save
+every model" intentionally meant the latter before changing runtime.
+
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit
 `e9d49b06fabd4c8c0aba5cdd40ef2006213405b3`, passed 1,927 archived tests with

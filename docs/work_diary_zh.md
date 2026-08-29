@@ -8700,3 +8700,17 @@ legacy Google 是值得保留但不能整套照搬的生产证据：它区分同
 **固定解释。** 对被预制配置明确分类为“不能思考”的模型，调用者省略 batch size 时，建议值固定为 **1**。它只是预制默认值，不是 provider 硬上限；调用者显式提供正整数时仍优先使用，若 provider 拒绝则诚实返回可 resume 的 provider 错误，不暗中重新分组。尤其不能根据某次调用的 `enable_thinking=False` 自动给模型分类。这个解释不需要再新增 `supports_reasoning` 属性：由少量预制入口直接保存分类结论和建议值即可，避免为了一个默认值扩展 ProviderModel。
 
 **变更、验证和过度设计复查。** 本轮只修改权威、计划、维护者决策、导航和迁移说明，把五项直接文字冲突减为四项；没有 API 调用、runtime、test、dependency、public API、state、legacy、frozen 或受保护未跟踪文件变化。没有为历史证据重发请求，也没有建立模型推理能力探测、动态 batch 猜测、自适应重分组或新 capability bool。对文档判断运行全量测试不能增加证据；验证限定为逐项对照源码默认值、请求转发代码、#557 日记/权威记录、跨文档搜索与 `git diff --check`。
+
+## #616 — 2026-08-29：把“发现全部模型”与“维护全部可执行预制”拆开
+
+**本轮英文原子任务。** `Atomic task — Iteration #616: determine whether “prebuild every Google and DashScope model as a provider entity” is a maintainable, evidence-backed product contract or a catalog-mirror silo, without implementing the provider runtime. Context: #615 made progress by resolving the non-thinking default as curated preset data while preserving the evidence boundary; four wording conflicts remain, and preset quantity is the one most likely to multiply maintenance across hundreds of volatile models. Success means waiting approximately three minutes after #615, reconciling Git, the authority, diary, current catalog code and live catalog evidence; using current official Google and DashScope documentation to identify what their model catalogs actually guarantee about capabilities, limits, and defaults; deciding which facts can be discovered dynamically versus which require curated live proof; updating only the decision record if evidence is decisive; and committing/pushing with no API generation call, credential access, runtime, or test change. This matters because one class or hand-maintained preset per catalog row would recreate the same “nuclear silo” structure the video redesign is meant to remove.` #615 已提交并推送权威解释，属于进展；本轮在其提交后约 180 秒开始实质核对。
+
+**本人源码核对。** 当前 Google `list_google_genai_models()` 使用 native `client.models.list()`，parser 只保留支持 `generateContent` 的有序模型 ID；只有长音频的已建消费者会从同一响应读取所选模型可选的正整数 `input_token_limit`。当前 DashScope 则访问配置好的 OpenAI-compatible `.../models`，严格解析 `data[].id`，十分钟内存缓存只保存 ID 集合。它不是阿里新文档中的 native `/api/v1/models` 丰富 schema，不能因为计划需要更多字段就悄悄换 endpoint。
+
+**两组官方文档证据。** 两名轻量只读代理分别查 Google 与 DashScope，本人随后打开原始官方页面逐字段复核。Google [Models API](https://ai.google.dev/api/models) 给出模型身份、版本、描述、input/output token limit、支持的方法、thinking 与采样默认值，但没有输入/输出媒体模态、普通 OCR/细节 OCR 质量、建议图片张数、建议音频分钟数或逐模型重试策略。DashScope 新 [查询模型列表](https://help.aliyun.com/zh/model-studio/list-models) 更丰富，给出 `VU`/`ASR`/`Reasoning` 等标签、请求/响应模态、上下文与输出限制、价格、地域和分页；它仍没有 OCR/细节 OCR 质量、OCRLLM 建议分组、建议音频分钟数和逐模型重试策略。两边目录都能证明“当前存在与部分能力元数据”，不能独自生成完整 ProviderModel 合同。
+
+**收束后的三层含义。** 第一层是动态 catalog descriptor：可以覆盖当前全部模型，但只代表供应商实际给出的临时元数据。第二层是少量 executable preset：必须补齐 OCRLLM 的三个任务能力、建议值和经过实际错误验证的策略。第三层是 explicit custom model：调用者为非预制目录模型明确提供缺失事实。现在不创建新的公开 `DiscoveredProviderModel`；只有真实消费者需要 ID 以外字段时才增加最窄 typed descriptor。每个模型一个 Python 子类、把目录快照提交进仓库、或用 `False/1/30` 填满未知字段，都会制造错误能力声明和持续维护工作。
+
+**仍需维护者确认的精确问题。** “把每个模型预制并保存”若指运行时/TTL 内动态生成全部 catalog descriptor，同时只保存少量可执行预制，与现有维护规则兼容；若指把每个目录行做成源码内完整可执行 ProviderModel，则官方目录无法提供必填事实，必须人工发明或长期逐项维护，等于明确推翻此前“不无限逐模型修”的决定。本轮只把这个二选一写清，没有替维护者暗选。
+
+**验证与过度设计复查。** 本轮没有读取 credential、没有 catalog/generation/API 调用、没有 runtime/test/dependency/public API/state/legacy/frozen 变化。两名代理只做官方文档只读调查且未编辑仓库；本人复核全部代码和引用。文档判断不靠全量测试，最后只做跨文档一致性、链接、差异和 `git diff --check`。未新增 catalog cache、persistent mirror、自动能力推断、模型子类、通用 descriptor 基类或 endpoint 迁移。

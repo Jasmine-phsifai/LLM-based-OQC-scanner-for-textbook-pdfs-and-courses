@@ -1402,3 +1402,23 @@ reconstructed from today's default. The evidence therefore does not establish
 thinking/batch causality or overrule the requested preset policy. Provider
 rejection of an explicit larger batch remains an honest resumable error; the
 library does not silently re-batch.
+
+**#616 narrows the all-model preset question with official catalog evidence.**
+Google's official [Models API](https://ai.google.dev/api/models) supplies model
+identity, supported generation methods, token limits, thinking and sampling
+metadata, but not media modalities, OCR/detail-OCR fitness, OCRLLM media defaults,
+or per-model retry policy. DashScope's official
+[native model-list API](https://help.aliyun.com/zh/model-studio/list-models)
+adds capability tags, media modalities, context/output limits, pricing, and
+regional metadata, but still omits those OCRLLM-specific facts. The active
+DashScope adapter currently reads only IDs from its separate compatible
+`/models` response and must not silently switch schemas during planning.
+
+The recommended interpretation is: dynamically discover every current catalog
+row as transient metadata, keep only a small official-and-live-proven set of
+complete executable presets, and allow an explicit custom model contract for
+other rows. Do not create one Python subclass per model, check in a volatile
+full-catalog snapshot, or invent missing booleans/defaults. This question remains
+open only because "prebuild and save every model" may instead have intended a
+source-controlled executable mirror; choosing that meaning explicitly reverses
+the earlier no-indefinite-model-maintenance decision.

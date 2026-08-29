@@ -12101,3 +12101,38 @@ caller-owned public extraction versus a separately approved private job owner,
 and staged runtime fields versus an entirely populated first `ProviderModel`.
 No provider call, runtime, test, dependency, public API, state, legacy source,
 frozen boundary, or refactor authorization changed in #615.
+
+## Current working update: #616 separates catalog discovery from executable presets
+
+The full-catalog question remains open, but current official contracts make its
+tradeoff concrete. Google's official
+[Models API](https://ai.google.dev/api/models) exposes identity, supported
+generation methods, token limits, thinking, and sampling metadata; it does not
+expose image/audio modalities, OCR/detail-OCR fitness, OCRLLM media-grouping
+recommendations, or per-model retry policy. The active Google parser keeps
+`generateContent` model IDs, and the long-audio consumer separately reads only
+the selected row's optional input-token limit.
+
+DashScope's new official
+[native model-list API](https://help.aliyun.com/zh/model-studio/list-models)
+exposes richer capability tags, request/response modalities, context/output
+limits, pricing, and regional metadata. It still does not provide OCR/detail-
+OCR quality, OCRLLM-recommended image batch size, recommended audio minutes, or
+per-model retry policy. The active library does not currently consume that
+schema: its maintained OpenAI-compatible catalog path retains exact model IDs
+from the configured `/models` endpoint. Do not change catalog transport merely
+to make a planning document appear complete.
+
+A current catalog row may therefore become a transient discovery descriptor,
+but it is not automatically a complete executable `ProviderModel`. A small
+curated preset supplies the missing OCRLLM contract from official and bounded
+live evidence; an explicit custom model may instead require caller-supplied
+facts. No new descriptor class is authorized until a consumer needs more than
+the existing IDs. The remaining maintainer question is now exact: does "save
+every model" mean runtime/TTL descriptors for every current row plus a small
+executable preset set, or a source-controlled executable mirror that must invent
+or manually maintain missing fields? #616 recommends the first interpretation
+and leaves the second as an explicit reversal requiring confirmation.
+
+No credential, catalog or generation call, runtime, test, dependency, public
+API, state, legacy source, frozen boundary, or refactor authorization changed.

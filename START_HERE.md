@@ -98,6 +98,15 @@ actual request flag, so the two facts are not joined into a causal claim.
 Future curated presets follow the latest maintainer rule that a model classified
 as unable to think recommends one image when batch size is omitted; explicit
 caller sizing is unchanged.
+#616 records why current catalog discovery and executable presets remain
+separate. Google exposes actions, limits, thinking and sampling metadata;
+DashScope's newer native catalog exposes capabilities, media modalities,
+limits, pricing, and regional data. Neither catalog defines OCR/detail-OCR
+fitness, OCRLLM media defaults, or per-model retry policy, and the active
+DashScope compatible catalog currently retains IDs only. The recommended
+discussion route is transient discovery of all served rows plus a small
+live-proven executable preset set; a source-controlled full mirror remains an
+explicit unresolved reversal, not implemented behavior.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
