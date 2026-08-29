@@ -11777,3 +11777,28 @@ schema. The implementation pause remains until the maintainer answers the
 material subset needed by the first slice. Social-media work, crop/ROI, legacy
 format compatibility, arbitrary plugin registries, and a replacement video
 black box remain excluded.
+
+## Current working update: #605 corrects the public video documentation
+
+#605 fixes one shipped documentation contradiction without touching the paused
+replacement. The root packaging README and the repository-local active-library
+README already
+labelled `recognize_video_to_markdown` obsolete as future direction, but both
+still said a future `recognize_video` could remain as a thin caller. They also
+presented the low-level video recognition/compose/publication example without
+marking that whole chain as frozen compatibility surface. This conflicted with
+#604 and could lead a new downstream caller to build on the family selected for
+deletion. The package-local README remains excluded from the wheel as before;
+this correction does not claim that it is an installed artifact.
+
+Both documents now distinguish current availability from maintained direction:
+the existing video APIs remain documented and callable until the replacement
+deletion gate, but new architecture does not build on them. Independently
+resumable merged-image and merged-audio calls each own their own output; callers
+compose visible media steps, and no replacement `recognize_video` wrapper is
+reserved. No current signature, export, behavior, dependency, state, test,
+provider, legacy source, frozen package boundary, or deletion changed. Exact
+cross-document wording review and `git diff --check` passed. The one directly
+relevant wheel-selection regression also passed, confirming the package-local
+README remains excluded; no runtime test or provider call can add evidence to
+this documentation-only correction.

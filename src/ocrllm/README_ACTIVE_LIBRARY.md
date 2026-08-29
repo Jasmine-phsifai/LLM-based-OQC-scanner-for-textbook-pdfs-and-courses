@@ -103,8 +103,9 @@ does not consume retained state.
 but frozen until the narrowed provider-model/media-batch replacement passes its
 deletion gate; see
 [`docs/plan_provider_entity_batch_refactor.md`](../../docs/plan_provider_entity_batch_refactor.md).
-Image/audio batch resume replaces the video journal; a future
-`recognize_video` may only be a thin caller of public steps. The high-level
+Independently resumable image/audio batch calls replace the video journal;
+callers compose the visible steps and no replacement `recognize_video` wrapper
+is currently reserved. The high-level
 `recognize_video_to_markdown()` call now owns
 one complete video journal, validates all saved media/request identity before
 dispatch, and resumes only missing image/audio work;
@@ -390,6 +391,12 @@ offline- and Google-live-proven.
 The provider-free video parsing and separately configured recognition slices
 are available:
 
+> **FROZEN COMPATIBILITY SURFACE:** the recognition/compose/publication calls in
+> this example remain documented because they are currently shipped. New code
+> should not treat that video-specific lifecycle as the replacement design. It
+> is deleted after independently resumable merged-image and merged-audio calls
+> pass their replacement gates.
+
 ```python
 from pathlib import Path
 
@@ -583,9 +590,10 @@ created. The low-level `recognize_video()` call cannot consume retained state;
 use `recognize_video_to_markdown(..., resume=True)` for the library-owned video
 journal and fixed `result.md`.
 **OBSOLETE AS DIRECTION (2026-08-29; implementation paused):** that journal
-facade remains shipped but frozen. Its replacements are public image/audio
-batch resume on one Markdown file; a future `recognize_video` may only be a
-thin convenience caller — see
+facade remains shipped but frozen. Its replacements are independently resumable
+image/audio batch calls, each owning its own Markdown; callers compose the
+visible steps and no replacement `recognize_video` wrapper is currently
+reserved — see
 [`docs/plan_provider_entity_batch_refactor.md`](../../docs/plan_provider_entity_batch_refactor.md).
 Repair remains a separate future text-range side
 path rather than a state consumer.

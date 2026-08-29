@@ -11,7 +11,7 @@ Current truth is maintained in
 before relying on any dated phase, decision, checkpoint, review, or incident
 record. Those files preserve history and do not override current status.
 
-As of 2026-08-27:
+As of 2026-08-29:
 
 - Phase 0 contract honesty, the Phase 1 image gate, the Phase 2 development
   worker, and Phase 2A image-library completion are GO.
@@ -36,8 +36,9 @@ As of 2026-08-27:
   remains shipped but frozen while the narrowed provider-model/media-batch
   replacement is decided and proven — see
   [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md);
-  image/audio batch resume replaces the video journal, and a future
-  `recognize_video` may only be a thin caller of public steps. If a
+  independently resumable image/audio batch calls replace the video journal;
+  callers compose the visible steps and no replacement `recognize_video`
+  wrapper is currently reserved. If a
   short-audio unit settles but its journal update fails, the persistence error
   retains the known call and client-cleanup evidence; a recognized or exact
   Google no-speech settlement also retains current model usage. Exact no-speech
@@ -222,6 +223,12 @@ pip install ".[video,image,audio,dashscope,google]"
 
 ### Combined-video example with separate providers
 
+> **FROZEN COMPATIBILITY SURFACE:** this example documents the currently shipped
+> API so existing callers can use it honestly. New architecture must not build
+> on this video-specific recognition/compose/publication chain. After the
+> independently resumable merged-image and merged-audio replacements are proven,
+> the chain is deleted rather than retained beside them.
+
 ```python
 from os import environ
 from pathlib import Path
@@ -281,8 +288,9 @@ For library-owned persistence, call the high-level facade instead:
 > **OBSOLETE AS DIRECTION (2026-08-29; implementation paused):**
 > `recognize_video_to_markdown` remains shipped but frozen until the narrowed
 > provider-model/media-batch replacement passes its deletion gate. The
-> successors are public image/audio batch resume functions; a future
-> `recognize_video` may only be a thin convenience caller. See
+> successors are independently resumable image/audio batch functions, each with
+> its own output; callers compose the visible steps and no replacement
+> `recognize_video` wrapper is currently reserved. See
 > [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md).
 > The example below describes the shipped API until the refactor lands.
 
