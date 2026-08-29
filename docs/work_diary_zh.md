@@ -8728,3 +8728,17 @@ legacy Google 是值得保留但不能整套照搬的生产证据：它区分同
 **仍未替维护者暗定的细节。** `ProviderBinding` 只是暂名；精确构造器、同 lane 同 vendor/model 但不同 settings 是否允许重复，以及 settled slot 是否公开记录某些非敏感输出设置，留到第一消费者的 API 小切片决定。`batchify_images` / 音频分片只需要无密钥模型默认值，还是也接受完整 binding，同样将在其函数签名讨论时确认。本轮不把这些扩成 settings 基类、factory hierarchy、binding ID registry、plugin loader 或新 checkpoint schema。
 
 **验证与过度设计复查。** 本轮只改权威、计划、维护者决定、导航、迁移状态和中文日记；没有 credential/API/runtime/test/dependency/public API/state/legacy/frozen 变化，也没有运行与文档判断无关的全量测试。过度设计风险不是“两字段配对”本身，而是过早把它实现成没有消费者的公开框架，或顺手引入通用配置字典、注册表、工厂层级和全新 resume 体系；本轮全部拒绝。
+
+## #618 — 2026-08-29：默认分组由可见媒体规划读取模型事实
+
+**本轮英文原子任务。** `Atomic task — Iteration #618: decide the narrow ownership boundary for omitted image batch size and omitted audio interval without implementing the replacement media APIs. Context: #617 made progress by separating durable model facts from runtime settings, while the proposed visible pipeline requires batchify_images() and audio splitting to obtain provider-derived defaults without importing credentials or making batching depend on whichever fallback later succeeds. Success means waiting approximately three minutes after #617, reconciling Git and the authoritative plan/diary, personally tracing the current image grouping and audio-window planners plus their resume identities, comparing explicit-only, ProviderModel-aware, and recognition-owned default resolution, selecting the smallest deterministic contract, documenting only evidence-backed conclusions, and committing/pushing with no provider call, runtime, test, or public API change. This matters because unstable or credential-coupled planning would make fallback and resume change media boundaries and would quietly recreate a lifecycle black box.` #617 已提交并推送，属于进展；本轮在其提交后约三分钟开始实质源码核对。
+
+**现有证据。** 当前视频帧路径先求一个有效图片数，再生成有序 exact tuple groups；PDF 同样在 provider dispatch 前按八页固定分组。当前长音频只接受正整数分钟或 whole，生成带固定 30 秒上下文的确定逻辑/物理窗口，把 mode、minutes、完整 request fingerprints 和 settled prefix 写入状态；resume 省略分钟时读回已存值，改变计划会在 materialize/provider call 前失败。可复用的是“媒体边界先固定、resume 不重算”，不能照搬旧视频 journal 或把 provider/model 锁进未来未完成槽位身份。
+
+**三条路线和结论。** A 要求图片/音频规划永远显式传数值，代码最少，但违背省略时使用模型建议值的已定产品行为。C 到识别时才从 `ProviderBinding` 分组/切片，会让凭据、端点和当前 fallback 决定媒体边界，也把可见步骤藏回 recognition。选择 B：`batchify_images` / `split_audio` 接受显式标量、无密钥 `ProviderModel` 的 single/flat/nested shape，或两者；显式值优先，省略时完整验证能力和建议值、取全候选最小正整数一次。识别/resume 才接受 #617 的 `ProviderBinding`。两名轻量只读代理分别核对图片和音频，结论一致；本人逐文件复核其引用，没有把代理结论当成代码事实直接照抄。
+
+**剪枝后的合同。** 图片规划直接返回有序 exact tuple groups，merged recognizer 只消费已分组输入；不再同时支持隐藏的 unbatched recognition 默认分组，也不新增 `ImageBatchPlan`。音频显式 `-1` 立即归一成 `mode=whole, interval_minutes=None`；fallback/resume 不重切。provider models 只供规划读取能力/默认值，不序列化；bindings/settings 只供 dispatch，不反向进入规划。nested lanes 只参与以后调度，不产生 lane-local 图片组或音频窗口。
+
+**发现但不顺手解决的真实接口风险。** 当前音频窗口的 30 秒上下文依赖专用 prompt 只输出逻辑范围。若公开 splitter 只返回裸文件路径，普通音频识别会把边界上下文重复写入结果；因此未来需要一个最窄的切片元数据返回形状，或明确改变 overlap 行为。这个问题留给 split API 小切片，不用通用 `MediaPlan`、planner registry 或再次隐藏 split 来绕开。最新 `float` 字样仍与现有 validator/window/state/resume 的整数分钟合同冲突；在维护者明确推翻前继续用 `int | None`，不引入小数舍入和新身份规则。
+
+**验证与过度设计复查。** 本轮只改六份决策/导航文档；没有 credential/provider/API/runtime/test/dependency/public API/state/legacy/frozen 变化，不运行无法增加证据的全量测试。拒绝了 ProviderBinding 进入规划、bare model 进入 dispatch、parallel settings tree、第二套 unbatched recognition、generic media plan、lane-local planner、adaptive shrinking 和动态 re-split。

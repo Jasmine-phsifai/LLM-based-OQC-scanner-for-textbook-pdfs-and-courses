@@ -12160,3 +12160,27 @@ consumer; do not add provider-plan lists to current `Config.provider` and do not
 let a new API accept both old and new provider sources. Exact naming, duplicate
 rules, and safe audit fields remain later API details. No credential, API,
 runtime, test, dependency, public API, state, legacy, or frozen code changed.
+
+## Current working update: #618 assigns provider defaults to media planning
+
+Future visible `batchify_images` and `split_audio` may read only secret-free
+`ProviderModel` shapes to resolve an omitted scalar. They accept an explicit
+value, a scalar/flat/nested model shape, or both; explicit values win, and audio
+`-1` normalizes immediately to whole mode. Omission uses the minimum positive
+exact-integer applicable default across all candidates once. Exact ordered
+groups/windows then remain fixed through fallback and resume.
+
+Actual recognition and resume use the `ProviderBinding` direction from #617
+because dispatch needs exact settings. Do not pass credentials/settings into
+media planning, bare models into dispatch, or maintain a parallel settings
+tree. The merged image recognizer consumes already-created groups and does not
+add a second hidden unbatched grouping route. No `ImageBatchPlan`, generic
+media planner, lane-local grouping, or adaptive re-planning is authorized.
+
+Audio's exact public split result remains a later API gate: the retained
+30-second context requires logical/actual range metadata and a range-aware
+prompt, so bare segment paths would duplicate boundary speech. This does not
+justify moving splitting back inside recognition. Positive integer minutes
+remain authoritative; the latest `float` wording still requires explicit
+maintainer reversal. No runtime, API, test, dependency, state, legacy, or frozen
+code changed.

@@ -1444,3 +1444,20 @@ separate named model/settings parameters are sufficient there. Introduce it only
 with the first public merged recognizer or flat-list consumer, and do not add
 list behavior to existing `Config.provider`. The provisional name, duplicate
 rule, and safe settled-setting audit fields remain later slice-local decisions.
+
+**#618 fixes which layer reads omitted media defaults.** Visible planning uses
+secret-free `ProviderModel`; runtime recognition/resume uses the
+`ProviderBinding(model, settings)` direction from #617. `batchify_images` and
+`split_audio` accept an explicit scalar, a scalar/flat/nested model shape, or
+both. Explicit values win; audio `-1` becomes the one whole-mode identity.
+Omission takes the minimum positive exact-integer applicable default across all
+candidates once, then freezes ordered groups/windows for fallback and resume.
+
+The merged image recognizer consumes already-batched exact tuples and does not
+also own an unbatched default-resolution path. Exact image groups are the plan;
+do not add `ImageBatchPlan`, credentials/settings, a provider tree, lane-local
+grouping, or adaptive rebatching. Audio remains integer-minute only unless the
+maintainer explicitly reverses it. Its public split result needs a later narrow
+decision because current 30-second overlap requires logical/actual range
+metadata; bare paths are insufficient, but that does not authorize a generic
+media-plan class or hidden recognition-owned splitting.

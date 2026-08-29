@@ -1381,3 +1381,10 @@ when the first public merged or flat-list consumer needs a complete candidate,
 use a small runtime-only `ProviderBinding(model, settings)`. Do not put secrets,
 callables, generic options, retry/token/lane state, or provider trees into the
 model or current `Config.provider`.
+
+#618 places provider-derived image/audio defaults in the visible planning step,
+not dispatch. `batchify_images` and `split_audio` may inspect secret-free
+`ProviderModel` shapes; recognition/resume use runtime `ProviderBinding`
+values. Explicit scalars win, omitted values use one common minimum, and the
+resulting tuple groups/windows never change during fallback or resume. No code
+implements this yet.

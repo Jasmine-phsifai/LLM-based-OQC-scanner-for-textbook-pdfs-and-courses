@@ -308,12 +308,12 @@ The latest proposal also confirms these already maintained contracts:
 - one merged image call writes ordered image slots to one Markdown file, and
   one merged audio call writes ordered audio slots to a different Markdown
   file;
-- manual image batching is provider-free; an unbatched recognition call may
-  resolve an omitted batch size from the completely validated provider shape,
-  but an already settled plan is never silently re-batched after rejection;
-- `split_audio` accepts an explicit interval or provider input, requires at
-  least one, gives the explicit interval priority, and uses `-1` only as the
-  call-level whole-file spelling;
+- visible image batching accepts an explicit size or secret-free model shape;
+  recognition receives the resulting exact groups, and no settled plan is
+  silently re-batched after rejection;
+- `split_audio` accepts an explicit interval or secret-free model shape,
+  requires at least one, gives the explicit interval priority, and uses `-1`
+  only as the call-level whole-file spelling;
 - recognize, resume, and experimental repair take explicit sources and an
   optional output target, with ambiguous cross-directory defaults rejected
   before provider dispatch;
@@ -581,14 +581,22 @@ extract_video_audio
 
 ### 2.3 Batch boundaries
 
-- Manual batching stays provider-free:
-  `batchify_images(paths, batch_size=<positive int>)` requires an explicit
-  size.
-- A merged recognition facade may also accept unbatched paths. When its
-  `batch_size` is omitted, it resolves one default from the supplied provider
-  models before dispatch.
+- `batchify_images` accepts an explicit positive integer size, a secret-free
+  `ProviderModel` shape used only for default resolution, or both; at least one
+  is required and the explicit size wins.
+- The model shape may be scalar, flat list, or nested list. When the size is
+  omitted, validate every applicable model and take the minimum positive
+  recommendation across the flattened shape once. Runtime settings,
+  credentials, endpoints, and `ProviderBinding` do not enter batching.
+- The merged recognizer consumes the exact ordered groups returned by
+  `batchify_images`; it does not add a second unbatched-input/default-resolution
+  path. This keeps the requested inspect/extract/batchify/recognize steps
+  visible instead of making batchification optional hidden work.
 - Already-batched input is never re-chunked during provider fallback. Slot
   identity and resume ordering stay stable.
+- The groups themselves are the plan. Do not add an `ImageBatchPlan` class,
+  planner registry, or provider tree to persistence merely to remember one
+  advisory integer.
 - Media batch containers follow the active library's strict concrete-tuple
   approach. Generators, custom iterables, and compatibility wrappers are not a
   product requirement.
@@ -597,8 +605,9 @@ extract_video_audio
 
 ### 2.4 Audio splitting
 
-- `split_audio` accepts either an explicit integer-minute interval or provider
-  input; at least one is required.
+- `split_audio` accepts either an explicit integer-minute interval or a
+  secret-free `ProviderModel` shape; at least one is required. Exact runtime
+  settings and `ProviderBinding` first enter at recognition.
 - An explicit interval wins when both are present.
 - `-1` means no split. It is a call argument only, never a provider default.
 - Provider default audio duration is a positive integer number of minutes,
@@ -608,6 +617,12 @@ extract_video_audio
   evidence-backed decision changes it. Individual providers may reject a
   shorter duration; that remains a provider failure, not a reason to guess a
   new chunk plan during recognition.
+- The existing 30-second boundary context depends on logical and actual range
+  metadata plus a range-aware prompt. A future public splitter cannot return
+  bare paths while silently preserving that overlap, because ordinary audio
+  recognition would duplicate boundary speech. The smallest exact slice return
+  shape is a later API decision; do not hide splitting inside recognition to
+  avoid that decision.
 
 ### 2.5 Provider-model value
 
@@ -694,13 +709,19 @@ failure and decision.
 
 ### 2.6 Provider input shapes
 
-Recognition and provider-derived audio splitting accept exactly three shapes:
+Planning and recognition use the same three structural depths but different
+leaf types:
 
 ```text
-one provider-model
-flat list[provider-model]
-nested list[list[provider-model]]
+batchify/split: one ProviderModel | flat list[ProviderModel]
+                | nested list[list[ProviderModel]]
+recognize/resume: one ProviderBinding | flat list[ProviderBinding]
+                  | nested list[list[ProviderBinding]]
 ```
+
+Planning reads only capabilities and suggestions. Recognition uses the complete
+model/settings pair. Do not make one argument accept both bare models and
+bindings, and do not pass a parallel settings tree.
 
 - A flat list is one ordered fallback lane. While its slot is unresolved, each
   provider may be reached at most once after that provider's own finite retry
@@ -1339,7 +1360,7 @@ even though later batches may start from a remembered successful provider.
 Lane-local defaults couple time ranges to round-robin assignment and require a
 variable-window scheduler plus more persisted mapping. Requiring an explicit
 interval for multiple providers contradicts the fixed requirement that
-`split_audio` may derive one from provider input. The global minimum may create
+`split_audio` may derive one from a model shape. The global minimum may create
 more calls than a larger provider needs, but it adds no alternate identity or
 scheduler.
 
@@ -1779,3 +1800,51 @@ consumer actually needs it, and do not retrofit list semantics into the current
 and settled-slot safe-setting audit fields remain slice-local API choices. New
 merged APIs should not accept two competing provider sources such as both
 `Config.provider` and `providers=`.
+
+## #618 Provider Defaults Belong To Visible Media Planning
+
+The current implementation supplies two useful facts. Video grouping resolves
+one effective image count before creating ordered tuple groups, and provider
+fallback never changes those groups. Long-audio interval mode builds exact
+integer-minute logical/actual windows, persists the normalized mode, minutes,
+ordered request fingerprints and settled prefix, and rejects a changed plan
+before materialization or provider dispatch. The replacement should preserve
+those invariants without copying the video journal or provider-bound audio
+fingerprint.
+
+Three ownership routes were compared. Explicit-only planning would force
+callers to duplicate curated defaults and contradict the requested omitted-
+argument behavior. Dispatch-time planning from `ProviderBinding` would couple
+media boundaries to credentials and whichever fallback happens to run, and it
+would hide batchification/splitting inside recognition. The selected narrow
+route lets the visible planning functions inspect only secret-free
+`ProviderModel` facts.
+
+`batchify_images` and `split_audio` therefore accept an explicit scalar, a
+scalar/flat/nested `ProviderModel` shape, or both. An explicit positive value
+wins; audio additionally accepts `-1` and immediately normalizes it to whole
+mode. When omitted, completely validate applicable capabilities/defaults and
+take the minimum positive exact integer across all candidates. Resolve one
+ordered plan before recognition. Nested lanes do not receive different media
+boundaries, fallback does not re-plan, and resume reuses the saved plan rather
+than the current provider list.
+
+Recognition and resume instead accept `ProviderBinding` leaves because those
+operations need exact settings. This is not two provider abstractions:
+`ProviderModel` is durable model data and `ProviderBinding` is the runtime pair
+defined in #617. Do not pass bindings into planning, bare models into dispatch,
+or parallel settings trees into either.
+
+For images, exact ordered tuple groups are sufficient; no `ImageBatchPlan`
+value is added. For audio, current overlap semantics prove that bare segment
+paths would be incomplete because recognition also needs logical versus actual
+time ranges. The public slice record/return shape remains a later API gate. It
+must be decided before implementing `split_audio`, but does not justify a
+generic media-plan type or hidden recognition-owned splitting.
+
+The latest `float` wording remains a direct unresolved conflict. Current
+validation, window construction, state and resume identity all require exact
+positive integer minutes, and fractional minutes would add rounding and durable
+identity rules. `ProviderModel.default_audio_minutes` therefore remains
+`int | None` unless the maintainer explicitly reverses the integer-only
+decision. No runtime or public API is authorized by this clarification.

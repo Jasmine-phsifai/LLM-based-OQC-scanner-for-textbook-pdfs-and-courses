@@ -2850,3 +2850,12 @@ flat/nested lists. The first internal single-provider proof can still use two
 named arguments; the public type waits for its first real merged or flat-list
 consumer. Existing `Config.provider`, adapters, resume formats, APIs, tests, and
 runtime remain unchanged.
+
+#618 clarifies future omitted media defaults without adding runtime. Visible
+`batchify_images`/`split_audio` read only secret-free `ProviderModel` facts;
+recognition/resume later receive complete `ProviderBinding` values. Explicit
+positive sizes/minutes win, audio `-1` normalizes to whole mode, and omission
+uses one common minimum before freezing exact groups/windows. No parallel
+settings tree, hidden recognition-time planning, plan framework, or adaptive
+re-planning is introduced. Audio split return metadata and the maintainer's
+`float` versus established integer-minute conflict remain later API decisions.
