@@ -949,12 +949,12 @@ choice details remain open or are fixed as marked:
    outcome reporting kept outside the rule and one universal "exhausted means
    record and advance" behavior (recommended), or do `error` / `next` /
    `current` retain distinct control meanings that still need to be specified?
-8. **Combined provider-model boundary:** does one immutable value contain only
-    vendor/model identity, controlled adapter ID, three capabilities,
-    capability-dependent defaults, and finite retry rules, while an explicit
-    lazy resolver uses separately supplied exact adapter settings and keeps the
-    injected Python protocol separate (recommended)? Or does each model carry
-    an arbitrary callable/protocol plus a generic invocation-options mapping?
+8. **Fixed combined provider-model boundary:** one immutable value contains
+    only vendor/model identity, controlled adapter ID, three capabilities,
+    capability-dependent defaults, and finite retry rules. An explicit lazy
+    resolver uses separately supplied exact adapter settings and keeps the
+    injected Python protocol separate. Arbitrary callables, executables,
+    generic invocation-options mappings, and hybrid ownership are rejected.
 9. **Fixed token contract:** persist one cumulative aggregate per exact
    `(vendor, model)` with exact calls and nullable input/output totals,
    including trustworthy failed-attempt evidence. Treat the loaded value as the
@@ -1083,8 +1083,9 @@ value. Credentials remain call/runtime data; the first vertical slice reuses
 its existing exact settings type and does not invent a generic credential
 registry before a second transport proves a common need. Keep the existing
 injected protocol on its existing API instead of automatically wrapping it in
-the replacement batch abstraction. This is not maintainer confirmation;
-choice 8 remains open and no runtime was implemented.
+the replacement batch abstraction. #589 fixes this boundary from the already
+settled readability, secret ownership, and no-universal-Config constraints.
+No runtime was implemented.
 
 **#579 evidence for choice 9.** Active Google and DashScope response boundaries
 already accept only trustworthy non-negative integer usage. Google can retain
@@ -1184,7 +1185,8 @@ identity. The former choices 8 and 10 therefore described two halves of the
 same boundary. Route A is one immutable data value plus a controlled adapter ID
 and separately supplied exact settings. Route B is an arbitrary callable plus
 generic options. A hybrid would duplicate authority and is not a third option.
-No class, adapter, resolver, setting, preset, or public API changed.
+#589 later fixes Route A. No class, adapter, resolver, setting, preset, or public
+API changed.
 
 **#586 fixes choice 9 without a token ledger.** Current image state preserves
 slot call counts but not token totals and clears reused current usage, so
@@ -1224,6 +1226,22 @@ document is planned. If a future maintainer explicitly requests one combined
 deliverable, that request is reconsidered then rather than retained now as an
 unused framework. No runtime, export, state, API, provider, or test source
 changed.
+
+**#589 fixes the combined provider-model boundary.** Current built-ins already
+prove exact-type settings, explicit resolver branches, lazy operation-module
+imports, and adapter-owned SDK/request/response/error/cleanup behavior. The
+existing injected `VisionProvider` proves that arbitrary Python execution is a
+useful separate extension seam, but it is opaque, non-persistent, and capable
+of carrying secrets or live resources. Putting that callable plus a generic
+options mapping into every `ProviderModel` would duplicate the seam and rebuild
+the legacy universal Config under a new name. The fixed model value therefore
+stores a validated controlled `adapter_id`; exact adapter settings remain at
+the call boundary and runtime-only resolved modules stay out of durable
+identity. A first single-provider proof may take its one exact settings value
+directly. Multi-provider settings association is specified only when that real
+consumer begins and cannot reopen callable/options-bearing model identity. No
+class, resolver, adapter, registry, setting, preset, API, runtime, provider
+call, or test source changed.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

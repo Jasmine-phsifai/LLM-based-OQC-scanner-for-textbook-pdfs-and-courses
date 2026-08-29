@@ -123,9 +123,8 @@ Only fields consumed by the first real vertical slice may be added. The
 recommended durable set is:
 
 - vendor and model identifier;
-- an invocation boundary, still awaiting choice 8 in section 6; the
-  recommended built-in route stores a controlled adapter identifier rather
-  than a callable or executable pointer;
+- a fixed invocation boundary: the built-in route stores a controlled adapter
+  identifier rather than a callable or executable pointer;
 - plain-image OCR support;
 - detail-image OCR support, including LaTeX/code-oriented output;
 - audio-input recognition support;
@@ -411,16 +410,15 @@ pause:
    records the last failure and advances to the next provider. Keep `error` /
    `next` / `current` only if the maintainer assigns them distinct control
    behavior that is not already expressed by those fields.
-8. **Provider-model and invocation boundary (includes former choice 10).**
-   Recommended: one immutable `ProviderModel` stores only vendor, model,
-   controlled adapter ID, three task-capability booleans, capability-dependent
-   nullable image/audio defaults, and canonical finite retry rules. One
-   explicit lazy resolver selects a known operation-specific adapter. Exact
-   credentials, endpoint, request options, and timeout remain in adapter
-   settings supplied separately at the call boundary; the existing injected
-   Python protocol remains separate. Alternative: each model carries an
-   arbitrary callable/protocol plus a generic options mapping. Do not approve a
-   hybrid of these two ownership models.
+8. **Fixed provider-model and invocation boundary (includes former choice
+   10).** One immutable `ProviderModel` stores only vendor, model, controlled
+   adapter ID, three task-capability booleans, capability-dependent nullable
+   image/audio defaults, and canonical finite retry rules. One explicit lazy
+   resolver selects a known operation-specific adapter. Exact credentials,
+   endpoint, request options, and timeout remain in adapter settings supplied
+   separately at the call boundary; the existing injected Python protocol
+   remains separate. Arbitrary callables, executables, generic options mappings,
+   and hybrid ownership are rejected.
 9. **Fixed token persistence contract.** The sidecar keeps one cumulative
    aggregate per exact `(vendor, model)`: exact dispatched call count plus
    nullable input/output totals. It includes trustworthy evidence from failed
@@ -455,7 +453,7 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | combined choice 8/10 | 1–7, 11 |
+| First and second provider-model proofs | fixed combined choice 8/10 | 1–7, 11 |
 | Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choices 9/12 | 1, 2, 4, 7, 11 |
 | Flat fallback | 1, 2, 4, 7, plus fixed choices 9/12 | 11 |
 | Nested lanes | the complete flat-fallback gate | 11 |
@@ -880,14 +878,18 @@ model description. A subclass per vendor/model has the same problem with more
 files. A single sparse object with every SDK's optional fields is another form
 of the same god object.
 
-Route A is recommended because it preserves extensibility by adding one honest
+Route A is fixed because it preserves extensibility by adding one honest
 transport adapter in code, not by pretending arbitrary execution is data. It
 also remains compatible with a future Python backend called by Electron: the
 front end sends ordinary data, while only the backend resolves and executes
 the adapter. #585 merges field ownership into this same Route A/B gate; choice
-10 is not a second approval. The combined choice 8/10 remains awaiting explicit
-maintainer confirmation. No `ProviderModel`, resolver, registry, credential
-type, adapter, or public batch API is authorized by this evidence.
+10 is not a second approval, and #589 closes the combined choice. The first
+single-provider proof may accept its existing exact settings type directly. A
+later multi-provider consumer must prove how several exact settings instances
+are bound at the call boundary; that call-shape question cannot move generic
+options or secrets into durable model identity. No `ProviderModel`, resolver,
+registry, credential type, adapter, or public batch API is implemented by this
+decision.
 
 ### 6.8 Evidence for choice 9 (#579)
 
@@ -968,11 +970,11 @@ supported; audio defaults are positive exactly when audio is supported. The
 first adapter continues to receive its existing exact settings separately.
 There is no dummy image/audio default for an unsupported task.
 
-Route B adds a sparse generic options list/mapping containing credentials,
+The rejected Route B adds a sparse generic options list/mapping containing credentials,
 endpoint, Chat/Responses choice, effort and future SDK switches. It initially
 looks convenient but loses validation, mixes secrets with durable values and
 recreates the legacy cross-provider configuration blob. A subclass per model
-has the same coupling with more files. Route A is recommended. #585 confirms
+has the same coupling with more files. Route A is fixed by #589. #585 confirms
 that this is the same ownership decision as choice 8 rather than another gate:
 `adapter_id` is useful only if adapter-specific settings remain outside the
 model value. This audit does not implement or authorize a provider model,

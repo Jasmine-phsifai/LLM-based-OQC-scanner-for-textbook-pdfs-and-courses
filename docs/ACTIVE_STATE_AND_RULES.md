@@ -11269,3 +11269,32 @@ reconsidered then as a new feature. No composer, shared sidecar, section marker,
 cross-branch lock, final video document, runtime source, export, API, state,
 provider call, test source, dependency, legacy source, frozen boundary, or
 deletion changed.
+
+## Current working update: #589 fixes controlled adapter identity
+
+#589 is a documentation-only ownership decision under the replacement-API
+implementation pause. The combined provider-model choices 8/10 no longer wait
+for another maintainer answer. One immutable `ProviderModel` carries a validated
+controlled `adapter_id`; a small explicit resolver selects one shipped
+operation-specific adapter through lazy imports. Exact credentials, endpoint,
+request options, and timeout remain in that adapter's exact settings supplied
+at the call boundary.
+
+This is already the only boundary consistent with the settled priorities.
+Current Google and DashScope settings validate different facts and select
+explicit built-in branches. Their adapters own SDK loading, client lifecycle,
+request/response translation, canonical errors, and cleanup. The separate
+injected-provider protocol is useful for Python tests and advanced callers but
+is opaque, non-persistent, and may contain secrets or live resources. Embedding
+it plus a generic options mapping in every model value would duplicate that
+extension seam and recreate the legacy universal configuration object.
+
+Arbitrary callable or executable fields, a generic options bag, mutable adapter
+registry, dotted-module loader, plugin discovery, model subclass hierarchy, and
+hybrid ownership are rejected. Runtime-only resolved modules do not become
+durable identity. The first single-provider proof may receive its existing exact
+settings object directly; the later multi-provider call defines settings
+association only from its real consumer and may not move generic options or
+secrets into `ProviderModel`. No class, resolver, adapter, registry, setting,
+preset, API, runtime source, provider call, test source, dependency, legacy
+source, frozen boundary, or deletion changed.
