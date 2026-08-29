@@ -11542,3 +11542,28 @@ Focused provider settings, resolver, request, error, response-usage, live-gate,
 and lightweight-import regressions are **194 passed in 3.75s**. The live-gate
 test remained offline under its normal credential guard; #597 made no provider
 request.
+
+## Current working update: #598 finds a proxy-bound catalog evidence gap
+
+#598 is a documentation-only live-readiness check under the unchanged
+discussion-first implementation pause. A bounded read-only audit and maintainer
+review confirmed that public `list_google_genai_models()` is the correct narrow
+path: it resolves one native Google credential, calls `client.models.list()`
+once, filters current `generateContent` models, and closes the client. It does
+not generate content, upload media, cache a catalog, or write state.
+
+The sole live catalog request used the nonempty legacy-QSettings Google key
+without printing or persisting it and timed out after 20 seconds. There was no
+generation call. Windows proxy configuration was enabled and its endpoint was
+TCP-reachable, but neither `HTTP_PROXY` nor `HTTPS_PROXY` existed in the child
+environment. The result therefore proves neither current
+`gemini-2.5-flash` membership nor model/provider unavailability. Route A remains
+conditional rather than rejected. The next bounded probe may set the active
+system proxy only in one child environment, make one catalog request, emit only
+catalog count and exact candidate membership, then discard the copied key and
+environment. Do not add Windows-proxy discovery or persistence to OCRLLM.
+
+No runtime source, test source, dependency, public API, provider-model type,
+preset, generation call, legacy source, frozen boundary, or deletion changed.
+Focused credential precedence, catalog filtering/cleanup, and catalog-failure
+call-accounting regressions are **3 passed in 0.16s**.

@@ -1287,6 +1287,15 @@ the new consumer succeeds, retry/fallback execution, merged output, resume,
 registry, plugin, local placeholder, or pool. A typed live failure remains
 honest evidence but does not close the preset/phase gate.
 
+**#598 keeps that order conditional.** One catalog-only native Google request
+timed out after 20 seconds with zero generation calls. The machine's Windows
+proxy was enabled and reachable, while the Python child had no standard proxy
+environment variables. This is insufficient evidence about current model
+membership. One later probe may copy the active proxy into one temporary child
+environment and report only catalog count plus exact candidate membership. It
+does not authorize library-level proxy discovery, a second generation attempt,
+or implementation of the replacement API.
+
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
 retained; image/audio providers are separate; callers compose the visible video

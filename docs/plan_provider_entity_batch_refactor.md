@@ -402,6 +402,18 @@ and optional credential pool make it a broader first settings seam. Under Route
 A it becomes the second transport proof, where those differences can challenge
 the first boundary instead of entering it pre-emptively.
 
+#598 performed the required catalog-only refresh attempt without lifting the
+implementation pause. The existing `list_google_genai_models()` path made one
+authenticated `models.list()` request and no generation, upload, cache, or
+write. It returned a typed timeout after 20 seconds. Windows proxy configuration
+was enabled and its endpoint was reachable, but the child Python process had no
+`HTTP_PROXY` or `HTTPS_PROXY`; therefore this result does not prove that
+`gemini-2.5-flash` is absent and does not disqualify Route A. The next live
+probe must pass the already-running system proxy to one child process through a
+temporary environment, make one catalog request, emit only count and exact
+candidate membership, and discard the copied key/proxy environment. It must not
+add automatic Windows-proxy discovery to the library or retry generation.
+
 After authorization, the first slice is limited to:
 
 1. one internal immutable `ProviderModel` with the already-fixed complete field
