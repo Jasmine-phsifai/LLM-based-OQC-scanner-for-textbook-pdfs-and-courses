@@ -1388,3 +1388,9 @@ not dispatch. `batchify_images` and `split_audio` may inspect secret-free
 values. Explicit scalars win, omitted values use one common minimum, and the
 resulting tuple groups/windows never change during fallback or resume. No code
 implements this yet.
+
+#619 recommends `split_audio() -> tuple[AudioSlice, ...]`: each immutable value
+names the caller-owned source and exact logical/overlap-padded ranges, while
+recognition materializes and removes only its active transport clip. This keeps
+the split visible and resumable without persistent chunks, a job owner, or a
+generic media-plan framework. It is documentation-only.

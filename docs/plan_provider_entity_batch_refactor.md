@@ -620,9 +620,14 @@ extract_video_audio
 - The existing 30-second boundary context depends on logical and actual range
   metadata plus a range-aware prompt. A future public splitter cannot return
   bare paths while silently preserving that overlap, because ordinary audio
-  recognition would duplicate boundary speech. The smallest exact slice return
-  shape is a later API decision; do not hide splitting inside recognition to
-  avoid that decision.
+  recognition would duplicate boundary speech. `split_audio` therefore returns
+  an exact tuple of immutable `AudioSlice` values carrying caller-owned source,
+  zero-based index, and exact logical/actual ranges. It plans no provider call
+  and does not materialize persistent segment files.
+- Recognition consumes those already-fixed slices. It may create the physical
+  transport clip for one active slot, reuse it for that slot's finite fallback
+  attempts, and remove it on scope exit. Transport materialization is not
+  permission to calculate or alter slice boundaries.
 
 ### 2.5 Provider-model value
 
@@ -1837,10 +1842,9 @@ or parallel settings trees into either.
 
 For images, exact ordered tuple groups are sufficient; no `ImageBatchPlan`
 value is added. For audio, current overlap semantics prove that bare segment
-paths would be incomplete because recognition also needs logical versus actual
-time ranges. The public slice record/return shape remains a later API gate. It
-must be decided before implementing `split_audio`, but does not justify a
-generic media-plan type or hidden recognition-owned splitting.
+paths are incomplete because recognition also needs logical versus actual time
+ranges. #619 selects one small audio-specific immutable `AudioSlice` descriptor
+rather than a generic media-plan type or hidden recognition-owned splitting.
 
 The latest `float` wording remains a direct unresolved conflict. Current
 validation, window construction, state and resume identity all require exact
@@ -1848,3 +1852,70 @@ positive integer minutes, and fractional minutes would add rounding and durable
 identity rules. `ProviderModel.default_audio_minutes` therefore remains
 `int | None` unless the maintainer explicitly reverses the integer-only
 decision. No runtime or public API is authorized by this clarification.
+
+## #619 Audio Splitting Returns Descriptors, Not Retained Chunks
+
+Both the legacy Google parent and the active library prove that a physical
+overlap-padded MP3 is not a complete slice identity. Interior logical ranges
+are contiguous, while each physical range adds 30 seconds on both eligible
+sides; adjacent interior files therefore share up to 60 seconds. Their opaque
+filenames do not say which words belong to which output slot. A range-aware
+prompt needs original-source and clip-relative logical/actual coordinates to
+exclude that context from the returned transcript.
+
+Three output routes were compared. Returning persistent `Path` values would
+lose the logical ownership ranges or require a second manifest/filename
+protocol, and it would retain a full extra set of files for sources up to ten
+hours. A context-managed generator or job owner would force recognition into
+one process lifetime, obstruct later resume, and recreate the removed video
+lifecycle owner. The selected narrow route returns an exact tuple of immutable
+audio-specific descriptors:
+
+```python
+AudioSlice(
+    source=source_path,
+    index=0,
+    logical_start_seconds=0.0,
+    logical_end_seconds=1800.0,
+    actual_start_seconds=0.0,
+    actual_end_seconds=1830.0,
+)
+```
+
+The value contains only the caller-owned source `Path`, a stable zero-based
+index, and the exact four range coordinates. It contains no materialized path,
+provider/model, binding/settings, prompt, output, retry/token/error state,
+cleanup method, source hash, or generic options. `split_audio` freezes these
+boundaries without creating durable segment files. A whole-file `-1` plan is
+one slice whose logical and actual ranges cover the inspected source.
+
+Recognition validates the exact tuple and explicit sources, snapshots/hash-
+checks source content, and privately materializes the already-selected actual
+range only while its logical slot is active. It may reuse that physical clip
+across the slot's finite fallback attempts, then deletes it even on failure.
+Changing the descriptor is a new plan, not resume. Resume persists normalized
+mode/minutes, ordered range/source identity and sparse settled slots; it never
+persists temporary clip paths or requires old clips to survive. Actual
+provider/model/usage belongs only to settled evidence.
+
+This preserves the existing bounded-storage mechanism: the active library
+already snapshots in streaming chunks, validates long audio without loading
+all PCM into Python memory, materializes one missing interval inside a cleanup
+context, and rematerializes it from the source during resume. The future nested
+scheduler may have more than one active lane, but no design pre-materializes
+all slices or adds a cleanup registry.
+
+Legacy supplies warnings rather than architecture to copy. Its Google chunks
+are created under a temp directory with no matching normal cleanup in the
+long-audio path, its custom recognized-text checkpoint is not removed on
+ordinary success, and matching cached segments are considered regardless of
+the public `resume` flag. The active one-slice context manager already avoids
+the file leak. Do not port the legacy chunk directory, custom checkpoint,
+repair manifest, configurable overlap, or cache semantics. Repair remains the
+separate experimental side path and may reuse exact saved ranges only when its
+own narrow consumer is approved.
+
+No `AudioPlan`, base media-slice class, public context manager, persistent chunk
+archive, transcript similarity deduplicator, or second checkpoint system is
+authorized. The `AudioSlice` name and minimum facts are recommended for the
+later implementation slice; no runtime or public API changes in #619.

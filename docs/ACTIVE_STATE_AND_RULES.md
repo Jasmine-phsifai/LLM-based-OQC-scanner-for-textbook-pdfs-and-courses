@@ -12177,10 +12177,35 @@ tree. The merged image recognizer consumes already-created groups and does not
 add a second hidden unbatched grouping route. No `ImageBatchPlan`, generic
 media planner, lane-local grouping, or adaptive re-planning is authorized.
 
-Audio's exact public split result remains a later API gate: the retained
-30-second context requires logical/actual range metadata and a range-aware
-prompt, so bare segment paths would duplicate boundary speech. This does not
-justify moving splitting back inside recognition. Positive integer minutes
-remain authoritative; the latest `float` wording still requires explicit
-maintainer reversal. No runtime, API, test, dependency, state, legacy, or frozen
-code changed.
+Audio's retained 30-second context requires logical/actual range metadata and a
+range-aware prompt, so bare segment paths would duplicate boundary speech.
+#619 selects a minimal `AudioSlice` descriptor for that later API rather than
+moving splitting back inside recognition. Positive integer minutes remain
+authoritative; the latest `float` wording still requires explicit maintainer
+reversal. No runtime, API, test, dependency, state, legacy, or frozen code
+changed.
+
+## Current working update: #619 keeps audio slice identity without retained chunks
+
+Future `split_audio` returns an exact tuple of immutable `AudioSlice` values.
+Each value contains only a caller-owned source path, stable zero-based index,
+and exact logical start/end plus actual overlap-padded start/end. It contains no
+temporary segment path, provider/model, binding/settings, prompt, output,
+retry/token/error state, cleanup method, source hash, or generic options.
+Whole mode is one descriptor covering the inspected source.
+
+Recognition consumes these fixed descriptors and may privately materialize the
+selected actual range only while that logical slot is active, reuse it across
+that slot's finite fallback attempts, then delete it on scope exit. It does not
+calculate new boundaries. Resume saves source/range plan identity and sparse
+settled work, never temporary paths; actual provider/model/usage stays settled
+evidence. No public context manager, job owner, retained chunk directory,
+`AudioPlan`, media-slice base class, cleanup registry, or transcript deduplicator
+is authorized.
+
+Legacy Google confirms why: physical filenames omit logical ownership ranges,
+its overlap-aware prompt needs all four coordinates, and its chunk/checkpoint
+cleanup is incomplete. Those are parent warnings, not formats to port. The
+active one-interval cleanup context is the retained implementation precedent.
+No media conversion, provider call, runtime, test, dependency, API, state, or
+frozen boundary changed.

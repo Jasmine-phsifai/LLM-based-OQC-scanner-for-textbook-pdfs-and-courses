@@ -1127,3 +1127,33 @@ final frame, fails honestly when it cannot decode it, closes the final segment,
 and preserves both endpoints under its density cap; its real-MP4 EOF regression
 and capped-selector regression both pass. No active-library fix or compatibility
 layer is required.
+
+## 2026-08-29: Google long-audio chunks and custom checkpoint outlive the run
+
+**Observed from the maintained source; not fixed in this planning iteration.**
+The Google long-audio splitter writes all physical chunks below
+`temp_dir/google_audio_chunks/<source stem>`, but the Google recognition success
+and failure paths do not remove those files or their directory. Ordinary
+success removes the generic audio checkpoint, but does not remove the matching
+custom Google recognized-text checkpoint; that custom checkpoint is loaded
+whenever its metadata matches, independently of the public `resume` argument.
+
+The overlap itself is intentional: logical ranges remain contiguous and each
+physical range adds up to 30 seconds of context per eligible side. `AudioChunk`
+and the custom checkpoint preserve actual/logical ranges because opaque names
+such as `google_part002.mp3` cannot express which overlapping words belong to
+the result. The cleanup gap and implicit cache/recovery semantics are separate
+from this required range identity.
+
+No compatibility fix was attempted because the current task is the new-library
+audio API discussion, not legacy mutation. The active library already uses a
+smaller lifecycle: it rematerializes one missing interval from the source,
+persists settled text/identity rather than chunk paths, and deletes the physical
+interval in `finally`.
+
+**Carry-forward judgement. WARNING FOR src/ocrllm.** Preserve exact logical and
+actual audio ranges, but do not port the retained chunk directory, custom cache,
+unconditional cache reuse, or cleanup gap. Future public splitting should keep
+caller sources alive and let recognition own only bounded temporary transport
+clips. Resume must be explicit and source/range-bound rather than depending on
+old physical chunks.

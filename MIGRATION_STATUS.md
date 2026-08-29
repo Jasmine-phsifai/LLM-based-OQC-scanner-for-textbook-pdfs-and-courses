@@ -2858,4 +2858,14 @@ positive sizes/minutes win, audio `-1` normalizes to whole mode, and omission
 uses one common minimum before freezing exact groups/windows. No parallel
 settings tree, hidden recognition-time planning, plan framework, or adaptive
 re-planning is introduced. Audio split return metadata and the maintainer's
-`float` versus established integer-minute conflict remain later API decisions.
+`float` versus established integer-minute conflict were left as later API
+decisions; #619 below closes only the return-metadata shape.
+
+#619 narrows the future audio split result to immutable descriptors without
+implementing them. `AudioSlice` carries caller-owned source, zero-based index,
+and exact logical/actual ranges; it carries no materialized path or provider,
+output, prompt, retry, token, cleanup, or generic state. Recognition may
+materialize one active physical clip and delete it after finite fallback;
+resume retains source/range identity and settled slots, never temporary files.
+Legacy chunk/checkpoint cleanup gaps are recorded as warnings rather than
+formats to port. Runtime, API, tests, media, and provider behavior are unchanged.

@@ -1457,7 +1457,22 @@ The merged image recognizer consumes already-batched exact tuples and does not
 also own an unbatched default-resolution path. Exact image groups are the plan;
 do not add `ImageBatchPlan`, credentials/settings, a provider tree, lane-local
 grouping, or adaptive rebatching. Audio remains integer-minute only unless the
-maintainer explicitly reverses it. Its public split result needs a later narrow
-decision because current 30-second overlap requires logical/actual range
-metadata; bare paths are insufficient, but that does not authorize a generic
-media-plan class or hidden recognition-owned splitting.
+maintainer explicitly reverses it. Current 30-second overlap requires
+logical/actual range metadata; bare paths are insufficient. #619 selects the
+small audio-specific descriptor below rather than a generic media-plan class or
+hidden recognition-owned splitting.
+
+**#619 selects descriptor-only public audio splitting.** `split_audio` returns
+an exact tuple of immutable `AudioSlice` values containing caller-owned source,
+stable zero-based index, and exact logical/actual start/end seconds. It does not
+materialize and retain every segment. Recognition privately creates only the
+already-planned physical clip for an active slot, may reuse it through that
+slot's finite fallback attempts, and deletes it on exit. Resume persists range
+identity and sparse settled work, not temporary paths.
+
+Do not add provider/model/settings, prompt/output, retry/token/error state,
+cleanup behavior, source hash, or generic options to `AudioSlice`. Do not add an
+`AudioPlan`, base media-slice hierarchy, public context manager/job owner,
+retained chunk archive, cleanup registry, configurable overlap, or transcript
+similarity deduplicator. Legacy's uncleared chunk directory and custom cached
+checkpoint are warnings to avoid, not compatibility formats to migrate.
