@@ -10805,8 +10805,9 @@ result-plus-error wrapper, post-success calls, comparison/ranking stage, and
 changes to `BatchItemOutcome` are rejected unless a later consumer proves them
 necessary.
 
-Choices 1 and 2 remain open for explicit maintainer confirmation. This iteration
-changes documentation only: no dispatcher, provider model, retry, result schema,
+At #572, choices 1 and 2 remained open for explicit maintainer confirmation;
+#591 later fixes choice 1, while choice 2 remains open. This iteration changes
+documentation only: no dispatcher, provider model, retry, result schema,
 runtime, test, dependency, frozen directory, legacy behavior, or migration
 capability changed. The focused existing candidate/batch contract remains
 **29 passed in 0.80s**.
@@ -11154,15 +11155,17 @@ open behavior. It prevents late publication questions from blocking early live
 evidence and prevents early model objects from acquiring fields used only by a
 future pool.
 
-Direct wording still conflicts within choices 1–3, so they remain open rather
-than being guessed. Choices 4 and 6 are narrowed to common-minimum versus
+At #584, direct wording still conflicted within choices 1–3. #591 later fixes
+choice 1 to stop on first success; choices 2–3 remain open. Choices 4 and 6 are
+narrowed to common-minimum versus
 first-provider defaults; explicit-only behavior is removed because omission is
 already required to derive a provider-informed value. The maintainer directly
 fixed the behavior behind choice 11: a thin `resume_video` route delegates to
 ordinary image/audio resume and owns no video journal, composition,
 publication, naming, or cleanup. Only package-root export remains open. Choice
-12 still governs whether independently merged media results also require one
-combined artifact. No runtime, export, test source, sidecar, provider,
+12 was still open at #584; #588 later fixes separate image/audio outputs and
+removes the speculative combined artifact. No runtime, export, test source,
+sidecar, provider,
 dependency, legacy source, frozen boundary, or deletion changed.
 
 ## Current working update: #585 combines provider-model data and invocation ownership
@@ -11323,3 +11326,27 @@ same-model attempt counter. No exponential policy, retry-delay hint parser,
 infinite sentinel, learned policy, retry engine, dispatcher, provider model,
 preset, API, runtime source, provider call, test source, dependency, legacy
 source, frozen boundary, or deletion changed.
+
+## Current working update: #591 fixes flat fallback to first success
+
+#591 is a documentation-only settlement rule under the replacement-API
+implementation pause. A flat provider list is an ordered fallback lane, not an
+ensemble. While one logical slot remains unresolved, each provider may be
+reached at most once after that provider's own finite retry rule. The first
+valid recognition settles the slot and stops the lane. No later provider is
+called for comparison, ranking, voting, duplicate Markdown, or a second result.
+
+This is the narrow reading of "traverse the list once" that remains consistent
+with one result or one error per logical unit: the dispatcher makes at most one
+ordered pass while unresolved; it does not make mandatory paid calls after the
+unit has settled. The successful provider remains the remembered starting point
+for the next batch. Current active and legacy candidate loops already stop on
+first success, and the current result boundary has no owner for competing valid
+results or a winner/merge policy.
+
+Choice 1 is therefore fixed. Choice 2 remains separate and open: this decision
+does not determine whether bounded failures before eventual success are returned
+with the completed result or cause an attached-result exception. No ensemble,
+quorum, scoring, comparison stage, multi-result wrapper, retry dispatcher,
+provider model, preset, API, runtime source, provider call, test source,
+dependency, legacy source, frozen boundary, or deletion changed.

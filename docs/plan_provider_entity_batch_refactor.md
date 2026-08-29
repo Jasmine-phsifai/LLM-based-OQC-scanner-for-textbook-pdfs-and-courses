@@ -203,7 +203,10 @@ flat list[provider-model]
 nested list[list[provider-model]]
 ```
 
-- A flat list is one ordered fallback lane.
+- A flat list is one ordered fallback lane. While its slot is unresolved, each
+  provider may be reached at most once after that provider's own finite retry
+  rule. The first valid recognition settles the slot and stops the lane; no
+  later provider is called for comparison, ranking, or duplicate output.
 - A nested list is a fixed set of independent lanes. Batches are assigned by a
   simple round-robin rule (`batch_index % lane_count`); no batch uses a
   provider outside its assigned lane.
@@ -218,8 +221,8 @@ nested list[list[provider-model]]
 - No dynamic rebalancing, cross-lane rescue, arbitrary iterable support, or
   second pool abstraction is planned.
 
-The exact success-stop contract remains open in section 6 and must be settled
-before a dispatcher is implemented.
+The success-stop contract is fixed. "Traverse once" means at most one ordered
+pass while a slot remains unresolved, not mandatory calls after success.
 
 ### 2.7 Retry and error evidence
 
@@ -379,9 +382,10 @@ suite alone does not prove a provider phase.
 The unresolved parts of these choices are explicit phase gates, not one global
 pause:
 
-1. **Flat-list traversal after success.** Recommended interpretation: visit
-   each provider at most once per batch, but stop immediately on first success.
-   Alternative: continue calling every provider even after success.
+1. **Fixed flat-list success stop.** Visit each provider at most once per batch
+   after its finite retry rule, and stop immediately on the first valid
+   recognition. Calling later providers would be an unrequested ensemble with
+   no result-selection or merge contract.
 2. **Successful result with earlier provider failures.** Recommended:
    return the completed `RecognitionResult` with bounded provider-failure
    records; raise only for partial or total recognition failure. Alternative:
@@ -453,9 +457,9 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | fixed combined choice 8/10 | 1–7, 11 |
-| Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choices 9/12 | 1, 2, 4, 7, 11 |
-| Flat fallback | 1, 2, 4, plus fixed choices 7/9/12 | 11 |
+| First and second provider-model proofs | fixed combined choice 8/10 | 2–7, 11 |
+| Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choices 9/12 | 2, 4, 7, 11 |
+| Flat fallback | 2, 4, plus fixed choices 1/7/9/12 | 11 |
 | Nested lanes | the complete flat-fallback gate | 11 |
 | Merged audio + resume | 4, 5, fixed choices 9/12, plus the proven provider boundary | 11 |
 | Video-derived resume/publication and old-chain deletion | 11 and every earlier replacement gate; fixed choice 12 | none |
@@ -467,14 +471,15 @@ particular, choice 3 is about the committed public preset scope rather than
 permission to prove one internal live model, and choice 11's routing behavior
 is fixed even though its root-export detail remains open.
 
-The direct maintainer wording does not safely close choices 1–3. It says both
-that each provider list is traversed once and that a single batch either returns
-a result or an error; it asks to report exhausted provider errors after success
-but later narrows the final accumulator to failed batches. It also asks for
-Google/DashScope model objects while rejecting indefinite model-by-model fixes
-and retaining live discovery. Those are real contract tensions, so this
-reconciliation does not choose between them. By contrast, former choices 4 and
-6 ask the same provider-list reduction question. #587 merges them into choice
+The direct maintainer wording does not safely close choices 2–3. It asks to
+report exhausted provider errors after success but later narrows the final
+accumulator to failed batches. It also asks for Google/DashScope model objects
+while rejecting indefinite model-by-model fixes and retaining live discovery.
+Those are real contract tensions, so this reconciliation does not choose between
+them. Choice 1 is now fixed by the one-result contract: "traverse once" limits
+revisiting while unresolved and does not require paid calls after success. By
+contrast, former choices 4 and 6 ask the same provider-list reduction question.
+#587 merges them into choice
 4: omission must derive one media-appropriate scalar from the supplied
 providers, leaving only the common-minimum versus first-provider rule. This is
 one product decision, not permission for a generic cross-media planner. Choice
@@ -499,7 +504,7 @@ The current public result boundary also constrains choice 2:
 - `recognize_batch` treats a raised exception as that item's failure and closes
   the start gate, even if provider work had already produced valid text.
 
-Therefore Route A is recommended as the smallest contract:
+Choice 1 is fixed to the first part of Route A; choice 2 remains open:
 
 1. Rotate the flat candidate order to the lane's remembered successful start,
    attempt each candidate at most once, and stop immediately on the first valid
@@ -523,8 +528,8 @@ winner/merge rule or a second result-plus-error wrapper, would violate the
 current `BatchItemOutcome` invariant, and could cause a caller to replay paid
 successful work. It is wider than the legacy and active behavior.
 
-These two choices remain awaiting explicit maintainer confirmation; the audit
-and recommendation do not authorize dispatcher implementation.
+Choice 2 remains awaiting explicit maintainer confirmation. Fixing choice 1
+does not authorize dispatcher implementation.
 
 ### 6.2 Evidence for choice 3 (#573)
 

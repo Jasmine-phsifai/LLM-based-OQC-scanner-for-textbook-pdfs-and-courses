@@ -924,8 +924,9 @@ per attempted provider. The public type name is the implementation-level
 `ProviderModel`, with no duplicate `ProviderEntity` alias. The following
 choice details remain open or are fixed as marked:
 
-1. Does a flat provider list stop at the first successful recognition
-   (recommended), or continue calling providers after success?
+1. **Fixed first-success stop:** a flat provider list stops at the first valid
+   recognition. "Traverse once" means each provider is reached at most once
+   while unresolved, not that providers after success must still be called.
 2. When recognition completes after earlier provider failures, does the
    function return the completed result with bounded failure records
    (recommended), or raise while attaching the successful result?
@@ -980,8 +981,9 @@ and an error together, so raising after successful fallback would turn valid
 work into a failed item and may trigger replay. The recommended contract is
 therefore: first valid result stops the flat lane; return it as complete with
 one warning and ordered, bounded `metadata["provider_failures"]`; raise only
-when recognition remains incomplete. This is evidence and a recommendation,
-not maintainer confirmation; both choices remain open.
+when recognition remains incomplete. #591 fixes the first-success stop because
+post-success calls would require an unrequested winner, comparison, or merge
+contract. The separate choice 2 reporting question remains open.
 
 **#573 evidence for choice 3.** Active image/audio settings already accept
 exact caller-selected model IDs, and active Google/DashScope adapters validate
@@ -1171,8 +1173,9 @@ not a reason to keep a dormant subsystem or gate. No runtime/export was changed.
 references, not a flat implementation barrier. The combined 8/10 gate blocks the first
 internal provider-model proof; public preset scope, merged-image identity,
 fallback, audio, and video publication are gated only when their respective
-slices begin. Direct wording still conflicts within choices 1–3, so they remain
-open rather than being guessed. Former choices 4 and 6 no longer offer
+slices begin. #584 left choices 1–3 open; #591 later fixes choice 1 to stop on
+first success, while choices 2–3 remain open. Former choices 4 and 6 no longer
+offer
 explicit-only input as an alternative because provider-derived omission is
 fixed. #587 combines their identical common-minimum-versus-first-provider
 question into choice 4 without combining their media planners. Choice 11
