@@ -933,6 +933,12 @@ Future merged provider lists may also accept an injected object that explicitly
 satisfies a small `ProviderAdapter` contract; missing stable identity, task
 capabilities, invocation, or safe error/usage reporting is a preflight
 configuration error, not something inferred through permissive duck typing.
+This escape hatch is direct in-process Python only. `recognize_batch()` shares
+the object across its in-process threads; the frozen JSONL worker accepts only
+literal DashScope identity and rebuilds `DashScopeSettings` in the child. Do not
+serialize, pickle, or add a worker/protocol wrapper for arbitrary callables.
+Electron-facing backends resolve a serializable provider choice inside the
+backend process instead of transferring a Python callable across it.
 
 #612 records the latest discussion without authorizing implementation. The
 public frame workflow is `inspect_video -> extract_video_frames ->

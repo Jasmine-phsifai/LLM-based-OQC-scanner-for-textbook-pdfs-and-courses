@@ -151,6 +151,16 @@ are a configuration error; the new engine does not guess them through duck
 typing or silently default them to false. Keep this protocol narrow and do not
 wrap injected objects in a public entity hierarchy.
 
+That injected route is an in-process Python contract. Current `recognize()` and
+`recognize_batch()` call it directly; the latter uses threads in the same
+process. The frozen JSONL worker accepts only literal `provider="dashscope"`
+and reconstructs `DashScopeSettings` in its spawned child, so it neither accepts
+nor serializes an arbitrary provider object. Do not add callable pickling,
+provider-object JSON, a worker compatibility shim, or a frozen-protocol change.
+A future Electron/Python or Rust backend resolves a serializable provider/entity
+choice inside its own backend process; the callable itself does not cross that
+boundary.
+
 Provider collections retain the fixed scalar/exact-flat-list/exact-nested-list
 shape. Flat lanes stop at first success. Nested lanes have fixed absolute-slot
 assignment and no cross-lane rescue. The provider-independent dispatcher must

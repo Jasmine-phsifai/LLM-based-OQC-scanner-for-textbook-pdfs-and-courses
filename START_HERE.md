@@ -125,9 +125,11 @@ catalog mirror is rejected.
 runtime work. Provider audio defaults use integer minutes; omitted multi-
 provider media defaults use the minimum positive recommendation across all
 validated candidates; first-class provider-model entities coexist with the
-shipped injected-client escape hatch and a future small explicit adapter
-contract, with no separate `ProviderBinding`; old video recognition is deleted
-only after merged image/audio recognition and resume proof. Finite retry rules
+shipped direct in-process injected-client escape hatch and a future small
+explicit adapter contract, with no separate `ProviderBinding`; the frozen
+worker/process protocol does not transport arbitrary providers; old video
+recognition is deleted only after merged image/audio recognition and resume
+proof. Finite retry rules
 keep `error`/`next`/`current` reporting categories. Successful fallback returns
 `status="complete"` with bounded warnings/metadata, some unresolved slots return
 `status="partial"`, and zero settled slots raise `AllCandidatesExhausted`.

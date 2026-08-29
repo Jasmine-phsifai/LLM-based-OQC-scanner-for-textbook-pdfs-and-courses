@@ -22,7 +22,8 @@ consumer-free provider Phase 1 and exhaustive module blueprint; no refactor
 runtime has shipped. #607 keeps implementation paused and #615 narrows the
 then-current wording conflicts. #647 closes the seven questions reopened by
 #646: use a few live-proven presets, integer provider audio minutes, first-class
-provider-model entities plus a separate explicit injected-adapter escape hatch,
+provider-model entities plus a separate explicit direct in-process injected-
+adapter escape hatch (not a frozen worker/process transport),
 replacement-gated old-video deletion, one common-minimum omitted media default,
 finite three-label retry rules, and complete results with bounded successful-
 fallback evidence. Partial results now represent some unresolved slots; zero

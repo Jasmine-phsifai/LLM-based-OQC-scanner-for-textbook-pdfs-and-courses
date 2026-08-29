@@ -12962,3 +12962,29 @@ identical call would add cost and noise rather than evidence. This iteration is
 documentation and architecture review only. No runtime, API, test, provider
 call, credential read, media access, dependency, state schema, frozen-source
 change, or deletion occurred.
+
+## Current working update: #648 bounds injected providers to direct in-process Python
+
+#648 verifies the compatibility premise behind #647 before any new adapter type
+is implemented. `Config.provider` accepts an injected `VisionProvider`, direct
+resolution preserves that exact object, and `recognize()` invokes it through the
+bounded in-process call path. `recognize_batch()` reuses the same Config through
+serial execution or a same-process `ThreadPoolExecutor`; this is real shipped
+direct-Python behavior.
+
+The production worker/process boundary is different. Its frozen command schema
+accepts only literal `provider="dashscope"`; `build_worker_image_config()`
+constructs exact `DashScopeSettings` in the child, and the parent serializes only
+the strict JSON command. The isolated manager's generic internal job callable is
+not a transported `VisionProvider`. Therefore neither the current worker nor an
+Electron caller can send an arbitrary Python provider object across that
+boundary. A future backend resolves a serializable entity/adapter choice inside
+its own process; no callable pickle, provider JSON representation, compatibility
+shim, or frozen protocol change is planned.
+
+Focused direct injected-provider timeout/success/resume/error tests pass **14**;
+focused batch/preflight/parallel tests pass **13**; the worker command/config/
+isolated-process set passes **55**. A bounded independent read-only audit reached
+the same conclusion. This is a documentation correction, not a runtime defect:
+no code, test source, API, provider call, credential, media, dependency, state,
+`contracts/`, `worker/`, or deletion behavior changed.
