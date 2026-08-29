@@ -10993,7 +10993,8 @@ generic credential registry before a second transport exists.
 Route B stores a callable/protocol object in every entity. It makes injection
 easy but hides identity, secrets, resources, and lifecycle inside opaque values,
 duplicates the existing injected-provider boundary, and repeats legacy's broad
-client coupling. Choice 8 remains open for explicit maintainer confirmation.
+client coupling. #585 later merges this with the field-ownership half formerly
+called choice 10; the combined boundary remains open for confirmation.
 This iteration is documentation only; no provider model, adapter, resolver,
 credential type, registry, runtime, API, test, dependency, legacy, frozen
 directory, or migration capability changed. Invocation-boundary and lightweight
@@ -11145,7 +11146,7 @@ that #575 had already completed the same audit. Repeating it would have been no
 progress. The replacement atomic task audited all twelve maintained choices
 against the latest direct maintainer wording and the implementation order.
 
-The choices are no longer one global barrier. Choices 8 and 10 gate an internal
+The choices are no longer one global barrier. The combined 8/10 gate blocks an internal
 provider-model proof; public presets and merged-image output, flat fallback,
 merged audio, and video deletion each wait only for their own named decisions.
 This does not authorize a phase before its dependencies or silently select any
@@ -11163,3 +11164,29 @@ publication, naming, or cleanup. Only package-root export remains open. Choice
 12 still governs whether independently merged media results also require one
 combined artifact. No runtime, export, test source, sidecar, provider,
 dependency, legacy source, frozen boundary, or deletion changed.
+
+## Current working update: #585 combines provider-model data and invocation ownership
+
+#585 is a documentation-only reduction under the implementation pause. The
+existing #578 and #580 evidence already defines the recommended boundary
+precisely enough; another class sketch would duplicate planning rather than
+reduce ambiguity. The former choices 8 and 10 are now one approval gate.
+
+Route A is one immutable provider-model data value containing only identity,
+controlled adapter ID, task capabilities, capability-dependent defaults, and
+finite canonical retry rules. A small explicit lazy resolver selects a shipped
+operation adapter. Exact credentials, endpoint, request options, and timeout
+remain in separately supplied adapter settings; the existing injected Python
+protocol remains on its current API. Route B is one model object carrying an
+arbitrary callable/protocol plus generic invocation options. A hybrid is
+rejected because it would give model data and adapter settings overlapping
+authority.
+
+The active library supports this separation as evidence: built-in vision
+resolution already uses exact Google/DashScope settings branches and lazy
+module imports, while those two settings types validate different facts. Its
+runtime-only resolved provider may hold the imported callable module; that is
+execution state, not durable model identity. No new pseudocode, class hierarchy,
+model field, adapter, resolver, setting, preset, registry, public API, runtime,
+test source, provider call, dependency, legacy source, frozen boundary, or
+deletion was added.

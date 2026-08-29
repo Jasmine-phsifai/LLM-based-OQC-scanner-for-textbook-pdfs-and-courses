@@ -409,11 +409,16 @@ pause:
    records the last failure and advances to the next provider. Keep `error` /
    `next` / `current` only if the maintainer assigns them distinct control
    behavior that is not already expressed by those fields.
-8. **Built-in invocation boundary.** Recommended: a `ProviderModel` stores one
-   controlled adapter ID; one explicit lazy resolver selects the known
-   operation-specific adapter module. Keep the existing injected Python
-   protocol separate. Alternative: store a callable/protocol adapter object
-   inside every `ProviderModel`.
+8. **Provider-model and invocation boundary (includes former choice 10).**
+   Recommended: one immutable `ProviderModel` stores only vendor, model,
+   controlled adapter ID, three task-capability booleans, capability-dependent
+   nullable image/audio defaults, and canonical finite retry rules. One
+   explicit lazy resolver selects a known operation-specific adapter. Exact
+   credentials, endpoint, request options, and timeout remain in adapter
+   settings supplied separately at the call boundary; the existing injected
+   Python protocol remains separate. Alternative: each model carries an
+   arbitrary callable/protocol plus a generic options mapping. Do not approve a
+   hybrid of these two ownership models.
 9. **Token persistence across failed work and resume.** Recommended: keep one
    current and one historical aggregate per exact `(vendor, model)`, each with
    exact call count and nullable input/output totals. Persist the aggregate
@@ -421,14 +426,10 @@ pause:
    attempts that did not settle a slot; never create a public per-attempt
    ledger. Alternative: persist successful-slot usage only and accept that
    paid failed attempts disappear after process loss or resume.
-10. **Provider-model field ownership.** Recommended: keep only vendor, model,
-    controlled adapter ID, three capability booleans, capability-dependent
-    nullable image/audio defaults, and canonical finite retry rules in the
-    immutable value. Reuse exact adapter settings for credentials, endpoint,
-    request options, and timeouts; the adapter ID identifies the invocation
-    protocol. Alternative: add one generic list
-    or mapping of API/base URL/Chat-or-Responses/effort and future SDK options
-    to every provider-model value.
+10. **Merged into choice 8.** Field ownership and invocation ownership are one
+    boundary decision. Keeping them separate would permit incoherent hybrids,
+    such as a controlled adapter ID plus an unvalidated generic options bag, or
+    an arbitrary callable that still depends on hidden adapter settings.
 11. **Video resume export only.** Fixed behavior: a thin `resume_video` route
     delegates explicit image and audio sources to their ordinary resume
     functions and owns no video journal, publication transaction, output
@@ -451,7 +452,7 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | 8, 10 | 1–7, 9, 11, 12 |
+| First and second provider-model proofs | combined choice 8/10 | 1–7, 9, 11, 12 |
 | Public presets and single-provider merged image + resume | 3, 5, 9, plus the provider-model gate | 1, 2, 4, 6, 7, 11, 12 |
 | Flat fallback | 1, 2, 4, 7, 9 | 6, 11, 12 |
 | Nested lanes | the complete flat-fallback gate | 6, 11, 12 |
@@ -868,9 +869,10 @@ Route A is recommended because it preserves extensibility by adding one honest
 transport adapter in code, not by pretending arbitrary execution is data. It
 also remains compatible with a future Python backend called by Electron: the
 front end sends ordinary data, while only the backend resolves and executes
-the adapter. Choice 8 remains awaiting explicit maintainer confirmation. No
-`ProviderModel`, resolver, registry, credential type, adapter, or public batch
-API is authorized by this evidence.
+the adapter. #585 merges field ownership into this same Route A/B gate; choice
+10 is not a second approval. The combined choice 8/10 remains awaiting explicit
+maintainer confirmation. No `ProviderModel`, resolver, registry, credential
+type, adapter, or public batch API is authorized by this evidence.
 
 ### 6.8 Evidence for choice 9 (#579)
 
@@ -948,10 +950,12 @@ Route B adds a sparse generic options list/mapping containing credentials,
 endpoint, Chat/Responses choice, effort and future SDK switches. It initially
 looks convenient but loses validation, mixes secrets with durable values and
 recreates the legacy cross-provider configuration blob. A subclass per model
-has the same coupling with more files. Route A is recommended. Choice 10 remains
-awaiting explicit maintainer confirmation; this audit does not implement or
-authorize a provider model, common settings type, adapter, preset, registry,
-retry engine, dispatcher, or public API.
+has the same coupling with more files. Route A is recommended. #585 confirms
+that this is the same ownership decision as choice 8 rather than another gate:
+`adapter_id` is useful only if adapter-specific settings remain outside the
+model value. This audit does not implement or authorize a provider model,
+common settings type, adapter, preset, registry, retry engine, dispatcher, or
+public API.
 
 ### 6.10 Fixed local-execution boundary (#581)
 

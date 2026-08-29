@@ -949,20 +949,18 @@ product choices remain open:
    outcome reporting kept outside the rule and one universal "exhausted means
    record and advance" behavior (recommended), or do `error` / `next` /
    `current` retain distinct control meanings that still need to be specified?
-8. Does each built-in `ProviderModel` store a controlled adapter ID resolved
-   through one explicit lazy dispatcher while the existing injected Python
-   protocol stays separate (recommended), or does every model entity contain
-   an arbitrary callable/protocol adapter object?
+8. **Combined provider-model boundary:** does one immutable value contain only
+    vendor/model identity, controlled adapter ID, three capabilities,
+    capability-dependent defaults, and finite retry rules, while an explicit
+    lazy resolver uses separately supplied exact adapter settings and keeps the
+    injected Python protocol separate (recommended)? Or does each model carry
+    an arbitrary callable/protocol plus a generic invocation-options mapping?
 9. Does resumable recognition persist one current/historical aggregate per
    exact `(vendor, model)`, including safely reported usage from attempts that
    did not settle a slot (recommended), or persist successful-slot usage only
    and accept that failed paid attempts disappear after resume?
-10. Does immutable `ProviderModel` contain only identity, controlled adapter
-    ID, three task-capability booleans, capability-dependent nullable defaults,
-    and canonical finite retry rules while exact adapter settings remain
-    separate and `adapter_id` identifies the invocation protocol (recommended),
-    or does every value gain a generic API/base URL/protocol/effort/
-    future-options mapping?
+10. **Merged into choice 8:** field ownership and invocation ownership are one
+    decision, not two independently selectable contracts.
 11. **Fixed routing, open export detail:** `resume_video` is a thin route to the
     ordinary image/audio resume functions and owns no video journal,
     publication transaction, composition, output naming, or cleanup lifecycle.
@@ -1118,8 +1116,8 @@ mode changes. Recommended: one frozen value containing vendor, model,
 defaults only for supported tasks, and immutable canonical retry rules. Keep
 exact adapter settings separate and reuse the first adapter's shipped settings
 type. Do not give unsupported tasks dummy defaults or add a generic options
-bag. This is not maintainer confirmation; choice 10 remains open and no runtime
-was implemented.
+bag. #585 later merges this field decision into choice 8; the combined boundary
+remains open and no runtime was implemented.
 
 **#581 fixed local-execution boundary.** RapidOCR remains the current explicit
 `image_mode="ocr"` strategy during the first provider-model vertical slices. It
@@ -1165,7 +1163,7 @@ provider, retry, resume, sidecar, path discovery, or cleanup ownership. Choice
 12 remains open and no runtime/export was changed.
 
 **#584 decision-gate reconciliation.** The twelve numbered choices are evidence
-references, not a flat implementation barrier. Choices 8 and 10 gate the first
+references, not a flat implementation barrier. The combined 8/10 gate blocks the first
 internal provider-model proof; public preset scope, merged-image identity,
 fallback, audio, and video publication are gated only when their respective
 slices begin. Direct wording still conflicts within choices 1–3, so they remain
@@ -1173,6 +1171,16 @@ open rather than being guessed. Choices 4 and 6 no longer offer explicit-only
 input as an alternative because provider-derived omission is fixed. Choice 11
 now fixes a stateless route to ordinary image/audio resume and leaves only
 package-root export open. This sequencing changes no runtime or public API.
+
+**#585 combines choices 8 and 10.** The current built-in resolver already uses
+explicit exact-type branches and lazy imports, while Google and DashScope keep
+different validated settings. The runtime-only resolved object may contain its
+callable module; that does not make executable state part of durable model
+identity. The former choices 8 and 10 therefore described two halves of the
+same boundary. Route A is one immutable data value plus a controlled adapter ID
+and separately supplied exact settings. Route B is an arbitrary callable plus
+generic options. A hybrid would duplicate authority and is not a third option.
+No class, adapter, resolver, setting, preset, or public API changed.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
