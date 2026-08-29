@@ -117,10 +117,21 @@ separate. Google exposes actions, limits, thinking and sampling metadata;
 DashScope's newer native catalog exposes capabilities, media modalities,
 limits, pricing, and regional data. Neither catalog defines OCR/detail-OCR
 fitness, OCRLLM media defaults, or per-model retry policy, and the active
-DashScope compatible catalog currently retains IDs only. The recommended
-discussion route is transient discovery of all served rows plus a small
-live-proven executable preset set; a source-controlled full mirror remains an
-explicit unresolved reversal, not implemented behavior.
+DashScope compatible catalog currently retains IDs only. #647 fixes the route:
+discover served rows live and ship only a small preset set whose entries have
+each completed at least one bounded real request. A source-controlled full
+catalog mirror is rejected.
+#647 also closes the remaining provider/media decisions without starting
+runtime work. Provider audio defaults use integer minutes; omitted multi-
+provider media defaults use the minimum positive recommendation across all
+validated candidates; first-class provider-model entities coexist with the
+shipped injected-client escape hatch and a future small explicit adapter
+contract, with no separate `ProviderBinding`; old video recognition is deleted
+only after merged image/audio recognition and resume proof. Finite retry rules
+keep `error`/`next`/`current` reporting categories. Successful fallback returns
+`status="complete"` with bounded warnings/metadata, some unresolved slots return
+`status="partial"`, and zero settled slots raise `AllCandidatesExhausted`.
+Runtime remains discussion-paused; plan section 0 owns the exact later order.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

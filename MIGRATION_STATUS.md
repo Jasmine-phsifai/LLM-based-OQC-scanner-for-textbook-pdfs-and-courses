@@ -20,15 +20,16 @@ is currently reserved. The video job-state layer is deleted after replacement
 merged-image, merged-audio, and resume proof. #569 withdraws the former
 consumer-free provider Phase 1 and exhaustive module blueprint; no refactor
 runtime has shipped. #607 keeps implementation paused and #615 narrows the
-then-current wording conflicts. #627--#646 supersede that old four-item list:
-caller-owned extraction and staged runtime fields are settled, while seven
-choices remain on the current board: catalog breadth, integer versus exact
-fractional provider audio defaults, controlled built-in binding dispatch versus
-arbitrary callable leaves, replacement-gated versus immediate deletion,
-multi-provider default reduction, retry-rule shape, and successful-fallback
-reporting. A curated preset classified as unable to think recommends one image
-when the caller omits batch size; this is neither a provider limit nor something
-inferred from a request-level thinking switch.
+then-current wording conflicts. #647 closes the seven questions reopened by
+#646: use a few live-proven presets, integer provider audio minutes, first-class
+provider-model entities plus a separate explicit injected-adapter escape hatch,
+replacement-gated old-video deletion, one common-minimum omitted media default,
+finite three-label retry rules, and complete results with bounded successful-
+fallback evidence. Partial results now represent some unresolved slots; zero
+settled slots raise `AllCandidatesExhausted`. A curated preset classified as
+unable to think recommends one image when the caller omits batch size; this is
+neither a provider limit nor something inferred from a request-level thinking
+switch.
 
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
@@ -64,25 +65,22 @@ for a model classified as unable to think recommends batch size one, an
 explicit caller size wins, and provider rejection is reported rather than
 silently re-batching.
 
-#616 narrows, but does not silently decide, preset quantity. Official Google
+#616 recorded the evidence that later supports #647's preset decision. Official Google
 catalog rows provide generation actions, token limits, thinking and sampling
 metadata; the newer native DashScope catalog additionally provides capability
 tags, media modalities, context/output limits, pricing, and regional facts.
 Neither supplies ordinary/detail OCR fitness, OCRLLM-recommended media grouping,
 or per-model retry policy, and the active DashScope adapter currently consumes
-a different compatible ID-only catalog. The recommended route is transient
-discovery of all current rows plus a small live-proven executable preset set,
-not a checked-in class or preset for every volatile row. Confirm whether "save
-every model" intentionally meant the latter before changing runtime.
+a different compatible ID-only catalog. #647 now selects transient discovery of
+all current rows plus a small live-proven executable preset set, not a checked-in
+class or preset for every volatile row.
 
-### Current provider/media checkpoint (#627--#646)
+### Current provider/media checkpoint (#647)
 
 Runtime implementation remains paused; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
-is the current decision board. Seven choices remain: catalog breadth, provider
-audio-default numeric type, controlled bindings versus arbitrary callable
-leaves, old-video deletion timing, multi-provider default reduction, retry-rule
-shape, and successful-fallback reporting.
+holds the closed decisions, pruning rules, and later atomic order. There is no
+remaining #646 product choice and no current runtime authorization.
 
 The fixed destination has no second video black box. Callers visibly compose
 provider-free video inspection/extraction with independent merged-image and
@@ -90,11 +88,13 @@ merged-audio recognition/resume. The old six-symbol video recognition family
 remains shipped but frozen; its verified deletion closure is removed only when
 the selected deletion timing and replacement gates allow it.
 
-After the pause is lifted, the common first runtime gate is one exact native-
-Google image entry and one exact DashScope OpenAI-compatible image entry before
-public merged-interface work. Catalog breadth, fallback/pooling, audio, repair,
-and old-video deletion do not block that proof. Exact downstream contracts stay
-in plan section 0 rather than being duplicated here.
+After the pause is lifted, the first runtime slice is the provider-model entity,
+exact typed settings, private controlled entity resolver, and small explicit
+injected-adapter contract. Then one exact native-Google image entry and one exact
+DashScope OpenAI-compatible image entry must pass bounded live proof before
+public merged-interface work. Fallback/pooling, audio, repair, and old-video
+deletion do not block that proof. Exact downstream contracts stay in plan
+section 0 rather than being duplicated here.
 
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit

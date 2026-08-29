@@ -907,15 +907,32 @@ is often accepted.
   legacy extension, port DashScope FileTrans, add a generic converter/provider
   framework, or expose whole-file M4A before this API choice is settled.
 
-## Open provider-model and media-batch choices (#571 reconciliation)
+## Resolved provider-model and media-batch choices (#647)
 
-The maintainer has approved the decomposed media direction but explicitly
-paused each provider/entity and replacement-recognition slice for its relevant
-discussion gate. The choices and their phase dependency map are recorded in section 6 of
-[`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
-No provider-model class, retry engine, registry, static catalog, batch pool,
-merged facade, or video deletion begins until its relevant contract is settled;
-later unrelated choices do not form one global barrier.
+The maintainer has approved the decomposed media direction and answered the
+seven provider/media questions reopened by #646. Runtime remains explicitly
+discussion-paused; the closed contracts and atomic phase order are in section 0
+of [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
+No provider-model class, retry engine, preset, batch pool, merged facade, or
+video deletion starts merely because the choices are now recorded.
+
+The current decisions are: ship only a few presets admitted by bounded real
+success; keep provider audio defaults in integer minutes; use the minimum
+positive recommendation across all validated candidates when the caller omits
+media sizing; retain `error`/`next`/`current` as finite retry-policy/reporting
+categories; return successful fallback as `status="complete"` with bounded
+warnings/metadata; use `status="partial"` when some slots remain unresolved;
+raise `AllCandidatesExhausted` only when no slot settles; and delete the old
+video recognition family only after replacement image/audio recognition and
+resume proof.
+
+The first-class route is one exact provider-model entity carrying exact typed
+adapter settings. There is no separate `ProviderBinding` type. Existing
+`Config(provider=ExistingVisionClient())` injection remains shipped behavior.
+Future merged provider lists may also accept an injected object that explicitly
+satisfies a small `ProviderAdapter` contract; missing stable identity, task
+capabilities, invocation, or safe error/usage reporting is a preflight
+configuration error, not something inferred through permissive duck typing.
 
 #612 records the latest discussion without authorizing implementation. The
 public frame workflow is `inspect_video -> extract_video_frames ->
@@ -925,10 +942,12 @@ created. Published retained frames are caller-owned. The old video recognition
 and journal family remains frozen until merged image/audio publication and both
 resume paths are proven, then is deleted in the same transition.
 
-Two implementation-time details remain deliberately open inside the fixed
-choices below: how a partial merged Markdown is returned or raised after all
-slots run, and the exact public constructor/duplicate rules for binding exact
-adapter settings to provider-model values. #620 closes the scheduling reading:
+Partial merged settlement and the extra binding layer are no longer open:
+partial work returns the existing partial result with resume evidence, and
+provider entities carry their exact settings without `ProviderBinding`. Exact
+constructor spelling remains an implementation detail for the first atomic
+provider slice, not permission to create aliases or a framework. #620 closes
+the scheduling reading:
 nested lanes are fixed, serial within a lane, and advance independently between
 lanes; "wait respectively" is not a global epoch barrier. The exact admission
 rule remains a maintainer confirmation point. #621 recommends that the nested
@@ -959,10 +978,12 @@ unresolved detail in the following fixed choice list:
 1. **Fixed first-success stop:** a flat provider list stops at the first valid
    recognition. "Traverse once" means each provider is reached at most once
    while unresolved, not that providers after success must still be called.
-2. **Fixed successful-fallback reporting:** recognition that completes after
-   earlier provider failures returns the completed result with ordered, bounded
-   failure records. A typed error is raised only for an incomplete logical slot;
-   there is no attached-result exception.
+2. **Fixed settlement reporting:** recognition that completes after earlier
+   provider failures returns `status="complete"` with ordered, bounded failure
+   records. Some unresolved slots return `status="partial"` with resumable
+   failed-slot evidence. Only zero settled slots raise
+   `AllCandidatesExhausted`; there is no attached-result exception or separate
+   `RecognitionIncomplete` result-bearing error.
 3. **Fixed bounded preset scope:** committed presets are a small curated set of
    live-proven models. Every other current model uses explicit construction of
    the same `ProviderModel` after live discovery; the repository does not mirror
@@ -980,16 +1001,22 @@ unresolved detail in the following fixed choice list:
    family or third combined-video Markdown name.
 6. **Merged into fixed choice 4:** image batch size and audio interval use the
    same common-minimum reduction without sharing a planner or policy switch.
-7. **Fixed finite retry rule:** canonical-code rules contain only non-negative
-   finite `extra_retries` and `wait_seconds`. Outcome reporting stays outside
-   the rule. Exhaustion records the last safe failure and advances. The
-   overlapping `error` / `next` / `current` labels are removed.
-8. **Fixed combined provider-model boundary:** one immutable value contains
-    only vendor/model identity, controlled adapter ID, three capabilities,
-    capability-dependent defaults, and finite retry rules. An explicit lazy
-    resolver uses separately supplied exact adapter settings and keeps the
-    injected Python protocol separate. Arbitrary callables, executables,
-    generic invocation-options mappings, and hybrid ownership are rejected.
+7. **Fixed finite three-label retry rule:** canonical-code rules contain one of
+   `error`, `next`, or `current` plus non-negative finite `extra_retries` and
+   `wait_seconds`. `error` reports an exhausted request mistake at error level;
+   `next` reports an ordinary provider switch at info level; `current` reports a
+   longer same-provider retry/wait policy at info level. Exhaustion records the
+   last safe failure and advances when another candidate exists. Labels do not
+   authorize infinite waits or a second state machine.
+8. **Fixed entity plus injected escape-hatch boundary:** one immutable
+   provider-model entity contains vendor/model identity, controlled adapter ID,
+   three capabilities, capability-dependent defaults, finite retry rules, and
+   its exact typed adapter settings. A private lazy resolver owns built-in
+   execution. There is no `ProviderBinding` type. Existing injected
+   `VisionProvider` use remains unchanged; new merged lists may additionally
+   accept an object that explicitly satisfies the small `ProviderAdapter`
+   contract. Executables, generic invocation mappings, permissive capability
+   guessing, and a public adapter hierarchy are rejected.
 9. **Fixed token contract:** persist one cumulative aggregate per exact
    `(vendor, model)` with exact calls and nullable input/output totals,
    including trustworthy failed-attempt evidence. Treat the loaded value as the

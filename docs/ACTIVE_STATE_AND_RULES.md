@@ -49,8 +49,9 @@ provider-model/media-batch direction is approved; see #568 and the corrective
 #569/#571/#604/#610/#612 entries at the end of this file and
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
 Implementation is paused by the maintainer's discussion-first instruction;
-#612 records the current pruning and no runtime slice is currently
-authorized. The former exhaustive module build specification and its
+#647 records the current pruning and the maintainer's seven provider/media
+answers, but no runtime slice is currently authorized. The former exhaustive
+module build specification and its
 consumer-free Phase 1 are not authorized.
 Where the narrative below describes `recognize_video_to_markdown`, the video
 journal, or the non-resumable low-level `recognize_video()` as current product
@@ -12903,3 +12904,61 @@ planned slots are not silently re-chunked, a genuinely unresolved slot remains
 distinct from successful content, and runtime implementation stays discussion-
 paused. #646 changes decision truthfulness only; it adds no API, provider,
 media, state, test, dependency, frozen-source change, or deletion authority.
+
+## Current working update: #647 closes the seven provider/media choices and prunes execution order
+
+The maintainer has now answered all seven questions reopened by #646. Ship only
+a few presets that have completed at least one bounded real request; keep live
+catalog discovery and explicit construction for other exact models. Provider
+audio defaults remain exact positive integer minutes. Omitted multi-provider
+image/audio grouping resolves once to the minimum positive recommendation across
+all validated candidates. Replacement image/audio recognition plus resume proof
+must precede coherent deletion of the old video recognition family; the old
+Config-based `recognize` and `recognize_batch` line remains available.
+
+The provider-model entity is the primary route, and there is no separate
+`ProviderBinding` type. The already-shipped injected `VisionProvider` route
+remains compatible. A caller-supplied object entering a future merged provider
+list must explicitly satisfy one small `ProviderAdapter` contract with stable
+identity, exact task capabilities, invocation, and safe error/usage reporting;
+missing capabilities fail configuration preflight instead of being guessed or
+defaulted false. Entity adapters are selected through a private controlled
+resolver; neither path authorizes a generic parameter bag or public adapter
+hierarchy.
+
+Finite retry rules keep the maintainer's `error`, `next`, and `current` labels.
+The labels distinguish exhausted-request error reporting, ordinary provider
+advance, and longer same-provider retry/wait reporting; explicit finite retry
+and wait values control execution, and every exhausted candidate eventually
+advances when another candidate exists. Raw HTTP values remain adapter evidence,
+not cross-vendor policy keys.
+
+If all media slots settle, return `status="complete"`; earlier exhausted
+providers are bounded warnings plus safe ordered metadata and never cause a
+post-success Python exception. If some slots settle, return the existing
+`status="partial"` with failed-slot evidence and retained resume state. If none
+settle, raise `AllCandidatesExhausted`. This supersedes the planned separate
+`RecognitionIncomplete` result-bearing exception in historical entries.
+
+The discussion also resolves extraction ownership: because no replacement
+library `recognize_video` lifecycle exists, public frame/audio extraction output
+is caller-owned and is not auto-deleted by a later independent recognize call.
+Only artifacts created and consumed within one call are library-cleaned; a
+future application-level one-click job may clean its own files.
+
+A current structural audit counted 302 production Python files and 23,383 lines,
+including 91 root-level modules, alongside both many 20--60-line helpers and
+431/632/590-line orchestration files. This is evidence of simultaneous
+micro-module sprawl and oversized flows. The next runtime order, once explicitly
+resumed, is therefore scalar provider entity/adapters, two live image entries,
+merged image scalar then flat fallback, merged audio scalar then flat fallback,
+replacement-gated old-video deletion, and only then nested pooling and
+experimental repair. It is not authorization to implement any of those stages.
+
+#647 also cancelled the initially considered repeated Google short-audio run
+before any credential or network access. Existing #069/#082 short-audio success
+and #614 current catalog failure already answer that unchanged boundary; another
+identical call would add cost and noise rather than evidence. This iteration is
+documentation and architecture review only. No runtime, API, test, provider
+call, credential read, media access, dependency, state schema, frozen-source
+change, or deletion occurred.

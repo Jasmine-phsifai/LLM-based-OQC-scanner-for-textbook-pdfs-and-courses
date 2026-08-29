@@ -10,7 +10,7 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-30, #646)
+## 0. Current pruning checkpoint (2026-08-30, #647)
 
 This plan remains a discussion record, not implementation authorization. The
 maintainer has paused runtime work while the replacement is reviewed for
@@ -132,26 +132,36 @@ inside one library call are automatically removed. A future Python application
 job may own and delete the public extraction outputs it requested; that does not
 restore a library video wrapper or an Electron-owned provider call.
 
-The provider boundary remains one immutable `ProviderModel` **instance** for
-one exact `(vendor, model)`, not one Python class/file per catalog row. Its
+The primary provider boundary remains one immutable provider-model **instance**
+for one exact `(vendor, model)`, not one Python class/file per catalog row. Its
 complete target data is vendor, model, controlled `adapter_id`, three task-
-capability booleans, capability-dependent image/audio defaults, and immutable
-finite canonical retry rules. Runtime secrets and adapter-specific settings
-belong in one short-lived `ProviderBinding(model, settings)`, never in a
-generic parameter list, callable, client, source, output, lane, token, or error
-field. The complete data value does not itself implement splitting, dispatch,
-retry, fallback, pooling, resume, or repair.
+capability booleans, capability-dependent image/audio defaults, immutable
+finite canonical retry rules, and only the exact adapter settings required to
+invoke that instance. Runtime secrets stay redacted and are never serialized.
+There is no separate `ProviderBinding` type and no generic parameter list. The
+complete entity does not itself implement splitting, dispatch, retry,
+fallback, pooling, resume, or repair.
+
+The already-shipped `Config(provider=ExistingVisionClient())` injection route
+remains unchanged as a second escape hatch. A caller-supplied object used as a
+leaf in a **new** merged provider list must instead explicitly satisfy the later
+small `ProviderAdapter` contract, including stable identity, exact task
+capabilities, invocation, and safe error/usage reporting. Missing capabilities
+are a configuration error; the new engine does not guess them through duck
+typing or silently default them to false. Keep this protocol narrow and do not
+wrap injected objects in a public entity hierarchy.
 
 Provider collections retain the fixed scalar/exact-flat-list/exact-nested-list
 shape. Flat lanes stop at first success. Nested lanes have fixed absolute-slot
 assignment and no cross-lane rescue. The provider-independent dispatcher must
 not branch directly on raw SDK exceptions or pretend that one HTTP number has
-the same meaning across vendors. Decision 6 below determines whether a
-normalized model rule retains distinct action labels or only finite retry/wait
-numbers. A media-size rejection does not silently re-batch: another candidate
-may accept the same immutable slot; otherwise the unresolved slot remains
-available for explicit resume with a new provider plan. Changing the slot
-grouping is a new plan, not resume.
+the same meaning across vendors. A normalized model rule retains the maintainer's
+three `error` / `next` / `current` policy labels plus finite retry/wait numbers;
+the labels control reporting category, while the finite numbers control actual
+attempts and delay. A media-size rejection does not silently re-batch: another
+candidate may accept the same immutable slot; otherwise the unresolved slot
+remains available for explicit resume with a new provider plan. Changing the
+slot grouping is a new plan, not resume.
 
 Token accounting is already fixed by #586 and is not another decision group.
 Each future job sidecar keeps one cumulative row per exact `(vendor, model)`:
@@ -213,22 +223,24 @@ failures.
 
 `batchify_images` remains task-independent: it groups concrete media and may
 consume the provider shape only to resolve a provider-derived batch-size
-default. Decision 5 below controls how several candidate recommendations reduce
-to one scalar; provider runtime settings still do not enter batchification.
+default. When omitted, all validated candidates reduce to one minimum positive
+recommendation before slots exist; provider runtime settings still do not enter
+batchification.
 Fresh recognition persists the selected task as ordinary resume identity;
 ordinary resume restores that task and rechecks newly supplied providers rather
 than allowing a plain/detail switch. Experimental repair with a missing sidecar
 does not justify a general task manifest in this slice; its exact task input is
 left to the later repair consumer.
 
-An actually unresolved slot after its permitted lane is exhausted follows the
-separate future `RecognitionIncomplete` path. A slot completed by a later
-provider is not incomplete. Decision 7 below clarifies whether the maintainer's
-latest instruction to "report/throw" every traversed failure means returning
-one bounded warning plus `metadata["provider_failures"]` with the complete
-result, or raising after successful content. No alternative may persist raw
-errors, retry history, media paths, settings, accounts, or per-attempt token
-details as future routing memory.
+Settlement now reuses the existing result boundary rather than adding a new
+result-bearing exception. If every slot settles, return `status="complete"`;
+providers exhausted before a later success appear only as bounded warnings and
+ordered safe metadata. If some slots settle and some remain unresolved, publish
+the resumable failure markers/state and return `status="partial"` with only the
+failed-slot evidence. If no slot settles, raise the existing
+`AllCandidatesExhausted`. No path persists raw errors, retry history, media
+paths, settings, accounts, or per-attempt token details as future routing
+memory.
 
 Do not make any of the following prerequisites for the first real image proof:
 
@@ -239,88 +251,126 @@ Do not make any of the following prerequisites for the first real image proof:
 - merged audio, repair, Electron/Rust bindings, local-provider placeholders, or
   social-media work.
 
-Seven decision groups now remain. The last three are reopened provenance
-corrections: earlier heartbeat agents promoted recommendations to fixed choices
-without a saved direct maintainer selection, and the latest proposal touches
-those same behaviors. They are direct answers, not invitations to design more
-alternatives:
+The maintainer has now closed all seven #646 decision groups:
 
-1. **Catalog scope.** Confirm whether "prebuild and save Google/DashScope model
-   objects" means that the package ships only several complete, live-proven
-   presets while every other exact catalog model remains available through
-   live discovery plus explicit `ProviderModel` construction (recommended), or
-   intentionally means one checked-in complete executable object for every
-   catalog row despite missing OCR/default/retry facts. "Every model is an
-   entity" fixes the identity of a selected model; it does not by itself fix
-   how many named presets the package ships.
-2. **Audio unit.** Keep provider defaults and caller overrides in one exact
-   positive-integer minute domain (recommended), or allow
-   `default_audio_minutes=7.5` to create exact 450-second slices while explicit
-   caller `interval_minutes=7.5` remains invalid.
-3. **Adapter dispatch, explicitly reopened by the latest maintainer wording.**
-   Confirm #589 (recommended): new merged recognize/resume provider lists
-   contain only `ProviderBinding(model, exact_settings)` leaves. Complete
-   preflight validates each controlled `adapter_id` against the exact settings
-   type; one private explicit resolver lazily imports a known operation adapter;
-   that adapter owns credential/catalog/request/response/error/usage/cleanup.
-   The existing arbitrary Python `VisionProvider` remains a separate direct-
-   image injection seam and is not wrapped into fallback/pool lists. Or
-   explicitly authorize callable/Protocol leaves in the new lists and accept
-   that callable identity, settings validation, resume identity, lifecycle,
-   audio operations, and Electron-to-backend resolution must then be defined.
-   Do not combine a controlled ID with a generic callable/options bag.
-4. **Deletion timing.** Prove the two replacement merged/resume owners and then
-   delete the old video family in one stage (recommended), or remove the shipped
-   capability immediately before its replacement exists.
-5. **Provider-derived default reduction.** Explicit image/audio values still
-   win and one resolved scalar is frozen before slots are planned. For a flat or
-   nested provider shape, confirm whether omission takes the minimum positive
-   applicable recommendation across every validated candidate (recommended),
-   or the current traversal-start provider's recommendation. Lane-local variable
-   grouping, adaptive re-chunking, and implicit fallback-time re-planning remain
-   rejected.
-6. **Retry-rule shape.** Confirm whether the proposed `error` / `next` /
-   `current` labels express any transition beyond finite same-candidate retries,
-   a wait, safe failure recording, and then candidate advance. If not, retain
-   only canonical error key, finite `extra_retries`, and `wait_seconds`
-   (recommended). If they do, the maintainer must state the exact distinct
-   terminal behavior before a state machine is justified. Capability, source,
-   configuration, and preflight failures remain outside provider retry.
-7. **Successful-fallback reporting.** Confirm whether "report/throw all
-   traversed errors" means a normal complete result with one bounded warning and
-   ordered safe exhausted-provider metadata (recommended), rather than a Python
-   exception after valid content has already settled. Only unresolved slots are
-   unambiguously terminal failures; changing that boundary would require an
-   explicit result/error API decision, not an inferred wrapper.
+1. Ship only a few presets admitted by at least one bounded real successful
+   request. Discover the volatile catalog live; callers may explicitly construct
+   an exact unpreset model at their own responsibility.
+2. Provider audio recommendations and explicit caller intervals use exact
+   positive integer minutes. Caller-only `-1` still means whole audio.
+3. Do not add `ProviderBinding`. The provider-model entity is the first-class
+   route; existing injected vision clients remain compatible, and new merged
+   lists may also accept an explicit small `ProviderAdapter` escape-hatch
+   contract. Missing task capabilities reject before dispatch.
+4. Prove merged image/audio recognition plus resume parity, then delete the old
+   video recognition family. The old Config-based `recognize` and
+   `recognize_batch` line remains available.
+5. When the caller omits image count or audio interval, resolve the minimum
+   positive recommendation across every validated candidate exactly once before
+   slot planning. Explicit values win.
+6. Retain `error`, `next`, and `current` on finite retry rules. `error` is a
+   high-visibility exhausted request error; `next` is ordinary provider advance;
+   `current` denotes a longer same-provider retry/wait policy. All remain
+   finite and eventually advance when another candidate exists.
+7. A later successful fallback returns a complete result with bounded
+   warning/metadata and never raises merely because an earlier provider failed.
+   Partial status is reserved for unresolved slots; only zero settled slots
+   raise `AllCandidatesExhausted`.
 
-The direct adapter question is therefore one yes/no confirmation: **should the
-new merged recognize/resume provider lists follow #589 and accept only built-in
-controlled `ProviderBinding` leaves, while the current arbitrary Python
-`VisionProvider` remains outside those lists?** #589 proved that route
-technically; #634 correctly reopened authorization because the maintainer later
-said the invocation design was undecided. No new adapter sketch or third hybrid
-is needed before answering.
+These are product decisions, not implementation authorization. Historical
+#590/#592/#594/#640/#646 text remains provenance only where it differs.
 
-The direct catalog question is also one yes/no confirmation: **does "prebuild
-and save model objects" mean several complete live-proven shipped presets, with
-all other exact model IDs discovered live and used through explicit
-construction, rather than one source-controlled complete object per catalog
-row?** Both interpretations share the same first gate: after runtime work is
-resumed, prove one exact native-Google image entry and one exact DashScope
-OpenAI-compatible image entry through the separately approved internal call
-route before rewriting merged/public interfaces. Do not generate a full catalog
-mirror or a new descriptor type while that later breadth question remains
-unanswered.
+### #647 latest proposal reconciliation and implementation pruning
 
-The direct media-default question is one scalar rule, not a planner framework:
-**when a flat or nested provider shape supplies the omitted default, should all
-validated candidates contribute to one minimum positive value?** The direct
-retry question is whether the three proposed labels have any distinct terminal
-behavior after finite attempts are exhausted. The direct success-reporting
-question is whether "throw" was intended as Python exception control flow even
-after valid content exists. Earlier #590/#592/#594/#640 entries remain useful
-technical recommendations, but section 0 no longer presents their agent-derived
-answers as maintainer-confirmed choices.
+The latest maintainer proposal confirms the destination but does **not** lift
+the runtime pause. It strengthens these product directions:
+
+- callers compose provider-free video inspection/frame extraction and audio
+  extraction themselves; there is no replacement long video-recognition black
+  box;
+- selected video frames remain full frames, with negative-feedback/similarity
+  selection internal to extraction and no crop/corner/ROI stage;
+- image slots merge into one image Markdown and audio slots merge into a
+  separate audio Markdown; PDF page groups reuse the image merge backend;
+- image and audio calls accept their own explicit concrete sources, provider
+  input, and optional output target; no library API reads legacy-app state;
+- one selected provider identity is one exact vendor/model pair with explicit
+  plain-image, detail-image, and audio capability facts plus recommended image
+  count and audio duration; detail-image support implies plain-image support;
+- scalar, flat fallback-list, and nested fixed-lane pool inputs are the eventual
+  surface, while repair remains a small missing-sidecar recovery path and social
+  downloading remains out of scope.
+
+The proposal also contains several points that must be pruned before code:
+
+1. Public `extract_video_frames()` and `extract_video_audio()` outputs are
+   caller-owned. Without a library `recognize_video` lifecycle, a later
+   independent recognize call cannot safely know whether it may delete them.
+   The library deletes only artifacts it creates and consumes inside the same
+   call. A future application-level one-click video job may delete its own
+   extraction outputs; that does not recreate a library black box.
+2. Retry policy does not key directly on HTTP `400`/`404`/`429` across vendors.
+   Each adapter first maps SDK/status evidence to the existing canonical typed
+   provider error. Only the canonical code may select finite retry count and
+   delay. Capability, source, configuration, and output preflight failures
+   never enter that loop.
+3. Keep `error`, `next`, and `current`, but do not inflate them into a state
+   machine. All eventually record the last exhausted safe error and advance when
+   another candidate exists. `error` reports an exhausted request mistake at
+   error level; `next` records an ordinary provider switch at info level;
+   `current` records a longer same-provider retry/wait policy at info level.
+   Finite rule values, not label-specific hidden loops, control attempts and
+   delay.
+4. Model data must not contain a generic list of arbitrary invocation
+   parameters or an executable function pointer. A first-class entity carries
+   exact model facts plus the exact typed adapter settings it needs; a private
+   controlled resolver lazily selects known Google-native, OpenAI-compatible,
+   or local execution code. An injected escape-hatch object follows the small
+   explicit adapter protocol instead of being converted into an entity.
+5. Do not implement scalar, flat fallback, nested pooling, image, audio, resume,
+   repair, and token persistence in one slice. Each later slice may add only the
+   next topology already consumed by a public flow.
+
+The phrase "traverse the whole list once" is read provisionally as **visit each
+candidate at most once per slot, with its configured finite attempts, and stop
+immediately on the first successful candidate**. Calling later providers after
+valid content exists would spend calls without changing the slot and is not
+authorized. A later slot may rotate its flat traversal start to the last provider
+that succeeded during the same invocation, then wrap once; that preference is
+not persisted as resume state. Nested outer lists remain fixed lanes with no
+cross-lane rescue; exact slot-to-lane assignment is postponed until the pool
+slice and must not complicate the first scalar proof.
+
+The smallest safe runtime sequence after the maintainer resumes work is:
+
+1. add only immutable provider-model facts, exact typed settings, private
+   controlled adapter resolution, and the smallest injected-adapter contract;
+2. ship a few complete presets and live-prove one native Google image entry and
+   one DashScope OpenAI-compatible image entry before rewriting public calls;
+3. implement merged image planning/recognition/resume first for one scalar
+   provider, then flat fallback; do not begin nested pooling yet;
+4. implement explicit audio extraction/splitting and merged audio
+   recognition/resume with the same scalar-then-flat sequence;
+5. prove both replacement owners, then delete the verified 34-file old video
+   recognition/orchestration family in one coherent change;
+6. add nested fixed-lane pooling only after serial fallback is proven, and add
+   experimental repair last from a real missing-sidecar Markdown case.
+
+This ordering is not permission to implement. It prevents the provider object
+from becoming a scheduler, state store, retry executor, output planner, or media
+owner before those consumers exist.
+
+The current-code audit also gives a concrete reduction target. At #647,
+`src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level
+modules. Many root helpers are 20--60 lines, while `recognize.py` is 431 lines,
+`processors/recognize_images.py` is 632 lines, and the frozen
+`recognize_video_to_markdown.py` is 590 lines. This is both micro-module sprawl
+and oversized orchestration, not evidence that every file should be merged.
+The immediate rule is narrower: add no helper until one next consumer needs it;
+keep closely related private helpers in the owning feature module/package; split
+only a function whose responsibility or test seam is independently meaningful;
+and use the old-video deletion to reduce the root surface before adding pool or
+repair modules. `contracts/` and `worker/` remain frozen.
 
 Until the maintainer resumes runtime work, do not implement `ProviderModel`,
 presets, adapter dispatch, merged recognition, retry/fallback, pool execution,
