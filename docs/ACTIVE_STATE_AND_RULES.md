@@ -12419,3 +12419,26 @@ descriptor framework, registry, or model sweep while that reversal is
 unconfirmed. The other four discussion groups remain unchanged. No runtime,
 API, test, preset, provider call, credential, dependency, state, media, frozen
 boundary, or deletion changes in #629.
+
+## Current working update: #630 confirms label-free canonical retry rules
+
+Active Google and DashScope mapping plus the legacy production patches prove
+that raw HTTP numbers do not select retry behavior. The adapter first emits a
+canonical OCRLLM code and safe scope; a future `ProviderModel` rule for that
+code contains only finite non-negative `extra_retries` and finite non-negative
+`wait_seconds`. Missing means the initial request only. Wait before an extra
+same-candidate attempt, stop immediately on success, and after exhaustion
+advance while the slot has another candidate. The operation outcome already
+decides complete result evidence versus `RecognitionIncomplete`.
+
+`error` / `current` / `next` are derived states, not stored policy. Existing
+`ProviderErrorDisposition` remains separate cooldown/quarantine/stop/request/
+source evidence. Capability, configuration, source, and preflight failures
+remain outside provider retry and cause zero calls. Legacy total-attempt counts,
+stream/nonstream and SDK/compatible fallbacks, FileTrans polling, exponential
+waits, delay-hint parsing, media-specific exhaustion behavior, mutable
+unavailable sets, and duplicate audio candidate loops are not ported. Exact
+numeric rules require bounded real failure evidence; 402/409 receive none by
+analogy. Four decision groups remain. No runtime, API, retry executor, preset,
+provider call, state, dependency, media, frozen-boundary, or deletion change in
+#630.

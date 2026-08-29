@@ -10,7 +10,7 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-29, #629)
+## 0. Current pruning checkpoint (2026-08-29, #630)
 
 This plan remains a discussion record, not implementation authorization. #627
 reconciles the latest proposal with decisions #591--#626 so readers do not have
@@ -61,7 +61,7 @@ constructor or public preset may ship until the complete target shape is present
 The complete data value does not itself implement audio, retry, fallback, or
 pool behavior.
 
-Only these five decision groups remain, ordered by their earliest consumer:
+Only these four decision groups remain, ordered by their earliest consumer:
 
 1. Whether the latest phrase "prebuild and save Google and DashScope model
    objects" explicitly reverses transient current-catalog identities plus a
@@ -69,17 +69,13 @@ Only these five decision groups remain, ordered by their earliest consumer:
    mirror. #629 proves the active catalogs cannot populate the complete
    `ProviderModel` facts, so the mirror remains unauthorized unless the
    maintainer accepts guessed facts or indefinite per-model maintenance.
-2. Whether the latest `error` / `next` / `current` examples intentionally
-   restore action labels or raw HTTP keys. The current smaller rule first maps
-   vendor evidence to a canonical code, then applies only finite
-   `extra_retries` and `wait_seconds`.
-3. For nested lanes, whether the outer exact list is the sole concurrency
+2. For nested lanes, whether the outer exact list is the sole concurrency
    authority with the existing 32-lane ceiling, and whether last-success is
    invocation-only rather than persisted across resume. #621/#622 retain those
    recommendations pending confirmation.
-4. Whether the latest `float` spelling intentionally reverses positive integer
+3. Whether the latest `float` spelling intentionally reverses positive integer
    provider audio minutes. Integer minutes remain authoritative meanwhile.
-5. The exact stateless `resume_video` arguments and one-branch-failure return
+4. The exact stateless `resume_video` arguments and one-branch-failure return
    shape remain a later API question. They do not block the first provider or
    merged-image slice and do not authorize video state or a result framework.
 
@@ -2355,3 +2351,58 @@ catalog module, name classifier, persistent registry/cache, or per-model test
 sweep merely to make route 1 look symmetrical with presets. #629 changes no
 runtime, API, test, preset, provider call, credential, dependency, state,
 media, frozen boundary, or deletion.
+
+## #630 Canonical Finite Retry Rules Preserve The Proven Legacy Behavior
+
+The latest raw-code examples describe a useful outcome but do not require raw
+HTTP keys or `error` / `current` / `next` fields. The active Google mapper
+already proves that one HTTP 400 can mean provider-unavailable
+`FAILED_PRECONDITION`, request-invalid `INVALID_ARGUMENT`, invalid credential,
+or unsupported model modality. The active DashScope mapper combines status,
+provider code, safe message markers, SDK family, and scope to distinguish
+model quota, account/concurrency/rate state, permission, request, source, and
+temporary provider failure. Raw status remains safe evidence after mapping; it
+is not enough to select policy.
+
+The legacy Google and DashScope/OpenAI-compatible paths confirm the same
+behavioral minimum:
+
+- temporary rate, network, concurrency, empty/invalid response, timeout, and
+  provider-unavailable families may retry the same candidate finitely;
+- model quota, absent model, unsupported modality, authentication, billing,
+  safety/content, request, and source families need distinct canonical
+  classification even when some eventually advance to another candidate;
+- after a candidate's finite block ends, the replacement lane either advances
+  while its slot is unresolved or records the final safe failure when the lane
+  is empty.
+
+Therefore one immutable rule keyed by canonical OCRLLM code needs only finite
+non-negative `extra_retries` and finite non-negative `wait_seconds`. A missing
+rule means no call beyond the initial attempt. Waiting occurs before each extra
+same-candidate attempt, never after exhaustion. `current` means that this finite
+block still has an extra attempt; `next` means it ended while a candidate
+remains; `error` is decided by the already-fixed complete/incomplete operation
+outcome. Saving those derived labels would duplicate dispatcher state.
+
+Existing `ProviderErrorDisposition.action` and safe scope remain separate
+evidence for cooldown, credential quarantine, request/source correction, and
+stop decisions; they do not become retry-rule fields. Configuration, source,
+capability, and preflight failures remain outside the table and make zero
+provider calls.
+
+Do not copy legacy retry numbers as preset defaults. Google used six total
+attempts for image/text and four for long audio; generic compatible calls used
+six total attempts, while FileTrans upload, submit, metadata, polling, and
+download used different operation-specific counts. Legacy also mixed
+stream-to-nonstream fallback, SDK-to-compatible fallback, exponential waits,
+provider delay hints, mutable unavailable sets, and a second outer audio
+candidate loop. Those are transport/job details and historical maintenance
+cost, not `ProviderModel` fields. A later real adapter failure may justify one
+code-specific number or bounded adapter-owned retry-after hint; no generic hint
+parser, exponential mode, post-exhaustion action, operation/media condition,
+blacklist, or unbounded sentinel is authorized now. Raw 402 and 409 examples
+have no independent legacy evidence and receive no guessed rule.
+
+#630 closes only the action-label/raw-key question. It implements no retry
+type, executor, provider model, preset, adapter fallback, API, provider call,
+state, dependency, media behavior, frozen-boundary change, or deletion.

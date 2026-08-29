@@ -1559,9 +1559,8 @@ stops at first success, or whether complete fallback returns normally: those
 questions are settled.
 
 The remaining discussion order is: runtime catalog descriptors plus a small
-live-proven preset set versus a checked-in executable mirror; canonical two-
-value retry rules versus an explicit reversal to raw-code action labels; nested-
-list concurrency plus invocation-local lane preference; integer versus float
+live-proven preset set versus a checked-in executable mirror; nested-list
+concurrency plus invocation-local lane preference; integer versus float
 provider audio minutes; and only later the exact stateless `resume_video`
 signature. This board is not runtime
 authorization and adds no new framework.
@@ -1596,3 +1595,21 @@ facts or continuing per-model work. Do not add a descriptor framework,
 generated catalog, classifier, registry/cache, or model sweep merely to prepare
 either route. This decision record remains discussion-only and changes no
 runtime/API.
+
+**#630 closes the raw-code/action-label reopening with legacy production
+evidence.** Google 400, 429, and 503 and DashScope 403/429 produce different
+decisions only after provider status/code/message/SDK and scope are classified;
+raw HTTP alone is not the policy. The exact behavior requested by the examples
+is already represented by canonical code plus finite `extra_retries` and
+`wait_seconds`, followed by the fixed candidate traversal on exhaustion.
+`current`, `next`, and `error` merely name positions in that execution and are
+not stored fields.
+
+Keep `ProviderErrorDisposition` as separate safe action/scope evidence; do not
+copy it into `ProviderModel`. Do not import legacy totals, exponential/dynamic
+wait modes, stream/protocol fallback, FileTrans operation polling, mutable
+blacklists, media-specific post-exhaustion flags, or duplicate audio loops.
+Specific counts remain unproven preset data until a bounded real failure
+supports them; raw 402/409 receive no analogical defaults. This closes one
+discussion group without implementing a type, rule table, executor, provider,
+preset, or API.

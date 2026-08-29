@@ -1463,3 +1463,11 @@ discovery plus a small live-proven preset set remains the authorized
 interpretation. A checked-in executable object for every catalog row remains an
 explicit maintainer reversal, not something implementation may infer. No
 runtime, preset, catalog call, or API changed.
+
+#630 closes the raw-code/action-label retry question using active mappers and
+legacy Google/DashScope production patches. Vendor evidence first becomes a
+canonical code and safe scope; a future rule stores only finite
+`extra_retries` and `wait_seconds`, then normal candidate traversal handles
+exhaustion. Legacy operation-specific counts, stream/protocol fallback,
+exponential waits, blacklists, and duplicate audio loops are not migrated.
+Four decision groups remain; no runtime, retry executor, preset, or API changed.
