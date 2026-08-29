@@ -144,6 +144,19 @@ first retained segment end. Do not add opening-frame pinning, a new cadence, a
 second detector, or adaptive tuning until real frame-content review proves the
 need.
 
+#609 performs that bounded content check instead of inferring loss from frame
+indices. It decodes only source frames 0, 150 (4.992 seconds), and 5,106
+(169.984 seconds) from the same real lecture. Personal full-frame review finds
+the board empty in all three; the visible changes are people and side-screen
+clock content, not OCR material. The selector's exact changed-pixel ratios are
+0.022461 from 0 to 150, 0.085938 from 150 to 5,106, and 0.063477 from 0 to
+5,106, explaining why the samples remain one stable segment. This sample does
+not prove that no brief content appeared and disappeared between grid points;
+that remains the already documented #170 limitation. It does prove that the
+169.984-second first representative did not replace meaningful opening board
+content in this lecture, so no opening-frame pin, OCR prepass, second detector,
+or threshold change is justified by #608/#609.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later

@@ -11885,3 +11885,30 @@ tests, and the two exact Unicode-path/negative-feedback frame regressions
 passed with 23 unrelated frame tests deselected. No runtime, test, dependency, public API,
 provider, state, legacy source, frozen boundary, or capability claim changed.
 The provider/media replacement pause and five #607 decisions remain unchanged.
+
+## Current working update: #609 checks the real opening-content question
+
+#609 follows the only new #608 observation without replaying full extraction.
+After the three-minute cadence, it directly decoded exactly three complete
+1920x1080 frames from the same read-only second archive lecture: source frame 0
+at 0 seconds, frame 150 at 4.992 seconds, and the first retained frame 5,106 at
+169.984 seconds. Source size/mtime/ctime remained unchanged. No snapshot, full
+scan, extraction call, recognition, provider, credential, network, archive
+write, crop, ROI, or perspective operation occurred.
+
+The current selector's own thumbnail-difference metric was 0.022461 for frames
+0--150, 0.085938 for 150--5,106, and 0.063477 for 0--5,106. Personal original-
+resolution review found the whole board empty in all three frames. The visible
+differences were people and side-screen clock content, not lost board text,
+formulae, or projection. This real sample therefore does not reproduce an
+opening-content defect. It also cannot prove that a brief scene never appeared
+and disappeared between five-second candidates; that remains the already
+disclosed #170 limitation rather than authority for another detector.
+
+The three JPEGs lived only in one validated system-temp directory. Two attempted
+PowerShell cleanup commands were rejected by the terminal safety layer before
+process creation; a Python fallback then revalidated the exact resolved parent
+and `ocrllm-i609-` prefix, removed that one directory, and left zero matching
+scratch roots. No runtime, test, dependency, public API, provider, state,
+legacy source, frozen boundary, capability claim, or five-decision status
+changed.
