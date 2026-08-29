@@ -11214,3 +11214,31 @@ state stores calls but drops historical tokens when reused. These asymmetric
 shipped shapes expose the real gap but are not copied as the replacement
 schema. No token schema, runtime, state, public API, provider call, test source,
 dependency, legacy source, frozen boundary, or deletion changed.
+
+## Current working update: #587 combines image and audio default reduction only
+
+#587 is a documentation-only decision reduction under the replacement-API
+implementation pause. The former image batch-size choice 4 and audio interval
+choice 6 asked the same product question twice: when the caller omits the
+media-specific scalar and supplies several provider models, should OCRLLM use
+the minimum positive applicable default across all candidates or the first
+provider's default? They are now one combined choice 4 awaiting one maintainer
+answer. The minimum remains recommended.
+
+The shared invariant is deliberately narrow. A caller-supplied positive image
+count or audio minute value wins unchanged; audio also keeps explicit `-1` as
+whole mode. Otherwise all candidate capabilities and applicable positive
+defaults are validated before resolving one scalar and creating immutable
+ordered slots. Provider fallback and resume reuse that exact plan. A rejection
+is reported as a provider failure; it does not trigger automatic re-batching or
+re-splitting. First-provider reduction remains the only alternative, but would
+make durable work identity depend on provider-list order even though a later
+batch may start from a remembered successful provider.
+
+This does not create a generic media-plan abstraction. Image groups remain path
+tuples measured in image count. Audio windows remain time ranges measured in
+integer minutes, with a distinct whole-file identity. Their validators,
+planners, sidecars, and repair evidence stay separate. No `MediaPlan`, common
+unit field, cross-media batchifier, lane-local scheduler, adaptive resizing,
+runtime source, API, provider call, state schema, test source, dependency,
+legacy source, frozen boundary, or deletion changed.

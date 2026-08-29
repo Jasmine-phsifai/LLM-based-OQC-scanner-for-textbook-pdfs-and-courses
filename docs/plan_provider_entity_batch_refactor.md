@@ -388,21 +388,22 @@ pause:
 3. **Preset scope.** Recommended: a few live-proven presets plus explicit
    construction/live discovery for other model IDs. Alternative: commit every
    currently exposed Google/DashScope model as a preset.
-4. **Default image batch size with multiple providers.** Recommended: resolve
-   one common size as the minimum positive integer default across all flattened
-   candidates so fallback and nested lanes keep one slot plan. Alternative:
-   use the first provider's default. Requiring an explicit size is no longer
-   an option because provider-derived omission behavior is already fixed.
+4. **Shared provider-derived media planning rule.** For both omitted image
+   batch size and omitted audio interval, should OCRLLM resolve one common
+   scalar as the minimum positive integer default across all flattened
+   candidates (recommended), or use the first provider's applicable default?
+   A caller-supplied positive integer always wins; audio also keeps explicit
+   `-1` as whole-file mode. Image count and audio minutes remain separate
+   media fields and plans. Requiring an explicit value is no longer an option
+   because provider-derived omission behavior is already fixed.
 5. **Default output filenames.** Recommended: use one derived-result suffix,
    `<source-identity>_ocrllm.md`, for a single media source, an image/audio
    folder batch, and video output. Directory placement is already fixed in
    section 2.2. Alternative: use distinct image/audio/video suffixes.
-6. **Provider-derived audio default.** Recommended: take the minimum positive
-   integer `default_audio_minutes` across all flattened candidate providers so
-   slot identity is common across fallback and nested lanes. An explicit
-   positive integer or `-1` whole-file request wins. Alternative: use the first
-   provider's default. Requiring an explicit interval for multiple providers is
-   no longer an option because provider-derived omission behavior is fixed.
+6. **Merged into choice 4.** Image batch size and audio interval use different
+   units and plan builders, but the unresolved provider-list reduction is the
+   same decision. Do not ask for or implement two independently selectable
+   policies.
 7. **Retry rule meaning.** Recommended: every canonical-code rule contains
    only finite `extra_retries` and `wait_seconds`. Reporting is determined by
    the recognition outcome, not repeated in retry configuration. Exhaustion
@@ -456,10 +457,10 @@ twelve equal prerequisites:
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
 | First and second provider-model proofs | combined choice 8/10 | 1–7, 11, 12 |
-| Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choice 9 | 1, 2, 4, 6, 7, 11, 12 |
-| Flat fallback | 1, 2, 4, 7, plus fixed choice 9 | 6, 11, 12 |
-| Nested lanes | the complete flat-fallback gate | 6, 11, 12 |
-| Merged audio + resume | 5, 6, fixed choice 9, plus the proven provider boundary | 11, 12 |
+| Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choice 9 | 1, 2, 4, 7, 11, 12 |
+| Flat fallback | 1, 2, 4, 7, plus fixed choice 9 | 11, 12 |
+| Nested lanes | the complete flat-fallback gate | 11, 12 |
+| Merged audio + resume | 4, 5, fixed choice 9, plus the proven provider boundary | 11, 12 |
 | Video-derived resume/publication and old-chain deletion | 11, 12 and every earlier replacement gate | none |
 
 This ordering does not silently choose an open contract. It prevents an
@@ -475,10 +476,13 @@ a result or an error; it asks to report exhausted provider errors after success
 but later narrows the final accumulator to failed batches. It also asks for
 Google/DashScope model objects while rejecting indefinite model-by-model fixes
 and retaining live discovery. Those are real contract tensions, so this
-reconciliation does not choose between them. By contrast, choices 4 and 6 are
-narrowed: omission must derive a value from the supplied providers, leaving
-only the common-minimum versus first-provider rule. Choice 11's delegation
-behavior is directly fixed; only export placement remains open.
+reconciliation does not choose between them. By contrast, former choices 4 and
+6 ask the same provider-list reduction question. #587 merges them into choice
+4: omission must derive one media-appropriate scalar from the supplied
+providers, leaving only the common-minimum versus first-provider rule. This is
+one product decision, not permission for a generic cross-media planner. Choice
+11's delegation behavior is directly fixed; only export placement remains
+open.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -646,9 +650,9 @@ Do not add adaptive shrinking, binary-search retries, dynamic repacking,
 per-lane batch queues, or a throughput optimizer. One validated integer, one
 ordered tuple of groups, and the existing slot-sidecar direction are enough.
 
-Choice 4 remains awaiting explicit maintainer confirmation. This evidence does
-not authorize a batchifier, fallback dispatcher, sidecar schema, or provider
-implementation.
+Combined choice 4 remains awaiting explicit maintainer confirmation. This
+evidence does not authorize a batchifier, fallback dispatcher, sidecar schema,
+or provider implementation.
 
 ### 6.4 Evidence for choice 5 (#575)
 
@@ -750,9 +754,20 @@ sentinel. The current public long-audio API still rejects `-1`; accepting and
 normalizing it belongs to the future replacement entry and is not a defect in
 the shipped API during the implementation pause.
 
-Choice 6 remains awaiting explicit maintainer confirmation. This evidence does
-not authorize `split_audio`, provider defaults, audio batching, fallback,
-sidecar changes, or runtime implementation.
+The provider-list reduction is no longer a separate choice 6; #587 combines it
+with choice 4. Combined choice 4 remains awaiting explicit maintainer
+confirmation. This evidence does not authorize `split_audio`, provider
+defaults, audio batching, fallback, sidecar changes, or runtime implementation.
+
+#587 deliberately shares only the reduction invariant: explicit scalar wins;
+otherwise inspect every validated candidate's applicable positive default and
+resolve one scalar before slot planning; fallback and resume then reuse the
+same immutable plan. It does not introduce a `MediaPlan`, generic unit field,
+cross-media batchifier, or common image/audio sidecar. Images still plan exact
+path groups by count. Audio still plans time windows in integer minutes and
+normalizes explicit `-1` to whole mode. First-provider reduction is the only
+remaining alternative because it would make both plans depend on list order
+even though later work may start from a remembered successful provider.
 
 ### 6.6 Evidence for choice 7 (#577)
 
