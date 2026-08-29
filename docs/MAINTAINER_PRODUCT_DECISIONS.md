@@ -1559,9 +1559,21 @@ stops at first success, or whether complete fallback returns normally: those
 questions are settled.
 
 The remaining discussion order is: runtime catalog descriptors plus a small
-live-proven preset set versus a checked-in executable mirror; complete-first
-versus consumer-staged runtime model fields; canonical two-value retry rules
-versus an explicit reversal to raw-code action labels; nested-list concurrency
-plus invocation-local lane preference; integer versus float provider audio
-minutes; and only later the exact stateless `resume_video` signature. This board is not runtime
+live-proven preset set versus a checked-in executable mirror; canonical two-
+value retry rules versus an explicit reversal to raw-code action labels; nested-
+list concurrency plus invocation-local lane preference; integer versus float
+provider audio minutes; and only later the exact stateless `resume_video`
+signature. This board is not runtime
 authorization and adds no new framework.
+
+**#628 closes schema-design versus runtime-staging as a false binary.** The
+complete target `ProviderModel` field set remains designed now. The first
+internal image proof may carry only fields it consumes because it is unexported,
+unserialized, has no public preset, and promises no constructor compatibility.
+Before the first public constructor or preset, resolve retry-rule and audio-
+minute types and land the complete target shape once.
+
+This staging permission applies only to pure data fields. It does not authorize
+placeholder defaults, a serializer/schema version, retry executor, audio
+splitter, fallback, nested pool, generic settings, registry, or token ledger.
+After public export, fields do not wait for later consumers.

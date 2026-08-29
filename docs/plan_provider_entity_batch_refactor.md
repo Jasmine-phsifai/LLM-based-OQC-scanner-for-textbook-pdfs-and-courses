@@ -54,26 +54,30 @@ fallback returns one complete result with bounded failure evidence; unresolved
 slots publish recovery evidence then raise `RecognitionIncomplete`; and image
 and audio retain separate plans, sidecars, and Markdown writers.
 
-Only these six decision groups remain, ordered by their earliest consumer:
+The complete nine-field target `ProviderModel` field set is already designed. #628
+separates that design from implementation timing: an unexported, unserialized
+internal proof may add only fields its real image consumer uses, but no public
+constructor or public preset may ship until the complete target shape is present.
+The complete data value does not itself implement audio, retry, fallback, or
+pool behavior.
+
+Only these five decision groups remain, ordered by their earliest consumer:
 
 1. Whether "prebuild all Google and DashScope models" means transient current-
    catalog descriptors plus a small live-proven executable preset set, or a
    checked-in executable mirror that reverses the no-indefinite-maintenance
    decision. The former remains recommended.
-2. Whether the fully documented eventual `ProviderModel` schema must place
-   every not-yet-consumed audio/retry field in the first runtime class, rather
-   than landing fields with their first real consumer.
-3. Whether the latest `error` / `next` / `current` examples intentionally
+2. Whether the latest `error` / `next` / `current` examples intentionally
    restore action labels or raw HTTP keys. The current smaller rule first maps
    vendor evidence to a canonical code, then applies only finite
    `extra_retries` and `wait_seconds`.
-4. For nested lanes, whether the outer exact list is the sole concurrency
+3. For nested lanes, whether the outer exact list is the sole concurrency
    authority with the existing 32-lane ceiling, and whether last-success is
    invocation-only rather than persisted across resume. #621/#622 retain those
    recommendations pending confirmation.
-5. Whether the latest `float` spelling intentionally reverses positive integer
+4. Whether the latest `float` spelling intentionally reverses positive integer
    provider audio minutes. Integer minutes remain authoritative meanwhile.
-6. The exact stateless `resume_video` arguments and one-branch-failure return
+5. The exact stateless `resume_video` arguments and one-branch-failure return
    shape remain a later API question. They do not block the first provider or
    merged-image slice and do not authorize video state or a result framework.
 
@@ -2266,3 +2270,42 @@ normal path or adding a generalized parser. Cancellation, preflight/config/
 source failure, and publication failure retain their own typed error families.
 No runtime, API, test, stable-code implementation, schema, provider, dependency,
 media, or deletion changes in #626.
+
+## #628 Complete Target Field Set, Staged Private Proof
+
+The maintainer's request to design the whole provider-model class and the
+standing rule against consumer-free machinery are not competing requirements.
+The durable target is already exact: vendor, model, controlled `adapter_id`,
+three task-capability booleans, nullable capability-dependent image/audio
+defaults, and immutable finite canonical retry rules. It contains no settings,
+secret, callable, client, generic options, source/output, usage, errors, lane
+state, or executable behavior.
+
+Each field has an independent invariant, but not the same first consumer.
+Identity, adapter route, and image capabilities serve the first internal image
+proof. Image default first serves visible batching; audio capability/default
+first serve the audio slice; retry rules first serve flat fallback. Merely
+storing those facts would not extract audio, sleep, retry, switch providers, or
+schedule lanes, but landing unused fields immediately would require freezing
+types and testing values before those consumers exist. Two of those types are
+still explicit maintainer questions: retry-rule shape and integer-versus-float
+audio minutes.
+
+The narrow combined rule is therefore:
+
+1. Section 2.5 remains the complete class field design; do not invent another model
+   type, options mapping, behavior mixin, or per-model subclass.
+2. The first proof may use an internal, keyword-only immutable `ProviderModel`
+   containing only its consumed fields. It has no root export, public preset,
+   serializer, schema version, resume identity, or compatibility promise.
+3. Before the first public constructor or public preset ships, resolve the two
+   open field-type questions and land the complete designed data shape once.
+   After that gate, adding fields merely when a later consumer arrives is not
+   allowed.
+4. A complete public data value still authorizes no retry executor, audio
+   splitter, fallback chain, binding list, nested pool, token ledger, registry,
+   or provider call. Each behavior remains its own live-proven vertical slice.
+
+This avoids both schema churn after public release and placeholder machinery
+before evidence. No runtime class, field, validator, serializer, preset, public
+API, test, provider call, dependency, state, media, or deletion changes in #628.

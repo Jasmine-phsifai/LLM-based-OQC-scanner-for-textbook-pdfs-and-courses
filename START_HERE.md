@@ -1451,6 +1451,7 @@ documentation-only; the stable error code is not implemented yet.
 #627 refreshes section 0 of the provider/media plan so historical #604/#610/#612
 questions are no longer mistaken for current blockers. Settled naming,
 preflight, ownership, resume routing, fallback-success, and incomplete-run
-contracts are not reopened. Six narrow decision groups remain in earliest-
-consumer order; no runtime or API work is authorized by this documentation-only
-reconciliation.
+contracts are not reopened. #628 then removes schema timing from the list: the
+full target data field set is designed, a private first proof may stage consumed
+fields, and the complete shape is mandatory before public export or presets.
+Five narrow decision groups remain; no runtime or API work is authorized.
