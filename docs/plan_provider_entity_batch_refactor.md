@@ -2094,3 +2094,45 @@ second batch abstraction, deep-copy mechanism, or auto-correction of mixed or
 empty shapes. Duplicate bindings remain intentionally undecided for their
 consumer slice. No runtime, API, test, schema, provider, dependency, media, or
 deletion changes in #623.
+
+## #624 Reject Only Definite Same-Lane Duplicates
+
+A fallback lane grants every candidate one finite retry block. Repeating the
+same candidate in that lane would silently multiply its configured calls and
+cost; silently deduplicating it would instead conceal an invalid route. Complete
+preflight therefore rejects definite duplicates within each lane. This applies
+to the single lane produced by a flat list and independently to every inner
+lane of a nested list. It happens after the one container snapshot from #623
+and before media, defaults, output, or provider work.
+
+Duplicate identity stays deliberately narrow. For planning, two
+`ProviderModel` leaves in one lane with the same exact `(vendor, model)` identity
+are duplicates; conflicting descriptive facts for that identity are invalid,
+not alternate candidates. For recognition/resume, two `ProviderBinding` leaves
+are definitely duplicate only when they use the same model identity and refer
+to the same exact settings object. The same model with different settings
+objects remains an ordered explicit route for another account, region, endpoint,
+or runtime configuration.
+
+Do not compare, hash, stringify, serialize, or fingerprint secret-bearing or
+mutable settings to infer semantic equivalence. Current DashScope settings can
+contain a mutable credential pool, so structural equality is not a stable
+general binding identity. The implementation needs only a lane-local pairwise
+preflight check; it does not need a global set, binding registry, account ID,
+secret-derived key, or retry-budget merger.
+
+The same model or binding may appear in different nested lanes. Cross-lane
+reuse is explicit pool topology and may intentionally share a backup or run the
+same route concurrently. Global deduplication could empty a lane, change
+`lane_count`, and change `batch_index % lane_count`; it is rejected. Every
+actual call remains counted, and token totals retain their already-selected
+`(vendor, model)` aggregation rather than adding account/binding billing rows.
+
+The current `VisionModelSettings` precedent is mixed: it rejects duplicates
+inside `candidate_models`, while the separate primary `name` plus candidate
+sources are silently deduplicated at execution. The replacement API has only
+one provider shape, so it does not inherit that compatibility exception.
+Semantic equality of separately constructed settings, safe settled binding
+labels, globally identical lane policy, and provider-specific quota coordination
+remain deferred until a real consumer proves a need. No runtime, API, test,
+schema, provider, dependency, media, or deletion changes in #624.

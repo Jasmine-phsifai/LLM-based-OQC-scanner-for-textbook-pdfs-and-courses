@@ -12283,6 +12283,25 @@ error state solely to reconstruct a preference is rejected. #622 changes no
 runtime, API, state schema, fingerprint, test, provider, dependency, frozen
 boundary, or deletion.
 
+## Current working update: #624 rejects only definite same-lane duplicates
+
+Future provider preflight rejects a repeated candidate within one fallback
+lane rather than silently deduplicating it or granting it another finite retry
+block. Planning treats repeated exact `(vendor, model)` identity as duplicate.
+Recognition/resume treats a binding as definitely repeated only when the model
+identity matches and both leaves reference the same exact settings object. Same
+model plus different settings objects remains an explicit route.
+
+The same candidate may appear in separate nested lanes because those lanes are
+explicit fixed pool topology. No global deduplication may remove/empty lanes or
+change lane count and batch assignment. Do not inspect, compare, hash,
+serialize, or fingerprint secret-bearing/mutable settings to guess semantic
+equality. A later implementation needs only one lane-local pairwise preflight
+check, not a binding registry, account identity, global set, or retry merger.
+Every dispatched call and existing `(vendor, model)` token aggregate remains
+honest. #624 changes no runtime, API, test, schema, provider, dependency, media,
+frozen boundary, or deletion.
+
 ## Current working update: #623 makes provider topology exact-list only
 
 Future provider arguments accept exactly one leaf, one nonempty exact built-in

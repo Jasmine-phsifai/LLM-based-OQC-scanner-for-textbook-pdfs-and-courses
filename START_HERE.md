@@ -1425,3 +1425,10 @@ list of nonempty exact built-in list lanes. Snapshot it once to private tuple
 lanes; reject tuples-as-provider-collections, arbitrary iterables, subclasses,
 empty/mixed/deeper shapes, and wrong leaves before side effects. Media batches
 remain exact tuples. No public provider-plan or recursive normalizer is planned.
+
+#624 rejects only definite duplicates within one fallback lane before side
+effects: planning compares exact provider/model identity; recognition/resume
+also requires the same settings object. Same model with different settings and
+the same route reused across separate nested lanes remain valid. Do not silently
+or globally deduplicate, compare secrets/mutable settings, or multiply finite
+retry blocks. This decision is documentation-only.

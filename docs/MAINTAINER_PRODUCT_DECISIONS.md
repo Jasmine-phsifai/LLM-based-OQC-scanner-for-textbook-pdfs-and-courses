@@ -1503,3 +1503,18 @@ complete zero-side-effect preflight. Do not build recursive normalization,
 auto-wrapping, public `ProviderPlan`, deep-copy or concurrent-mutation machinery.
 One-element flat and one-lane nested forms remain valid. Duplicate-binding
 policy is not decided by this container slice.
+
+**#624 rejects only definite duplicates inside one fallback lane.** A repeated
+candidate must fail complete preflight; it is neither silently removed nor
+treated as another finite retry block. Planning duplicate identity is exact
+`(vendor, model)`. Runtime duplicate identity requires that model identity plus
+the same exact settings object; same model with another settings object remains
+a distinct account/region/endpoint route.
+
+Cross-lane repetition remains valid explicit nested-pool topology. Never
+globally deduplicate and thereby remove a lane or change round-robin assignment.
+Do not compare, hash, stringify, persist, or fingerprint secrets and mutable
+settings to guess semantic equality. Keep actual call counts and the existing
+model-level token aggregate; do not add binding/account billing. The old
+primary-name/candidate silent-dedup compatibility path is not a contract for
+the one-source replacement API.

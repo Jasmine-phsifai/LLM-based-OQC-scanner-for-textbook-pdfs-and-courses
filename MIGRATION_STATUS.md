@@ -2908,3 +2908,12 @@ batches remain exact tuples. A valid shape is privately snapshotted once to
 tuple lanes without a public plan object, recursive compatibility layer, deep
 copy, or mutation locking. Runtime, APIs, tests, schemas, providers, and media
 behavior remain unchanged.
+
+#624 closes the provider-list duplicate rule without implementation. Complete
+preflight rejects definite duplicates within each flat or nested fallback lane:
+planning uses repeated exact `(vendor, model)` identity, while dispatch requires
+that identity plus the same settings object. Same-model different-settings
+routes and cross-lane reuse remain valid. There is no silent/global deduplication,
+semantic settings comparison, secret fingerprint, binding registry, or retry-
+budget expansion. Existing call and model-token accounting remains unchanged;
+runtime, APIs, tests, schemas, providers, and media behavior are unchanged.
