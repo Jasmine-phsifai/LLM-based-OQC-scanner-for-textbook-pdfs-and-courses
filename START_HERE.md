@@ -1586,3 +1586,15 @@ Only genuinely unresolved slots raise the separate future
 `RecognitionIncomplete`; do not throw after success or create a result-bearing
 exception/wrapper. Four maintainer choices remain: catalog scope, audio unit,
 adapter dispatch, and replacement-gated old-video deletion timing.
+
+#641 narrows catalog scope without implementing it. Every selected exact model
+is one `ProviderModel` entity, but this does not require one class or shipped
+preset per vendor-catalog row. After runtime work is resumed, both possible
+catalog-breadth routes first prove one native-Google image entry and one
+DashScope OpenAI-compatible image entry through the separately approved internal
+call route; only then may merged image interfaces be rewritten. The remaining
+confirmation is whether the package ships only several complete live-proven
+presets and uses live discovery plus explicit construction for other IDs, or
+intentionally keeps a complete executable source mirror. No mirror, descriptor
+framework, runtime type, preset, catalog call, provider call, or interface
+changed in #641.

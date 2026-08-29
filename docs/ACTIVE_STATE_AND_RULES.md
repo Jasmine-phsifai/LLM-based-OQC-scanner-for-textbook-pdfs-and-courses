@@ -12748,3 +12748,31 @@ diagnostics are not durable routing/resume identity. Section 0 now has four
 remaining choices rather than five. #640 changes only decision records and no
 runtime, API, result/error type, schema, provider call, credential, output,
 media, dependency, frozen area, or deletion.
+
+## Current working update: #641 separates first-entry proof from catalog breadth
+
+The remaining catalog question is now exact. "Every model is a provider
+entity" means every selected exact `(vendor, model)` uses the same
+`ProviderModel` value; it does not decide how many named objects the package
+ships. "Several usable entries before interface rewrites" fixes the first
+implementation gate but still permits either a small maintained preset set or
+an eventual full checked-in mirror. The latter conflicts with the separate
+no-indefinite-per-model-maintenance rule, so it requires an explicit maintainer
+answer rather than an inferred implementation.
+
+Both routes share a safe first step after the discussion pause is lifted: prove
+one exact native-Google image entry and one exact DashScope OpenAI-compatible
+image entry through the separately approved internal call route before
+rewriting merged/public interfaces. Current Google discovery and DashScope
+compatible catalog paths retain exact IDs, not the plain/detail/audio
+capabilities, recommended media defaults, and retry facts required by a complete
+model value. Do not guess those facts or add a generated mirror, descriptor
+type, capability trinary, name classifier, registry, or model sweep.
+
+The direct catalog confirmation is: does "prebuild and save model objects"
+mean several complete live-proven shipped presets while all other exact models
+use live discovery plus explicit construction, rather than one complete source-
+controlled object per catalog row? #641 records only the question and common
+sequence; runtime, API, catalog return types, presets, provider calls,
+credentials, dependencies, media, state, frozen areas, and deletion are
+unchanged.

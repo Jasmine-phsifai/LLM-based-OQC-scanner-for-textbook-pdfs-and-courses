@@ -1813,3 +1813,21 @@ attach a result to an exception, create a fallback wrapper, or persist these
 diagnostics as future routing memory. The current decision board therefore has
 four remaining questions: catalog scope, audio unit, adapter dispatch, and old-
 video deletion timing. No runtime or provider behavior changed in #640.
+
+**#641 separates the first executable gate from eventual catalog breadth.** A
+selected exact `(vendor, model)` is one `ProviderModel` entity, but that identity
+rule does not require one Python class or one shipped preset per catalog row.
+The requirement to prove several usable entries before rewriting interfaces is
+compatible with both catalog-breadth routes and therefore does not close the
+literal "prebuild every model object" ambiguity.
+
+Once runtime work is resumed, both routes begin with one exact native-Google
+image entry and one exact DashScope OpenAI-compatible image entry through the
+separately approved internal call route. Do not wait for or generate a full
+catalog mirror before those proofs. Current catalog paths expose IDs but cannot
+populate every OCR/default/retry fact, so unknown facts are not converted to
+false values and do not trigger a descriptor framework. The remaining yes/no
+question is whether the package ultimately ships only several complete live-
+proven presets, with other exact IDs using discovery plus explicit construction,
+or intentionally maintains one complete source object per catalog row. #641 is
+discussion-only.

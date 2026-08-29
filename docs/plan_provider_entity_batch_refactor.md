@@ -247,9 +247,14 @@ Do not make any of the following prerequisites for the first real image proof:
 Four decision groups now remain. They are direct answers, not invitations to
 design more alternatives:
 
-1. **Catalog scope.** Keep runtime discovery plus a small live-proven executable
-   preset set (recommended), or intentionally maintain a checked-in executable
-   object for every catalog row despite missing OCR/default/retry facts.
+1. **Catalog scope.** Confirm whether "prebuild and save Google/DashScope model
+   objects" means that the package ships only several complete, live-proven
+   presets while every other exact catalog model remains available through
+   live discovery plus explicit `ProviderModel` construction (recommended), or
+   intentionally means one checked-in complete executable object for every
+   catalog row despite missing OCR/default/retry facts. "Every model is an
+   entity" fixes the identity of a selected model; it does not by itself fix
+   how many named presets the package ships.
 2. **Audio unit.** Keep provider defaults and caller overrides in one exact
    positive-integer minute domain (recommended), or allow
    `default_audio_minutes=7.5` to create exact 450-second slices while explicit
@@ -277,6 +282,17 @@ controlled `ProviderBinding` leaves, while the current arbitrary Python
 technically; #634 correctly reopened authorization because the maintainer later
 said the invocation design was undecided. No new adapter sketch or third hybrid
 is needed before answering.
+
+The direct catalog question is also one yes/no confirmation: **does "prebuild
+and save model objects" mean several complete live-proven shipped presets, with
+all other exact model IDs discovered live and used through explicit
+construction, rather than one source-controlled complete object per catalog
+row?** Both interpretations share the same first gate: after runtime work is
+resumed, prove one exact native-Google image entry and one exact DashScope
+OpenAI-compatible image entry through the separately approved internal call
+route before rewriting merged/public interfaces. Do not generate a full catalog
+mirror or a new descriptor type while that later breadth question remains
+unanswered.
 
 Until the maintainer resumes runtime work, do not implement `ProviderModel`,
 presets, adapter dispatch, merged recognition, retry/fallback, pool execution,
@@ -2783,3 +2799,35 @@ unresolved after its lane uses the distinct #626 publication-and-
 as provider-routing memory, add a public failure-record class, or create a
 per-attempt ledger. #640 changes only decision records; no runtime, API, error
 type/code, schema, provider call, credential, media, output, or deletion changed.
+
+## #641 Catalog Breadth Does Not Block The First Two Image Entries
+
+The latest maintainer statements establish three different facts that must not
+be collapsed. Every selected exact `(vendor, model)` is represented by the same
+`ProviderModel` value rather than one vendor-wide entity or one class per model.
+OCRLLM must not continually hardcode and repair models one by one. Several
+usable Google/DashScope entries must be proven before the merged interfaces are
+rewritten. None of those facts alone resolves whether "prebuild and save every
+model object" was intended to require an eventual checked-in executable mirror
+of every volatile catalog row, so that breadth remains one exact confirmation.
+
+The active code proves the narrow common sequence. Google discovery returns
+only ordered current `generateContent` IDs and does not cache or hardcode them.
+DashScope accepts an explicit exact model ID and validates non-baseline IDs
+against the configured live `/models` membership; its active response retains
+IDs only. Neither route can populate plain/detail/audio capability facts,
+recommended media defaults, or canonical retry rules for every row. Filling
+those facts with guessed `False`/`None`, a three-state capability system, a
+generated descriptor layer, or a name classifier is rejected.
+
+After the maintainer resumes runtime work, the common first gate is therefore
+two bounded image entries: one exact native-Google entry and one exact
+DashScope OpenAI-compatible entry, each using the same internal pure-data model
+shape; exact runtime settings and invocation follow the separately open adapter
+decision. A passing entry may become a shipped preset. Only after both entries
+can actually recognize should
+the merged image interfaces be rewritten around bindings. Audio has its own
+later live-preset gate. No full mirror, catalog-return-type change, descriptor
+framework, fallback/pool implementation, model sweep, preset identity, runtime
+class, interface rewrite, provider call, or credential access is authorized by
+#641.
