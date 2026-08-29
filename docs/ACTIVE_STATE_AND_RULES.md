@@ -11028,3 +11028,39 @@ confirmation. The same reconciliation records that `ProviderModel` means one
 data class with preset instances, not one subclass/file per model. No provider
 class, preset, adapter, retry engine, token schema, batch facade, state,
 runtime, test, dependency, frozen-file, legacy, or migration capability changed.
+
+## Current working update: #580 separates provider-model facts from adapter and run state
+
+#580 is a documentation-only field-ownership audit under the continuing
+provider/entity implementation pause. Active Google/DashScope adapters and the
+legacy client/configuration paths were inspected directly; no credential,
+network, provider call, runtime source, test source, legacy source or frozen
+boundary changed.
+
+The active code already has four distinct owners. Vision/audio settings select
+model names; exact provider settings own credentials and DashScope endpoint and
+request toggles; recognition execution policy owns caller image limits,
+parallelism and request cadence; adapters own prompts, media serialization,
+catalog checks, SDK clients, uploads, timeouts, errors and cleanup. Call/token
+counts, cancellation, last-success routing and provider failures are invocation
+state. Google and DashScope do not expose a shared generic options shape.
+
+Legacy confirms why those responsibilities must stay separate. Its API,
+independent-vision, Google, Codex and model sections repeat or copy model,
+endpoint, key, protocol, effort, batch, concurrency, media-routing and fallback
+values. Its general, Google, hybrid and API-pool clients then retain mutable
+clients, credentials, retries, unavailable/last-success models, slot counters
+and routing decisions. These are useful behavior references, not one model
+object to port.
+
+The decision-ready Route A makes `ProviderModel` one frozen value containing
+vendor, model, controlled `adapter_id`, explicit plain/detail-image and audio
+capabilities, nullable defaults that are positive only for supported tasks, and
+immutable finite retry rules keyed by canonical OCRLLM codes. API keys, pools,
+region/base URL, timeout, prompt/media input, Chat/Responses, effort/thinking,
+high-resolution encoding, concurrency, overrides, clients, uploads and run
+evidence stay in exact adapter settings or invocation state. Unsupported tasks
+receive `None`, not invented image/audio defaults. A generic future-options bag
+and a subclass per model are rejected. This is choice 10 and still awaits
+maintainer confirmation. The focused current-field evidence remains green at
+**154 passed in 1.35s**; no implementation is authorized by this audit.

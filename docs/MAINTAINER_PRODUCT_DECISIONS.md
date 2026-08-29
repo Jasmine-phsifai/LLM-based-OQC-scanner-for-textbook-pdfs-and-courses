@@ -948,6 +948,12 @@ product choices remain open:
    exact `(vendor, model)`, including safely reported usage from attempts that
    did not settle a slot (recommended), or persist successful-slot usage only
    and accept that failed paid attempts disappear after resume?
+10. Does immutable `ProviderModel` contain only identity, controlled adapter
+    ID, three task-capability booleans, capability-dependent nullable defaults,
+    and canonical finite retry rules while exact adapter settings remain
+    separate and `adapter_id` identifies the invocation protocol (recommended),
+    or does every value gain a generic API/base URL/protocol/effort/
+    future-options mapping?
 
 **#572 evidence for choices 1 and 2.** Both the active library's same-provider
 model-candidate loop and the legacy DashScope/Google candidate loops stop at
@@ -1076,6 +1082,25 @@ current-versus-historical classification. Count each adapter response once;
 persist observed aggregate usage, including safely reported failed-attempt
 usage, without retaining a public attempt ledger. This is not maintainer
 confirmation; choice 9 remains open and no runtime was implemented.
+
+**#580 evidence for choice 10.** Active code already gives model names,
+provider settings, recognition execution policy, adapter implementation and
+per-call state different owners. DashScope region/base URL select the endpoint;
+its thinking and high-resolution flags alter a request; Google provider
+settings currently contain only an optional credential. Prompts, media,
+timeouts, cancellation, client/upload lifecycle, calls, tokens and cleanup are
+also invocation facts rather than model identity. These two real adapters do
+not prove one useful generic call-parameter shape. Legacy demonstrates the
+opposite design's cost: provider, model, endpoint, key, protocol, effort,
+batching, concurrency, media routing, candidate queues and mutable client/pool
+state are spread across interdependent sections and sometimes copied when a
+mode changes. Recommended: one frozen value containing vendor, model,
+`adapter_id`, explicit plain/detail-image and audio booleans, nullable positive
+defaults only for supported tasks, and immutable canonical retry rules. Keep
+exact adapter settings separate and reuse the first adapter's shipped settings
+type. Do not give unsupported tasks dummy defaults or add a generic options
+bag. This is not maintainer confirmation; choice 10 remains open and no runtime
+was implemented.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

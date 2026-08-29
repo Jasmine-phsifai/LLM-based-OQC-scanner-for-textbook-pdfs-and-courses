@@ -114,7 +114,7 @@ second alias for the same value. `ProviderModel` is one data class whose presets
 are instances; it is not one Python subclass or source file per vendor model.
 
 Only fields consumed by the first real vertical slice may be added. The
-expected set is:
+recommended durable set is:
 
 - vendor and model identifier;
 - an invocation boundary, still awaiting choice 8 in section 6; the
@@ -123,14 +123,32 @@ expected set is:
 - plain-image OCR support;
 - detail-image OCR support, including LaTeX/code-oriented output;
 - audio-input recognition support;
-- positive integer default image batch size;
-- positive integer default audio minutes;
-- optional maximum output tokens, only when the adapter consumes it;
-- evidence-backed retry rules;
-- only the concrete call options used by that adapter.
+- default image batch size, which is a positive integer exactly when plain
+  image OCR is supported and otherwise `None`;
+- default audio minutes, which is a positive integer exactly when audio is
+  supported and otherwise `None`;
+- evidence-backed finite retry rules keyed by canonical OCRLLM codes.
 
 Detail OCR implies plain OCR. A capability mismatch is an OCRLLM pre-dispatch
 error, not a provider runtime error, and causes zero provider calls.
+
+The value does not contain a generic call-parameter list or mapping. API keys,
+credential pools, region/base URL, timeout, cancellation, prompt/media input,
+Chat-versus-Responses selection, thinking/effort, high-resolution encoding,
+catalog clients, upload handles, call/token counters, last-success state, and
+provider errors belong to exact adapter settings, one call, or recognition run
+state. The first vertical slice reuses its existing exact provider-settings
+type rather than creating a second common settings object. An adapter-specific
+option moves into durable model data only after two real presets prove that it
+is part of model identity rather than call configuration.
+
+No universal constructor default invents `1` image or `30` audio minutes for an
+unsupported task. A live-proven audio-capable preset may begin with a 30-minute
+suggestion, and a live-proven image preset carries its measured batch
+suggestion. Maximum output tokens, concurrency, start interval, batch override,
+audio split override, candidate order, lane memory, and token accounting stay
+outside the provider-model value unless a later real adapter consumes a field
+that cannot be represented honestly elsewhere.
 
 Entities/presets do not contain API secrets. A generic executable registry,
 plugin system, identity fingerprint, full model catalog, placeholder OpenAI
@@ -372,6 +390,14 @@ Implementation remains paused until these choices are explicit:
    attempts that did not settle a slot; never create a public per-attempt
    ledger. Alternative: persist successful-slot usage only and accept that
    paid failed attempts disappear after process loss or resume.
+10. **Provider-model field ownership.** Recommended: keep only vendor, model,
+    controlled adapter ID, three capability booleans, capability-dependent
+    nullable image/audio defaults, and canonical finite retry rules in the
+    immutable value. Reuse exact adapter settings for credentials, endpoint,
+    request options, and timeouts; the adapter ID identifies the invocation
+    protocol. Alternative: add one generic list
+    or mapping of API/base URL/Chat-or-Responses/effort and future SDK options
+    to every provider-model value.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -803,6 +829,52 @@ no current billing consumer. Route A is recommended because it preserves honest
 totals without a telemetry framework. Choice 9 remains awaiting explicit
 maintainer confirmation. No token schema, provider model, dispatcher, state,
 runtime, test, or public API changed in this documentation audit.
+
+### 6.9 Evidence for choice 10 (#580)
+
+The active library already separates four responsibilities, although its
+current `Config` predates the replacement API. Model names live in vision/audio
+model settings. Exact Google/DashScope provider settings own credentials and,
+for DashScope, region, endpoint and evidence-affecting request toggles. The
+recognition execution policy owns image-count overrides, concurrency and start
+interval. Adapters own prompts, media serialization, SDK clients, catalog
+checks, upload lifecycle, timeout use, error mapping and cleanup. Call counts,
+tokens, cancellation and last-success routing are invocation state.
+
+This separation is not cosmetic. DashScope `enable_thinking` and
+`vl_high_resolution_images` directly alter one request, while its region and
+base URL select a catalog and endpoint. Google settings currently contain only
+an optional secret. The two adapters therefore do not prove one honest generic
+`call_parameters` shape. Their shared durable facts are the provider/model
+identity, the adapter route, product-supported media tasks and the defaults
+that future batching/splitting actually consumes.
+
+Legacy is the counterexample. Its API, independent vision, Google, Codex and
+model sections repeat model names, endpoints, keys, wire protocol, effort,
+batch sizes, concurrency, stagger, media routing and candidate queues. Enabling
+one path copies values into several sections; the general client may borrow a
+different provider's credential, choose Chat or Responses, route audio by URL
+family, retry, switch models and keep mutable clients. Google and the API pool
+also combine last-success/unavailable-model memory, credential slots and call
+counters. Those behaviors solved real application problems, but they are not a
+durable model description to port.
+
+Route A therefore uses one frozen `ProviderModel` with vendor, model,
+`adapter_id`, three explicit capability booleans, nullable capability-dependent
+image/audio defaults, and immutable canonical retry rules. Detail-image OCR
+requires plain-image OCR. Image defaults are positive exactly when image OCR is
+supported; audio defaults are positive exactly when audio is supported. The
+first adapter continues to receive its existing exact settings separately.
+There is no dummy image/audio default for an unsupported task.
+
+Route B adds a sparse generic options list/mapping containing credentials,
+endpoint, Chat/Responses choice, effort and future SDK switches. It initially
+looks convenient but loses validation, mixes secrets with durable values and
+recreates the legacy cross-provider configuration blob. A subclass per model
+has the same coupling with more files. Route A is recommended. Choice 10 remains
+awaiting explicit maintainer confirmation; this audit does not implement or
+authorize a provider model, common settings type, adapter, preset, registry,
+retry engine, dispatcher, or public API.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
