@@ -11021,13 +11021,13 @@ Legacy contains request counters and finite retry behavior but no token
 accounting worth porting.
 
 The decision-ready Route A keeps exact dispatched call count plus nullable
-input/output token totals per `(vendor, model)`, separated into current and
-historical aggregates. A missing usage value stays unknown, never zero; safely
-reported usage from a failed attempt may enter the aggregate once at the
-adapter/result boundary. Resume persists only this bounded aggregate, not a
-public per-attempt ledger, cost engine, global mutable manager, or token
-taxonomy. This is choice 9 in the maintained plan and still awaits explicit
-confirmation. The same reconciliation records that `ProviderModel` means one
+input/output token totals per `(vendor, model)`. A missing usage value stays
+unknown, never zero; safely reported usage from a failed attempt may enter the
+aggregate once at the adapter/result boundary. #586 later fixes one cumulative
+sidecar value as the next invocation's historical baseline and keeps only the
+new invocation delta in memory; there is no second durable bucket, public
+per-attempt ledger, cost engine, global mutable manager, or token taxonomy. The
+same reconciliation records that `ProviderModel` means one
 data class with preset instances, not one subclass/file per model. No provider
 class, preset, adapter, retry engine, token schema, batch facade, state,
 runtime, test, dependency, frozen-file, legacy, or migration capability changed.
@@ -11190,3 +11190,27 @@ execution state, not durable model identity. No new pseudocode, class hierarchy,
 model field, adapter, resolver, setting, preset, registry, public API, runtime,
 test source, provider call, dependency, legacy source, frozen boundary, or
 deletion was added.
+
+## Current working update: #586 fixes one cumulative token state plus a current delta
+
+#586 is a documentation-only accounting reduction under the implementation
+pause. The maintained choice 9 no longer asks the maintainer to choose between
+losing paid failed attempts and a two-bucket durable design. It now fixes the
+smallest contract consistent with per-model accumulation and honest resume.
+
+Each job sidecar stores one cumulative aggregate per exact `(vendor, model)`:
+exact dispatched calls and nullable input/output tokens. Trustworthy evidence
+from a failed attempt is included and saved before another provider attempt.
+The value loaded at invocation start is that invocation's historical baseline;
+new work is tracked as an in-memory current delta. Result metadata may show
+both views, but the sidecar does not persist separately labeled current and
+historical buckets. Unknown token dimensions stay unknown rather than becoming
+zero.
+
+Ordered settled-slot state remains independently necessary to resume content.
+It is not a token ledger. Current long audio persists call/token facts in its
+settled slots and derives history from which slots were loaded; current image
+state stores calls but drops historical tokens when reused. These asymmetric
+shipped shapes expose the real gap but are not copied as the replacement
+schema. No token schema, runtime, state, public API, provider call, test source,
+dependency, legacy source, frozen boundary, or deletion changed.

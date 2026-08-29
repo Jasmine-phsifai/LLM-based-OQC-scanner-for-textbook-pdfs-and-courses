@@ -923,7 +923,7 @@ discussion pause. A failed batch's final accumulator keeps only that batch's
 last provider, canonical code, and bounded description, not one overflow record
 per attempted provider. The public type name is the implementation-level
 `ProviderModel`, with no duplicate `ProviderEntity` alias. The following
-product choices remain open:
+choice details remain open or are fixed as marked:
 
 1. Does a flat provider list stop at the first successful recognition
    (recommended), or continue calling providers after success?
@@ -955,10 +955,11 @@ product choices remain open:
     lazy resolver uses separately supplied exact adapter settings and keeps the
     injected Python protocol separate (recommended)? Or does each model carry
     an arbitrary callable/protocol plus a generic invocation-options mapping?
-9. Does resumable recognition persist one current/historical aggregate per
-   exact `(vendor, model)`, including safely reported usage from attempts that
-   did not settle a slot (recommended), or persist successful-slot usage only
-   and accept that failed paid attempts disappear after resume?
+9. **Fixed token contract:** persist one cumulative aggregate per exact
+   `(vendor, model)` with exact calls and nullable input/output totals,
+   including trustworthy failed-attempt evidence. Treat the loaded value as the
+   historical baseline and keep only this invocation's delta in memory. Do not
+   persist separate current/history buckets or a per-attempt ledger.
 10. **Merged into choice 8:** field ownership and invocation ownership are one
     decision, not two independently selectable contracts.
 11. **Fixed routing, open export detail:** `resume_video` is a thin route to the
@@ -1095,10 +1096,11 @@ counting but does not preserve historical token totals. Current aggregators are
 also keyed by model string only, which cannot remain the identity once two
 vendors may expose the same model ID. Recommended: one bounded aggregate per
 exact `(vendor, model)` with exact call count, nullable input/output totals, and
-current-versus-historical classification. Count each adapter response once;
-persist observed aggregate usage, including safely reported failed-attempt
-usage, without retaining a public attempt ledger. This is not maintainer
-confirmation; choice 9 remains open and no runtime was implemented.
+one cumulative persisted value. Count each adapter response once; persist
+observed aggregate usage, including safely reported failed-attempt usage,
+without retaining a public attempt ledger. #586 later fixes the loaded value as
+the historical baseline and current-run deltas as memory-only reporting; no
+runtime was implemented.
 
 **#580 evidence for choice 10.** Active code already gives model names,
 provider settings, recognition execution policy, adapter implementation and
@@ -1181,6 +1183,17 @@ same boundary. Route A is one immutable data value plus a controlled adapter ID
 and separately supplied exact settings. Route B is an arbitrary callable plus
 generic options. A hybrid would duplicate authority and is not a third option.
 No class, adapter, resolver, setting, preset, or public API changed.
+
+**#586 fixes choice 9 without a token ledger.** Current image state preserves
+slot call counts but not token totals and clears reused current usage, so
+historical image tokens disappear. Current long audio persists token/call facts
+inside settled slots and derives current versus historical output from which
+slots were loaded; it does not persist two aggregate buckets. The replacement
+therefore keeps one cumulative per exact provider-model in the job sidecar and
+one current-run delta in memory. Updated failed-attempt evidence is saved before
+the next provider attempt. Ordered settled-slot state remains independently
+necessary for resume, but is not an itemized billing ledger. Unknown token
+dimensions remain unknown. No runtime/state schema changed.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

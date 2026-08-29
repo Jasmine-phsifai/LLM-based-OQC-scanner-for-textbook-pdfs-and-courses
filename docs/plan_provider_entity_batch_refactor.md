@@ -419,13 +419,16 @@ pause:
    Python protocol remains separate. Alternative: each model carries an
    arbitrary callable/protocol plus a generic options mapping. Do not approve a
    hybrid of these two ownership models.
-9. **Token persistence across failed work and resume.** Recommended: keep one
-   current and one historical aggregate per exact `(vendor, model)`, each with
-   exact call count and nullable input/output totals. Persist the aggregate
-   already observed for a resumable job, including safely reported usage from
-   attempts that did not settle a slot; never create a public per-attempt
-   ledger. Alternative: persist successful-slot usage only and accept that
-   paid failed attempts disappear after process loss or resume.
+9. **Fixed token persistence contract.** The sidecar keeps one cumulative
+   aggregate per exact `(vendor, model)`: exact dispatched call count plus
+   nullable input/output totals. It includes trustworthy evidence from failed
+   attempts as well as settled slots and is updated before another provider
+   attempt begins. At invocation start, the loaded cumulative value is the
+   historical baseline; this invocation's delta remains in memory as current
+   usage. Results derive current/history views from those two values. Do not
+   persist two labeled buckets or a per-attempt ledger. Slot state remains
+   separate because resume needs settled content identity, not because token
+   accounting needs itemized billing records.
 10. **Merged into choice 8.** Field ownership and invocation ownership are one
     boundary decision. Keeping them separate would permit incoherent hybrids,
     such as a controlled adapter ID plus an unvalidated generic options bag, or
@@ -450,13 +453,13 @@ pause:
 The numbered choices remain useful evidence references, but they are not
 twelve equal prerequisites:
 
-| Implementation slice | Must resolve first | May remain open |
+| Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | combined choice 8/10 | 1–7, 9, 11, 12 |
-| Public presets and single-provider merged image + resume | 3, 5, 9, plus the provider-model gate | 1, 2, 4, 6, 7, 11, 12 |
-| Flat fallback | 1, 2, 4, 7, 9 | 6, 11, 12 |
+| First and second provider-model proofs | combined choice 8/10 | 1–7, 11, 12 |
+| Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choice 9 | 1, 2, 4, 6, 7, 11, 12 |
+| Flat fallback | 1, 2, 4, 7, plus fixed choice 9 | 6, 11, 12 |
 | Nested lanes | the complete flat-fallback gate | 6, 11, 12 |
-| Merged audio + resume | 5, 6, 9, plus the proven provider boundary | 11, 12 |
+| Merged audio + resume | 5, 6, fixed choice 9, plus the proven provider boundary | 11, 12 |
 | Video-derived resume/publication and old-chain deletion | 11, 12 and every earlier replacement gate | none |
 
 This ordering does not silently choose an open contract. It prevents an
@@ -891,23 +894,30 @@ keys use only the model string. That is adequate for the shipped single-vendor
 identity assumptions, but it would conflate two future provider-model values
 that expose the same model string.
 
-Route A keeps one bounded aggregate per exact `(vendor, model)` with four facts:
-exact dispatched call count, nullable input tokens, nullable output tokens, and
-whether it belongs to the current invocation or restored history. Each adapter
-contributes usage once at its response boundary. A response-validation failure
-may contribute usage when the provider actually reported it; a call without
-trustworthy usage keeps the token total unknown. A resumable job persists the
-aggregate it has already observed, including failed paid attempts, so a later
-resume does not erase them. Reused work enters historical totals and never
-current call counts.
+The smallest replacement contract keeps one bounded cumulative aggregate per
+exact `(vendor, model)`: exact dispatched call count and nullable input/output
+tokens. Each adapter contributes usage once at its response boundary. A
+response-validation failure may contribute usage when the provider actually
+reported it; a call without trustworthy usage makes the affected cumulative
+dimension unknown rather than zero. Updated cumulative evidence is saved before
+another provider attempt, so a process loss does not erase a paid failed call.
 
-Route B persists only successful-slot usage. It is smaller, but loses reported
-usage from failed attempts after process loss or resume. A per-attempt public
-ledger would preserve more diagnostics but duplicates retry/error state and has
-no current billing consumer. Route A is recommended because it preserves honest
-totals without a telemetry framework. Choice 9 remains awaiting explicit
-maintainer confirmation. No token schema, provider model, dispatcher, state,
-runtime, test, or public API changed in this documentation audit.
+The sidecar does not persist separate current and historical aggregates. The
+loaded cumulative value is the next invocation's historical baseline, while
+new in-memory deltas are current; result metadata can derive both without a
+second durable bucket. Resume still requires ordered settled-slot content and
+identity. Current long audio stores call/token facts per settled slot and
+derives current/history at composition time, while current image state stores
+calls but loses historical tokens on reuse. Those shipped shapes are evidence,
+not the future schema.
+
+Persisting only successful-slot usage loses reported failed-attempt cost. A
+public per-attempt ledger duplicates retry/error state, while two labeled
+durable current/history buckets duplicate the same cumulative evidence across
+invocations. The one-cumulative-plus-current-delta contract is fixed by #586 as
+the smallest honest interpretation of the maintainer's per-model accumulation
+rule. No token schema, provider model, dispatcher, state, runtime, test, or
+public API changed in this documentation audit.
 
 ### 6.9 Evidence for choice 10 (#580)
 
