@@ -10996,3 +10996,35 @@ This iteration is documentation only; no provider model, adapter, resolver,
 credential type, registry, runtime, API, test, dependency, legacy, frozen
 directory, or migration capability changed. Invocation-boundary and lightweight
 import regressions are **179 passed in 2.68s**.
+
+## Current working update: #579 keeps token accounting bounded and resumes the visible video plan
+
+#579 remained documentation-only while provider/entity and replacement
+recognition implementation is paused. The maintainer's latest clarification
+removes the last planned video convenience wrapper: callers will compose
+inspection, complete-frame extraction/selection, image batching, merged image
+recognition, audio extraction/splitting, and merged audio recognition as
+visible library functions. The frozen shipped video recognition/journal chain
+is still removed only after those replacement paths meet their deletion gate;
+this discussion update does not delete or modify runtime code.
+
+The active and legacy token audit found no reason to build a billing or
+telemetry framework. Active Google/DashScope parsers accept only trustworthy
+non-negative integer usage; some response-validation errors retain reported
+usage, while other failures report none. Long-audio resume can expose
+historical usage, image resume currently cannot, and all current aggregators
+key by model string rather than the future exact `(vendor, model)` identity.
+Legacy contains request counters and finite retry behavior but no token
+accounting worth porting.
+
+The decision-ready Route A keeps exact dispatched call count plus nullable
+input/output token totals per `(vendor, model)`, separated into current and
+historical aggregates. A missing usage value stays unknown, never zero; safely
+reported usage from a failed attempt may enter the aggregate once at the
+adapter/result boundary. Resume persists only this bounded aggregate, not a
+public per-attempt ledger, cost engine, global mutable manager, or token
+taxonomy. This is choice 9 in the maintained plan and still awaits explicit
+confirmation. The same reconciliation records that `ProviderModel` means one
+data class with preset instances, not one subclass/file per model. No provider
+class, preset, adapter, retry engine, token schema, batch facade, state,
+runtime, test, dependency, frozen-file, legacy, or migration capability changed.

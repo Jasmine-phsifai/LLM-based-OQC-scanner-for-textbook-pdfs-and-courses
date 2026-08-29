@@ -44,10 +44,11 @@ extract_video_audio
 
 - These steps remain directly callable. Recognition must not hide them inside
   one required black-box function.
-- A future `recognize_video` convenience wrapper is allowed only after the
-  public steps work together. It must be a thin caller of those steps and must
-  not own recognition rules, a result type, a journal, or another resume
-  format.
+- The replacement does not include a `recognize_video` convenience wrapper.
+  Callers compose the visible public steps themselves; recognition rules,
+  cleanup ownership, and resume must not disappear inside another video
+  black box. A later wrapper would require a separate maintainer decision and
+  a concrete consumer, not merely the availability of the component steps.
 - Image and audio providers are separate inputs.
 - Video resume routes to image-batch and audio-batch resume. There is no third
   video resume engine.
@@ -109,7 +110,8 @@ extract_video_audio
 One value represents exactly one `(vendor, model)` pair. Google or DashScope
 as a whole is not one provider value. The public type is named `ProviderModel`:
 it states the actual identity more clearly than `ProviderEntity`. Do not ship a
-second alias for the same value.
+second alias for the same value. `ProviderModel` is one data class whose presets
+are instances; it is not one Python subclass or source file per vendor model.
 
 Only fields consumed by the first real vertical slice may be added. The
 expected set is:
@@ -198,13 +200,19 @@ unproven maximums such as 32 retries or 600 seconds.
 
 ### 2.8 Token accounting
 
-- Accumulate provider-reported input and output tokens by exact vendor/model.
-- Current-run totals include any usage a provider reports for successful or
-  failed calls. Persist successful-slot usage only, so resume can derive paid
-  settled totals without counting a reused slot as a new call.
-- Never invent usage when a provider does not report it and never divide one
-  batch's usage across its individual images.
-- More detailed accounting waits for a real consumer or billing defect.
+- Accumulate exact call count plus provider-reported input and output tokens by
+  exact `(vendor, model)` identity. The currently shipped model-only key must
+  not be copied into the future multi-provider dispatcher.
+- Current-run totals include usage reported for a valid result and usage that
+  an adapter safely observed before a later response-validation failure.
+- A dispatched call with no trustworthy usage does not become zero. The call
+  count remains exact, while the affected token dimension for that
+  vendor/model total is `None` because its exact total is unknown.
+- Persist only aggregate usage needed to distinguish historical resume work
+  from the current invocation. Do not persist a public per-attempt ledger,
+  cost estimator, token-category taxonomy, or duplicate global counter.
+- Never divide one batch's usage across its individual images or audio slices.
+  More detail waits for a real consumer or billing defect.
 
 ### 2.9 Resume, repair, and owned intermediates
 
@@ -221,9 +229,11 @@ unproven maximums such as 32 retries or 600 seconds.
   arbitrary Markdown and is not a gate for production resume or deletion of
   the old video journal.
 - Caller-owned media is never deleted.
-- Media created by a future video convenience wrapper is deleted after full
-  success and retained after partial or total failure so resume remains
-  possible.
+- Because the replacement has no video convenience wrapper, media returned by
+  caller-invoked extraction functions is caller-owned and is not later deleted
+  by recognition. If a future wrapper is separately approved, its generated
+  media lifecycle must be decided with that wrapper rather than anticipated in
+  this plan.
 - A frame rejected by video deduplication may be deleted only when OCRLLM
   created that frame for the current owned run.
 
@@ -308,10 +318,10 @@ in the already-shipped provider-free inspect/extract/selection functions.
 6. **Audio vertical slice.** Expose extraction and integer-minute splitting,
    then merged audio slots and resume. Perform one real short/whole or two-chunk
    request as appropriate to the current provider evidence.
-7. **Video composition and deletion.** Prove the public image/audio steps can
-   be composed on real video. Add a thin convenience wrapper only if still
-   useful, then delete the frozen video recognition/journal chain. Repair is
-   not a deletion gate.
+7. **Video composition and deletion.** Prove that a caller can compose the
+   public image/audio steps on real video, then delete the frozen video
+   recognition/journal chain. Do not replace it with another convenience
+   wrapper. Repair is not a deletion gate.
 
 Each phase must contain a real consumer, the smallest focused offline tests,
 and a bounded live call where provider behavior is in scope. A green offline
@@ -355,6 +365,13 @@ Implementation remains paused until these choices are explicit:
    operation-specific adapter module. Keep the existing injected Python
    protocol separate. Alternative: store a callable/protocol adapter object
    inside every `ProviderModel`.
+9. **Token persistence across failed work and resume.** Recommended: keep one
+   current and one historical aggregate per exact `(vendor, model)`, each with
+   exact call count and nullable input/output totals. Persist the aggregate
+   already observed for a resumable job, including safely reported usage from
+   attempts that did not settle a slot; never create a public per-attempt
+   ledger. Alternative: persist successful-slot usage only and accept that
+   paid failed attempts disappear after process loss or resume.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -752,6 +769,41 @@ the adapter. Choice 8 remains awaiting explicit maintainer confirmation. No
 `ProviderModel`, resolver, registry, credential type, adapter, or public batch
 API is authorized by this evidence.
 
+### 6.8 Evidence for choice 9 (#579)
+
+The active adapters already preserve only trustworthy non-negative integer
+usage. Google can attach provider-reported usage to a typed error when content
+validation fails after the response is received; DashScope and other paths may
+have no usage for an error. The shared aggregator makes an affected token
+dimension `None` when any included observation lacks that dimension, rather
+than presenting a known partial sum as an exact total.
+
+Current resume evidence is asymmetric. Long-audio settled slots persist token
+counts and expose historical usage separately from current calls. Image resume
+clears current usage for a reused slot, correctly preventing double counting,
+but its state does not retain historical token totals. All current aggregation
+keys use only the model string. That is adequate for the shipped single-vendor
+identity assumptions, but it would conflate two future provider-model values
+that expose the same model string.
+
+Route A keeps one bounded aggregate per exact `(vendor, model)` with four facts:
+exact dispatched call count, nullable input tokens, nullable output tokens, and
+whether it belongs to the current invocation or restored history. Each adapter
+contributes usage once at its response boundary. A response-validation failure
+may contribute usage when the provider actually reported it; a call without
+trustworthy usage keeps the token total unknown. A resumable job persists the
+aggregate it has already observed, including failed paid attempts, so a later
+resume does not erase them. Reused work enters historical totals and never
+current call counts.
+
+Route B persists only successful-slot usage. It is smaller, but loses reported
+usage from failed attempts after process loss or resume. A per-attempt public
+ledger would preserve more diagnostics but duplicates retry/error state and has
+no current billing consumer. Route A is recommended because it preserves honest
+totals without a telemetry framework. Choice 9 remains awaiting explicit
+maintainer confirmation. No token schema, provider model, dispatcher, state,
+runtime, test, or public API changed in this documentation audit.
+
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
 replacement gate rather than preserved as a compatibility line; no deletion is
@@ -768,7 +820,8 @@ Deletion requires all of the following, and does not require repair:
 - one real video whose extracted image and audio paths compose into the same
   output without the old journal;
 - explicit-source and output-default behavior documented;
-- owned files deleted on success and retained on failure;
+- caller-invoked extraction outputs remain caller-owned; only extraction-local
+  rejected candidates and temporary files follow their documented cleanup;
 - package import remains lightweight;
 - old public consumers and tests are either migrated or deliberately removed;
 - focused tests, full offline suite, and bounded live evidence are green.

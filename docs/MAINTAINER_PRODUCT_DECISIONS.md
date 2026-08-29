@@ -139,8 +139,8 @@ is often accepted.
 ## Provider usage accounting
 
 - Keep accounting understandable. Accumulate provider-reported input and output
-  tokens by the exact model that produced them, together with that model's call
-  count.
+  tokens by the exact `(vendor, model)` that produced them, together with that
+  provider-model's exact dispatched call count.
 - Never estimate missing token usage and never turn an unavailable usage value
   into zero. Google and other providers may omit usage on errors, empty replies,
   or interrupted requests.
@@ -149,6 +149,10 @@ is often accepted.
   logic to every rare error exit.
 - Distinguish current-invocation usage from historical usage restored from a
   checkpoint.
+- Do not create a public per-attempt ledger, price engine, or global mutable
+  token manager before a real consumer requires one. Aggregate once at the
+  adapter/result boundary and persist only the bounded aggregate needed for
+  honest resume reporting.
 
 ## File lifecycle and bounded I/O
 
@@ -940,6 +944,10 @@ product choices remain open:
    through one explicit lazy dispatcher while the existing injected Python
    protocol stays separate (recommended), or does every model entity contain
    an arbitrary callable/protocol adapter object?
+9. Does resumable recognition persist one current/historical aggregate per
+   exact `(vendor, model)`, including safely reported usage from attempts that
+   did not settle a slot (recommended), or persist successful-slot usage only
+   and accept that failed paid attempts disappear after resume?
 
 **#572 evidence for choices 1 and 2.** Both the active library's same-provider
 model-candidate loop and the legacy DashScope/Google candidate loops stop at
@@ -1054,9 +1062,25 @@ injected protocol on its existing API instead of automatically wrapping it in
 the replacement batch abstraction. This is not maintainer confirmation;
 choice 8 remains open and no runtime was implemented.
 
+**#579 evidence for choice 9.** Active Google and DashScope response boundaries
+already accept only trustworthy non-negative integer usage. Google can retain
+reported usage on a later content-validation error; some failed calls report no
+usage at all. The shared aggregator therefore treats a missing dimension as
+unknown instead of zero. Long-audio resume persists per-slot usage and exposes
+historical totals separately, while image resume prevents current-run double
+counting but does not preserve historical token totals. Current aggregators are
+also keyed by model string only, which cannot remain the identity once two
+vendors may expose the same model ID. Recommended: one bounded aggregate per
+exact `(vendor, model)` with exact call count, nullable input/output totals, and
+current-versus-historical classification. Count each adapter response once;
+persist observed aggregate usage, including safely reported failed-attempt
+usage, without retaining a public attempt ledger. This is not maintainer
+confirmation; choice 9 remains open and no runtime was implemented.
+
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
-retained; image/audio providers are separate; video resume delegates to image
-and audio batch resume; repair is experimental and does not block deletion;
-caller media is never deleted; failed batches retain one terminal failure; and
-social-media work stays frozen.
+retained; image/audio providers are separate; callers compose the visible video
+steps and no replacement video black box is planned; video resume delegates to
+image and audio batch resume; repair is experimental and does not block
+deletion; caller media is never deleted; failed batches retain one terminal
+failure; and social-media work stays frozen.
