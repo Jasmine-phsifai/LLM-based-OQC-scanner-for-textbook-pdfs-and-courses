@@ -10873,11 +10873,11 @@ an explicit value contradicts the maintainer's defaulting requirement.
 Adaptive shrinking, binary search, dynamic repacking, per-lane batch queues,
 and throughput optimization are rejected.
 
-Choice 4 remains open for explicit maintainer confirmation. This iteration is
-documentation only: no batchifier, provider, fallback, sidecar schema, public
-API, runtime, test, dependency, frozen-file, legacy, or migration capability
-changed. The existing image-limit, video-group, paid-slot-resume, and bounded
-PDF-group regressions are **50 passed in 1.70s**.
+At #574, choice 4 remained open; #594 later fixes the common-minimum rule. This
+iteration is documentation only: no batchifier, provider, fallback, sidecar
+schema, public API, runtime, test, dependency, frozen-file, legacy, or migration
+capability changed. The existing image-limit, video-group, paid-slot-resume, and
+bounded PDF-group regressions are **50 passed in 1.70s**.
 
 ## Current working update: #575 reduces default Markdown naming to one rule
 
@@ -10935,8 +10935,9 @@ a variable-window scheduler and extra state, and explicit-only contradicts the
 maintainer's provider-derived default requirement. Adaptive shrinking, binary
 search, automatic whole-to-interval fallback and provider-specific queues are
 rejected. The shipped API currently rejecting `-1` is not changed while the
-replacement implementation is paused. Choice 6 remains open for explicit
-maintainer confirmation. This iteration is documentation only: no audio API,
+replacement implementation is paused. At #576, choice 6 remained open; #587
+later merges it into choice 4 and #594 fixes the common-minimum rule. This
+iteration is documentation only: no audio API,
 provider value, splitter, fallback, sidecar, runtime, test, dependency, legacy,
 frozen directory, or migration capability changed. The existing interval,
 whole, persistence, resume and video-audio-state regressions are **119 passed
@@ -11228,8 +11229,8 @@ implementation pause. The former image batch-size choice 4 and audio interval
 choice 6 asked the same product question twice: when the caller omits the
 media-specific scalar and supplies several provider models, should OCRLLM use
 the minimum positive applicable default across all candidates or the first
-provider's default? They are now one combined choice 4 awaiting one maintainer
-answer. The minimum remains recommended.
+provider's default? They became one combined choice 4; #594 later fixes the
+common-minimum rule.
 
 The shared invariant is deliberately narrow. A caller-supplied positive image
 count or audio minute value wins unchanged; audio also keeps explicit `-1` as
@@ -11413,3 +11414,37 @@ discovered/proven state machine, and per-model test sweep are rejected. Choice
 adapter, API, runtime source, provider call, test source, dependency, legacy
 source, frozen boundary, or deletion changed. Focused Google/DashScope catalog,
 exact model, and pre-dispatch contracts remain **35 passed in 0.25s**.
+
+## Current working update: #594 fixes common-minimum media defaults
+
+#594 is a documentation-only media-planning decision under the replacement-API
+implementation pause. Explicit input keeps priority: a positive image count or
+audio minute value is used unchanged, and explicit audio `-1` remains the
+whole-file request. When omitted for one provider-model, that model's positive
+applicable default is used. For flat or nested provider shapes, OCRLLM validates
+all candidates and takes the minimum positive applicable default before it
+creates any image groups or audio windows.
+
+The reduction is global only for one integer. It does not alter lane assignment,
+permit cross-lane fallback, or combine image and audio planners. Image groups
+remain ordered path tuples; audio windows remain integer-minute time ranges with
+a distinct whole identity. Their sidecars and repair evidence remain separate.
+The resolved scalar and exact ordered slots become durable request identity;
+fallback and resume reuse them without recalculation.
+
+First-provider reduction is rejected because provider order controls fallback,
+not planning authority, and a lane may start a later batch from its remembered
+successful provider. It could create a group too large for a fallback candidate
+while the settled plan forbids silent re-batching. Lane-local planning would
+require variable windows and persisted lane mappings. A conservative minimum
+may reduce throughput but adds no scheduler or state dimension.
+
+Choice 4 is closed, and former choice 6 remains merged into it. Provider
+recommendations are not hard limits: a provider may still reject the original
+slot, which is recorded honestly; changing the scalar starts a new plan. No
+adaptive shrinking, binary search, dynamic repacking, whole-to-split fallback,
+lane-local queue, generic `MediaPlan`, batchifier, splitter, dispatcher, sidecar
+schema, provider model, API, runtime source, provider call, test source,
+dependency, legacy source, frozen boundary, or deletion changed.
+Focused image-limit, PDF grouping, durable image-slot, long-audio persistence,
+and changed-interval rejection regressions are **28 passed in 0.71s**.

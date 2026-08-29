@@ -394,22 +394,19 @@ pause:
 3. **Fixed preset scope.** Ship a small curated set of live-proven presets and
    use explicit construction/live discovery for other model IDs. Do not commit,
    generate, or synchronize every current Google/DashScope catalog row.
-4. **Shared provider-derived media planning rule.** For both omitted image
-   batch size and omitted audio interval, should OCRLLM resolve one common
-   scalar as the minimum positive integer default across all flattened
-   candidates (recommended), or use the first provider's applicable default?
-   A caller-supplied positive integer always wins; audio also keeps explicit
-   `-1` as whole-file mode. Image count and audio minutes remain separate
-   media fields and plans. Requiring an explicit value is no longer an option
-   because provider-derived omission behavior is already fixed.
+4. **Fixed common-minimum media default.** A caller-supplied positive integer
+   wins; audio also keeps explicit `-1` as whole-file mode. When omitted, one
+   provider supplies its own positive applicable default; flat and nested
+   shapes validate every candidate and use the minimum positive applicable
+   default across the flattened shape. Image count and audio minutes retain
+   separate validators, planners, identities, and sidecars.
 5. **Default output filenames.** Recommended: use one derived-result suffix,
    `<source-identity>_ocrllm.md`, for a single media source, an image/audio
    folder batch, and PDF output. Directory placement is already fixed in
    section 2.2. Alternative: use distinct image/audio/PDF suffixes.
-6. **Merged into choice 4.** Image batch size and audio interval use different
-   units and plan builders, but the unresolved provider-list reduction is the
-   same decision. Do not ask for or implement two independently selectable
-   policies.
+6. **Merged into fixed choice 4.** Image batch size and audio interval use
+   different units and plan builders, but both use the same common-minimum
+   provider-list reduction. They do not expose independent policy switches.
 7. **Fixed finite retry rule.** Every canonical-code rule contains only
    non-negative finite `extra_retries` and `wait_seconds`. Reporting is
    determined by the recognition outcome, not repeated in retry configuration.
@@ -458,11 +455,11 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | fixed combined choice 8/10 | 4, 5, 11 |
-| Public presets and single-provider merged image + resume | 5, plus the provider-model gate and fixed choices 3/9/12 | 4, 11 |
-| Flat fallback | 4, plus fixed choices 1/2/7/9/12 | 11 |
+| First and second provider-model proofs | fixed combined choice 8/10 | 5, 11 |
+| Public presets and single-provider merged image + resume | 5, plus the provider-model gate and fixed choices 3/9/12 | 11 |
+| Flat fallback | fixed choices 1/2/4/7/9/12 | 11 |
 | Nested lanes | the complete flat-fallback gate | 11 |
-| Merged audio + resume | 4, 5, fixed choices 9/12, plus the proven provider boundary | 11 |
+| Merged audio + resume | 5, fixed choices 4/9/12, plus the proven provider boundary | 11 |
 | Video-derived resume/publication and old-chain deletion | 11 and every earlier replacement gate; fixed choice 12 | none |
 
 This ordering does not silently choose an open contract. It prevents an
@@ -484,9 +481,9 @@ failed-batch accumulator remains limited to genuinely failed slots. Choice 1 is
 fixed by the one-result contract: "traverse once" limits revisiting while
 unresolved and does not require paid calls after success. By contrast, former
 choices 4 and 6 ask the same provider-list reduction question. #587 merges
-them into choice 4: omission must derive one media-appropriate scalar from the supplied
-providers, leaving only the common-minimum versus first-provider rule. This is
-one product decision, not permission for a generic cross-media planner. Choice
+them into choice 4, and #594 fixes the common-minimum rule: omission derives one
+media-appropriate scalar from every candidate before planning. This is one
+product decision, not permission for a generic cross-media planner. Choice
 11's delegation behavior is directly fixed; only export placement remains
 open.
 
@@ -657,9 +654,9 @@ Do not add adaptive shrinking, binary-search retries, dynamic repacking,
 per-lane batch queues, or a throughput optimizer. One validated integer, one
 ordered tuple of groups, and the existing slot-sidecar direction are enough.
 
-Combined choice 4 remains awaiting explicit maintainer confirmation. This
-evidence does not authorize a batchifier, fallback dispatcher, sidecar schema,
-or provider implementation.
+Combined choice 4 is closed to the common-minimum rule. This decision does not
+authorize a batchifier, fallback dispatcher, sidecar schema, or provider
+implementation.
 
 ### 6.4 Evidence for choice 5 (#575)
 

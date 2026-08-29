@@ -935,19 +935,17 @@ choice details remain open or are fixed as marked:
    live-proven models. Every other current model uses explicit construction of
    the same `ProviderModel` after live discovery; the repository does not mirror
    the complete Google/DashScope catalogs.
-4. **Shared provider-derived media planning choice:** with multiple providers
-   and no explicit image batch size or audio interval, does OCRLLM take the
-   minimum positive applicable default across all flattened candidates
-   (recommended), or the first provider's default? A caller-supplied positive
-   integer wins; audio also keeps explicit `-1` whole-file mode. Images and
-   audio keep separate units, planners, and sidecars. Provider-derived omission
-   is fixed, so requiring an explicit value is no longer an alternative.
+4. **Fixed common-minimum media default:** a caller-supplied positive integer
+   wins; audio also keeps explicit `-1` whole-file mode. When omitted, one
+   provider contributes its applicable positive default, while flat and nested
+   shapes validate all candidates and use their minimum positive applicable
+   default. Images and audio keep separate units, planners, identities, and
+   sidecars.
 5. Does every omitted output use `<source-identity>_ocrllm.md`
    (recommended), or do image, audio, and PDF receive separate suffixes?
    Directory placement is already fixed.
-6. **Merged into choice 4:** image batch size and audio interval have the same
-   unresolved provider-list reduction. They must not expose two independently
-   selectable default policies.
+6. **Merged into fixed choice 4:** image batch size and audio interval use the
+   same common-minimum reduction without sharing a planner or policy switch.
 7. **Fixed finite retry rule:** canonical-code rules contain only non-negative
    finite `extra_retries` and `wait_seconds`. Outcome reporting stays outside
    the rule. Exhaustion records the last safe failure and advances. The
@@ -1010,8 +1008,8 @@ that resolved size and exact groups, and never recalculate or re-batch them
 during fallback or resume. Flattening here does not allow cross-lane fallback.
 First-provider sizing can create oversized fallback groups; lane-local sizing
 needs a variable-window planner and extra state; explicit-only contradicts the
-maintainer's provider-derived-default requirement. This is not maintainer
-confirmation; combined choice 4 remains open.
+maintainer's provider-derived-default requirement. #594 fixes the recommended
+common-minimum rule; no planner implementation is authorized by that decision.
 
 **#575 evidence for choice 5.** Active naming currently differs across ordinary
 image/PDF output, long audio, and the old video job; legacy adds several
@@ -1042,9 +1040,9 @@ re-split it. A rejection remains a provider failure, and changing the interval
 starts a new plan. First-provider and lane-local defaults make time boundaries
 depend on provider scheduling; explicit-only contradicts provider-derived
 splitting. Do not add adaptive shrinking, binary search, hidden whole-to-split
-fallback, or per-provider window queues. This is not maintainer confirmation.
-#587 merges this provider-list reduction into choice 4; there is no separate
-choice 6.
+fallback, or per-provider window queues. #587 merges this provider-list
+reduction into choice 4, and #594 fixes the common-minimum rule; there is no
+separate choice 6.
 
 **#577 evidence for choice 7.** Active Google and DashScope adapters map raw
 SDK/HTTP evidence to canonical OCRLLM codes before any policy decision. A raw
@@ -1180,10 +1178,9 @@ slices begin. #584 left choices 1–3 open; #591 later fixes choice 1 to stop on
 first success, and #592 fixes choice 2 to return bounded failure evidence with
 the result. #593 later fixes choice 3 to a small live-proven preset set plus
 explicit construction and live discovery. Former choices 4 and 6 no longer
-offer
-explicit-only input as an alternative because provider-derived omission is
-fixed. #587 combines their identical common-minimum-versus-first-provider
-question into choice 4 without combining their media planners. Choice 11
+offer explicit-only input as an alternative because provider-derived omission
+is fixed. #587 combines them without combining their media planners, and #594
+fixes their common-minimum reduction. Choice 11
 now fixes a stateless route to ordinary image/audio resume and leaves only
 package-root export open. This sequencing changes no runtime or public API.
 
@@ -1213,14 +1210,14 @@ dimensions remain unknown. No runtime/state schema changed.
 image grouping and long-audio windows both become durable slot identity before
 provider dispatch; fallback and resume cannot safely reinterpret either plan.
 The shared decision is only how an omitted scalar is reduced from several
-candidate-model defaults. Recommended: validate all candidates and take the
-minimum positive applicable default before planning. Alternative: use the
-first provider's default. Explicit image count or audio minutes always win,
+candidate-model defaults. #594 fixes validation of all candidates followed by
+the minimum positive applicable default before planning. Explicit image count
+or audio minutes always win,
 and explicit audio `-1` remains whole mode. Image count and audio minutes keep
 separate validators, planners, identities, and sidecars; no generic media-plan
 type, cross-media batchifier, or adaptive re-planning is approved. Combined
-choice 4 remains open for one maintainer answer; former choice 6 is not a
-second gate. No runtime, state, API, provider, or test source changed.
+choice 4 is closed; former choice 6 is not a second gate. No runtime, state,
+API, provider, or test source changed.
 
 **#588 closes choice 12 and removes the speculative composer.** The latest
 direct architecture defines `recognize_images_to_markdown` and
