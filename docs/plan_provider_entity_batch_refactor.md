@@ -10,7 +10,7 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-29, #634)
+## 0. Current pruning checkpoint (2026-08-30, #646)
 
 This plan remains a discussion record, not implementation authorization. The
 maintainer has paused runtime work while the replacement is reviewed for
@@ -144,11 +144,14 @@ retry, fallback, pooling, resume, or repair.
 
 Provider collections retain the fixed scalar/exact-flat-list/exact-nested-list
 shape. Flat lanes stop at first success. Nested lanes have fixed absolute-slot
-assignment and no cross-lane rescue. Canonical OCRLLM errors, not raw HTTP
-numbers, select finite same-candidate retry rules. A media-size rejection does
-not silently re-batch: another candidate may accept the same immutable slot;
-otherwise the unresolved slot remains available for explicit resume with a new
-provider plan. Changing the slot grouping is a new plan, not resume.
+assignment and no cross-lane rescue. The provider-independent dispatcher must
+not branch directly on raw SDK exceptions or pretend that one HTTP number has
+the same meaning across vendors. Decision 6 below determines whether a
+normalized model rule retains distinct action labels or only finite retry/wait
+numbers. A media-size rejection does not silently re-batch: another candidate
+may accept the same immutable slot; otherwise the unresolved slot remains
+available for explicit resume with a new provider plan. Changing the slot
+grouping is a new plan, not resume.
 
 Token accounting is already fixed by #586 and is not another decision group.
 Each future job sidecar keeps one cumulative row per exact `(vendor, model)`:
@@ -209,31 +212,23 @@ code already gives the distinct code and description required from provider
 failures.
 
 `batchify_images` remains task-independent: it groups concrete media and may
-consume the provider shape only for the already-defined batch-size default.
+consume the provider shape only to resolve a provider-derived batch-size
+default. Decision 5 below controls how several candidate recommendations reduce
+to one scalar; provider runtime settings still do not enter batchification.
 Fresh recognition persists the selected task as ordinary resume identity;
 ordinary resume restores that task and rechecks newly supplied providers rather
 than allowing a plain/detail switch. Experimental repair with a missing sidecar
 does not justify a general task manifest in this slice; its exact task input is
 left to the later repair consumer.
 
-Successful-fallback reporting is already fixed by #572, #592, and #625 and is
-not another decision group. When an earlier provider exhausts its finite
-attempts but a later provider returns valid content, the logical slot is
-complete and the call returns an ordinary
-`RecognitionResult(status="complete")`. Exactly one bounded human warning is
-present when any such failures occurred, and ordered
-`metadata["provider_failures"]` records each exhausted provider by absolute
-`slot_index`, vendor, model, canonical code, and final secret-safe bounded
-description. The tuple is ordered by slot and actual provider traversal; it
-does not contain successful-provider rows, raw errors, retry history, media
-paths, settings, accounts, or token-attempt detail.
-
-Only a genuinely unresolved slot after its permitted lane is exhausted leads
-to the separately fixed `RecognitionIncomplete` path. Do not throw after
-successful content, mark complete content partial, attach a result to an
-exception, add a fallback outcome wrapper, or copy successful-fallback records
-into the terminal unresolved-slot accumulator. Current-invocation fallback
-diagnostics are result evidence, not durable routing or resume identity.
+An actually unresolved slot after its permitted lane is exhausted follows the
+separate future `RecognitionIncomplete` path. A slot completed by a later
+provider is not incomplete. Decision 7 below clarifies whether the maintainer's
+latest instruction to "report/throw" every traversed failure means returning
+one bounded warning plus `metadata["provider_failures"]` with the complete
+result, or raising after successful content. No alternative may persist raw
+errors, retry history, media paths, settings, accounts, or per-attempt token
+details as future routing memory.
 
 Do not make any of the following prerequisites for the first real image proof:
 
@@ -244,8 +239,11 @@ Do not make any of the following prerequisites for the first real image proof:
 - merged audio, repair, Electron/Rust bindings, local-provider placeholders, or
   social-media work.
 
-Four decision groups now remain. They are direct answers, not invitations to
-design more alternatives:
+Seven decision groups now remain. The last three are reopened provenance
+corrections: earlier heartbeat agents promoted recommendations to fixed choices
+without a saved direct maintainer selection, and the latest proposal touches
+those same behaviors. They are direct answers, not invitations to design more
+alternatives:
 
 1. **Catalog scope.** Confirm whether "prebuild and save Google/DashScope model
    objects" means that the package ships only several complete, live-proven
@@ -274,6 +272,26 @@ design more alternatives:
 4. **Deletion timing.** Prove the two replacement merged/resume owners and then
    delete the old video family in one stage (recommended), or remove the shipped
    capability immediately before its replacement exists.
+5. **Provider-derived default reduction.** Explicit image/audio values still
+   win and one resolved scalar is frozen before slots are planned. For a flat or
+   nested provider shape, confirm whether omission takes the minimum positive
+   applicable recommendation across every validated candidate (recommended),
+   or the current traversal-start provider's recommendation. Lane-local variable
+   grouping, adaptive re-chunking, and implicit fallback-time re-planning remain
+   rejected.
+6. **Retry-rule shape.** Confirm whether the proposed `error` / `next` /
+   `current` labels express any transition beyond finite same-candidate retries,
+   a wait, safe failure recording, and then candidate advance. If not, retain
+   only canonical error key, finite `extra_retries`, and `wait_seconds`
+   (recommended). If they do, the maintainer must state the exact distinct
+   terminal behavior before a state machine is justified. Capability, source,
+   configuration, and preflight failures remain outside provider retry.
+7. **Successful-fallback reporting.** Confirm whether "report/throw all
+   traversed errors" means a normal complete result with one bounded warning and
+   ordered safe exhausted-provider metadata (recommended), rather than a Python
+   exception after valid content has already settled. Only unresolved slots are
+   unambiguously terminal failures; changing that boundary would require an
+   explicit result/error API decision, not an inferred wrapper.
 
 The direct adapter question is therefore one yes/no confirmation: **should the
 new merged recognize/resume provider lists follow #589 and accept only built-in
@@ -293,6 +311,16 @@ OpenAI-compatible image entry through the separately approved internal call
 route before rewriting merged/public interfaces. Do not generate a full catalog
 mirror or a new descriptor type while that later breadth question remains
 unanswered.
+
+The direct media-default question is one scalar rule, not a planner framework:
+**when a flat or nested provider shape supplies the omitted default, should all
+validated candidates contribute to one minimum positive value?** The direct
+retry question is whether the three proposed labels have any distinct terminal
+behavior after finite attempts are exhausted. The direct success-reporting
+question is whether "throw" was intended as Python exception control flow even
+after valid content exists. Earlier #590/#592/#594/#640 entries remain useful
+technical recommendations, but section 0 no longer presents their agent-derived
+answers as maintainer-confirmed choices.
 
 Until the maintainer resumes runtime work, do not implement `ProviderModel`,
 presets, adapter dispatch, merged recognition, retry/fallback, pool execution,

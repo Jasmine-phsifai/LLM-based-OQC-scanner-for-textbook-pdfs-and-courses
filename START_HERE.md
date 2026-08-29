@@ -1528,11 +1528,12 @@ by the library.
 Official Google and DashScope catalog schemas still cannot populate complete
 executable `ProviderModel` facts. Section 0 of
 `docs/plan_provider_entity_batch_refactor.md` is now the sole current board and
-lists four direct choices: catalog mirror scope, fractional provider audio
-minutes, private versus public adapter dispatch, and deletion timing. Successful
-fallback is fixed to a normal complete result with bounded earlier-provider
-diagnostics; only unresolved slots raise. The first option in each remaining
-pair is recommended. Runtime work remains discussion-paused; no provider class,
+lists seven direct choices: catalog mirror scope, fractional provider audio
+minutes, private versus public adapter dispatch, deletion timing,
+multi-provider default reduction, retry-rule shape, and successful-fallback
+reporting. Three earlier heartbeat recommendations were reopened because no
+saved direct maintainer selection proves them and the latest proposal touches
+the same behavior. Runtime work remains discussion-paused; no provider class,
 preset, merged recognizer, fallback, pool, repair, or old-video deletion changed.
 
 #635 verifies the future deletion closure without selecting its timing. Exactly

@@ -7,7 +7,7 @@ file and that file differ, that file wins.
 
 ## Current Status
 
-Last synchronized: 2026-08-29.
+Last synchronized: 2026-08-30.
 
 Refactor authority (approved direction, implementation paused): the narrowed
 provider-model/media-batch refactor (#568/#569 in
@@ -20,13 +20,13 @@ is currently reserved. The video job-state layer is deleted after replacement
 merged-image, merged-audio, and resume proof. #569 withdraws the former
 consumer-free provider Phase 1 and exhaustive module blueprint; no refactor
 runtime has shipped. #607 keeps implementation paused and #615 narrows the
-then-current wording conflicts. #627--#642 supersede that old four-item list:
-caller-owned extraction and staged runtime fields are settled, while adapter
-dispatch was explicitly reopened by the maintainer. The current four choices
-are catalog breadth, integer versus exact fractional provider audio defaults,
-controlled built-in binding dispatch versus arbitrary callable leaves, and
-replacement-gated versus immediate deletion of the old video recognition
-family. A curated preset classified as unable to think recommends one image
+then-current wording conflicts. #627--#646 supersede that old four-item list:
+caller-owned extraction and staged runtime fields are settled, while seven
+choices remain on the current board: catalog breadth, integer versus exact
+fractional provider audio defaults, controlled built-in binding dispatch versus
+arbitrary callable leaves, replacement-gated versus immediate deletion,
+multi-provider default reduction, retry-rule shape, and successful-fallback
+reporting. A curated preset classified as unable to think recommends one image
 when the caller omits batch size; this is neither a provider limit nor something
 inferred from a request-level thinking switch.
 
@@ -75,13 +75,14 @@ discovery of all current rows plus a small live-proven executable preset set,
 not a checked-in class or preset for every volatile row. Confirm whether "save
 every model" intentionally meant the latter before changing runtime.
 
-### Current provider/media checkpoint (#627--#642)
+### Current provider/media checkpoint (#627--#646)
 
 Runtime implementation remains paused; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
-is the current decision board. Four choices remain: catalog breadth, provider
+is the current decision board. Seven choices remain: catalog breadth, provider
 audio-default numeric type, controlled bindings versus arbitrary callable
-leaves, and old-video deletion timing.
+leaves, old-video deletion timing, multi-provider default reduction, retry-rule
+shape, and successful-fallback reporting.
 
 The fixed destination has no second video black box. Callers visibly compose
 provider-free video inspection/extraction with independent merged-image and

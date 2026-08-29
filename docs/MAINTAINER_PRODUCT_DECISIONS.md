@@ -1837,3 +1837,32 @@ question is whether the package ultimately ships only several complete live-
 proven presets, with other exact IDs using discovery plus explicit construction,
 or intentionally maintains one complete source object per catalog row. #641 is
 discussion-only.
+
+**#646 reopens three agent-derived recommendations for direct maintainer
+confirmation.** A provenance review found no saved maintainer statement that
+selects the common-minimum reduction for omitted flat/nested media defaults,
+removes the proposed `error` / `next` / `current` retry labels, or requires
+earlier exhausted-provider failures to be returned as warning metadata after a
+later provider succeeds. #590/#592/#594/#640 contain strong technical arguments
+for those recommendations, but they are not substitutes for the requested
+maintainer discussion.
+
+The current board therefore has seven questions. The four existing questions
+remain catalog breadth, provider audio-default numeric type, controlled binding
+dispatch, and old-video deletion timing. The three reopened questions are:
+
+1. whether omitted multi-provider image/audio defaults use one minimum positive
+   recommendation across all validated candidates or the traversal-start
+   provider's recommendation;
+2. whether the three proposed retry labels carry behavior beyond finite retry,
+   wait, safe failure recording, and candidate advance; and
+3. whether "report/throw" after successful fallback means returning bounded
+   failure evidence with the complete result or raising a Python exception after
+   valid content already exists.
+
+The technical recommendation remains common-minimum planning, label-free finite
+canonical retry rules, and a normal complete result with bounded warning
+metadata. These are explicitly recommendations until the maintainer answers.
+No lane-local planner, adaptive re-batching, raw cross-vendor HTTP matrix,
+attached-result exception, second outcome wrapper, or implementation is
+authorized by this reopening.

@@ -12879,3 +12879,27 @@ This is a bounded navigation correction, not a copied queue or a new
 architecture summary. The #065 body remains historical evidence. No maintainer
 decision, runtime, API, provider, media, state, test, frozen source area, or
 deletion gate changes.
+
+## Current working update: #646 restores three maintainer decision gates
+
+A direct-provenance review of the current provider/media board found that
+#590/#592/#594/#640 promoted three technically reasoned heartbeat
+recommendations to fixed choices without a saved direct maintainer selection.
+The maintainer's latest discussion draft touches the same behavior, so section 0
+of `docs/plan_provider_entity_batch_refactor.md` now reopens them rather than
+silently treating agent reasoning as authorization.
+
+The current board has seven questions: the existing catalog breadth, provider
+audio-default numeric type, adapter dispatch, and old-video deletion timing;
+plus multi-provider default reduction, retry-rule shape, and successful-
+fallback reporting. The maintained recommendations remain one common minimum
+before planning, canonical finite retry/wait rules without redundant action
+labels, and a complete result with bounded earlier-provider evidence. They are
+not runtime contracts until the maintainer confirms them.
+
+Already explicit lower bounds remain unchanged: provider/media input shapes are
+fully preflighted, capability/configuration failures make zero provider calls,
+planned slots are not silently re-chunked, a genuinely unresolved slot remains
+distinct from successful content, and runtime implementation stays discussion-
+paused. #646 changes decision truthfulness only; it adds no API, provider,
+media, state, test, dependency, frozen-source change, or deletion authority.
