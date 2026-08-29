@@ -1577,3 +1577,22 @@ This staging permission applies only to pure data fields. It does not authorize
 placeholder defaults, a serializer/schema version, retry executor, audio
 splitter, fallback, nested pool, generic settings, registry, or token ledger.
 After public export, fields do not wait for later consumers.
+
+**#629 proves why catalog membership is not an executable preset.** The active
+Google discovery path retains normalized IDs with `generateContent`; its own
+tests show this action does not classify image, OCR, detail-OCR, or audio task
+fitness. The active DashScope compatible `/models` path retains exact IDs only.
+Neither path can populate the complete capability booleans, OCRLLM grouping and
+audio recommendations, or canonical retry facts. Legacy name heuristics and
+manual limit tables demonstrate the stale-maintenance failure that a full
+mirror would port.
+
+Pending the maintainer's direct answer to the conflicting latest wording, keep
+the no-indefinite-maintenance interpretation: discover all current identities,
+ship a few complete task-specific live-proven presets, and permit explicit
+custom construction for the rest. Treat a request for one checked-in executable
+object per catalog row as an explicit reversal requiring acceptance of guessed
+facts or continuing per-model work. Do not add a descriptor framework,
+generated catalog, classifier, registry/cache, or model sweep merely to prepare
+either route. This decision record remains discussion-only and changes no
+runtime/API.

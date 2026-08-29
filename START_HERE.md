@@ -1455,3 +1455,11 @@ contracts are not reopened. #628 then removes schema timing from the list: the
 full target data field set is designed, a private first proof may stage consumed
 fields, and the complete shape is mandatory before public export or presets.
 Five narrow decision groups remain; no runtime or API work is authorized.
+
+#629 checks the first remaining group against active Google/DashScope catalog
+code and official schemas. Catalog membership cannot supply OCR/detail-OCR
+fitness, OCRLLM media defaults, or canonical retry facts, so dynamic identity
+discovery plus a small live-proven preset set remains the authorized
+interpretation. A checked-in executable object for every catalog row remains an
+explicit maintainer reversal, not something implementation may infer. No
+runtime, preset, catalog call, or API changed.

@@ -10,7 +10,7 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-29, #627)
+## 0. Current pruning checkpoint (2026-08-29, #629)
 
 This plan remains a discussion record, not implementation authorization. #627
 reconciles the latest proposal with decisions #591--#626 so readers do not have
@@ -63,10 +63,12 @@ pool behavior.
 
 Only these five decision groups remain, ordered by their earliest consumer:
 
-1. Whether "prebuild all Google and DashScope models" means transient current-
-   catalog descriptors plus a small live-proven executable preset set, or a
-   checked-in executable mirror that reverses the no-indefinite-maintenance
-   decision. The former remains recommended.
+1. Whether the latest phrase "prebuild and save Google and DashScope model
+   objects" explicitly reverses transient current-catalog identities plus a
+   small live-proven executable preset set in favor of a checked-in executable
+   mirror. #629 proves the active catalogs cannot populate the complete
+   `ProviderModel` facts, so the mirror remains unauthorized unless the
+   maintainer accepts guessed facts or indefinite per-model maintenance.
 2. Whether the latest `error` / `next` / `current` examples intentionally
    restore action labels or raw HTTP keys. The current smaller rule first maps
    vendor evidence to a canonical code, then applies only finite
@@ -2309,3 +2311,47 @@ The narrow combined rule is therefore:
 This avoids both schema churn after public release and placeholder machinery
 before evidence. No runtime class, field, validator, serializer, preset, public
 API, test, provider call, dependency, state, media, or deletion changes in #628.
+
+## #629 Catalog Rows Are Not Executable Presets
+
+The latest discussion uses both "prebuild and save Google and DashScope model
+objects" and "after several usable entries are prebuilt." Those phrases cannot
+be silently treated as the same contract. This iteration checks whether the
+active catalogs can honestly supply every field required by a complete
+executable `ProviderModel` before asking the maintainer to choose.
+
+They cannot. The current native Google catalog parser keeps normalized model
+IDs whose declared actions include `generateContent`; tests deliberately show
+that this membership does not classify image, plain/detail OCR, or audio
+fitness. The Google long-audio path separately consumes optional
+`input_token_limit` only because that path has a real duration-preflight
+consumer. The current DashScope compatible `/models` path keeps only nonempty
+`data[].id` values and performs exact membership checks. Neither active path
+derives the three OCRLLM capability booleans, recommended image grouping,
+recommended audio minutes, or per-model canonical retry facts.
+
+The legacy catalog shows the maintenance cost rather than a reusable solution:
+it guesses modalities from model-name fragments, retains nullable limits,
+hardcodes fallback IDs, and manually stores selected image/audio allowances.
+Porting that table would reproduce the stale catalog and false-capability risks
+that the new library is meant to remove.
+
+Two bounded meanings therefore remain visible:
+
+1. **Current recommended meaning:** discover all currently served identities
+   dynamically; publish only a small set of complete, task-specific presets
+   that have passed real image/audio calls; let callers explicitly construct
+   the same `ProviderModel` for other IDs and supply facts the catalog does not
+   prove.
+2. **Explicit reversal:** check in a complete executable object for every
+   catalog row and accept either guessed defaults or continuing per-model
+   research, live testing, and source updates. This is not authorized by the
+   discussion-only proposal without direct confirmation that it intentionally
+   reverses the no-indefinite-model-maintenance rule.
+
+Discovery may keep returning exact IDs until a real consumer needs richer
+provider-declared metadata. Do not create a public descriptor class, generated
+catalog module, name classifier, persistent registry/cache, or per-model test
+sweep merely to make route 1 look symmetrical with presets. #629 changes no
+runtime, API, test, preset, provider call, credential, dependency, state,
+media, frozen boundary, or deletion.

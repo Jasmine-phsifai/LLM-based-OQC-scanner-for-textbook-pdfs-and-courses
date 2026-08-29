@@ -12399,3 +12399,23 @@ land. The complete value itself does not authorize audio, retry, fallback,
 binding-list, pool, token-ledger, or registry behavior. No runtime, API, test,
 schema implementation, provider, state, media, dependency, frozen boundary, or
 deletion changes in #628.
+
+## Current working update: #629 keeps catalog identity separate from executable proof
+
+The maintainer's latest discussion mentions both saving Google/DashScope model
+objects and first proving several usable entries. Current source and official
+catalog schemas do not make every catalog row a complete executable
+`ProviderModel`: the active Google path retains identity and a supported action,
+while the active DashScope compatible path retains IDs; neither supplies
+plain/detail OCR fitness, OCRLLM media defaults, or canonical retry values.
+
+The current authorized interpretation therefore remains dynamic discovery of
+all served identities plus a small task-specific set of live-proven complete
+presets and explicit custom construction for other IDs. A checked-in executable
+mirror remains a visible maintainer choice, not an inferred requirement: it
+requires direct confirmation that guessed facts or indefinite per-model
+maintenance are intended. Do not create a generated mirror, name classifier,
+descriptor framework, registry, or model sweep while that reversal is
+unconfirmed. The other four discussion groups remain unchanged. No runtime,
+API, test, preset, provider call, credential, dependency, state, media, frozen
+boundary, or deletion changes in #629.
