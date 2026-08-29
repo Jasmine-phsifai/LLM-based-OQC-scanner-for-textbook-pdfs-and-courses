@@ -46,6 +46,85 @@ owners first, then deletes the old family in one migration stage with no
 compatibility wrapper. Immediate capability removal remains an explicit choice
 rather than an inferred consequence of "discard the chain."
 
+### Verified old-video deletion manifest (#635)
+
+A static AST import closure plus reverse-consumer review finds exactly 34
+production files whose consumers are confined to the old video family (apart
+from package-root exports). Delete them together after the replacement gate;
+partial deletion would leave dead state/result modules:
+
+```text
+# public entry/result/publication
+recognize_video.py
+recognize_video_frames.py
+recognize_video_to_markdown.py
+compose_video_result.py
+publish_video_result.py
+video_recognition_outcome.py
+
+# branch execution and old result evidence
+recognize_video_job_audio.py
+recognize_video_job_frames.py
+finalize_video_job.py
+attach_current_video_evidence_to_error.py
+attach_video_frame_group_identity.py
+read_video_frame_group_identity.py
+group_retained_video_frames.py
+processors/recognize_video_mp3.py
+
+# old video journal, identity, and resume
+build_owned_media_fingerprint.py
+fingerprint_video_short_audio_request.py
+hash_video_snapshot.py
+load_video_job_state.py
+parse_video_job_state.py
+plan_video_frame_groups.py
+prepare_video_job_audio_state.py
+restore_video_job_frames.py
+save_video_job_state_atomically.py
+serialize_video_job_state.py
+source_fingerprint_path.py
+validate_video_job_resume.py
+validate_video_job_resume_image_requests.py
+validate_video_job_resume_request.py
+video_audio_requires_credential_preflight.py
+video_job_journal.py
+video_job_state.py
+video_job_state_file_limit.py
+
+# video-only MP3 wrappers
+audio/probe_video_mp3.py
+audio/snapshot_video_mp3.py
+```
+
+The two generic-looking fingerprint helpers are not shared infrastructure:
+current production references come only from the old video journal/branch
+modules, and `source_fingerprint_path` reports a saved-video-specific error.
+Conversely, keep the complete current `video/` package, `retained_video_frame.py`,
+and `video_info.py`. In particular, `extract_video_frames` directly consumes
+`video/prepare_video_media.py`; `extract_video_audio` consumes the video
+snapshot/inspection/FFmpeg helpers. Keep the `video` optional dependency extra
+and video error codes because provider-free inspect/extract still use them.
+
+The eventual deletion commit also removes the six package-root exports
+`recognize_video`, `recognize_video_frames`, `recognize_video_to_markdown`,
+`compose_video_result`, `publish_video_result`, and
+`VideoRecognitionOutcome`. It deletes the twelve tests dedicated only to this
+family, while editing rather than deleting `test_extract_video_audio.py`,
+`test_lightweight_import.py`, and `test_stage_m_offline_gate.py`. Replace the
+old Google video runner and the combined section of the offline gate with the
+already-proven visible replacement flows; update current READMEs and navigation
+without rewriting historical diary evidence. `contracts/` and `worker/` import
+none of the old modules and require no deletion-time change.
+
+The deletion gate is therefore mechanical after product proof: merged image,
+merged audio, and both ordinary resumes pass focused plus bounded live evidence;
+the retained provider-free video tests pass; current source/test/tool/README
+references to the six public names and 34 modules are zero; the full provider-
+free suite passes; and isolated wheels prove base import, the `video` extractors,
+the visible combined profile, and absence of deleted modules. Do not repeat a
+paid old-video call merely to delete an already-superseded runner.
+
 Public `extract_*` output is caller-owned because no library recognition
 lifecycle encloses later calls. Only rejected frame candidates, source
 snapshots, materialized audio slices, and other artifacts created and consumed

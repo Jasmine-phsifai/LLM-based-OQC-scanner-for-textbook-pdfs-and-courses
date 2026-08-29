@@ -12565,3 +12565,50 @@ in each pair. No runtime work begins until the needed answers arrive.
 This iteration adds no runtime, export, API, type, test, preset, provider call,
 credential access, dependency, state, media behavior, frozen-boundary change,
 or deletion.
+
+## Current working update: #635 verifies the old-video deletion closure
+
+The deletion-timing choice remains open, but its code boundary is no longer
+ambiguous. Two bounded read-only audits plus personal AST/import review identify
+exactly 34 production files whose reverse consumers are confined to the old
+video recognition/orchestration family apart from the package-root exports. The
+complete grouped manifest is in section 0 of
+`docs/plan_provider_entity_batch_refactor.md`.
+
+The set includes the six public entry/result/publication modules, both branch
+jobs and their evidence/grouping helpers, the complete video journal/state/
+resume family, the video-specific audio processor and two MP3 wrappers. It also
+includes `build_owned_media_fingerprint.py` and
+`source_fingerprint_path.py`: despite their generic names, current production
+references come only from old video state/branch modules, and the latter emits
+a saved-video-specific error. No non-video production importer requires any of
+the 34 files.
+
+The keep boundary is equally exact. Preserve the entire current
+`src/ocrllm/video/` package, `retained_video_frame.py`, and `video_info.py`.
+`extract_video_frames` still directly consumes `prepare_video_media`, while
+`extract_video_audio` consumes the retained video snapshot, inspection, and
+FFmpeg helpers. Preserve the `video` optional dependency extra and video error
+codes. Frozen `contracts/` and `worker/` import none of the obsolete modules and
+need no deletion-time edit.
+
+The future coherent deletion removes six package-root exports and twelve
+dedicated old-family test files; it edits the retained extraction/import/gate
+tests, replaces the old video runner/offline combined section with the visible
+replacement flow, and updates current README/navigation. Historical diary
+records are not rewritten. The 34 production files currently contain 3,725
+lines and the twelve dedicated tests 8,175 lines, so leaving fragments would be
+a material maintenance failure rather than harmless compatibility.
+
+The deletion gate remains replacement-first: merged image, merged audio, and
+both ordinary resumes need focused and bounded live proof. Then require zero
+current references, retained provider-free video tests, the full provider-free
+suite, and isolated wheel proofs for base import, `[video]` extraction, the new
+visible combined profile, and absence of deleted modules. Do not make another
+paid call through the obsolete runner merely to remove it.
+
+Current retained provider-free evidence is green: inspect, full-frame extract,
+audio extract, and retained-frame tests pass **44 tests with one old combined-
+recognition test deliberately deselected**. #635 changes only decision records;
+there is no runtime, export, API, test, dependency, provider call, credential,
+state, media behavior, frozen-boundary change, or deletion.

@@ -1518,3 +1518,18 @@ minutes, private versus public adapter dispatch, successful-fallback reporting,
 and deletion timing. The first option in each pair is recommended. Runtime work
 remains discussion-paused; no provider class, preset, merged recognizer,
 fallback, pool, repair, or old-video deletion changed.
+
+#635 verifies the future deletion closure without selecting its timing. Exactly
+34 production files belong only to the old video recognition/orchestration
+family, including two generic-looking but video-only fingerprint/path helpers;
+the grouped manifest is in section 0 of the refactor plan. Preserve the complete
+`src/ocrllm/video/` provider-free extraction package, `RetainedVideoFrame`,
+`VideoInfo`, the video extra, and video errors. Frozen contracts/worker code has
+no old-family dependency.
+
+The future deletion also removes six old root exports and twelve dedicated
+tests, rewrites three retained tests plus the old video runner/offline combined
+gate, and updates current READMEs. Its replacement-first gate remains unchanged.
+The retained inspect/frame/audio extraction surface currently passes 44 focused
+tests with the one old combined-recognition test excluded. No runtime, export,
+test, provider call, dependency, media behavior, or deletion changed in #635.

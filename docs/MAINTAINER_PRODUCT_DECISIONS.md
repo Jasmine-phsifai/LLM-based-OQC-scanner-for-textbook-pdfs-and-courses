@@ -1707,3 +1707,25 @@ each pair recommended:
 Runtime remains maintainer-paused. When it resumes, the choices actually
 consumed by one atomic slice must be explicit first; unrelated later choices do
 not block that slice or justify another all-or-nothing foundation.
+
+**#635 makes deletion choice 5 executable without choosing its timing.** Static
+forward/reverse import review proves one closed 34-file old-video production
+set. It contains the public recognize/compose/publish/outcome surface, branch
+jobs and video-only evidence, the complete video journal/state/resume family,
+the video-specific audio processor/wrappers, and two generic-looking helpers
+(`build_owned_media_fingerprint.py`, `source_fingerprint_path.py`) that have no
+non-video production consumers. Section 0 of the refactor plan is the exact
+grouped manifest.
+
+Keep the complete `src/ocrllm/video/` provider-free media package,
+`retained_video_frame.py`, `video_info.py`, the `video` optional dependency
+extra, and video errors. `extract_video_frames` directly uses
+`prepare_video_media`; do not infer deletion from a filename. Frozen
+`contracts/` and `worker/` contain no old implementation dependency.
+
+When the replacement gate is met, delete the 34 files together, remove the six
+old root exports and dedicated tests, rewrite the old runner/gate section around
+the visible replacement, and update current user documentation. Do not retain
+a compatibility shim, partial journal subset, or paid old-runner proof. Choice 5
+still asks only whether this happens after replacement proof (recommended) or
+immediately with a capability gap; #635 does not answer it for the maintainer.
