@@ -11694,3 +11694,34 @@ the cross-operation tracked evidence already proved the mismatch. No public
 signature/export, dependency, state, legacy source, frozen boundary, or
 deletion changed, and the four existing untracked files were not read or
 modified.
+
+## Current working update: #603 live-confirms the corrected Google mapping
+
+#603 makes one bounded real-image check through the unchanged public Google
+runner after #602. The committed repo-owned formula board remained a regular
+116,507-byte, 2560x1600 PNG with its manifest SHA-256. WinINET proxy was enabled
+and TCP-reachable. One credential-isolating controller read the already
+authorized legacy-QSettings key only into child memory, injected the active
+proxy variables, and launched exactly one
+`run_google_genai_image_smoke.py` child with explicit
+`gemini-2.5-flash` and a 120-second request limit.
+
+The child ended after 2,694 ms with an honest typed catalog failure:
+`PROVIDER_UNAVAILABLE`, provider scope, HTTP 400,
+`FAILED_PRECONDITION`, `provider_operation="catalog"`, and
+`provider_calls_attempted=0`. No generation, retry, second runner, separate
+catalog probe, model switch, fallback, source conversion, or recognized content
+output occurred. Exit code was 1, stderr was empty, and the safe report exposed
+no credential, source path, or recognition body. The fixture's size, digest,
+dimensions, and mtime were unchanged, and no runner process remained.
+
+The first disposable inline-controller command had a PowerShell quoting
+`SyntaxError` before credential access or child creation. Correcting that
+harness command did not replay a provider request; the subsequent runner was
+the only provider child. This is harness evidence, not an OCRLLM failure.
+
+#603 therefore closes only the real-execution confirmation of #602's mapping.
+It does not prove current catalog membership, Google image success, formula
+quality, or any retry/fallback rule. No runtime source, test source, dependency,
+public API, state, legacy source, frozen boundary, or deletion changed. The four
+existing untracked files remained untouched.

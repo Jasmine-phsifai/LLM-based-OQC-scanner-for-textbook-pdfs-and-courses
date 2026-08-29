@@ -52,6 +52,13 @@ account suspension, or a model defect, and it does not execute a retry. Ordinary
 canonical result; they do not copy this raw vendor status into a common HTTP
 matrix.
 
+#603 live-confirms that correction through the existing public image path. One
+repo-owned formula-board invocation reached the native Google catalog and
+returned `PROVIDER_UNAVAILABLE` with provider scope, HTTP 400,
+`FAILED_PRECONDITION`, catalog operation, and zero generation calls. This
+proves the canonical mapping is now honest in real execution; it does not prove
+catalog availability, model membership, image recognition, or a retry policy.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later
