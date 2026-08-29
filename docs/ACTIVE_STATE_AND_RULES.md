@@ -10838,8 +10838,9 @@ discovered/proven state machine is introduced. Exact initial preset identities
 and their batch/audio defaults are deliberately not selected by this scope
 audit.
 
-Choice 3 remains open for explicit maintainer confirmation. This iteration is
-documentation only and does not add a preset, provider class, constructor,
+At #573, choice 3 remained open; #593 later fixes the bounded live-proven preset
+scope. This iteration is documentation only and does not add a preset, provider
+class, constructor,
 registry, catalog behavior, adapter, API call, test, dependency, frozen-file,
 legacy, or migration capability change. The existing DashScope catalog,
 caller-selected-model, and lightweight-import regressions are **23 passed in
@@ -11156,18 +11157,19 @@ evidence and prevents early model objects from acquiring fields used only by a
 future pool.
 
 At #584, direct wording still conflicted within choices 1–3. #591 later fixes
-choice 1 to stop on first success, and #592 fixes choice 2 to return prior
-failure evidence with the successful result. Choice 3 remains open. Choices 4
-and 6 are narrowed to common-minimum versus
-first-provider defaults; explicit-only behavior is removed because omission is
+choice 1 to stop on first success, #592 fixes choice 2 to return prior failure
+evidence with the successful result, and #593 fixes choice 3 to bounded
+live-proven presets plus explicit construction/discovery. Choices 4 and 6 are
+narrowed to common-minimum versus first-provider defaults; explicit-only
+behavior is removed because omission is
 already required to derive a provider-informed value. The maintainer directly
 fixed the behavior behind choice 11: a thin `resume_video` route delegates to
 ordinary image/audio resume and owns no video journal, composition,
 publication, naming, or cleanup. Only package-root export remains open. Choice
 12 was still open at #584; #588 later fixes separate image/audio outputs and
 removes the speculative combined artifact. No runtime, export, test source,
-sidecar, provider,
-dependency, legacy source, frozen boundary, or deletion changed.
+sidecar, provider, dependency, legacy source, frozen boundary, or deletion
+changed.
 
 ## Current working update: #585 combines provider-model data and invocation ownership
 
@@ -11347,8 +11349,8 @@ results or a winner/merge policy.
 
 Choice 1 is therefore fixed. At #591, choice 2 remained separate and open;
 #592 later fixes normal result return with bounded prior-failure evidence. No
-ensemble,
-quorum, scoring, comparison stage, multi-result wrapper, retry dispatcher,
+ensemble, quorum, scoring, comparison stage, multi-result wrapper, retry
+dispatcher,
 provider model, preset, API, runtime source, provider call, test source,
 dependency, legacy source, frozen boundary, or deletion changed.
 
@@ -11380,3 +11382,34 @@ that actually failed. No result-plus-error wrapper, attempt-ledger type, second
 exception channel, dispatcher, provider model, API, runtime source, provider
 call, test source, dependency, legacy source, frozen boundary, or deletion
 changed.
+
+## Current working update: #593 fixes a bounded live-proven preset set
+
+#593 is a documentation-only preset-scope decision under the replacement-API
+implementation pause. A `ProviderModel` still identifies exactly one vendor and
+model combination whenever it is supplied to recognition. That identity rule
+does not require OCRLLM to commit one preset for every row in a vendor catalog.
+
+OCRLLM will ship a small curated set of Google/DashScope presets only after each
+entry passes its bounded operation-specific live slice. Other current model IDs
+remain usable by explicitly constructing the same `ProviderModel`, after live
+discovery confirms current availability. Discovery results are vendor evidence,
+not trusted OCR/detail-OCR/audio capability declarations and not package source.
+The exact first preset names and defaults remain owned by their live vertical
+slices rather than this scope decision.
+
+This reconciles "prebuild usable entries" with the standing rules against a
+hardcoded support list and indefinite model-by-model maintenance. Existing
+DashScope evidence already found 241 catalog rows in one live discovery while
+the active library accepted exact caller-selected models without a static
+mirror. Repeating a credentialed catalog call would produce another expiring
+count and would not test the preset boundary, so #593 makes no live provider
+request.
+
+A complete generated catalog module, catalog-to-preset generator, automatic
+capability classifier, cross-vendor registry, persistent catalog cache, public
+discovered/proven state machine, and per-model test sweep are rejected. Choice
+3 is closed, but no preset, `ProviderModel`, constructor, resolver, registry,
+adapter, API, runtime source, provider call, test source, dependency, legacy
+source, frozen boundary, or deletion changed. Focused Google/DashScope catalog,
+exact model, and pre-dispatch contracts remain **35 passed in 0.25s**.

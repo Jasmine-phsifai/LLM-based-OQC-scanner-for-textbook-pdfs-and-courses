@@ -182,11 +182,12 @@ repr, persistence, or committed presets. A non-secret endpoint or adapter
 option enters a provider-model value only when a live adapter consumes it; the
 first slice does not create a generic `list` of hypothetical call parameters.
 
-Preset scope remains an explicit section 6 choice. Until it is answered, no
-full static model catalog is approved. The recommended route is a small set of
-live-proven presets plus live discovery or explicit construction for other
-model IDs; OCRLLM should not indefinitely maintain every model exposed by a
-vendor catalog.
+Preset scope is fixed to a small curated set of live-proven entries. Live
+discovery or explicit construction of the same `ProviderModel` handles other
+model IDs; OCRLLM does not mirror or indefinitely maintain every model exposed
+by a vendor catalog. "Every model is a provider-model entity" describes the
+identity of a model that is actually supplied, not a requirement to ship every
+catalog row as a preset.
 
 Google initially keeps the same access method already used successfully by the
 active/legacy evidence selected by the authority. DashScope initially keeps
@@ -390,9 +391,9 @@ pause:
    `RecognitionResult` with ordered, bounded provider-failure records. Raise a
    typed error only when the logical slot remains incomplete; never turn a
    valid settled result into an attached-result exception.
-3. **Preset scope.** Recommended: a few live-proven presets plus explicit
-   construction/live discovery for other model IDs. Alternative: commit every
-   currently exposed Google/DashScope model as a preset.
+3. **Fixed preset scope.** Ship a small curated set of live-proven presets and
+   use explicit construction/live discovery for other model IDs. Do not commit,
+   generate, or synchronize every current Google/DashScope catalog row.
 4. **Shared provider-derived media planning rule.** For both omitted image
    batch size and omitted audio interval, should OCRLLM resolve one common
    scalar as the minimum positive integer default across all flattened
@@ -457,8 +458,8 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | fixed combined choice 8/10 | 2–7, 11 |
-| Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choices 9/12 | 2, 4, 7, 11 |
+| First and second provider-model proofs | fixed combined choice 8/10 | 4, 5, 11 |
+| Public presets and single-provider merged image + resume | 5, plus the provider-model gate and fixed choices 3/9/12 | 4, 11 |
 | Flat fallback | 4, plus fixed choices 1/2/7/9/12 | 11 |
 | Nested lanes | the complete flat-fallback gate | 11 |
 | Merged audio + resume | 4, 5, fixed choices 9/12, plus the proven provider boundary | 11 |
@@ -467,13 +468,16 @@ twelve equal prerequisites:
 This ordering does not silently choose an open contract. It prevents an
 unrelated late question from blocking earlier evidence and prevents an early
 class from being built with fields required only by a later phase. In
-particular, choice 3 is about the committed public preset scope rather than
-permission to prove one internal live model, and choice 11's routing behavior
-is fixed even though its root-export detail remains open.
+particular, fixed choice 3 limits the committed public preset scope without
+blocking one internal live model proof, and choice 11's routing behavior is
+fixed even though its root-export detail remains open.
 
-The direct maintainer wording still leaves choice 3 open: it asks for
-Google/DashScope model objects while rejecting indefinite model-by-model fixes
-and retaining live discovery. Choice 2 is fixed by separating visibility from
+Choice 3 is fixed by separating entity identity from shipped convenience. Every
+supplied model is one provider-model entity, while only a small live-proven set
+is committed as presets; other current catalog IDs use the same explicit
+constructor after discovery. This satisfies the request for usable prebuilt
+Google/DashScope entries without turning volatile vendor catalogs into package
+source. Choice 2 is fixed by separating visibility from
 exception semantics. An eventually successful slot returns its result with one
 terminal safe failure record for each exhausted earlier provider; the final
 failed-batch accumulator remains limited to genuinely failed slots. Choice 1 is
@@ -570,7 +574,7 @@ cache and fallback list can outlive provider changes. That GUI-oriented product
 also has custom-model validation, so the static mirror is not needed to keep
 new IDs usable in the library.
 
-Route A is therefore recommended:
+Route A is fixed:
 
 1. Ship only a small number of presets whose declared OCRLLM media capabilities
    have each passed a bounded real request. Exact initial model selection waits
@@ -595,9 +599,9 @@ discovered-versus-proven state machine would then exist only to support that
 mirror. They are rejected. The distinction between discovered, vendor-declared,
 and live-proven remains an evidence rule, not a new public enum or framework.
 
-Choice 3 remains awaiting explicit maintainer confirmation. No preset,
-constructor, discovery API, registry, or adapter change is authorized by this
-audit.
+Choice 3 is closed. This scope decision does not select a concrete initial
+preset or authorize preset, constructor, discovery API, registry, or adapter
+implementation.
 
 ### 6.3 Evidence for choice 4 (#574)
 

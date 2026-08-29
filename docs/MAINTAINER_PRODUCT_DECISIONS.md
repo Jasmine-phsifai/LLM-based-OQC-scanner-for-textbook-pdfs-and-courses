@@ -931,9 +931,10 @@ choice details remain open or are fixed as marked:
    earlier provider failures returns the completed result with ordered, bounded
    failure records. A typed error is raised only for an incomplete logical slot;
    there is no attached-result exception.
-3. Are committed presets limited to a few live-proven models plus explicit
-   construction/live discovery (recommended), or does the repository freeze
-   every currently served Google/DashScope model?
+3. **Fixed bounded preset scope:** committed presets are a small curated set of
+   live-proven models. Every other current model uses explicit construction of
+   the same `ProviderModel` after live discovery; the repository does not mirror
+   the complete Google/DashScope catalogs.
 4. **Shared provider-derived media planning choice:** with multiple providers
    and no explicit image batch size or audio interval, does OCRLLM take the
    minimum positive applicable default across all flattened candidates
@@ -997,8 +998,8 @@ static lists, cached catalogs, name classifiers, and fallback IDs demonstrate
 the stale-catalog cost. Recommended: ship only a few live-proven
 `ProviderModel` presets, accept explicit construction of the same type for all
 other IDs, and keep vendor discovery as an untrusted query utility rather than
-a preset generator or registry. This is not maintainer confirmation; choice 3
-remains open and no concrete preset has been selected.
+a preset generator or registry. #593 fixes this bounded preset scope while
+leaving concrete initial model selection to its live vertical slice.
 
 **#574 evidence for choice 4.** Current active and legacy resume paths treat
 ordered batch membership as durable work identity, and legacy PDF checkpoints
@@ -1177,7 +1178,9 @@ internal provider-model proof; public preset scope, merged-image identity,
 fallback, audio, and video publication are gated only when their respective
 slices begin. #584 left choices 1–3 open; #591 later fixes choice 1 to stop on
 first success, and #592 fixes choice 2 to return bounded failure evidence with
-the result. Choice 3 remains open. Former choices 4 and 6 no longer offer
+the result. #593 later fixes choice 3 to a small live-proven preset set plus
+explicit construction and live discovery. Former choices 4 and 6 no longer
+offer
 explicit-only input as an alternative because provider-derived omission is
 fixed. #587 combines their identical common-minimum-versus-first-provider
 question into choice 4 without combining their media planners. Choice 11
