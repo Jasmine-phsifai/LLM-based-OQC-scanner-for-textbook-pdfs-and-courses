@@ -12039,3 +12039,38 @@ This current live fact supports `qwen3.5-ocr` as a viable small preset candidate
 and the existing DashScope adapter as a first image transport. It does not
 implement or authorize `ProviderModel`, retry, fallback, lanes, a full catalog
 mirror, a batch default, output/resume changes, or the frozen video refactor.
+
+## Current working update: #614 reaches the native Google short-audio catalog
+
+More than three minutes after #613, one bounded run reused the same unchanged
+real archive MP3 that previously exposed and then proved the #558 admission
+fix. It remained a regular non-reparse 1,986,191-byte file and fully decoded to
+123.97066666666667 seconds. No download, conversion, archive write, output
+Markdown, or content publication occurred. The enabled proxy was reachable and
+the existing Google key was injected only into the sole maintained runner
+child.
+
+The native adapter reached its current catalog operation for exact
+`gemini-2.5-flash`. Google returned HTTP 400 `FAILED_PRECONDITION`; the #602
+mapping correctly produced provider-scoped `PROVIDER_UNAVAILABLE`, operation
+`catalog`, and exact `provider_calls_attempted=0`. The child exited in 4.954
+seconds with empty stderr. No generation, retry, model switch, fallback,
+alternate transport, or second child occurred. Secret/path scans passed, the
+source size/mtime/ctime/hash stayed unchanged, no recent matching snapshot MP3
+remained, and no owned Python process remained.
+
+Two disposable pre-provider mistakes are recorded honestly. One JavaScript
+wrapper failed to parse its PowerShell search command before any command ran;
+one provider-free preflight correctly decoded the source but then tried to read
+`.duration_seconds` from the float returned by `probe_short_mp3()`. The
+corrected local-only preflight succeeded before the single live child. Neither
+mistake read a credential or made a network/provider request, and neither is an
+OCRLLM defect.
+
+This is current audio robustness and canonical-mapping evidence, not a current
+transcription success. It neither disqualifies Google audio after a provider
+window refresh nor selects a ProviderModel preset/default. Repeating the same
+catalog refusal, sweeping models, bypassing catalog, adding retry, or changing
+SDK/endpoint would add no new product evidence. No runtime, test, dependency,
+public API, state, provider policy, legacy source, frozen boundary, or refactor
+authorization changed.

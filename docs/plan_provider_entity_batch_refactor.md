@@ -386,6 +386,32 @@ that `qwen3.5-ocr` remains a live preset candidate. It does not resolve the five
 open product choices, prove a replacement `ProviderModel`, justify a full
 catalog mirror, select a batch default, or authorize interface rewrites.
 
+### #614 live fact: short audio reaches Google but catalog is unavailable
+
+One bounded public short-audio run reused the previously validated unchanged
+1,986,191-byte archive MP3 (123.9707 decoded seconds) without download,
+conversion, output, or content publication. The enabled proxy was reachable,
+the existing Google credential was injected only into one runner child, and
+the native adapter reached its own current catalog operation for exact
+`gemini-2.5-flash`.
+
+The catalog returned HTTP 400 `FAILED_PRECONDITION`. The post-#602 mapper
+classified it as provider-scoped `PROVIDER_UNAVAILABLE`, with operation
+`catalog` and exact `provider_calls_attempted=0`. This is the correct current
+classification: no audio generation occurred, so it proves neither current
+audio capability nor transcription. The runner exited in 4.954 seconds with
+empty stderr, no secret/path disclosure, unchanged source identity, no recent
+matching MP3 snapshot, and no owned Python process.
+
+Two disposable local-controller mistakes preceded the sole live child: one
+PowerShell search command failed in its JavaScript wrapper before execution,
+and one provider-free probe treated the returned float duration as an object.
+Neither read a credential or made a network request. They are harness history,
+not product defects or API attempts. No retry, model sweep, endpoint change,
+runtime change, or test was justified. This evidence supports canonical-
+error-first policy; it does not select Google audio defaults or disqualify the
+model from a later live-proven preset after the provider window recovers.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later

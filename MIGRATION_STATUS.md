@@ -41,6 +41,15 @@ with one call, 4,357 input and 285 output tokens, and a closed client. No retry,
 fallback, model switch, output artifact, runtime change, or replacement API was
 involved.
 
+#614 refreshes the independent native-Google short-audio path with the same
+unchanged real archive MP3 previously used to prove local admission. Its
+123.9707-second stream passed full decode and reached adapter-owned catalog;
+Google returned HTTP 400 `FAILED_PRECONDITION`, correctly mapped after #602 to
+provider-scoped `PROVIDER_UNAVAILABLE`, operation `catalog`, and exact zero
+generation calls. Credential/path redaction, source identity, snapshot cleanup,
+and process cleanup passed. No retry, model sweep, product change, or test was
+warranted.
+
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit
 `e9d49b06fabd4c8c0aba5cdd40ef2006213405b3`, passed 1,927 archived tests with

@@ -96,8 +96,15 @@ implemented and live-proven: the lazy
 `miniaudio>=1.71,<2` local MP3 probe, deterministic validation corpus, bounded
 compact-name snapshot, exact audio-model configuration, native Google inline
 request, public facade, and in-memory result are implemented for one MP3 of at
-most 300 seconds. Persistence, resume, groups, upload, and automatic routing by
-the general `recognize()` facade do not exist. #150 activated Stage A2 planning
+most 300 seconds. Persistence, resume, groups, upload, and automatic long-audio
+routing by the general `recognize()` facade do not exist.
+#614 refreshes the same short-audio boundary with an unchanged 123.9707-second
+archive MP3. The native catalog returned HTTP 400 `FAILED_PRECONDITION`, now
+correctly mapped to provider-scoped `PROVIDER_UNAVAILABLE` with zero generation
+calls. Source/credential/snapshot/process cleanup passed. This is current
+robustness evidence, not a transcription success or reason to add retry/model
+sweeping.
+#150 activated Stage A2 planning
 from a real 301.056-second public
 video probe. #151 now implements and live-proves standalone
 `recognize_long_mp3()` for one Google Files MP3 longer than 300 seconds and no
