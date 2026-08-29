@@ -44,10 +44,10 @@ historical claim.
 
 **2026-08-28 refactor authority, narrowed 2026-08-29.** The
 provider-model/media-batch direction is approved; see #568 and the corrective
-#569/#571/#604 entries at the end of this file and
+#569/#571/#604/#610/#612 entries at the end of this file and
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
 Implementation is paused by the maintainer's discussion-first instruction;
-#604 records the remaining contradictions and no runtime slice is currently
+#612 records the current pruning and no runtime slice is currently
 authorized. The former exhaustive module build specification and its
 consumer-free Phase 1 are not authorized.
 Where the narrative below describes `recognize_video_to_markdown`, the video
@@ -11977,3 +11977,40 @@ OpenAI-compatible transport. Therefore the initial Google adapter direction is
 now explicitly native `google-genai`; changing it later requires separate real
 evidence. No runtime, test, dependency, public API, provider call, credential,
 state, legacy source, frozen boundary, or capability claim changed.
+
+## Current working update: #612 removes a planned public dedupe stage without implementing
+
+#612 supersedes the planned visible `extract_video_frames ->
+dedupe_video_frames -> batchify_images` chain. The public path is now
+`inspect_video -> extract_video_frames -> batchify_images`:
+`extract_video_frames()` already owns candidate thumbnail comparison, bounded
+negative-feedback/similarity selection, and atomic publication of retained
+complete JPEG frames. Its scan/select/write helpers stay private. OCRLLM may
+delete candidates rejected inside that owned operation, but published retained
+frames are caller-owned.
+
+The duplicated video recognition, composition, publication, and journal family
+remains the deletion target, not the provider-free inspection/extraction
+primitives. It stays frozen until one merged image writer, one merged audio
+writer, and their independent resume paths are proven, then is removed in the
+same transition. There is still no replacement `recognize_video` wrapper or
+video-specific resume engine.
+
+The latest discussion reconfirms separate image/audio Markdown owners, exact
+source inputs and optional deterministic outputs, provider-free explicit image
+batching, provider-derived defaults only before a plan settles, explicit or
+provider-derived audio splitting, flat first-success fallback, fixed nested
+lanes without cross-lane rescue, canonical-error-first finite retry, exact
+`(vendor, model)` usage, experimental repair, backend-only future Electron
+access, and frozen social acquisition.
+
+It does not approve a generic invocation-options list, callable/executable
+pointer, raw-HTTP retry table, full vendor catalog mirror, retry counts copied
+from examples, new video lifecycle owner, or runtime class with unused fields.
+The five #607 wording conflicts remain open. Partial merged-output behavior,
+nested-lane scheduling, and multi-provider settings binding are later API
+gates; the current recommendations are documented in the refactor plan. The
+prepared #612 DashScope live run was cancelled before credential access or any
+provider call when the discussion-first request arrived. No runtime, test,
+dependency, public API, provider state, legacy source, frozen boundary, or
+deletion changed.

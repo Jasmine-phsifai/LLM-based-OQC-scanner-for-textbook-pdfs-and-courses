@@ -153,7 +153,12 @@ video workflow is composed by callers from those public steps. No replacement
 contract is fixed. #607 narrows the remaining discussion to the five current
 conflicts listed at the top of the refactor plan; it does not reopen the already
 fixed fallback, output, adapter/settings, token, routing, or separate-media
-contracts.
+contracts. #612 removes the planned public `dedupe_video_frames` boundary:
+`extract_video_frames()` itself keeps the negative-feedback/similarity
+selection and publishes caller-owned complete frames. The old video recognition
+chain remains frozen until merged image/audio writers and their independent
+resume paths are proven, then it is deleted rather than replaced by another
+video wrapper.
 Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval

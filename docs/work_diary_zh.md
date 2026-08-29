@@ -8650,3 +8650,19 @@ legacy Google 是值得保留但不能整套照搬的生产证据：它区分同
 **hybrid 例外没有改变结论。** legacy `HybridGoogleProviderClient` 在 Google 音频开启、视觉另有配置时，把图片调用交给 legacy `LLMClient`，而文本和长音频仍交给原生 `GoogleProviderClient`。这证明图片 provider 与音频 provider 分离确有生产先例，不代表 Google 自己通过兼容端点访问。active library 比 legacy 更窄：每次 operation 创建并关闭 client，只请求一个明确模型；legacy 缓存 client，并把 unavailable model、上次成功模型、同模型重试和切换队列放在对象里。后四项只能作为未来 fallback 的行为证据，不能塞入 ProviderModel。
 
 **结论和过度设计复查。** 当前计划的 native `google-genai` 方向是准确的，不需要改 transport，也不应为了统一 Google/DashScope 而先造一个 OpenAI-compatible Google adapter。若未来真实 SDK 故障证明必须更换端点，再单独决策。本轮只把该事实写明确，没有 runtime/test/dependency/public API/provider call/credential/state/legacy/frozen 变化；没有调用 API 或增加测试，四个受保护未跟踪文件未读取或修改。
+
+## #612 — 2026-08-29：把新方案继续剪枝为可讨论合同，不执行重构
+
+**本轮英文原子任务。** `Atomic task — Iteration #612: reconcile the maintainer's newest discussion-only video/provider proposal with the current source and decision record, remove any newly reintroduced public abstraction that has no caller decision, and identify only the contract choices that genuinely block later vertical slices. Context: #611 proved the native Google transport, while the replacement runtime remains paused and the maintainer explicitly forbids implementation in this discussion. Success means cancelling the prepared DashScope call before credential access or provider dispatch; personally comparing the proposed inspect/extract/batchify, merged image/audio, provider-model, retry, pool, token, resume, repair, and cleanup boundaries with shipped code; removing the redundant planned public dedupe step; separating frozen deletion targets from retained provider-free primitives; recording resolved rules and narrow open choices; changing documentation only; and committing/pushing. This matters because a complete-looking provider framework built before its result, ownership, and settings-binding contracts are settled would repeat the video's nuclear-silo design.`
+
+**暂停了什么。** 上一轮后准备过一次单次 DashScope 图片实测，但维护者的新消息明确改为“只讨论、不要开始执行”。因此没有读取 QSettings 凭据、没有启动 live runner、没有 provider call、没有网络调用，也没有产生临时输出。该实测不计作失败或未关闭 gate，只是被新任务替换。
+
+**本人代码核对。** 当前 `recognize_video_frames.py` 约 93 行、`recognize_video.py` 约 192 行、`recognize_video_to_markdown.py` 约 590 行，外围还有 compose/publish、video journal/state、parse/load/save/serialize 和 job-only image/audio recognizer。它们共同构成要淘汰的重复视频识别生命周期。相反，公开 `extract_video_frames()` 虽然入口只有 18 行，但内部已经把候选缩略图扫描、负反馈/相似度选择和完整 JPEG 原子发布分别放进清楚文件；用户没有需要接管缩略图候选的公开决策。因此计划里的 `dedupe_video_frames` 是重复公开边界，已从目标流程删除。公开流程固定为 `inspect_video -> extract_video_frames -> batchify_images`，被 extract 内部拒绝的自建候选可以删除，已经发布的保留帧属于调用者。
+
+**Provider 剪枝。** `ProviderModel` 只描述一个准确 vendor+model、受控 `adapter_id`、三类能力和被实际消费者使用的建议值；SDK 调用由已知 adapter 模块完成。API key、credential pool、region/base URL、chat/responses、effort、timeout、prompt、计数器、lane 上次成功位置、错误和 token 总数不塞进一个通用 list/dict。多个 ProviderModel 如何绑定各自 exact settings，等第二个真实 transport 和 flat-list consumer 出现时再定；现在先造映射、registry 或 binding hierarchy 都是无人消费的基础设施。
+
+**重试和结果语义。** 400/404/409/429/500/503/504 不能成为跨厂商共同策略键；adapter 必须先结合 provider code/status 映射为 OCRLLM canonical error，随后才可查有限 `extra_retries`/`wait_seconds`。本次示例次数只保留为调查线索，不写成默认值。成功 fallback 正常返回并附带有限 warning，不会得到结果后又抛终止错误；尚未完成的 slot 才进入最终失败记录。对含失败 slot 的 merged Markdown，目前建议是在后续 slot 全部尝试后原子发布带精确失败标记的 partial Markdown、保留 sidecar，再抛一个 typed terminal error，但这仍是实现前需要维护者确认的 API 细节。
+
+**池化、token 与测试。** nested provider list 暂按固定 round-robin 分配、lane 内串行、lane 间并行、无全局 epoch barrier、无动态 stealing 理解；这是推荐而不是已实现合同。token 只按准确 `(vendor, model)` 累加 call count 与 provider 实报 input/output，未知值不伪装为零，不拆分到单图，不建 per-attempt billing ledger。未来测试只覆盖一次输入形状/零调用 preflight、一次 slot 持久化/resume、每个真实 adapter 的小量 live 路径和 lane 不越界，不按“每个模型 × 每个错误码 × 每种媒体”造矩阵。
+
+**删除顺序和过度设计复查。** 旧视频识别链确实已经接近“原子弹发射井”，但现在立刻删除会制造功能空窗。它保持冻结，等 merged image、merged audio 和两个独立 resume 真跑通后，在同一产品切换中删除；之后继续保留才是维护负担。本轮没有 runtime/test/dependency/public API/provider call/credential/state/legacy/frozen 变化，没有新增测试，四个受保护未跟踪文件未读取或修改。只更新权威、计划、导航、决策和中文工作日志。

@@ -915,6 +915,24 @@ No provider-model class, retry engine, registry, static catalog, batch pool,
 merged facade, or video deletion begins until its relevant contract is settled;
 later unrelated choices do not form one global barrier.
 
+#612 records the latest discussion without authorizing implementation. The
+public frame workflow is `inspect_video -> extract_video_frames ->
+batchify_images`; negative-feedback/similarity selection remains inside
+`extract_video_frames`, so no public `dedupe_video_frames` abstraction is
+created. Published retained frames are caller-owned. The old video recognition
+and journal family remains frozen until merged image/audio publication and both
+resume paths are proven, then is deleted in the same transition.
+
+Three implementation-time details are deliberately not hidden inside the fixed
+choices below: how a partial merged Markdown is returned or raised after all
+slots run, whether nested lanes advance independently or through a global epoch
+barrier, and how multiple exact adapter-settings objects bind to provider-model
+values. Current recommendations are respectively partial atomic publication
+plus one terminal typed error, lane-local sequential progress with parallel
+lanes and no barrier, and delaying the binding shape until the second live
+transport proves it. None permits secrets, generic parameter lists, or mutable
+clients inside `ProviderModel`.
+
 The latest instruction resolves two former choices. The duplicated video
 recognition/journal product is abandoned after its image/audio replacement gate;
 it is not retained as a compatibility family and is not deleted during this

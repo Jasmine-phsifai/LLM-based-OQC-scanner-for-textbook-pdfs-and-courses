@@ -1,7 +1,7 @@
 # Plan: Provider-Model And Media-Batch Refactor
 
 Status: **approved product direction; runtime implementation remains paused
-for the current decision map in section 0.** Existing
+for the current decision map in section 0 and the #612 discussion checkpoint.** Existing
 provider-free primitive maintenance remains allowed when real media exposes a
 defect. This revision replaces the prematurely expanded
 2026-08-28 module build specification. It is a decision record and sequencing
@@ -262,6 +262,108 @@ sets, remembered successful model, or embedded retry/model-switch loop into
 lifecycle remains the smaller adapter boundary. #611 changes no transport or
 runtime code; it makes the source-proven native-SDK choice explicit.
 
+### #612 discussion checkpoint: keep the visible workflow, remove the second public frame filter
+
+The maintainer's latest proposal remains discussion input rather than runtime
+authorization. It cancels the planned public `dedupe_video_frames` step. The
+public provider-free video flow is now:
+
+```text
+inspect_video
+  -> extract_video_frames
+  -> batchify_images
+  -> recognize_images_to_markdown
+
+extract_video_audio
+  -> split_audio
+  -> recognize_audio_to_markdown
+```
+
+`extract_video_frames()` already owns one understandable operation: compare
+sampling thumbnails, apply the bounded negative-feedback selection and
+similarity check, then publish the retained complete JPEG frames. Its scan,
+select, and write helpers stay private and separately readable. Exporting a
+second deduplication stage would make callers carry implementation-only
+candidates without giving them a supported decision to make. OCRLLM may delete
+only candidates that it created and rejected inside this extraction operation;
+every published retained frame is caller-owned.
+
+The obsolete low-level video **recognition** chain is still the deletion
+target. It is frozen rather than extended, and is deleted in the same product
+transition that proves the replacement merged-image and merged-audio writers
+and their independent resume paths. Deleting it earlier would create a shipped
+feature gap; preserving it afterward would preserve the duplicated journal and
+composition burden.
+
+The latest proposal also confirms these already maintained contracts:
+
+- one merged image call writes ordered image slots to one Markdown file, and
+  one merged audio call writes ordered audio slots to a different Markdown
+  file;
+- manual image batching is provider-free; an unbatched recognition call may
+  resolve an omitted batch size from the completely validated provider shape,
+  but an already settled plan is never silently re-batched after rejection;
+- `split_audio` accepts an explicit interval or provider input, requires at
+  least one, gives the explicit interval priority, and uses `-1` only as the
+  call-level whole-file spelling;
+- recognize, resume, and experimental repair take explicit sources and an
+  optional output target, with ambiguous cross-directory defaults rejected
+  before provider dispatch;
+- one provider-model, one flat ordered fallback lane, and fixed nested lanes
+  remain the only provider shapes. Flat lanes stop at first success. Nested
+  lanes never rescue work across lanes, and a failed batch does not stop later
+  batches;
+- token evidence is normalized at the adapter response boundary and
+  accumulated by exact `(vendor, model)`, without allocating batch usage to
+  individual images or persisting a per-attempt billing ledger;
+- Electron remains a later client of a Python or Rust backend. OCRLLM does not
+  add an Electron execution path, social acquisition, or legacy-file
+  compatibility.
+
+The controlled invocation design remains smaller than a generic executable or
+parameter bag. `ProviderModel` identifies one exact vendor/model and one known
+`adapter_id`. The adapter module owns SDK/client construction and consumes its
+existing exact settings object. API keys, credential pools, region/base URL,
+Chat-versus-Responses selection, effort, timeout, prompts, counters, lane
+memory, errors, and token totals do not become a generic `list` field on the
+model value. How several provider models bind to several exact settings objects
+is intentionally decided with the first flat-list consumer; it is not guessed
+inside the single-provider class.
+
+Raw HTTP examples such as 400, 404, 409, 429, 500, 503, and 504 remain vendor
+evidence, not cross-vendor policy keys. Each adapter first emits a canonical
+OCRLLM error. A later rule may give that canonical code finite
+`extra_retries` and `wait_seconds`; exhaustion advances only while the slot is
+unresolved. The proposed numerical retry counts are not defaults until legacy
+evidence or a bounded real call justifies them.
+
+Five earlier wording conflicts remain open: integer versus fractional provider
+audio minutes, blanket batch size one for non-thinking models versus
+evidence-backed suggestions, a small live-proven preset set versus a complete
+catalog mirror, caller-owned extraction versus a newly introduced private job
+owner, and staged runtime fields versus instantiating the whole final schema at
+once. Three later API details are now explicit discussion gates rather than
+permission to build infrastructure:
+
+1. A merged run with unresolved slots needs one outcome rule. The current
+   recommendation is to atomically publish one partial Markdown containing
+   exact failed-slot markers, retain its sidecar, and raise one typed terminal
+   error after all later slots were attempted. A successful fallback returns a
+   normal result with bounded warnings; it does not raise after producing a
+   valid slot.
+2. Nested lanes need one scheduling rule. The current recommendation is fixed
+   round-robin assignment with sequential work inside each lane and parallel
+   progress between lanes, without a global epoch barrier or dynamic stealing.
+3. The first flat-list slice must decide how exact adapter settings are paired
+   with provider-model values. Secrets and mutable client state still cannot
+   move into `ProviderModel`; do not create a generic settings mapping before
+   the second live transport demonstrates the binding.
+
+No provider model, preset, adapter resolver, retry executor, pool, batch facade,
+resume route, repair path, test, provider call, or deletion is authorized by
+#612. The previously prepared DashScope live run was cancelled before credential
+access or provider dispatch when this discussion-first instruction arrived.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later
@@ -364,7 +466,6 @@ The intended public composition is:
 ```text
 inspect_video
   -> extract_video_frames
-  -> dedupe_video_frames
   -> batchify_images
   -> recognize_images_to_markdown
 
@@ -375,6 +476,9 @@ extract_video_audio
 
 - These steps remain directly callable. Recognition must not hide them inside
   one required black-box function.
+- `extract_video_frames` includes the negative-feedback/similarity selection
+  and publishes only retained complete frames. Candidate scan/select/write
+  helpers remain private; there is no second public deduplication step.
 - The replacement does not include a `recognize_video` convenience wrapper.
   Callers compose the visible public steps themselves; recognition rules,
   cleanup ownership, and resume must not disappear inside another video
