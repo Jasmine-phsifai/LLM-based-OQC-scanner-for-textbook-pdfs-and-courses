@@ -10874,3 +10874,33 @@ documentation only: no batchifier, provider, fallback, sidecar schema, public
 API, runtime, test, dependency, frozen-file, legacy, or migration capability
 changed. The existing image-limit, video-group, paid-slot-resume, and bounded
 PDF-group regressions are **50 passed in 1.70s**.
+
+## Current working update: #575 reduces default Markdown naming to one rule
+
+#575 audited the active ordinary image/PDF resolver, long-audio job layout,
+video publication and target claims, then compared the legacy board, audio,
+PDF, and video names. The current products do not share one default: active
+image/PDF uses a first-source/profile name under `Config.output_dir`, long audio
+and the old video job use source-named directories with `result.md`, and legacy
+adds media-specific Chinese suffixes plus a multi-image common-prefix guess.
+These are evidence, not formats that the replacement library must combine.
+
+The decision-ready Route A uses one default
+`<normalized-source-identity>_ocrllm.md`. Single image/audio/PDF/video sources
+use their stem; a folder batch uses the folder name. Directory placement stays
+as already fixed: beside a single source or video, and beside the batch folder.
+Explicit output paths always win. Recognize, resume, and repair resolve the same
+identity without scanning for a likely old file. A new recognition refuses an
+existing target; duplicate or colliding targets fail preflight before provider
+dispatch. Rare same-stem cross-media collisions require an explicit output
+path. There is no auto-numbering, timestamp/hash suffix, default overwrite,
+persistent registry, cross-process lock, or generalized output transaction.
+
+The media-specific `_image.md`, `_audio.md`, and `_video.md` Route B is viable
+but adds three naming branches mainly to accommodate that rare collision, and
+combined video still needs a special name. Choice 5 remains open for explicit
+maintainer confirmation. This iteration is documentation only: no output
+resolver, config, public API, runtime, test, dependency, provider, legacy,
+frozen directory, or migration capability changed. The existing output,
+long-audio path, video publication, PDF, and lightweight-import regressions are
+**77 passed in 4.77s**.

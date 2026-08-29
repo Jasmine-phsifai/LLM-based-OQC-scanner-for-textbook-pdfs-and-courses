@@ -64,7 +64,7 @@ extract_video_audio
   an optional output Markdown path. Omission uses the same deterministic
   default-placement and naming rules; resume/repair do not search unrelated
   directories for a plausible prior output.
-- A single image or audio file defaults beside that file.
+- A single image, audio, PDF, or video file defaults beside that file.
 - An image or audio batch defaults beside the directory containing the batch.
 - If an omitted output cannot be resolved without guessing, for example a
   batch spanning unrelated directories, preflight rejects the call before any
@@ -331,9 +331,10 @@ Implementation remains paused until these choices are explicit:
    one common size as the minimum positive integer default across all flattened
    candidates so fallback and nested lanes keep one slot plan. Alternative:
    use the first provider's default or require an explicit size.
-5. **Default output filenames.** Decide names for a single media source, an
-   image/audio folder batch, and video output. Directory placement is already
-   fixed in section 2.2.
+5. **Default output filenames.** Recommended: use one derived-result suffix,
+   `<source-identity>_ocrllm.md`, for a single media source, an image/audio
+   folder batch, and video output. Directory placement is already fixed in
+   section 2.2. Alternative: use distinct image/audio/video suffixes.
 6. **Provider-derived audio default.** Recommended: take the minimum positive
    integer `default_audio_minutes` across all flattened candidate providers so
    slot identity is common across fallback and nested lanes. Alternative:
@@ -513,6 +514,56 @@ ordered tuple of groups, and the existing slot-sidecar direction are enough.
 Choice 4 remains awaiting explicit maintainer confirmation. This evidence does
 not authorize a batchifier, fallback dispatcher, sidecar schema, or provider
 implementation.
+
+### 6.4 Evidence for choice 5 (#575)
+
+Current naming is not one future contract. Active single-image and PDF output
+uses `<first-source>[_plus_N]_<profile>.md` under an explicit
+`Config.output_dir`; current long audio and the old video job instead create a
+source-named directory containing `result.md`. Legacy adds separate Chinese
+board, audio, PDF, and video names and guesses a multi-image name from a common
+prefix or parent directory. Those schemes describe their own shipped products;
+combining them would preserve several incompatible defaults rather than make
+the new library predictable.
+
+Route A is recommended as the smallest future rule:
+
+1. An explicit output Markdown path always wins. Default resolution runs only
+   when the caller omits it.
+2. Use `<normalized-source-identity>_ocrllm.md` for every default. A single
+   image, audio file, PDF, or video uses its source stem. An image/audio folder
+   batch uses the containing folder name. Placement remains exactly section
+   2.2: beside a single source or video, and beside the batch folder.
+3. Recognize, resume, and repair resolve that same path from the same explicit
+   source identity. They do not scan directories, infer a common filename
+   prefix, or choose a different existing file.
+4. A new recognition refuses an existing target and duplicate/colliding
+   targets are rejected during preflight before provider dispatch. There is no
+   automatic numbering, timestamp, hash suffix, overwrite-by-default, or
+   persistent naming registry. An unusual same-stem image/audio collision is
+   resolved by an explicit output path rather than another default branch.
+5. The video composition entry passes one explicit combined target to its
+   image/audio result composition. Branches do not independently derive or
+   race for two default Markdown files. Whether two separate manual calls may
+   intentionally merge into one explicit file is a later composition contract,
+   not a reason to expand naming.
+
+Route B uses media-specific `_image.md`, `_audio.md`, and `_video.md` suffixes.
+It avoids one rare cross-media same-stem collision, but duplicates media type in
+the naming contract and makes a combined video result arbitrarily belong to one
+branch or require another special case. The fixed `_ocrllm.md` suffix already
+marks a derived artifact; strict collision refusal plus explicit paths is
+enough.
+
+Keep the existing narrow path-component normalization because Windows path
+length caused a real legacy failure. Do not turn it into auto-shortening based
+on directory contents, a collision allocator, cross-process lock, or output
+transaction framework. The current in-process target claim is implementation
+evidence for rejecting simultaneous ownership, not permission to generalize it.
+
+Choice 5 remains awaiting explicit maintainer confirmation. This evidence does
+not authorize output-routing, resume, repair, video composition, or runtime
+changes.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7

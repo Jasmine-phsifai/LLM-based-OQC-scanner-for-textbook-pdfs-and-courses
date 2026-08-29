@@ -925,9 +925,9 @@ product choices remain open:
 4. With multiple providers and no explicit image batch size, is one common
    size the minimum positive integer default across all flattened candidates
    (recommended), the first provider's default, or a required explicit size?
-5. What exact default filename is used for a single media source, an
-   image/audio folder batch, and video output? Directory placement is already
-   fixed.
+5. Does every omitted output use `<source-identity>_ocrllm.md`
+   (recommended), or do image, audio, and video receive separate suffixes?
+   Directory placement is already fixed.
 6. With multiple audio-capable providers and no explicit interval, is one
    common interval the minimum positive integer default across all candidates
    (recommended), or is an explicit interval required?
@@ -971,6 +971,21 @@ First-provider sizing can create oversized fallback groups; lane-local sizing
 needs a variable-window planner and extra state; explicit-only contradicts the
 maintainer's provider-derived-default requirement. This is not maintainer
 confirmation; choice 4 remains open.
+
+**#575 evidence for choice 5.** Active naming currently differs across ordinary
+image/PDF output, long audio, and the old video job; legacy adds several
+media-specific Chinese names and a multi-image common-prefix guess. Recommended:
+an explicit output path wins, while every omitted output resolves to
+`<normalized-source-identity>_ocrllm.md`. Single files, PDFs, and videos use the
+source stem; a folder batch uses the folder name. New recognition refuses an
+existing target, and preflight rejects duplicate targets before provider calls.
+Do not auto-number, scan for a plausible old file, add timestamps/hashes, or
+build a persistent collision registry. A rare same-stem image/audio collision
+uses an explicit output path. The video composition owner passes one explicit
+combined target to both settled branches rather than letting them derive two
+files. Media-specific suffixes are the viable alternative, but they add three
+default branches mainly to hide that rare collision. This is not maintainer
+confirmation; choice 5 remains open.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
