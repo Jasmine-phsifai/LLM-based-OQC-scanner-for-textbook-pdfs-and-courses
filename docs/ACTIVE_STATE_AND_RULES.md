@@ -12700,3 +12700,30 @@ totals. Current shared aggregation is model-only and must not be copied into a
 multi-vendor path. Five focused unknown-usage, failed-response, image-resume,
 fallback, and long-audio-resume regressions pass. #638 changes only decision
 records; no runtime, schema, result type, provider call, or credential changed.
+
+## Current working update: #639 reduces adapter dispatch to one confirmation
+
+The current section-0 adapter choice is intentionally open, not an accidental
+contradiction. #589 technically fixed and justified controlled `adapter_id`
+dispatch, but the maintainer later explicitly said the invocation method was
+undecided; #634 therefore reopened authorization. #639 retains that latest
+authority and removes no choice on the maintainer's behalf.
+
+The recommended #589 route is now concrete. New merged recognize/resume
+provider collections contain complete `ProviderBinding(model, exact_settings)`
+leaves. Preflight verifies the controlled adapter ID, vendor, task capability,
+and exact settings type before media/output/provider work. A private explicit
+resolver lazily imports one known operation adapter. The adapter—not the model,
+binding, or resolver—owns credential/catalog work, request/response translation,
+canonical errors, usage, SDK/client/upload lifecycle, and cleanup. No registry,
+dotted module path, executable pointer, common options bag, cached client, or
+adapter object hierarchy is required.
+
+The alternative explicitly permits arbitrary callable/Protocol leaves in the
+new fallback/pool lists. That would require new answers for callable identity,
+settings validation, resume identity, cleanup, audio operations, and
+Electron-to-Python resolution. The existing injected `VisionProvider` already
+serves direct Python image injection and remains separate under the recommended
+route. The only maintainer question is whether to confirm that separation.
+Five focused settings/resolver/lazy-import/injected-error regressions pass.
+#639 changes only decision records and makes no runtime or provider call.

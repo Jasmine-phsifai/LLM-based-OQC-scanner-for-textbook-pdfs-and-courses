@@ -235,9 +235,18 @@ design more alternatives:
    positive-integer minute domain (recommended), or allow
    `default_audio_minutes=7.5` to create exact 450-second slices while explicit
    caller `interval_minutes=7.5` remains invalid.
-3. **Adapter dispatch.** Resolve controlled `adapter_id` values through private
-   library adapter modules first (recommended), or publish a callable/Protocol
-   extension surface before Google and DashScope prove the common consumer.
+3. **Adapter dispatch, explicitly reopened by the latest maintainer wording.**
+   Confirm #589 (recommended): new merged recognize/resume provider lists
+   contain only `ProviderBinding(model, exact_settings)` leaves. Complete
+   preflight validates each controlled `adapter_id` against the exact settings
+   type; one private explicit resolver lazily imports a known operation adapter;
+   that adapter owns credential/catalog/request/response/error/usage/cleanup.
+   The existing arbitrary Python `VisionProvider` remains a separate direct-
+   image injection seam and is not wrapped into fallback/pool lists. Or
+   explicitly authorize callable/Protocol leaves in the new lists and accept
+   that callable identity, settings validation, resume identity, lifecycle,
+   audio operations, and Electron-to-backend resolution must then be defined.
+   Do not combine a controlled ID with a generic callable/options bag.
 4. **Successful fallback reporting.** Return a complete result with one warning
    and bounded structured earlier-provider failures (recommended), or throw
    after valid content has already completed. The latter must define how callers
@@ -246,6 +255,14 @@ design more alternatives:
 5. **Deletion timing.** Prove the two replacement merged/resume owners and then
    delete the old video family in one stage (recommended), or remove the shipped
    capability immediately before its replacement exists.
+
+The direct adapter question is therefore one yes/no confirmation: **should the
+new merged recognize/resume provider lists follow #589 and accept only built-in
+controlled `ProviderBinding` leaves, while the current arbitrary Python
+`VisionProvider` remains outside those lists?** #589 proved that route
+technically; #634 correctly reopened authorization because the maintainer later
+said the invocation design was undecided. No new adapter sketch or third hybrid
+is needed before answering.
 
 Until the maintainer resumes runtime work, do not implement `ProviderModel`,
 presets, adapter dispatch, merged recognition, retry/fallback, pool execution,

@@ -1780,3 +1780,19 @@ buckets, per-attempt billing rows, media-member token estimates, prices, or a
 global manager. Current image resume's missing historical tokens and current
 long audio's per-slot persistence are evidence for the future schema, not a
 reason to retrofit the old image state during the discussion pause.
+
+**#639 reconciles #589 with the later explicit invocation uncertainty.** #589
+proved the controlled-ID route and remains the technical recommendation, but
+the maintainer's later statement that the call method was undecided legitimately
+reopened authorization in #634. Do not silently treat either paragraph as
+stale.
+
+The exact confirmation is narrow: new merged recognize/resume provider lists
+either accept only `ProviderBinding(model, exact_settings)` leaves whose
+controlled adapter IDs resolve privately to known operation modules, while the
+current arbitrary Python `VisionProvider` stays on its separate direct-image
+API; or they also accept arbitrary callable/Protocol leaves. The second route
+would require callable and resume identity, settings, lifecycle, audio, and
+Electron-backend rules. A controlled ID plus generic callable/options bag is
+not a third route. No registry, adapter wrapper hierarchy, local placeholder,
+or implementation is authorized while this yes/no remains unanswered.

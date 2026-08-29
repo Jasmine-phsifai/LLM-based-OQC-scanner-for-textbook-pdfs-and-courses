@@ -1565,3 +1565,14 @@ historical baseline and current-run deltas stay in memory. Ordered resume slots
 remain separate state. No per-attempt ledger, duplicate current/history
 buckets, media-member token estimates, price engine, or global manager is
 approved, and current runtime/schema remains unchanged.
+
+#639 makes the still-open adapter decision exact. #589 technically proved the
+recommended route, but #634 correctly reopened authorization after the
+maintainer said invocation remained undecided. Confirming #589 means future
+merged recognize/resume lists contain only complete
+`ProviderBinding(model, exact_settings)` leaves; a private explicit resolver
+lazy-loads known Google/DashScope operation adapters, and the existing arbitrary
+Python `VisionProvider` remains a separate direct-image seam. The alternative
+puts arbitrary callables into the new fallback/pool lists and therefore needs
+new identity, settings, resume, cleanup, audio, and Electron-backend contracts.
+No hybrid, registry, runtime, or provider call was added.
