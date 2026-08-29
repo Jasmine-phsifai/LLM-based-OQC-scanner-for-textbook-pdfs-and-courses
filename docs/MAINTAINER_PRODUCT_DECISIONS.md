@@ -941,9 +941,11 @@ choice details remain open or are fixed as marked:
    shapes validate all candidates and use their minimum positive applicable
    default. Images and audio keep separate units, planners, identities, and
    sidecars.
-5. Does every omitted output use `<source-identity>_ocrllm.md`
-   (recommended), or do image, audio, and PDF receive separate suffixes?
-   Directory placement is already fixed.
+5. **Fixed common output filename:** every omitted output uses
+   `<normalized-source-identity>_ocrllm.md`. A single image, audio file, or PDF
+   uses its source stem; an image/audio folder batch uses the folder name.
+   Directory placement is already fixed. There is no media-specific suffix
+   family or third combined-video Markdown name.
 6. **Merged into fixed choice 4:** image batch size and audio interval use the
    same common-minimum reduction without sharing a planner or policy switch.
 7. **Fixed finite retry rule:** canonical-code rules contain only non-negative
@@ -1022,9 +1024,9 @@ Do not auto-number, scan for a plausible old file, add timestamps/hashes, or
 build a persistent collision registry. A rare same-stem image/audio collision
 uses an explicit output path. Video-derived image and audio calls each resolve
 their own target; #588 removes a third combined video name. Media-specific
-suffixes are the viable alternative, but they add image/audio branches and an
-unused video branch mainly to hide that rare collision. This is not maintainer
-confirmation; choice 5 remains open.
+suffixes were the viable alternative, but they add image/audio branches and an
+unused video branch mainly to hide that rare collision. #595 fixes the common
+`_ocrllm.md` suffix and closes choice 5.
 
 **#576 evidence for choice 6.** Active long-audio persistence already binds
 whole/interval mode, the exact positive interval, ordered window fingerprints,

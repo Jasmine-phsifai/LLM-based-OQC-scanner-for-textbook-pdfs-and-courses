@@ -78,8 +78,8 @@ extract_video_audio
   image call and one separate output per merged audio call. Independent media
   calls never mutate the same file, and the current product does not add an
   image-plus-audio composer or final cross-media artifact.
-- Output naming is still open in section 6; code must not infer a naming
-  convention before it is settled.
+- Default naming is fixed in section 6: normalize the source identity and append
+  `_ocrllm.md`. No media-specific suffix family is added.
 
 ### 2.3 Batch boundaries
 
@@ -400,10 +400,11 @@ pause:
    shapes validate every candidate and use the minimum positive applicable
    default across the flattened shape. Image count and audio minutes retain
    separate validators, planners, identities, and sidecars.
-5. **Default output filenames.** Recommended: use one derived-result suffix,
-   `<source-identity>_ocrllm.md`, for a single media source, an image/audio
-   folder batch, and PDF output. Directory placement is already fixed in
-   section 2.2. Alternative: use distinct image/audio/PDF suffixes.
+5. **Fixed common output filename.** Every omitted output uses
+   `<normalized-source-identity>_ocrllm.md`: a single image, audio file, or PDF
+   uses its source stem, and an image/audio folder batch uses the folder name.
+   Directory placement remains fixed in section 2.2. There is no media-specific
+   suffix family or third combined-video Markdown name.
 6. **Merged into fixed choice 4.** Image batch size and audio interval use
    different units and plan builders, but both use the same common-minimum
    provider-list reduction. They do not expose independent policy switches.
@@ -455,11 +456,11 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | fixed combined choice 8/10 | 5, 11 |
-| Public presets and single-provider merged image + resume | 5, plus the provider-model gate and fixed choices 3/9/12 | 11 |
+| First and second provider-model proofs | fixed combined choice 8/10 | 11 |
+| Public presets and single-provider merged image + resume | the provider-model gate and fixed choices 3/5/9/12 | 11 |
 | Flat fallback | fixed choices 1/2/4/7/9/12 | 11 |
 | Nested lanes | the complete flat-fallback gate | 11 |
-| Merged audio + resume | 5, fixed choices 4/9/12, plus the proven provider boundary | 11 |
+| Merged audio + resume | fixed choices 4/5/9/12, plus the proven provider boundary | 11 |
 | Video-derived resume/publication and old-chain deletion | 11 and every earlier replacement gate; fixed choice 12 | none |
 
 This ordering does not silently choose an open contract. It prevents an
@@ -669,7 +670,7 @@ prefix or parent directory. Those schemes describe their own shipped products;
 combining them would preserve several incompatible defaults rather than make
 the new library predictable.
 
-Route A is recommended as the smallest future rule:
+Route A is fixed as the smallest future rule:
 
 1. An explicit output Markdown path always wins. Default resolution runs only
    when the caller omits it.
@@ -690,11 +691,11 @@ Route A is recommended as the smallest future rule:
    the same media rules. They do not intentionally share an explicit target,
    and OCRLLM does not derive a third video Markdown target.
 
-Route B uses media-specific `_image.md`, `_audio.md`, and `_video.md` suffixes.
-It avoids one rare cross-media same-stem collision, but duplicates media type in
-the naming contract and preserves an unused `_video.md` case. The fixed
-`_ocrllm.md` suffix already marks a derived artifact; strict collision refusal
-plus explicit paths is enough.
+Route B, with media-specific `_image.md`, `_audio.md`, and `_video.md` suffixes,
+is rejected. It avoids one rare cross-media same-stem collision but duplicates
+media type in the naming contract and preserves an unused `_video.md` case. The
+fixed `_ocrllm.md` suffix already marks a derived artifact; strict collision
+refusal plus explicit paths is enough.
 
 Keep the existing narrow path-component normalization because Windows path
 length caused a real legacy failure. Do not turn it into auto-shortening based
@@ -702,9 +703,9 @@ on directory contents, a collision allocator, cross-process lock, or output
 transaction framework. The current in-process target claim is implementation
 evidence for rejecting simultaneous ownership, not permission to generalize it.
 
-Choice 5 remains awaiting explicit maintainer confirmation. This evidence does
-not authorize output-routing, resume, repair, cross-media composition, or
-runtime changes.
+Choice 5 is closed to the common `_ocrllm.md` suffix. This decision does not
+authorize output-routing, resume, repair, cross-media composition, or runtime
+changes.
 
 ### 6.5 Evidence for choice 6 (#576)
 

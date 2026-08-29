@@ -10902,8 +10902,9 @@ persistent registry, cross-process lock, or generalized output transaction.
 
 The media-specific `_image.md`, `_audio.md`, and `_video.md` Route B is viable
 but adds three naming branches mainly to accommodate that rare collision, and
-combined video still needs a special name. Choice 5 remains open for explicit
-maintainer confirmation. This iteration is documentation only: no output
+combined video still needs a special name. At #575, choice 5 remained open;
+#595 later fixes the common `_ocrllm.md` rule. This iteration is documentation
+only: no output
 resolver, config, public API, runtime, test, dependency, provider, legacy,
 frozen directory, or migration capability changed. The existing output,
 long-audio path, video publication, PDF, and lightweight-import regressions are
@@ -11448,3 +11449,33 @@ schema, provider model, API, runtime source, provider call, test source,
 dependency, legacy source, frozen boundary, or deletion changed.
 Focused image-limit, PDF grouping, durable image-slot, long-audio persistence,
 and changed-interval rejection regressions are **28 passed in 0.71s**.
+
+## Current working update: #595 fixes one default Markdown filename
+
+#595 is a documentation-only naming decision under the replacement-API
+implementation pause. It closes choice 5 to one deterministic default:
+`<normalized-source-identity>_ocrllm.md`. A single image, audio file, or PDF
+uses its source stem; an image/audio folder batch uses the folder name. The
+already-fixed placement remains beside the single source or beside the batch
+folder. An explicit output path always wins.
+
+Recognize, resume, and repair resolve the same target from the same explicit
+source identity and do not search for a plausible old output. Fresh recognition
+refuses an existing target, and duplicate/colliding targets fail preflight
+before provider dispatch. A rare image/audio same-stem collision requires an
+explicit output path. There is no automatic numbering, timestamp/hash suffix,
+overwrite-by-default, persistent registry, cross-process lock, or collision
+allocator.
+
+Media-specific `_image.md`, `_audio.md`, and `_video.md` suffixes are rejected:
+they add permanent branches mainly for the rare collision and preserve an
+unused combined-video case. Video-derived image and audio recognition each use
+their ordinary source rule; no third combined video Markdown name is created.
+The retained normalization remains narrow evidence-based path handling, not a
+general naming framework.
+
+Choice 5 is closed, but no output resolver, batch writer, resume/repair route,
+provider model, API, runtime source, test source, dependency, legacy source,
+frozen boundary, or deletion changed.
+Focused output, long-audio ownership, video publication, PDF, and lightweight
+import regressions are **95 passed in 5.21s**.
