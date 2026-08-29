@@ -1480,3 +1480,12 @@ epoch barrier, rescue, work stealing, or fairness queue. Every fresh/resume call
 starts from its newly supplied first binding; settled work is reused, but no
 provider cursor/tree is persisted or inferred. Three decision groups remain;
 no runtime, scheduler, state schema, provider call, or API changed.
+
+#632 narrows the remaining audio-duration conflict to one behavior: should
+`ProviderModel(default_audio_minutes=7.5)` create exact 450-second slices
+when explicit `interval_minutes=7.5` remains invalid? Current code and authority
+stay exact-integer minutes; presets choose conservative whole-minute values and
+runtime does not guess a rounding rule. A yes answer would normalize the
+provider default once to exact seconds and saved ranges, not persist binary
+float or introduce a general Duration API. Three decision groups remain; no
+runtime, state, provider call, or API changed.

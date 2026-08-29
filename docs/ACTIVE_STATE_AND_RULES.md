@@ -12467,3 +12467,26 @@ separate image/audio proof, not a new provider or concurrency field. Three
 decision groups remain. #631 changes no runtime, API, scheduler, validation,
 fingerprint, state, test, provider call, dependency, media behavior, frozen
 boundary, or deletion.
+
+## Current working update: #632 narrows the audio-minute conflict to one example
+
+The active library proves that public `interval_minutes`, interval planning,
+durable state, and resume identity currently use exact positive integer minutes;
+floating seconds are used only for decoded duration and planned boundaries.
+The latest `float` provider-field wording therefore needs one concrete answer:
+should `ProviderModel(default_audio_minutes=7.5)` be valid and create exact
+450-second slices when no caller interval is supplied, while explicit
+`interval_minutes=7.5` remains invalid?
+
+The current recommendation and authority remain one exact positive-integer
+minute domain. Curated preset authors choose a conservative whole-minute value;
+runtime code does not silently floor, ceil, round, or clamp a vendor limit. If
+the answer to the example is yes, normalize the provider recommendation once to
+an exact positive second count and persist seconds/exact ranges, never a binary
+float or a recomputed provider default. Do not generalize the public caller API
+to seconds, Decimal, `timedelta`, or a duration framework without a real
+consumer.
+
+Three decision groups remain. #632 changes no runtime, API, ProviderModel,
+splitter, state, fingerprint, test, provider call, media, dependency, frozen
+boundary, or deletion.

@@ -1632,3 +1632,22 @@ current `index % lane_count`. It does not persist or infer a provider tree,
 lane count/cursor, binding fingerprint, blacklist, cooldown, or error-derived
 routing. The shipped Config-based executor and fingerprint remain unchanged;
 audio request-start pacing stays a separate proof before merged audio.
+
+**#632 turns the `float` audio-minute wording into one answerable behavior.**
+Current public input, planner validation, persisted state, and resume matching
+all use exact positive integer minutes. Seconds become floats only after the
+interval is accepted and are already preserved in exact planned ranges.
+
+The recommended narrow contract keeps `ProviderModel.default_audio_minutes`
+as `int | None`, explicit `interval_minutes` as an exact positive integer, and
+exact `-1` as the caller-only whole-audio sentinel. Presets hold a conservative
+OCRLLM operating recommendation, not an exact vendor maximum; choosing 29 from
+29.5 minutes is an evidence-backed preset choice, not a runtime `floor()` rule.
+
+The remaining maintainer question is exact: should a provider recommendation of
+`7.5` be valid and create 450-second slices when the explicit caller value
+`interval_minutes=7.5` is still rejected? A yes answer authorizes a deliberately
+asymmetric two-type boundary and requires one-time normalization to exact
+positive seconds plus persisted ranges. It does not authorize saving binary
+float identity, implicit rounding, fractional caller input, a generalized
+duration type, or a state migration before the new merged-audio consumer lands.

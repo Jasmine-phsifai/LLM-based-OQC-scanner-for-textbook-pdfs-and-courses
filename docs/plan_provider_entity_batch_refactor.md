@@ -10,7 +10,7 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-29, #631)
+## 0. Current pruning checkpoint (2026-08-29, #632)
 
 This plan remains a discussion record, not implementation authorization. #627
 reconciles the latest proposal with decisions #591--#626 so readers do not have
@@ -69,8 +69,11 @@ Only these three decision groups remain, ordered by their earliest consumer:
    mirror. #629 proves the active catalogs cannot populate the complete
    `ProviderModel` facts, so the mirror remains unauthorized unless the
    maintainer accepts guessed facts or indefinite per-model maintenance.
-2. Whether the latest `float` spelling intentionally reverses positive integer
-   provider audio minutes. Integer minutes remain authoritative meanwhile.
+2. Whether `ProviderModel(default_audio_minutes=7.5)` is intended to create
+   exact 450-second slices when the caller omits an interval, even though the
+   explicit public `interval_minutes=7.5` remains invalid. #632 recommends one
+   exact positive-integer minute domain and keeps it authoritative pending this
+   concrete answer; no automatic floor/ceil/round rule is inferred.
 3. The exact stateless `resume_video` arguments and one-branch-failure return
    shape remain a later API question. They do not block the first provider or
    merged-image slice and do not authorize video state or a result framework.
@@ -2441,3 +2444,44 @@ the focused merged-audio proof recorded in #621 remains required. No pool,
 scheduler, queue, runtime API, validation, fingerprint, state schema, test,
 provider call, dependency, media behavior, frozen boundary, or deletion is
 implemented by #631.
+
+## #632 Float Audio Minutes Need One Concrete Product Answer
+
+The latest `float` field spelling and the earlier exact-integer caller contract
+can coexist technically, but they do not yet define one behavior. The active
+planner rejects `1.0`, `1.5`, booleans, and non-positive intervals; it converts
+an accepted integer minute count to floating seconds only after validation.
+Long-audio state persists exact integer `interval_minutes`, request fingerprints
+include the resulting logical/actual second boundaries, and resume restores or
+compares the saved integer before materialization and provider dispatch.
+
+Three routes were checked:
+
+1. **One integer-minute domain (recommended).** Both the curated provider
+   recommendation and the explicit caller override are exact positive integers;
+   caller `-1` alone means whole audio. A preset stores OCRLLM's conservative
+   working recommendation, not a vendor hard limit. If evidence says a model is
+   stable below 29.5 minutes, the preset author may deliberately choose 29; the
+   runtime does not implement an automatic rounding rule.
+2. **Float provider recommendation, integer caller override.** This is coherent
+   only if values such as `7.5` are meaningful and create exact 450-second
+   logical slices. Then the planning boundary must normalize once to an exact
+   positive second count and persist seconds plus exact ranges; binary float is
+   not durable identity, and fallback/resume never recompute from the provider.
+   This intentionally permits an omitted-provider-default plan that the caller
+   cannot request through `interval_minutes=7.5`.
+3. **General duration API.** Allowing fractional caller minutes, `timedelta`,
+   Decimal, unit enums, or arbitrary seconds would change the public split
+   contract, state schema, Electron-facing values, and resume comparison. No
+   current consumer or provider failure requires that framework.
+
+Do not silently floor, ceil, round, clamp, or accept only integral floats such as
+`30.0`; the first three hide policy, while the last makes `float` semantically
+empty. The one exact maintainer question is therefore: should
+`ProviderModel(default_audio_minutes=7.5)` be valid and produce exact
+450-second slices while explicit `interval_minutes=7.5` is rejected? Until the
+answer is yes, `default_audio_minutes` remains `int | None` and the current
+state/resume contract is unchanged.
+
+#632 implements no ProviderModel, splitter, conversion, state migration, API,
+provider call, media operation, dependency, frozen-boundary change, or deletion.
