@@ -12490,3 +12490,27 @@ consumer.
 Three decision groups remain. #632 changes no runtime, API, ProviderModel,
 splitter, state, fingerprint, test, provider call, media, dependency, frozen
 boundary, or deletion.
+
+## Current working update: #633 makes video resume a one-branch route
+
+The future package-root `resume_video(source, *, media_type, providers,
+output_path=None)` handles exactly one already-extracted branch per call.
+`media_type` is the required exact literal `"image"` or `"audio"`; do not infer
+it from paths or container shapes. Image input is the exact group tuple from
+`batchify_images`; audio input is one explicit audio path or the exact
+`AudioSlice` tuple from `split_audio`. Provider input keeps the fixed scalar,
+flat-list, or nested-list binding shape.
+
+The router delegates once and returns the ordinary image/audio
+`RecognitionResult` unchanged. It propagates every ordinary resume error
+unchanged and does not run a second branch after failure. Resuming both parts of
+one video therefore means two explicit calls. There is no combined success/
+failure state and no `VideoResumeResult`, paired argument set, original-video
+input, journal, sidecar search, output coordinator, composition, cancellation
+coordinator, extraction, or cleanup ownership.
+
+Omitted output stays the selected ordinary resume's deterministic default;
+grouping and interval identity come from saved ordinary plans, so the route
+accepts no batch-size, interval, or `resume=True` option. Two decision groups
+remain. #633 changes no runtime, export, API, result/error type, validation,
+state, test, provider call, media, dependency, frozen boundary, or deletion.

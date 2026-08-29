@@ -1489,3 +1489,12 @@ runtime does not guess a rounding rule. A yes answer would normalize the
 provider default once to exact seconds and saved ranges, not persist binary
 float or introduce a general Duration API. Three decision groups remain; no
 runtime, state, provider call, or API changed.
+
+#633 closes the stateless video-resume signature. Future package-root
+`resume_video(source, *, media_type, providers, output_path=None)` requires exact
+`media_type="image"` or `"audio"` and delegates exactly one already-extracted
+branch to its ordinary resume. It returns that image/audio result or propagates
+its error unchanged. Resuming both branches means two calls; there is no
+combined outcome, original-video input, auto-detection, journal, output pair,
+sidecar search, scheduling, composition, or cleanup owner. Two decision groups
+remain; no runtime, export, result type, state, provider call, or API changed.

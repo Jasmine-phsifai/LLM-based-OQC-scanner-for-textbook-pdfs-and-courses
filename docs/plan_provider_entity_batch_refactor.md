@@ -10,7 +10,7 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-29, #632)
+## 0. Current pruning checkpoint (2026-08-29, #633)
 
 This plan remains a discussion record, not implementation authorization. #627
 reconciles the latest proposal with decisions #591--#626 so readers do not have
@@ -61,7 +61,7 @@ constructor or public preset may ship until the complete target shape is present
 The complete data value does not itself implement audio, retry, fallback, or
 pool behavior.
 
-Only these three decision groups remain, ordered by their earliest consumer:
+Only these two decision groups remain, ordered by their earliest consumer:
 
 1. Whether the latest phrase "prebuild and save Google and DashScope model
    objects" explicitly reverses transient current-catalog identities plus a
@@ -74,9 +74,6 @@ Only these three decision groups remain, ordered by their earliest consumer:
    explicit public `interval_minutes=7.5` remains invalid. #632 recommends one
    exact positive-integer minute domain and keeps it authoritative pending this
    concrete answer; no automatic floor/ceil/round rule is inferred.
-3. The exact stateless `resume_video` arguments and one-branch-failure return
-   shape remain a later API question. They do not block the first provider or
-   merged-image slice and do not authorize video state or a result framework.
 
 #602 corrects one already-shipped canonical mapping before any retry executor
 exists. Native Google HTTP 400 with exact status `FAILED_PRECONDITION` has now
@@ -2485,3 +2482,56 @@ state/resume contract is unchanged.
 
 #632 implements no ProviderModel, splitter, conversion, state migration, API,
 provider call, media operation, dependency, frozen-boundary change, or deletion.
+
+## #633 Video Resume Routes Exactly One Explicit Media Branch
+
+The package-root `resume_video` remains required, but it is not a two-branch
+operation. One call routes exactly one already-extracted media source to one
+ordinary resume owner. Its future public shape is fixed conceptually as two
+overloads with the same four arguments:
+
+```python
+resume_video(
+    source,
+    *,
+    media_type: Literal["image", "audio"],
+    providers,
+    output_path: str | Path | None = None,
+) -> RecognitionResult
+```
+
+For `media_type="image"`, `source` is the exact ordered image-group tuple
+returned by `batchify_images`. For `media_type="audio"`, it is one explicit
+audio path or the exact `tuple[AudioSlice, ...]` returned by `split_audio`.
+`providers` keeps the already-fixed scalar, exact flat-list, or exact nested-
+list `ProviderBinding` shape. Explanatory image/provider aliases used by type
+overloads remain private; this route does not justify public request or plan
+classes.
+
+The exact media discriminator is validated before delegation and is never
+guessed from a filename suffix, path, tuple nesting, or member type. The chosen
+ordinary resume then owns complete source/provider/capability/output/state
+preflight, deterministic omitted-output resolution, sidecar identity,
+publication, and cleanup. The router does not duplicate those checks or search
+for state.
+
+Return the delegated `RecognitionResult` unchanged, including its canonical
+`source_type="image"` or `"audio"`. Propagate `RecognitionIncomplete`, resume,
+provider, output, cancellation, and configuration errors unchanged. Do not
+catch a failure to run the other branch, translate codes, add video details, or
+attach a result to an exception. A caller resuming both outputs makes two
+explicit calls, so one success and one failure remain two ordinary outcomes.
+
+Reject the dual-branch alternatives: paired image/audio sources, two provider
+trees, two output paths, automatic serial/parallel branch execution, cross-
+branch cancellation, and a `VideoResumeResult`/tuple/dict wrapper all recreate
+the retired video lifecycle. The route also accepts no original video, `resume`
+flag, batch size, audio interval, extraction option, journal, composer, or
+cleanup owner. Saved ordinary plans already carry grouping/splitting identity.
+If two independent defaults collide, the existing rule requires explicit
+separate output paths; this single-branch router does not coordinate them.
+
+#633 closes the stateless video-resume signature and removes that item from the
+current decision board. It implements no export, overload, router, resume
+function, result type, validation, state, API, provider call, media operation,
+dependency, frozen-boundary change, or deletion.

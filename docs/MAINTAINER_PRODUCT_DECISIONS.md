@@ -1559,9 +1559,10 @@ stops at first success, or whether complete fallback returns normally: those
 questions are settled.
 
 The remaining discussion order is: runtime catalog descriptors plus a small
-live-proven preset set versus a checked-in executable mirror; integer versus
-float provider audio minutes; and only later the exact stateless `resume_video`
-signature. This board is not runtime authorization and adds no new framework.
+live-proven preset set versus a checked-in executable mirror, then integer
+versus float provider audio minutes. The stateless `resume_video` signature is
+closed by #633. This board is not runtime authorization and adds no new
+framework.
 
 **#628 closes schema-design versus runtime-staging as a false binary.** The
 complete target `ProviderModel` field set remains designed now. The first
@@ -1651,3 +1652,20 @@ asymmetric two-type boundary and requires one-time normalization to exact
 positive seconds plus persisted ranges. It does not authorize saving binary
 float identity, implicit rounding, fractional caller input, a generalized
 duration type, or a state migration before the new merged-audio consumer lands.
+
+**#633 fixes `resume_video` as a single-branch package-root route.** Its public
+arguments are `source`, required keyword-only `media_type`, `providers`, and
+optional `output_path`. Exact `media_type="image"` accepts the ordered groups
+from `batchify_images`; exact `media_type="audio"` accepts one audio path or the
+`AudioSlice` tuple from `split_audio`. Use private overload aliases only; do not
+export a provider shape, image plan, request object, or result wrapper.
+
+One call delegates to one ordinary resume and returns its `RecognitionResult`
+unchanged with `source_type="image"` or `"audio"`. Every error propagates
+unchanged. To resume both video-derived branches, call twice. Do not auto-detect
+the branch, catch one failure to run another, aggregate outcomes, or create
+paired source/provider/output arguments, cross-branch scheduling/cancellation,
+a video journal, shared Markdown, sidecar search, or a `VideoResumeResult`.
+Grouping/splitting identity is already ordinary resume state, so the router has
+no batch-size, interval, original-video, `resume=True`, extraction, composition,
+naming, or cleanup parameter.
