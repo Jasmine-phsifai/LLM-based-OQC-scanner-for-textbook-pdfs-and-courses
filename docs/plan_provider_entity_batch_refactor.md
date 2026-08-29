@@ -1,7 +1,7 @@
 # Plan: Provider-Model And Media-Batch Refactor
 
-Status: **approved product direction; each provider/entity and replacement-
-recognition slice is paused only for its relevant decision gate in section 6.** Existing
+Status: **approved product direction; runtime implementation remains paused
+for the current decision map in section 0.** Existing
 provider-free primitive maintenance remains allowed when real media exposes a
 defect. This revision replaces the prematurely expanded
 2026-08-28 module build specification. It is a decision record and sequencing
@@ -148,6 +148,61 @@ slice begins:
 
 Neither ambiguity blocks the first single-provider image proof.
 
+### #607 current decision map: do not reconfirm settled contracts
+
+#607 reconciles the latest proposal with the complete decision record rather
+than treating every newly worded example as a new contract. The previous
+nine-question conversational checklist was too broad: most of those questions
+already have maintained answers below and do not need another maintainer vote.
+
+The following remain fixed and are not reopened by the latest wording:
+
+- flat fallback stops at the first valid result; a complete circular pass occurs
+  only while the slot remains unresolved;
+- earlier exhausted providers are bounded diagnostics on an eventually
+  successful result, while the terminal failed-batch accumulator contains only
+  genuinely unresolved slots;
+- an omitted media scalar uses the minimum applicable positive suggestion over
+  the completely validated provider shape; an explicit value wins and no
+  recognition call silently re-batches or re-splits it;
+- default output naming, separate image/audio Markdown ownership, canonical-
+  error-first finite retry shape, `(vendor, model)` usage accounting, controlled
+  `adapter_id` plus exact settings, and the stateless package-root
+  `resume_video` routing direction remain as specified in section 6;
+- raw HTTP numbers in the latest examples are vendor evidence for adapter
+  mapping, not portable public retry-policy keys. Exact retry counts remain
+  unapproved until real errors justify them.
+
+Only these five contradictions still need direct maintainer resolution before
+their relevant runtime slice:
+
+1. whether provider-recommended audio duration intentionally changes from
+   positive integer minutes to `float`, despite the existing integer-only split
+   and durable identity contract;
+2. whether every non-thinking image model must suggest one image, or whether
+   every preset keeps an evidence-backed positive suggestion independent of a
+   thinking flag;
+3. whether the request to prebuild Google/DashScope models intentionally
+   overturns the small live-proven preset set and requires a volatile full-
+   catalog mirror;
+4. whether caller-invoked extraction remains caller-owned now that no
+   `recognize_video` lifecycle owner exists, or a separately approved private
+   job/temp owner is actually wanted;
+5. whether the complete image/audio/retry `ProviderModel` schema is only
+   designed up front while runtime fields land with consumers, or the first
+   internal runtime class must contain the entire currently unused schema.
+
+The exact plain-versus-detail task selector and the stateless `resume_video`
+input/partial-result signature remain later slice-local API reviews. They do
+not reopen its already fixed no-journal/no-composition/no-cleanup boundary and
+do not block a private single-provider image proof.
+
+#606 adds one narrow current fact without resolving any of those five choices:
+one credential-isolated DashScope `/models` request returned 246 entries and
+contained both `qwen3.7-plus-2026-05-26` and `qwen3.5-ocr`. It made zero
+recognition calls. This keeps the DashScope-first candidate viable but proves
+neither OCR quality nor a reason to mirror the full catalog.
+
 ## 1. Why This Refactor Exists
 
 The current video product repeats the same work through three public paths:
@@ -162,7 +217,13 @@ The target is not a stronger video framework. The target is one set of public,
 composable media steps, one merged-image batch recognizer, one merged-audio
 batch recognizer, and no video-only recognition or resume implementation.
 
-## 2. Decisions Already Fixed
+## 2. Fixed Destination And Current Safe Defaults
+
+Sections 2.4 and 2.5 retain positive integer audio minutes, evidence-backed
+image suggestions, a bounded preset set, and staged field consumption as the
+safe defaults while #607's direct wording conflicts remain unresolved. Those
+defaults prevent speculative runtime work; they are not evidence that the
+maintainer has answered the five reopened questions.
 
 ### 2.1 Media pipeline
 
@@ -516,10 +577,12 @@ Each phase must contain a real consumer, the smallest focused offline tests,
 and a bounded live call where provider behavior is in scope. A green offline
 suite alone does not prove a provider phase.
 
-### 5.1 Proposed first phase entry awaiting authorization (#597)
+### 5.1 Proposed first phase entry awaiting authorization (#597/#607)
 
-The choices are closed, but implementation remains paused until the maintainer
-selects the first transport order. #597 audited the current resolver, shared
+The transport order is evidence-selected, but implementation remains paused
+until #607's schema-timing conflict and any other decision actually consumed by
+the selected first preset are resolved or explicitly deferred. #597 audited the
+current resolver, shared
 vision-call boundary, operation adapters, tests, and prior live evidence. It
 found no additional provider-model field or framework decision that must block
 the first internal proof.
@@ -569,10 +632,16 @@ part of `catalog`; no parser stage, vendor body, retry hint, HTTP-policy layer,
 proxy behavior, or provider-model code was added. This observability repair does
 not change the DashScope-first order or lift the implementation pause.
 
+#606 rechecked the DashScope catalog without recognition. One isolated request
+returned 246 entries and contained both the pinned
+`qwen3.7-plus-2026-05-26` baseline and `qwen3.5-ocr`. The first DashScope
+candidate therefore remains currently discoverable. This does not authorize a
+preset, runtime slice, full-catalog mirror, retry policy, or model switch.
+
 After authorization, the first slice is limited to:
 
-1. one internal immutable `ProviderModel` with the already-fixed complete field
-   contract and no root export;
+1. one internal immutable `ProviderModel` with the field set selected by
+   #607's schema-timing decision and no root export;
 2. one controlled `adapter_id` branch and one internal image consumer that
    receives the existing exact settings separately and reuses the existing
    operation adapter;
@@ -592,10 +661,15 @@ provider list, registry, plugin system, local-model placeholder, or API pool.
 The later merged-image phase, not this internal proof, owns the two live batches
 of seven or eight images.
 
-## 6. Fixed Maintainer Decisions
+## 6. Maintainer Decisions And #607 Reopened Details
 
-These fixed choices are explicit phase contracts. Closing the final detail does
-not itself lift the maintainer's discussion-first implementation pause:
+The decisions below remain explicit phase contracts except for the exact
+subparts reopened in #607: audio scalar type within choice 4, preset scope in
+choice 3, and complete-schema implementation timing within choice 8. The
+first-success, successful-result reporting, reduction rule, output, invocation,
+retry shape, token, resume-routing, and separate-output boundaries remain
+fixed. Resolving a reopened detail does not itself lift the maintainer's
+discussion-first implementation pause:
 
 1. **Fixed flat-list success stop.** Visit each provider at most once per batch
    after its finite retry rule, and stop immediately on the first valid
@@ -605,10 +679,13 @@ not itself lift the maintainer's discussion-first implementation pause:
    `RecognitionResult` with ordered, bounded provider-failure records. Raise a
    typed error only when the logical slot remains incomplete; never turn a
    valid settled result into an attached-result exception.
-3. **Fixed preset scope.** Ship a small curated set of live-proven presets and
+3. **Reopened preset quantity; current safe default is bounded.** The recorded
+   contract ships a small curated set of live-proven presets and
    use explicit construction/live discovery for other model IDs. Do not commit,
-   generate, or synchronize every current Google/DashScope catalog row.
-4. **Fixed common-minimum media default.** A caller-supplied positive integer
+   generate, or synchronize every current Google/DashScope catalog row unless
+   the maintainer explicitly confirms that the latest wording overturns this.
+4. **Fixed common-minimum reduction; audio numeric type reopened.** A caller-
+   supplied positive integer
    wins; audio also keeps explicit `-1` as whole-file mode. When omitted, one
    provider supplies its own positive applicable default; flat and nested
    shapes validate every candidate and use the minimum positive applicable
@@ -627,15 +704,18 @@ not itself lift the maintainer's discussion-first implementation pause:
    determined by the recognition outcome, not repeated in retry configuration.
    Exhaustion records the last safe failure and advances to the next provider.
    The overlapping `error` / `next` / `current` labels are not retained.
-8. **Fixed provider-model and invocation boundary (includes former choice
-   10).** One immutable `ProviderModel` stores only vendor, model, controlled
+8. **Fixed invocation/ownership boundary; runtime schema timing reopened
+   (includes former choice 10).** The planned immutable `ProviderModel` stores
+   only vendor, model, controlled
    adapter ID, three task-capability booleans, capability-dependent nullable
    image/audio defaults, and canonical finite retry rules. One explicit lazy
    resolver selects a known operation-specific adapter. Exact credentials,
    endpoint, request options, and timeout remain in adapter settings supplied
    separately at the call boundary; the existing injected Python protocol
    remains separate. Arbitrary callables, executables, generic options mappings,
-   and hybrid ownership are rejected.
+   and hybrid ownership are rejected. #607 asks only whether all planned fields
+   land in the first internal runtime class or land as real consumers appear;
+   it does not reopen adapter/settings ownership.
 9. **Fixed token persistence contract.** The sidecar keeps one cumulative
    aggregate per exact `(vendor, model)`: exact dispatched call count plus
    nullable input/output totals. It includes trustworthy evidence from failed
@@ -669,12 +749,12 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | fixed combined choice 8/10 | none |
-| Public presets and single-provider merged image + resume | the provider-model gate and fixed choices 3/5/9/12 | none |
-| Flat fallback | fixed choices 1/2/4/7/9/12 | none |
-| Nested lanes | the complete flat-fallback gate | none |
-| Merged audio + resume | fixed choices 4/5/9/12, plus the proven provider boundary | none |
-| Video-derived resume/publication and old-chain deletion | fixed choice 11 and every earlier replacement gate; fixed choice 12 | none |
+| First and second provider-model proofs | fixed combined choice 8/10 plus #607 schema-timing decision | audio type, preset quantity, extraction ownership, resume signature |
+| Public presets and single-provider merged image + resume | provider-model gate, fixed choices 5/9/12, #607 preset/default decisions, and plain/detail selector | audio type, extraction ownership, resume signature |
+| Flat fallback | fixed choices 1/2/4/7/9/12 and live evidence for any concrete retry values | audio type, extraction ownership, resume signature |
+| Nested lanes | the complete flat-fallback gate | audio type, extraction ownership, resume signature |
+| Merged audio + resume | fixed choices 5/9/12, proven provider boundary, and #607 audio-type decision | video-resume signature |
+| Video-derived resume/publication and old-chain deletion | fixed choice 11 and every earlier replacement gate; fixed choice 12; #607 extraction ownership and exact stateless resume signature | none |
 
 This ordering does not silently choose an open contract. It prevents an
 unrelated late question from blocking earlier evidence and prevents an early

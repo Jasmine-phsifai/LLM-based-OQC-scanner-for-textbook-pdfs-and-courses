@@ -1350,3 +1350,27 @@ The negative-feedback/similarity frame algorithm and exact `resume_video`
 partial-result signature remain separate later reviews. They do not authorize a
 new wrapper, shared Markdown writer, video journal, retry executor, nested pool,
 or broad test matrix now.
+
+**#607 narrows the open list and corrects an overbroad follow-up.** The latest
+proposal does not require the maintainer to reconfirm every numbered choice.
+Question 4 above is compatible with the fixed contract rather than a real
+conflict: an eventually successful slot returns bounded earlier-provider
+failures as result diagnostics, while the final failed-batch accumulator still
+contains only unresolved batches. Likewise first-success stop, the common-
+minimum reduction, common output naming, controlled adapter plus exact settings,
+canonical-code retry shape, per-`(vendor, model)` usage, stateless root
+`resume_video` routing, and separate image/audio outputs remain fixed.
+
+The genuinely open product conflicts are now limited to: integer versus float
+provider audio minutes; blanket one-image defaults for non-thinking models
+versus evidence-backed defaults; bounded live-proven presets versus a complete
+catalog mirror; caller-owned public extraction versus a newly approved private
+job/temp owner; and designing the complete `ProviderModel` schema up front while
+deciding whether unused fields also land in the first runtime class. Plain/detail
+task selection and the exact stateless `resume_video` partial-result signature
+remain later API reviews, not first-proof blockers.
+
+#606 contributes only current catalog evidence: one isolated DashScope
+`/models` request returned 246 entries and contained both
+`qwen3.7-plus-2026-05-26` and `qwen3.5-ocr`, with zero recognition calls. It
+does not close preset quantity, OCR quality, retry, or schema questions.

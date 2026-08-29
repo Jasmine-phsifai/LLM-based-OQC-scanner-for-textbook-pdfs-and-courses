@@ -150,7 +150,10 @@ image/audio batch resume replaces the video journal; a future
 video workflow is composed by callers from those public steps. No replacement
 `recognize_video` wrapper is currently reserved; the separately discussed thin
 `resume_video` name may delegate only after its input and partial-result
-contract is fixed.
+contract is fixed. #607 narrows the remaining discussion to the five current
+conflicts listed at the top of the refactor plan; it does not reopen the already
+fixed fallback, output, adapter/settings, token, routing, or separate-media
+contracts.
 Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval

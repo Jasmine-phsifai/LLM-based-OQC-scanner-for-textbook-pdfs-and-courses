@@ -19,8 +19,12 @@ callers compose visible media steps and no replacement `recognize_video` wrapper
 is currently reserved. The video job-state layer is deleted after replacement
 merged-image, merged-audio, and resume proof. #569 withdraws the former
 consumer-free provider Phase 1 and exhaustive module blueprint; no refactor
-runtime has shipped. #604 keeps implementation paused while the remaining
-wording conflicts in section 0 of the plan are discussed.
+runtime has shipped. #607 keeps implementation paused and narrows the genuine
+wording conflicts in section 0 of the plan to five: audio-minute numeric type,
+non-thinking image default evidence, preset quantity, extraction ownership, and
+complete-schema implementation timing. Previously fixed fallback, output,
+adapter/settings, token, resume-routing, and separate-media contracts do not
+need another vote.
 
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit

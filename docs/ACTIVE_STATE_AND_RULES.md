@@ -11824,3 +11824,33 @@ catalog row, path, or response body was emitted or persisted; the owned child
 left no process residue. No runtime, test, dependency, public API, preset,
 state, legacy source, frozen boundary, or deletion changed. The ProviderModel
 and media replacement implementation pause remains in force.
+
+## Current working update: #607 removes false decision gates without implementing
+
+#607 reconciles the complete maintained decision record with #604's latest
+proposal wording. Personal review confirms the shipped package still publicly
+exports the three frozen video recognition facades and does not yet contain
+`ProviderModel`, `batchify_images`, `split_audio`, or the replacement
+`resume_video`. This is current-code evidence that the discussion pause is real,
+not a claim that the destination already shipped.
+
+The refactor plan no longer asks the maintainer to reconfirm already settled
+contracts. Flat fallback stops at first success; bounded earlier-provider
+failures accompany an eventually successful result while the terminal
+accumulator contains only unresolved batches; omitted media defaults use the
+minimum applicable suggestion after full provider-shape validation; output
+naming, canonical finite retry shape, controlled adapter plus exact settings,
+per-provider-model usage, stateless root video-resume routing, and separate
+image/audio Markdown ownership remain fixed.
+
+Only five direct wording conflicts remain open: integer versus float provider
+audio minutes; blanket one-image defaults for non-thinking models versus
+evidence-backed suggestions; a small live-proven preset set versus a complete
+vendor-catalog mirror; caller-owned public extraction versus a newly approved
+private job/temp owner; and whether a completely designed `ProviderModel`
+schema also lands every currently unused field in its first internal runtime
+class. Plain/detail task selection and the exact stateless `resume_video`
+partial-result signature remain later API reviews. #606's 246-entry DashScope
+catalog proof keeps both named model candidates current but resolves none of
+these product conflicts. No runtime, test, dependency, public API, provider
+call, state, legacy source, frozen boundary, or deletion changed in #607.
