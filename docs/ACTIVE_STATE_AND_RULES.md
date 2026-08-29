@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-28 against the
+Status: **authoritative and current.** Last verified 2026-08-29 against the
 working tree, tests, and recorded commit history.
 
 This file outranks every other document in this repository. Read it before
@@ -10698,3 +10698,33 @@ consumer and live image batch, then a second transport, then single-provider
 merged image resume, flat fallback, nested lanes, audio, and only finally video
 composition/deletion. No consumer-free provider foundation is an acceptable
 iteration.
+
+## Current working update: #570 proves the public video primitives on real archive media
+
+#570 exercised the retained provider-free public surface on the smaller of the
+two authorized MP4 files found under `D:\archieve`. The archive was read only:
+there was no crawl, download, provider call, credential access, recognition,
+Markdown/journal output, crop, ROI, or perspective correction. `inspect_video`
+validated a 2,665,023,982-byte, 9,683.53-second, 1920-by-1080 source with one
+selectable audio stream. `extract_video_frames` returned 82 ordered, unique,
+non-retrograde full-frame JPEGs, and `extract_video_audio` produced a mono,
+16-kHz MP3 whose fully decoded duration was 9,683.6 seconds, approximately
+0.07 seconds from the source duration. Source identity remained unchanged and
+all owned temporary output and worker processes were removed.
+
+One apparent JPEG failure was a verifier error, not a product defect. Direct
+`cv2.imread(path)` failed for all 82 files because the disposable output path
+contained non-ASCII Windows components. Reading each file through Python and
+passing its bytes to `cv2.imdecode` succeeded 82/82; independent Pillow loads
+also succeeded 82/82, preserved 1920-by-1080 dimensions, and the files' sizes
+and hashes did not change during validation. The production writer already
+uses `cv2.imencode` plus Python file I/O specifically to avoid this path issue.
+No OpenCV path-compatibility wrapper or generalized verifier was added.
+
+The final focused offline gate for `inspect_video`, frame extraction, audio
+extraction, and lightweight import is **58 passed in 3.86s**. A plain
+`import ocrllm` in the real-media probe took approximately 0.032 seconds and
+did not load OpenCV, Pillow, NumPy, Google, OpenAI, DashScope, torch, or
+transformers. No runtime, test, dependency, public API, provider, frozen code,
+or capability claim changed. The provider/entity and replacement-recognition
+decisions therefore remain paused exactly as recorded by #569.
