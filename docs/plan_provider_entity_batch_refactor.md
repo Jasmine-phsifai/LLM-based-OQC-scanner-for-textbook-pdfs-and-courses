@@ -386,10 +386,10 @@ pause:
    after its finite retry rule, and stop immediately on the first valid
    recognition. Calling later providers would be an unrequested ensemble with
    no result-selection or merge contract.
-2. **Successful result with earlier provider failures.** Recommended:
-   return the completed `RecognitionResult` with bounded provider-failure
-   records; raise only for partial or total recognition failure. Alternative:
-   raise after completion while attaching the successful result.
+2. **Fixed successful-fallback reporting.** Return the completed
+   `RecognitionResult` with ordered, bounded provider-failure records. Raise a
+   typed error only when the logical slot remains incomplete; never turn a
+   valid settled result into an attached-result exception.
 3. **Preset scope.** Recommended: a few live-proven presets plus explicit
    construction/live discovery for other model IDs. Alternative: commit every
    currently exposed Google/DashScope model as a preset.
@@ -459,7 +459,7 @@ twelve equal prerequisites:
 | --- | --- | --- |
 | First and second provider-model proofs | fixed combined choice 8/10 | 2–7, 11 |
 | Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choices 9/12 | 2, 4, 7, 11 |
-| Flat fallback | 2, 4, plus fixed choices 1/7/9/12 | 11 |
+| Flat fallback | 4, plus fixed choices 1/2/7/9/12 | 11 |
 | Nested lanes | the complete flat-fallback gate | 11 |
 | Merged audio + resume | 4, 5, fixed choices 9/12, plus the proven provider boundary | 11 |
 | Video-derived resume/publication and old-chain deletion | 11 and every earlier replacement gate; fixed choice 12 | none |
@@ -471,16 +471,16 @@ particular, choice 3 is about the committed public preset scope rather than
 permission to prove one internal live model, and choice 11's routing behavior
 is fixed even though its root-export detail remains open.
 
-The direct maintainer wording does not safely close choices 2–3. It asks to
-report exhausted provider errors after success but later narrows the final
-accumulator to failed batches. It also asks for Google/DashScope model objects
-while rejecting indefinite model-by-model fixes and retaining live discovery.
-Those are real contract tensions, so this reconciliation does not choose between
-them. Choice 1 is now fixed by the one-result contract: "traverse once" limits
-revisiting while unresolved and does not require paid calls after success. By
-contrast, former choices 4 and 6 ask the same provider-list reduction question.
-#587 merges them into choice
-4: omission must derive one media-appropriate scalar from the supplied
+The direct maintainer wording still leaves choice 3 open: it asks for
+Google/DashScope model objects while rejecting indefinite model-by-model fixes
+and retaining live discovery. Choice 2 is fixed by separating visibility from
+exception semantics. An eventually successful slot returns its result with one
+terminal safe failure record for each exhausted earlier provider; the final
+failed-batch accumulator remains limited to genuinely failed slots. Choice 1 is
+fixed by the one-result contract: "traverse once" limits revisiting while
+unresolved and does not require paid calls after success. By contrast, former
+choices 4 and 6 ask the same provider-list reduction question. #587 merges
+them into choice 4: omission must derive one media-appropriate scalar from the supplied
 providers, leaving only the common-minimum versus first-provider rule. This is
 one product decision, not permission for a generic cross-media planner. Choice
 11's delegation behavior is directly fixed; only export placement remains
@@ -504,7 +504,7 @@ The current public result boundary also constrains choice 2:
 - `recognize_batch` treats a raised exception as that item's failure and closes
   the start gate, even if provider work had already produced valid text.
 
-Choice 1 is fixed to the first part of Route A; choice 2 remains open:
+Choices 1 and 2 are fixed to Route A:
 
 1. Rotate the flat candidate order to the lane's remembered successful start,
    attempt each candidate at most once, and stop immediately on the first valid
@@ -528,8 +528,9 @@ winner/merge rule or a second result-plus-error wrapper, would violate the
 current `BatchItemOutcome` invariant, and could cause a caller to replay paid
 successful work. It is wider than the legacy and active behavior.
 
-Choice 2 remains awaiting explicit maintainer confirmation. Fixing choice 1
-does not authorize dispatcher implementation.
+Surfacing the bounded records means returning them in the result, not raising
+after successful recognition. Fixing choices 1 and 2 does not authorize
+dispatcher implementation.
 
 ### 6.2 Evidence for choice 3 (#573)
 

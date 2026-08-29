@@ -10806,7 +10806,7 @@ changes to `BatchItemOutcome` are rejected unless a later consumer proves them
 necessary.
 
 At #572, choices 1 and 2 remained open for explicit maintainer confirmation;
-#591 later fixes choice 1, while choice 2 remains open. This iteration changes
+#591 later fixes choice 1 and #592 fixes choice 2. This iteration changes
 documentation only: no dispatcher, provider model, retry, result schema,
 runtime, test, dependency, frozen directory, legacy behavior, or migration
 capability changed. The focused existing candidate/batch contract remains
@@ -11156,8 +11156,9 @@ evidence and prevents early model objects from acquiring fields used only by a
 future pool.
 
 At #584, direct wording still conflicted within choices 1–3. #591 later fixes
-choice 1 to stop on first success; choices 2–3 remain open. Choices 4 and 6 are
-narrowed to common-minimum versus
+choice 1 to stop on first success, and #592 fixes choice 2 to return prior
+failure evidence with the successful result. Choice 3 remains open. Choices 4
+and 6 are narrowed to common-minimum versus
 first-provider defaults; explicit-only behavior is removed because omission is
 already required to derive a provider-informed value. The maintainer directly
 fixed the behavior behind choice 11: a thin `resume_video` route delegates to
@@ -11344,9 +11345,38 @@ for the next batch. Current active and legacy candidate loops already stop on
 first success, and the current result boundary has no owner for competing valid
 results or a winner/merge policy.
 
-Choice 1 is therefore fixed. Choice 2 remains separate and open: this decision
-does not determine whether bounded failures before eventual success are returned
-with the completed result or cause an attached-result exception. No ensemble,
+Choice 1 is therefore fixed. At #591, choice 2 remained separate and open;
+#592 later fixes normal result return with bounded prior-failure evidence. No
+ensemble,
 quorum, scoring, comparison stage, multi-result wrapper, retry dispatcher,
 provider model, preset, API, runtime source, provider call, test source,
 dependency, legacy source, frozen boundary, or deletion changed.
+
+## Current working update: #592 returns successful fallback evidence normally
+
+#592 is a documentation-only result-contract decision under the replacement-API
+implementation pause. When an earlier provider exhausts its finite retry rule
+and a later provider successfully completes the logical slot, recognition
+returns one ordinary successful `RecognitionResult`. It includes one bounded
+human warning and ordered `metadata["provider_failures"]` records. Each record
+contains only the exhausted provider/model, canonical code, and secret-safe
+bounded description. It keeps the last failure after that provider's retries,
+not every raw retry response.
+
+This satisfies the requirement to surface traversed errors without changing
+successful paid work into failure. `BatchItemOutcome` can carry exactly one
+result or one typed error, and `recognize_batch()` treats a raised error as the
+item's failure and stops later starts. An attached-result exception would
+therefore require a second public wrapper and caller rules for recovering the
+result, while creating a replay risk. No current or legacy fallback consumer
+requires that shape.
+
+Content that was fully recognized remains `status="complete"`; provider-fallback
+history is operational evidence, not missing content. A typed error is raised
+only when the logical slot is still incomplete after candidate exhaustion.
+Successful-slot provider failures stay on that result; the separate final
+failed-batch accumulator continues to contain only terminal evidence for slots
+that actually failed. No result-plus-error wrapper, attempt-ledger type, second
+exception channel, dispatcher, provider model, API, runtime source, provider
+call, test source, dependency, legacy source, frozen boundary, or deletion
+changed.

@@ -927,9 +927,10 @@ choice details remain open or are fixed as marked:
 1. **Fixed first-success stop:** a flat provider list stops at the first valid
    recognition. "Traverse once" means each provider is reached at most once
    while unresolved, not that providers after success must still be called.
-2. When recognition completes after earlier provider failures, does the
-   function return the completed result with bounded failure records
-   (recommended), or raise while attaching the successful result?
+2. **Fixed successful-fallback reporting:** recognition that completes after
+   earlier provider failures returns the completed result with ordered, bounded
+   failure records. A typed error is raised only for an incomplete logical slot;
+   there is no attached-result exception.
 3. Are committed presets limited to a few live-proven models plus explicit
    construction/live discovery (recommended), or does the repository freeze
    every currently served Google/DashScope model?
@@ -983,7 +984,8 @@ therefore: first valid result stops the flat lane; return it as complete with
 one warning and ordered, bounded `metadata["provider_failures"]`; raise only
 when recognition remains incomplete. #591 fixes the first-success stop because
 post-success calls would require an unrequested winner, comparison, or merge
-contract. The separate choice 2 reporting question remains open.
+contract. #592 fixes choice 2: surfacing traversed failure evidence means
+returning it with the successful result, not raising after success.
 
 **#573 evidence for choice 3.** Active image/audio settings already accept
 exact caller-selected model IDs, and active Google/DashScope adapters validate
@@ -1174,8 +1176,8 @@ references, not a flat implementation barrier. The combined 8/10 gate blocks the
 internal provider-model proof; public preset scope, merged-image identity,
 fallback, audio, and video publication are gated only when their respective
 slices begin. #584 left choices 1–3 open; #591 later fixes choice 1 to stop on
-first success, while choices 2–3 remain open. Former choices 4 and 6 no longer
-offer
+first success, and #592 fixes choice 2 to return bounded failure evidence with
+the result. Choice 3 remains open. Former choices 4 and 6 no longer offer
 explicit-only input as an alternative because provider-derived omission is
 fixed. #587 combines their identical common-minimum-versus-first-provider
 question into choice 4 without combining their media planners. Choice 11
