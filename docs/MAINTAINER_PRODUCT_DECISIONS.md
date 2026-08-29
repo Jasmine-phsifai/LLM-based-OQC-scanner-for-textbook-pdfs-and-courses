@@ -1347,19 +1347,16 @@ No implementation starts until the needed subset of these questions is settled:
 
 1. Does the latest `float` wording intentionally overturn integer-only provider
    audio minutes, or was it a type slip? Current authority remains integer-only.
-2. Should a non-thinking image model always suggest batch size one, despite no
-   demonstrated relation between thinking support and safe output capacity, or
-   should every preset default remain evidence-backed?
-3. Does "prebuild Google and DashScope models" mean the existing fixed small
+2. Does "prebuild Google and DashScope models" mean the existing fixed small
    live-proven preset set, or does it intentionally reopen the rejected full
    catalog mirror?
-4. When a later provider succeeds, should earlier provider failures remain as
+3. When a later provider succeeds, should earlier provider failures remain as
    bounded warnings on the successful result, or should the final accumulator
    contain failed batches only? A successful result will not be converted into
    a terminal exception.
-5. With no `recognize_video` owner, public extraction output is caller-owned.
+4. With no `recognize_video` owner, public extraction output is caller-owned.
    Is that accepted, or is a separately approved job/temp owner actually wanted?
-6. Should the first internal `ProviderModel` contain only fields consumed by the
+5. Should the first internal `ProviderModel` contain only fields consumed by the
    first image slice, or the entire planned image/audio/retry schema before those
    consumers exist? The staged option is recommended to avoid a second
    consumer-free foundation.
@@ -1380,9 +1377,8 @@ canonical-code retry shape, per-`(vendor, model)` usage, stateless root
 `resume_video` routing, and separate image/audio outputs remain fixed.
 
 The genuinely open product conflicts are now limited to: integer versus float
-provider audio minutes; blanket one-image defaults for non-thinking models
-versus evidence-backed defaults; bounded live-proven presets versus a complete
-catalog mirror; caller-owned public extraction versus a newly approved private
+provider audio minutes; bounded live-proven presets versus a complete catalog
+mirror; caller-owned public extraction versus a newly approved private
 job/temp owner; and designing the complete `ProviderModel` schema up front while
 deciding whether unused fields also land in the first runtime class. Plain/detail
 task selection and the exact stateless `resume_video` partial-result signature
@@ -1392,3 +1388,17 @@ remain later API reviews, not first-proof blockers.
 `/models` request returned 246 entries and contained both
 `qwen3.7-plus-2026-05-26` and `qwen3.5-ocr`, with zero recognition calls. It
 does not close preset quantity, OCR quality, retry, or schema questions.
+
+**#615 fixes the non-thinking image-default interpretation.** The latest direct
+maintainer instruction is authoritative: a curated preset for a model classified
+as unable to think recommends `default_image_batch_size=1`. This is only the
+omitted-argument recommendation; it is not a hard provider limit, and an
+explicit positive caller size still wins. Do not derive this classification
+from `enable_thinking=False`. The maintained DashScope settings default that
+request flag to false and forward it unchanged. #557 separately proves two
+serial eight-image `qwen3.5-ocr` calls can complete, but its bounded report did
+not retain the actual flag and the deleted disposable controller cannot be
+reconstructed from today's default. The evidence therefore does not establish
+thinking/batch causality or overrule the requested preset policy. Provider
+rejection of an explicit larger batch remains an honest resumable error; the
+library does not silently re-batch.

@@ -19,10 +19,13 @@ callers compose visible media steps and no replacement `recognize_video` wrapper
 is currently reserved. The video job-state layer is deleted after replacement
 merged-image, merged-audio, and resume proof. #569 withdraws the former
 consumer-free provider Phase 1 and exhaustive module blueprint; no refactor
-runtime has shipped. #607 keeps implementation paused and narrows the genuine
-wording conflicts in section 0 of the plan to five: audio-minute numeric type,
-non-thinking image default evidence, preset quantity, extraction ownership, and
-complete-schema implementation timing. Previously fixed fallback, output,
+runtime has shipped. #607 keeps implementation paused and #615 narrows the
+genuine wording conflicts in section 0 of the plan to four: audio-minute
+numeric type, preset quantity, extraction ownership, and complete-schema
+implementation timing. A curated preset classified as unable to think now
+recommends one image when the caller omits batch size; this is neither a
+provider limit nor something inferred from a request-level thinking switch.
+Previously fixed fallback, output,
 adapter/settings, token, resume-routing, and separate-media contracts do not
 need another vote.
 
@@ -49,6 +52,16 @@ provider-scoped `PROVIDER_UNAVAILABLE`, operation `catalog`, and exact zero
 generation calls. Credential/path redaction, source identity, snapshot cleanup,
 and process cleanup passed. No retry, model sweep, product change, or test was
 warranted.
+
+#615 resolves only the non-thinking image-default wording and makes no runtime
+change. The maintained DashScope settings default `enable_thinking` to false
+and the request builder forwards that value, but #557's bounded report did not
+retain the actual flag used for its two successful eight-image calls; the
+default cannot reconstruct a deleted controller. The latest maintainer rule
+therefore stands on the direct instruction rather than an inferred live flag: a curated preset
+for a model classified as unable to think recommends batch size one, an
+explicit caller size wins, and provider rejection is reported rather than
+silently re-batching.
 
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit

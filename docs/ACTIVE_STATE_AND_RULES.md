@@ -11843,7 +11843,7 @@ naming, canonical finite retry shape, controlled adapter plus exact settings,
 per-provider-model usage, stateless root video-resume routing, and separate
 image/audio Markdown ownership remain fixed.
 
-Only five direct wording conflicts remain open: integer versus float provider
+At #607, five direct wording conflicts remained open: integer versus float provider
 audio minutes; blanket one-image defaults for non-thinking models versus
 evidence-backed suggestions; a small live-proven preset set versus a complete
 vendor-catalog mirror; caller-owned public extraction versus a newly approved
@@ -11884,7 +11884,8 @@ library defect was reproduced. The complete lightweight-import file passed 14
 tests, and the two exact Unicode-path/negative-feedback frame regressions
 passed with 23 unrelated frame tests deselected. No runtime, test, dependency, public API,
 provider, state, legacy source, frozen boundary, or capability claim changed.
-The provider/media replacement pause and five #607 decisions remain unchanged.
+At #608, the provider/media replacement pause and five #607 decisions remained
+unchanged. #615 later resolved the non-thinking default wording only.
 
 ## Current working update: #609 checks the real opening-content question
 
@@ -11940,7 +11941,7 @@ before any finite retry rule. Existing Google and DashScope mappings prove one
 HTTP number is not a portable policy key, so the proposed raw-status counts are
 unverified examples rather than defaults.
 
-The five #607 wording choices remain genuinely open and have narrower
+At #610, the five #607 wording choices remained open and had narrower
 recommendations: preserve integer-minute audio planning unless fractional
 windows are intentionally supported; use evidence-backed image batch defaults
 rather than deriving all non-thinking models as one image; ship a small
@@ -12007,7 +12008,7 @@ access, and frozen social acquisition.
 It does not approve a generic invocation-options list, callable/executable
 pointer, raw-HTTP retry table, full vendor catalog mirror, retry counts copied
 from examples, new video lifecycle owner, or runtime class with unused fields.
-The five #607 wording conflicts remain open. Partial merged-output behavior,
+At #612, the five #607 wording conflicts remained open. Partial merged-output behavior,
 nested-lane scheduling, and multi-provider settings binding are later API
 gates; the current recommendations are documented in the refactor plan. The
 prepared #612 DashScope live run was cancelled before credential access or any
@@ -12074,3 +12075,29 @@ catalog refusal, sweeping models, bypassing catalog, adding retry, or changing
 SDK/endpoint would add no new product evidence. No runtime, test, dependency,
 public API, state, provider policy, legacy source, frozen boundary, or refactor
 authorization changed.
+
+## Current working update: #615 fixes the non-thinking image default meaning
+
+The latest maintainer direction resolves one of #607's five wording conflicts:
+a curated preset for a model classified as unable to think recommends
+`default_image_batch_size=1` when the caller omits an explicit size. It remains
+a recommendation, not a hard provider input limit. An explicit positive caller
+size wins; if the provider rejects it, recognition reports the existing honest
+resumable provider failure rather than silently re-batching.
+
+Model capability must not be inferred from one request's thinking switch. The
+maintained `DashScopeSettings` default `enable_thinking` is false and
+`build_dashscope_image_request()` forwards it unchanged. #557 separately
+completed one real sixteen-page PDF as exactly two serial eight-image
+`qwen3.5-ocr` calls, but its bounded report did not retain the actual request
+flag. Today's source default cannot reconstruct a deleted disposable
+controller, so #557 establishes neither thinking/batch causality nor a provider
+maximum. The preset author records the model classification and its recommended
+size without adding a new runtime capability boolean.
+
+Four direct wording conflicts remain: integer versus fractional provider audio
+minutes, a small live-proven preset set versus a full catalog mirror,
+caller-owned public extraction versus a separately approved private job owner,
+and staged runtime fields versus an entirely populated first `ProviderModel`.
+No provider call, runtime, test, dependency, public API, state, legacy source,
+frozen boundary, or refactor authorization changed in #615.

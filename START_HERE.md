@@ -90,6 +90,14 @@ one formula-board generation in 4.610 seconds with one call, usage 4,357/285,
 a closed client, and no retry, fallback, model switch, output, or
 secret/content/path disclosure. This is current connectivity/lifecycle
 evidence, not implementation of the replacement provider model.
+#615 prevents a configuration mistake: a request-level thinking switch is not
+the model's product classification. DashScope settings default
+`enable_thinking` to false, while #557 separately proves `qwen3.5-ocr` can
+complete two groups of eight; however, that bounded report did not retain the
+actual request flag, so the two facts are not joined into a causal claim.
+Future curated presets follow the latest maintainer rule that a model classified
+as unable to think recommends one image when batch size is omitted; explicit
+caller sizing is unchanged.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

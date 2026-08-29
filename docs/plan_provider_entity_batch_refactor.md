@@ -92,14 +92,22 @@ The following remain fixed:
 - full frames/pages remain intact, repair stays experimental, Electron remains
   a later Python/Rust-backend consumer, and social-media crawling stays frozen.
 
-The following require explicit maintainer confirmation before their slice:
+The latest proposal is reconciled as follows. Only entries explicitly described
+as open in the narrower list below require maintainer confirmation before their
+slice:
 
 1. The latest wording says `float` for provider default audio minutes, while the
    previously fixed public and durable contract accepts integer minutes only.
    This plan continues to use positive `int` until explicitly overturned.
-2. Thinking capability does not establish a safe image batch size. The proposal
-   to default every non-thinking model to one image remains unproven; a preset's
-   suggestion should come from output/context and bounded live evidence.
+2. A curated preset for a model classified as unable to think uses
+   `default_image_batch_size=1`, per the latest maintainer direction. This is a
+   recommendation used only when the caller omits a size, not a provider hard
+   limit. Do not infer that classification from a per-request
+   `enable_thinking=False`. #557 completed two eight-image `qwen3.5-ocr`
+   requests, but its bounded report did not retain that request flag; the
+   current default cannot reconstruct a deleted disposable controller. The
+   preset owns the classification and value; an explicit caller size still
+   wins.
 3. "Prebuild Google and DashScope models" can mean a few verified convenience
    presets or a mirror of hundreds of catalog rows. The latter conflicts with
    the earlier no-indefinite-model-maintenance rule and remains rejected pending
@@ -201,26 +209,22 @@ bounded real failure supports them; the overlapping `error` / `next` /
 `current` labels remain unnecessary because exhaustion always either advances
 an unresolved lane or ends it.
 
-Five wording choices therefore remain open, but are now narrowly framed:
+Four wording choices therefore remain open, but are now narrowly framed:
 
 1. Keep the public splitter and durable identity in exact integer minutes, or
    deliberately permit a provider's recommended scalar to be fractional. The
    current recommendation is integer minutes because accepting `float` without
    fractional-window behavior would create hidden rounding.
-2. Treat `default_image_batch_size=1` for every non-thinking model as a hard
-   rule, or keep it preset-specific and evidence-backed. The current
-   recommendation is evidence-backed: thinking is not the causal image/output
-   limit, although a specific non-thinking preset may still use one.
-3. Interpret "prebuild Google and DashScope models" as a small live-proven
+2. Interpret "prebuild Google and DashScope models" as a small live-proven
    preset set or a volatile full-catalog mirror. The current recommendation,
    consistent with the no-indefinite-model-maintenance decision, is a small
    preset set plus discovery and explicit construction.
-4. Keep caller-invoked extraction caller-owned, or authorize a distinct private
+3. Keep caller-invoked extraction caller-owned, or authorize a distinct private
    job/temp owner. With no replacement `recognize_video` wrapper, the phrase
    "media created by recognize video" has no library owner and cannot authorize
    deletion. The current recommendation is caller ownership; an application
    composing the steps may clean its own files.
-5. Design the full eventual schema in this document while adding runtime fields
+4. Design the full eventual schema in this document while adding runtime fields
    with real consumers, or instantiate every unused retry/audio field in the
    first class. The current recommendation is full design review plus staged
    internal runtime fields, followed by public export only when the first
@@ -337,12 +341,13 @@ OCRLLM error. A later rule may give that canonical code finite
 unresolved. The proposed numerical retry counts are not defaults until legacy
 evidence or a bounded real call justifies them.
 
-Five earlier wording conflicts remain open: integer versus fractional provider
-audio minutes, blanket batch size one for non-thinking models versus
-evidence-backed suggestions, a small live-proven preset set versus a complete
-catalog mirror, caller-owned extraction versus a newly introduced private job
-owner, and staged runtime fields versus instantiating the whole final schema at
-once. Three later API details are now explicit discussion gates rather than
+Four earlier wording conflicts remain open: integer versus fractional provider
+audio minutes, a small live-proven preset set versus a complete catalog mirror,
+caller-owned extraction versus a newly introduced private job owner, and staged
+runtime fields versus instantiating the whole final schema at once. The
+non-thinking preset default is fixed at one, without treating a request-level
+thinking switch as model capability or as a provider hard limit. Three later
+API details are now explicit discussion gates rather than
 permission to build infrastructure:
 
 1. A merged run with unresolved slots needs one outcome rule. The current
@@ -455,24 +460,29 @@ The following remain fixed and are not reopened by the latest wording:
   mapping, not portable public retry-policy keys. Exact retry counts remain
   unapproved until real errors justify them.
 
-Only these five contradictions still need direct maintainer resolution before
+Only these four contradictions still need direct maintainer resolution before
 their relevant runtime slice:
 
 1. whether provider-recommended audio duration intentionally changes from
    positive integer minutes to `float`, despite the existing integer-only split
    and durable identity contract;
-2. whether every non-thinking image model must suggest one image, or whether
-   every preset keeps an evidence-backed positive suggestion independent of a
-   thinking flag;
-3. whether the request to prebuild Google/DashScope models intentionally
+2. whether the request to prebuild Google/DashScope models intentionally
    overturns the small live-proven preset set and requires a volatile full-
    catalog mirror;
-4. whether caller-invoked extraction remains caller-owned now that no
+3. whether caller-invoked extraction remains caller-owned now that no
    `recognize_video` lifecycle owner exists, or a separately approved private
    job/temp owner is actually wanted;
-5. whether the complete image/audio/retry `ProviderModel` schema is only
+4. whether the complete image/audio/retry `ProviderModel` schema is only
    designed up front while runtime fields land with consumers, or the first
    internal runtime class must contain the entire currently unused schema.
+
+The image-size wording is no longer one of those contradictions. A preset
+classified as unable to think recommends one image. That rule is preset data,
+not a runtime derivation from `enable_thinking`, and it does not reject an
+explicit larger caller batch before the provider. Existing #557 evidence shows
+that this model can complete two groups of eight, but its report did not retain
+the request flag and therefore establishes no thinking/batch causality. It does
+not override the maintainer's default policy.
 
 The exact plain-versus-detail task selector and the stateless `resume_video`
 input/partial-result signature remain later slice-local API reviews. They do
