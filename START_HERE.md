@@ -140,10 +140,12 @@ limited to 9.5 hours, while explicitly selected integer-minute interval mode
 accepts the private product ceiling of 10 hours.
 **OBSOLETE AS DIRECTION (2026-08-29; implementation paused):** the
 `recognize_video_to_markdown` journal facade described above is superseded by
-the narrowed provider-model/media-batch refactor (#568/#569 in
+the narrowed provider-model/media-batch refactor (#568/#569/#571 in
 `docs/ACTIVE_STATE_AND_RULES.md`;
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)).
-The current facade remains shipped but frozen until replacement. Public
+The current facade remains shipped but frozen until replacement, then the
+duplicated recognition/journal product is deleted rather than retained as a
+compatibility family. Public
 image/audio batch resume replaces the video journal; a future
 `recognize_video` may only be a thin caller of those public steps.
 Fallback and batch/worker

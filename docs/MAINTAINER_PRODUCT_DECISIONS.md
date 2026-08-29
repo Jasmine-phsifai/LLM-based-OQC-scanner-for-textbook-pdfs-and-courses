@@ -455,6 +455,11 @@ is often accepted.
   interchangeable. The "retry decisions must be evidence-backed, not a generic
   count" rule is preserved: entity retry policies are per canonical error code
   with bounded attempts, not a blanket retry count.
+  **SUPERSEDED (2026-08-29, #569/#571):** the consumer-free registry,
+  `ProviderEntity` scaffold, placeholder adapter, and broad preset plan were
+  withdrawn before commit. The current plan uses the single name
+  `ProviderModel` and requires one direct real consumer in the same vertical
+  slice; no registry or provider framework is currently authorized.
 - The maintainer has configured the current test account with the existing
   provider sources and an additional free Volcengine OpenAI-compatible source.
   The latter is authorized for future bounded compatibility and robustness
@@ -891,14 +896,23 @@ is often accepted.
   legacy extension, port DashScope FileTrans, add a generic converter/provider
   framework, or expose whole-file M4A before this API choice is settled.
 
-## Open provider-model and media-batch choices (#569)
+## Open provider-model and media-batch choices (#571 reconciliation)
 
 The maintainer has approved the decomposed media direction but explicitly
-paused implementation for discussion. The current choices are recorded in
-section 6 of
+paused provider/entity and replacement-recognition implementation for
+discussion. The current choices are recorded in section 6 of
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
 No provider-model class, retry engine, registry, static catalog, batch pool,
 merged facade, or video deletion begins until the relevant contract is settled.
+
+The latest instruction resolves two former choices. The duplicated video
+recognition/journal product is abandoned after its image/audio replacement gate;
+it is not retained as a compatibility family and is not deleted during this
+discussion pause. A failed batch's final accumulator keeps only that batch's
+last provider, canonical code, and bounded description, not one overflow record
+per attempted provider. The public type name is the implementation-level
+`ProviderModel`, with no duplicate `ProviderEntity` alias. The following
+product choices remain open:
 
 1. Does a flat provider list stop at the first successful recognition
    (recommended), or continue calling providers after success?
@@ -908,9 +922,9 @@ merged facade, or video deletion begins until the relevant contract is settled.
 3. Are committed presets limited to a few live-proven models plus explicit
    construction/live discovery (recommended), or does the repository freeze
    every currently served Google/DashScope model?
-4. Is the old video recognition/journal chain frozen now and deleted after
-   image/audio batch resume proof (recommended), or deleted immediately while
-   no complete replacement exists?
+4. With multiple providers and no explicit image batch size, is one common
+   size the minimum positive integer default across all flattened candidates
+   (recommended), the first provider's default, or a required explicit size?
 5. What exact default filename is used for a single media source, an
    image/audio folder batch, and video output? Directory placement is already
    fixed.
@@ -921,13 +935,10 @@ merged facade, or video deletion begins until the relevant contract is settled.
    severity with one universal "exhausted means record and advance" behavior
    (recommended), or do `error` / `next` / `current` retain distinct control
    meanings that still need to be specified?
-8. For a failed batch, does the final accumulator keep only the last overall
-   provider/code/description (recommended from the latest concise rule), or one
-   final overflow record for every attempted provider? Completed batches with
-   earlier fallback are governed separately by choice 2.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
 retained; image/audio providers are separate; video resume delegates to image
 and audio batch resume; repair is experimental and does not block deletion;
-caller media is never deleted; and social-media work stays frozen.
+caller media is never deleted; failed batches retain one terminal failure; and
+social-media work stays frozen.

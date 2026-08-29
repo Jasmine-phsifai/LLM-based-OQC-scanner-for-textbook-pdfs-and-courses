@@ -44,7 +44,7 @@ historical claim.
 
 **2026-08-28 refactor authority, narrowed 2026-08-29.** The
 provider-model/media-batch direction is approved; see #568 and the corrective
-#569 entry at the end of this file and
+#569/#571 entries at the end of this file and
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
 Implementation is paused for the plan's explicit maintainer decisions. The
 former exhaustive module build specification and its consumer-free Phase 1
@@ -10728,3 +10728,47 @@ did not load OpenCV, Pillow, NumPy, Google, OpenAI, DashScope, torch, or
 transformers. No runtime, test, dependency, public API, provider, frozen code,
 or capability claim changed. The provider/entity and replacement-recognition
 decisions therefore remain paused exactly as recorded by #569.
+
+## Current working update: #571 reconciles the latest proposal without implementation
+
+#571 re-read the current plan, maintainer decisions, public facade, provider
+error disposition, and every current video-named source/test path after the
+maintainer supplied the detailed staged-media and provider proposal. Two
+former open choices are now fixed. The duplicated video recognition/journal
+product is an eventual deletion target, not a compatibility family; because
+implementation is explicitly paused, deletion waits for the merged image and
+audio resume gate rather than removing the only complete shipped video path
+today. A failed batch's final accumulator retains only that batch's terminal
+provider, canonical code, and bounded description, not one overflow record per
+provider. Completed batches that encountered earlier failures remain governed
+by the separate return-versus-raise decision.
+
+The read-only deletion audit confirms that this is not a three-file removal.
+The obsolete product currently includes public bindings for
+`recognize_video_frames`, the current `recognize_video`,
+`recognize_video_to_markdown`, `compose_video_result`, `publish_video_result`,
+and `VideoRecognitionOutcome`; the video job journal/state helpers and their
+job-only frame/audio recognizers; a video-specific MP3 processor; and dedicated
+tests. Provider-free `inspect_video`, complete-frame extraction and selection,
+audio extraction, `RetainedVideoFrame`, `VideoInfo`, and `VideoError` remain.
+Some test files mix both responsibilities and must be pruned by behavior rather
+than deleted by filename. The final deletion manifest must still be regenerated
+from imports when its gate closes.
+
+The plan now distinguishes provider/entity and replacement-recognition work
+from maintenance of already-shipped provider-free primitives, so #570's real
+media proof no longer appears to violate the discussion pause. `ProviderModel`
+is selected as the single clear public type name rather than making naming a
+product blocker. The remaining open choices are flat-list stop-on-success;
+return versus raise after successful fallback; small live-proven presets versus
+a whole served catalog; multi-provider default image batch size; exact default
+Markdown names; multi-provider default audio interval; and simplified finite
+retry rules versus distinct `error`/`next`/`current` behavior. Existing
+canonical error disposition remains evidence, not a new retry engine.
+
+This iteration changes only the current plan, maintainer decision record,
+authority, and Chinese diary. It does not delete code, add provider values,
+create a registry, implement fallback/pools, alter public APIs, change tests or
+dependencies, touch frozen directories, or update capability/migration status.
+`git diff --check` and all changed-document relative-link checks pass; the
+lightweight-import regression is **14 passed in 0.80s**.

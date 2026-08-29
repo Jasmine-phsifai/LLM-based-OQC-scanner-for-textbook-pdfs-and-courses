@@ -1,7 +1,9 @@
 # Plan: Provider-Model And Media-Batch Refactor
 
-Status: **approved product direction; implementation paused for the open
-decisions in section 6.** This revision replaces the prematurely expanded
+Status: **approved product direction; provider/entity and replacement-recognition
+implementation paused for the open decisions in section 6.** Existing
+provider-free primitive maintenance remains allowed when real media exposes a
+defect. This revision replaces the prematurely expanded
 2026-08-28 module build specification. It is a decision record and sequencing
 guide, not permission to build unused framework pieces.
 
@@ -58,8 +60,10 @@ extract_video_audio
 
 ### 2.2 Explicit media and output paths
 
-- Every recognize, resume, and repair entry accepts explicit source paths.
-- Every recognize entry accepts an optional output Markdown path.
+- Every recognize, resume, and repair entry accepts explicit source paths and
+  an optional output Markdown path. Omission uses the same deterministic
+  default-placement and naming rules; resume/repair do not search unrelated
+  directories for a plausible prior output.
 - A single image or audio file defaults beside that file.
 - An image or audio batch defaults beside the directory containing the batch.
 - If an omitted output cannot be resolved without guessing, for example a
@@ -103,9 +107,9 @@ extract_video_audio
 ### 2.5 Provider-model value
 
 One value represents exactly one `(vendor, model)` pair. Google or DashScope
-as a whole is not one provider value. The public name remains provisional;
-`ProviderModel` is clearer than `ProviderEntity` and should be selected before
-code is written.
+as a whole is not one provider value. The public type is named `ProviderModel`:
+it states the actual identity more clearly than `ProviderEntity`. Do not ship a
+second alias for the same value.
 
 Only fields consumed by the first real vertical slice may be added. The
 expected set is:
@@ -162,6 +166,10 @@ nested list[list[provider-model]]
   point. With no prior success it starts at the first provider.
 - A failed batch does not stop later batches. Final reporting records failed
   batch range, last provider, canonical error code, and bounded description.
+- The final failed-batch accumulator keeps exactly that terminal failure for
+  each failed batch. It does not retain one overflow record per provider. The
+  separate question of earlier-provider warnings on a batch that eventually
+  succeeds remains open in section 6.
 - No dynamic rebalancing, cross-lane rescue, arbitrary iterable support, or
   second pool abstraction is planned.
 
@@ -221,14 +229,21 @@ them before real frame-quality evidence is reviewed.
 
 ## 3. What Must Be Removed Eventually
 
-The following current product layers are frozen immediately and removed after
-the replacement image/audio paths meet the deletion gate:
+The maintainer has fixed the destination: the duplicated video recognition and
+journal product is abandoned, not maintained as a compatibility family. The
+following current implementations remain frozen only until the replacement
+image/audio paths meet the deletion gate, then are removed deliberately:
 
 - `recognize_video_frames` as a separate recognition product;
-- `compose_video_result` and `VideoRecognitionOutcome`;
+- the current `recognize_video` implementation; that public name may return
+  later only as the thin convenience caller allowed by section 2.1;
+- `compose_video_result`, `publish_video_result`, and
+  `VideoRecognitionOutcome`;
 - `recognize_video_to_markdown`;
 - the video job state/journal, its parse/load/save/serialize/validate helpers,
   and the job-only image/audio recognizers;
+- the current video-specific MP3 processor and helpers that have no consumer
+  after the public image/audio paths replace it;
 - tests whose only purpose is the deleted job/journal contract.
 
 Keep and simplify the provider-free media functions: inspection, complete-frame
@@ -257,9 +272,19 @@ One file still has one clear responsibility, but files are created when a
 working vertical slice consumes them, not because a final architecture diagram
 contains a box.
 
+The 2026-08-29 read-only surface audit found all current public-export changes
+in `src/ocrllm/__init__.py` and confirmed that `publish_video_result` cannot
+survive unchanged without `VideoRecognitionOutcome`. It also found mixed test
+files that contain both retained provider-free coverage and obsolete video
+recognition coverage, so deletion must prune individual tests rather than drop
+every video-named file. This audit is a deletion map, not permission to delete
+before the gate.
+
 ## 5. Evidence-First Implementation Order
 
-No implementation phase starts until section 6 is resolved and recorded.
+No provider/entity or replacement-recognition phase starts until section 6 is
+resolved and recorded. This pause does not prohibit fixing a defect reproduced
+in the already-shipped provider-free inspect/extract/selection functions.
 
 1. **One provider-model vertical slice.** Add the smallest provider-model value
    and direct adapter consumer together; predefine one suitable model already
@@ -302,10 +327,10 @@ Implementation remains paused until these choices are explicit:
 3. **Preset scope.** Recommended: a few live-proven presets plus explicit
    construction/live discovery for other model IDs. Alternative: commit every
    currently exposed Google/DashScope model as a preset.
-4. **Old video deletion timing.** Recommended: freeze it now, prove image and
-   audio batch resume, then delete it in the same migration sequence.
-   Alternative: delete it immediately and temporarily ship no complete video
-   recognition path.
+4. **Default image batch size with multiple providers.** Recommended: resolve
+   one common size as the minimum positive integer default across all flattened
+   candidates so fallback and nested lanes keep one slot plan. Alternative:
+   use the first provider's default or require an explicit size.
 5. **Default output filenames.** Decide names for a single media source, an
    image/audio folder batch, and video output. Directory placement is already
    fixed in section 2.2.
@@ -318,13 +343,13 @@ Implementation remains paused until these choices are explicit:
    always records the last failure and advances to the next provider. Keep
    `error` / `next` / `current` only if the maintainer assigns them distinct
    control behavior that is not already expressed by those fields.
-8. **Failure-record granularity.** The instructions mention both one final
-   overflow record per provider and a final accumulator containing only the
-   failed batch's last provider/code/description. Recommended: retain only the
-   last overall provider failure on a failed batch, while a completed batch may
-   carry bounded earlier-fallback warnings under decision 2. Alternative:
-   retain one final overflow record for every attempted provider on every
-   failed batch.
+
+Two choices formerly listed here are now fixed by the latest instruction. The
+old video recognition/journal product is removed after the section 7
+replacement gate rather than preserved as a compatibility line; no deletion is
+performed during the current discussion pause. A failed batch retains only its
+last provider/code/description; completed batches that encountered earlier
+provider failures are governed by decision 2 above.
 
 ## 7. Gate For Deleting The Old Video Chain
 
@@ -342,3 +367,8 @@ Deletion requires all of the following, and does not require repair:
 
 Until that gate closes, the old video chain describes shipped behavior but is
 frozen rather than a target for further fixes or features.
+
+#570 already proves that the retained public inspection, full-frame extraction,
+and audio extraction primitives work independently on one real archive video.
+It does not satisfy the merged-Markdown or image/audio batch-resume gates and
+therefore does not authorize early deletion.
