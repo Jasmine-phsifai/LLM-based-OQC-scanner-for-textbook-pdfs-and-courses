@@ -216,9 +216,9 @@ nested list[list[provider-model]]
 - A failed batch does not stop later batches. Final reporting records failed
   batch range, last provider, canonical error code, and bounded description.
 - The final failed-batch accumulator keeps exactly that terminal failure for
-  each failed batch. It does not retain one overflow record per provider. The
-  separate question of earlier-provider warnings on a batch that eventually
-  succeeds remains open in section 6.
+  each failed batch. It does not retain one overflow record per provider. When
+  a later provider succeeds, fixed choice 2 keeps bounded earlier-provider
+  failure evidence on that successful result instead.
 - No dynamic rebalancing, cross-lane rescue, arbitrary iterable support, or
   second pool abstraction is planned.
 
@@ -378,7 +378,53 @@ Each phase must contain a real consumer, the smallest focused offline tests,
 and a bounded live call where provider behavior is in scope. A green offline
 suite alone does not prove a provider phase.
 
-## 6. Maintainer Decisions Still Required
+### 5.1 Proposed first phase entry awaiting authorization (#597)
+
+The choices are closed, but implementation remains paused until the maintainer
+selects the first transport order. #597 audited the current resolver, shared
+vision-call boundary, operation adapters, tests, and prior live evidence. It
+found no additional provider-model field or framework decision that must block
+the first internal proof.
+
+**Route A (recommended): native Google image first.** Use exact candidate
+`gemini-2.5-flash` only if live discovery still serves it. The active and legacy
+built-in Google paths already use native `google-genai`; the exact current
+adapter owns catalog validation, request construction, canonical errors, token
+usage, and client cleanup. `GoogleGenAISettings` contains only the optional
+secret, so this is the smallest way to prove that durable model identity and
+runtime settings remain separate. Existing bounded evidence already covers one
+and eight-image requests plus independent audio input for this model.
+
+**Route B: DashScope image first.** Use exact `qwen3.5-ocr` through the existing
+OpenAI-compatible DashScope adapter. It has the strongest direct formula-board
+success evidence, but its region, endpoint, thinking, high-resolution option,
+and optional credential pool make it a broader first settings seam. Under Route
+A it becomes the second transport proof, where those differences can challenge
+the first boundary instead of entering it pre-emptively.
+
+After authorization, the first slice is limited to:
+
+1. one internal immutable `ProviderModel` with the already-fixed complete field
+   contract and no root export;
+2. one controlled `adapter_id` branch and one internal image consumer that
+   receives the existing exact settings separately and reuses the existing
+   operation adapter;
+3. focused validation, secret-safe representation, capability-mismatch,
+   resolver, response/usage, and typed-error regressions; and
+4. one live-discovered, repo-owned formula-board request through that consumer,
+   with at most one generation call, no retry, fallback, model substitution, or
+   second provider.
+
+The candidate becomes a shipped preset only after the new consumer returns
+valid Markdown and preserves honest provider/model, call, token, and cleanup
+evidence. A missing catalog row or typed provider failure is useful robustness
+evidence but leaves this phase and preset gate open. The slice does not add a
+public recognition facade, merged Markdown, resume, batchifier, retry engine,
+provider list, registry, plugin system, local-model placeholder, or API pool.
+The later merged-image phase, not this internal proof, owns the two live batches
+of seven or eight images.
+
+## 6. Fixed Maintainer Decisions
 
 These fixed choices are explicit phase contracts. Closing the final detail does
 not itself lift the maintainer's discussion-first implementation pause:
@@ -757,9 +803,9 @@ normalizing it belongs to the future replacement entry and is not a defect in
 the shipped API during the implementation pause.
 
 The provider-list reduction is no longer a separate choice 6; #587 combines it
-with choice 4. Combined choice 4 remains awaiting explicit maintainer
-confirmation. This evidence does not authorize `split_audio`, provider
-defaults, audio batching, fallback, sidecar changes, or runtime implementation.
+with choice 4, and #594 fixes the common-minimum rule. This evidence does not
+authorize `split_audio`, provider defaults, audio batching, fallback, sidecar
+changes, or runtime implementation.
 
 #587 deliberately shares only the reduction invariant: explicit scalar wins;
 otherwise inspect every validated candidate's applicable positive default and

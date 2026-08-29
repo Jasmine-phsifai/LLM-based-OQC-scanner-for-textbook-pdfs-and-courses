@@ -11507,3 +11507,38 @@ No `__init__.py`, runtime, public export, signature, state, test source,
 dependency, provider, legacy source, frozen boundary, or deletion changed.
 Focused root-facade, lightweight-import, image-resume, long-audio-resume, and
 cross-branch video-resume regressions are **65 passed in 2.35s**.
+
+## Current working update: #597 makes the first provider-model slice decision-ready
+
+#597 is a documentation-only phase-entry audit under the maintainer's explicit
+discussion-first implementation pause. Two bounded read-only audits and the
+maintainer review found no unresolved choice among the twelve fixed contracts.
+They did find two stale plan statements: successful fallback warnings and the
+common provider-derived media default were still described as open even though
+#592 and #594 had closed them. Those statements now point to the fixed rules.
+
+The recommended first implementation route is one internal native Google image
+slice using exact `gemini-2.5-flash` only if current discovery still serves it.
+The active and legacy built-ins both use native `google-genai`; the existing
+adapter already owns catalog checks, request construction, canonical errors,
+tokens, and client cleanup, while `GoogleGenAISettings` is the narrowest exact
+settings input. Existing evidence covers one/eight-image and independent audio
+requests. DashScope `qwen3.5-ocr` is the alternative first route because it has
+the most direct formula-board success evidence; under the recommendation it is
+the second transport proof that challenges settings separation with region,
+endpoint, thinking, high-resolution, and credential-pool data.
+
+After explicit authorization, the first slice contains one internal complete
+`ProviderModel`, one controlled adapter branch, one internal image consumer,
+focused offline contracts, and one repo-owned formula-board request with at
+most one generation call. It has no root export, shipped preset before that
+consumer succeeds, retry/fallback execution, public recognition facade, merged
+Markdown, resume, batchifier, provider list, registry, plugin system, local
+placeholder, or API pool. A typed live failure is honest robustness evidence
+but leaves the phase and preset gate open. No implementation, provider call,
+runtime source, test source, dependency, export, state, legacy source, frozen
+boundary, or deletion changed in #597.
+Focused provider settings, resolver, request, error, response-usage, live-gate,
+and lightweight-import regressions are **194 passed in 3.75s**. The live-gate
+test remained offline under its normal credential guard; #597 made no provider
+request.

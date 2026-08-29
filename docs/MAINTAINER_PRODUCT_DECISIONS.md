@@ -1267,6 +1267,26 @@ No `error` / `next` / `current`, exponential engine, retry-hint parser,
 unbounded sentinel, retry engine, dispatcher, model, preset, API, runtime,
 provider call, or test source changed.
 
+**#597 records the first implementation entry without lifting the pause.** Two
+read-only audits and the maintainer review found no unresolved field, routing,
+output, retry, token, or resume decision blocking the first internal
+provider-model proof. The recommended order is native Google
+`gemini-2.5-flash` first, contingent on current catalog membership, then
+DashScope `qwen3.5-ocr`. Google is the narrower first settings seam and matches
+the native transport already proven in both active and legacy code; DashScope
+then tests whether region, endpoint, thinking, high-resolution options, and
+credential-pool data remain outside durable model identity. The alternative is
+DashScope first because it has the most direct formula-board success evidence.
+No implementation order is authorized until the maintainer selects it.
+
+The authorized first slice, whichever transport is selected, contains one
+internal complete `ProviderModel`, one controlled adapter branch, one internal
+image consumer reusing exact existing settings, focused offline contracts, and
+one bounded repo-owned formula-board call. It has no root export, preset until
+the new consumer succeeds, retry/fallback execution, merged output, resume,
+registry, plugin, local placeholder, or pool. A typed live failure remains
+honest evidence but does not close the preset/phase gate.
+
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
 retained; image/audio providers are separate; callers compose the visible video
