@@ -11616,3 +11616,50 @@ No live provider call was repeated because #599 already supplied the real
 failure and this iteration changes only deterministic safe metadata. No
 dependency, public export/signature, legacy source, frozen boundary, or deletion
 changed.
+
+## Current working update: #601 audits and prunes the pending replacement
+
+#601 is a documentation-only architecture review under the maintainer's renewed
+instruction not to implement the pending replacement yet. The current tree has
+302 Python files under `src/ocrllm/` and about 24,548 lines. Forty-seven
+video-named implementation files account for about 4,696 lines, and the root
+test suite has sixteen video-named test files. File count alone is not a defect,
+but the shipped product duplicates recognition and lifecycle ownership through
+`recognize_video_frames`, `recognize_video`,
+`recognize_video_to_markdown`, `compose_video_result`,
+`publish_video_result`, and a separate video journal/state/resume family.
+
+The maintainer reconfirmed that this recognition chain is abandoned after the
+replacement deletion gate. Provider-free inspection, complete-frame
+extraction, audio extraction, candidate scanning/selection, and frame writing
+remain. Board-corner search, ROI/perspective cropping, a combined video
+recognizer, a third video resume engine, legacy-format compatibility, and
+social-media acquisition remain excluded.
+
+The next separately authorized provider slice stays smaller than the final
+architecture: one immutable `ProviderModel` instance for one exact vendor/model,
+one controlled adapter ID, one existing exact settings value, and one real
+image consumer. No catalog-wide preset family, model subclass hierarchy,
+provider registry, fallback, retry executor, nested lanes, API pool, token
+ledger, merged publication, resume, repair, or public facade rewrite is part of
+that slice. Other catalog models are handled later by live discovery and
+explicit construction; only a small live-proven preset set is maintained.
+
+Vendor adapters continue to map raw status evidence to canonical OCRLLM errors
+before any future finite retry rule is applied. Successful fallback, when that
+later slice exists, returns bounded earlier-provider warnings with the valid
+result rather than raising a terminal exception. Failed recognition retains one
+terminal safe failure for each unresolved batch. No retry count or raw-HTTP
+matrix was authorized by #601.
+
+One cleanup sentence in the latest proposal conflicts with the removed
+`recognize_video` wrapper. Until the maintainer clarifies otherwise,
+caller-invoked extraction output is caller-owned; only a frame created and
+rejected inside the same deduplication operation may be deleted. Plain-versus-
+detail OCR selection and the exact partial-result shape of the thin root
+`resume_video` route remain later public-API questions and do not block the
+first provider proof.
+
+No runtime source, test source, dependency, public API, provider call, state,
+legacy source, frozen boundary, or deletion changed in #601. The four existing
+untracked files were not read or modified.

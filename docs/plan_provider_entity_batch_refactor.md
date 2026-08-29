@@ -10,6 +10,56 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
+## 0. Current pruning checkpoint (2026-08-29, #601)
+
+This plan remains a discussion record, not implementation authorization. The
+latest maintainer proposal confirms the destination but does not make every
+later pool/retry detail part of the first slice.
+
+The next implementation, if separately authorized, remains only one vertical
+proof: one immutable `ProviderModel` **instance** for one exact vendor/model,
+one controlled `adapter_id`, the existing exact provider settings supplied at
+the call boundary, and one real image consumer. Adding a model means adding or
+constructing another value of the same type; it does not mean creating one
+Python subclass/file per model. Adding a new transport family later means one
+independently readable adapter, not conditionals spread through media code.
+
+Do not make any of the following prerequisites for that proof:
+
+- mirroring every Google or DashScope catalog row as a committed preset;
+- flat fallback, nested provider lanes, lane parallelism, or an API pool;
+- a retry executor or a pre-filled HTTP-status matrix;
+- persistent token ledgers or per-attempt billing records;
+- merged image/audio publication, resume, repair, or public facade rewrites;
+- RapidOCR, VLLM, Ollama, Volcengine, or OpenAI-compatible placeholders.
+
+After one provider-model/adapter boundary works live, ship only a small set of
+live-proven preset instances. Live discovery plus explicit construction covers
+other model IDs. A raw vendor HTTP code is first mapped by that vendor adapter
+to one canonical OCRLLM error; only a later fallback slice may attach finite
+retry values to that canonical code. A successful fallback returns bounded
+earlier-provider failure evidence with the result; it does not raise a terminal
+exception after producing a valid recognition. Terminal failure reports one
+last safe failure for each unresolved batch.
+
+The media destination remains the visible composition in section 2.1. There is
+no replacement `recognize_video` lifecycle owner. Consequently, media produced
+by caller-invoked extraction is caller-owned and cannot be deleted by a later
+recognition call. OCRLLM may delete only a rejected frame that it created and
+still owns inside the same deduplication operation. The maintainer's separate
+reference to cleanup for media "created by recognize video" is held as an open
+wording conflict rather than used to revive a convenience wrapper.
+
+Two public-contract details remain deliberately unsettled until their actual
+slice begins:
+
+1. how a caller selects plain-image OCR versus detail OCR; provider capability
+   booleans can validate a selected task but do not themselves select it;
+2. the exact input and return signature of the thin root `resume_video` route,
+   including how it reports one branch succeeding while the other fails.
+
+Neither ambiguity blocks the first single-provider image proof.
+
 ## 1. Why This Refactor Exists
 
 The current video product repeats the same work through three public paths:

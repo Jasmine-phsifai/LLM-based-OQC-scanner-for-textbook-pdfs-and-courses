@@ -8528,3 +8528,17 @@ legacy Google 是值得保留但不能整套照搬的生产证据：它区分同
 **实现和边界。** `list_google_genai_models()` 在 client 尚未建立时记 `provider_operation="client_setup"`，建立后记 `catalog`；只有目录已成功、随后唯一 close 失败时才改为 `cleanup`。目录网络/SDK 错误和目录解析错误都属于同一个 `catalog`，没有为了 parser 再造阶段。若目录与 cleanup 同时失败，保留主要 catalog operation，并继续用现有布尔值说明 cleanup 也失败。错误类、code、message 和原始厂商文本均不变。
 
 **验证和过度设计复查。** 新增三条窄回归分别覆盖 client setup、catalog request+close、cleanup-only；原生 Google adapter、错误脱敏和轻量导入合计 **85 passed in 1.97s**。#599 已提供真实失败，本轮只改变确定性安全 metadata，因此没有为了看同一个错误再打一次 API。没有 HTTP code 字典、retry、proxy resolver、generation counter、新 stage enum 或 ProviderModel；也没有 dependency、public signature/export、legacy、frozen、deletion 变化。四份受保护未跟踪文件仍未读取或修改。
+
+## #601 — 2026-08-29：暂停实现，给 Provider 与视频替换方案做剪枝审计
+
+**本轮英文原子任务。** `Atomic task — Iteration #601: audit and prune the maintainer's proposed provider-model and visible media pipeline without implementing it. Context: the current package already carries a duplicated video recognition/journal family and a long decision plan; the maintainer has reconfirmed deletion of the video black boxes while proposing model values, fallback lanes, retries, token accounting, resume, repair, and cleanup. Success means reconciling Git and the authoritative documents; measuring the current public/source surface; separating the minimum first vertical slice from later pool behavior; identifying contradictions that would recreate lifecycle ownership; recording only confirmed direction and explicit open questions; changing documentation only; and leaving runtime, tests, providers, and APIs untouched. This matters because a complete future design must not become a consumer-free framework or preserve the very video black box being removed.` #600 修复了真实可观测性缺口并已提交，属于进展；本轮在其提交后约九分钟才修改文档。工作区仍只有四个既有未跟踪文件，均未读取或修改。
+
+**实际存量。** 当前 `src/ocrllm` 有 302 个 Python 文件，约 24,548 行；其中 47 个文件名含 video，约 4,696 行，根测试中另有 16 个视频测试文件。数量本身不是删除理由，但公开层同时存在 `recognize_video_frames`、`recognize_video`、`recognize_video_to_markdown`、`compose_video_result`、`publish_video_result` 和独立 journal/state/resume，已经形成重复的识别与生命周期所有权。删除门之后整条识别产品线退役；`inspect_video`、完整帧提取、音频提取、候选帧扫描/选择/写盘保留，不能按文件名批量删除。
+
+**第一片必须更小。** 若维护者后续另行授权，只做一个 immutable `ProviderModel` 实例、一个受控 `adapter_id`、调用边界传入现有精确 settings、一个真实图片 consumer。每个模型是同一数据类型的实例，不是每模型一个 subclass/文件；只维护少量真实跑通的 preset，其他模型通过实时目录和显式构造进入。全量目录镜像、registry、flat fallback、nested lanes、并行 API pool、retry executor、token ledger、merged Markdown、resume/repair 和公共接口改写都不是第一片依赖。
+
+**错误与计数剪枝。** 原始 HTTP/RPC 状态先由各厂商 adapter 映射成 OCRLLM canonical error，再由以后真正存在的 fallback slice 读取有限重试次数；不复制一份通用 HTTP 状态表，也不实现 `error/next/current` 状态机。以后某 provider 失败而后继 provider 成功时，返回有效结果并附带有界 warning，不在成功后再抛 terminal exception。所有候选都失败时，每个未解决批次只保留最终 provider 的安全错误。token 只按 `(vendor, model)` 累加 provider 真实报告的 input/output；未知不伪造为零，不做每图片分摊或逐尝试账本。
+
+**发现的矛盾与待问。** 既然 replacement 没有 `recognize_video` wrapper，就没有一个 owner 能在“recognize 生命周期结束”时删除 extract 输出。当前解释保持公开 extract 结果由调用者所有；OCRLLM 只可删除同一次去重操作中自己生成且明确淘汰的帧。另有两个公共合同等到对应 slice 再定：调用者如何选择 plain OCR 或 detail OCR；薄 `resume_video` 在图片、音频一成一败时返回什么。它们不阻塞第一条单 provider 图片 proof。
+
+**过度设计复查。** 当前最大的已实现发射井是 video recognition/journal 家族，不是底层媒体函数。当前最大的计划风险是把最终 nested pool、失败聚合、retry 和 durable token accounting写成第一阶段依赖。本轮只在计划顶部增加短剪枝检查点，并在权威状态记录审计；没有 runtime、test、dependency、public API、provider call、state、legacy、frozen 或删除变化，也没有为本轮文档变更运行代码测试。
