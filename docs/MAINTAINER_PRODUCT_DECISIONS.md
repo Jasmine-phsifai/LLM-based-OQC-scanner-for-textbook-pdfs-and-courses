@@ -1102,6 +1102,20 @@ type. Do not give unsupported tasks dummy defaults or add a generic options
 bag. This is not maintainer confirmation; choice 10 remains open and no runtime
 was implemented.
 
+**#581 fixed local-execution boundary.** RapidOCR remains the current explicit
+`image_mode="ocr"` strategy during the first provider-model vertical slices. It
+already lazy-loads optional dependencies, produces the shared result shape,
+reports zero provider/network calls, and has a stable completed-result resume
+identity; moving it now would not prove the replacement provider consumer.
+Future VLLM, Ollama, or other local execution is not excluded: a concrete path
+may later use the same controlled `adapter_id` boundary and the same
+`ProviderModel` value type. Do not create `LocalProviderModel`, a local model
+catalog, placeholder local adapters/extras, an executable path, or a callable
+field first. The first Google/DashScope slices do not change RapidOCR settings,
+result/error behavior, call/token semantics, or resume identity. This is a
+fixed deferral boundary, not another open product choice and not authority to
+implement a local adapter.
+
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
 retained; image/audio providers are separate; callers compose the visible video

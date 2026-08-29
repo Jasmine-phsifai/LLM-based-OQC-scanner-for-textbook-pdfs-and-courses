@@ -156,6 +156,22 @@ adapter, or arbitrary future-SDK options container is not approved. The
 existing injected-provider protocol remains a separate Python extension and
 test seam; it is not silently embedded in every provider-model value.
 
+The first `ProviderModel` vertical slice does not migrate the existing
+RapidOCR path and does not prebuild VLLM, Ollama, Codex, or another local-model
+runtime. RapidOCR already has a narrow `image_mode="ocr"` strategy, lazy
+optional dependencies, typed errors, deterministic output, zero network calls,
+and a stable resume identity. Moving it now would conflate local execution with
+transport-provider calls without serving a replacement-API consumer.
+
+This does not close the model boundary around cloud vendors. When a concrete
+local-model consumer exists, it may use the same controlled `adapter_id` route
+and the same `ProviderModel` value type. It must preserve lightweight import,
+optional extras, honest local call/token evidence, and the existing local
+result/error/resume behavior. Do not create a second local provider hierarchy,
+a local model catalog, placeholder local adapters, or executable/callable
+fields in anticipation of that consumer. RapidOCR capability examples in this
+plan are conceptual only; they do not select an initial preset or batch default.
+
 Credentials are supplied at call/runtime boundaries and never included in
 repr, persistence, or committed presets. A non-secret endpoint or adapter
 option enters a provider-model value only when a live adapter consumes it; the
@@ -267,8 +283,8 @@ following current implementations remain frozen only until the replacement
 image/audio paths meet the deletion gate, then are removed deliberately:
 
 - `recognize_video_frames` as a separate recognition product;
-- the current `recognize_video` implementation; that public name may return
-  later only as the thin convenience caller allowed by section 2.1;
+- the current `recognize_video` implementation and its public name; the
+  replacement does not reserve a convenience wrapper;
 - `compose_video_result`, `publish_video_result`, and
   `VideoRecognitionOutcome`;
 - `recognize_video_to_markdown`;
@@ -298,6 +314,8 @@ Do not create any of the following before a real consumer requires it:
 - repair support beyond OCRLLM's own failed-slot/time-range markers;
 - compatibility with legacy application files or configuration formats;
 - broad retry matrices copied from HTTP status folklore;
+- placeholder RapidOCR, VLLM, Ollama, or Codex adapters/extras before a real
+  local-model consumer;
 - test matrices for hypothetical adapters and model combinations.
 
 One file still has one clear responsibility, but files are created when a
@@ -324,7 +342,8 @@ in the already-shipped provider-free inspect/extract/selection functions.
    There is no registry, pool, retry engine, or public facade yet.
 2. **Second transport proof.** Add one model using the other already-working
    Google/DashScope transport. Change the data boundary only where the second
-   real consumer proves it necessary.
+   real consumer proves it necessary. RapidOCR and future local-model runtimes
+   remain outside these first two transport slices.
 3. **Merged image result and resume.** Accept explicit sources, settle ordered
    image slots into one Markdown, and prove two bounded live batches. Implement
    only single-provider dispatch first.
@@ -875,6 +894,28 @@ has the same coupling with more files. Route A is recommended. Choice 10 remains
 awaiting explicit maintainer confirmation; this audit does not implement or
 authorize a provider model, common settings type, adapter, preset, registry,
 retry engine, dispatcher, or public API.
+
+### 6.10 Fixed local-execution boundary (#581)
+
+The active local OCR path is already an explicit, working strategy rather than
+an unfinished cloud-provider adapter. `Config(image_mode="ocr")` selects
+`LocalOCRSettings`; RapidOCR loads only on execution, processes ordered images
+without provider/network calls, returns the shared result shape, and reuses its
+stable `image.ocr.rapidocr.v1` completed-result resume identity. Provider-model
+validation is bypassed for this path deliberately. The shared image sidecar may
+wrap a local completed result, but local OCR does not invent paid provider
+slots or provider token usage.
+
+Route A keeps this stable path unchanged while the first replacement vertical
+slices prove Google and DashScope. A future concrete local VLLM/Ollama or
+in-process OCR consumer enters through the same controlled `adapter_id`
+boundary and the same `ProviderModel` type only when its operation contract,
+optional dependency, and real call path are proven together. Route B moves
+RapidOCR and placeholder local runtimes into the first model abstraction now;
+it would force false common semantics for credentials, retries, call counts,
+tokens, batching, and resume without a consumer. Route A is fixed as the
+current boundary. This is not an eleventh provider-model choice and authorizes
+no local adapter, preset, resolver branch, dependency, or API change.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7

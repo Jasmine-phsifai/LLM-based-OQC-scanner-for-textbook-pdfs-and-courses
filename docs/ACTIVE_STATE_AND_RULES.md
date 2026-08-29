@@ -54,7 +54,9 @@ journal, or the non-resumable low-level `recognize_video()` as current product
 direction, those passages are superseded as direction (they remain true
 descriptions of the currently shipped code until the refactor's deletion
 phase). The Config-based `recognize`/`recognize_batch`/`recognize_long_mp3`
-line is untouched by this refactor.
+line is untouched by this refactor. The latest maintained destination has no
+replacement `recognize_video` wrapper: callers compose the visible image and
+audio steps themselves.
 
 The library was built as a feasibility spike: prove that one narrow vertical
 slice (DashScope + image) could carry a stable public contract. That question
@@ -10670,9 +10672,9 @@ the two batch resumes; strict explicit-source/preflight rules; integer-minute
 audio splitting; a small provider-model value per vendor/model; bounded retry
 decisions based on canonical errors; per-model token totals; narrow OCRLLM-only
 repair; full-frame retention; and deletion limited to OCRLLM-owned
-intermediates. A future `recognize_video` may be a thin convenience caller only
-after the public steps work and may not own another result, journal, or resume
-contract.
+intermediates. The replacement does not reserve a future `recognize_video`
+convenience caller; adding one would require a separate later product decision
+and concrete consumer.
 
 The former plan's approximately forty-file module blueprint, pure-data-first
 Phase 1, provider fingerprint, placeholder OpenAI adapter, general registry,
@@ -11064,3 +11066,25 @@ receive `None`, not invented image/audio defaults. A generic future-options bag
 and a subclass per model are rejected. This is choice 10 and still awaits
 maintainer confirmation. The focused current-field evidence remains green at
 **154 passed in 1.35s**; no implementation is authorized by this audit.
+
+## Current working update: #581 keeps local execution behind the same future adapter boundary
+
+#581 is a documentation-only boundary audit under the continuing implementation
+pause. The active RapidOCR route remains `Config(image_mode="ocr")` with
+`LocalOCRSettings`, lazy optional imports, typed errors, deterministic ordered
+Markdown, zero provider/network calls, and the stable
+`image.ocr.rapidocr.v1` completed-result resume identity. It is a working local
+strategy, not an unfinished cloud-provider adapter, and is not migrated into
+the first `ProviderModel` slice.
+
+The provider-model design remains open to future local execution through the
+same controlled `adapter_id` and the same value type when a real VLLM, Ollama,
+or other local consumer is implemented and proven. It does not authorize a
+second local-provider hierarchy, a local model catalog, placeholder adapters or
+extras, executable/callable model fields, fake provider calls, or fabricated
+token usage. The first replacement slices remain the two already-working
+Google/DashScope transports. Focused local-OCR and lightweight-import evidence
+is green at **45 passed, 27 deselected** in the delegated read-only audit; the
+primary verification is recorded in the diary. No runtime source, public API,
+dependency, preset, resolver, provider behavior, legacy source, or frozen
+boundary changed.
