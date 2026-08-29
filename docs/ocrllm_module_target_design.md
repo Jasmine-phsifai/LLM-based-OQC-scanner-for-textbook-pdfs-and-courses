@@ -5,18 +5,16 @@
 > public contract. Current behavior is authoritative in
 > [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md#p1-b--concrete-tuple-batch-contract-and-full-preflight).
 >
-> **AMENDED (2026-08-28; approved, implementation pending):** the
-> provider-entity/batch refactor
+> **AMENDED (2026-08-29; approved direction, implementation paused):** the
+> narrowed provider-model/media-batch refactor
 > ([`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md))
-> adds a `batch/` engine package, a `providers/catalog/` prefab registry, and
-> `entity.py`/`adapter.py`/`registry.py`/`retry_policy.py`/`token_ledger.py`
-> under `providers/`; adds `recognize_images_to_markdown`,
-> `recognize_audio_to_markdown`, `chunk_audio`, `dedupe_video_frames`, and
-> `resume_*_to_markdown` facades; rewrites `recognize_video` as a resumable
-> orchestrator over `ProviderEntity` arguments; and removes
-> `recognize_video_to_markdown` with the whole video job-state layer. Where the
-> layout, provider-resolution, and video sections below conflict, the refactor
-> plan wins.
+> targets public media steps, merged image/audio Markdown recognition and
+> batch-owned resume before deleting the video-only journal. It explicitly
+> withdraws the former registry/catalog/token-ledger/module blueprint: files
+> are added only with a real vertical-slice consumer. A future
+> `recognize_video` may only be a thin caller. Where the layout,
+> provider-resolution, and video sections below conflict, the narrowed plan
+> and #569 in `ACTIVE_STATE_AND_RULES.md` win.
 
 Status: supporting target-state design map.
 

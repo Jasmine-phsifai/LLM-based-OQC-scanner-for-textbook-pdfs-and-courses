@@ -138,13 +138,14 @@ recognize/compose/publish calls remain the non-resumable low-level API. The same
 iteration makes duration validation route-aware: whole Google Files remains
 limited to 9.5 hours, while explicitly selected integer-minute interval mode
 accepts the private product ceiling of 10 hours.
-**OBSOLETE (2026-08-28; approved, implementation pending):** the
+**OBSOLETE AS DIRECTION (2026-08-29; implementation paused):** the
 `recognize_video_to_markdown` journal facade described above is superseded by
-the provider-entity batch refactor (#568 in `docs/ACTIVE_STATE_AND_RULES.md`;
+the narrowed provider-model/media-batch refactor (#568/#569 in
+`docs/ACTIVE_STATE_AND_RULES.md`;
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)).
-`recognize_video` becomes the resumable orchestrator with separate
-`image_providers`/`audio_providers`, and video resume routes to image-batch
-and audio-batch resume on one Markdown file.
+The current facade remains shipped but frozen until replacement. Public
+image/audio batch resume replaces the video journal; a future
+`recognize_video` may only be a thin caller of those public steps.
 Fallback and batch/worker
 support remain later gates. #152 now selects Route B
 while keeping explicit whole-file and interval-chunked operations. Interval

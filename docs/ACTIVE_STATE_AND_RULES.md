@@ -42,9 +42,13 @@ historical claim.
 
 ## Project Posture Changed
 
-**2026-08-28 refactor authority.** The provider-entity/batch refactor is
-approved; see #568 at the end of this file and
+**2026-08-28 refactor authority, narrowed 2026-08-29.** The
+provider-model/media-batch direction is approved; see #568 and the corrective
+#569 entry at the end of this file and
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
+Implementation is paused for the plan's explicit maintainer decisions. The
+former exhaustive module build specification and its consumer-free Phase 1
+are not authorized.
 Where the narrative below describes `recognize_video_to_markdown`, the video
 journal, or the non-resumable low-level `recognize_video()` as current product
 direction, those passages are superseded as direction (they remain true
@@ -10647,3 +10651,50 @@ frames/audio) are deleted on success only, kept on failure, and
 `docs/MAINTAINER_PRODUCT_DECISIONS.md` was aligned with this entry before any
 implementation began. No runtime, test, dependency, or capability status
 changed in this documentation step.
+
+## Current working update: #569 narrows the refactor before implementation
+
+#569 re-audited #568 after the maintainer explicitly rejected replacing the
+old video black box with another broad framework. The shipped repository has
+50 video-named source files (4,756 lines) and 16 video test files (8,478
+lines). This count includes useful provider-free inspection/extraction code,
+but it confirms that the three recognition surfaces, result composition, and
+video-only job journal carry too much repeated lifecycle and resume behavior.
+Those recognition/journal layers are now frozen: they describe shipped code
+until replacement, but receive no further features or speculative fixes.
+
+The refactor plan now keeps only the accepted destination: directly callable
+inspect/extract/dedupe/batch/split steps; one merged-image and one merged-audio
+Markdown path; separate image/audio provider inputs; video resume routed to
+the two batch resumes; strict explicit-source/preflight rules; integer-minute
+audio splitting; a small provider-model value per vendor/model; bounded retry
+decisions based on canonical errors; per-model token totals; narrow OCRLLM-only
+repair; full-frame retention; and deletion limited to OCRLLM-owned
+intermediates. A future `recognize_video` may be a thin convenience caller only
+after the public steps work and may not own another result, journal, or resume
+contract.
+
+The former plan's approximately forty-file module blueprint, pure-data-first
+Phase 1, provider fingerprint, placeholder OpenAI adapter, general registry,
+whole-family static catalogs, guessed identical Google/DashScope retry
+presets, premature token ledger and pool workers, and repair-as-deletion-gate
+are withdrawn. The uncommitted implementation of `ProviderEntity`,
+`RetryPolicy`, vendor presets, `ProviderCapabilityMismatch`, and their tests
+was removed rather than polished or submitted. Runtime, tests, public API,
+dependencies, frozen `contracts/` and `worker/`, and provider behavior remain
+unchanged.
+
+Implementation is paused until the maintainer decides the plan's remaining
+contract choices: stop-on-first-success versus calling later fallback models;
+return versus raise after complete recognition with earlier provider failures;
+small live-proven presets versus a full static model catalog; freeze-then-delete
+versus immediate deletion of the old video product; exact default output
+filenames; the multi-provider default audio interval rule; and whether the
+overlapping `error`/`next`/`current` retry labels survive; and whether a failed
+batch retains one last overall provider failure or one last failure per
+attempted provider. The recommended
+path remains evidence-first vertical slices: one provider-model plus a real
+consumer and live image batch, then a second transport, then single-provider
+merged image resume, flat fallback, nested lanes, audio, and only finally video
+composition/deletion. No consumer-free provider foundation is an acceptable
+iteration.

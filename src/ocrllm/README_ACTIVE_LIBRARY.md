@@ -98,12 +98,13 @@ integer number of minutes; settled state is written under the video-owned output
 root and removed only after a complete clean audio result. Failed and partial
 audio outcomes retain any settled state. The low-level `recognize_video()` call
 does not consume retained state.
-**OBSOLETE (2026-08-28; approved, implementation pending):** the
-`recognize_video_to_markdown()` journal facade described next is removed by
-the provider-entity batch refactor; see
+**OBSOLETE AS DIRECTION (2026-08-29; implementation paused):** the
+`recognize_video_to_markdown()` journal facade described next remains shipped
+but frozen until the narrowed provider-model/media-batch replacement passes its
+deletion gate; see
 [`docs/plan_provider_entity_batch_refactor.md`](../../docs/plan_provider_entity_batch_refactor.md).
-`recognize_video` becomes the resumable orchestrator and video resume routes
-to image-batch and audio-batch resume on one Markdown file. The high-level
+Image/audio batch resume replaces the video journal; a future
+`recognize_video` may only be a thin caller of public steps. The high-level
 `recognize_video_to_markdown()` call now owns
 one complete video journal, validates all saved media/request identity before
 dispatch, and resumes only missing image/audio work;
@@ -581,10 +582,10 @@ it before returning. No nested `audio/result.md` or video `result.md` is
 created. The low-level `recognize_video()` call cannot consume retained state;
 use `recognize_video_to_markdown(..., resume=True)` for the library-owned video
 journal and fixed `result.md`.
-**OBSOLETE (2026-08-28; approved, implementation pending):** that journal
-facade is removed by the provider-entity batch refactor; the successors are
-`resume_video` (routing to image-batch and audio-batch resume on one Markdown
-file) and the resumable `recognize_video` orchestrator — see
+**OBSOLETE AS DIRECTION (2026-08-29; implementation paused):** that journal
+facade remains shipped but frozen. Its replacements are public image/audio
+batch resume on one Markdown file; a future `recognize_video` may only be a
+thin convenience caller — see
 [`docs/plan_provider_entity_batch_refactor.md`](../../docs/plan_provider_entity_batch_refactor.md).
 Repair remains a separate future text-range side
 path rather than a state consumer.

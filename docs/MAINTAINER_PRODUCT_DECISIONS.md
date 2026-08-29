@@ -890,3 +890,44 @@ is often accepted.
 - Do not silently make `recognize_long_mp3()` accept M4A, add WAV or every
   legacy extension, port DashScope FileTrans, add a generic converter/provider
   framework, or expose whole-file M4A before this API choice is settled.
+
+## Open provider-model and media-batch choices (#569)
+
+The maintainer has approved the decomposed media direction but explicitly
+paused implementation for discussion. The current choices are recorded in
+section 6 of
+[`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
+No provider-model class, retry engine, registry, static catalog, batch pool,
+merged facade, or video deletion begins until the relevant contract is settled.
+
+1. Does a flat provider list stop at the first successful recognition
+   (recommended), or continue calling providers after success?
+2. When recognition completes after earlier provider failures, does the
+   function return the completed result with bounded failure records
+   (recommended), or raise while attaching the successful result?
+3. Are committed presets limited to a few live-proven models plus explicit
+   construction/live discovery (recommended), or does the repository freeze
+   every currently served Google/DashScope model?
+4. Is the old video recognition/journal chain frozen now and deleted after
+   image/audio batch resume proof (recommended), or deleted immediately while
+   no complete replacement exists?
+5. What exact default filename is used for a single media source, an
+   image/audio folder batch, and video output? Directory placement is already
+   fixed.
+6. With multiple audio-capable providers and no explicit interval, is one
+   common interval the minimum positive integer default across all candidates
+   (recommended), or is an explicit interval required?
+7. Are retry rules reduced to finite extra retries, wait seconds, and reporting
+   severity with one universal "exhausted means record and advance" behavior
+   (recommended), or do `error` / `next` / `current` retain distinct control
+   meanings that still need to be specified?
+8. For a failed batch, does the final accumulator keep only the last overall
+   provider/code/description (recommended from the latest concise rule), or one
+   final overflow record for every attempted provider? Completed batches with
+   earlier fallback are governed separately by choice 2.
+
+The following are not open implementation shortcuts: audio intervals are
+integer minutes; `-1` means no split only at the call boundary; full frames are
+retained; image/audio providers are separate; video resume delegates to image
+and audio batch resume; repair is experimental and does not block deletion;
+caller media is never deleted; and social-media work stays frozen.

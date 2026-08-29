@@ -32,11 +32,12 @@ As of 2026-08-27:
   high-level `recognize_video_to_markdown()` facade now owns one fixed result
   and temporary journal and resumes only missing image/audio units; the
   three-step video API remains the lower-level non-resumable surface.
-  **OBSOLETE (2026-08-28; approved, implementation pending):** this facade and
-  its journal are replaced by the provider-entity batch refactor — see
+  **OBSOLETE AS DIRECTION (2026-08-29; implementation paused):** this facade
+  remains shipped but frozen while the narrowed provider-model/media-batch
+  replacement is decided and proven — see
   [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md);
-  `recognize_video` becomes the resumable orchestrator and video resume routes
-  to image-batch and audio-batch resume on one Markdown file. If a
+  image/audio batch resume replaces the video journal, and a future
+  `recognize_video` may only be a thin caller of public steps. If a
   short-audio unit settles but its journal update fails, the persistence error
   retains the known call and client-cleanup evidence; a recognized or exact
   Google no-speech settlement also retains current model usage. Exact no-speech
@@ -277,10 +278,11 @@ complete or partial outcome can be composed or published as final Markdown.
 
 For library-owned persistence, call the high-level facade instead:
 
-> **OBSOLETE (2026-08-28; approved, implementation pending):**
-> `recognize_video_to_markdown` is removed by the provider-entity batch
-> refactor. The successor is the resumable `recognize_video(source, *,
-> image_providers, audio_providers, ...)` orchestrator; see
+> **OBSOLETE AS DIRECTION (2026-08-29; implementation paused):**
+> `recognize_video_to_markdown` remains shipped but frozen until the narrowed
+> provider-model/media-batch replacement passes its deletion gate. The
+> successors are public image/audio batch resume functions; a future
+> `recognize_video` may only be a thin convenience caller. See
 > [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md).
 > The example below describes the shipped API until the refactor lands.
 
