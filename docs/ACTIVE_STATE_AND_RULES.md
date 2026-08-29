@@ -10808,3 +10808,36 @@ changes documentation only: no dispatcher, provider model, retry, result schema,
 runtime, test, dependency, frozen directory, legacy behavior, or migration
 capability changed. The focused existing candidate/batch contract remains
 **29 passed in 0.80s**.
+
+## Current working update: #573 bounds shipped presets to proven entries
+
+#573 audited active and legacy model selection plus the current official Google
+and DashScope discovery contracts. The active library already accepts exact
+caller-selected image/audio model IDs. Google lists and rechecks current model
+membership before dispatch; DashScope has one pinned proven default and checks
+other IDs against the live endpoint. Therefore accepting a new ID does not
+require committing every vendor model as a package preset.
+
+Vendor discovery does not prove OCRLLM task suitability. Google catalog rows
+expose generation methods and token limits but not OCR/detail-OCR/audio
+suitability; Google version classes and deprecation schedules also change.
+DashScope exposes richer declared modalities and context metadata, but its
+operation-specific image, ASR, protocol, duration, and regional restrictions
+remain separate. Legacy's static lists, cached catalogs, name classifiers, and
+hardcoded fallbacks demonstrate how a full mirror becomes stale and can label a
+listed model more strongly than the evidence supports.
+
+The decision-ready recommendation is a small number of live-proven
+`ProviderModel` presets plus explicit construction of that same type for other
+IDs. Vendor discovery remains a query/preflight utility, not a preset generator,
+cross-vendor registry, persistent cache, or capability oracle. No public
+discovered/proven state machine is introduced. Exact initial preset identities
+and their batch/audio defaults are deliberately not selected by this scope
+audit.
+
+Choice 3 remains open for explicit maintainer confirmation. This iteration is
+documentation only and does not add a preset, provider class, constructor,
+registry, catalog behavior, adapter, API call, test, dependency, frozen-file,
+legacy, or migration capability change. The existing DashScope catalog,
+caller-selected-model, and lightweight-import regressions are **23 passed in
+0.93s**.

@@ -947,6 +947,19 @@ one warning and ordered, bounded `metadata["provider_failures"]`; raise only
 when recognition remains incomplete. This is evidence and a recommendation,
 not maintainer confirmation; both choices remain open.
 
+**#573 evidence for choice 3.** Active image/audio settings already accept
+exact caller-selected model IDs, and active Google/DashScope adapters validate
+current catalog membership without a committed full catalog. Google and
+DashScope official discovery metadata describe availability and some declared
+capabilities, but operation-specific OCR/audio suitability and stable defaults
+still require separate documentation and bounded real calls. Legacy's large
+static lists, cached catalogs, name classifiers, and fallback IDs demonstrate
+the stale-catalog cost. Recommended: ship only a few live-proven
+`ProviderModel` presets, accept explicit construction of the same type for all
+other IDs, and keep vendor discovery as an untrusted query utility rather than
+a preset generator or registry. This is not maintainer confirmation; choice 3
+remains open and no concrete preset has been selected.
+
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
 retained; image/audio providers are separate; video resume delegates to image

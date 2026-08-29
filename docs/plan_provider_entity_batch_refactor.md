@@ -389,6 +389,73 @@ successful work. It is wider than the legacy and active behavior.
 These two choices remain awaiting explicit maintainer confirmation; the audit
 and recommendation do not authorize dispatcher implementation.
 
+### 6.2 Evidence for choice 3 (#573)
+
+Here, a **preset** means one ready-to-use `ProviderModel` value shipped by
+OCRLLM. A row returned by a vendor catalog is discovery evidence, not a preset,
+and an explicitly constructed `ProviderModel` is not a second model type.
+
+The active library already accepts exact caller-supplied image and audio model
+IDs. Google requires an explicit ID, lists the current catalog, and rechecks
+membership before image, short-audio, and uploaded-audio dispatch. DashScope
+has one live-proven pinned default and checks other exact IDs against its
+current `/models` endpoint. Neither active adapter needs a committed full
+catalog to dispatch a caller-selected model.
+
+The vendor APIs also show why catalog membership is not capability proof:
+
+- Google's official Models API lists current models and exposes generation
+  methods and token limits, but does not declare that every
+  `generateContent` model can perform OCR, detail OCR, or OCRLLM's audio
+  workflow. Google's model guide separately distinguishes stable, preview,
+  latest, and experimental names, and publishes shutdowns. See
+  <https://ai.google.dev/api/models> and
+  <https://ai.google.dev/gemini-api/docs/models>.
+- DashScope's official `GET /api/v1/models` endpoint exposes richer declared
+  modalities, features, context limits, regions, and deployment information.
+  Its separate vision and ASR guides still define operation-specific image,
+  duration, protocol, and format limits. A row is also account, workspace, and
+  region dependent. See <https://help.aliyun.com/en/model-studio/list-models>,
+  <https://help.aliyun.com/en/model-studio/vision-model>, and
+  <https://help.aliyun.com/en/model-studio/asr-model>.
+
+Legacy demonstrates the maintenance failure directly. It combines a large
+static builtin list, cached live catalogs, name-based capability
+classification, and hardcoded fallback IDs. Its DashScope classifier treats
+nearly every ID that is not obviously audio-only as a vision model; its Google
+cache and fallback list can outlive provider changes. That GUI-oriented product
+also has custom-model validation, so the static mirror is not needed to keep
+new IDs usable in the library.
+
+Route A is therefore recommended:
+
+1. Ship only a small number of presets whose declared OCRLLM media capabilities
+   have each passed a bounded real request. Exact initial model selection waits
+   for its own vertical-slice evidence; this decision does not authorize a
+   particular Google or DashScope model.
+2. Let callers construct the same `ProviderModel` explicitly for every other
+   model ID. Existing adapter catalog/preflight checks remain responsible for
+   honest current availability; construction does not promise provider access.
+3. Keep vendor-specific discovery as a query utility. It may supply IDs and
+   provider-declared metadata to a caller, but it does not auto-create trusted
+   presets, infer OCR quality, persist a cross-vendor registry, or rewrite the
+   shipped preset set.
+4. Add, replace, or retire a shipped preset only after a bounded live vertical
+   slice or a real provider retirement creates that need. Do not synchronize
+   the package to every catalog change.
+
+Route B would commit or generate a `ProviderModel` for every currently listed
+vendor model. It either copies incomplete vendor metadata as capability truth
+or requires OCRLLM to test and maintain hundreds of combinations. A generated
+module, catalog cache, auto-classifier, registry, and public
+discovered-versus-proven state machine would then exist only to support that
+mirror. They are rejected. The distinction between discovered, vendor-declared,
+and live-proven remains an evidence rule, not a new public enum or framework.
+
+Choice 3 remains awaiting explicit maintainer confirmation. No preset,
+constructor, discovery API, registry, or adapter change is authorized by this
+audit.
+
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
 replacement gate rather than preserved as a compatibility line; no deletion is
