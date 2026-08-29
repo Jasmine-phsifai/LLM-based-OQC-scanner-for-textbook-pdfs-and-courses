@@ -150,6 +150,17 @@ not silently re-batch: another candidate may accept the same immutable slot;
 otherwise the unresolved slot remains available for explicit resume with a new
 provider plan. Changing the slot grouping is a new plan, not resume.
 
+Output ownership is already fixed and is not a sixth decision group. A scalar
+source, or an `AudioSlice` tuple whose members all refer to that same original
+audio file, defaults to its sibling `<normalized-source-stem>_ocrllm.md`. A
+merged batch of distinct concrete media files may instead derive
+`<normalized-folder-name>_ocrllm.md` beside its source folder only when every
+leaf source has the exact same direct parent. If the parents differ, recognize,
+resume, and repair require an explicit `output_path` and reject the complete
+request before provider dispatch when it is omitted. The first member, a common
+ancestor, a hash, or a directory scan never chooses the target. This rule
+applies to every leaf of nested image groups, not only each group's first item.
+
 Do not make any of the following prerequisites for the first real image proof:
 
 - a checked-in executable mirror of every current vendor model;
@@ -726,10 +737,18 @@ extract_video_audio
   default-placement and naming rules; resume/repair do not search unrelated
   directories for a plausible prior output.
 - A single image, audio, or PDF file defaults beside that file.
-- An image or audio batch defaults beside the directory containing the batch.
+- An exact `AudioSlice` tuple derived from one original audio file keeps that
+  file as its source identity and uses the same scalar default. Logical ranges
+  are not treated as independently stored audio files or a folder batch.
+- An image or audio batch defaults beside its source directory only when every
+  distinct concrete leaf source has the exact same direct parent after public
+  path coercion. The folder name supplies the default source identity. Do not
+  infer equivalent parents through symlink resolution, a common ancestor, or a
+  first-member shortcut; nested image groups validate all leaves.
 - If an omitted output cannot be resolved without guessing, for example a
-  batch spanning unrelated directories, preflight rejects the call before any
-  provider request.
+  batch whose direct parents differ, preflight rejects the call before any
+  provider request. The same mixed-directory recognize, resume, or repair call
+  remains valid when the caller supplies one explicit `output_path`.
 - Image and audio batches write ordered slots into one Markdown file. They do
   not publish one Markdown file per item. This means one output per merged
   image call and one separate output per merged audio call. Independent media

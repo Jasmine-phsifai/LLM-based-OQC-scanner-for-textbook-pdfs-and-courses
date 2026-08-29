@@ -1729,3 +1729,21 @@ the visible replacement, and update current user documentation. Do not retain
 a compatibility shim, partial journal subset, or paid old-runner proof. Choice 5
 still asks only whether this happens after replacement proof (recommended) or
 immediately with a capability gap; #635 does not answer it for the maintainer.
+
+**#636 confirms that mixed-directory output ownership is already decided.** A
+scalar source defaults beside itself; an `AudioSlice` tuple for one original
+audio file keeps that same source identity. A merged batch of distinct concrete
+media files derives the folder-name `_ocrllm.md` target only when every leaf
+source has the exact same direct parent; nested image groups inspect every
+leaf. Different parents plus omitted `output_path` fail complete preflight with
+`OUTPUT_PATH_INVALID`, zero provider calls, and no output or sidecar. An
+explicit target makes that mixed-directory call valid and is reused by
+recognize, resume, and repair.
+
+Do not let the first tuple item own the output, because reordering content would
+move durable state. Do not search a common ancestor, hash paths/content, scan
+directories, or infer symlink equivalence. Those routes add naming and
+filesystem policy without solving caller authorization. This clarification is
+fixed behavior, not a sixth answer requested from the maintainer and not an
+authorization to implement the merged writer. It does not change the current
+`recognize()` memory-only default.

@@ -12612,3 +12612,35 @@ audio extract, and retained-frame tests pass **44 tests with one old combined-
 recognition test deliberately deselected**. #635 changes only decision records;
 there is no runtime, export, API, test, dependency, provider call, credential,
 state, media behavior, frozen-boundary change, or deletion.
+
+## Current working update: #636 verifies the strict merged-output default
+
+The latest explicit-source requirement does not add a sixth pending product
+choice. Existing section 2.2 and the common `_ocrllm.md` decision already imply
+one strict rule, now made exact: a scalar image, audio file, or PDF defaults to
+`<normalized-source-stem>_ocrllm.md` beside that file. An `AudioSlice` tuple
+whose ranges all refer to one original audio file keeps that scalar identity. A
+merged batch of distinct concrete media files defaults to
+`<normalized-folder-name>_ocrllm.md` beside its source folder only when every
+leaf source has the exact same direct parent after public path coercion. Nested
+image groups check every leaf rather than only each first item.
+
+When leaf parents differ, recognize, resume, and repair require an explicit
+`output_path`. Omission raises `OUTPUT_PATH_INVALID` during complete preflight
+with zero provider calls and no output/sidecar creation. Do not choose the first
+member's directory, search for a common ancestor, derive a hash target, scan
+for an existing result, or infer symlink equivalence. Reordering a tuple must
+not change disk ownership. With an explicit target, mixed-directory sources
+remain valid and use the ordinary output/sidecar ownership checks.
+
+Current implementation is precedent rather than the future API: image/PDF
+`resolve_output_path` derives a filename from the first source only after the
+caller has already supplied `Config.output_dir`; it does not authorize choosing
+that source's directory. Long audio owns one deterministic source-stem root,
+and image resume fixes its state beside the Markdown target. Focused output,
+long-audio planning, image-resume output, and long-audio ownership regressions
+pass **49 tests**. #636 changes only decision records; there is no runtime, API,
+test, provider call, credential, output, sidecar, media, dependency, frozen-
+boundary, or deletion change. These source-side defaults belong only to the
+future merged APIs; current `recognize()` remains memory-only when
+`Config.output_dir` is omitted.

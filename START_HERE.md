@@ -1533,3 +1533,15 @@ gate, and updates current READMEs. Its replacement-first gate remains unchanged.
 The retained inspect/frame/audio extraction surface currently passes 44 focused
 tests with the one old combined-recognition test excluded. No runtime, export,
 test, provider call, dependency, media behavior, or deletion changed in #635.
+
+#636 confirms that future merged-output defaulting is already fixed, not a new
+maintainer question. Scalar media and one source's `AudioSlice` tuple default
+beside that source. A batch of distinct concrete files defaults to
+`<normalized-folder-name>_ocrllm.md` beside its source folder only when every
+leaf has the exact same direct parent; nested image groups inspect every leaf.
+Mixed-parent recognize/resume/repair requires an explicit `output_path` and
+otherwise fails complete preflight with zero provider calls and no output or
+sidecar. Never choose the first item, common ancestor, hash, directory scan, or
+symlink equivalence. Existing output/ownership regressions are 49 passed; no
+runtime or public API changed, and current `recognize()` keeps its memory-only
+default.
