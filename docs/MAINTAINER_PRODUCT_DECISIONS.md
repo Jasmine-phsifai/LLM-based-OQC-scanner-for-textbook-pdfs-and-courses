@@ -510,14 +510,17 @@ is often accepted.
 
 ## Video recognition direction
 
-- **2026-08-28 refactor authority.** The provider-entity/batch refactor
+- **2026-08-28 refactor authority, narrowed 2026-08-29.** The provider-model/
+  batch refactor
   ([`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md),
   #568 in `ACTIVE_STATE_AND_RULES.md`) supersedes the video-journal decisions
-  in this section as marked below. The resumable video consumer is now the
-  rewritten `recognize_video(source, *, image_providers, audio_providers, ...)`
-  orchestrator over public step functions; video resume routes to image-batch
-  and audio-batch resume on one Markdown file; the video journal and
-  `recognize_video_to_markdown` are deleted in the refactor's final phase.
+  in this section as marked below. The earlier plan for a rewritten
+  `recognize_video(...)` orchestrator is itself superseded by #579/#581: the
+  replacement has visible image/audio steps and no recognition wrapper. Video-
+  derived work reuses image-batch and audio-batch resume on one Markdown file;
+  whether a named stateless `resume_video` exists remains the explicit choice
+  11 below. The video journal and `recognize_video_to_markdown` are deleted only
+  after the refactor's replacement gate.
   Full-frame retention, provider separation, paid-work reuse, and
   retain-recoverable-gaps survive unchanged.
 
@@ -954,6 +957,11 @@ product choices remain open:
     separate and `adapter_id` identifies the invocation protocol (recommended),
     or does every value gain a generic API/base URL/protocol/effort/
     future-options mapping?
+11. Is video resume only caller composition of the merged image/audio resume
+    paths (recommended), or does the library expose a named `resume_video`
+    router? A router is acceptable only if it remains genuinely stateless and
+    does not own a video journal, publication transaction, output naming, or
+    cleanup lifecycle.
 
 **#572 evidence for choices 1 and 2.** Both the active library's same-provider
 model-candidate loop and the legacy DashScope/Google candidate loops stop at
@@ -1115,6 +1123,20 @@ field first. The first Google/DashScope slices do not change RapidOCR settings,
 result/error behavior, call/token semantics, or resume identity. This is a
 fixed deferral boundary, not another open product choice and not authority to
 implement a local adapter.
+
+**#582 evidence for choice 11.** Current image recognition resumes through
+`Config.resume=True` and an output-adjacent image sidecar. Current long-audio
+recognition owns a different whole/interval sidecar and publication boundary.
+`recognize_batch()` has no collective resume state. The shipped
+`recognize_video_to_markdown(..., resume=True)` is not a thin router: it rejects
+branch persistence and owns a video journal, one result path, source/branch
+validation, composition, publication, and cleanup. The low-level
+`recognize_video()` is not resumable. Recommended: the replacement has no
+public `resume_video`; callers re-enter the merged image and audio recognizers
+with explicit sources/output and let each branch reuse its own sidecar. A named
+router is viable only if the maintainer explicitly accepts the coordination
+contract without recreating those ownership duties. This is evidence, not
+confirmation; choice 11 remains open and no runtime/export was changed.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

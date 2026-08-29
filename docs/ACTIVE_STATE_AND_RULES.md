@@ -11088,3 +11088,26 @@ is green at **45 passed, 27 deselected** in the delegated read-only audit; the
 primary verification is recorded in the diary. No runtime source, public API,
 dependency, preset, resolver, provider behavior, legacy source, or frozen
 boundary changed.
+
+## Current working update: #582 separates video-derived resume from a video resume API
+
+#582 is a documentation-only ownership audit under the implementation pause.
+The current image path resumes through `Config.resume=True` and its own
+output-adjacent sidecar. Long audio owns a separate whole/interval sidecar and
+publication boundary. `recognize_batch()` has no collective resume record. The
+low-level `recognize_video()` is not resumable; the high-level
+`recognize_video_to_markdown(..., resume=True)` resumes only because it owns a
+third video journal, fixed result path, source and branch validation,
+composition, publication, and cleanup while rejecting branch persistence.
+
+The fixed destination remains no video-specific resume engine. The narrower
+public-shape question is now choice 11 in the maintained plan: either callers
+directly re-enter the merged image/audio recognizers with explicit sources and
+one target, or a named router must prove that it coordinates those paths
+without owning another journal or lifecycle. Route A, caller composition with
+no public `resume_video`, is recommended because the current evidence does not
+show how a supposedly stateless router could own partial completion, write
+ordering, sidecar discovery, final publication, or cleanup without recreating
+the deleted layer. This remains a recommendation awaiting maintainer
+confirmation. No runtime, export, sidecar, test source, provider call,
+dependency, legacy source, frozen boundary, or deletion gate changed.

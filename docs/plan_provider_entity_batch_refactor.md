@@ -50,8 +50,10 @@ extract_video_audio
   black box. A later wrapper would require a separate maintainer decision and
   a concrete consumer, not merely the availability of the component steps.
 - Image and audio providers are separate inputs.
-- Video resume routes to image-batch and audio-batch resume. There is no third
-  video resume engine.
+- Video-derived work reuses image-batch and audio-batch resume. There is no
+  third video resume engine. Whether this remains caller composition or gains
+  a named stateless router is the explicit choice 11 in section 6; neither
+  route may own a video journal or another result lifecycle.
 - PDF-rendered pages reuse the merged-image batch backend. PDF does not gain a
   separate provider dispatcher.
 - Every retained image is a complete frame or page. No board-corner search,
@@ -417,6 +419,12 @@ Implementation remains paused until these choices are explicit:
     protocol. Alternative: add one generic list
     or mapping of API/base URL/Chat-or-Responses/effort and future SDK options
     to every provider-model value.
+11. **Video resume surface.** Recommended: do not add a public `resume_video`;
+    callers re-invoke the merged image and audio recognizers against their
+    explicit sources, shared output target, and independent sidecars. The
+    alternative is a named stateless router, but it must first explain how two
+    branches coordinate one Markdown result without owning a video journal,
+    publication transaction, output naming, or cleanup lifecycle.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -916,6 +924,29 @@ it would force false common semantics for credentials, retries, call counts,
 tokens, batching, and resume without a consumer. Route A is fixed as the
 current boundary. This is not an eleventh provider-model choice and authorizes
 no local adapter, preset, resolver branch, dependency, or API change.
+
+### 6.11 Evidence for choice 11 (#582)
+
+The shipped resume owners are not interchangeable wrappers. Image recognition
+uses `Config.resume=True` and an output-adjacent image state; long-audio
+recognition uses its own whole/interval state and removes that state only after
+durable publication. `recognize_batch()` delegates to the item recognizers and
+does not own a combined resume record. The low-level `recognize_video()` is not
+resumable, while `recognize_video_to_markdown(..., resume=True)` can resume only
+because it owns a third video journal, fixed result path, source/branch
+validation, final composition, publication, and cleanup. It even rejects
+branch-level persistence so that its journal remains the sole owner.
+
+Route A therefore treats “video resume routes to image/audio resume” as caller
+composition: the future merged image and audio recognizers each resume their
+own explicit source slots into the shared target, and no video-named public
+resume entry exists. Route B adds `resume_video` as a supposedly stateless
+router. Today that router cannot define partial completion, write ordering,
+sidecar discovery, final publication, or cleanup without becoming another
+video lifecycle owner; translating the old journal would add a compatibility
+format that the new library explicitly rejects. Route A is recommended. Choice
+11 remains awaiting explicit maintainer confirmation; this audit changes no
+runtime, export, sidecar, result, or deletion gate.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
