@@ -137,10 +137,22 @@ for one exact `(vendor, model)`, not one Python class/file per catalog row. Its
 complete target data is vendor, model, controlled `adapter_id`, three task-
 capability booleans, capability-dependent image/audio defaults, immutable
 finite canonical retry rules, and only the exact adapter settings required to
-invoke that instance. Runtime secrets stay redacted and are never serialized.
-There is no separate `ProviderBinding` type and no generic parameter list. The
-complete entity does not itself implement splitting, dispatch, retry,
-fallback, pooling, resume, or repair.
+invoke that instance. There is no separate `ProviderBinding`, parallel settings
+tree, or generic parameter list. A credential-free preset is directly usable
+through the existing environment resolver. A caller that supplies an explicit
+credential constructs a separate runtime instance with the same exact typed
+settings; it never mutates a shared preset.
+
+The entity's settings field is runtime-only: it is excluded from repr,
+dataclass comparison/hash, generic serialization, batching identity, and
+committed presets. The complete entity is never itself a resume document.
+Resume derives a versioned secret-free request identity from vendor/model plus
+only output-affecting safe adapter fields, following the current image
+fingerprint precedent. API keys, credential/pool identity, and mutable pool
+health never enter that projection. Existing DashScope credential-pool support
+may remain inside its exact runtime settings, but the first entity slice adds
+no new pool abstraction or pool persistence. The entity does not itself
+implement splitting, dispatch, retry, fallback, pooling, resume, or repair.
 
 The already-shipped `Config(provider=ExistingVisionClient())` injection route
 remains unchanged as a second escape hatch. A caller-supplied object used as a
@@ -1023,15 +1035,18 @@ the existing `ConfigError(code="CONFIG_INVALID")` before adapter/media/output
 work and causes zero provider calls; it is not a provider runtime failure and
 does not silently remove a fallback candidate or lane.
 
-The value does not contain a generic call-parameter list or mapping. API keys,
-credential pools, region/base URL, timeout, cancellation, prompt/media input,
-Chat-versus-Responses selection, thinking/effort, high-resolution encoding,
+The value does not contain a generic call-parameter list or mapping. Its one
+exact typed adapter-settings field may contain runtime API keys, a currently
+supported credential pool, region/base URL, or proven adapter switches because
+the maintainer explicitly rejected a second binding value and a parallel
+settings tree. That field is `repr=False`, `compare=False`, `hash=False`, and is
+never generically serialized. Timeout, cancellation, prompt/media input,
 catalog clients, upload handles, call/token counters, last-success state, and
-provider errors belong to exact adapter settings, one call, or recognition run
-state. The first vertical slice reuses its existing exact provider-settings
-type rather than creating a second common settings object. An adapter-specific
-option moves into durable model data only after two real presets prove that it
-is part of model identity rather than call configuration.
+provider errors remain one-call or recognition-run state. The first vertical
+slice reuses its existing exact provider-settings type rather than creating a
+second common settings object. An adapter-specific option moves into durable
+model facts only after two real presets prove that it is part of model identity
+rather than call configuration.
 
 No universal constructor default invents `1` image or `30` audio minutes for an
 unsupported task. A live-proven audio-capable preset may begin with a 30-minute
@@ -1041,11 +1056,13 @@ audio split override, candidate order, lane memory, and token accounting stay
 outside the provider-model value unless a later real adapter consumes a field
 that cannot be represented honestly elsewhere.
 
-Entities/presets do not contain API secrets. A generic executable registry,
-plugin system, identity fingerprint, full model catalog, placeholder OpenAI
-adapter, or arbitrary future-SDK options container is not approved. The
-existing injected-provider protocol remains a separate Python extension and
-test seam; it is not silently embedded in every provider-model value.
+Committed presets do not contain API secrets, and no provider-model object is
+serialized as a whole. A runtime instance may hold an explicit credential only
+inside its redacted exact settings. A generic executable registry, plugin
+system, full model catalog, placeholder OpenAI adapter, or arbitrary future-SDK
+options container is not approved. The existing injected-provider protocol
+remains a separate Python extension and test seam; it is not silently embedded
+in every provider-model value.
 
 The first `ProviderModel` vertical slice does not migrate the existing
 RapidOCR path and does not prebuild VLLM, Ollama, Codex, or another local-model
@@ -1064,9 +1081,14 @@ fields in anticipation of that consumer. RapidOCR capability examples in this
 plan are conceptual only; they do not select an initial preset or batch default.
 
 Credentials are supplied at call/runtime boundaries and never included in
-repr, persistence, or committed presets. A non-secret endpoint or adapter
-option enters a provider-model value only when a live adapter consumes it; the
-first slice does not create a generic `list` of hypothetical call parameters.
+repr, comparison/hash identity, persistence, batching, or committed presets.
+The environment-resolved preset and an explicitly credentialed per-call entity
+are the two supported built-in constructions; neither requires `ProviderBinding`.
+Do not use `dataclasses.asdict()`, object equality, or object hash as resume or
+cache identity. A versioned adapter-owned projection may include non-secret
+output-affecting endpoint/region/options while excluding credentials, pool
+objects, pool IDs, and health state. The first slice does not create a generic
+`list` of hypothetical call parameters.
 
 Preset scope is fixed to a small curated set of live-proven entries. Live
 discovery or explicit construction of the same `ProviderModel` handles other

@@ -134,6 +134,13 @@ keep `error`/`next`/`current` reporting categories. Successful fallback returns
 `status="complete"` with bounded warnings/metadata, some unresolved slots return
 `status="partial"`, and zero settled slots raise `AllCandidatesExhausted`.
 Runtime remains discussion-paused; plan section 0 owns the exact later order.
+#649 further fixes construction without adding another layer: one runtime
+provider-model entity carries exact typed adapter settings, official presets
+remain credential-free, and explicit credentials require a separate per-call
+entity rather than preset mutation. Neither settings equality/hash nor generic
+dataclass serialization is provider/resume identity. Persisted resume identity
+is a secret-free projection of vendor/model and safe output-affecting adapter
+facts; keys, credential pools, and mutable pool health stay runtime-only.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

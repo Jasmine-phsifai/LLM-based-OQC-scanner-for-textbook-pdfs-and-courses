@@ -940,6 +940,29 @@ serialize, pickle, or add a worker/protocol wrapper for arbitrary callables.
 Electron-facing backends resolve a serializable provider choice inside the
 backend process instead of transferring a Python callable across it.
 
+#649 closes the remaining secret/settings ownership ambiguity without reviving
+`ProviderBinding`. One runtime provider-model entity carries one exact typed
+adapter-settings value so it is directly invokable and provider lists never
+need a parallel settings structure. Checked-in presets contain no credential
+and use the existing environment resolver; a caller needing an explicit key
+constructs a separate per-call entity rather than mutating the preset. The
+settings field is omitted from repr, dataclass comparison/hash, generic
+serialization, batching, and committed preset identity. The entity itself is
+never persisted. Resume uses a versioned secret-free request projection of
+vendor/model and only safe output-affecting adapter facts; keys, credential or
+pool identity, mutable pool health, and raw settings never enter it. Existing
+DashScope pool support remains runtime adapter configuration and does not
+authorize a second pool abstraction in the first entity slice.
+
+This rule follows active behavior rather than an invented security layer.
+Current Google/DashScope settings already redact repr, and current image/audio
+resume fingerprints exclude credentials. However, current settings dataclass
+equality/hash still varies with explicit keys, generic `dataclasses.asdict()`
+would expose the key field, and Config snapshotting deliberately shares one
+mutable DashScope pool. Therefore future code must not treat settings equality,
+hash, or generic dataclass serialization as provider/resume identity. This is a
+first-slice acceptance rule, not authorization to implement the slice now.
+
 #612 records the latest discussion without authorizing implementation. The
 public frame workflow is `inspect_video -> extract_video_frames ->
 batchify_images`; negative-feedback/similarity selection remains inside

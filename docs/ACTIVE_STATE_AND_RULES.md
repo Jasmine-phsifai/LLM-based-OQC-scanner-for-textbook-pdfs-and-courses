@@ -12988,3 +12988,39 @@ isolated-process set passes **55**. A bounded independent read-only audit reache
 the same conclusion. This is a documentation correction, not a runtime defect:
 no code, test source, API, provider call, credential, media, dependency, state,
 `contracts/`, `worker/`, or deletion behavior changed.
+
+## Current working update: #649 fixes no-Binding credential/settings ownership
+
+#649 tests the exact current settings boundary before the first provider-model
+slice. `GoogleGenAISettings` and `DashScopeSettings` redact explicit keys from
+repr, but their generated dataclass equality and hash still vary with the key;
+generic `dataclasses.asdict()` includes the `api_key` field. `Config` snapshots
+rebuild ordinary Google/DashScope settings, while an existing mutable
+`DashScopeCredentialPool` is intentionally shared. These objects are safe
+runtime configuration, not safe durable provider identity.
+
+Current resume code already provides the smaller precedent. Image fingerprints
+exclude Google/DashScope keys and DashScope credential-pool identity while
+including only safe output-affecting endpoint/region/adapter switches. Short and
+long Google audio fingerprints contain provider/model/transport/prompt/window
+facts and no credential. Five focused persistence/redaction regressions pass,
+and a separate sentinel-only offline probe confirms repr redaction, secret-free
+resume fingerprints, key-sensitive settings equality/hash, and pool sharing.
+No environment credential was read and no network/provider call was made.
+
+The target therefore remains one complete runtime provider-model entity with
+one exact typed adapter-settings field and no `ProviderBinding` or parallel
+settings tree. Committed presets are credential-free and use environment
+resolution; explicit credentials belong only to a separately constructed
+per-call entity. The settings field is excluded from provider-model repr,
+comparison/hash, generic serialization, batching, and committed preset
+identity. The entity itself is never a persisted resume document. Resume uses
+one versioned secret-free request projection containing vendor/model and only
+safe output-affecting adapter facts; keys, credential/pool identity, and mutable
+pool health are excluded. Existing DashScope pool support remains runtime-only
+and does not justify a new pool abstraction in the first slice.
+
+This closes a construction ambiguity without implementing runtime. It adds no
+provider-model type, adapter, preset, credential handling, state schema, API,
+test source, provider call, media work, dependency, frozen-source edit, or old-
+video deletion.

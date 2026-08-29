@@ -32,6 +32,19 @@ unable to think recommends one image when the caller omits batch size; this is
 neither a provider limit nor something inferred from a request-level thinking
 switch.
 
+#649 closes only provider credential/settings ownership. One runtime
+provider-model entity carries its exact typed settings; there is still no
+`ProviderBinding` or parallel settings tree. Committed presets are
+credential-free, while a caller needing an explicit key constructs a separate
+per-call entity. The settings field and complete entity are not resume or cache
+identity: repr, comparison/hash, generic serialization, batching, and persisted
+state exclude runtime settings. Resume retains a versioned secret-free
+vendor/model plus safe output-affecting adapter projection. Current sentinel
+probes and five regressions prove why: repr and resume are secret-free, but
+current settings equality/hash vary with keys, `asdict()` contains the key
+field, and a DashScope pool is shared mutable runtime state. No runtime refactor
+or schema change has started.
+
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
 negative-feedback/similarity selection already belongs to the one extraction
