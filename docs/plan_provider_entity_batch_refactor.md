@@ -1731,3 +1731,51 @@ therefore remains unrecommended. The maintainer still needs to confirm whether
 "save every model" means bounded runtime/TTL discovery descriptors (compatible
 with this route) or a source-controlled executable mirror (an explicit reversal
 of the earlier maintenance rule).
+
+## #617 Recommended Runtime Binding: Model Facts Stay Separate From Call Settings
+
+One runnable candidate needs both a durable model description and the exact
+adapter settings that make that candidate callable. Those values have different
+lifetimes. `ProviderModel` is secret-free, reusable model/preset data. Google,
+DashScope, and later local settings may contain credentials, region or base URL,
+and adapter-specific switches and are valid only at a runtime call boundary.
+
+Two tempting shapes are rejected. Putting settings inside `ProviderModel`
+contaminates a shareable preset with secrets and account/endpoint choices.
+Passing a model tree plus a parallel settings mapping leaves ambiguous pairings
+for duplicate vendors, models, regions, or accounts and becomes positional
+state that every caller must keep synchronized.
+
+The recommended later public shape is one short-lived, frozen two-field value,
+provisionally named `ProviderBinding`:
+
+```python
+ProviderBinding(
+    model=QWEN_3_5_OCR,
+    settings=dashscope_settings,
+)
+```
+
+Each scalar, flat fallback list, or nested lane list contains complete bindings,
+not bare models plus a second structure. Complete preflight must verify that the
+controlled `adapter_id` and the exact settings type agree before media work or
+provider dispatch. Internally, the three accepted shapes may be snapshotted to
+immutable tuples; this is a provider plan normalization, not another batch
+abstraction.
+
+The binding does not own a callable, client, registry entry, generic options
+mapping, retry state, token totals, error history, lane position, source, output,
+prompt, timeout, or cancellation. OCRLLM continues to resolve `adapter_id`
+through private known adapter modules. Secrets and the settings object are never
+serialized. A future resume record may persist only human-readable vendor/model
+plus a versioned secret-free fingerprint of explicitly selected output-affecting
+settings; it must not serialize arbitrary settings or a provider candidate tree.
+
+This decision is staged. The first internal single-provider proof may continue
+to accept separate named `model` and exact `settings` arguments. Do not add the
+public binding type until the first public merged recognizer or flat-provider
+consumer actually needs it, and do not retrofit list semantics into the current
+`Config.provider`. The public name, exact constructor, duplicate-binding rule,
+and settled-slot safe-setting audit fields remain slice-local API choices. New
+merged APIs should not accept two competing provider sources such as both
+`Config.provider` and `providers=`.

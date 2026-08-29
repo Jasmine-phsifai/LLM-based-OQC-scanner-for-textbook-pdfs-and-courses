@@ -1374,3 +1374,10 @@ two missing windows, publishes ordered Markdown, and removes state. Existing
 owners retain real-media cleanup and source/snapshot responsibilities, avoiding
 a duplicate integration fixture or second recovery design. The full
 provider-free suite passes 1,926 tests.
+
+#617 narrows the later provider input without adding code. Keep durable,
+secret-free `ProviderModel` data separate from exact runtime adapter settings;
+when the first public merged or flat-list consumer needs a complete candidate,
+use a small runtime-only `ProviderBinding(model, settings)`. Do not put secrets,
+callables, generic options, retry/token/lane state, or provider trees into the
+model or current `Config.provider`.

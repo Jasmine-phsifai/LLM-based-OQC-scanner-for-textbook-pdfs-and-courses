@@ -12136,3 +12136,27 @@ and leaves the second as an explicit reversal requiring confirmation.
 
 No credential, catalog or generation call, runtime, test, dependency, public
 API, state, legacy source, frozen boundary, or refactor authorization changed.
+
+## Current working update: #617 narrows model-to-settings binding
+
+One future provider candidate must pair one secret-free `ProviderModel` with one
+exact adapter settings object. Do not put credentials, endpoint/account choices,
+or provider-specific call switches inside the durable model, and do not require
+callers to maintain a parallel settings mapping beside flat or nested provider
+lists. The recommended runtime-only value is provisionally `ProviderBinding`
+with exactly `model` and secret-hidden `settings` fields.
+
+Scalar, flat fallback, and nested lane inputs will contain complete bindings and
+will be fully validated before media work or dispatch. The controlled
+`adapter_id` still resolves through private known modules; no callable, client,
+generic options bag, registry API, retry/token/lane state, source, output, or
+prompt belongs in the binding. Resume may retain only safe settled identity and
+a versioned secret-free fingerprint, never the settings object or credentials.
+
+This is a direction for the later consumer, not a runtime authorization. The
+first internal single-provider proof may keep separate named model/settings
+arguments. Add the public type only with the first real merged or flat-list
+consumer; do not add provider-plan lists to current `Config.provider` and do not
+let a new API accept both old and new provider sources. Exact naming, duplicate
+rules, and safe audit fields remain later API details. No credential, API,
+runtime, test, dependency, public API, state, legacy, or frozen code changed.

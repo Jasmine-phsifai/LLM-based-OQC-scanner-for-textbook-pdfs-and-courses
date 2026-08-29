@@ -1422,3 +1422,25 @@ full-catalog snapshot, or invent missing booleans/defaults. This question remain
 open only because "prebuild and save every model" may instead have intended a
 source-controlled executable mirror; choosing that meaning explicitly reverses
 the earlier no-indefinite-model-maintenance decision.
+
+**#617 recommends a minimal model/settings binding without implementing it.**
+`ProviderModel` remains durable, reusable, and secret-free. Exact Google,
+DashScope, or later local adapter settings remain runtime configuration. A
+future runnable candidate should pair them in a short-lived frozen value,
+provisionally `ProviderBinding(model, settings)`. Scalar, flat, and nested
+provider inputs contain these complete pairs rather than a model structure plus
+a parallel settings map.
+
+This value has only the pairing responsibility. It contains no callable/client,
+generic options, public registry, retry/token/error/lane state, source, output,
+prompt, timeout, or cancellation. Its adapter ID is resolved only through known
+private modules, and exact settings-type mismatch fails complete preflight with
+zero provider calls. Secrets and settings are never serialized; future resume
+may save only a versioned secret-free binding fingerprint and safe settled
+vendor/model evidence.
+
+Do not create the public class during the first internal single-provider proof;
+separate named model/settings parameters are sufficient there. Introduce it only
+with the first public merged recognizer or flat-list consumer, and do not add
+list behavior to existing `Config.provider`. The provisional name, duplicate
+rule, and safe settled-setting audit fields remain later slice-local decisions.

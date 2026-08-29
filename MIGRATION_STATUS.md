@@ -2841,3 +2841,12 @@ of scope. The existing materializer, interval/whole persistence, Google long-
 audio adapter, routing, and capability owner set passes 123 tests. No runtime,
 API, test, capability, dependency, provider, archive, legacy, or frozen code
 changed.
+
+#617 documents, without implementing, the smallest future association between
+one exact model and its callable settings. A runtime-only two-field
+`ProviderBinding(model, settings)` is recommended over putting credentials and
+endpoints in durable `ProviderModel` or maintaining a parallel settings map for
+flat/nested lists. The first internal single-provider proof can still use two
+named arguments; the public type waits for its first real merged or flat-list
+consumer. Existing `Config.provider`, adapters, resume formats, APIs, tests, and
+runtime remain unchanged.
