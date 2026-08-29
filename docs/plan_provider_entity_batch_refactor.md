@@ -337,8 +337,9 @@ Implementation remains paused until these choices are explicit:
    section 2.2. Alternative: use distinct image/audio/video suffixes.
 6. **Provider-derived audio default.** Recommended: take the minimum positive
    integer `default_audio_minutes` across all flattened candidate providers so
-   slot identity is common across fallback and nested lanes. Alternative:
-   require an explicit interval whenever more than one provider is supplied.
+   slot identity is common across fallback and nested lanes. An explicit
+   positive integer or `-1` whole-file request wins. Alternative: require an
+   explicit interval whenever more than one provider is supplied.
 7. **Retry rule meaning.** Recommended: every canonical-code rule contains
    only finite extra retries, wait seconds, and reporting severity; exhaustion
    always records the last failure and advances to the next provider. Keep
@@ -564,6 +565,60 @@ evidence for rejecting simultaneous ownership, not permission to generalize it.
 Choice 5 remains awaiting explicit maintainer confirmation. This evidence does
 not authorize output-routing, resume, repair, video composition, or runtime
 changes.
+
+### 6.5 Evidence for choice 6 (#576)
+
+Audio interval duration is durable slot identity, not a provider retry knob.
+The active long-audio path already builds deterministic logical windows with
+fixed boundary context, fingerprints every exact window, and persists the
+whole/interval mode, positive `interval_minutes`, ordered fingerprints, and
+settled prefix. A changed interval is rejected before materialization or a
+provider call. Video's current journal likewise binds its audio mode and
+interval and rejects a changed resume request. Legacy Google audio uses a
+30-minute logical default and saves exact window boundaries, but that is one
+provider path's evidence rather than a universal hard limit.
+
+The smallest future rule is:
+
+1. Validate the complete provider shape and audio capability before creating
+   media. Every `ProviderModel` involved in this calculation must carry one
+   positive integer `default_audio_minutes`.
+2. A caller-supplied positive integer wins unchanged. A caller-supplied `-1`
+   also wins and means whole-file mode. Normalize `-1` immediately to the
+   internal identity `mode="whole", interval_minutes=None`; do not persist a
+   negative duration or create two whole-file identities.
+3. When the interval is omitted for one provider, use that provider's positive
+   suggested default. For flat or nested provider shapes, flatten only for this
+   scalar calculation and take the minimum positive suggestion across every
+   candidate. This does not permit fallback across nested lanes.
+4. Resolve the mode and minutes once before splitting. Persist the normalized
+   mode, resolved minutes, and exact ordered windows with the audio batch plan.
+   Resume and provider fallback reuse that plan and never recompute it from a
+   changed provider list.
+5. A provider suggestion is not a hard limit. An explicit larger interval or
+   whole-file request is not silently clamped. If the selected provider rejects
+   the fixed audio duration, record the provider failure and advance only under
+   the separately approved fallback rule; changing the split creates a new
+   plan rather than masquerading as resume.
+
+Using the first provider's default makes immutable windows depend on list order
+even though later batches may start from a remembered successful provider.
+Lane-local defaults couple time ranges to round-robin assignment and require a
+variable-window scheduler plus more persisted mapping. Requiring an explicit
+interval for multiple providers contradicts the fixed requirement that
+`split_audio` may derive one from provider input. The global minimum may create
+more calls than a larger provider needs, but it adds no alternate identity or
+scheduler.
+
+Do not add adaptive shortening, binary-search re-splitting, provider-specific
+window queues, automatic whole-to-interval fallback, or a second public
+sentinel. The current public long-audio API still rejects `-1`; accepting and
+normalizing it belongs to the future replacement entry and is not a defect in
+the shipped API during the implementation pause.
+
+Choice 6 remains awaiting explicit maintainer confirmation. This evidence does
+not authorize `split_audio`, provider defaults, audio batching, fallback,
+sidecar changes, or runtime implementation.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7

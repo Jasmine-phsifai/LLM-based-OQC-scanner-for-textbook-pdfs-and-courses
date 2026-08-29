@@ -930,7 +930,8 @@ product choices remain open:
    Directory placement is already fixed.
 6. With multiple audio-capable providers and no explicit interval, is one
    common interval the minimum positive integer default across all candidates
-   (recommended), or is an explicit interval required?
+   (recommended), or is an explicit interval required? Explicit positive
+   minutes and `-1` whole-file mode always win.
 7. Are retry rules reduced to finite extra retries, wait seconds, and reporting
    severity with one universal "exhausted means record and advance" behavior
    (recommended), or do `error` / `next` / `current` retain distinct control
@@ -986,6 +987,23 @@ combined target to both settled branches rather than letting them derive two
 files. Media-specific suffixes are the viable alternative, but they add three
 default branches mainly to hide that rare collision. This is not maintainer
 confirmation; choice 5 remains open.
+
+**#576 evidence for choice 6.** Active long-audio persistence already binds
+whole/interval mode, the exact positive interval, ordered window fingerprints,
+and settled slots; changing the interval is rejected before materialization or
+provider dispatch. Legacy Google's 30-minute windows are one provider default,
+not a universal limit. Recommended: validate every candidate's audio capability;
+an explicit positive integer wins, while explicit `-1` is normalized at the
+call boundary to the single internal whole identity (`mode="whole"`, no stored
+minutes). If omitted, one provider supplies its positive suggested minutes and
+flat/nested shapes use the minimum across all flattened candidates. Resolve and
+persist one exact window plan before recognition; fallback and resume never
+re-split it. A rejection remains a provider failure, and changing the interval
+starts a new plan. First-provider and lane-local defaults make time boundaries
+depend on provider scheduling; explicit-only contradicts provider-derived
+splitting. Do not add adaptive shrinking, binary search, hidden whole-to-split
+fallback, or per-provider window queues. This is not maintainer confirmation;
+choice 6 remains open.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

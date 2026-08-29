@@ -10904,3 +10904,36 @@ resolver, config, public API, runtime, test, dependency, provider, legacy,
 frozen directory, or migration capability changed. The existing output,
 long-audio path, video publication, PDF, and lightweight-import regressions are
 **77 passed in 4.77s**.
+
+## Current working update: #576 fixes the decision shape for audio defaults
+
+#576 audited active long-audio window construction, whole/interval request
+identity, partial-state persistence, changed-interval refusal and video journal
+reuse, then compared legacy Google's 30-minute windows. Current active state
+stores the exact mode, positive interval, ordered window fingerprints and
+settled prefix; a changed interval fails before materialization or a provider
+call. Legacy's 30 minutes is useful provider evidence, not a package-wide hard
+limit.
+
+The decision-ready Route A gives explicit input priority. A positive integer is
+used unchanged; `-1` means whole file and is normalized immediately to the one
+internal `mode="whole", interval_minutes=None` identity. When omitted, one
+provider contributes its positive suggested minutes; flat and nested provider
+shapes use the minimum positive suggestion across all flattened candidates.
+Flattening is only for that scalar and does not allow cross-lane fallback. The
+mode, resolved minutes and exact windows are fixed once before splitting and
+persisted; fallback and resume never recalculate or re-split them. A provider
+duration rejection remains an honest failure, and changing the interval starts
+a new plan.
+
+First-provider sizing makes windows depend on list order, lane-local sizes need
+a variable-window scheduler and extra state, and explicit-only contradicts the
+maintainer's provider-derived default requirement. Adaptive shrinking, binary
+search, automatic whole-to-interval fallback and provider-specific queues are
+rejected. The shipped API currently rejecting `-1` is not changed while the
+replacement implementation is paused. Choice 6 remains open for explicit
+maintainer confirmation. This iteration is documentation only: no audio API,
+provider value, splitter, fallback, sidecar, runtime, test, dependency, legacy,
+frozen directory, or migration capability changed. The existing interval,
+whole, persistence, resume and video-audio-state regressions are **119 passed
+in 0.60s**.
