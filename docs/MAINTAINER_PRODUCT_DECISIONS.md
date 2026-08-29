@@ -929,10 +929,13 @@ slots run, and the exact public constructor/duplicate rules for binding exact
 adapter settings to provider-model values. #620 closes the scheduling reading:
 nested lanes are fixed, serial within a lane, and advance independently between
 lanes; "wait respectively" is not a global epoch barrier. The exact admission
-rule when lane count and an execution bound differ waits for the nested-lane
-consumer rather than creating another scheduler knob now. None of these choices
-permits secrets, generic parameter lists, or mutable clients inside
-`ProviderModel`.
+rule remains a maintainer confirmation point. #621 recommends that the nested
+outer list be the replacement API's sole concurrency authority, bounded to 32,
+while the shipped `max_parallel_requests` remains with current Config-based
+independent-output calls. If current execution policy must be reused instead,
+reject `lane_count > max_parallel_requests`; do not queue, clamp, or require
+equality. None of these choices permits secrets, generic parameter lists,
+mutable clients, or per-model concurrency state inside `ProviderModel`.
 
 The latest instruction resolves two former choices. The duplicated video
 recognition/journal product is abandoned after its image/audio replacement gate;

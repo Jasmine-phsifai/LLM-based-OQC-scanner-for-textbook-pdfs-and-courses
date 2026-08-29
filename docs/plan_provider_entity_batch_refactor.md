@@ -1973,3 +1973,49 @@ the concrete resume schema.
 
 No scheduler, provider plan, runtime, test, state format, public API, provider
 call, dependency, or deletion is added by #620.
+
+## #621 One Concurrency Authority For Nested Lanes
+
+Current `RecognitionExecutionPolicy.max_parallel_requests` belongs to the
+shipped independent-output `recognize_batch()` executor. It defaults to one,
+is bounded to 32, and is its only runtime scheduler input. Direct recognition,
+PDF grouping, standalone long audio, and the journal-backed video branches do
+not uniformly consume that field. It is also copied into the current provider-
+bound image request fingerprint even where scheduling does not change one
+logical slot. These are current compatibility facts, not a clean replacement
+contract to copy.
+
+Three routes were compared. Making the nested outer list the sole concurrency
+topology gives one fact: `lane_count = len(provider_lanes)`, one active slot per
+lane, and a maximum of `lane_count` active slots. Reusing
+`max_parallel_requests` as a smaller cap makes the default silently serialize
+the requested pool and requires queued-lane fairness; requiring equality makes
+the caller state the same number twice. Both dual-control routes add surprise
+without changing fixed assignment.
+
+The current recommendation, pending explicit maintainer confirmation, is that
+the replacement merged API does not expose or consume
+`max_parallel_requests`. A nested provider plan owns its concurrency and must
+have at most 32 lanes, reusing the existing safety ceiling; an excessive plan
+is rejected during complete preflight with zero provider, media, or output
+work. Scalar and flat fallback plans remain one lane. The shipped Config-based
+APIs and their execution policy remain unchanged.
+
+If the maintainer instead requires the replacement API to accept the existing
+execution policy, the bounded fallback is `lane_count <=
+max_parallel_requests`, with overflow rejected rather than queued or clamped;
+exact equality is unnecessary. Do not introduce a second worker option,
+per-model parallelism field, fair ready-lane queue, dynamic throttle, or
+persisted concurrency identity before a real consumer changes this decision.
+
+The audit also found a separate current-surface mismatch to preserve for later
+evidence. Request-start pacing is applied before every vision provider method,
+but short Google audio does not call the gate, while uploaded long audio gates
+the workflow before catalog/client work rather than every SDK operation. The
+historical statement that the interval covers every provider method is not
+uniformly true. #621 does not fix or test this during the discussion pause; a
+focused audio call-order proof must establish the intended contract before the
+merged-audio slice reuses that policy.
+
+No concurrency API, validation, scheduler, fingerprint, audio gate, test,
+provider call, runtime, state, dependency, or deletion changes in #621.

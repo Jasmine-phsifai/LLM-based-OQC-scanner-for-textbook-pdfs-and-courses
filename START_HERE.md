@@ -1402,3 +1402,12 @@ state; there is no global barrier, cross-lane rescue, work stealing, persisted
 epoch, or completion-order output. The implementation slice still must settle
 how lane count meets the existing concurrency bound and how a resumed call
 initializes lane preference. No scheduler or runtime API exists yet.
+
+#621 recommends, pending maintainer confirmation, that the nested outer provider
+list itself define replacement-API concurrency, bounded by 32 lanes. Do not add
+a second `max_parallel_requests` control to that API; the shipped field remains
+with current independent-output calls. If the old execution policy is retained
+instead, reject excess lanes rather than queueing or clamping them. The same
+audit found that current request-start pacing is uniform for vision but not for
+short/uploaded Google audio; this is recorded for focused proof before merged
+audio, not fixed during the discussion pause.

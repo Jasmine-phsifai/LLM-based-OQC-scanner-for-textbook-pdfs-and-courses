@@ -2879,3 +2879,14 @@ settles paid in-flight calls. The precise relation between lane count and the
 existing execution bound, plus resume initialization of lane preference, waits
 for the actual nested consumer. Runtime, API, tests, state, providers, and
 migration status remain unchanged.
+
+#621 narrows the first remaining nested-lane admission choice without
+implementing it. The recommendation, pending maintainer confirmation, is that
+the nested outer provider list alone defines replacement-API concurrency, with
+one active slot per lane and the existing 32-lane safety ceiling; current
+`max_parallel_requests` remains attached to shipped independent-output APIs.
+If that old policy is explicitly retained, excess lanes are rejected instead
+of queued or clamped. The audit also records that request-start pacing is not
+uniform across current short/long Google audio, so merged audio must prove its
+intended cadence before reuse. Runtime, APIs, tests, state, and providers remain
+unchanged.

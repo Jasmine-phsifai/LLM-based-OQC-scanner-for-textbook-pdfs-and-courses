@@ -12235,3 +12235,28 @@ existing execution bound and how resume initializes lane preference from a
 newly supplied plan. #620 does not add a barrier, work-stealing queue, fairness
 policy, per-lane checkpoint, scheduler setting, runtime, API, test, provider
 call, dependency, state format, or deletion.
+
+## Current working update: #621 recommends one nested-lane concurrency authority
+
+The current `max_parallel_requests` field is implemented only as the worker
+bound for the shipped independent-item `recognize_batch()` executor. It is not
+uniformly consumed by direct, PDF, long-audio, or journal-backed media paths.
+#621 therefore does not presume that this historical Config field belongs in
+the replacement merged recognizers.
+
+Pending maintainer confirmation, the smallest contract is: scalar/flat provider
+input is one lane; a nested outer list is its own fixed concurrency topology;
+one slot may be active per lane; and more than the existing safety ceiling of
+32 lanes fails complete preflight with zero side effects. The replacement API
+does not add or consume a second `max_parallel_requests` knob. If the existing
+execution policy is explicitly retained for that API, overflow is rejected as
+`lane_count > max_parallel_requests`; lanes are not silently queued or clamped,
+and equality is not required. Current APIs remain unchanged.
+
+This source audit also records a separate unresolved pacing mismatch. Vision
+provider methods pass through the request-start gate. Short Google audio does
+not, and uploaded long audio gates the enclosing workflow once rather than each
+SDK operation. Do not claim uniform audio request pacing or port that behavior
+into merged audio until a focused call-order test and bounded real path establish
+the intended contract. #621 changes no runtime, API, fingerprint, state, test,
+provider, dependency, frozen boundary, or deletion.
