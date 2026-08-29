@@ -1,7 +1,7 @@
 # Plan: Provider-Model And Media-Batch Refactor
 
-Status: **approved product direction; provider/entity and replacement-recognition
-implementation paused for the open decisions in section 6.** Existing
+Status: **approved product direction; each provider/entity and replacement-
+recognition slice is paused only for its relevant decision gate in section 6.** Existing
 provider-free primitive maintenance remains allowed when real media exposes a
 defect. This revision replaces the prematurely expanded
 2026-08-28 module build specification. It is a decision record and sequencing
@@ -51,9 +51,10 @@ extract_video_audio
   a concrete consumer, not merely the availability of the component steps.
 - Image and audio providers are separate inputs.
 - Video-derived work reuses image-batch and audio-batch resume. There is no
-  third video resume engine. Whether this remains caller composition or gains
-  a named stateless router is the explicit choice 11 in section 6; neither
-  route may own a video journal or another result lifecycle.
+  third video resume engine. The maintainer explicitly requires a thin
+  `resume_video` route to the image/audio resume functions; it owns no journal,
+  publication, naming, or cleanup lifecycle. Whether that convenience is a
+  root public export remains the narrow choice 11 in section 6.
 - PDF-rendered pages reuse the merged-image batch backend. PDF does not gain a
   separate provider dispatcher.
 - Every retained image is a complete frame or page. No board-corner search,
@@ -337,9 +338,12 @@ before the gate.
 
 ## 5. Evidence-First Implementation Order
 
-No provider/entity or replacement-recognition phase starts until section 6 is
-resolved and recorded. This pause does not prohibit fixing a defect reproduced
-in the already-shipped provider-free inspect/extract/selection functions.
+No phase starts until the decision gate named for that phase below is resolved
+and recorded. Section 6 is not one flat barrier: a later video-publication
+choice does not block the first provider-model proof, and a fallback policy
+does not block single-provider merged recognition. This pause also does not
+prohibit fixing a defect reproduced in the already-shipped provider-free
+inspect/extract/selection functions.
 
 1. **One provider-model vertical slice.** Add the smallest provider-model value
    and direct adapter consumer together; predefine one suitable model already
@@ -371,7 +375,8 @@ suite alone does not prove a provider phase.
 
 ## 6. Maintainer Decisions Still Required
 
-Implementation remains paused until these choices are explicit:
+The unresolved parts of these choices are explicit phase gates, not one global
+pause:
 
 1. **Flat-list traversal after success.** Recommended interpretation: visit
    each provider at most once per batch, but stop immediately on first success.
@@ -386,7 +391,8 @@ Implementation remains paused until these choices are explicit:
 4. **Default image batch size with multiple providers.** Recommended: resolve
    one common size as the minimum positive integer default across all flattened
    candidates so fallback and nested lanes keep one slot plan. Alternative:
-   use the first provider's default or require an explicit size.
+   use the first provider's default. Requiring an explicit size is no longer
+   an option because provider-derived omission behavior is already fixed.
 5. **Default output filenames.** Recommended: use one derived-result suffix,
    `<source-identity>_ocrllm.md`, for a single media source, an image/audio
    folder batch, and video output. Directory placement is already fixed in
@@ -394,8 +400,9 @@ Implementation remains paused until these choices are explicit:
 6. **Provider-derived audio default.** Recommended: take the minimum positive
    integer `default_audio_minutes` across all flattened candidate providers so
    slot identity is common across fallback and nested lanes. An explicit
-   positive integer or `-1` whole-file request wins. Alternative: require an
-   explicit interval whenever more than one provider is supplied.
+   positive integer or `-1` whole-file request wins. Alternative: use the first
+   provider's default. Requiring an explicit interval for multiple providers is
+   no longer an option because provider-derived omission behavior is fixed.
 7. **Retry rule meaning.** Recommended: every canonical-code rule contains
    only finite `extra_retries` and `wait_seconds`. Reporting is determined by
    the recognition outcome, not repeated in retry configuration. Exhaustion
@@ -422,13 +429,12 @@ Implementation remains paused until these choices are explicit:
     protocol. Alternative: add one generic list
     or mapping of API/base URL/Chat-or-Responses/effort and future SDK options
     to every provider-model value.
-11. **Video resume surface.** Recommended: do not add a public `resume_video`;
-    callers re-invoke the merged image and audio recognizers against their
-    explicit sources and independent state. Any final cross-media composition
-    follows choice 12 rather than being hidden in resume. The
-    alternative is a named stateless router, but it must first explain how two
-    branches coordinate one Markdown result without owning a video journal,
-    publication transaction, output naming, or cleanup lifecycle.
+11. **Video resume export only.** Fixed behavior: a thin `resume_video` route
+    delegates explicit image and audio sources to their ordinary resume
+    functions and owns no video journal, publication transaction, output
+    naming, composition, or cleanup lifecycle. The only open detail is whether
+    this convenience is exported from the package root or remains a documented
+    caller composition helper.
 12. **Cross-media Markdown ownership.** Recommended: interpret "one Markdown"
     as one output for each merged image or merged audio recognition call. Do
     not let two independent recognizers incrementally mutate one target. If one
@@ -437,6 +443,38 @@ Implementation remains paused until these choices are explicit:
     results and publishes exactly once. Alternative: one shared document owner
     coordinates both branches and their state; this requires a separately
     justified lifecycle contract and is not implicit in the current plan.
+
+### 6.0 Decision blocks and implementation gates (#584)
+
+The numbered choices remain useful evidence references, but they are not
+twelve equal prerequisites:
+
+| Implementation slice | Must resolve first | May remain open |
+| --- | --- | --- |
+| First and second provider-model proofs | 8, 10 | 1–7, 9, 11, 12 |
+| Public presets and single-provider merged image + resume | 3, 5, 9, plus the provider-model gate | 1, 2, 4, 6, 7, 11, 12 |
+| Flat fallback | 1, 2, 4, 7, 9 | 6, 11, 12 |
+| Nested lanes | the complete flat-fallback gate | 6, 11, 12 |
+| Merged audio + resume | 5, 6, 9, plus the proven provider boundary | 11, 12 |
+| Video-derived resume/publication and old-chain deletion | 11, 12 and every earlier replacement gate | none |
+
+This ordering does not silently choose an open contract. It prevents an
+unrelated late question from blocking earlier evidence and prevents an early
+class from being built with fields required only by a later phase. In
+particular, choice 3 is about the committed public preset scope rather than
+permission to prove one internal live model, and choice 11's routing behavior
+is fixed even though its root-export detail remains open.
+
+The direct maintainer wording does not safely close choices 1–3. It says both
+that each provider list is traversed once and that a single batch either returns
+a result or an error; it asks to report exhausted provider errors after success
+but later narrows the final accumulator to failed batches. It also asks for
+Google/DashScope model objects while rejecting indefinite model-by-model fixes
+and retaining live discovery. Those are real contract tensions, so this
+reconciliation does not choose between them. By contrast, choices 4 and 6 are
+narrowed: omission must derive a value from the supplied providers, leaving
+only the common-minimum versus first-provider rule. Choice 11's delegation
+behavior is directly fixed; only export placement remains open.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -949,17 +987,16 @@ because it owns a third video journal, fixed result path, source/branch
 validation, final composition, publication, and cleanup. It even rejects
 branch-level persistence so that its journal remains the sole owner.
 
-Route A therefore treats “video resume routes to image/audio resume” as caller
-composition: the future merged image and audio recognizers each resume their
-own explicit source slots and state, and no video-named public resume entry
-exists. Whether their settled results later enter one combined file is choice
-12, not a resume responsibility. Route B adds `resume_video` as a supposedly
-stateless router. Today that router cannot define partial completion, write ordering,
-sidecar discovery, final publication, or cleanup without becoming another
-video lifecycle owner; translating the old journal would add a compatibility
-format that the new library explicitly rejects. Route A is recommended. Choice
-11 remains awaiting explicit maintainer confirmation; this audit changes no
-runtime, export, sidecar, result, or deletion gate.
+The #582 audit correctly rejected any router that defines partial completion,
+write ordering, sidecar discovery, final publication, or cleanup; those duties
+would recreate a video lifecycle owner, and translating the old journal would
+add a rejected compatibility format. The later direct maintainer wording is
+more specific about the remaining public shape: `resume_video` routes to the
+ordinary image and audio resume functions. #584 therefore fixes that routing
+behavior while leaving only the root-export detail open. Whether settled
+branch results later enter one combined file remains choice 12 and is not a
+resume responsibility. No runtime, export, sidecar, result, or deletion gate
+changes with this documentation reconciliation.
 
 ### 6.12 Evidence for choice 12 (#583)
 

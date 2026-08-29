@@ -909,11 +909,12 @@ is often accepted.
 ## Open provider-model and media-batch choices (#571 reconciliation)
 
 The maintainer has approved the decomposed media direction but explicitly
-paused provider/entity and replacement-recognition implementation for
-discussion. The current choices are recorded in section 6 of
+paused each provider/entity and replacement-recognition slice for its relevant
+discussion gate. The choices and their phase dependency map are recorded in section 6 of
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
 No provider-model class, retry engine, registry, static catalog, batch pool,
-merged facade, or video deletion begins until the relevant contract is settled.
+merged facade, or video deletion begins until its relevant contract is settled;
+later unrelated choices do not form one global barrier.
 
 The latest instruction resolves two former choices. The duplicated video
 recognition/journal product is abandoned after its image/audio replacement gate;
@@ -934,14 +935,16 @@ product choices remain open:
    every currently served Google/DashScope model?
 4. With multiple providers and no explicit image batch size, is one common
    size the minimum positive integer default across all flattened candidates
-   (recommended), the first provider's default, or a required explicit size?
+   (recommended), or the first provider's default? Provider-derived omission
+   behavior is fixed, so a required explicit size is no longer an alternative.
 5. Does every omitted output use `<source-identity>_ocrllm.md`
    (recommended), or do image, audio, and video receive separate suffixes?
    Directory placement is already fixed.
 6. With multiple audio-capable providers and no explicit interval, is one
    common interval the minimum positive integer default across all candidates
-   (recommended), or is an explicit interval required? Explicit positive
-   minutes and `-1` whole-file mode always win.
+   (recommended), or the first provider's default? Explicit positive minutes
+   and `-1` whole-file mode always win; requiring an interval whenever several
+   providers are supplied is no longer an alternative.
 7. Are retry rules reduced to finite `extra_retries` and `wait_seconds`, with
    outcome reporting kept outside the rule and one universal "exhausted means
    record and advance" behavior (recommended), or do `error` / `next` /
@@ -960,11 +963,11 @@ product choices remain open:
     separate and `adapter_id` identifies the invocation protocol (recommended),
     or does every value gain a generic API/base URL/protocol/effort/
     future-options mapping?
-11. Is video resume only caller composition of the merged image/audio resume
-    paths (recommended), or does the library expose a named `resume_video`
-    router? A router is acceptable only if it remains genuinely stateless and
-    does not own a video journal, publication transaction, output naming, or
-    cleanup lifecycle.
+11. **Fixed routing, open export detail:** `resume_video` is a thin route to the
+    ordinary image/audio resume functions and owns no video journal,
+    publication transaction, composition, output naming, or cleanup lifecycle.
+    Should it be exported from the package root, or remain a documented caller
+    composition helper?
 12. Does "one Markdown" mean one output per merged image call and one per
     merged audio call (recommended until clarified), or one additional artifact
     containing both branches? Independent recognizers never mutate the same
@@ -1139,12 +1142,12 @@ recognition owns a different whole/interval sidecar and publication boundary.
 `recognize_video_to_markdown(..., resume=True)` is not a thin router: it rejects
 branch persistence and owns a video journal, one result path, source/branch
 validation, composition, publication, and cleanup. The low-level
-`recognize_video()` is not resumable. Recommended: the replacement has no
-public `resume_video`; callers re-enter the merged image and audio recognizers
-with explicit sources/output and let each branch reuse its own sidecar. A named
-router is viable only if the maintainer explicitly accepts the coordination
-contract without recreating those ownership duties. This is evidence, not
-confirmation; choice 11 remains open and no runtime/export was changed.
+`recognize_video()` is not resumable. #582 therefore rejected any replacement
+router that owns coordination, but its recommendation against the public name
+was superseded by the maintainer's direct instruction that a video resume
+function routes to the ordinary image/audio resume functions. #584 fixes only
+that stateless delegation; package-root export remains open. No runtime/export
+was changed.
 
 **#583 evidence for choice 12.** Current image and long-audio recognition own
 different sidecars and whole-file publication rules. `recognize_batch()`
@@ -1160,6 +1163,16 @@ merged media call. If one combined image/audio artifact is confirmed, the only
 recommended extension is a pure explicit final composer with no recognition,
 provider, retry, resume, sidecar, path discovery, or cleanup ownership. Choice
 12 remains open and no runtime/export was changed.
+
+**#584 decision-gate reconciliation.** The twelve numbered choices are evidence
+references, not a flat implementation barrier. Choices 8 and 10 gate the first
+internal provider-model proof; public preset scope, merged-image identity,
+fallback, audio, and video publication are gated only when their respective
+slices begin. Direct wording still conflicts within choices 1–3, so they remain
+open rather than being guessed. Choices 4 and 6 no longer offer explicit-only
+input as an alternative because provider-derived omission is fixed. Choice 11
+now fixes a stateless route to ordinary image/audio resume and leaves only
+package-root export open. This sequencing changes no runtime or public API.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

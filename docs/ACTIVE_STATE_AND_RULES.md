@@ -11136,3 +11136,30 @@ sidecars, or clean extraction artifacts. Direct shared-file mutation and a
 cross-branch document transaction are rejected as over-design. Choice 12
 remains open. No runtime, export, sidecar, public API, dependency, provider,
 legacy source, frozen boundary, or deletion occurred.
+
+## Current working update: #584 replaces the flat decision barrier with phase gates
+
+#584 is a documentation-only reconciliation under the implementation pause.
+Its initial default-filename audit was stopped after current evidence showed
+that #575 had already completed the same audit. Repeating it would have been no
+progress. The replacement atomic task audited all twelve maintained choices
+against the latest direct maintainer wording and the implementation order.
+
+The choices are no longer one global barrier. Choices 8 and 10 gate an internal
+provider-model proof; public presets and merged-image output, flat fallback,
+merged audio, and video deletion each wait only for their own named decisions.
+This does not authorize a phase before its dependencies or silently select any
+open behavior. It prevents late publication questions from blocking early live
+evidence and prevents early model objects from acquiring fields used only by a
+future pool.
+
+Direct wording still conflicts within choices 1–3, so they remain open rather
+than being guessed. Choices 4 and 6 are narrowed to common-minimum versus
+first-provider defaults; explicit-only behavior is removed because omission is
+already required to derive a provider-informed value. The maintainer directly
+fixed the behavior behind choice 11: a thin `resume_video` route delegates to
+ordinary image/audio resume and owns no video journal, composition,
+publication, naming, or cleanup. Only package-root export remains open. Choice
+12 still governs whether independently merged media results also require one
+combined artifact. No runtime, export, test source, sidecar, provider,
+dependency, legacy source, frozen boundary, or deletion changed.
