@@ -936,6 +936,17 @@ product choices remain open:
    (recommended), or do `error` / `next` / `current` retain distinct control
    meanings that still need to be specified?
 
+**#572 evidence for choices 1 and 2.** Both the active library's same-provider
+model-candidate loop and the legacy DashScope/Google candidate loops stop at
+the first valid result. The active path returns success normally and preserves
+the attempt ledger in result metadata. `BatchItemOutcome` cannot hold a result
+and an error together, so raising after successful fallback would turn valid
+work into a failed item and may trigger replay. The recommended contract is
+therefore: first valid result stops the flat lane; return it as complete with
+one warning and ordered, bounded `metadata["provider_failures"]`; raise only
+when recognition remains incomplete. This is evidence and a recommendation,
+not maintainer confirmation; both choices remain open.
+
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are
 retained; image/audio providers are separate; video resume delegates to image

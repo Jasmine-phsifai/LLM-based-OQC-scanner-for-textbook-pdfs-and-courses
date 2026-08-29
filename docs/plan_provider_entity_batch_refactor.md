@@ -344,6 +344,51 @@ Implementation remains paused until these choices are explicit:
    `error` / `next` / `current` only if the maintainer assigns them distinct
    control behavior that is not already expressed by those fields.
 
+### 6.1 Evidence for choices 1 and 2 (#572)
+
+The active library already has one smaller same-provider precedent. Its ordered
+model-candidate loop advances only after an eligible typed failure, stops at
+the first valid result, returns that result normally, and records every prior
+attempt in `metadata["model_attempts"]`. The focused regression proves a quota
+failure followed by one successful recovery model. The legacy DashScope model
+chain, Google model switcher, and Google audio candidate loop also return or
+break immediately after the first valid result. None performs extra calls after
+success.
+
+The current public result boundary also constrains choice 2:
+
+- `RecognitionResult` already owns immutable human warnings and JSON metadata;
+- `BatchItemOutcome` requires exactly one result or one error for each item;
+- `recognize_batch` treats a raised exception as that item's failure and closes
+  the start gate, even if provider work had already produced valid text.
+
+Therefore Route A is recommended as the smallest contract:
+
+1. Rotate the flat candidate order to the lane's remembered successful start,
+   attempt each candidate at most once, and stop immediately on the first valid
+   recognition.
+2. Return one ordinary `RecognitionResult`; keep `status="complete"` when the
+   requested content is complete. Add one bounded human warning and an ordered
+   `metadata["provider_failures"]` tuple for providers exhausted before success.
+3. Each provider-failure record contains only vendor, model, stable canonical
+   code, and secret-safe bounded description. The successful provider/model
+   remains the result's normal provider metadata; no duplicate success record
+   is needed in the failure tuple.
+4. Raise only if the logical recognition remains incomplete after the permitted
+   candidates are exhausted. Failed-batch reporting still follows the fixed
+   terminal-only rule in section 2.6.
+
+This metadata proposal avoids a consumer-free `ProviderAttempt` public type.
+It may be promoted to a typed field only if a second real consumer proves that
+the JSON boundary is too weak. Route B would continue calling providers after
+success and/or raise while attaching a valid result. It would need an undefined
+winner/merge rule or a second result-plus-error wrapper, would violate the
+current `BatchItemOutcome` invariant, and could cause a caller to replay paid
+successful work. It is wider than the legacy and active behavior.
+
+These two choices remain awaiting explicit maintainer confirmation; the audit
+and recommendation do not authorize dispatcher implementation.
+
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
 replacement gate rather than preserved as a compatibility line; no deletion is

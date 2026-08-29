@@ -10772,3 +10772,39 @@ create a registry, implement fallback/pools, alter public APIs, change tests or
 dependencies, touch frozen directories, or update capability/migration status.
 `git diff --check` and all changed-document relative-link checks pass; the
 lightweight-import regression is **14 passed in 0.80s**.
+
+## Current working update: #572 grounds the first fallback decisions in shipped behavior
+
+#572 inspected the active `RecognitionResult`, `BatchItemOutcome`, batch
+collector, provider dispositions, image model-candidate loop and regression,
+then compared the legacy DashScope and Google fallback paths. Both codebases
+stop on the first valid candidate. The active path returns that success normally
+and preserves earlier attempts in `metadata["model_attempts"]`; the legacy path
+returns normally but mostly loses earlier failure evidence. Neither performs
+post-success provider calls.
+
+The alternative "raise after successful fallback" does not fit the shipped
+Python boundary. One `BatchItemOutcome` carries exactly one result or one error;
+raising would classify the completed item as failed, abort later batch starts,
+and may make a caller replay already-paid valid work. Continuing to call later
+providers would additionally require an unrequested winner, comparison, or
+merge rule. Legacy's distinct behavior of publishing partial batch placeholders
+and then raising addresses failed logical units, not a provider candidate that
+was successfully replaced, and is not inherited here.
+
+The decision-ready Route A is now documented but not implemented: rotate the
+flat lane to its remembered start, attempt each candidate at most once, stop at
+the first valid result, return a normal complete `RecognitionResult`, and add
+one human warning plus ordered bounded
+`metadata["provider_failures"]` records containing vendor, model, canonical
+code, and secret-safe description. Raise only when the logical recognition is
+still incomplete after candidate exhaustion. A new public attempt-ledger type,
+result-plus-error wrapper, post-success calls, comparison/ranking stage, and
+changes to `BatchItemOutcome` are rejected unless a later consumer proves them
+necessary.
+
+Choices 1 and 2 remain open for explicit maintainer confirmation. This iteration
+changes documentation only: no dispatcher, provider model, retry, result schema,
+runtime, test, dependency, frozen directory, legacy behavior, or migration
+capability changed. The focused existing candidate/batch contract remains
+**29 passed in 0.80s**.
