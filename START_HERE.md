@@ -55,6 +55,17 @@ Minimal import example:
 from ocrllm import Config, GoogleGenAISettings, VisionModelSettings, recognize
 ```
 
+Current video boundary: provider-free `inspect_video()`,
+`extract_video_frames()`, and `extract_video_audio()` are active. The shipped
+`recognize_video_frames`, `recognize_video`, `VideoRecognitionOutcome`,
+`compose_video_result`, `publish_video_result`, and
+`recognize_video_to_markdown` family is frozen historical compatibility, not a
+recommended integration path. It is deleted after independent merged-image and
+merged-audio recognition/resume replacements pass their gates. Callers will
+compose the visible steps; no replacement `recognize_video` lifecycle wrapper
+is planned. The long numbered `#...` narrative below is implementation history
+unless the current authority explicitly reaffirms it.
+
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained gate ran once from exact commit
 `e9d49b06fabd4c8c0aba5cdd40ef2006213405b3` through the active proxy. It passed
@@ -791,13 +802,13 @@ disposition-gated, and fully disclosed offline. Experimental direct Google
 short-audio recognition remains memory-only. Standalone Google Files long-MP3
 whole/interval publication and resume are shipped; their published live gates
 are lifecycle evidence, not transcription-quality evaluations. PDF repair
-remains unavailable. Video recognition is available through provider-free
-three-step calls and the higher-level `recognize_video_to_markdown()` facade.
-Only the high-level facade owns a journal and resumes missing image/audio work;
-the three-step calls remain non-resumable. Video worker routing remains
-unavailable. The request-owned video snapshot implementation is present in a
-clean externally installed wheel and does not make plain package import load
-heavy media or provider modules. Local user
+remains unavailable. Provider-free video inspection and frame/audio extraction
+are active. The old recognition/orchestration family remains importable but
+frozen until its independent image/audio replacements pass the deletion gate;
+its previous combined journal and live proofs are historical evidence, not
+current usage guidance. No replacement video lifecycle wrapper or video worker
+routing is planned. Provider-free video extraction remains lazy, so plain
+package import does not load heavy media or provider modules. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.
 

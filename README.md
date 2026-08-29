@@ -11,6 +11,19 @@ Current truth is maintained in
 before relying on any dated phase, decision, checkpoint, review, or incident
 record. Those files preserve history and do not override current status.
 
+### Current video boundary
+
+Provider-free `inspect_video()`, `extract_video_frames()`, and
+`extract_video_audio()` are active. The currently shipped
+`recognize_video_frames`, `recognize_video`, `VideoRecognitionOutcome`,
+`compose_video_result`, `publish_video_result`, and
+`recognize_video_to_markdown` family is frozen and obsolete as product
+direction. Existing callers can still encounter it, but new callers must not
+adopt it. It is deleted after independent merged-image and merged-audio
+recognition/resume replacements pass their gates; no replacement video
+lifecycle wrapper is planned. Until then, later descriptions of this family are
+implementation history, not recommended usage.
+
 As of 2026-08-29:
 
 - Phase 0 contract honesty, the Phase 1 image gate, the Phase 2 development
@@ -25,13 +38,7 @@ As of 2026-08-29:
   implemented and live-proven. Short MP3 remains memory-only; the standalone
   long-MP3 facade can optionally publish to a same-name directory and resume
   settled whole-file or integer-minute interval work without replaying paid
-  calls. Combined video selects inline audio through 300 seconds, whole-file
-  Files requests above that through 9.5 hours by default, or explicit serial
-  intervals through the private 10-hour product ceiling. Video retains settled
-  interval prefixes after failure or a partial provider-cleanup result. The
-  high-level `recognize_video_to_markdown()` facade now owns one fixed result
-  and temporary journal and resumes only missing image/audio units; the
-  three-step video API remains the lower-level non-resumable surface.
+  calls.
   **OBSOLETE AS DIRECTION (2026-08-29; implementation paused):** this facade
   remains shipped but frozen while the narrowed provider-model/media-batch
   replacement is decided and proven — see
@@ -58,25 +65,8 @@ As of 2026-08-29:
   `extract_video_frames()` performs a
   bounded five-second coarse scan that always compares the actual final frame,
   count-driven negative-feedback selection, and complete-directory JPEG
-  publication. `recognize_video_frames()` feeds
-  the exact ordered retained-frame tuple through the existing image path in
-  groups of at most eight and returns honest batch outcomes. It is memory-only;
-  `extract_video_audio()` now reads one request-owned MP4 snapshot and
+  publication. `extract_video_audio()` reads one request-owned MP4 snapshot and
   atomically publishes a fully decoded mono MP3 through the lazy video extra.
-  Frame and audio recognition use separate
-  `Config` objects, so their providers can differ. `recognize_video()` now
-  settles both branches into a typed `VideoRecognitionOutcome`; an outcome
-  cannot claim that the audio stream is absent while retaining an MP3 artifact,
-  an explicitly partial child result keeps the video partial, and frame-group
-  results must describe images.
-  `compose_video_result()` can explicitly turn a returned complete or partial
-  outcome into a standard memory-only video `RecognitionResult` with separate
-  frame and audio sections. Its current-run provider-call total is an integer
-  only when every settled branch supplies exact evidence; otherwise it is
-  `None`, never a guessed zero. `publish_video_result()` can instead atomically
-  publish the same complete or partial composition to an explicit caller-owned
-  path, with opt-in overwrite. Long-audio video routing and high-level video
-  resume are implemented; video worker routing is not.
 - Native Google image, inline short-MP3, and single-request Google Files long-MP3
   adapters are implemented. Legacy
   compatibility work and carry-forward warnings remain recorded in
@@ -127,52 +117,15 @@ The active package is `src/ocrllm/`. Its current image/PDF contract:
   seeks a five-second presentation-time grid plus the exact final frame and
   records decoded presentation timestamps, including for variable-frame-rate
   MP4s; a scene that appears entirely between those samples can be missed.
-- exposes memory-only `recognize_video_frames()` for a nonempty exact tuple of
-  library `RetainedVideoFrame` values; it reuses image preflight and recognition
-  in ordered groups of at most eight and creates no video-specific provider.
 - exposes `extract_video_audio()` for one explicit `.mp3` target under an
   existing plain directory; it streams the caller MP4 into a hidden snapshot,
   stages and fully decodes the first audio track, atomically publishes it, and
   removes request-owned files without imposing the short recognizer's duration
   limit.
-- keeps exact frame indices and timestamps on every settled video-frame group,
-  including typed failures and undispatched cancellation, so callers do not
-  have to reconstruct group membership after recognition. A public video
-  outcome is accepted only when those ordered group identities exactly cover
-  its retained frames; invalid outcomes cannot report `complete` first.
 - distinguishes a valid MP4 with no audio stream (`VIDEO_NO_AUDIO_STREAM`) from
   a declared audio stream that is corrupt or cannot be decoded (`VIDEO_INVALID`).
-- exposes `recognize_video()` as one Python-library orchestration call with
-  explicit image and audio configs. It validates both configurations before
-  reading the video, creating media output, or dispatching either provider;
-  then it retains frames and extracted MP3,
-  preserves each branch's result or typed error, and computes honest
-  `complete`, `partial`, or `failed` status without publishing final Markdown.
-  If final request-owned source-snapshot cleanup alone fails after the branches
-  settle, the outcome remains available as `partial` with an exact
-  `snapshot_cleanup_error`; composition and publication preserve the recognized
-  text, media, call evidence, and a fixed cleanup warning.
-  One cancelled branch returns as its existing typed branch error while the
-  other branch remains visible; pre-cancelled audio skips extraction. If both
-  branches are already cancelled, the call stops before source or output work.
-  Its outcome requires the exact lexical `output_root/frames/*` and optional
-  `output_root/audio.mp3` layout; it does not resolve path or symlink aliases.
-- exposes `compose_video_result()` as a provider-free explicit second step for
-  a returned complete or partial video outcome. It keeps ordered frame and
-  audio sections separate, preserves stable failure codes, reports retained
-  media as assets, and accumulates provider-reported tokens by model. A proved
-  failed Google audio-client close on terminal no-speech remains visible as a
-  cleanup warning and `audio_provider_client_closed=False`; unrelated error
-  details are not copied. It does not infer audio/frame alignment or accept a
-  fully failed outcome.
-- exposes `publish_video_result()` as the separate final-output step. It accepts
-  the same settled outcome plus an explicit output path, atomically publishes
-  Markdown without overwriting by default, and returns the standard video
-  result with a verified `output_path`. The Markdown target cannot replace a
-  retained frame or use the fixed `output_root/audio.mp3` media path, including
-  when the video is silent. It adds no recognition, resume, or legacy-format
-  behavior. The explicit filename remains caller-owned: the bytes are UTF-8
-  Markdown and `.md` is recommended, but the library does not impose a suffix.
+- keeps the old video recognition/orchestration family importable only as a
+  frozen compatibility surface; it is not the active integration path.
 
 The local OCR mode is available through the `ocr` extra. It is text extraction,
 not a formula/table/layout-equivalent replacement for the vision workflow. The
@@ -187,22 +140,11 @@ For DashScope image/PDF recognition and provider-free video parsing:
 pip install ".[image,dashscope,pdf-vision,video]"
 ```
 
-For the complete native-Google combined-video workflow:
+For provider-free video inspection and frame/audio extraction:
 
 ```powershell
-pip install ".[video,image,audio,google]"
+pip install ".[video]"
 ```
-
-For local RapidOCR on complete video frames with independent Google audio:
-
-```powershell
-pip install ".[video,ocr,audio,google]"
-```
-
-Use `image_config=Config(image_mode="ocr")` with the separate Google
-`audio_config`. The frame branch remains provider-free and receives complete
-retained frames; local OCR remains ordered text extraction rather than a
-formula, table, or layout-equivalent replacement for a vision model.
 
 For provider-free RapidOCR over complete PDF-rendered pages:
 
@@ -215,104 +157,28 @@ the complete pages in bounded ordered groups; the final result reports zero
 provider/network calls and aggregates the local OCR engine/version, image count,
 and retained-line count across those groups.
 
-For DashScope frame recognition with independent Google audio recognition:
-
-```powershell
-pip install ".[video,image,audio,dashscope,google]"
-```
-
-### Combined-video example with separate providers
-
-> **FROZEN COMPATIBILITY SURFACE:** this example documents the currently shipped
-> API so existing callers can use it honestly. New architecture must not build
-> on this video-specific recognition/compose/publication chain. After the
-> independently resumable merged-image and merged-audio replacements are proven,
-> the chain is deleted rather than retained beside them.
+### Provider-free video extraction
 
 ```python
-from os import environ
 from pathlib import Path
 
-from ocrllm import (
-    AudioModelSettings,
-    Config,
-    DashScopeSettings,
-    GoogleGenAISettings,
-    VisionModelSettings,
-    compose_video_result,
-    publish_video_result,
-    recognize_video,
-)
+from ocrllm import extract_video_audio, extract_video_frames, inspect_video
 
-
-image_config = Config(
-    provider=DashScopeSettings.for_region("cn-beijing"),
-    vision_model=VisionModelSettings(name="qwen3.7-plus-2026-05-26"),
-)
-audio_config = Config(
-    provider=GoogleGenAISettings(),
-    audio_model=AudioModelSettings(
-        name=environ["OCRLLM_GOOGLE_AUDIO_MODEL"],
-    ),
-)
-
-outcome = recognize_video(
+output_parent = Path("extracted")
+output_parent.mkdir()
+info = inspect_video("lecture.mp4")
+frames = extract_video_frames("lecture.mp4", output_dir=output_parent)
+audio = extract_video_audio(
     "lecture.mp4",
-    output_dir=Path("video-work"),
-    image_config=image_config,
-    audio_config=audio_config,
+    output_path=output_parent / "lecture" / "audio.mp3",
 )
-if outcome.status == "failed":
-    raise RuntimeError(
-        "video recognition failed; inspect frame_error and audio_error"
-    )
-
-result = compose_video_result(outcome)  # memory-only
-published = publish_video_result(outcome, Path("lecture.md"))
-print(result.status, published.output_path)
+print(info.duration_seconds, len(frames), audio)
 ```
 
-The image and audio configurations are independent; the example intentionally
-uses different built-in providers. Set `OCRLLM_GOOGLE_AUDIO_MODEL` only after
-checking current IDs with `list_google_genai_models()` and proving audio support
-with a small request: catalog membership alone does not prove that a model
-accepts audio. The current combined-video audio branch selects native Google
-inline transport through 300 decoded seconds and the existing Files transport
-above 300 seconds, subject to the selected model and current single-request
-limits. The low-level three-step route itself remains non-resumable.
-`recognize_video()` retains media and returns typed branch evidence; only a
-complete or partial outcome can be composed or published as final Markdown.
-
-For library-owned persistence, call the high-level facade instead:
-
-> **OBSOLETE AS DIRECTION (2026-08-29; implementation paused):**
-> `recognize_video_to_markdown` remains shipped but frozen until the narrowed
-> provider-model/media-batch replacement passes its deletion gate. The
-> successors are independently resumable image/audio batch functions, each with
-> its own output; callers compose the visible steps and no replacement
-> `recognize_video` wrapper is currently reserved. See
-> [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md).
-> The example below describes the shipped API until the refactor lands.
-
-```python
-from ocrllm import recognize_video_to_markdown
-
-result = recognize_video_to_markdown(
-    "lecture.mp4",
-    output_dir=Path("recognized"),
-    image_config=image_config,
-    audio_config=audio_config,
-    audio_interval_minutes=5,  # omit for automatic short/whole mode
-)
-
-# After a recoverable failure, repeat with the same inputs and resume=True.
-```
-
-This route validates all saved artifacts and request identities before a
-resumed provider dispatch, reuses settled work, and publishes fixed
-`recognized/lecture/result.md` only after recoverable gaps are closed. Interval
-length accepts positive integer minutes only. Repair remains a separate narrow
-future side path and does not consume this journal.
+The returned frames and MP3 are caller-owned. The future merged-image and
+merged-audio recognition/resume functions are not shipped yet, so this example
+stops at the active boundary rather than routing through the frozen video
+recognition family.
 
 ### Built-in DashScope example
 
@@ -391,8 +257,8 @@ Do not:
 - treat `output/`, `temp/`, `ocrllm_social_e2e/`, caches, or screenshots as
   source-of-truth evidence;
 - start HarmonyOS/ArkTS, Rust/PyO3, social-media recognition, PDF repair outside
-  the approved phase gate, video worker routing, or a second resume protocol for
-  the low-level three-step video API.
+  the approved phase gate, video worker routing, or another video lifecycle
+  wrapper.
 
 ## History Trace
 

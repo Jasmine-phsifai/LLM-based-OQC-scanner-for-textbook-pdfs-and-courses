@@ -7,6 +7,19 @@ document and carries current state, the open defect register, and the coding and
 documentation rules. Then read `../../docs/ocrllm_library_go_no_go.md` for phase
 gates and file responsibilities.
 
+## Current Video Supersession
+
+`../../docs/plan_provider_entity_batch_refactor.md` controls current video
+replacement work. Provider-free `inspect_video`, `extract_video_frames`, and
+`extract_video_audio` remain active. Every later numbered instruction about
+`recognize_video_frames`, `recognize_video`, `VideoRecognitionOutcome`,
+`compose_video_result`, `publish_video_result`,
+`recognize_video_to_markdown`, video job state/journals, or the combined-video
+runner is historical evidence only. That family remains shipped but frozen
+until independently resumable merged-image and merged-audio replacements pass
+their deletion gates, then it is deleted. Do not extend it, recruit new callers
+to it, or create another video lifecycle wrapper.
+
 The approved current work is the `#065 Unified Execution Queue` in
 `../../docs/ACTIVE_STATE_AND_RULES.md`; the older Stage M/A plan supplies detail
 only where that queue has not superseded it. #078 closed P1-c with one bounded
@@ -199,7 +212,8 @@ directories merely to reject the path before provider-free scanning.
 audio `Config` optional. Both configs remain deterministic zero-I/O preflight;
 only a validly configured call can later settle missing audio as frame-only.
 Do not add content-dependent config validation or a second frame-only mode to
-`recognize_video()`; use the existing frame extraction/recognition functions.
+`recognize_video()`; new work stops at provider-free frame/audio extraction
+until the independent merged-media recognition calls are approved and proven.
 #202 proves the existing accumulated-drift path retains one sampled transient
 high-contrast text line affecting about 2.29% of its thumbnail. Do not lower
 thresholds, import legacy refine/pHash machinery, or freeze another large

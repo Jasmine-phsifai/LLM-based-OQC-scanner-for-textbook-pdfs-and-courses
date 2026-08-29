@@ -12776,3 +12776,34 @@ controlled object per catalog row? #641 records only the question and common
 sequence; runtime, API, catalog return types, presets, provider calls,
 credentials, dependencies, media, state, frozen areas, and deletion are
 unchanged.
+
+## Current working update: #642 removes frozen video usage guidance
+
+Current video documentation now separates runtime truth from product direction.
+Provider-free `inspect_video()`, `extract_video_frames()`, and
+`extract_video_audio()` remain active. The shipped `recognize_video_frames`,
+`recognize_video`, `VideoRecognitionOutcome`, `compose_video_result`,
+`publish_video_result`, and `recognize_video_to_markdown` family remains
+importable for existing callers but is frozen and must not be selected for new
+integrations or current live acceptance work.
+
+Root and package usage examples now stop after caller-owned frame and audio
+extraction. They do not route through the frozen recognition/orchestration
+family and do not invent the future merged-media APIs before implementation.
+The old combined-video runner and its results remain historical evidence for
+incident analysis and the eventual deletion gate, not a current provider gate.
+Package-local agent instructions explicitly supersede their older imperative
+entries while preserving those numbered records as history.
+
+The replacement boundary is unchanged: callers visibly compose inspection,
+full-frame extraction with internal negative-feedback/similarity selection,
+image batch planning, merged-image recognition/resume, audio extraction,
+audio splitting, and merged-audio recognition/resume. Image and audio own
+separate outputs and providers. No replacement `recognize_video` lifecycle
+wrapper is planned. The old family is deleted only after both independent
+replacement paths pass their documented gates; #642 does not choose immediate
+deletion or change that gate.
+
+#642 changes documentation only. It does not change runtime exports, APIs,
+tests, provider behavior, media ownership, state, dependencies, frozen source
+areas, the 34-file deletion manifest, or any unresolved ProviderModel choice.

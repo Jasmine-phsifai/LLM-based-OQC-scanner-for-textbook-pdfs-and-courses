@@ -3,7 +3,7 @@
 This directory is the new `ocrllm` Python package. It is the only codebase in
 this repo intended for direct import by other projects.
 
-## Public Contract
+## Active recommended contract
 
 ```python
 from ocrllm import (
@@ -49,24 +49,29 @@ from ocrllm import (
     UnsupportedFormat,
     VideoError,
     VideoInfo,
-    VideoRecognitionOutcome,
     VisionModelSettings,
-    compose_video_result,
     extract_video_audio,
     extract_video_frames,
     recognize,
     recognize_batch,
     recognize_long_mp3,
-    recognize_video,
-    recognize_video_frames,
-    recognize_video_to_markdown,
     get_capabilities,
     get_provider_error_disposition,
     inspect_video,
     list_google_genai_models,
-    publish_video_result,
 )
 ```
+
+Provider-free `inspect_video()`, `extract_video_frames()`, and
+`extract_video_audio()` are active. The package still exports
+`recognize_video_frames`, `recognize_video`, `VideoRecognitionOutcome`,
+`compose_video_result`, `publish_video_result`, and
+`recognize_video_to_markdown`, but this family is frozen and obsolete as product
+direction. Existing callers can still encounter it; new callers must not adopt
+it. It is deleted after independent merged-image and merged-audio
+recognition/resume replacements pass their gates, and no replacement video
+lifecycle wrapper is planned. Later details about these symbols and their live
+runner are historical implementation evidence, not usage guidance.
 
 The wheel includes an empty `py.typed` marker. This makes the inline annotations
 in the installed package discoverable through the standard typed-package
@@ -388,78 +393,31 @@ Short MP3 remains memory-only; standalone long-MP3 whole/interval publication
 and resume are available through `recognize_long_mp3()`. PDF recognition is
 offline- and Google-live-proven.
 
-The provider-free video parsing and separately configured recognition slices
-are available:
-
-> **FROZEN COMPATIBILITY SURFACE:** the recognition/compose/publication calls in
-> this example remain documented because they are currently shipped. New code
-> should not treat that video-specific lifecycle as the replacement design. It
-> is deleted after independently resumable merged-image and merged-audio calls
-> pass their replacement gates.
+Provider-free video inspection and extraction are available:
 
 ```python
 from pathlib import Path
 
 from ocrllm import (
-    AudioModelSettings,
-    Config,
-    GoogleGenAISettings,
-    VisionModelSettings,
     extract_video_audio,
     extract_video_frames,
     inspect_video,
-    publish_video_result,
-    recognize,
-    recognize_video,
-    recognize_video_frames,
 )
 
+output_parent = Path("output")
+output_parent.mkdir()
 info = inspect_video("lecture.mp4")
-frames = extract_video_frames("lecture.mp4", output_dir="output")
-image_outcomes = recognize_video_frames(
-    frames,
-    config=Config(
-        provider=GoogleGenAISettings(),
-        vision_model=VisionModelSettings(name="gemini-2.5-flash"),
-    ),
-)
-video_root = Path("output") / "lecture"
+frames = extract_video_frames("lecture.mp4", output_dir=output_parent)
+video_root = output_parent / "lecture"
 audio_path = extract_video_audio(
     "lecture.mp4",
     output_path=video_root / "audio.mp3",
 )
-audio_result = recognize(
-    audio_path,
-    config=Config(
-        provider=GoogleGenAISettings(),
-        audio_model=AudioModelSettings(name="gemini-2.5-flash"),
-    ),
-)
-
-video_outcome = recognize_video(
-    "another-lecture.mp4",
-    output_dir="output",
-    image_config=Config(
-        provider=GoogleGenAISettings(),
-        vision_model=VisionModelSettings(name="gemini-2.5-flash"),
-    ),
-    audio_config=Config(
-        provider=GoogleGenAISettings(),
-        audio_model=AudioModelSettings(name="gemini-2.5-flash"),
-    ),
-    # Optional: use exact integer-minute Files intervals instead of whole mode.
-    audio_interval_minutes=10,
-)
-if video_outcome.status != "failed":
-    video_result = publish_video_result(
-        video_outcome,
-        "output/another-lecture.md",
-    )
+print(info.duration_seconds, len(frames), audio_path)
 ```
 
 Install `ocrllm[video]` for provider-free inspection and frame/audio extraction.
-The complete native-Google recognition example above requires
-`ocrllm[video,image,audio,google]`. `inspect_video()` accepts one local MP4,
+`inspect_video()` accepts one local MP4,
 validates metadata and a real first-frame decode, returns immutable `VideoInfo`,
 writes nothing, and makes no provider call. Its duration comes from the MP4
 container rather than `frame_count / FPS`, so variable-frame-rate input does
@@ -472,11 +430,6 @@ is applied by the pinned OpenCV backend: `VideoInfo` dimensions and retained
 JPEG pixels both use the decoded display orientation rather than the encoded
 landscape storage dimensions.
 
-The image branch may instead use provider-free local OCR while the audio branch
-continues to use Google: pass `image_config=Config(image_mode="ocr")`, keep the
-separate Google `audio_config`, and install the union
-`ocrllm[video,ocr,audio,google]`. This combination retains complete video frames,
-makes zero image-provider/network calls, and does not change the audio provider.
 `extract_video_frames()` adds five-second coarse thumbnails, bounded
 count-driven negative-feedback selection, and ordered immutable
 `RetainedVideoFrame` records. Coarse seeks use presentation time and each
@@ -508,6 +461,12 @@ both distinctive `IMPORTANT` and `42` content; silent audio made no provider
 call. A separate real five-minute probe alternated a small cursor every second:
 61 coarse candidates calibrated to six retained frames while published JPEGs
 still represented both sides of one genuine major slide transition.
+
+### Historical frozen frame-recognition detail
+
+The next paragraph records the shipped compatibility implementation; it is not
+an active entry point for new callers.
+
 `recognize_video_frames()` accepts only the exact
 ordered tuple returned by this library and reuses ordinary image recognition
 in groups of at most eight. It is memory-only and returns one existing
@@ -519,6 +478,9 @@ a missing explicit Google vision model, raise before retained-JPEG validation
 instead of becoming a failure for the first frame group. This frame-only
 function does not compose a video document or persist/resume recognition;
 those are separate library responsibilities.
+
+### Active extraction details
+
 Each public `RetainedVideoFrame` must name a `.jpg` path, matching the library's
 retained-asset format. The existing image preflight still owns file existence
 and JPEG byte validation; the value object does not add another decoder or path
@@ -529,8 +491,15 @@ request-owned snapshot there, and atomically publishes a fully decoded mono
 16 kHz / 32 kbps MP3. Extraction itself has no duration ceiling. The
 function raises `VideoError(code="VIDEO_NO_AUDIO_STREAM")` when the MP4 is
 valid but has no audio stream; present-but-corrupt or undecodable audio remains
-`VIDEO_INVALID`, so callers do not have to parse FFmpeg text. The
-combined recognizer uses the separately installed `audio,google` routes: it
+`VIDEO_INVALID`, so callers do not have to parse FFmpeg text.
+
+### Historical frozen orchestration detail
+
+Everything from the combined recognizer through publication and video-journal
+resume below records the compatibility implementation only. It must not guide
+new integration work.
+
+The combined recognizer uses the separately installed `audio,google` routes: it
 owns and fully decodes the extracted MP3 once, then selects inline recognition
 through 300 seconds, Google Files whole-audio above 300 seconds through the
 9.5-hour single-request ceiling by default, or explicit integer-minute Files
@@ -637,8 +606,11 @@ writes UTF-8 Markdown and `.md` is the recommended suffix, but suffixes are not
 validated. This is distinct from the exact library-owned media paths above.
 Automatic fallback and video worker routing remain unavailable. Resume exists
 only through explicit `recognize_video_to_markdown(..., resume=True)`; the
-low-level recognize/compose/publish calls remain non-resumable. Plain
-`import ocrllm` does not import OpenCV, NumPy, imageio-ffmpeg, recognition
+low-level recognize/compose/publish calls remain non-resumable.
+
+### Import behavior
+
+Plain `import ocrllm` does not import OpenCV, NumPy, imageio-ffmpeg, recognition
 execution helpers, or provider SDKs. The primary single/batch recognition,
 standalone long-MP3, and four video facade functions are bound during package
 initialization so explicitly importing their same-named submodules cannot
@@ -734,9 +706,16 @@ provider work. Fresh and partially resumed interval runs still require one
 validated current-model usage row. This runner does not expose whole-mode
 resume; the library facade's broader resume contract remains separate.
 
-## Bounded Google Combined-Video Live Smoke
+## Historical frozen combined-video evidence
 
-Install `ocrllm[video,image,audio,google]` and run one authorized MP4 through
+The following record proves behavior of the shipped but frozen video
+recognition/orchestration family. It is retained for incident and deletion-gate
+traceability only. Do not run this runner as a current acceptance gate or use it
+as an integration example; current live proof belongs to the independent image
+and audio paths.
+
+Historically, maintainers installed `ocrllm[video,image,audio,google]` and ran an
+authorized MP4 through
 `tools/run_google_genai_video_smoke.py` with explicit current-catalog
 `--image-model` and `--audio-model` values, a video path, a timeout, and the
 required `--expected-frame-groups` value of `1` or `2`. Before catalog access,
