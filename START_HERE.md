@@ -1411,3 +1411,10 @@ instead, reject excess lanes rather than queueing or clamping them. The same
 audit found that current request-start pacing is uniform for vision but not for
 short/uploaded Google audio; this is recorded for focused proof before merged
 audio, not fixed during the discussion pause.
+
+#622 recommends resetting each provider lane to the first binding on every fresh
+or resume invocation. Last-success changes only after a new success inside that
+call. Settled slots and cumulative usage remain reusable evidence, but they do
+not restore routing; unresolved slots keep their absolute indexes and use the
+current lane count. No provider tree, lane cursor, historical blacklist, or
+binding-plan identity is persisted.

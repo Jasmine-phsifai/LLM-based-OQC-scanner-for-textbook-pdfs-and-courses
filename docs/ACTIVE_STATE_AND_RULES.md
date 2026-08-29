@@ -12260,3 +12260,25 @@ SDK operation. Do not claim uniform audio request pacing or port that behavior
 into merged audio until a focused call-order test and bounded real path establish
 the intended contract. #621 changes no runtime, API, fingerprint, state, test,
 provider, dependency, frozen boundary, or deletion.
+
+## Current working update: #622 keeps lane preference inside one invocation
+
+Pending maintainer confirmation of the phrase "each new batch," every fresh or
+resume invocation starts each current provider lane at its first binding. Only
+a valid success produced in that invocation updates that lane's start for its
+next unresolved batch; a fully failed batch does not clear or replace the
+current invocation's earlier success.
+
+Loaded settled slots remain historical content, call, token, and actual
+provider/model evidence. They do not seed routing, blacklist a provider, restore
+a retry cursor, or override the caller's newly supplied order. Unresolved slots
+keep their original absolute indexes and use `batch_index % current_lane_count`;
+changing lane count or provider plan may reroute only unresolved work. Settled
+content is never reopened or repacked.
+
+The current shipped image/audio sidecars bind providers differently and do not
+contain a complete safe `ProviderBinding` identity or lane cursor. Adding
+binding-plan fingerprints, lane-count identity, cursor migration, and historical
+error state solely to reconstruct a preference is rejected. #622 changes no
+runtime, API, state schema, fingerprint, test, provider, dependency, frozen
+boundary, or deletion.

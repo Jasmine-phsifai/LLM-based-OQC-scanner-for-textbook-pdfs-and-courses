@@ -937,6 +937,14 @@ reject `lane_count > max_parallel_requests`; do not queue, clamp, or require
 equality. None of these choices permits secrets, generic parameter lists,
 mutable clients, or per-model concurrency state inside `ProviderModel`.
 
+#622 recommends that last-success routing is invocation-local. Every fresh or
+resume call starts each newly supplied lane at its first binding; only a success
+inside that call changes the next batch's start. Settled provider/model facts
+remain audit evidence, not a persisted preference. Unresolved slots keep their
+absolute indexes and use the current lane count, while settled slots are never
+reopened. Persisting or reconstructing a lane cursor remains rejected unless
+the maintainer explicitly says "each new batch" includes a later resume call.
+
 The latest instruction resolves two former choices. The duplicated video
 recognition/journal product is abandoned after its image/audio replacement gate;
 it is not retained as a compatibility family and is not deleted during this

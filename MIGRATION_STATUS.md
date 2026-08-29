@@ -2890,3 +2890,11 @@ of queued or clamped. The audit also records that request-start pacing is not
 uniform across current short/long Google audio, so merged audio must prove its
 intended cadence before reuse. Runtime, APIs, tests, state, and providers remain
 unchanged.
+
+#622 recommends invocation-local lane preference without implementation. Every
+fresh or resume call begins each newly supplied lane at its first binding; only
+a success during that call changes the next unresolved batch's start. Settled
+slots stay complete and retain audit/usage evidence, while unresolved slots use
+their original absolute indexes and the current lane count. Historical settled
+providers do not restore a cursor or blacklist. No provider plan, lane state,
+binding fingerprint, runtime, API, test, or state-schema change is added.

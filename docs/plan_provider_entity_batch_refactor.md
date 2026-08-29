@@ -1966,10 +1966,9 @@ setting or silently decide how a future nested API combines outer-list lane
 count with the existing `max_parallel_requests` setting. That exact admission
 rule belongs to the nested-lane implementation slice; it must preserve fixed
 assignment and bounded progress without adding global rounds or fairness/work-
-stealing machinery. Resume bootstrap from a newly supplied provider plan also
-remains slice-local: settled slots are reused, while whether a matching earlier
-success may seed a lane or every lane restarts at its new first binding needs
-the concrete resume schema.
+stealing machinery. #621 records the current one-authority recommendation.
+Resume bootstrap is narrowed by #622 below: settled slots are reused, while
+every new invocation starts its newly supplied lanes at their first binding.
 
 No scheduler, provider plan, runtime, test, state format, public API, provider
 call, dependency, or deletion is added by #620.
@@ -2019,3 +2018,40 @@ merged-audio slice reuses that policy.
 
 No concurrency API, validation, scheduler, fingerprint, audio gate, test,
 provider call, runtime, state, dependency, or deletion changes in #621.
+
+## #622 Resume Does Not Restore Lane Preference
+
+The maintainer's "each new batch" last-success rule is interpreted within one
+fresh or resume invocation. Each lane starts at the first binding in the provider
+plan supplied for that invocation. Only a valid success produced during that
+same invocation changes the starting binding for the lane's next unresolved
+batch. A completely failed batch leaves the current invocation's last-success
+pointer unchanged.
+
+Three routes were compared. Resetting to the current first binding honors the
+caller's current order and needs no new state. Reconstructing a preference from
+the most recent settled slot would silently override a reordered provider plan
+and cannot distinguish the same vendor/model used with different endpoints or
+settings. Persisting a lane cursor or provider tree would additionally require
+lane-count identity, binding fingerprints, invalidation, and migration rules
+for a routing optimization. The latter two routes are rejected.
+
+Resume continues to preserve the facts that matter. Settled media slots remain
+settled and retain their actual successful vendor/model and cumulative usage
+evidence. Unresolved slots retain their original absolute batch indexes and are
+assigned by `batch_index % current_lane_count`; the missing subset is never
+renumbered. A changed lane count or provider plan may therefore change only the
+routing of unresolved work. It never reopens, repacks, or moves settled content.
+
+Historical calls and nullable token totals remain the loaded cumulative
+baseline, but token rows, prior terminal errors, and settled provider evidence
+do not act as a durable preference, blacklist, cooldown, or retry cursor. The
+resumed invocation runs its current finite policies and records its own current
+delta. If the caller wants a previously successful provider first, the caller
+can place that binding first in the new plan.
+
+This is the current smallest recommendation pending confirmation that "new
+batch" does not mean a batch in a later resume invocation. No candidate tree,
+lane count, cursor, binding object, historical error list, or provider-routing
+fingerprint is persisted. No runtime, API, state schema, test, provider call,
+dependency, or deletion changes in #622.
