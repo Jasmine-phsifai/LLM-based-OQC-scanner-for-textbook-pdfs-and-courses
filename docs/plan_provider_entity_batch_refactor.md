@@ -1,7 +1,7 @@
 # Plan: Provider-Model And Media-Batch Refactor
 
 Status: **approved product direction; runtime implementation remains paused
-for the current decision map in section 0 and the #612 discussion checkpoint.** Existing
+for the current decision map in section 0.** Existing
 provider-free primitive maintenance remains allowed when real media exposes a
 defect. This revision replaces the prematurely expanded
 2026-08-28 module build specification. It is a decision record and sequencing
@@ -10,11 +10,12 @@ guide, not permission to build unused framework pieces.
 Authority: the latest maintainer instructions and the corresponding current
 working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
 
-## 0. Current pruning checkpoint (2026-08-29, #601)
+## 0. Current pruning checkpoint (2026-08-29, #627)
 
-This plan remains a discussion record, not implementation authorization. The
-latest maintainer proposal confirms the destination but does not make every
-later pool/retry detail part of the first slice.
+This plan remains a discussion record, not implementation authorization. #627
+reconciles the latest proposal with decisions #591--#626 so readers do not have
+to treat older checkpoint questions as current merely because they remain below
+as history.
 
 The next implementation, if separately authorized, remains only one vertical
 proof: one immutable `ProviderModel` **instance** for one exact vendor/model,
@@ -42,6 +43,40 @@ earlier-provider failure evidence with the result; it does not raise a terminal
 exception after producing a valid recognition. Terminal failure reports one
 last safe failure for each unresolved batch.
 
+The following are already fixed and are not current questions: the public video
+flow has no replacement `recognize_video` black box; frame selection stays
+inside `extract_video_frames`; published extraction output is caller-owned;
+`resume_video` is a stateless package-root route to the two ordinary media
+resumes; deterministic default output is
+`<normalized-source-identity>_ocrllm.md`; every provider leaf and capability is
+validated before side effects; flat fallback stops at first success; successful
+fallback returns one complete result with bounded failure evidence; unresolved
+slots publish recovery evidence then raise `RecognitionIncomplete`; and image
+and audio retain separate plans, sidecars, and Markdown writers.
+
+Only these six decision groups remain, ordered by their earliest consumer:
+
+1. Whether "prebuild all Google and DashScope models" means transient current-
+   catalog descriptors plus a small live-proven executable preset set, or a
+   checked-in executable mirror that reverses the no-indefinite-maintenance
+   decision. The former remains recommended.
+2. Whether the fully documented eventual `ProviderModel` schema must place
+   every not-yet-consumed audio/retry field in the first runtime class, rather
+   than landing fields with their first real consumer.
+3. Whether the latest `error` / `next` / `current` examples intentionally
+   restore action labels or raw HTTP keys. The current smaller rule first maps
+   vendor evidence to a canonical code, then applies only finite
+   `extra_retries` and `wait_seconds`.
+4. For nested lanes, whether the outer exact list is the sole concurrency
+   authority with the existing 32-lane ceiling, and whether last-success is
+   invocation-only rather than persisted across resume. #621/#622 retain those
+   recommendations pending confirmation.
+5. Whether the latest `float` spelling intentionally reverses positive integer
+   provider audio minutes. Integer minutes remain authoritative meanwhile.
+6. The exact stateless `resume_video` arguments and one-branch-failure return
+   shape remain a later API question. They do not block the first provider or
+   merged-image slice and do not authorize video state or a result framework.
+
 #602 corrects one already-shipped canonical mapping before any retry executor
 exists. Native Google HTTP 400 with exact status `FAILED_PRECONDITION` has now
 occurred across catalog and Files-upload operations, so it maps to
@@ -60,6 +95,9 @@ proves the canonical mapping is now honest in real execution; it does not prove
 catalog availability, model membership, image recognition, or a retry policy.
 
 ### #604 discussion checkpoint: preserve the destination, reopen contradictions
+
+Historical checkpoint: its open list is superseded by section 0 and the later
+#591--#626 decisions; retain it only as the reasoning trail.
 
 The maintainer's latest detailed proposal reconfirms most of sections 2.1-2.9,
 but explicitly pauses implementation for further discussion. It does not
@@ -168,6 +206,9 @@ or threshold change is justified by #608/#609.
 
 ### #610 discussion checkpoint: prune the proposed provider/media destination
 
+Historical checkpoint: use section 0 for current questions. The narrower
+evidence and rejected designs below remain valid.
+
 The maintainer's latest proposal is discussion input, not runtime
 authorization. Read against the shipped source, it confirms the destination
 already recorded below: visible inspect/extract/batchify/recognize composition,
@@ -271,6 +312,9 @@ lifecycle remains the smaller adapter boundary. #611 changes no transport or
 runtime code; it makes the source-proven native-SDK choice explicit.
 
 ### #612 discussion checkpoint: keep the visible workflow, remove the second public frame filter
+
+Historical checkpoint: later decisions close several questions listed here;
+section 0 is the current decision board.
 
 The maintainer's latest proposal remains discussion input rather than runtime
 authorization. It cancels the planned public `dedupe_video_frames` step. The

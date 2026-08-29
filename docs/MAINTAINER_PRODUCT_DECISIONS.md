@@ -1550,3 +1550,18 @@ settings, raw errors, or success rows. Atomicity covers the Markdown write only;
 do not add a two-file transaction. State-write and Markdown-write failures keep
 their existing error families, with the latter retaining state and the safe
 failed-slot summary.
+
+**#627 replaces stale checkpoint questions with one current discussion board.**
+Do not ask again whether default output uses `_ocrllm.md`, whether every provider
+leaf/capability is preflighted, whether public extraction is caller-owned,
+whether `resume_video` exists as a stateless root route, whether flat fallback
+stops at first success, or whether complete fallback returns normally: those
+questions are settled.
+
+The remaining discussion order is: runtime catalog descriptors plus a small
+live-proven preset set versus a checked-in executable mirror; complete-first
+versus consumer-staged runtime model fields; canonical two-value retry rules
+versus an explicit reversal to raw-code action labels; nested-list concurrency
+plus invocation-local lane preference; integer versus float provider audio
+minutes; and only later the exact stateless `resume_video` signature. This board is not runtime
+authorization and adds no new framework.

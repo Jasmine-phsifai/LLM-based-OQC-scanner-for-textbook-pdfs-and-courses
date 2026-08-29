@@ -12365,3 +12365,23 @@ new partial; Markdown-write failure retains state and raises existing
 terminal families remain unchanged. #626 changes no runtime, API, test, stable
 code, schema implementation, provider, dependency, media, frozen boundary, or
 deletion.
+
+## Current working update: #627 makes the discussion board current
+
+#627 is a documentation-only reconciliation after the maintainer's latest
+discussion-only proposal. It corrects the tempting but false reading that every
+older checkpoint question remains open. Default `_ocrllm.md` naming, complete
+provider/capability preflight, caller ownership of published extraction output,
+the stateless root `resume_video` route, flat first-success fallback, successful-
+fallback result evidence, and the incomplete-run terminal are already fixed.
+
+The current plan now lists only six remaining decision groups, ordered by first
+consumer: transient catalog descriptors plus a small executable preset set
+versus a source-controlled catalog mirror; complete-first versus consumer-staged
+runtime model fields; whether raw-code action labels intentionally reverse
+canonical two-value retry rules; nested-lane concurrency authority and
+invocation-local preference; integer versus float provider audio minutes; and
+the later exact `resume_video` signature.
+Older #604/#610/#612 question lists are explicitly historical. No runtime, API,
+test, stable code, state, provider, media, dependency, frozen boundary, or
+deletion changes in #627.

@@ -1447,3 +1447,10 @@ partial result or attach a result to an exception. Its ordered `failed_slots`
 contains only slot index plus the final vendor/model/code/safe description.
 There is no cross-file transaction or memory-only omitted-output branch. This is
 documentation-only; the stable error code is not implemented yet.
+
+#627 refreshes section 0 of the provider/media plan so historical #604/#610/#612
+questions are no longer mistaken for current blockers. Settled naming,
+preflight, ownership, resume routing, fallback-success, and incomplete-run
+contracts are not reopened. Six narrow decision groups remain in earliest-
+consumer order; no runtime or API work is authorized by this documentation-only
+reconciliation.
