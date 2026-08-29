@@ -30,6 +30,7 @@ def list_google_genai_models(
     client = None
     public_error: OCRLLMError | None = None
     models: tuple[str, ...] | None = None
+    provider_operation = "client_setup"
     try:
         try:
             client = google_module.Client(
@@ -39,6 +40,7 @@ def list_google_genai_models(
                     timeout_seconds=timeout,
                 ),
             )
+            provider_operation = "catalog"
             models = parse_google_genai_model_catalog(client.models.list())
         except OCRLLMError as error:
             public_error = error
@@ -49,12 +51,16 @@ def list_google_genai_models(
         if close_error is not None:
             if public_error is None:
                 public_error = close_error
+                provider_operation = "cleanup"
             else:
                 public_error._add_safe_detail("provider_client_cleanup_failed", True)
         del api_key
     if public_error is not None:
+        public_error._add_safe_detail("provider_operation", provider_operation)
         raise public_error from None
     return () if models is None else models
+
+
 def _validate_timeout(value: object) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ConfigError("timeout_seconds must be a finite positive number.") from None

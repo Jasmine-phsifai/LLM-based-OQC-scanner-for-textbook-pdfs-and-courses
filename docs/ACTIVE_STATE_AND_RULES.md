@@ -11596,3 +11596,23 @@ next eligible atomic repair. No runtime source, test source, dependency, public
 API, preset, legacy source, frozen boundary, or deletion changed in #599.
 Focused credential precedence, catalog filtering/cleanup, and catalog-failure
 call-accounting regressions remain **3 passed in 0.16s**.
+
+## Current working update: #600 labels public Google catalog failure stages
+
+#600 fixes the narrow existing-library defect exposed by #599 without touching
+the paused provider-model replacement. Public `list_google_genai_models()` now
+starts with safe `provider_operation="client_setup"`, changes it to `catalog`
+only after the client exists, and reports `cleanup` only when a successful
+catalog is followed by the sole close failure. A catalog network/SDK error and
+a catalog parse error deliberately share `catalog`; when catalog and cleanup
+both fail, the primary operation remains catalog and the existing bounded
+`provider_client_cleanup_failed` evidence remains additive.
+
+The fix does not change existing error classes/codes/messages, expose raw
+provider text, add an HTTP status, retry, proxy resolver, generation-call
+counter, new stage enum, or provider-model type. Focused native Google adapter,
+error-redaction, and lightweight-import regressions are **85 passed in 1.97s**.
+No live provider call was repeated because #599 already supplied the real
+failure and this iteration changes only deterministic safe metadata. No
+dependency, public export/signature, legacy source, frozen boundary, or deletion
+changed.

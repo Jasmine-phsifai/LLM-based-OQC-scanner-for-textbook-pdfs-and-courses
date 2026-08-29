@@ -424,6 +424,13 @@ is therefore the evidence-backed first proof; Google follows after a later
 catalog succeeds. Do not add automatic Windows-proxy discovery to the library
 or retry generation to force the former order.
 
+#600 repairs one existing public-helper defect exposed by that failure:
+`list_google_genai_models()` now identifies `client_setup`, `catalog`, or
+`cleanup` in its safe typed error details. Parsing the returned catalog remains
+part of `catalog`; no parser stage, vendor body, retry hint, HTTP-policy layer,
+proxy behavior, or provider-model code was added. This observability repair does
+not change the DashScope-first order or lift the implementation pause.
+
 After authorization, the first slice is limited to:
 
 1. one internal immutable `ProviderModel` with the already-fixed complete field

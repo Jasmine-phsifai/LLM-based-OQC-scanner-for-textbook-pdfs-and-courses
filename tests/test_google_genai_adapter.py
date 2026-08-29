@@ -235,6 +235,65 @@ def test_google_catalog_filters_generate_content_normalizes_ids_and_closes(monke
     assert fake.client_kwargs[0]["http_options"].timeout == 7500
 
 
+def test_google_catalog_client_setup_failure_identifies_operation(monkeypatch):
+    catalog = importlib.import_module(
+        "ocrllm.providers.google_genai.list_google_genai_models"
+    )
+    fake = _FakeGoogleModule()
+
+    def fail_client_setup(**_kwargs):
+        raise ConnectionError("PRIVATE-GOOGLE-CLIENT-SETUP")
+
+    monkeypatch.setattr(fake, "Client", fail_client_setup)
+    monkeypatch.setattr(catalog, "load_google_genai", lambda: fake)
+
+    with pytest.raises(ProviderError) as captured:
+        ocrllm.list_google_genai_models(_google_settings())
+
+    assert captured.value.code == "PROVIDER_NETWORK"
+    assert captured.value.details["provider_operation"] == "client_setup"
+    assert "PRIVATE-GOOGLE-CLIENT-SETUP" not in str(captured.value)
+    assert fake.clients == []
+
+
+def test_google_catalog_request_failure_identifies_operation_and_closes(monkeypatch):
+    catalog = importlib.import_module(
+        "ocrllm.providers.google_genai.list_google_genai_models"
+    )
+    fake = _FakeGoogleModule()
+
+    def fail_catalog():
+        raise ConnectionError("PRIVATE-GOOGLE-CATALOG")
+
+    monkeypatch.setattr(fake.models, "list", fail_catalog)
+    monkeypatch.setattr(catalog, "load_google_genai", lambda: fake)
+
+    with pytest.raises(ProviderError) as captured:
+        ocrllm.list_google_genai_models(_google_settings())
+
+    assert captured.value.code == "PROVIDER_NETWORK"
+    assert captured.value.details["provider_operation"] == "catalog"
+    assert "PRIVATE-GOOGLE-CATALOG" not in str(captured.value)
+    assert fake.models.generate_calls == []
+    assert fake.clients[0].closed is True
+
+
+def test_google_catalog_cleanup_failure_identifies_operation(monkeypatch):
+    catalog = importlib.import_module(
+        "ocrllm.providers.google_genai.list_google_genai_models"
+    )
+    fake = _FakeGoogleModule(close_error=RuntimeError("PRIVATE-GOOGLE-CLOSE"))
+    monkeypatch.setattr(catalog, "load_google_genai", lambda: fake)
+
+    with pytest.raises(ProviderError) as captured:
+        ocrllm.list_google_genai_models(_google_settings())
+
+    assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.details["provider_operation"] == "cleanup"
+    assert "PRIVATE-GOOGLE-CLOSE" not in str(captured.value)
+    assert fake.clients[0].closed is True
+
+
 def test_google_request_uses_bounded_snapshot_bytes_and_prompt_last(tmp_path):
     builder = importlib.import_module(
         "ocrllm.providers.google_genai.build_google_genai_image_request"
