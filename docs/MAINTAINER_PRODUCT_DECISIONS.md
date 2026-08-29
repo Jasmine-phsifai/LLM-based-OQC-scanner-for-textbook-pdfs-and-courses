@@ -936,6 +936,10 @@ product choices remain open:
    outcome reporting kept outside the rule and one universal "exhausted means
    record and advance" behavior (recommended), or do `error` / `next` /
    `current` retain distinct control meanings that still need to be specified?
+8. Does each built-in `ProviderModel` store a controlled adapter ID resolved
+   through one explicit lazy dispatcher while the existing injected Python
+   protocol stays separate (recommended), or does every model entity contain
+   an arbitrary callable/protocol adapter object?
 
 **#572 evidence for choices 1 and 2.** Both the active library's same-provider
 model-candidate loop and the legacy DashScope/Google candidate loops stop at
@@ -1029,6 +1033,26 @@ parser, exponential engine, unbounded retry, or learned policy. The supplied
 so preserving their labels would duplicate state rather than express behavior.
 This is not maintainer confirmation; choice 7 remains open and no runtime was
 implemented.
+
+**#578 evidence for choice 8.** Active code already separates built-in and
+injected invocation. Exact Google/DashScope settings select lazily imported
+operation modules; those adapters own SDK loading, credential resolution,
+request/response translation, canonical error mapping, and client cleanup. The
+separate `VisionProvider` protocol accepts an opaque Python object for tests and
+advanced injection. Legacy shows the cost of merging those roles: its general,
+Google, hybrid, API-pool, and Codex clients combine transport selection,
+credentials, clients, media routing, retry, fallback, model memory, and CLI
+execution. Recommended: built-in `ProviderModel` values store only a validated
+transport-level adapter ID, and a small explicit resolver lazily imports known
+operation-specific modules. It is not a mutable registry, plugin system,
+arbitrary module loader, executable path, or subclass per model. SDK clients,
+uploads, credentials, pools, retry state, and lane state never enter the model
+value. Credentials remain call/runtime data; the first vertical slice reuses
+its existing exact settings type and does not invent a generic credential
+registry before a second transport proves a common need. Keep the existing
+injected protocol on its existing API instead of automatically wrapping it in
+the replacement batch abstraction. This is not maintainer confirmation;
+choice 8 remains open and no runtime was implemented.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

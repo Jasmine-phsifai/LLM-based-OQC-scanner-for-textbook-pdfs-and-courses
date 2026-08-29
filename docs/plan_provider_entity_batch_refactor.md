@@ -115,7 +115,9 @@ Only fields consumed by the first real vertical slice may be added. The
 expected set is:
 
 - vendor and model identifier;
-- adapter identifier (data, not a callable or executable pointer);
+- an invocation boundary, still awaiting choice 8 in section 6; the
+  recommended built-in route stores a controlled adapter identifier rather
+  than a callable or executable pointer;
 - plain-image OCR support;
 - detail-image OCR support, including LaTeX/code-oriented output;
 - audio-input recognition support;
@@ -130,7 +132,9 @@ error, not a provider runtime error, and causes zero provider calls.
 
 Entities/presets do not contain API secrets. A generic executable registry,
 plugin system, identity fingerprint, full model catalog, placeholder OpenAI
-adapter, or arbitrary future-SDK options container is not approved.
+adapter, or arbitrary future-SDK options container is not approved. The
+existing injected-provider protocol remains a separate Python extension and
+test seam; it is not silently embedded in every provider-model value.
 
 Credentials are supplied at call/runtime boundaries and never included in
 repr, persistence, or committed presets. A non-secret endpoint or adapter
@@ -346,6 +350,11 @@ Implementation remains paused until these choices are explicit:
    records the last failure and advances to the next provider. Keep `error` /
    `next` / `current` only if the maintainer assigns them distinct control
    behavior that is not already expressed by those fields.
+8. **Built-in invocation boundary.** Recommended: a `ProviderModel` stores one
+   controlled adapter ID; one explicit lazy resolver selects the known
+   operation-specific adapter module. Keep the existing injected Python
+   protocol separate. Alternative: store a callable/protocol adapter object
+   inside every `ProviderModel`.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -681,6 +690,67 @@ requires that branch.
 Choice 7 remains awaiting explicit maintainer confirmation. This evidence does
 not authorize a retry engine, provider dispatcher, new error mapping, retry
 hint parser, preset, or runtime change.
+
+### 6.7 Evidence for choice 8 (#578)
+
+The active library already contains both candidate mechanisms, but for
+different jobs. Built-in Google and DashScope settings are resolved by exact
+type to lazily imported operation modules. Those modules own SDK loading,
+credential resolution, request construction, response parsing, canonical error
+mapping, and client cleanup. Separately, `VisionProvider` accepts an injected
+Python object with a callable `recognize_images` method. The injected object is
+useful for tests and advanced Python integration, but it is opaque, not
+serializable, and may hide secrets or live resources.
+
+Legacy shows why those mechanisms must not be folded into one model entity.
+Its general client combines OpenAI-compatible clients, a vision client, Codex
+CLI execution, wire-protocol choice, retry, and model fallback. Its Google
+client also retains unavailable-model and last-success state, while the hybrid
+client silently routes different media to different internal clients. These
+paths prove that an invocation may be native SDK, compatible HTTP SDK, local
+engine, or CLI; they do not justify storing the executable implementation or
+mutable client state in `ProviderModel`.
+
+Route A keeps the first built-in boundary closed and explicit:
+
+1. `ProviderModel.adapter_id` is a validated data value identifying one actual
+   transport, such as native Google GenAI or DashScope's OpenAI-compatible
+   endpoint. It is not merely the vendor name because one vendor may expose
+   more than one protocol.
+2. One small resolver uses explicit branches for the adapter IDs shipped by
+   OCRLLM and lazily imports the corresponding operation module. It is not a
+   mutable registry, entry-point system, dotted-module loader, or plugin
+   discovery mechanism.
+3. Adapter modules expose operation-specific calls such as image or audio
+   recognition. They create and close SDK clients inside a call and retain
+   vendor request building, response parsing, and canonical error mapping.
+4. Fallback order, finite retry execution, lane-local last success, and token
+   aggregation remain recognition-call state. They do not move into an adapter
+   or a provider-model preset.
+5. Credentials and credential pools remain call/runtime data outside durable
+   provider-model identity. The first real adapter reuses its existing exact
+   settings boundary; do not create a generic credential registry before the
+   second transport proves what common shape is required.
+6. The shipped injected-provider protocol remains available on its existing
+   API. The replacement batch API does not automatically accept it or wrap it
+   in a `ProviderModel`; that is reconsidered only for a real new consumer.
+
+Route B stores a callable/protocol object in every provider-model value. It
+makes dependency injection convenient, but also makes identity, equality,
+safe representation, lifecycle ownership, and future Python-to-process input
+opaque. It duplicates the existing injected-provider boundary and encourages
+open clients, upload handles, credentials, or fallback state to travel with a
+model description. A subclass per vendor/model has the same problem with more
+files. A single sparse object with every SDK's optional fields is another form
+of the same god object.
+
+Route A is recommended because it preserves extensibility by adding one honest
+transport adapter in code, not by pretending arbitrary execution is data. It
+also remains compatible with a future Python backend called by Electron: the
+front end sends ordinary data, while only the backend resolves and executes
+the adapter. Choice 8 remains awaiting explicit maintainer confirmation. No
+`ProviderModel`, resolver, registry, credential type, adapter, or public batch
+API is authorized by this evidence.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7

@@ -10967,3 +10967,32 @@ documentation only; no provider class, dispatcher, retry engine, mapping,
 public API, runtime, test, dependency, legacy, frozen directory, or migration
 capability changed. Canonical mapping, provider-boundary, candidate-recognition,
 and lightweight-import regressions are **225 passed in 3.37s**.
+
+## Current working update: #578 separates model data from invocation code
+
+#578 audited the active built-in and injected invocation paths plus the legacy
+Google, hybrid, OpenAI-compatible, API-pool, and Codex clients. Active built-ins
+already resolve exact settings to lazily imported operation modules; those
+modules own SDK loading, credentials, requests, response parsing, canonical
+errors, and client cleanup. The separate injected `VisionProvider` protocol is
+an opaque Python extension and test seam. These are different responsibilities,
+not two implementations that a future `ProviderModel` should merge.
+
+The decision-ready Route A gives a built-in provider-model one validated
+transport-level adapter ID. A small explicit resolver lazily imports known
+operation modules. It is not a registry, plugin system, arbitrary module loader,
+executable path, or subclass per model. Adapter modules keep operation-specific
+image/audio entry points and own only one call's SDK lifecycle. Fallback, retry,
+lane memory, and token aggregation remain recognition-call state. Credentials
+and pools remain runtime data outside durable model identity; the first real
+adapter reuses its existing exact settings boundary rather than creating a
+generic credential registry before a second transport exists.
+
+Route B stores a callable/protocol object in every entity. It makes injection
+easy but hides identity, secrets, resources, and lifecycle inside opaque values,
+duplicates the existing injected-provider boundary, and repeats legacy's broad
+client coupling. Choice 8 remains open for explicit maintainer confirmation.
+This iteration is documentation only; no provider model, adapter, resolver,
+credential type, registry, runtime, API, test, dependency, legacy, frozen
+directory, or migration capability changed. Invocation-boundary and lightweight
+import regressions are **179 passed in 2.68s**.
