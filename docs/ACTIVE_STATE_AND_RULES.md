@@ -12554,13 +12554,14 @@ adapter route, or finite canonical retry values. `features=batch` describes the
 vendor Batch facility, not an image count. A catalog row therefore remains
 discovery data rather than an automatically executable preset.
 
-Five direct questions remain: dynamic catalog plus a small live-proven preset
+Four direct questions remain: dynamic catalog plus a small live-proven preset
 set versus a checked-in complete mirror; integer provider audio minutes versus
 the exact `7.5 -> 450 seconds` asymmetric behavior; private controlled adapter
-dispatch versus an early public callable/Protocol; successful fallback result
-metadata versus a post-success exception; and gated old-video deletion versus
-immediate capability removal. The current recommendations are the first option
-in each pair. No runtime work begins until the needed answers arrive.
+dispatch versus an early public callable/Protocol; and gated old-video deletion
+versus immediate capability removal. Successful fallback is already fixed:
+complete content returns normally with bounded prior-provider diagnostics, and
+only unresolved slots raise. The current recommendations are the first option
+in each remaining pair. No runtime work begins until the needed answers arrive.
 
 This iteration adds no runtime, export, API, type, test, preset, provider call,
 credential access, dependency, state, media behavior, frozen-boundary change,
@@ -12727,3 +12728,23 @@ serves direct Python image injection and remains separate under the recommended
 route. The only maintainer question is whether to confirm that separation.
 Five focused settings/resolver/lazy-import/injected-error regressions pass.
 #639 changes only decision records and makes no runtime or provider call.
+
+## Current working update: #640 removes a duplicate fallback decision
+
+Successful-fallback reporting was already fixed by #572/#592 and narrowed by
+#625. When an earlier provider exhausts its finite attempts and a later provider
+returns valid content, return one ordinary
+`RecognitionResult(status="complete")`. Add exactly one bounded human warning
+when prior failures exist and ordered `metadata["provider_failures"]` records
+containing only absolute slot index, vendor, model, canonical code, and final
+secret-safe bounded description. Do not include winning-provider rows, raw
+errors, retry history, media paths, settings/accounts, or token-attempt detail.
+
+Only genuinely unresolved slots enter the separate failed-slot accumulator and
+future `RecognitionIncomplete` path. Never throw after valid content merely to
+report earlier failures, mark complete content partial, attach a result to an
+exception, or add a fallback outcome wrapper. Current-invocation fallback
+diagnostics are not durable routing/resume identity. Section 0 now has four
+remaining choices rather than five. #640 changes only decision records and no
+runtime, API, result/error type, schema, provider call, credential, output,
+media, dependency, frozen area, or deletion.

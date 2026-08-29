@@ -216,6 +216,25 @@ than allowing a plain/detail switch. Experimental repair with a missing sidecar
 does not justify a general task manifest in this slice; its exact task input is
 left to the later repair consumer.
 
+Successful-fallback reporting is already fixed by #572, #592, and #625 and is
+not another decision group. When an earlier provider exhausts its finite
+attempts but a later provider returns valid content, the logical slot is
+complete and the call returns an ordinary
+`RecognitionResult(status="complete")`. Exactly one bounded human warning is
+present when any such failures occurred, and ordered
+`metadata["provider_failures"]` records each exhausted provider by absolute
+`slot_index`, vendor, model, canonical code, and final secret-safe bounded
+description. The tuple is ordered by slot and actual provider traversal; it
+does not contain successful-provider rows, raw errors, retry history, media
+paths, settings, accounts, or token-attempt detail.
+
+Only a genuinely unresolved slot after its permitted lane is exhausted leads
+to the separately fixed `RecognitionIncomplete` path. Do not throw after
+successful content, mark complete content partial, attach a result to an
+exception, add a fallback outcome wrapper, or copy successful-fallback records
+into the terminal unresolved-slot accumulator. Current-invocation fallback
+diagnostics are result evidence, not durable routing or resume identity.
+
 Do not make any of the following prerequisites for the first real image proof:
 
 - a checked-in executable mirror of every current vendor model;
@@ -225,7 +244,7 @@ Do not make any of the following prerequisites for the first real image proof:
 - merged audio, repair, Electron/Rust bindings, local-provider placeholders, or
   social-media work.
 
-Five decision groups now remain. They are direct answers, not invitations to
+Four decision groups now remain. They are direct answers, not invitations to
 design more alternatives:
 
 1. **Catalog scope.** Keep runtime discovery plus a small live-proven executable
@@ -247,12 +266,7 @@ design more alternatives:
    that callable identity, settings validation, resume identity, lifecycle,
    audio operations, and Electron-to-backend resolution must then be defined.
    Do not combine a controlled ID with a generic callable/options bag.
-4. **Successful fallback reporting.** Return a complete result with one warning
-   and bounded structured earlier-provider failures (recommended), or throw
-   after valid content has already completed. The latter must define how callers
-   avoid replaying paid successful work; it is not silently inferred from
-   "report all errors."
-5. **Deletion timing.** Prove the two replacement merged/resume owners and then
+4. **Deletion timing.** Prove the two replacement merged/resume owners and then
    delete the old video family in one stage (recommended), or remove the shipped
    capability immediately before its replacement exists.
 
@@ -1383,10 +1397,11 @@ Choices 1 and 2 are fixed to Route A:
 2. Return one ordinary `RecognitionResult`; keep `status="complete"` when the
    requested content is complete. Add one bounded human warning and an ordered
    `metadata["provider_failures"]` tuple for providers exhausted before success.
-3. Each provider-failure record contains only vendor, model, stable canonical
-   code, and secret-safe bounded description. The successful provider/model
-   remains the result's normal provider metadata; no duplicate success record
-   is needed in the failure tuple.
+3. Each provider-failure record contains only the absolute zero-based
+   `slot_index`, vendor, model, stable canonical code, and secret-safe bounded
+   description. The successful provider/model remains the result's normal
+   provider metadata; no duplicate success record is needed in the failure
+   tuple.
 4. Raise only if the logical recognition remains incomplete after the permitted
    candidates are exhausted. Failed-batch reporting still follows the fixed
    terminal-only rule in section 2.6.
@@ -2740,3 +2755,31 @@ separate output paths; this single-branch router does not coordinate them.
 current decision board. It implements no export, overload, router, resume
 function, result type, validation, state, API, provider call, media operation,
 dependency, frozen-boundary change, or deletion.
+
+## #640 Successful-Fallback Reporting Was Not Reopened
+
+Section 0 briefly listed successful-fallback reporting as a maintainer choice,
+but the detailed decision trail had already fixed it in #572/#592 and narrowed
+its exact fields in #625. The later instruction to report accumulated provider
+errors does not require turning completed recognition into exception control
+flow. #640 removes that duplicate question and promotes the already-fixed rule
+to the current pruning checkpoint.
+
+The current result boundary confirms the choice. `RecognitionResult` is the
+successful-output object; its `status="partial"` represents usable recognized
+content with degradation such as cleanup warnings, not missing requested
+slots. `BatchItemOutcome` permits exactly one result or one error, and
+`recognize_batch()` treats an exception as failure and stops later work from
+starting. Raising after a later provider has already produced valid content
+would therefore hide the successful result, risk replaying paid work, and
+require an attached-result exception or a second outcome wrapper to recover
+both facts.
+
+The exact replacement behavior remains: successful fallback returns
+`RecognitionResult(status="complete")` with one aggregate warning and the
+bounded ordered `provider_failures` metadata fixed by #625. A slot still
+unresolved after its lane uses the distinct #626 publication-and-
+`RecognitionIncomplete` path. Do not persist successful-fallback diagnostics
+as provider-routing memory, add a public failure-record class, or create a
+per-attempt ledger. #640 changes only decision records; no runtime, API, error
+type/code, schema, provider call, credential, media, output, or deletion changed.

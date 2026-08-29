@@ -1513,11 +1513,12 @@ by the library.
 Official Google and DashScope catalog schemas still cannot populate complete
 executable `ProviderModel` facts. Section 0 of
 `docs/plan_provider_entity_batch_refactor.md` is now the sole current board and
-lists five direct choices: catalog mirror scope, fractional provider audio
-minutes, private versus public adapter dispatch, successful-fallback reporting,
-and deletion timing. The first option in each pair is recommended. Runtime work
-remains discussion-paused; no provider class, preset, merged recognizer,
-fallback, pool, repair, or old-video deletion changed.
+lists four direct choices: catalog mirror scope, fractional provider audio
+minutes, private versus public adapter dispatch, and deletion timing. Successful
+fallback is fixed to a normal complete result with bounded earlier-provider
+diagnostics; only unresolved slots raise. The first option in each remaining
+pair is recommended. Runtime work remains discussion-paused; no provider class,
+preset, merged recognizer, fallback, pool, repair, or old-video deletion changed.
 
 #635 verifies the future deletion closure without selecting its timing. Exactly
 34 production files belong only to the old video recognition/orchestration
@@ -1576,3 +1577,12 @@ Python `VisionProvider` remains a separate direct-image seam. The alternative
 puts arbitrary callables into the new fallback/pool lists and therefore needs
 new identity, settings, resume, cleanup, audio, and Electron-backend contracts.
 No hybrid, registry, runtime, or provider call was added.
+
+#640 removes one duplicate question from the current board. Successful fallback
+was already fixed by #572/#592/#625: if an earlier provider fails but a later
+provider returns valid content, return `RecognitionResult(status="complete")`
+with one aggregate warning and bounded ordered `provider_failures` metadata.
+Only genuinely unresolved slots raise the separate future
+`RecognitionIncomplete`; do not throw after success or create a result-bearing
+exception/wrapper. Four maintainer choices remain: catalog scope, audio unit,
+adapter dispatch, and replacement-gated old-video deletion timing.

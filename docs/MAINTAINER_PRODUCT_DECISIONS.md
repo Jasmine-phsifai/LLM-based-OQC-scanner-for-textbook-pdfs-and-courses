@@ -1690,7 +1690,7 @@ metadata, but cannot populate every OCRLLM capability, recommended media size,
 adapter route, or retry rule. Do not convert every row into a guessed executable
 preset or add a catalog-descriptor framework without a consumer.
 
-The current direct-answer board contains five items, with the first route in
+The current direct-answer board contains four items, with the first route in
 each pair recommended:
 
 1. runtime discovery plus a few live-proven presets, or a checked-in complete
@@ -1699,10 +1699,12 @@ each pair recommended:
    intentionally asymmetric caller contract;
 3. private controlled `adapter_id` dispatch, or an early public callable/
    Protocol extension point;
-4. a complete result carrying bounded earlier-provider failure evidence, or a
-   post-success exception;
-5. replacement-gated deletion, or immediate removal of the current video
+4. replacement-gated deletion, or immediate removal of the current video
    recognition capability.
+
+Successful fallback is not an open fifth item: #572/#592/#625 already require
+a complete result with bounded earlier-provider failure evidence, while only
+genuinely unresolved slots use the #626 terminal path.
 
 Runtime remains maintainer-paused. When it resumes, the choices actually
 consumed by one atomic slice must be explicit first; unrelated later choices do
@@ -1796,3 +1798,18 @@ would require callable and resume identity, settings, lifecycle, audio, and
 Electron-backend rules. A controlled ID plus generic callable/options bag is
 not a third route. No registry, adapter wrapper hierarchy, local placeholder,
 or implementation is authorized while this yes/no remains unanswered.
+
+**#640 removes successful-fallback reporting from the open-choice list.** The
+decision was already fixed by #572/#592 and its exact record shape by #625. A
+later provider's valid content returns normally as
+`RecognitionResult(status="complete")`; one aggregate warning and ordered,
+bounded `metadata["provider_failures"]` disclose providers exhausted before
+success. Each record is limited to slot index, vendor, model, canonical code,
+and a final secret-safe description.
+
+Only unresolved slots cause the separate future `RecognitionIncomplete`
+terminal path. Do not raise after successful paid work, classify it as partial,
+attach a result to an exception, create a fallback wrapper, or persist these
+diagnostics as future routing memory. The current decision board therefore has
+four remaining questions: catalog scope, audio unit, adapter dispatch, and old-
+video deletion timing. No runtime or provider behavior changed in #640.
