@@ -1555,3 +1555,13 @@ fails pre-dispatch with existing `CONFIG_INVALID`, zero provider calls, and no
 candidate/lane filtering or detail-to-plain downgrade. `batchify_images`
 remains task-independent, current image runtime is unchanged, and repair does
 not gain a speculative task-manifest system.
+
+#638 brings the already-fixed #586 token rule into the current pruning
+checkpoint. Future merged jobs keep one cumulative sidecar row per exact
+`(vendor, model)`: exact dispatched calls and nullable input/output totals. A
+dispatched call without trustworthy usage makes that token dimension unknown,
+not zero; a zero-call preflight adds no row. Loaded cumulative values are the
+historical baseline and current-run deltas stay in memory. Ordered resume slots
+remain separate state. No per-attempt ledger, duplicate current/history
+buckets, media-member token estimates, price engine, or global manager is
+approved, and current runtime/schema remains unchanged.

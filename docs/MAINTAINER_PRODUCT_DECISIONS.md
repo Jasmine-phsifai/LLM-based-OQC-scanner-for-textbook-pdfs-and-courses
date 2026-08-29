@@ -1764,3 +1764,19 @@ chooser. Detail support implies plain support; an inconsistent model value is
 invalid. `batchify_images` remains task-independent. Fresh recognition saves
 the task as resume identity; missing-sidecar repair details wait for the actual
 experimental repair consumer.
+
+**#638 promotes rather than redesigns the #586 token contract.** The current
+section-0 checkpoint now states the already-fixed rule directly: one cumulative
+sidecar row per exact `(vendor, model)`, containing exact dispatched calls and
+nullable input/output totals. Every actual dispatch increments calls. Missing
+trustworthy usage makes only the affected cumulative token dimension unknown;
+it is never replaced with zero or a partial sum. Pre-dispatch failures add no
+row, and safely observed failed-response usage is merged once.
+
+The loaded cumulative value is historical baseline; this invocation's delta is
+memory-only. Settled slot content and source/window identity remain separate
+resume state, not token-ledger detail. Do not persist duplicate current/history
+buckets, per-attempt billing rows, media-member token estimates, prices, or a
+global manager. Current image resume's missing historical tokens and current
+long audio's per-slot persistence are evidence for the future schema, not a
+reason to retrofit the old image state during the discussion pause.

@@ -12672,3 +12672,31 @@ not justify a generic task manifest now. Current Config, RapidOCR, image
 profile, prompts, and runtime are unchanged. Focused existing config/local-OCR/
 cloud-image/import/capability regressions pass **136 tests**; #637 changes only
 decision records and makes no provider call.
+
+## Current working update: #638 promotes the fixed token contract into the current checkpoint
+
+#638 does not reopen token accounting or add a sixth product choice. #586
+already fixed the minimum honest replacement contract, but section 0 did not
+summarize it. Each future job sidecar stores one cumulative row per exact
+`(vendor, model)`: exact dispatched calls and nullable input/output token
+totals. A confirmed dispatch is counted even when usage is absent. If any
+included call lacks trustworthy usage for one dimension, that cumulative
+dimension is `None`; it is never zero or a known partial sum. A zero-dispatch
+preflight failure contributes no row, while usage safely observed before a
+later response-validation failure is included once.
+
+The loaded cumulative value is the next invocation's historical baseline and
+the current invocation keeps only an in-memory delta. One lane saves its newly
+observed evidence before advancing to another provider candidate; this is not a
+global barrier for other in-flight lanes. Resume still requires ordered slot
+content and source/window identity. Token totals cannot replace those records,
+and the sidecar does not duplicate current/history buckets or persist a public
+per-attempt ledger.
+
+Current code remains evidence rather than implementation of that replacement:
+long-audio settled slots preserve call/token facts and derive historical usage,
+whereas image resume preserves calls but currently loses historical token
+totals. Current shared aggregation is model-only and must not be copied into a
+multi-vendor path. Five focused unknown-usage, failed-response, image-resume,
+fallback, and long-audio-resume regressions pass. #638 changes only decision
+records; no runtime, schema, result type, provider call, or credential changed.

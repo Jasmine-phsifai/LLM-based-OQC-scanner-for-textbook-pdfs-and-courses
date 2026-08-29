@@ -150,6 +150,24 @@ not silently re-batch: another candidate may accept the same immutable slot;
 otherwise the unresolved slot remains available for explicit resume with a new
 provider plan. Changing the slot grouping is a new plan, not resume.
 
+Token accounting is already fixed by #586 and is not another decision group.
+Each future job sidecar keeps one cumulative row per exact `(vendor, model)`:
+exact dispatched calls plus nullable input/output token totals. Every confirmed
+dispatch contributes one call even when usage is absent; if any included call
+lacks trustworthy input or output usage, that cumulative dimension is `None`,
+not a known partial sum or zero. Pre-dispatch failures with zero calls add no
+usage row. Trustworthy usage observed before a later response-validation error
+is included once at the adapter boundary.
+
+The cumulative value loaded at invocation start is the historical baseline;
+only the current invocation's delta lives in memory. Before one lane advances
+to another provider attempt, its newly observed cumulative evidence is saved;
+already-running lanes do not wait at a global barrier. Ordered settled-slot
+content, source/window identity, and Markdown remain separate resume state and
+cannot be replaced by aggregate calls or tokens. Do not persist labeled
+current/history duplicates, expose per-attempt billing rows, split one batch's
+usage across media members, add prices, or create a global token manager.
+
 Output ownership is already fixed and is not a sixth decision group. A scalar
 source, or an `AudioSlice` tuple whose members all refer to that same original
 audio file, defaults to its sibling `<normalized-source-stem>_ocrllm.md`. A
