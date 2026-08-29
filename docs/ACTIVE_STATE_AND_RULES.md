@@ -12014,3 +12014,28 @@ prepared #612 DashScope live run was cancelled before credential access or any
 provider call when the discussion-first request arrived. No runtime, test,
 dependency, public API, provider state, legacy source, frozen boundary, or
 deletion changed.
+
+## Current working update: #613 re-proves the shipped DashScope image path
+
+After the #612 discussion-only pruning and more than three minutes after its
+commit, one credential-isolated run exercised the unchanged public DashScope
+image facade with the repo-owned formula-board fixture. The enabled proxy was
+reachable, current Beijing discovery returned 246 models, and exact
+`qwen3.5-ocr` completed one generation in 4.610 seconds. The result reported
+one provider call, 4,357 input tokens, 285 output tokens, and an exactly closed
+client.
+
+The runner used no retry, fallback, model switch, output directory, sidecar, or
+durable artifact. Its safe JSON output contained neither credential, recognized
+Markdown, nor absolute fixture path; stderr was empty, fixture size/mtime/hash
+were unchanged, and no owned Python process remained. One earlier disposable
+PowerShell-to-`python -c` quoting attempt failed at Python parse time before
+credential access, proxy inspection, catalog discovery, or provider code. It
+made zero network/provider calls and is recorded as harness error rather than
+OCRLLM evidence.
+
+No active-library defect was reproduced, so no runtime or test was changed.
+This current live fact supports `qwen3.5-ocr` as a viable small preset candidate
+and the existing DashScope adapter as a first image transport. It does not
+implement or authorize `ProviderModel`, retry, fallback, lanes, a full catalog
+mirror, a batch default, output/resume changes, or the frozen video refactor.

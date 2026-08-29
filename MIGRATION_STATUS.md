@@ -34,6 +34,13 @@ recognition/journal family remains frozen until merged image/audio writers and
 their independent resume paths are proven, then is deleted in the same product
 transition. No runtime refactor or deletion has started.
 
+#613 re-proves the unchanged shipped DashScope image transport after that
+discussion checkpoint. Live Beijing discovery returned 246 models and exact
+`qwen3.5-ocr` completed one repo-owned formula-board generation in 4.610 seconds
+with one call, 4,357 input and 285 output tokens, and a closed client. No retry,
+fallback, model switch, output artifact, runtime change, or replacement API was
+involved.
+
 Current distribution evidence: #555 is the latest complete nine-profile clean
 gate. The unchanged maintained script ran once from exact commit
 `e9d49b06fabd4c8c0aba5cdd40ef2006213405b3`, passed 1,927 archived tests with

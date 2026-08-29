@@ -364,6 +364,28 @@ resume route, repair path, test, provider call, or deletion is authorized by
 #612. The previously prepared DashScope live run was cancelled before credential
 access or provider dispatch when this discussion-first instruction arrived.
 
+### #613 live fact: the shipped DashScope image path still completes
+
+After the #612 discussion checkpoint and without implementing any replacement
+API, one credential-isolated public image run used the repo-owned
+`formula_board.png` through the current DashScope path. Live Beijing discovery
+returned 246 models and still contained exact `qwen3.5-ocr`. The recognition
+completed in 4.610 seconds with exactly one generation call, provider-reported
+usage of 4,357 input and 285 output tokens, and an exactly closed client. There
+was no retry, fallback, model switch, output file, sidecar, or runtime change.
+
+The disposable controller emitted only its safe JSON summary: stderr was empty,
+the credential, recognized Markdown, and absolute fixture path were absent,
+the fixture bytes stayed unchanged, and no owned Python process remained. An
+earlier PowerShell-to-`python -c` quoting attempt stopped at Python parse time
+before QSettings, proxy, catalog, or provider code; it is harness history, not
+a provider attempt or OCRLLM defect.
+
+This proves the existing adapter remains a viable first image transport and
+that `qwen3.5-ocr` remains a live preset candidate. It does not resolve the five
+open product choices, prove a replacement `ProviderModel`, justify a full
+catalog mirror, select a batch default, or authorize interface rewrites.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later

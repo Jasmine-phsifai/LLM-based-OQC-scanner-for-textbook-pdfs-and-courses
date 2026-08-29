@@ -84,6 +84,12 @@ publication. This is connectivity/lifecycle proof, not formula-quality or broad
 quota evidence. #340 makes later DashScope calls preserve compatible-endpoint
 `prompt_tokens` / `completion_tokens` through the existing per-model metadata;
 missing or invalid counts remain unknown without discarding recognized text.
+#613 rechecks the same shipped path after the provider/media discussion pause:
+current Beijing discovery returned 246 models and exact `qwen3.5-ocr` completed
+one formula-board generation in 4.610 seconds with one call, usage 4,357/285,
+a closed client, and no retry, fallback, model switch, output, or
+secret/content/path disclosure. This is current connectivity/lifecycle
+evidence, not implementation of the replacement provider model.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
