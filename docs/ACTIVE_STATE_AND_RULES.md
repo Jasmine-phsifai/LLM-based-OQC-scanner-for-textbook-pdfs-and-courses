@@ -11663,3 +11663,34 @@ first provider proof.
 No runtime source, test source, dependency, public API, provider call, state,
 legacy source, frozen boundary, or deletion changed in #601. The four existing
 untracked files were not read or modified.
+
+## Current working update: #602 corrects Google project-precondition scope
+
+#602 fixes one shipped error-classification defect before starting the paused
+provider-model replacement. The native Google mapper formerly treated every
+otherwise-unmatched HTTP 400 as `PROVIDER_REQUEST_INVALID` with request scope,
+whose public disposition tells a caller to fix the request. Repeated live
+evidence now shows exact status `FAILED_PRECONDITION` at catalog entry for image,
+short audio, and whole audio, and at the separate Google Files upload operation.
+The latter two operations do not share a recognition payload that a caller can
+repair, so request scope was demonstrably misleading.
+
+Exact `FAILED_PRECONDITION` now returns existing `ProviderUnavailable` with
+`PROVIDER_UNAVAILABLE` and provider scope. It preserves safe HTTP/provider
+status and operation details. The existing disposition describes it as
+retryable provider evidence, but no adapter retry, wait, fallback, or second
+request was added. Ordinary `400 / INVALID_ARGUMENT`, image-count rejection,
+unsupported modality, invalid key, permission, quota, and server errors retain
+their existing mappings.
+
+Legacy evidence was used only as corroboration: it classifies billing only
+when the provider text explicitly says billing/payment and does not establish
+that the current project is unpaid or suspended. #602 therefore adds no billing
+inference, account error, project-specific error class, catalog-only code, raw
+HTTP matrix, ProviderModel rule, or provider pool. Focused Google image/audio
+adapter, live-runner presentation, disposition, and lightweight-import
+regressions are **147 passed in 2.58s**. No live provider call was repeated;
+the cross-operation tracked evidence already proved the mismatch. No public
+signature/export, dependency, state, legacy source, frozen boundary, or
+deletion changed, and the four existing untracked files were not read or
+modified.

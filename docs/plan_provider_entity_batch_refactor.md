@@ -42,6 +42,16 @@ earlier-provider failure evidence with the result; it does not raise a terminal
 exception after producing a valid recognition. Terminal failure reports one
 last safe failure for each unresolved batch.
 
+#602 corrects one already-shipped canonical mapping before any retry executor
+exists. Native Google HTTP 400 with exact status `FAILED_PRECONDITION` has now
+occurred across catalog and Files-upload operations, so it maps to
+`PROVIDER_UNAVAILABLE` with provider scope rather than
+`PROVIDER_REQUEST_INVALID` with request scope. This does not identify billing,
+account suspension, or a model defect, and it does not execute a retry. Ordinary
+`400 / INVALID_ARGUMENT` remains request-invalid. Future rules consume the
+canonical result; they do not copy this raw vendor status into a common HTTP
+matrix.
+
 The media destination remains the visible composition in section 2.1. There is
 no replacement `recognize_video` lifecycle owner. Consequently, media produced
 by caller-invoked extraction is caller-owned and cannot be deleted by a later

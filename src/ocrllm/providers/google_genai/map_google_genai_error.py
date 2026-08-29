@@ -75,6 +75,11 @@ def map_google_genai_error(error: object, *, model: str) -> OCRLLMError:
             "Google GenAI is temporarily unavailable.",
             details=_scoped(details, "provider"),
         )
+    if status == "FAILED_PRECONDITION":
+        return ProviderUnavailable(
+            "Google GenAI cannot currently serve this project.",
+            details=_scoped(details, "provider"),
+        )
     if code == 400 or status == "INVALID_ARGUMENT":
         if _looks_like_invalid_api_key(message):
             return ProviderError(

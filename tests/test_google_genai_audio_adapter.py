@@ -325,7 +325,9 @@ def test_google_audio_adapter_catalog_sdk_failure_preserves_safe_operation(
     with pytest.raises(ProviderError) as caught:
         recognize(FIXTURE, config=_config())
 
-    assert caught.value.code == "PROVIDER_REQUEST_INVALID"
+    assert caught.value.code == "PROVIDER_UNAVAILABLE"
+    assert caught.value.details["failure_scope"] == "provider"
+    assert caught.value.retryable is True
     assert caught.value.details["http_status"] == 400
     assert caught.value.details["provider_status"] == "FAILED_PRECONDITION"
     assert caught.value.details["provider_operation"] == "catalog"

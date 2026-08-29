@@ -545,6 +545,14 @@ def test_public_google_missing_text_preserves_reported_usage(
         (400, "INVALID_ARGUMENT", "invalid request", ProviderRequestInvalid, "request", None),
         (
             400,
+            "FAILED_PRECONDITION",
+            "project precondition failed",
+            ProviderUnavailable,
+            "provider",
+            None,
+        ),
+        (
+            400,
             "INVALID_ARGUMENT",
             "invalid modality parameter",
             ProviderRequestInvalid,
