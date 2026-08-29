@@ -517,13 +517,12 @@ is often accepted.
   in this section as marked below. The earlier plan for a rewritten
   `recognize_video(...)` orchestrator is itself superseded by #579/#581: the
   replacement has visible image/audio steps and no recognition wrapper. Video-
-  derived work reuses image-batch and audio-batch resume; whether their outputs
-  also enter one cross-media Markdown is the explicit choice 12 below, and two
-  independent recognizers must not silently mutate one target. A confirmed
-  combined artifact would need one narrow final writer, not another video
-  journal. Whether a named stateless `resume_video` exists remains the explicit
-  choice 11 below. The video journal and `recognize_video_to_markdown` are deleted only
-  after the refactor's replacement gate.
+  derived work reuses image-batch and audio-batch resume. #588 fixes one
+  independent merged Markdown per media call; OCRLLM does not add a cross-media
+  final artifact, composer, or shared writer. Whether a named stateless
+  `resume_video` exists remains the explicit choice 11 below. The video journal
+  and `recognize_video_to_markdown` are deleted only after the refactor's
+  replacement gate.
   Full-frame retention, provider separation, paid-work reuse, and
   retain-recoverable-gaps survive unchanged.
 
@@ -941,7 +940,7 @@ choice details remain open or are fixed as marked:
    audio keep separate units, planners, and sidecars. Provider-derived omission
    is fixed, so requiring an explicit value is no longer an alternative.
 5. Does every omitted output use `<source-identity>_ocrllm.md`
-   (recommended), or do image, audio, and video receive separate suffixes?
+   (recommended), or do image, audio, and PDF receive separate suffixes?
    Directory placement is already fixed.
 6. **Merged into choice 4:** image batch size and audio interval have the same
    unresolved provider-list reduction. They must not expose two independently
@@ -968,11 +967,10 @@ choice details remain open or are fixed as marked:
     publication transaction, composition, output naming, or cleanup lifecycle.
     Should it be exported from the package root, or remain a documented caller
     composition helper?
-12. Does "one Markdown" mean one output per merged image call and one per
-    merged audio call (recommended until clarified), or one additional artifact
-    containing both branches? Independent recognizers never mutate the same
-    target. If the combined artifact is required, is one narrow media-neutral
-    composer that consumes settled branch results and publishes once acceptable?
+12. **Fixed separate media outputs:** one merged image call owns one Markdown
+    and one merged audio call owns a different Markdown. Independent recognizers
+    never mutate the same target. The current product adds no cross-media final
+    artifact, media-neutral composer, or shared document owner.
 
 **#572 evidence for choices 1 and 2.** Both the active library's same-provider
 model-candidate loop and the legacy DashScope/Google candidate loops stop at
@@ -1014,15 +1012,15 @@ confirmation; combined choice 4 remains open.
 image/PDF output, long audio, and the old video job; legacy adds several
 media-specific Chinese names and a multi-image common-prefix guess. Recommended:
 an explicit output path wins, while every omitted output resolves to
-`<normalized-source-identity>_ocrllm.md`. Single files, PDFs, and videos use the
-source stem; a folder batch uses the folder name. New recognition refuses an
+`<normalized-source-identity>_ocrllm.md`. Single files and PDFs use the source
+stem; a folder batch uses the folder name. New recognition refuses an
 existing target, and preflight rejects duplicate targets before provider calls.
 Do not auto-number, scan for a plausible old file, add timestamps/hashes, or
 build a persistent collision registry. A rare same-stem image/audio collision
-uses an explicit output path. The video composition owner passes one explicit
-combined target to both settled branches rather than letting them derive two
-files. Media-specific suffixes are the viable alternative, but they add three
-default branches mainly to hide that rare collision. This is not maintainer
+uses an explicit output path. Video-derived image and audio calls each resolve
+their own target; #588 removes a third combined video name. Media-specific
+suffixes are the viable alternative, but they add image/audio branches and an
+unused video branch mainly to hide that rare collision. This is not maintainer
 confirmation; choice 5 remains open.
 
 **#576 evidence for choice 6.** Active long-audio persistence already binds
@@ -1160,11 +1158,11 @@ generic incremental Markdown update protocol: PDF has successful page-range
 markers, while image slot and audio window identities exist only in their JSON
 state. Two recognizers directly sharing one target would therefore require the
 cross-branch locking, marker parsing, conflict handling, and lifecycle layer the
-refactor is removing. The smallest current interpretation is one output per
-merged media call. If one combined image/audio artifact is confirmed, the only
-recommended extension is a pure explicit final composer with no recognition,
-provider, retry, resume, sidecar, path discovery, or cleanup ownership. Choice
-12 remains open and no runtime/export was changed.
+refactor is removing. #588 fixes one output per merged media call and closes
+choice 12. The speculative pure composer is also removed from the current plan:
+there is no direct consumer or maintainer requirement for an additional
+cross-media artifact. A later explicit request would be a new product feature,
+not a reason to keep a dormant subsystem or gate. No runtime/export was changed.
 
 **#584 decision-gate reconciliation.** The twelve numbered choices are evidence
 references, not a flat implementation barrier. The combined 8/10 gate blocks the first
@@ -1211,6 +1209,21 @@ separate validators, planners, identities, and sidecars; no generic media-plan
 type, cross-media batchifier, or adaptive re-planning is approved. Combined
 choice 4 remains open for one maintainer answer; former choice 6 is not a
 second gate. No runtime, state, API, provider, or test source changed.
+
+**#588 closes choice 12 and removes the speculative composer.** The latest
+direct architecture defines `recognize_images_to_markdown` and
+`recognize_audio_to_markdown` as separate visible steps, each merging its own
+ordered slots. It does not require one additional image-plus-audio artifact.
+Current image, PDF, long-audio, and old-video publication confirms only that
+one owner can compose a complete string and publish it atomically; there is no
+generic incremental Markdown protocol. The current replacement therefore
+produces one independently resumable image Markdown and one independently
+resumable audio Markdown. Independent writers never share a target, and no
+cross-media composer, shared sidecar, marker protocol, lock, or final video
+document is planned. If a future maintainer explicitly requests one combined
+deliverable, that request is reconsidered then rather than retained now as an
+unused framework. No runtime, export, state, API, provider, or test source
+changed.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

@@ -68,16 +68,16 @@ extract_video_audio
   an optional output Markdown path. Omission uses the same deterministic
   default-placement and naming rules; resume/repair do not search unrelated
   directories for a plausible prior output.
-- A single image, audio, PDF, or video file defaults beside that file.
+- A single image, audio, or PDF file defaults beside that file.
 - An image or audio batch defaults beside the directory containing the batch.
 - If an omitted output cannot be resolved without guessing, for example a
   batch spanning unrelated directories, preflight rejects the call before any
   provider request.
 - Image and audio batches write ordered slots into one Markdown file. They do
-  not publish one Markdown file per item. This fixes one output per merged
-  image call and one output per merged audio call; it does not yet decide that
-  two independent media calls may mutate the same file. Cross-media ownership
-  is choice 12 in section 6.
+  not publish one Markdown file per item. This means one output per merged
+  image call and one separate output per merged audio call. Independent media
+  calls never mutate the same file, and the current product does not add an
+  image-plus-audio composer or final cross-media artifact.
 - Output naming is still open in section 6; code must not infer a naming
   convention before it is settled.
 
@@ -364,10 +364,11 @@ inspect/extract/selection functions.
 6. **Audio vertical slice.** Expose extraction and integer-minute splitting,
    then merged audio slots and resume. Perform one real short/whole or two-chunk
    request as appropriate to the current provider evidence.
-7. **Video composition and deletion.** Prove that a caller can compose the
-   public image/audio steps on real video, then delete the frozen video
-   recognition/journal chain. Do not replace it with another convenience
-   wrapper. Repair is not a deletion gate.
+7. **Visible video workflow and deletion.** Prove that a caller can run the
+   public image and audio steps on real video and receive their two independent
+   merged Markdown outputs, then delete the frozen video recognition/journal
+   chain. Do not replace it with another convenience wrapper or cross-media
+   composer. Repair is not a deletion gate.
 
 Each phase must contain a real consumer, the smallest focused offline tests,
 and a bounded live call where provider behavior is in scope. A green offline
@@ -398,8 +399,8 @@ pause:
    because provider-derived omission behavior is already fixed.
 5. **Default output filenames.** Recommended: use one derived-result suffix,
    `<source-identity>_ocrllm.md`, for a single media source, an image/audio
-   folder batch, and video output. Directory placement is already fixed in
-   section 2.2. Alternative: use distinct image/audio/video suffixes.
+   folder batch, and PDF output. Directory placement is already fixed in
+   section 2.2. Alternative: use distinct image/audio/PDF suffixes.
 6. **Merged into choice 4.** Image batch size and audio interval use different
    units and plan builders, but the unresolved provider-list reduction is the
    same decision. Do not ask for or implement two independently selectable
@@ -439,15 +440,13 @@ pause:
     functions and owns no video journal, publication transaction, output
     naming, composition, or cleanup lifecycle. The only open detail is whether
     this convenience is exported from the package root or remains a documented
-    caller composition helper.
-12. **Cross-media Markdown ownership.** Recommended: interpret "one Markdown"
-    as one output for each merged image or merged audio recognition call. Do
-    not let two independent recognizers incrementally mutate one target. If one
-    combined image-and-audio artifact is still required, approve a separate,
-    narrow media-neutral composition step that consumes already-settled branch
-    results and publishes exactly once. Alternative: one shared document owner
-    coordinates both branches and their state; this requires a separately
-    justified lifecycle contract and is not implicit in the current plan.
+    caller routing helper.
+12. **Fixed separate media outputs.** "One Markdown" means one output for each
+    merged image recognition call and one separate output for each merged audio
+    recognition call. Independent recognizers never mutate one target. The
+    current product has no final image-plus-audio artifact, shared document
+    owner, or media-neutral composer. A later explicit maintainer request may
+    reopen that as a new product feature; it is not retained as a current gate.
 
 ### 6.0 Decision blocks and implementation gates (#584)
 
@@ -456,12 +455,12 @@ twelve equal prerequisites:
 
 | Implementation slice | Must resolve or honor first | May remain open |
 | --- | --- | --- |
-| First and second provider-model proofs | combined choice 8/10 | 1–7, 11, 12 |
-| Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choice 9 | 1, 2, 4, 7, 11, 12 |
-| Flat fallback | 1, 2, 4, 7, plus fixed choice 9 | 11, 12 |
-| Nested lanes | the complete flat-fallback gate | 11, 12 |
-| Merged audio + resume | 4, 5, fixed choice 9, plus the proven provider boundary | 11, 12 |
-| Video-derived resume/publication and old-chain deletion | 11, 12 and every earlier replacement gate | none |
+| First and second provider-model proofs | combined choice 8/10 | 1–7, 11 |
+| Public presets and single-provider merged image + resume | 3, 5, plus the provider-model gate and fixed choices 9/12 | 1, 2, 4, 7, 11 |
+| Flat fallback | 1, 2, 4, 7, plus fixed choices 9/12 | 11 |
+| Nested lanes | the complete flat-fallback gate | 11 |
+| Merged audio + resume | 4, 5, fixed choices 9/12, plus the proven provider boundary | 11 |
+| Video-derived resume/publication and old-chain deletion | 11 and every earlier replacement gate; fixed choice 12 | none |
 
 This ordering does not silently choose an open contract. It prevents an
 unrelated late question from blocking earlier evidence and prevents an early
@@ -670,9 +669,10 @@ Route A is recommended as the smallest future rule:
 1. An explicit output Markdown path always wins. Default resolution runs only
    when the caller omits it.
 2. Use `<normalized-source-identity>_ocrllm.md` for every default. A single
-   image, audio file, PDF, or video uses its source stem. An image/audio folder
-   batch uses the containing folder name. Placement remains exactly section
-   2.2: beside a single source or video, and beside the batch folder.
+   image, audio file, or PDF uses its source stem. An image/audio folder batch
+   uses the containing folder name. Placement remains exactly section 2.2:
+   beside a single source and beside the batch folder. The visible video
+   workflow has no third combined output name.
 3. Recognize, resume, and repair resolve that same path from the same explicit
    source identity. They do not scan directories, infer a common filename
    prefix, or choose a different existing file.
@@ -681,18 +681,15 @@ Route A is recommended as the smallest future rule:
    automatic numbering, timestamp, hash suffix, overwrite-by-default, or
    persistent naming registry. An unusual same-stem image/audio collision is
    resolved by an explicit output path rather than another default branch.
-5. The video composition entry passes one explicit combined target to its
-   image/audio result composition. Branches do not independently derive or
-   race for two default Markdown files. Whether two separate manual calls may
-   intentionally merge into one explicit file is a later composition contract,
-   not a reason to expand naming.
+5. Video-derived image and audio calls resolve their own distinct targets under
+   the same media rules. They do not intentionally share an explicit target,
+   and OCRLLM does not derive a third video Markdown target.
 
 Route B uses media-specific `_image.md`, `_audio.md`, and `_video.md` suffixes.
 It avoids one rare cross-media same-stem collision, but duplicates media type in
-the naming contract and makes a combined video result arbitrarily belong to one
-branch or require another special case. The fixed `_ocrllm.md` suffix already
-marks a derived artifact; strict collision refusal plus explicit paths is
-enough.
+the naming contract and preserves an unused `_video.md` case. The fixed
+`_ocrllm.md` suffix already marks a derived artifact; strict collision refusal
+plus explicit paths is enough.
 
 Keep the existing narrow path-component normalization because Windows path
 length caused a real legacy failure. Do not turn it into auto-shortening based
@@ -701,8 +698,8 @@ transaction framework. The current in-process target claim is implementation
 evidence for rejecting simultaneous ownership, not permission to generalize it.
 
 Choice 5 remains awaiting explicit maintainer confirmation. This evidence does
-not authorize output-routing, resume, repair, video composition, or runtime
-changes.
+not authorize output-routing, resume, repair, cross-media composition, or
+runtime changes.
 
 ### 6.5 Evidence for choice 6 (#576)
 
@@ -1022,10 +1019,10 @@ would recreate a video lifecycle owner, and translating the old journal would
 add a rejected compatibility format. The later direct maintainer wording is
 more specific about the remaining public shape: `resume_video` routes to the
 ordinary image and audio resume functions. #584 therefore fixes that routing
-behavior while leaving only the root-export detail open. Whether settled
-branch results later enter one combined file remains choice 12 and is not a
-resume responsibility. No runtime, export, sidecar, result, or deletion gate
-changes with this documentation reconciliation.
+behavior while leaving only the root-export detail open. #588 fixes separate
+image and audio outputs and removes cross-media composition from the current
+product; it is not a resume responsibility. No runtime, export, sidecar,
+result, or deletion gate changes with this documentation reconciliation.
 
 ### 6.12 Evidence for choice 12 (#583)
 
@@ -1048,17 +1045,15 @@ PDF success ranges have Markdown markers. Image slot IDs and audio window IDs
 live in their separate JSON state; there is no generic Markdown section-update
 or repair-marker implementation.
 
-Route A keeps each merged media recognizer responsible for one output and one
-state owner. If the maintainer confirms that video-derived image and audio text
-must additionally become one artifact, a narrow explicit composer may accept
-already-settled branch results and perform one atomic publication. It must not
-recognize media, dispatch or retry providers, resume branches, discover paths,
-own sidecars, or clean extraction artifacts. Route B lets independent
-recognizers read, validate, replace, and coordinate sections of one existing
-file; that necessarily adds shared markers, cross-branch state, locking, and
-conflict rules and is rejected as the current over-designed route. Choice 12
-remains open because the latest wording can mean either one file per merged
-media call or one final file across both media branches.
+The fixed current route keeps each merged media recognizer responsible for one
+output and one state owner. Video-derived image and audio text do not
+additionally become one OCRLLM-owned artifact. Independent recognizers reading,
+validating, replacing, or coordinating sections of one existing file would add
+shared markers, cross-branch state, locking, and conflict rules and remains
+rejected. A separate pure composer is also removed from the current plan: no
+direct requirement consumes it, and retaining a narrowly specified
+hypothetical subsystem is still over-design. A future explicit request for one
+cross-media deliverable is a new feature decision, not an unresolved choice 12.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
@@ -1073,9 +1068,8 @@ Deletion requires all of the following, and does not require repair:
 
 - one merged image Markdown run with ordinary resume proven;
 - one merged audio Markdown run with ordinary resume proven;
-- resolution of choice 12, followed either by two independently resumable
-  merged media outputs or by one explicitly approved single-writer composition
-  proof without the old journal;
+- two independently resumable merged media outputs, with no cross-media writer
+  or composition proof;
 - explicit-source and output-default behavior documented;
 - caller-invoked extraction outputs remain caller-owned; only extraction-local
   rejected candidates and temporary files follow their documented cleanup;

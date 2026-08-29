@@ -11242,3 +11242,30 @@ planners, sidecars, and repair evidence stay separate. No `MediaPlan`, common
 unit field, cross-media batchifier, lane-local scheduler, adaptive resizing,
 runtime source, API, provider call, state schema, test source, dependency,
 legacy source, frozen boundary, or deletion changed.
+
+## Current working update: #588 fixes separate image and audio Markdown outputs
+
+#588 is a documentation-only scope reduction under the replacement-API
+implementation pause. The latest maintainer architecture names two visible
+recognition steps: merged image slots write one image Markdown, and merged audio
+slots write one separate audio Markdown. It does not request an additional
+image-plus-audio artifact. Choice 12 is therefore closed rather than retained
+as a hypothetical product ambiguity.
+
+Independent media recognizers never mutate one target. Each media call owns its
+own resume state and performs one complete atomic publication after its ordered
+slots settle. Current image/PDF, long-audio, and frozen-video code proves that
+single-writer pattern but does not provide a generic incremental section writer.
+`write_markdown_atomically()` consumes an already composed complete string;
+process-local output claims prevent simultaneous ownership and do not merge
+writes.
+
+The previously suggested pure cross-media composer is removed from the current
+plan as well. Although it could be made narrower than a shared incremental
+writer, no present consumer requires it. Keeping its interface, publication
+rules, and deletion proof alive would still be design for a hypothetical
+future. If one combined deliverable is explicitly requested later, it is
+reconsidered then as a new feature. No composer, shared sidecar, section marker,
+cross-branch lock, final video document, runtime source, export, API, state,
+provider call, test source, dependency, legacy source, frozen boundary, or
+deletion changed.
