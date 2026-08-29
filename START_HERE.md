@@ -1545,3 +1545,13 @@ sidecar. Never choose the first item, common ancestor, hash, directory scan, or
 symlink equivalence. Existing output/ownership regressions are 49 passed; no
 runtime or public API changed, and current `recognize()` keeps its memory-only
 default.
+
+#637 fixes the future fresh merged-image selector as required exact
+`image_task="plain_ocr"` or `image_task="detail_ocr"`. It is separate from
+current `image_mode` and `profile`, has no default or automatic provider-based
+inference, and supplies no caller prompt. Every binding in the complete
+provider shape must support the selected task; otherwise the whole request
+fails pre-dispatch with existing `CONFIG_INVALID`, zero provider calls, and no
+candidate/lane filtering or detail-to-plain downgrade. `batchify_images`
+remains task-independent, current image runtime is unchanged, and repair does
+not gain a speculative task-manifest system.

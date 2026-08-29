@@ -161,6 +161,43 @@ request before provider dispatch when it is omitted. The first member, a common
 ancestor, a hash, or a directory scan never chooses the target. This rule
 applies to every leaf of nested image groups, not only each group's first item.
 
+The future fresh merged-image recognition call has one required explicit task
+selector:
+
+```python
+image_task: Literal["plain_ocr", "detail_ocr"]
+```
+
+The value must be a plain `str` with one of those exact spellings. There is no
+default, alias, case normalization, Boolean pair, automatic inference from the
+selected model, or reuse of current `Config.image_mode` / `profile`.
+`plain_ocr` requests ordered ordinary OCR text/Markdown without promising
+formula, layout, or code reconstruction. `detail_ocr` requests the maintained
+LaTeX/code-oriented detailed-image behavior; it does not prematurely promise
+every future SVG or Mermaid feature. Callers do not supply a prompt through
+this selector.
+
+The complete scalar, flat, or nested provider shape is validated against the
+selected task before adapter resolution, media work, output creation, or any
+provider call. Every candidate in the supplied shape must support the task. One
+incompatible candidate rejects the whole request with the existing
+`ConfigError(code="CONFIG_INVALID")` and safe details naming the task and exact
+model. It is not a provider runtime error and is never retried, skipped,
+silently removed from a lane, or downgraded from detail to plain. A model value
+claiming detail support without plain support is itself `CONFIG_INVALID` at
+construction. Do not add a capability-error class/code, task registry, public
+Enum, provider filter, or automatic task chooser: the existing configuration
+code already gives the distinct code and description required from provider
+failures.
+
+`batchify_images` remains task-independent: it groups concrete media and may
+consume the provider shape only for the already-defined batch-size default.
+Fresh recognition persists the selected task as ordinary resume identity;
+ordinary resume restores that task and rechecks newly supplied providers rather
+than allowing a plain/detail switch. Experimental repair with a missing sidecar
+does not justify a general task manifest in this slice; its exact task input is
+left to the later repair consumer.
+
 Do not make any of the following prerequisites for the first real image proof:
 
 - a checked-in executable mirror of every current vendor model;
@@ -599,15 +636,10 @@ still owns inside the same deduplication operation. The maintainer's separate
 reference to cleanup for media "created by recognize video" is held as an open
 wording conflict rather than used to revive a convenience wrapper.
 
-Two public-contract details remain deliberately unsettled until their actual
-slice begins:
-
-1. how a caller selects plain-image OCR versus detail OCR; provider capability
-   booleans can validate a selected task but do not themselves select it;
-2. the exact input and return signature of the thin root `resume_video` route,
-   including how it reports one branch succeeding while the other fails.
-
-Neither ambiguity blocks the first single-provider image proof.
+Historical note: at #605 the plain/detail selector and thin `resume_video`
+signature were still unsettled. #633 fixed the thin route and #637 fixes the
+image selector in section 0. This paragraph is retained only to show the former
+gap; it is not a competing current contract.
 
 ### #607 current decision map: do not reconfirm settled contracts
 
@@ -659,10 +691,10 @@ that this model can complete two groups of eight, but its report did not retain
 the request flag and therefore establishes no thinking/batch causality. It does
 not override the maintainer's default policy.
 
-The exact plain-versus-detail task selector and the stateless `resume_video`
-input/partial-result signature remain later slice-local API reviews. They do
-not reopen its already fixed no-journal/no-composition/no-cleanup boundary and
-do not block a private single-provider image proof.
+Historical note: #607 still deferred the exact plain-versus-detail selector and
+stateless `resume_video` signature. Those deferrals are superseded by #637 and
+#633 respectively. They do not reopen the fixed no-journal/no-composition/no-
+cleanup boundary.
 
 #606 adds one narrow current fact without resolving any of those five choices:
 one credential-isolated DashScope `/models` request returned 246 entries and
@@ -830,8 +862,13 @@ recommended durable set is:
   supported and otherwise `None`;
 - evidence-backed finite retry rules keyed by canonical OCRLLM codes.
 
-Detail OCR implies plain OCR. A capability mismatch is an OCRLLM pre-dispatch
-error, not a provider runtime error, and causes zero provider calls.
+Detail OCR implies plain OCR; a value claiming detail without plain support is
+invalid. Fresh merged-image recognition uses the required exact
+`image_task: Literal["plain_ocr", "detail_ocr"]` selector fixed in section 0.
+The complete provider shape must support the selected task. A mismatch raises
+the existing `ConfigError(code="CONFIG_INVALID")` before adapter/media/output
+work and causes zero provider calls; it is not a provider runtime failure and
+does not silently remove a fallback candidate or lane.
 
 The value does not contain a generic call-parameter list or mapping. API keys,
 credential pools, region/base URL, timeout, cancellation, prompt/media input,

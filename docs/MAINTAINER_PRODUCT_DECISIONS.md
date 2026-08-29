@@ -1747,3 +1747,20 @@ filesystem policy without solving caller authorization. This clarification is
 fixed behavior, not a sixth answer requested from the maintainer and not an
 authorization to implement the merged writer. It does not change the current
 `recognize()` memory-only default.
+
+**#637 fixes the future merged-image task selector without adding a framework.**
+Fresh merged-image recognition requires exact explicit
+`image_task: Literal["plain_ocr", "detail_ocr"]`; it has no default, aliases,
+Boolean-pair form, provider inference, caller prompt, or reuse of current
+`image_mode` / `profile`. `plain_ocr` requests ordinary ordered OCR output;
+`detail_ocr` requests the maintained LaTeX/code-oriented detailed behavior.
+
+Every candidate in the completely validated scalar/flat/nested provider shape
+must support the selected task. Any mismatch rejects the whole request before
+adapter/media/output work with the existing `ConfigError(CONFIG_INVALID)` and
+zero provider calls. Do not skip candidates, rewrite lanes, downgrade detail,
+or add a capability-error class, task registry, public Enum, or automatic task
+chooser. Detail support implies plain support; an inconsistent model value is
+invalid. `batchify_images` remains task-independent. Fresh recognition saves
+the task as resume identity; missing-sidecar repair details wait for the actual
+experimental repair consumer.

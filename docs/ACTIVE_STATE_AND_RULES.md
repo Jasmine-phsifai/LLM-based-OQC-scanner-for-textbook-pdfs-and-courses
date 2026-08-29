@@ -12644,3 +12644,31 @@ test, provider call, credential, output, sidecar, media, dependency, frozen-
 boundary, or deletion change. These source-side defaults belong only to the
 future merged APIs; current `recognize()` remains memory-only when
 `Config.output_dir` is omitted.
+
+## Current working update: #637 fixes the merged-image task selector
+
+Future fresh merged-image recognition requires one exact explicit
+`image_task: Literal["plain_ocr", "detail_ocr"]`. It has no default, aliases,
+Boolean-pair form, case normalization, provider-based inference, or reuse of
+the current `Config.image_mode` / `profile`. Plain requests ordinary ordered OCR
+text/Markdown; detail requests the maintained LaTeX/code-oriented detailed
+image behavior. The selector is not a caller prompt and does not promise future
+SVG/Mermaid reconstruction.
+
+Complete scalar/flat/nested provider preflight checks every supplied candidate
+against the task. Any incompatible candidate rejects the whole request with
+the existing `ConfigError(code="CONFIG_INVALID")` before adapter resolution,
+media work, output/sidecar creation, or provider calls. This is a distinct
+configuration code and description from provider runtime errors; do not add a
+new public capability error family. Never skip/filter an incompatible
+candidate, rewrite a nested lane, or downgrade detail to plain. A provider
+model that claims detail support without plain support is itself invalid.
+
+`batchify_images` remains task-independent. Fresh recognition eventually saves
+the selected task as ordinary resume identity; resume restores it and rechecks
+new providers rather than changing it. The experimental repair path's behavior
+when that identity is missing remains a later repair-consumer question and does
+not justify a generic task manifest now. Current Config, RapidOCR, image
+profile, prompts, and runtime are unchanged. Focused existing config/local-OCR/
+cloud-image/import/capability regressions pass **136 tests**; #637 changes only
+decision records and makes no provider call.
