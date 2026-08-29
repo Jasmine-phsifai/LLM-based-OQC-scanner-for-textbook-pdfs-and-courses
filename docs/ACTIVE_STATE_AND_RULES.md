@@ -11111,3 +11111,28 @@ ordering, sidecar discovery, final publication, or cleanup without recreating
 the deleted layer. This remains a recommendation awaiting maintainer
 confirmation. No runtime, export, sidecar, test source, provider call,
 dependency, legacy source, frozen boundary, or deletion gate changed.
+
+## Current working update: #583 separates merged-media output from cross-media ownership
+
+#583 is a documentation-only output-ownership audit under the implementation
+pause. The phrase "one Markdown" is now explicitly bounded to one output per
+merged image recognition call and one output per merged audio recognition call
+until the maintainer resolves choice 12. It no longer implies that two
+independent recognizers may sequentially mutate one existing target.
+
+The current library has no safe shared-section writer. Whole-file Markdown
+publication has one owner, image and long-audio recognition use different
+sidecars, and `recognize_batch()` returns independent outcomes while rejecting
+duplicate targets. PDF, long audio, and the frozen video path all collect
+settled children before one final publication. PDF success-page markers do not
+constitute a generic image/audio section-update or repair-marker protocol.
+
+The recommended minimum is therefore separate merged-media outputs. If a
+single image-and-audio artifact is confirmed as a product requirement, the
+only recommended addition is an explicit media-neutral composer that consumes
+already-settled branch results and performs one atomic publication. It must not
+recognize media, dispatch or retry providers, resume, discover paths, own
+sidecars, or clean extraction artifacts. Direct shared-file mutation and a
+cross-branch document transaction are rejected as over-design. Choice 12
+remains open. No runtime, export, sidecar, public API, dependency, provider,
+legacy source, frozen boundary, or deletion occurred.

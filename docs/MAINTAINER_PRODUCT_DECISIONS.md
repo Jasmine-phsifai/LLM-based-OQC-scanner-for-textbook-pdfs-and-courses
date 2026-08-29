@@ -478,9 +478,9 @@ is often accepted.
 - Resume is the primary recovery path.
 - Repair is a small manual fallback when the resume sidecar/state is missing or
   unusable, or when historical Markdown exists without compatible state.
-- **2026-08-28 batch state model.** The provider-entity refactor
+- **2026-08-28 proposed batch state model.** The provider-entity refactor
   ([`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md))
-  realizes this section for merged-Markdown batch recognition as: one sidecar
+  proposes for future merged-Markdown batch recognition: one sidecar
   plan per batch run (ordered request fingerprints, index-aligned settled
   slots, provider identity excluded so resume may change providers) plus
   parseable `ocrllm:` slot markers in the Markdown. Resume reads the sidecar
@@ -517,9 +517,12 @@ is often accepted.
   in this section as marked below. The earlier plan for a rewritten
   `recognize_video(...)` orchestrator is itself superseded by #579/#581: the
   replacement has visible image/audio steps and no recognition wrapper. Video-
-  derived work reuses image-batch and audio-batch resume on one Markdown file;
-  whether a named stateless `resume_video` exists remains the explicit choice
-  11 below. The video journal and `recognize_video_to_markdown` are deleted only
+  derived work reuses image-batch and audio-batch resume; whether their outputs
+  also enter one cross-media Markdown is the explicit choice 12 below, and two
+  independent recognizers must not silently mutate one target. A confirmed
+  combined artifact would need one narrow final writer, not another video
+  journal. Whether a named stateless `resume_video` exists remains the explicit
+  choice 11 below. The video journal and `recognize_video_to_markdown` are deleted only
   after the refactor's replacement gate.
   Full-frame retention, provider separation, paid-work reuse, and
   retain-recoverable-gaps survive unchanged.
@@ -962,6 +965,11 @@ product choices remain open:
     router? A router is acceptable only if it remains genuinely stateless and
     does not own a video journal, publication transaction, output naming, or
     cleanup lifecycle.
+12. Does "one Markdown" mean one output per merged image call and one per
+    merged audio call (recommended until clarified), or one additional artifact
+    containing both branches? Independent recognizers never mutate the same
+    target. If the combined artifact is required, is one narrow media-neutral
+    composer that consumes settled branch results and publishes once acceptable?
 
 **#572 evidence for choices 1 and 2.** Both the active library's same-provider
 model-candidate loop and the legacy DashScope/Google candidate loops stop at
@@ -1137,6 +1145,21 @@ with explicit sources/output and let each branch reuse its own sidecar. A named
 router is viable only if the maintainer explicitly accepts the coordination
 contract without recreating those ownership duties. This is evidence, not
 confirmation; choice 11 remains open and no runtime/export was changed.
+
+**#583 evidence for choice 12.** Current image and long-audio recognition own
+different sidecars and whole-file publication rules. `recognize_batch()`
+produces independent item outcomes and rejects duplicate targets; it is not a
+merged-document writer. Current PDF, long audio, and the frozen video path all
+compose settled child results before one final atomic publication. There is no
+generic incremental Markdown update protocol: PDF has successful page-range
+markers, while image slot and audio window identities exist only in their JSON
+state. Two recognizers directly sharing one target would therefore require the
+cross-branch locking, marker parsing, conflict handling, and lifecycle layer the
+refactor is removing. The smallest current interpretation is one output per
+merged media call. If one combined image/audio artifact is confirmed, the only
+recommended extension is a pure explicit final composer with no recognition,
+provider, retry, resume, sidecar, path discovery, or cleanup ownership. Choice
+12 remains open and no runtime/export was changed.
 
 The following are not open implementation shortcuts: audio intervals are
 integer minutes; `-1` means no split only at the call boundary; full frames are

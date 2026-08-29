@@ -73,7 +73,10 @@ extract_video_audio
   batch spanning unrelated directories, preflight rejects the call before any
   provider request.
 - Image and audio batches write ordered slots into one Markdown file. They do
-  not publish one Markdown file per item.
+  not publish one Markdown file per item. This fixes one output per merged
+  image call and one output per merged audio call; it does not yet decide that
+  two independent media calls may mutate the same file. Cross-media ownership
+  is choice 12 in section 6.
 - Output naming is still open in section 6; code must not infer a naming
   convention before it is settled.
 
@@ -421,10 +424,19 @@ Implementation remains paused until these choices are explicit:
     to every provider-model value.
 11. **Video resume surface.** Recommended: do not add a public `resume_video`;
     callers re-invoke the merged image and audio recognizers against their
-    explicit sources, shared output target, and independent sidecars. The
+    explicit sources and independent state. Any final cross-media composition
+    follows choice 12 rather than being hidden in resume. The
     alternative is a named stateless router, but it must first explain how two
     branches coordinate one Markdown result without owning a video journal,
     publication transaction, output naming, or cleanup lifecycle.
+12. **Cross-media Markdown ownership.** Recommended: interpret "one Markdown"
+    as one output for each merged image or merged audio recognition call. Do
+    not let two independent recognizers incrementally mutate one target. If one
+    combined image-and-audio artifact is still required, approve a separate,
+    narrow media-neutral composition step that consumes already-settled branch
+    results and publishes exactly once. Alternative: one shared document owner
+    coordinates both branches and their state; this requires a separately
+    justified lifecycle contract and is not implicit in the current plan.
 
 ### 6.1 Evidence for choices 1 and 2 (#572)
 
@@ -939,14 +951,48 @@ branch-level persistence so that its journal remains the sole owner.
 
 Route A therefore treats “video resume routes to image/audio resume” as caller
 composition: the future merged image and audio recognizers each resume their
-own explicit source slots into the shared target, and no video-named public
-resume entry exists. Route B adds `resume_video` as a supposedly stateless
-router. Today that router cannot define partial completion, write ordering,
+own explicit source slots and state, and no video-named public resume entry
+exists. Whether their settled results later enter one combined file is choice
+12, not a resume responsibility. Route B adds `resume_video` as a supposedly
+stateless router. Today that router cannot define partial completion, write ordering,
 sidecar discovery, final publication, or cleanup without becoming another
 video lifecycle owner; translating the old journal would add a compatibility
 format that the new library explicitly rejects. Route A is recommended. Choice
 11 remains awaiting explicit maintainer confirmation; this audit changes no
 runtime, export, sidecar, result, or deletion gate.
+
+### 6.12 Evidence for choice 12 (#583)
+
+The shipped output paths have one writer, not a shared-section protocol.
+`write_markdown_atomically()` publishes a complete file and rejects an existing
+target unless overwrite or an owning resume path has been selected.
+`OutputTargetClaims` prevents overlapping ownership but does not merge later
+writes. Image and long-audio recognition each own different sidecars and final
+publication rules. The current `recognize_batch()` returns ordered independent
+item outcomes and preflights duplicate output targets; it is not the future
+merged-Markdown recognizer.
+
+The existing successful precedents all have one final writer. PDF child groups
+return results to the PDF owner, which adds page-range markers and publishes one
+complete document. Long audio saves settled windows in its sidecar and publishes
+one complete document only after composition. The frozen video chain also
+composes branch results before a single publication; its safety does not prove
+that independent branch recognizers can append to the same target. Today only
+PDF success ranges have Markdown markers. Image slot IDs and audio window IDs
+live in their separate JSON state; there is no generic Markdown section-update
+or repair-marker implementation.
+
+Route A keeps each merged media recognizer responsible for one output and one
+state owner. If the maintainer confirms that video-derived image and audio text
+must additionally become one artifact, a narrow explicit composer may accept
+already-settled branch results and perform one atomic publication. It must not
+recognize media, dispatch or retry providers, resume branches, discover paths,
+own sidecars, or clean extraction artifacts. Route B lets independent
+recognizers read, validate, replace, and coordinate sections of one existing
+file; that necessarily adds shared markers, cross-branch state, locking, and
+conflict rules and is rejected as the current over-designed route. Choice 12
+remains open because the latest wording can mean either one file per merged
+media call or one final file across both media branches.
 
 Two choices formerly listed here are now fixed by the latest instruction. The
 old video recognition/journal product is removed after the section 7
@@ -961,8 +1007,9 @@ Deletion requires all of the following, and does not require repair:
 
 - one merged image Markdown run with ordinary resume proven;
 - one merged audio Markdown run with ordinary resume proven;
-- one real video whose extracted image and audio paths compose into the same
-  output without the old journal;
+- resolution of choice 12, followed either by two independently resumable
+  merged media outputs or by one explicitly approved single-writer composition
+  proof without the old journal;
 - explicit-source and output-default behavior documented;
 - caller-invoked extraction outputs remain caller-owned; only extraction-local
   rejected candidates and temporary files follow their documented cleanup;
