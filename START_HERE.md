@@ -31,8 +31,8 @@ docs/ACTIVE_STATE_AND_RULES.md        Work log and defect archive; verify
 docs/MAINTAINER_PRODUCT_DECISIONS.md  Maintainer choices preserved across handoffs;
                                       scope changes still require authority updates.
 docs/plan_provider_entity_batch_refactor.md
-                                      Current discussion-paused provider/media
-                                      board; section 0 controls ordering.
+                                      Current active provider/media migration
+                                      board; section 0 controls atomic ordering.
 docs/plan_phase1_maturation_and_phase2_audio.md
                                       Retained Stage M/A detail; the current
                                       provider/media board supersedes conflicts.
@@ -135,7 +135,8 @@ proof. Finite retry rules
 keep `error`/`next`/`current` reporting categories. Successful fallback returns
 `status="complete"` with bounded warnings/metadata, some unresolved slots return
 `status="partial"`, and zero settled slots raise `AllCandidatesExhausted`.
-Runtime remains discussion-paused; plan section 0 owns the exact later order.
+Runtime migration is now authorized one atomic slice at a time; plan section 0
+owns the exact order and prevents later topology from entering an earlier slice.
 #649 further fixes construction without adding another layer: one runtime
 provider-model entity carries exact typed adapter settings, official presets
 remain credential-free, and explicit credentials require a separate per-call
@@ -155,6 +156,15 @@ retry, pool, resume, or cleanup methods.
 self-tests to repository-only `quality_lab/`. Root `tests/` remains the default
 public-behavior suite; run `python -m pytest quality_lab` only when that evidence
 is relevant. The wheel still packages only `src/ocrllm`.
+#656 live-runs one 3.11-second synthetic speech MP3 through native Google
+`gemini-2.5-flash`: one generation call completed with 137 input and 7 output
+tokens, and the owned temporary source was removed. That run preceded the
+runner-only cleanup assertion, so client closure is not retroactively claimed.
+The runner now requires existing `provider_client_closed=True` evidence before
+reporting success; 17 focused tests and an offline negative probe pass. The
+maintainer also resumes migration at the first atomic provider-model slice;
+retry, fallback, pooling, merged media, repair, and old-video deletion remain
+ordered later gates.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
@@ -1566,9 +1576,10 @@ lists seven direct choices: catalog mirror scope, fractional provider audio
 minutes, private versus public adapter dispatch, deletion timing,
 multi-provider default reduction, retry-rule shape, and successful-fallback
 reporting. Three earlier heartbeat recommendations were reopened because no
-saved direct maintainer selection proves them and the latest proposal touches
-the same behavior. Runtime work remains discussion-paused; no provider class,
-preset, merged recognizer, fallback, pool, repair, or old-video deletion changed.
+saved direct maintainer selection proved them and the latest proposal touched
+the same behavior. At #634 runtime work remained discussion-paused and no
+provider class, preset, merged recognizer, fallback, pool, repair, or old-video
+deletion changed; #656 later resumes the pruned section-0 sequence.
 
 #635 verifies the future deletion closure without selecting its timing. Exactly
 34 production files belong only to the old video recognition/orchestration

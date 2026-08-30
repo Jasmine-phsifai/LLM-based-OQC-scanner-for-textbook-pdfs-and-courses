@@ -9,7 +9,7 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 Last synchronized: 2026-08-30.
 
-Refactor authority (approved direction, implementation paused): the narrowed
+Refactor authority (approved direction, atomic implementation resumed): the narrowed
 provider-model/media-batch refactor (#568/#569 in
 `docs/ACTIVE_STATE_AND_RULES.md`;
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md))
@@ -18,9 +18,11 @@ below as direction. Public image/audio batch resume replaces the video journal;
 callers compose visible media steps and no replacement `recognize_video` wrapper
 is currently reserved. The video job-state layer is deleted after replacement
 merged-image, merged-audio, and resume proof. #569 withdraws the former
-consumer-free provider Phase 1 and exhaustive module blueprint; no refactor
-runtime has shipped. #607 keeps implementation paused and #615 narrows the
-then-current wording conflicts. #647 closes the seven questions reopened by
+consumer-free provider Phase 1 and exhaustive module blueprint; no replacement
+runtime had shipped through #655. #607 paused implementation and #615 narrowed
+the then-current wording conflicts; #656 now resumes migration at the first
+atomic provider-model slice without authorizing later topology. #647 closes the
+seven questions reopened by
 #646: use a few live-proven presets, integer provider audio minutes, first-class
 provider-model entities plus a separate explicit direct in-process injected-
 adapter escape hatch (not a frozen worker/process transport),
@@ -76,6 +78,17 @@ their original paths. Two redundant nested fixture scopes were removed because
 their parent `quality_lab` scope already provides the same boundary. No runtime,
 provider, media, legacy, public API, or dependency behavior changed.
 
+#656 refreshes the real native-Google short-audio gate before provider-model
+migration begins. One 3.11-second synthetic speech MP3 completed with exact
+`gemini-2.5-flash`, one generation call, 137 input tokens, 7 output tokens, and
+owned temporary-source cleanup. The run preceded a runner-only correction, so
+provider-client cleanup remains honestly unproven for that run. The live runner
+now rejects missing or false existing `provider_client_closed` metadata before
+reporting success; 17 focused tests and a separate offline negative probe pass.
+No public/runtime API changed. The maintainer separately authorizes the next
+atomic provider-model migration slice; later retry, fallback, pool, merged-
+media, repair, and old-video deletion stages remain gated by section 0 order.
+
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
 negative-feedback/similarity selection already belongs to the one extraction
@@ -120,12 +133,15 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#647)
+### Current provider/media checkpoint (#656)
 
-Runtime implementation remains paused; section 0 of
+Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
-holds the closed decisions, pruning rules, and later atomic order. There is no
-remaining #646 product choice and no current runtime authorization.
+holds the closed decisions, pruning rules, and active order. The next slice is
+limited to immutable provider-model facts, exact typed settings, and the
+smallest private controlled resolution required by its scalar consumer. There
+is no remaining #646 product choice and no blanket authorization for later
+topology.
 
 The fixed destination has no second video black box. Callers visibly compose
 provider-free video inspection/extraction with independent merged-image and
@@ -387,7 +403,7 @@ Phase 1 maturation is offline implementation-complete:
 
 The ordered current provider/media work is section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md),
-subject to the authority file; runtime implementation remains discussion-paused.
+subject to the authority file; #656 resumes its first atomic runtime slice.
 PDF recognition is implemented and live-proven: #078 discovered 37 current
 Google models, then `gemini-2.5-flash` completed 16 pages as exactly two serial
 requests with two complete checkpoints, ordered published output, aggregate
@@ -528,9 +544,9 @@ second defect list in this file.
   protocol revision in the same slice.
 - The old video recognition/orchestration family remains importable but frozen;
   do not select or extend it for new work.
-- Replacement provider/media runtime remains discussion-paused. Real defects in
-  retained provider-free inspect/extract may still receive the smallest proven
-  fix; do not use that exception to start the refactor.
+- Replacement provider/media runtime has resumed at the first atomic section-0
+  slice. Retained provider-free inspect/extract may still receive the smallest
+  proven fix, but neither route authorizes later refactor stages early.
 - Active PDF work uses PDFium through `pypdfium2`; do not add PyMuPDF or
   `fitz`.
 - HarmonyOS/ArkTS and the Rust/PyO3 rewrite are deferred/suspended and are not

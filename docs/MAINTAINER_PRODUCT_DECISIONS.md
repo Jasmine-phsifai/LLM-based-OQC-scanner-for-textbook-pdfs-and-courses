@@ -9,8 +9,9 @@ implementing the older plan.
 [`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md) remains authoritative.
 Current provider/media implementation order is section 0 of
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md),
-and runtime implementation remains discussion-paused. This file preserves
-maintainer constraints but does not copy or independently reorder that board.
+and the maintainer resumed migration on 2026-08-30, one atomic slice at a time.
+This file preserves maintainer constraints but does not copy or independently
+reorder that board.
 
 ## Planning and documentation
 
@@ -910,11 +911,12 @@ is often accepted.
 ## Resolved provider-model and media-batch choices (#647)
 
 The maintainer has approved the decomposed media direction and answered the
-seven provider/media questions reopened by #646. Runtime remains explicitly
-discussion-paused; the closed contracts and atomic phase order are in section 0
-of [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
-No provider-model class, retry engine, preset, batch pool, merged facade, or
-video deletion starts merely because the choices are now recorded.
+seven provider/media questions reopened by #646. #656 later authorizes runtime
+migration to resume, one independently verifiable slice at a time; the closed
+contracts and atomic phase order are in section 0 of
+[`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
+That authorization does not permit a retry engine, batch pool, merged facade,
+or video deletion before its ordered consumer and proof gate.
 
 The current decisions are: ship only a few presets admitted by bounded real
 success; keep provider audio defaults in integer minutes; use the minimum
@@ -961,7 +963,8 @@ equality/hash still varies with explicit keys, generic `dataclasses.asdict()`
 would expose the key field, and Config snapshotting deliberately shares one
 mutable DashScope pool. Therefore future code must not treat settings equality,
 hash, or generic dataclass serialization as provider/resume identity. This is a
-first-slice acceptance rule, not authorization to implement the slice now.
+first-slice acceptance rule; #656 now authorizes that slice to begin without
+authorizing later topology.
 
 #650 fixes the initial retry-policy contents without undoing the maintainer's
 three-label decision. The first native-Google and DashScope image presets carry
@@ -1799,9 +1802,10 @@ Successful fallback is not an open fifth item: #572/#592/#625 already require
 a complete result with bounded earlier-provider failure evidence, while only
 genuinely unresolved slots use the #626 terminal path.
 
-Runtime remains maintainer-paused. When it resumes, the choices actually
-consumed by one atomic slice must be explicit first; unrelated later choices do
-not block that slice or justify another all-or-nothing foundation.
+At this #634 checkpoint runtime was maintainer-paused. #656 later resumed the
+section-0 sequence. The choices actually consumed by one atomic slice must be
+explicit first; unrelated later choices do not block that slice or justify
+another all-or-nothing foundation.
 
 **#635 makes deletion choice 5 executable without choosing its timing.** Static
 forward/reverse import review proves one closed 34-file old-video production

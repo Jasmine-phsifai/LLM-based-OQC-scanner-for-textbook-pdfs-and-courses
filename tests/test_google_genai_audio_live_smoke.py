@@ -76,6 +76,7 @@ def test_audio_live_smoke_delegates_catalog_validation_to_public_recognition(
                     "provider": "google",
                     "model": MODEL,
                     "provider_call_count": 1,
+                    "provider_client_closed": True,
                     "duration_seconds": 1.0,
                     "byte_size": 10,
                     "current_model_token_usage": (
@@ -120,6 +121,7 @@ def test_audio_live_smoke_outputs_no_transcript_path_or_secret(monkeypatch, caps
                     "provider": "google",
                     "model": MODEL,
                     "provider_call_count": 1,
+                    "provider_client_closed": True,
                     "duration_seconds": 1.25,
                     "byte_size": 2048,
                     "current_model_token_usage": (
@@ -711,6 +713,7 @@ def test_audio_live_summary_rejects_unproven_result_or_source_evidence():
         "provider": "google",
         "model": MODEL,
         "provider_call_count": 1,
+        "provider_client_closed": True,
         "duration_seconds": 1.0,
         "byte_size": 10,
         "current_model_token_usage": (
@@ -718,6 +721,24 @@ def test_audio_live_summary_rejects_unproven_result_or_source_evidence():
         ),
     }
     invalid_results = (
+        SimpleNamespace(
+            source_type="audio",
+            output_path=None,
+            metadata=MappingProxyType(
+                {**base_metadata, "provider_client_closed": False}
+            ),
+        ),
+        SimpleNamespace(
+            source_type="audio",
+            output_path=None,
+            metadata=MappingProxyType(
+                {
+                    key: value
+                    for key, value in base_metadata.items()
+                    if key != "provider_client_closed"
+                }
+            ),
+        ),
         SimpleNamespace(
             source_type="image",
             output_path=None,

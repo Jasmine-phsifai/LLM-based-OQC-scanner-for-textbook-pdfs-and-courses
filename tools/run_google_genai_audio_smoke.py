@@ -148,6 +148,11 @@ def _safe_recognition_summary(
             "Google audio live recognition returned an unexpected provider identity.",
             code="CONFIG_INVALID",
         ) from None
+    if metadata.get("provider_client_closed") is not True:
+        raise ConfigError(
+            "Google audio live recognition did not prove provider client cleanup.",
+            code="CONFIG_INVALID",
+        ) from None
     call_count = metadata.get("provider_call_count")
     usage = metadata.get("current_model_token_usage", ())
     duration_seconds = metadata.get("duration_seconds")
@@ -168,7 +173,6 @@ def _safe_recognition_summary(
         result.status != "complete"
         or metadata.get("transport") != "google_files"
         or metadata.get("remote_file_deleted") is not True
-        or metadata.get("provider_client_closed") is not True
         or duration_seconds <= 300.0
     ):
         raise ConfigError(

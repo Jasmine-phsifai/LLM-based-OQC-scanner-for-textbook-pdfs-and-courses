@@ -1,9 +1,9 @@
 # Plan: Provider-Model And Media-Batch Refactor
 
-Status: **approved product direction; runtime implementation remains paused
-for the current decision map in section 0.** Existing
-provider-free primitive maintenance remains allowed when real media exposes a
-defect. This revision replaces the prematurely expanded
+Status: **approved product direction; runtime implementation resumed by the
+maintainer on 2026-08-30, one atomic slice at a time in section 0 order.**
+Existing provider-free primitive maintenance remains allowed when real media
+exposes a defect. This revision replaces the prematurely expanded
 2026-08-28 module build specification. It is a decision record and sequencing
 guide, not permission to build unused framework pieces.
 
@@ -11,12 +11,13 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning checkpoint (2026-08-30, #647)
+## 0. Current pruning and execution checkpoint (2026-08-30, #656)
 
-This plan remains a discussion record, not implementation authorization. The
-maintainer has paused runtime work while the replacement is reviewed for
-overdesign. Historical questions below remain the reasoning trail; this section
-alone is the current decision board.
+The maintainer has now authorized migration to begin. Authorization advances
+only the next independently verifiable slice in the sequence below; it does not
+authorize building later topology, compatibility wrappers, or unused framework
+pieces in advance. Historical questions below remain the reasoning trail; this
+section alone is the current decision and execution board.
 
 The destination is one visible, caller-composed pair of media flows:
 
@@ -383,7 +384,7 @@ not persisted as resume state. Nested outer lists remain fixed lanes with no
 cross-lane rescue; exact slot-to-lane assignment is postponed until the pool
 slice and must not complicate the first scalar proof.
 
-The smallest safe runtime sequence after the maintainer resumes work is:
+The active runtime sequence is:
 
 1. add only immutable provider-model facts, exact typed settings, private
    controlled adapter resolution, and no new injected-adapter contract;
@@ -400,9 +401,10 @@ The smallest safe runtime sequence after the maintainer resumes work is:
 6. add nested fixed-lane pooling only after serial fallback is proven, and add
    experimental repair last from a real missing-sidecar Markdown case.
 
-This ordering is not permission to implement. It prevents the provider object
-from becoming a scheduler, state store, retry executor, output planner, or media
-owner before those consumers exist.
+The maintainer's authorization permits these steps one atomic slice at a time,
+starting with item 1. It does not permit implementing later items early. This
+prevents the provider object from becoming a scheduler, state store, retry
+executor, output planner, or media owner before those consumers exist.
 
 #651 confirms this timing from current code rather than from the future schema.
 The shipped `VisionProvider` has one synchronous `recognize_images(...)` method;
@@ -427,13 +429,14 @@ only a function whose responsibility or test seam is independently meaningful;
 and use the old-video deletion to reduce the root surface before adding pool or
 repair modules. `contracts/` and `worker/` remain frozen.
 
-Until the maintainer resumes runtime work, do not implement `ProviderModel`,
-presets, adapter dispatch, merged recognition, retry/fallback, pool execution,
-repair, or old-video deletion. When runtime resumes, only the choices consumed
-by that atomic slice must already be explicit; the unrelated later choices do
-not become a blanket prerequisite. The negative-feedback/similarity frame
-algorithm remains a separate later real-archive review; no crop/ROI/corner-
-detection path may return.
+Runtime work has resumed. Begin with only the immutable provider-model facts,
+exact typed settings, and the smallest private controlled resolution needed by
+the first scalar consumer. Do not pull presets, merged recognition, retry/
+fallback, pool execution, repair, or old-video deletion into that first slice.
+Only choices consumed by the current atomic slice must already be explicit;
+unrelated later choices do not become a blanket prerequisite. The negative-
+feedback/similarity frame algorithm remains a separate later real-archive
+review; no crop/ROI/corner-detection path may return.
 
 #602 corrects one already-shipped canonical mapping before any retry executor
 exists. Native Google HTTP 400 with exact status `FAILED_PRECONDITION` has now
@@ -1334,11 +1337,13 @@ Each phase must contain a real consumer, the smallest focused offline tests,
 and a bounded live call where provider behavior is in scope. A green offline
 suite alone does not prove a provider phase.
 
-### 5.1 Proposed first phase entry awaiting authorization (#597/#607)
+### 5.1 Historical first-phase proposal; authorization later granted by #656 (#597/#607)
 
-The transport order is evidence-selected, but implementation remains paused
-until #607's schema-timing conflict and any other decision actually consumed by
-the selected first preset are resolved or explicitly deferred. #597 audited the
+At #607 the transport order was evidence-selected but implementation remained
+paused until the schema-timing conflict and any other decision actually consumed
+by the selected first preset were resolved or explicitly deferred. #656 later
+resumed the pruned section-0 sequence; this subsection remains historical route
+evidence rather than a competing entry order. #597 audited the
 current resolver, shared
 vision-call boundary, operation adapters, tests, and prior live evidence. It
 found no additional provider-model field or framework decision that must block

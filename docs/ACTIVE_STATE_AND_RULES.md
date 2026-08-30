@@ -13071,3 +13071,34 @@ deselected**; focused legacy Google/independent-vision classifier tests pass
 the primary agent reran the tests with the repository environment. No key,
 network, provider call, runtime/test source, API, state, dependency, media,
 legacy source, frozen boundary, or deletion changed.
+
+## Current working update: #656 live-proves native Google short audio and resumes atomic migration
+
+#656 selects the bounded real-audio route over another provider-free video
+probe because the native Google short-audio path had only stale success and a
+newer catalog failure. A controller read the already-authorized legacy UI
+credential without printing or persisting it, generated a fixed synthetic
+speech MP3 in an owned system-temporary directory, and invoked the public live
+runner with exact `gemini-2.5-flash`. The native Google GenAI SDK completed one
+generation call with 137 input tokens, 7 output tokens, and process exit zero;
+the owned 3.11-second, 25,120-byte source directory was removed. This is not an
+OpenAI-compatible Google proof. The catalog request count is not exposed, the
+merged stderr channel was not independently characterized, and unrelated
+snapshot residue outside the owned directory was not scanned.
+
+The live result already carried `provider_client_closed`, but the short-audio
+runner did not require it before printing `status="passed"`; therefore that
+particular live run does not honestly prove client cleanup. The smallest fix
+requires the existing metadata value to be exactly true for both short and
+long audio and leaves the safe JSON output unchanged. Its 17 focused tests pass,
+and an offline negative probe rejects both false and missing cleanup evidence.
+No second provider request was made merely to improve the report. The next
+relevant live run will exercise the corrected gate.
+
+The maintainer has separately authorized migration to begin. Section 0 of the
+provider/media plan now activates only the first atomic provider-model slice:
+immutable model facts, exact typed settings, and the smallest private controlled
+resolution required by its scalar consumer. This does not authorize retry,
+fallback, pools, merged media, repair, old-video deletion, a public adapter
+hierarchy, a credential bridge in the library, or a model sweep. The four
+protected untracked files remain untouched.
