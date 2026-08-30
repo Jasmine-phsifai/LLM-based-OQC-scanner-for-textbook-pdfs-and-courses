@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #671)
+## 0. Current pruning and execution checkpoint (2026-08-30, #672)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -150,6 +150,35 @@ paths, and recognized text remain excluded. No production code, retry, fallback,
 timeout, or provider policy changed. The partial output/state is intentionally
 retained outside Git for the next atomic live-resume gate, which must dispatch
 only slot 1 and must not replay settled slot 0. Do not start another fresh run.
+
+### #672 closes the scalar merged-image live and ordinary-resume gate
+
+The exact retained #671 state still contained 16 matching source fingerprints,
+one settled eight-image slot, one failed eight-image slot with canonical
+`PROVIDER_TIMEOUT`, two historical Google generation calls, unknown historical
+token dimensions, and no cleanup failure. A copied-state `--resume` preflight
+without credentials returned `CONFIG_MISSING`, exit 1, zero provider calls,
+unchanged sources, and byte-identical output/state. It did not mutate the live
+state.
+
+One subsequent resume child used the original state and the same exact batches.
+It reused slot 0, dispatched only slot 1, and completed with exactly one current
+generation call. The safe result reports two settled slots, one reused slot,
+two historical calls, current usage of 2,401 input and 298 output tokens,
+unchanged source bytes, no provider cleanup warning, a 1,102-byte final
+Markdown, and no remaining sidecar. The process ended naturally with empty
+stderr. The external PowerShell parent did not retain the numeric live exit and
+it is not reconstructed; the independently verified result/state/publication
+facts are the completion authority. Both owned TEMP proof roots were then
+verified by exact filename and removed without recursive deletion.
+
+The maintained fixed-scenario runner now supports explicit `--resume` and
+validates one current call, one reused slot, and two historical calls without
+emitting paths, Markdown, descriptions, or credentials. No production runtime,
+schema, timeout, retry, fallback, or provider policy changed. Phase 3 of the
+evidence-first order is therefore complete. The next separately authorized
+slice is phase 4 flat fallback and finite retry evidence; it must not pull in
+nested lanes, parallel pools, merged audio, repair, or old-video deletion.
 
 The destination is one visible, caller-composed pair of media flows:
 

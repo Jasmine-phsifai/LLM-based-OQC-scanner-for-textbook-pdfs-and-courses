@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#668)
+### Current provider/media checkpoint (#672)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -232,7 +232,15 @@ unknown. The prior image and long-audio atomic byte writers now share one small
 core, removing duplicated lifecycle code without merging their schemas. There
 is still no fallback, retry executor, provider list/pool, merged audio, repair,
 video deletion, worker change, or cross-file transaction. The full offline
-suite passes 1,639 tests; bounded live merged-image proof is the next gate.
+suite passes 1,639 tests. #669/#670 establish a content-free live harness;
+#671 then settles one real eight-image Google slot and retains the other as
+`PROVIDER_TIMEOUT`. #672 resumes that exact state, reuses the settled slot,
+dispatches only the failed slot once, settles both slots, publishes the final
+Markdown, and removes state. The 16 sources remain unchanged, current usage is
+2,401/298 input/output tokens, and cleanup emits no warning. The scalar merged-
+image live/resume gate is closed. Flat fallback and finite retry evidence is
+the next separate phase; nested pools, merged audio, repair, and video deletion
+remain gated.
 
 The fixed destination has no second video black box. Callers visibly compose
 provider-free video inspection/extraction with independent merged-image and

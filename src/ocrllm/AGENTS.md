@@ -65,10 +65,14 @@ selector. The next gate must explicitly select validated image extensions,
 prove zero-call capture, and then make at most one live call. #671 does so: one
 real two-batch run settles slot 0 and retains slot 1 as
 `PROVIDER_TIMEOUT`, with exactly two calls and no source/client-cleanup failure.
-Do not repeat fresh recognition. The next gate must resume that private TEMP
-state, reuse slot 0, and dispatch only slot 1; no fallback/retry/pool/audio work
-belongs in that proof. The older Stage M/A plan supplies detail only where that
-board has not superseded it. #078
+Do not repeat fresh recognition. #672 consumes that exact private state through
+public resume: one historical slot is reused, only the failed slot is called,
+both slots settle, the final Markdown publishes, and the sidecar is removed.
+The scalar merged-image live/resume gate is closed. The next plan phase may
+begin flat fallback and finite retry evidence as its own slice; nested lanes,
+parallel pools, merged audio, repair, and old-video deletion remain later.
+The older Stage M/A plan supplies detail only where that board has not
+superseded it. #078
 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the

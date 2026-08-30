@@ -9,7 +9,11 @@ import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from ocrllm import GOOGLE_GEMINI_2_5_FLASH, recognize_images_to_markdown
+from ocrllm import (
+    GOOGLE_GEMINI_2_5_FLASH,
+    recognize_images_to_markdown,
+    resume_images_to_markdown,
+)
 from ocrllm.errors import OCRLLMError, STABLE_ERROR_CODES
 
 
@@ -31,6 +35,11 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--timeout", type=float, default=600.0)
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="resume the supplied output instead of starting a fresh job",
+    )
     arguments = parser.parse_args(argv)
     if len(arguments.batch) != BATCH_COUNT:
         parser.error("--batch must be supplied exactly twice")
@@ -47,18 +56,40 @@ def run_google_genai_merged_image_smoke(
     before: tuple[tuple[int, str], ...] | None = None
     try:
         before = _source_fingerprints(batches)
-        result = recognize_images_to_markdown(
-            batches,
-            provider=GOOGLE_GEMINI_2_5_FLASH,
-            image_task=IMAGE_TASK,
-            output_path=output_path,
-            timeout_seconds=arguments.timeout,
-        )
+        if arguments.resume:
+            result = resume_images_to_markdown(
+                batches,
+                provider=GOOGLE_GEMINI_2_5_FLASH,
+                output_path=output_path,
+                timeout_seconds=arguments.timeout,
+            )
+        else:
+            result = recognize_images_to_markdown(
+                batches,
+                provider=GOOGLE_GEMINI_2_5_FLASH,
+                image_task=IMAGE_TASK,
+                output_path=output_path,
+                timeout_seconds=arguments.timeout,
+            )
     except OCRLLMError as error:
-        return _failure_summary(error, batches, before, output_path, state_path)
+        return _failure_summary(
+            error,
+            batches,
+            before,
+            output_path,
+            state_path,
+            resume=arguments.resume,
+        )
     except Exception:
         return _invalid_summary(output_path, state_path)
-    return _result_summary(result, batches, before, output_path, state_path)
+    return _result_summary(
+        result,
+        batches,
+        before,
+        output_path,
+        state_path,
+        resume=arguments.resume,
+    )
 
 
 def _result_summary(
@@ -67,14 +98,32 @@ def _result_summary(
     before: tuple[tuple[int, str], ...],
     output_path: Path,
     state_path: Path,
+    *,
+    resume: bool,
 ) -> dict[str, object]:
     metadata = getattr(result, "metadata", None)
     output = _artifact_summary(output_path)
     state = _artifact_summary(state_path)
     sources_unchanged = _sources_unchanged(batches, before)
-    usage = _safe_usage(metadata.get("current_provider_model_usage")) if isinstance(
-        metadata, Mapping
-    ) else None
+    usage = None
+    historical_usage = None
+    if isinstance(metadata, Mapping):
+        usage = _safe_usage(metadata.get("current_provider_model_usage"))
+        historical_usage = _safe_usage(
+            metadata.get("historical_provider_model_usage")
+        )
+    expected_calls = 1 if resume else BATCH_COUNT
+    expected_reused = 1 if resume else 0
+    if resume:
+        valid_history = (
+            historical_usage is not None
+            and historical_usage["calls"] == BATCH_COUNT
+        )
+    else:
+        valid_history = (
+            isinstance(metadata, Mapping)
+            and metadata.get("historical_provider_model_usage") == ()
+        )
     status = getattr(result, "status", None)
     warnings = getattr(result, "warnings", None)
     valid = (
@@ -89,11 +138,11 @@ def _result_summary(
         and type(warnings) is tuple
         and isinstance(metadata, Mapping)
         and metadata.get("slot_count") == BATCH_COUNT
-        and metadata.get("reused_slot_count") == 0
-        and metadata.get("provider_call_count") == BATCH_COUNT
-        and metadata.get("historical_provider_model_usage") == ()
+        and metadata.get("reused_slot_count") == expected_reused
+        and metadata.get("provider_call_count") == expected_calls
+        and valid_history
         and usage is not None
-        and usage["calls"] == BATCH_COUNT
+        and usage["calls"] == expected_calls
     )
     if not valid:
         return _invalid_summary(output_path, state_path, result_status=status)
@@ -105,9 +154,14 @@ def _result_summary(
         "image_task": IMAGE_TASK,
         "batch_count": BATCH_COUNT,
         "batch_sizes": [BATCH_SIZE, BATCH_SIZE],
+        "operation": "resume" if resume else "recognize",
         "slot_count": BATCH_COUNT,
         "settled_slot_count": settled,
-        "provider_call_count": BATCH_COUNT,
+        "reused_slot_count": expected_reused,
+        "provider_call_count": expected_calls,
+        "historical_provider_call_count": (
+            historical_usage["calls"] if historical_usage is not None else 0
+        ),
         "input_tokens": usage["input_tokens"],
         "output_tokens": usage["output_tokens"],
         "sources_unchanged": True,
@@ -142,9 +196,12 @@ def _failure_summary(
     before: tuple[tuple[int, str], ...] | None,
     output_path: Path,
     state_path: Path,
+    *,
+    resume: bool,
 ) -> dict[str, object]:
     summary: dict[str, object] = {
         "status": "failed",
+        "operation": "resume" if resume else "recognize",
         "error": {
             "code": error.code,
             "scope": _safe_scope(error.details.get("failure_scope")),

@@ -240,7 +240,14 @@ task/plan, accepts a changed scalar provider, and dispatches only unresolved
 slots. Full completion removes state; zero completion raises
 `AllCandidatesExhausted` and creates no Markdown. No fallback/list/pool/retry,
 merged audio, repair, or video-chain deletion is included. All 1,639 offline
-tests pass; bounded live merged-image proof remains next.
+tests pass. #669's first live controller lost its evidence and #670 replaced it
+with a fixed content-free runner. #671 then made exactly two real Google calls:
+one eight-image slot settled and one retained `PROVIDER_TIMEOUT`. #672 resumes
+that exact state without a fresh run, reuses the settled slot, calls only the
+failed slot once, publishes both slots, and removes the sidecar. Current usage
+is 2,401/298 input/output tokens, sources remain unchanged, and provider cleanup
+has no warning. The scalar merged-image live/resume gate is closed; flat
+fallback and finite retry evidence is the next separate plan phase.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

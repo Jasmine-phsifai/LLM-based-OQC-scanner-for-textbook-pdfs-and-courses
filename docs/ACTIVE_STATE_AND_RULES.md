@@ -13518,3 +13518,32 @@ The partial Markdown and sidecar remain in their exact private TEMP scratch for
 the next atomic resume proof. That proof must make no fresh call, reuse settled
 slot 0, dispatch only failed slot 1, and remove state only after complete
 publication. The unrelated empty scratch was removed.
+
+## Current working update: #672 proves real no-replay merged-image resume
+
+Before dispatch, the retained #671 sidecar was independently rechecked: all 16
+source fingerprints still matched, slot 0 was settled, slot 1 was failed with
+`PROVIDER_TIMEOUT`, cumulative Google calls were two with unknown token totals,
+and cleanup state was false. The existing fixed runner gained only an explicit
+`--resume` branch through public `resume_images_to_markdown()` plus
+scenario-specific evidence checks. No production library code changed.
+
+A copied output/state first ran without credentials. It returned
+`CONFIG_MISSING`, numeric exit 1, zero provider calls, unchanged sources, and
+byte-identical 609-byte output plus 5,212-byte state; the original live state
+was unchanged. One subsequent child resumed the original through the HTTP
+proxy. It made exactly one current Google generation call, reused exactly one
+slot, and settled both slots. Current usage was 2,401 input and 298 output
+tokens; the prior two calls remained separately reported as history. Source
+bytes were unchanged, client cleanup produced no warning, the final Markdown
+was 1,102 bytes, and successful publication removed the sidecar.
+
+The live process ended naturally with one content-free JSON line and empty
+stderr. Its external PowerShell parent did not retain a numeric exit, which is
+left unknown rather than inferred. The result metadata, published artifact,
+absent state, unchanged sources, and missing process independently prove the
+library outcome. Both exact TEMP proof roots were inspected and then deleted
+file by file before their empty directories were removed; deletion is not
+recoverable. The scalar merged-image recognition/resume live gate is closed.
+The next plan phase is flat fallback and finite retry evidence, not nested
+pooling, audio, repair, or video-chain deletion.
