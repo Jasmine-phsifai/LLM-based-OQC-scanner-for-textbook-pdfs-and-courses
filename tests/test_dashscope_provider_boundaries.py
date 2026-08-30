@@ -261,30 +261,34 @@ def test_dashscope_response_parser_preserves_each_valid_usage_side_independently
 
 
 @pytest.mark.parametrize(
-    "response",
+    ("response", "reason"),
     [
-        SimpleNamespace(choices=[]),
-        _response(content=None),
-        _response(finish_reason="length"),
-        _response(finish_reason="content_filter"),
-        _response(refusal="request refused"),
-        _response(refusal={"reason": "safety"}),
-        _response(model="different-model"),
-        SimpleNamespace(
-            choices=[
-                _response().choices[0],
-                _response(finish_reason="length").choices[0],
-            ],
-            model=MODEL,
+        (SimpleNamespace(choices=[]), "malformed"),
+        (_response(content=None), "missing_text"),
+        (_response(finish_reason="length"), "truncated"),
+        (_response(finish_reason="content_filter"), "incomplete"),
+        (_response(refusal="request refused"), "refusal"),
+        (_response(refusal={"reason": "safety"}), "refusal"),
+        (_response(model="different-model"), "model_mismatch"),
+        (
+            SimpleNamespace(
+                choices=[
+                    _response().choices[0],
+                    _response(finish_reason="length").choices[0],
+                ],
+                model=MODEL,
+            ),
+            "malformed",
         ),
     ],
 )
-def test_dashscope_response_parser_rejects_false_success(response):
+def test_dashscope_response_parser_rejects_false_success(response, reason):
     with pytest.raises(ProviderError) as captured:
         parse_dashscope_image_response(response, model=MODEL)
 
     assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
     assert captured.value.retryable is False
+    assert captured.value.details["reason"] == reason
 
 
 def test_dashscope_raw_response_rejects_timeout_partial_header():
@@ -297,6 +301,7 @@ def test_dashscope_raw_response_rejects_timeout_partial_header():
         parse_dashscope_raw_response(raw, model=MODEL)
 
     assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.details["reason"] == "partial_timeout"
 
 
 def test_dashscope_raw_response_accepts_absent_or_false_partial_header():

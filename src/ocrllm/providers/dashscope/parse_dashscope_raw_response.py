@@ -19,7 +19,7 @@ def parse_dashscope_raw_response(raw_response: object, *, model: str) -> object:
         raise ProviderError(
             "DashScope returned an unreadable raw response boundary.",
             code="PROVIDER_RESPONSE_INVALID",
-            details=details,
+            details={**details, "reason": "raw_boundary"},
         ) from None
 
     if partial_header is not None:
@@ -27,20 +27,20 @@ def parse_dashscope_raw_response(raw_response: object, *, model: str) -> object:
             raise ProviderError(
                 "DashScope returned an invalid partial-response header.",
                 code="PROVIDER_RESPONSE_INVALID",
-                details=details,
+                details={**details, "reason": "partial_header"},
             ) from None
         normalized_header = partial_header.strip().casefold()
         if normalized_header == "true":
             raise ProviderError(
                 "DashScope returned content truncated by a provider timeout.",
                 code="PROVIDER_RESPONSE_INVALID",
-                details=details,
+                details={**details, "reason": "partial_timeout"},
             ) from None
         if normalized_header != "false":
             raise ProviderError(
                 "DashScope returned an invalid partial-response header.",
                 code="PROVIDER_RESPONSE_INVALID",
-                details=details,
+                details={**details, "reason": "partial_header"},
             ) from None
 
     try:
@@ -49,5 +49,5 @@ def parse_dashscope_raw_response(raw_response: object, *, model: str) -> object:
         raise ProviderError(
             "DashScope returned a response that could not be parsed safely.",
             code="PROVIDER_RESPONSE_INVALID",
-            details=details,
+            details={**details, "reason": "raw_parse"},
         ) from None

@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #662)
+## 0. Current pruning and execution checkpoint (2026-08-30, #663)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -532,6 +532,24 @@ admit a preset, infer plain/detail OCR capability or default batch size, prove
 audio defaults, authorize public-call rewrite, or waive the separately open
 DashScope success gate. The next DashScope action must still ask a new bounded
 diagnostic question rather than replaying the same invalid response blindly.
+
+#663 makes that future response failure distinguishable without storing or
+printing content. Existing DashScope raw-response and completion-parser branches
+now attach one short fixed `reason` such as `raw_parse`, `truncated`, `refusal`,
+or `missing_text`. The maintained runner emits it only from a closed whitelist;
+unknown strings, mappings, and provider text remain absent. The success/failure
+decision, parser strictness, canonical code/scope, retry behavior, and public API
+do not change. Existing parser tests gain assertions instead of a new test file,
+and a combined run also finishes #661's order-independence correction by proving
+zero-call preflight does not newly import either Google or OpenAI SDK modules.
+
+The sole live request did not exercise the new discriminator. Current catalog
+discovery returned `PROVIDER_CATALOG_UNAVAILABLE` after about 0.45 seconds, so
+generation calls were exactly zero and no response reason existed. There was no
+retry, switch, fallback, second child, source mutation, stderr, or residue. This
+is honest provider-boundary evidence, not a scalar success or parser diagnosis.
+The DashScope gate remains open; do not replay it immediately merely to seek a
+reason. Google remains closed, and no preset/public merged rewrite starts.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level

@@ -247,12 +247,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             code=failure.error.code,
             scope=_safe_failure_scope(failure.error),
             stage=failure.stage,
+            reason=_safe_failure_reason(failure.error),
         )
     except OCRLLMError as error:
         return _report_failure(
             code=error.code,
             scope=_safe_failure_scope(error),
             stage=None,
+            reason=_safe_failure_reason(error),
         )
     except Exception:
         return _report_failure(
@@ -271,12 +273,42 @@ def _safe_failure_scope(error: OCRLLMError) -> str | None:
     return get_provider_error_disposition(error).scope
 
 
-def _report_failure(*, code: str, scope: object, stage: str | None) -> int:
+def _safe_failure_reason(error: OCRLLMError) -> str | None:
+    """Return only one parser-owned, content-free response reason."""
+    reason = error.details.get("reason")
+    safe_reasons = {
+        "empty",
+        "incomplete",
+        "invalid_choice",
+        "invalid_encoding",
+        "malformed",
+        "missing_text",
+        "model_mismatch",
+        "partial_header",
+        "partial_timeout",
+        "raw_boundary",
+        "raw_parse",
+        "refusal",
+        "truncated",
+    }
+    return reason if type(reason) is str and reason in safe_reasons else None
+
+
+def _report_failure(
+    *,
+    code: str,
+    scope: object,
+    stage: str | None,
+    reason: str | None = None,
+) -> int:
+    error_summary = {"code": code, "scope": scope, "stage": stage}
+    if reason is not None:
+        error_summary["reason"] = reason
     print(
         json.dumps(
             {
                 "status": "failed",
-                "error": {"code": code, "scope": scope, "stage": stage},
+                "error": error_summary,
             },
             sort_keys=True,
             separators=(",", ":"),

@@ -13271,3 +13271,29 @@ disclosure. The native-Google scalar success gate is closed. This does not add
 a preset or establish untested capability/default/audio facts; DashScope's
 separate scalar success gate remains open and public merged-interface work does
 not start in #662.
+
+## Current working update: #663 safely distinguishes later DashScope response failures
+
+#663 addresses the exact observability gap exposed by #658/#660 without changing
+parser acceptance. Existing raw-response and completion-parser failures now add
+one fixed, content-free `reason`; the DashScope smoke reports it only when it is
+in a closed whitelist. Unknown values, mappings, raw response text, provider
+messages, credentials, paths, and recognized content remain hidden. No new error
+type, enum, diagnostic object, parser relaxation, retry, fallback, preset, pool,
+public API, or test file is added. The existing parser table gains reason
+assertions, and an offline hostile-value probe confirms the runner drops unknown
+or non-string reasons.
+
+The combined DashScope parser/adapter/runner/provider-model suite initially
+passes all product assertions but exposes two remaining order-dependent test
+assumptions: zero-call Google preflight still required the whole process never to
+have imported OpenAI. Those assertions now compare before/after module state,
+matching the Google correction from #661. The same 121 tests then pass.
+
+One delegated live child uses exact `qwen3.5-ocr` and the unchanged 116,507-byte
+formula board. DashScope catalog discovery returns unavailable after about 0.45
+seconds; generation calls are exactly zero. Safe JSON therefore has no response
+reason. There is no retry, model switch, fallback, second child, source change,
+stderr, process, or temp residue. The new discriminator remains ready for a
+later generation-stage failure, but the scalar success gate is still open and
+must not be replayed immediately just to force that branch.

@@ -91,6 +91,7 @@ def test_provider_model_image_consumer_rejects_non_entity_input():
 
 def test_provider_model_image_consumer_reuses_existing_zero_call_preflight(tmp_path):
     google_genai_was_loaded = "google.genai" in sys.modules
+    openai_was_loaded = "openai" in sys.modules
     provider_model = ProviderModel(
         vendor="google",
         model="gemini-test-model",
@@ -108,11 +109,12 @@ def test_provider_model_image_consumer_reuses_existing_zero_call_preflight(tmp_p
     assert captured.value.code == "SOURCE_NOT_FOUND"
     assert captured.value.details["provider_calls_attempted"] == 0
     assert ("google.genai" in sys.modules) is google_genai_was_loaded
-    assert "openai" not in sys.modules
+    assert ("openai" in sys.modules) is openai_was_loaded
 
 
 def test_provider_model_image_consumer_validates_request_timeout_before_dispatch():
     google_genai_was_loaded = "google.genai" in sys.modules
+    openai_was_loaded = "openai" in sys.modules
     provider_model = ProviderModel(
         vendor="google",
         model="gemini-test-model",
@@ -130,4 +132,4 @@ def test_provider_model_image_consumer_validates_request_timeout_before_dispatch
 
     assert captured.value.code == "CONFIG_INVALID"
     assert ("google.genai" in sys.modules) is google_genai_was_loaded
-    assert "openai" not in sys.modules
+    assert ("openai" in sys.modules) is openai_was_loaded

@@ -29,14 +29,14 @@ def parse_dashscope_image_response(
         raise ProviderError(
             "DashScope returned a malformed image-recognition response.",
             code="PROVIDER_RESPONSE_INVALID",
-            details=details,
+            details={**details, "reason": "malformed"},
         ) from None
 
     if type(response_model) is not str or response_model != model:
         raise ProviderError(
             "DashScope reported a different model than the requested model.",
             code="PROVIDER_RESPONSE_INVALID",
-            details=details,
+            details={**details, "reason": "model_mismatch"},
         ) from None
     if (
         type(choice_index) is not int
@@ -47,13 +47,13 @@ def parse_dashscope_image_response(
         raise ProviderError(
             "DashScope returned an invalid assistant choice.",
             code="PROVIDER_RESPONSE_INVALID",
-            details=details,
+            details={**details, "reason": "invalid_choice"},
         ) from None
     if type(finish_reason) is str and finish_reason == "length":
         raise ProviderError(
             "DashScope returned a truncated image-recognition response.",
             code="PROVIDER_RESPONSE_INVALID",
-            details=details,
+            details={**details, "reason": "truncated"},
         ) from None
     if type(finish_reason) is not str or finish_reason != "stop":
         raise ProviderError(
@@ -65,13 +65,13 @@ def parse_dashscope_image_response(
         raise ProviderError(
             "DashScope refused the image-recognition request.",
             code="PROVIDER_RESPONSE_INVALID",
-            details=details,
+            details={**details, "reason": "refusal"},
         ) from None
     if type(content) is not str:
         raise ProviderError(
             "DashScope returned no text image-recognition content.",
             code="PROVIDER_RESPONSE_INVALID",
-            details=details,
+            details={**details, "reason": "missing_text"},
         ) from None
     usage = _safe_attribute(response, "usage")
     return VisionProviderResponse(

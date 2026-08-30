@@ -198,6 +198,11 @@ later entity run completed exact `gemini-2.5-flash` with one generation, 595
 input tokens, 269 output tokens, and a closed client. Google scalar success is
 now proven; DashScope success remains independently open, and no preset or
 public merged-interface rewrite is admitted by this proof alone.
+#663 adds only fixed, content-free reasons to existing DashScope response-parser
+failures and a closed runner whitelist. Its sole live child stopped at current
+catalog unavailability with zero generations, so no reason was emitted and the
+success gate remains open. The request was not replayed; public/preset work still
+waits for a later successful DashScope entity run.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

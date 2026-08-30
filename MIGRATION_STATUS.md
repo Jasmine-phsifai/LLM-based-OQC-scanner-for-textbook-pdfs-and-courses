@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#662)
+### Current provider/media checkpoint (#663)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -181,6 +181,11 @@ constructs without SOCKS support. One bounded entity run completes exact
 `gemini-2.5-flash` in one generation with 595/269 input/output tokens and a
 closed client. No package dependency or runtime code changes. Google scalar
 success is closed; DashScope remains open for a later diagnostic run.
+#663 equips existing DashScope raw/completion parser failures with a fixed safe
+reason and lets the maintained runner report only whitelisted values. One live
+child then stops at catalog unavailability with zero generations, so it emits no
+response reason and does not close the DashScope gate. There is no replay,
+parser relaxation, retry, preset, or public-call rewrite.
 Only capability/default facts supported by a successful proof may join the
 still-private value. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,
