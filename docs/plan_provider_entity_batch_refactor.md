@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #690)
+## 0. Current pruning and execution checkpoint (2026-08-31, #691)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -789,6 +789,40 @@ partial/final Markdown sizes were 215/157 bytes. Transcript content was not
 reviewed. The runner now also emits the already-strictly-validated fresh usage
 row on future runs; that numeric row was not retained by this invocation and no
 API replay was made. The bounded audio repair live-success gate is closed.
+
+### #691 hardens the image repair runner; controller launch remains open
+
+Before a second image-repair live attempt, two Luna audits applied the #690
+evidence standard to the maintained image runner. The old repair branch did not
+strictly require media/profile/output/Markdown identity, source stability before
+owned state deletion, zero warnings/provider-failures, exact integer counters,
+provider identity in the unserved failure, final output/result bytes, failed-
+marker absence, true `lexists` state absence, or complete cleanup facts. Its
+repair error operation assignment was unreachable after an early return, and
+partial diagnostics admitted unknown warnings.
+
+The fixed runner now separates fresh orchestration, strict fresh validation,
+owned state-loss mutation, final/partial gating, and repair error reporting.
+Fresh requires one exact Google usage row, one exact unserved slot-1 failure,
+zero warning/provider-failure rows, exact source/result/output/state facts, and
+exact int counters. Complete repair requires audio-equivalent strict image
+media/profile/target, one exact usage/call, marker/failure/warning absence,
+changed byte-matching output, source stability, and `lexists` state absence.
+Partial repair requires the fixed remaining slot, exact counts/output/marker/
+source/state facts, and only the known remaining-slot/provider/snapshot warning
+allowlist. Error summaries carry the correct repair stage and cleanup facts.
+Missing-source and mutually exclusive-mode probes stop without provider work.
+
+The delegated controller then selected the deterministic 16 authorized images
+(141,975 candidates; first 16 by exact-extension lexical rule, 8+8), verified
+1,642,612 aggregate bytes/hash, proxy, and key presence, but omitted the runner
+script argument from the Python command. Python exited 2 during argument parsing;
+the tracked runner and provider were never reached, output/state were absent,
+sources remained unchanged, stderr was captured, process/credential residue was
+zero, and no second child was launched. The no-second-child rule prevented an
+in-iteration correction. This is a controller invocation failure, not Google or
+library evidence. The evidence root was removed; the image repair live-success
+gate remains open for one later correctly formed independent child.
 
 The destination is one visible, caller-composed pair of media flows:
 

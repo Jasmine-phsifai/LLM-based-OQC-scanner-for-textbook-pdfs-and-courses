@@ -14209,3 +14209,31 @@ stderr empty, process absent, and credential persistence count 0. Partial/final
 Markdown sizes were 215/157 bytes; transcript content was not opened. Future
 runner output now includes fresh usage too; this run did not retain its numeric
 fresh tokens and was not replayed. Audio repair live success is closed.
+
+## Current working update: #691 hardens image repair evidence before live retry
+
+Two read-only audits found the maintained image repair scenario substantially
+weaker than #690's audio gate. Fresh state deletion could occur without strict
+media/profile/output-byte/source/warning/provider-failure checks; bool/float
+counts and incomplete provider identity could pass; final output bytes, marker/
+failure/state absence, and partial warning allowlisting were incomplete; error
+operation/cleanup facts contained unreachable or missing code.
+
+The runner now has separate fresh validation, state-loss, final/partial, and
+error-reporting functions. All green counts are exact ints; usage and slot-1
+unserved failure rows are exact; warnings/provider failures, result media/
+profile/target, output bytes, marker/state/source and cleanup are hard gates.
+Partial evidence accepts only the fixed remaining slot and known remaining/
+provider/snapshot warnings. Missing sources return content-free repair/fresh
+failure; incompatible flags exit before source/provider work.
+
+The sole delegated controller invocation did not reach these gates. It selected
+the deterministic first 16 exact-extension images from 141,975 candidates and
+proved their 1,642,612-byte aggregate hash unchanged, but omitted the runner
+script argument. Python exited 2 at argument parsing; provider calls, output,
+state, marker, and transcript were absent. No second child was allowed. This is
+not an API/library failure or a repair-success proof. Three evidence files /
+one directory / 1,219 bytes were permanently removed after review; a PowerShell
+5.1 `Test-Path -Force` wrapper check erred after deletion, while independent
+root-absence verification passed. Archive/repo/other TEMP were untouched. The
+image repair live-success gate remains open.

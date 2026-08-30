@@ -604,6 +604,14 @@ state/warnings were absent, source/archive unchanged, stderr empty, and no
 credential/process remained. An earlier wrong registry-level preflight launched
 no child/API; no retry or production fix followed.
 
+#691 brings the image-repair runner up to the same strict evidence standard as
+audio: exact rows/types, zero unknown warnings, byte-matching output, marker/
+state/source/cleanup checks, and correct partial/error stages. The only delegated
+child omitted the runner script argument and exited 2 before runner/provider
+work; 16 selected sources were unchanged and no output/state/second child was
+created. This is not Google or library evidence. Image repair live success stays
+open for a later correctly formed invocation.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -143,36 +144,63 @@ def _run_repair_scenario(
             output_path=output_path,
             timeout_seconds=timeout_seconds,
         )
-        partial_metadata = partial.metadata
-        partial_usage = _safe_usage(
-            partial_metadata.get("current_provider_model_usage")
+    except OCRLLMError as error:
+        return _repair_failure_summary(
+            error,
+            batches,
+            before,
+            output_path,
+            state_path,
+            stage="fresh",
         )
-        partial_failed = partial_metadata.get("failed_slots")
-        partial_output = _artifact_summary(output_path)
-        valid_partial = (
-            partial.status == "partial"
-            and partial.output_path == output_path
-            and partial_metadata.get("slot_count") == BATCH_COUNT
-            and partial_metadata.get("settled_slot_count") == 1
-            and partial_metadata.get("provider_call_count") == 1
-            and partial_usage is not None
-            and partial_usage["calls"] == 1
-            and type(partial_failed) is tuple
-            and len(partial_failed) == 1
-            and isinstance(partial_failed[0], Mapping)
-            and partial_failed[0].get("slot_index") == 1
-            and partial_failed[0].get("model") == UNSERVED_REPAIR_MODEL
-            and partial_failed[0].get("code") == "PROVIDER_UNAVAILABLE"
-            and partial_output.get("exists") is True
-            and state_path.is_file()
-        )
-        if not valid_partial:
-            return _invalid_summary(
+    except Exception:
+        return {
+            **_invalid_summary(output_path, state_path),
+            "operation": "repair",
+            "stage": "fresh",
+        }
+
+    valid_partial, partial_usage, partial_failed = _validate_fresh_repair_partial(
+        partial,
+        batches=batches,
+        before=before,
+        output_path=output_path,
+        state_path=state_path,
+    )
+    if not valid_partial:
+        return {
+            **_invalid_summary(
                 output_path,
                 state_path,
                 result_status=getattr(partial, "status", None),
-            )
+            ),
+            "operation": "repair",
+            "stage": "fresh_partial",
+            "failed_slot": partial_failed,
+            "sources_unchanged": _sources_unchanged(batches, before),
+        }
+    assert partial_usage is not None
+    partial_output = _artifact_summary(output_path)
+    try:
         state_path.unlink()
+    except (OSError, ValueError):
+        return _repair_state_loss_failure(
+            batches,
+            before=before,
+            output_path=output_path,
+            state_path=state_path,
+            partial_output=partial_output,
+        )
+    if os.path.lexists(state_path):
+        return _repair_state_loss_failure(
+            batches,
+            before=before,
+            output_path=output_path,
+            state_path=state_path,
+            partial_output=partial_output,
+        )
+
+    try:
         repaired = repair_images_to_markdown(
             batches,
             provider=GOOGLE_GEMINI_2_5_FLASH,
@@ -181,93 +209,241 @@ def _run_repair_scenario(
             timeout_seconds=timeout_seconds,
         )
     except OCRLLMError as error:
-        return _failure_summary(
+        return _repair_failure_summary(
             error,
             batches,
             before,
             output_path,
             state_path,
-            resume=False,
-            nested_lanes=False,
+            stage="repair",
         )
-        summary["operation"] = "repair"
-        return summary
     except Exception:
-        return _invalid_summary(output_path, state_path)
+        return {
+            **_invalid_summary(output_path, state_path),
+            "operation": "repair",
+            "stage": "repair",
+        }
 
-    metadata = repaired.metadata
+    return _finish_repair_scenario(
+        repaired,
+        batches=batches,
+        before=before,
+        output_path=output_path,
+        state_path=state_path,
+        partial_output=partial_output,
+        partial_usage=partial_usage,
+    )
+
+
+def _validate_fresh_repair_partial(
+    partial,
+    *,
+    batches: tuple[tuple[Path, ...], ...],
+    before: tuple[tuple[int, str], ...],
+    output_path: Path,
+    state_path: Path,
+) -> tuple[
+    bool,
+    dict[str, int | None] | None,
+    dict[str, int | str] | None,
+]:
+    metadata = partial.metadata
     usage = _safe_usage(metadata.get("current_provider_model_usage"))
-    final_output = _artifact_summary(output_path)
-    valid_repair = (
-        repaired.status == "complete"
-        and repaired.source_type == "image"
-        and repaired.profile == IMAGE_TASK
-        and repaired.output_path == output_path
-        and repaired.warnings == ()
-        and metadata.get("slot_count") == BATCH_COUNT
-        and metadata.get("repair_marker_count") == 1
-        and metadata.get("repaired_slot_count") == 1
-        and metadata.get("settled_slot_count") == BATCH_COUNT
-        and metadata.get("provider_call_count") == 1
+    failed = _strict_repair_failed_slot(
+        metadata.get("failed_slots"),
+        model=UNSERVED_REPAIR_MODEL,
+        code="PROVIDER_UNAVAILABLE",
+    )
+    output_bytes = _read_file_bytes(output_path)
+    valid = (
+        partial.status == "partial"
+        and partial.source_type == "image"
+        and partial.profile == IMAGE_TASK
+        and partial.output_path == output_path
+        and type(partial.markdown) is str
+        and bool(partial.markdown.strip())
+        and partial.warnings == ()
+        and _is_exact_int(metadata.get("slot_count"), BATCH_COUNT)
+        and _is_exact_int(metadata.get("settled_slot_count"), 1)
+        and _is_exact_int(metadata.get("reused_slot_count"), 0)
+        and _is_exact_int(metadata.get("provider_call_count"), 1)
+        and metadata.get("historical_provider_model_usage") == ()
+        and metadata.get("provider_failures") is None
         and usage is not None
         and usage["calls"] == 1
-        and "OCRLLM_FAILED_IMAGE_SLOT" not in repaired.markdown
-        and final_output.get("exists") is True
-        and final_output != partial_output
-        and not state_path.exists()
-        and before is not None
+        and failed is not None
+        and output_bytes is not None
+        and output_bytes == partial.markdown.encode("utf-8")
+        and state_path.is_file()
+        and not state_path.is_symlink()
         and _sources_unchanged(batches, before)
     )
-    if repaired.status == "partial":
-        failed_slots = _safe_failed_slots(metadata.get("failed_slots"))
-        calls = metadata.get("provider_call_count")
-        if (
-            failed_slots is not None
-            and len(failed_slots) == 1
-            and type(calls) is int
-            and calls >= 0
-            and before is not None
-            and _sources_unchanged(batches, before)
-        ):
-            return {
-                "status": "partial",
-                "operation": "repair",
-                "provider": "google",
-                "model": GOOGLE_GEMINI_2_5_FLASH.model,
-                "image_task": IMAGE_TASK,
-                "batch_count": BATCH_COUNT,
-                "failed_slot_count": 1,
-                "repair_provider_call_count": calls,
-                "repair_provider_usage": usage,
-                "failed_slots": failed_slots,
-                "sources_unchanged": True,
-                "output": final_output,
-                "state": _artifact_summary(state_path),
-            }
-    if not valid_repair:
-        return _invalid_summary(
-            output_path,
-            state_path,
-            result_status=getattr(repaired, "status", None),
-        )
+    return valid, usage, failed
+
+
+def _repair_state_loss_failure(
+    batches: tuple[tuple[Path, ...], ...],
+    *,
+    before: tuple[tuple[int, str], ...],
+    output_path: Path,
+    state_path: Path,
+    partial_output: dict[str, object],
+) -> dict[str, object]:
     return {
-        "status": "passed",
+        "status": "failed",
+        "error": {"code": "INCOMPLETE_LIVE_EVIDENCE"},
+        "operation": "repair",
+        "stage": "state_loss",
+        "partial_output": partial_output,
+        "state_exists": os.path.lexists(state_path),
+        "sources_unchanged": _sources_unchanged(batches, before),
+        "output": _artifact_summary(output_path),
+    }
+
+
+def _finish_repair_scenario(
+    repaired,
+    *,
+    batches: tuple[tuple[Path, ...], ...],
+    before: tuple[tuple[int, str], ...],
+    output_path: Path,
+    state_path: Path,
+    partial_output: dict[str, object],
+    partial_usage: dict[str, int | None],
+) -> dict[str, object]:
+    metadata = repaired.metadata
+    usage = _safe_usage(metadata.get("current_provider_model_usage"))
+    output_bytes = _read_file_bytes(output_path)
+    final_output = _artifact_summary(output_path)
+    state_exists = os.path.lexists(state_path)
+    sources_unchanged = _sources_unchanged(batches, before)
+    common = {
         "operation": "repair",
         "provider": "google",
         "model": GOOGLE_GEMINI_2_5_FLASH.model,
         "image_task": IMAGE_TASK,
         "batch_count": BATCH_COUNT,
         "batch_sizes": [BATCH_SIZE, BATCH_SIZE],
-        "failed_slot_count": 1,
         "fresh_provider_call_count": 1,
-        "repair_provider_call_count": 1,
-        "repair_input_tokens": usage["input_tokens"],
-        "repair_output_tokens": usage["output_tokens"],
-        "sources_unchanged": True,
+        "fresh_provider_usage": partial_usage,
+        "repair_provider_call_count": metadata.get("provider_call_count"),
+        "repair_provider_usage": usage,
+        "warning_count": len(repaired.warnings),
+        "sources_unchanged": sources_unchanged,
         "partial_output": partial_output,
         "output": final_output,
-        "state": {"exists": False},
+        "output_matches_result": (
+            output_bytes is not None
+            and output_bytes == repaired.markdown.encode("utf-8")
+        ),
+        "state_exists": state_exists,
     }
+    valid_complete = (
+        repaired.status == "complete"
+        and repaired.source_type == "image"
+        and repaired.profile == IMAGE_TASK
+        and repaired.output_path == output_path
+        and repaired.warnings == ()
+        and _is_exact_int(metadata.get("slot_count"), BATCH_COUNT)
+        and _is_exact_int(metadata.get("repair_marker_count"), 1)
+        and _is_exact_int(metadata.get("repaired_slot_count"), 1)
+        and _is_exact_int(metadata.get("settled_slot_count"), BATCH_COUNT)
+        and _is_exact_int(metadata.get("provider_call_count"), 1)
+        and metadata.get("failed_slots") is None
+        and metadata.get("provider_failures") is None
+        and usage is not None
+        and usage["calls"] == 1
+        and "OCRLLM_FAILED_IMAGE_SLOT" not in repaired.markdown
+        and final_output.get("exists") is True
+        and common["output_matches_result"] is True
+        and final_output != partial_output
+        and state_exists is False
+        and sources_unchanged
+    )
+    if valid_complete:
+        return {"status": "passed", **common}
+
+    failed = _strict_repair_failed_slot(
+        metadata.get("failed_slots"),
+        model=GOOGLE_GEMINI_2_5_FLASH.model,
+        code=None,
+    )
+    calls = metadata.get("provider_call_count")
+    valid_partial = (
+        repaired.status == "partial"
+        and repaired.source_type == "image"
+        and repaired.profile == IMAGE_TASK
+        and repaired.output_path == output_path
+        and _valid_partial_warnings(repaired.warnings)
+        and _is_exact_int(metadata.get("slot_count"), BATCH_COUNT)
+        and _is_exact_int(metadata.get("repair_marker_count"), 1)
+        and _is_exact_int(metadata.get("repaired_slot_count"), 0)
+        and _is_exact_int(metadata.get("settled_slot_count"), 1)
+        and type(calls) is int
+        and calls >= 0
+        and (calls == 0 or (usage is not None and usage["calls"] == calls))
+        and failed is not None
+        and metadata.get("provider_failures") is None
+        and "OCRLLM_FAILED_IMAGE_SLOT" in repaired.markdown
+        and final_output.get("exists") is True
+        and common["output_matches_result"] is True
+        and state_exists is False
+        and sources_unchanged
+    )
+    if valid_partial:
+        return {
+            "status": "partial",
+            **common,
+            "failed_slot_count": 1,
+            "failed_slots": (failed,),
+            "provider_cleanup_warning": _has_cleanup_warning(repaired.warnings),
+        }
+    return {
+        **_invalid_summary(
+            output_path,
+            state_path,
+            result_status=getattr(repaired, "status", None),
+        ),
+        "operation": "repair",
+        "stage": "repair_result",
+        "sources_unchanged": sources_unchanged,
+    }
+
+
+def _repair_failure_summary(
+    error: OCRLLMError,
+    batches: tuple[tuple[Path, ...], ...],
+    before: tuple[tuple[int, str], ...] | None,
+    output_path: Path,
+    state_path: Path,
+    *,
+    stage: str,
+) -> dict[str, object]:
+    summary = _failure_summary(
+        error,
+        batches,
+        before,
+        output_path,
+        state_path,
+        resume=False,
+        nested_lanes=False,
+    )
+    summary.update(
+        {
+            "operation": "repair",
+            "provider_mode": "repair",
+            "stage": stage,
+            "state_exists": os.path.lexists(state_path),
+            "provider_cleanup_failed": _provider_cleanup_failed(error),
+            "provider_client_closed": _optional_bool(
+                error.details.get("provider_client_closed")
+            ),
+            "snapshot_cleanup_failed": _optional_bool(
+                error.details.get("snapshot_cleanup_failed")
+            ),
+        }
+    )
+    return summary
 
 
 def _unserved_repair_provider() -> ProviderModel:
@@ -522,6 +698,86 @@ def _invalid_summary(
         "output": _artifact_summary(output_path),
         "state": _artifact_summary(state_path),
     }
+
+
+def _strict_repair_failed_slot(
+    value: object,
+    *,
+    model: str,
+    code: str | None,
+) -> dict[str, int | str] | None:
+    if type(value) is not tuple or len(value) != 1:
+        return None
+    row = value[0]
+    if not isinstance(row, Mapping):
+        return None
+    index = row.get("slot_index")
+    actual_code = row.get("code")
+    if (
+        type(index) is not int
+        or index != 1
+        or row.get("provider") != "google"
+        or row.get("model") != model
+        or type(actual_code) is not str
+        or actual_code not in STABLE_ERROR_CODES
+        or (code is not None and actual_code != code)
+    ):
+        return None
+    return {
+        "slot_index": 1,
+        "provider": "google",
+        "model": model,
+        "code": actual_code,
+    }
+
+
+def _read_file_bytes(path: Path) -> bytes | None:
+    try:
+        return path.read_bytes() if path.is_file() else None
+    except (OSError, ValueError):
+        return None
+
+
+def _is_exact_int(value: object, expected: int) -> bool:
+    return type(value) is int and value == expected
+
+
+def _optional_bool(value: object) -> bool | None:
+    return value if type(value) is bool else None
+
+
+def _provider_cleanup_failed(error: OCRLLMError) -> bool:
+    return bool(
+        error.details.get("provider_client_cleanup_failed") is True
+        or error.details.get("provider_client_closed") is False
+    )
+
+
+def _has_cleanup_warning(warnings: tuple[str, ...]) -> bool:
+    return any(
+        warning
+        in {
+            "At least one provider client could not be closed during image repair.",
+            "At least one temporary image snapshot could not be removed after repair.",
+        }
+        for warning in warnings
+    )
+
+
+def _valid_partial_warnings(warnings: object) -> bool:
+    required = "One or more image slots remain failed after repair."
+    allowed = {
+        required,
+        "At least one provider client could not be closed during image repair.",
+        "At least one temporary image snapshot could not be removed after repair.",
+    }
+    return (
+        type(warnings) is tuple
+        and all(type(warning) is str for warning in warnings)
+        and required in warnings
+        and len(warnings) == len(set(warnings))
+        and all(warning in allowed for warning in warnings)
+    )
 
 
 def _optional_count(value: object) -> bool:

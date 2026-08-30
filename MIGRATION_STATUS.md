@@ -3343,3 +3343,11 @@ state deletion, repair made one generation with 1,201/3 tokens and completed
 2/2 slots. Output matched, marker/state/warnings were absent, source/archive were
 unchanged, stderr empty, process absent, and no credential persisted. No retry
 or production change occurred.
+
+#691 hardens every image-repair live runner pass/partial/error boundary to the
+exact #690 standard: typed counts, exact Google usage/unserved failure, zero
+unknown warnings, output/result/marker/state/source/cleanup identity, and correct
+repair-stage errors. One delegated controller then omitted the runner script
+argument and exited 2 before runner/provider work; selected 16-image aggregate
+hash stayed unchanged, no output/state or second child existed, and evidence was
+removed. This is controller failure only; image repair live success remains open.
