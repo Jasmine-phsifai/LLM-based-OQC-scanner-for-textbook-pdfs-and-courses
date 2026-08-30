@@ -14317,3 +14317,20 @@ provider, no-crop/video supersession, unresolved PDF, frozen
 entries and zero claims that this historical log outranks root authority. No
 runtime, API, test, provider call, dependency, state, product decision, or frozen
 code changes.
+
+## Current working update: #708 live-proves image repair completion
+
+After thirteen intervening iterations, the unchanged strict image-repair runner
+received one bounded Google recheck. Credential-free preflight first returned
+`CONFIG_MISSING`, calls zero, unchanged sources, no output and one owned state
+that was verified and removed. One credential-isolated child then used the same
+two fixed batches of eight authorized JPEGs through the configured proxy.
+
+Fresh made one `gemini-2.5-flash` generation (2,401/444 tokens), settled slot 0
+and published the fixed unserved slot 1 marker. After deliberate state loss,
+repair made one generation (2,401/971), replaced that marker, returned complete,
+published matching 2,774-byte Markdown, left no state/warning, and preserved all
+source hashes. Direct exit was zero; output/manifest/environment contained no
+credential and runner processes were zero. Both image and audio repair now have
+bounded real-provider success. No runtime, runner, retry, fallback, model switch,
+dependency, state, API or frozen-code change follows.

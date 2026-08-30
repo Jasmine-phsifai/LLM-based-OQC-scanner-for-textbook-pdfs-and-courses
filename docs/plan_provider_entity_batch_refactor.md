@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #707)
+## 0. Current pruning and execution checkpoint (2026-08-31, #708)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1262,6 +1262,38 @@ removed chronology. Numbered history and authority contradictions are both zero.
 No runtime, API, test, provider, dependency, state, product decision, or frozen
 code changes. This reduction must not be used to erase evidence from the
 authoritative records or to treat a deferred feature as approved.
+
+### #708 closes the image-repair real-provider success gate
+
+Thirteen iterations after #695's quota-exhausted result, the unchanged strict
+runner received one bounded recheck. Luna deterministically selected the same
+16 authorized immutable JPEGs as the earlier gate: two batches of eight,
+1,642,612 aggregate bytes and aggregate SHA-256
+`d092583bdd93436d8def0856da8c1cd62111fc42dc31ba8c188ad8a2ce1377ad`.
+The repository and archive were not modified.
+
+Credential-free preflight returned `CONFIG_MISSING`, calls zero, unchanged
+sources, no Markdown and one owned 5,467-byte unresolved sidecar. Its exact
+hash/type were verified and only that sidecar was removed before live work. The
+single credential-isolated child then ran through the configured proxy and
+exited zero. Fresh recognition made one served Google generation with
+2,401/444 input/output tokens, published a 1,077-byte partial, and retained only
+the deliberately unserved slot. After the runner deleted its own sidecar,
+public repair made exactly one `gemini-2.5-flash` generation with 2,401/971
+tokens and completed both slots.
+
+The final 2,774-byte Markdown has SHA-256
+`5bc26dde14232d0cce271b7588a0763112c9711453231f39ef7eebfa993b27df`,
+matches the returned result, differs from the partial, contains two ordered
+headings and no failed marker, and leaves no state or warning. Sources remain
+byte-exact; no credential appeared in output/manifest/environment and no runner
+process remained. Both experimental repair APIs now have bounded real-provider
+success evidence. This success does not prove same-model failure/recovery, so
+retry maps remain empty. No runtime, runner, API, dependency, state, provider
+policy, model switch, fallback, or second child was added. After exact invocation
+count reached zero, the owned TEMP root (two files / two directories / 5,013
+bytes) was removed and confirmed absent; repo/archive/other TEMP were not
+targeted.
 
 The destination is one visible, caller-composed pair of media flows:
 

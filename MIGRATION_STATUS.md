@@ -3548,3 +3548,13 @@ active import, media, provider, video/no-crop, PDF-decision, testing, frozen-cod
 and work-record rules. History remains in Git, the current plan, migration
 status, ACTIVE_STATE and diary. No runtime/API/test/provider/dependency/state or
 product-boundary behavior changes.
+
+#708 closes the remaining image-repair real-provider success gate with the
+unchanged strict runner. A credential-free preflight proves `CONFIG_MISSING` and
+calls zero. One later proxy-bound child uses two fixed eight-image batches:
+fresh makes one Google call and leaves the deliberate unserved marker; repair
+makes exactly one Google call, replaces it, publishes matching 2,774-byte
+complete Markdown, removes state, emits no warning, and preserves all source
+hashes. Fresh/repair usage is 2,401/444 and 2,401/971 input/output tokens. No
+runtime/runner/API/dependency/state/retry/fallback/provider-policy change occurs;
+retry maps remain empty because this is success evidence, not failure/recovery.
