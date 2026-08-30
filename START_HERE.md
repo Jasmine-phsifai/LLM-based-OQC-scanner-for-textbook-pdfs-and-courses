@@ -546,6 +546,13 @@ three slots settled with 7,600/50 current tokens, matching 308-byte Markdown,
 removed state, unchanged source, empty stderr, and exit 0. Nested audio live
 success is closed without adding automatic retry or provider switching.
 
+#684 exports a thin stateless `resume_video()` router for backend callers. One
+call requires exact `media_type`, explicit already-planned image batches or
+`AudioSlice` tuple, provider topology, and optional output. It delegates exactly
+one ordinary resume and returns its result/error unchanged. It does not accept a
+video path, infer media, coordinate outputs, search state, compose branches, or
+recreate the deleted lifecycle.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

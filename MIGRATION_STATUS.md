@@ -3275,3 +3275,11 @@ one-call/unknown-token row, reported 7,600/50 current tokens, settled all three
 slots, published matching 308-byte Markdown, removed state, preserved source,
 and exited 0 with empty stderr. No production code, retry, fallback, model switch,
 or second call was added.
+
+#684 adds the promised package-root `resume_video()` name without a video job.
+Exact `media_type="image"` routes exact image batches to ordinary image resume;
+exact `"audio"` routes an exact `AudioSlice` tuple to ordinary audio resume.
+Provider tree/output and returned result or error pass through unchanged. A bare
+audio/video path, paired branches, state lookup, timeout policy, composition,
+cleanup, and result wrapper are absent. Existing nested image/audio recovery
+tests consume both branches; fresh-process route validation stays import-light.

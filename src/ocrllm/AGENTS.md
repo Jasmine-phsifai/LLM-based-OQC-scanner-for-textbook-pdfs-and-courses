@@ -182,6 +182,14 @@ matching Markdown, removed state, and preserved source/cleanup. The production
 runtime did not change. This closes nested-audio live success but does not prove
 same-model retry or authorize retry/sleep policy.
 
+#684 publishes package-root `resume_video()` as a stateless one-branch router.
+It requires exact media type plus already-planned image batches or `AudioSlice`
+tuple, delegates to exactly one ordinary resume owner, and returns/errors
+unchanged. It accepts no bare audio path, original video, branch pair, timeout,
+state search, composition, cleanup, or result wrapper. Keep discriminator/media
+shape validation shallow and before execution imports; all lifecycle validation
+remains with the selected image/audio owner.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

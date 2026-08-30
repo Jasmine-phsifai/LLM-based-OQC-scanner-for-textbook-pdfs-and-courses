@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #683)
+## 0. Current pruning and execution checkpoint (2026-08-30, #684)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -577,6 +577,33 @@ the transcript. The complete six-file, 5,550-byte #682/#683 evidence root and it
 three stage directories were then permanently removed. The nested-audio live
 success gate is closed; this does not supply same-model retry evidence or justify
 retry/sleep policy.
+
+### #684 publishes the stateless one-branch `resume_video()` router
+
+Package-root `resume_video()` now takes exactly `source`, required exact
+`media_type="image" | "audio"`, required `providers`, and optional
+`output_path`. It does not accept an original video, paired branches, timeout,
+resume flag, batch/interval setting, output pair, journal, composer, cleanup
+owner, or result wrapper. Image source is an exact nonempty tuple of nonempty
+exact path tuples. Audio source is the exact nonempty `AudioSlice` tuple already
+used by the ordinary audio owner. The older #633 allowance for a bare audio Path
+is narrowed: silently splitting it would re-plan whole versus interval state and
+violate the visible planning boundary.
+
+The router validates the exact discriminator and shallow media category before
+lazy-importing one ordinary resume facade. It passes the provider tree and output
+unchanged, returns the same `RecognitionResult` object, and catches/translates no
+delegated error. Filesystem, same-source/range, provider capability, output,
+sidecar, publication, and cleanup validation remain solely with the chosen
+ordinary owner. It never imports or runs the other branch.
+
+Existing image and audio resume feature tests now consume the router for one
+nested successful recovery each. A fresh-process import/validation scenario
+proves invalid discriminator and cross-shaped sources fail with typed zero-call
+errors before image execution or audio job helpers load. Package-root binding
+remains lightweight. The focused set passes **29 tests / 3.97s**. No provider,
+media, output, state, dependency, worker/contracts, compatibility, composition,
+or video lifecycle was added.
 
 The destination is one visible, caller-composed pair of media flows:
 
@@ -3634,8 +3661,9 @@ resume_video(
 ```
 
 For `media_type="image"`, `source` is the exact ordered image-group tuple
-returned by `batchify_images`. For `media_type="audio"`, it is one explicit
-audio path or the exact `tuple[AudioSlice, ...]` returned by `split_audio`.
+returned by `batchify_images`. For `media_type="audio"`, it is the exact
+`tuple[AudioSlice, ...]` returned by `split_audio`; a bare audio path would hide
+whole/interval re-planning and is not accepted.
 `providers` keeps the already-fixed scalar, exact flat-list, or exact nested-
 list `ProviderBinding` shape. Explanatory image/provider aliases used by type
 overloads remain private; this route does not justify public request or plan

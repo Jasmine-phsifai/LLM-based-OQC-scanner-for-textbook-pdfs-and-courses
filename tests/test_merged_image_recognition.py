@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from ocrllm import recognize_images_to_markdown, resume_images_to_markdown
+from ocrllm import recognize_images_to_markdown, resume_images_to_markdown, resume_video
 from ocrllm.errors import (
     AllCandidatesExhausted,
     ConfigError,
@@ -708,9 +708,10 @@ def test_nested_image_resume_uses_absolute_slot_with_changed_lane_count(
         resume_models,
         resume_behavior,
     )
-    resumed = resume_images_to_markdown(
+    resumed = resume_video(
         batches,
-        provider=[[_provider(model)] for model in resume_models],
+        media_type="image",
+        providers=[[_provider(model)] for model in resume_models],
         output_path=output,
     )
 

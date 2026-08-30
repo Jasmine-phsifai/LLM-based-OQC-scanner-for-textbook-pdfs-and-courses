@@ -156,6 +156,13 @@ published matching Markdown, and removed state. Successful nested audio is now
 live-proven across invocations. Same-model retry, other audio formats, and
 experimental repair are not implemented.
 
+`resume_video()` is a stateless package-root routing name for backend callers.
+It requires exact `media_type="image"` plus already-batched image tuples, or
+exact `media_type="audio"` plus an `AudioSlice` tuple. It forwards the provider
+tree and optional output to exactly one ordinary resume owner and returns the
+same result/error. It does not accept a video path, infer media, find state,
+coordinate branches, compose Markdown, or clean extraction outputs.
+
 ## PDF
 
 The direct PDF vision facade snapshots one local PDF, renders ordered pages with

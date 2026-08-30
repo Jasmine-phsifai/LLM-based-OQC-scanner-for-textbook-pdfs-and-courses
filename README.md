@@ -120,6 +120,24 @@ retained three failed slots after network/rate-limit errors, and one later
 ordinary resume settled those exact slots in three generations, published one
 ordered Markdown, and removed state. This is explicit resume, not hidden retry.
 
+## Stateless media resume routing
+
+Backend callers may use `resume_video()` only as a discriminator-based alias for
+one already-extracted media plan:
+
+```python
+result = resume_video(
+    image_batches,
+    media_type="image",
+    providers=provider_plan,
+    output_path=image_markdown,
+)
+```
+
+Use `media_type="audio"` with an exact `AudioSlice` tuple for the other branch.
+The router does not accept a video path, split media, discover state, coordinate
+two outputs, compose a result, or own cleanup.
+
 ## Provider-free video
 
 ```python

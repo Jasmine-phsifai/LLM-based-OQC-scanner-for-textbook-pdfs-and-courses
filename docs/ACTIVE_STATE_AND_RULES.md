@@ -14012,3 +14012,31 @@ Primary review did not open transcript content. The six retained evidence files
 totalling 5,550 bytes and stage-0/1/2 directories were verified and permanently
 removed; source/archive/repo/other TEMP were untouched. The nested-audio real
 success gate is now closed, but no evidence supports automatic same-model retry.
+
+## Current working update: #684 publishes stateless `resume_video()` routing
+
+The package root now exposes `resume_video(source, *, media_type, providers,
+output_path=None)`. It is not a resurrected video lifecycle. Exact plain-string
+`media_type` must be `image` or `audio`. Image source must be a nonempty exact
+tuple of nonempty exact path tuples; audio source must be the exact nonempty
+`AudioSlice` tuple used by the ordinary audio owner. The historical #633 bare
+audio-path wording is narrowed because hidden `split_audio(-1)` would re-plan an
+interval state and violate visible planning.
+
+After shallow discriminator/category validation, the router lazy-imports exactly
+one ordinary resume facade, passes `providers` as its existing `provider` input,
+passes output unchanged, and returns the same result. Delegated exceptions are
+not caught or translated. Same-source/ranges, provider capabilities/topology,
+filesystem, sidecar, output publication, and cleanup remain with the selected
+owner. There is no original video input, paired branch, state search, timeout
+policy, batch/interval option, output coordination, composition, cleanup owner,
+or result wrapper.
+
+One existing nested-image recovery and one existing nested-audio recovery now
+call the router for their successful resume, proving both branches through the
+same SDK-boundary scenarios. A fresh-process validation test proves invalid
+media type and cross-shaped sources return typed zero-call errors before image
+execution or audio job helpers load. Plain package import binds the lightweight
+router without optional dependencies. The focused merged-image/audio/import set
+passes **29 / 3.97s**. No provider/API call, media operation, state/output write,
+dependency, worker/contracts change, repair, or compatibility format was added.

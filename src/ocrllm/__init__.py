@@ -21,6 +21,7 @@ from .resume_images_to_markdown import (
 from .resume_audio_to_markdown import (
     resume_audio_to_markdown as resume_audio_to_markdown,
 )
+from .resume_video import resume_video as resume_video
 
 
 if TYPE_CHECKING:
@@ -109,6 +110,7 @@ if TYPE_CHECKING:
     from .resume_audio_to_markdown import (
         resume_audio_to_markdown as resume_audio_to_markdown,
     )
+    from .resume_video import resume_video as resume_video
     from .retained_video_frame import RetainedVideoFrame as RetainedVideoFrame
     from .result import RecognitionResult as RecognitionResult
     from .video.extract_video_frames import extract_video_frames as extract_video_frames
@@ -231,6 +233,7 @@ _PUBLIC_IMPORTS = {
         ".resume_audio_to_markdown",
         "resume_audio_to_markdown",
     ),
+    "resume_video": (".resume_video", "resume_video"),
     "inspect_video": (".video.inspect_video", "inspect_video"),
 }
 
@@ -289,6 +292,7 @@ __all__ = [
     "recognize_images_to_markdown",
     "resume_images_to_markdown",
     "resume_audio_to_markdown",
+    "resume_video",
     "extract_video_frames",
     "extract_video_audio",
     "inspect_video",

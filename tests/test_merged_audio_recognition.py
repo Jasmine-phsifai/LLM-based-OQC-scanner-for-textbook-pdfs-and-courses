@@ -16,6 +16,7 @@ from ocrllm import (
     ProviderModel,
     recognize_audio_to_markdown,
     resume_audio_to_markdown,
+    resume_video,
     split_audio,
 )
 from ocrllm.errors import AllCandidatesExhausted, ConfigError, InvalidSource, ProviderError
@@ -730,9 +731,10 @@ def test_nested_audio_resume_uses_absolute_slot_with_changed_lane_count(
         served_models=resume_models,
         behavior=resume_behavior,
     )
-    resumed = resume_audio_to_markdown(
+    resumed = resume_video(
         slices,
-        provider=[[_provider(model)] for model in resume_models],
+        media_type="audio",
+        providers=[[_provider(model)] for model in resume_models],
         output_path=output,
     )
 

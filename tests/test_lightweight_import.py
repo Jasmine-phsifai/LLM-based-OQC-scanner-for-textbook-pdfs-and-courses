@@ -41,6 +41,7 @@ def test_plain_import_binds_recognition_facades_but_defers_execution_helpers():
         "split_audio=ocrllm.split_audio; "
         "recognize_audio=ocrllm.recognize_audio_to_markdown; "
         "resume_audio=ocrllm.resume_audio_to_markdown; "
+        "resume_video=ocrllm.resume_video; "
         "batchify_module=importlib.import_module('ocrllm.batchify_images'); "
         "assert callable(batchify_images); "
         "assert ocrllm.batchify_images is batchify_images; "
@@ -49,7 +50,9 @@ def test_plain_import_binds_recognition_facades_but_defers_execution_helpers():
         "assert 'ocrllm.split_audio' in sys.modules; "
         "assert callable(recognize_audio); "
         "assert callable(resume_audio); "
+        "assert callable(resume_video); "
         "assert 'ocrllm.run_merged_audio_job' not in sys.modules; "
+        "assert 'ocrllm.execute_merged_image_plan' not in sys.modules; "
         "assert 'ocrllm.recognize' in sys.modules; "
         "assert 'ocrllm.recognize_batch' in sys.modules; "
         "assert 'ocrllm.preflight_recognition_batch' not in sys.modules; "
@@ -73,6 +76,40 @@ def test_plain_import_binds_recognition_facades_but_defers_execution_helpers():
         timeout=30,
     )
 
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_resume_video_rejects_ambiguous_media_before_execution_imports():
+    source_root = Path(__file__).resolve().parents[1] / "src"
+    probe = "\n".join(
+        (
+            "import pathlib, sys",
+            "sys.path.insert(0, sys.argv[1])",
+            "import ocrllm",
+            "from ocrllm.errors import ConfigError, InvalidSource",
+            "def capture(call, expected):",
+            "    try:",
+            "        call()",
+            "    except expected as error:",
+            "        assert error.details['provider_calls_attempted'] == 0",
+            "    else:",
+            "        raise AssertionError('expected typed route rejection')",
+            "capture(lambda: ocrllm.resume_video((), media_type='video', providers=object()), ConfigError)",
+            "audio=(ocrllm.AudioSlice(source=pathlib.Path('missing.mp3'), index=0, logical_start_seconds=0.0, logical_end_seconds=1.0, actual_start_seconds=0.0, actual_end_seconds=1.0),)",
+            "capture(lambda: ocrllm.resume_video(audio, media_type='image', providers=object()), InvalidSource)",
+            "images=((pathlib.Path('missing.png'),),)",
+            "capture(lambda: ocrllm.resume_video(images, media_type='audio', providers=object()), InvalidSource)",
+            "assert 'ocrllm.execute_merged_image_plan' not in sys.modules",
+            "assert 'ocrllm.run_merged_audio_job' not in sys.modules",
+        )
+    )
+    completed = subprocess.run(
+        [sys.executable, "-I", "-c", probe, str(source_root)],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
     assert completed.returncode == 0, completed.stderr
 
 
