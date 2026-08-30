@@ -3492,3 +3492,13 @@ secret strings, booleans, negative values and other token keys remain redacted.
 The runner now safely reports terminal usage/slot evidence. The current wheel is
 327,312 bytes with 368 bytes headroom, 84 focused tests pass, and exact evidence
 roots are removed. Fallback/retry/state/API/dependency behavior is unchanged.
+
+#703 adds the numeric-token security distinction to the dependency-empty
+installed base probe. An installed `ProviderError` must preserve exact numeric/
+None `input_tokens` and `output_tokens`, while token secrets, string usage and
+negative usage remain redacted. Exact commit `0e4c282` passes 1,466 archived
+tests with one expected skip, clean fixture/build/install/file-selection/
+metadata/import checks, a 327,312-byte wheel and 1,683,054-byte base target.
+Optional profiles are intentionally skipped because #701 already proved all
+nine and no dependency/profile behavior changed. The proof root self-cleans;
+runtime/API/dependency/provider behavior is unchanged.

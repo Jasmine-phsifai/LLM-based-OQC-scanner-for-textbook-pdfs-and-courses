@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #702)
+## 0. Current pruning and execution checkpoint (2026-08-31, #703)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1134,6 +1134,24 @@ redaction is preserved, and the runner can safely project error usage. The
 worktree wheel is 327,312 bytes with 368 bytes headroom; 84 focused tests pass.
 Both exact TEMP roots (failed state/path and local wheel) are removed. No
 fallback/retry/state/API/dependency behavior changed beyond truthful error usage.
+
+### #703 proves safe numeric usage from the dependency-empty installed wheel
+
+The maintained dependency-empty base probe now constructs one installed
+`ProviderError` containing numeric/None usage fields alongside token-named secret
+and invalid values. It requires `input_tokens=17` and `output_tokens=None` to
+remain exact, while `provider_token`, string-valued `input_tokens`, and negative
+`output_tokens` remain `[REDACTED]`; the secret may not appear in `repr`. This is
+an extension of the existing base owner, not a new profile or gate.
+
+The exact clean-archive commit `0e4c282` runs with optional profiles skipped
+because #701 already proved all nine and no dependency/profile behavior changed.
+It still completes the archived suite, fixtures, clean wheel build/install,
+file-selection/base-metadata checks, installed behavior probe and two-interpreter
+import budgets: 1,466 tests pass with one expected RapidOCR skip; wheel size is
+327,312 bytes and base target size is 1,683,054 bytes. The exact proof root self-
+cleans. Runtime is unchanged from #702, the 320 KiB/2 MiB budgets remain fixed,
+and no provider, credential, media or network action occurs.
 
 The destination is one visible, caller-composed pair of media flows:
 
