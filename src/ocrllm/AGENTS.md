@@ -69,8 +69,17 @@ Do not repeat fresh recognition. #672 consumes that exact private state through
 public resume: one historical slot is reused, only the failed slot is called,
 both slots settle, the final Markdown publishes, and the sidecar is removed.
 The scalar merged-image live/resume gate is closed. The next plan phase may
-begin flat fallback and finite retry evidence as its own slice; nested lanes,
-parallel pools, merged audio, repair, and old-video deletion remain later.
+begin flat fallback and finite retry evidence as its own slice. #673 implements
+only exact built-in flat-list planning and serial one-pass traversal: omitted
+batch size uses the smallest candidate default, each unresolved slot stops on
+its first success, and an invocation-local last-success index only changes the
+next slot's starting candidate. Resume starts at the first candidate and stores
+no provider cursor. Successful fallback returns one bounded aggregate warning
+and ordered slot-indexed failure metadata; terminal slots retain only their last
+failure. Both presets still have empty retry rules, so no same-model retry or
+wait executor exists. The full offline suite passes 1,644 tests; one bounded
+real flat-fallback proof remains the next gate. Nested lanes, parallel pools,
+merged audio, repair, and old-video deletion remain later.
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

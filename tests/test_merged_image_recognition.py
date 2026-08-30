@@ -7,7 +7,12 @@ import importlib
 import pytest
 
 from ocrllm import recognize_images_to_markdown, resume_images_to_markdown
-from ocrllm.errors import AllCandidatesExhausted, OutputError, ProviderError
+from ocrllm.errors import (
+    AllCandidatesExhausted,
+    ConfigError,
+    OutputError,
+    ProviderError,
+)
 from ocrllm.providers.google_genai.provider_settings import GoogleGenAISettings
 from ocrllm.providers.provider_model import ProviderModel
 from ocrllm.providers.vision_provider_response import VisionProviderResponse
@@ -179,6 +184,62 @@ def test_resume_uses_changed_provider_only_for_failed_slot(tmp_path, monkeypatch
     assert not (tmp_path / "result.ocrllm-state.json").exists()
 
 
+def test_flat_fallback_resume_restarts_at_first_candidate_for_failed_slot(
+    tmp_path,
+    monkeypatch,
+):
+    batches = _three_batches(tmp_path)[:2]
+    output = tmp_path / "result.md"
+    first_run_calls = 0
+
+    def first_run(_provider, _paths, **_kwargs):
+        nonlocal first_run_calls
+        first_run_calls += 1
+        if first_run_calls == 2:
+            raise ProviderError(
+                "Temporary model failure.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        return VisionProviderResponse(markdown="settled before resume")
+
+    monkeypatch.setattr(executor, "recognize_provider_model_images", first_run)
+    partial = recognize_images_to_markdown(
+        batches,
+        provider=_provider("gemini-initial"),
+        image_task="plain_ocr",
+        output_path=output,
+    )
+    assert partial.status == "partial"
+
+    calls: list[str] = []
+
+    def resume_run(provider, paths, **_kwargs):
+        calls.append(provider.model)
+        assert tuple(path.name for path in paths) == ("frame-2.png",)
+        if provider.model == "gemini-test-a":
+            raise ProviderError(
+                "First resume candidate still unavailable.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        return VisionProviderResponse(markdown="settled by fallback")
+
+    monkeypatch.setattr(executor, "recognize_provider_model_images", resume_run)
+    resumed = resume_images_to_markdown(
+        batches,
+        provider=[_provider("gemini-test-a"), _provider("gemini-test-b")],
+        output_path=output,
+    )
+
+    assert calls == ["gemini-test-a", "gemini-test-b"]
+    assert resumed.status == "complete"
+    assert resumed.metadata["reused_slot_count"] == 1
+    assert resumed.metadata["provider_call_count"] == 2
+    assert resumed.metadata["provider_failures"][0]["model"] == "gemini-test-a"
+    assert not (tmp_path / "result.ocrllm-state.json").exists()
+
+
 def test_zero_settled_slots_raise_and_keep_state_without_markdown(
     tmp_path,
     monkeypatch,
@@ -234,4 +295,147 @@ def test_mixed_parent_default_rejects_before_provider_dispatch(tmp_path, monkeyp
         )
 
     assert getattr(captured.value, "code", None) == "OUTPUT_PATH_INVALID"
+    assert called is False
+
+
+def test_flat_fallback_stops_on_success_and_rotates_next_slot(
+    tmp_path,
+    monkeypatch,
+):
+    batches = _three_batches(tmp_path)[:2]
+    output = tmp_path / "result.md"
+    first = _provider("gemini-test-a")
+    second = _provider("gemini-test-b")
+    calls: list[tuple[str, str]] = []
+
+    def fallback(provider, paths, **_kwargs):
+        source = paths[0].name
+        calls.append((provider.model, source))
+        if (provider.model, source) == ("gemini-test-a", "frame-0.png"):
+            raise ProviderError(
+                "A" * 600,
+                code="PROVIDER_TIMEOUT",
+                details={"provider_calls_attempted": 1},
+            )
+        if (provider.model, source) == ("gemini-test-b", "frame-2.png"):
+            raise ProviderError(
+                "The second provider was unavailable.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        return VisionProviderResponse(
+            markdown=f"recognized {provider.model} {source}",
+            input_tokens=10,
+            output_tokens=2,
+        )
+
+    monkeypatch.setattr(executor, "recognize_provider_model_images", fallback)
+    result = recognize_images_to_markdown(
+        batches,
+        provider=[first, second],
+        image_task="detail_ocr",
+        output_path=output,
+    )
+
+    assert calls == [
+        ("gemini-test-a", "frame-0.png"),
+        ("gemini-test-b", "frame-0.png"),
+        ("gemini-test-b", "frame-2.png"),
+        ("gemini-test-a", "frame-2.png"),
+    ]
+    assert result.status == "complete"
+    assert result.warnings == (
+        "Recognition completed after one or more provider candidates failed.",
+    )
+    failures = result.metadata["provider_failures"]
+    assert tuple(
+        (row["slot_index"], row["model"], row["code"]) for row in failures
+    ) == (
+        (0, "gemini-test-a", "PROVIDER_TIMEOUT"),
+        (1, "gemini-test-b", "PROVIDER_UNAVAILABLE"),
+    )
+    assert len(failures[0]["description"]) == 512
+    assert failures[0]["description"].endswith("...")
+    assert result.metadata["provider_call_count"] == 4
+    assert not (tmp_path / "result.ocrllm-state.json").exists()
+
+
+def test_flat_fallback_exhaustion_keeps_only_terminal_slot_failure(
+    tmp_path,
+    monkeypatch,
+):
+    batches = _three_batches(tmp_path)[:1]
+    output = tmp_path / "result.md"
+    calls: list[str] = []
+
+    def fail(provider, _paths, **_kwargs):
+        calls.append(provider.model)
+        raise ProviderError(
+            f"{provider.model} failed.",
+            code="PROVIDER_UNAVAILABLE",
+            details={"provider_calls_attempted": 1},
+        )
+
+    monkeypatch.setattr(executor, "recognize_provider_model_images", fail)
+    with pytest.raises(AllCandidatesExhausted) as captured:
+        recognize_images_to_markdown(
+            batches,
+            provider=[_provider("gemini-test-a"), _provider("gemini-test-b")],
+            image_task="plain_ocr",
+            output_path=output,
+        )
+
+    assert calls == ["gemini-test-a", "gemini-test-b"]
+    assert captured.value.details["provider_calls_attempted"] == 2
+    assert captured.value.details["failed_slots"] == (
+        {
+            "slot_index": 0,
+            "provider": "google",
+            "model": "gemini-test-b",
+            "code": "PROVIDER_UNAVAILABLE",
+            "description": "gemini-test-b failed.",
+        },
+    )
+    assert "provider_failures" not in captured.value.details
+    assert not output.exists()
+    assert (tmp_path / "result.ocrllm-state.json").is_file()
+
+
+def test_flat_provider_shape_rejects_before_output_or_dispatch(
+    tmp_path,
+    monkeypatch,
+):
+    batches = _three_batches(tmp_path)[:1]
+    output = tmp_path / "result.md"
+    provider = _provider("gemini-test-a")
+    called = False
+
+    class ProviderList(list):
+        pass
+
+    def should_not_run(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError
+
+    monkeypatch.setattr(executor, "recognize_provider_model_images", should_not_run)
+    invalid_values = (
+        (),
+        [],
+        ProviderList([provider]),
+        [provider, object()],
+        [[provider]],
+        [provider, provider],
+    )
+    for invalid in invalid_values:
+        with pytest.raises(ConfigError) as captured:
+            recognize_images_to_markdown(
+                batches,
+                provider=invalid,  # type: ignore[arg-type]
+                image_task="plain_ocr",
+                output_path=output,
+            )
+        assert captured.value.details["provider_calls_attempted"] == 0
+        assert not output.exists()
+        assert not (tmp_path / "result.ocrllm-state.json").exists()
     assert called is False

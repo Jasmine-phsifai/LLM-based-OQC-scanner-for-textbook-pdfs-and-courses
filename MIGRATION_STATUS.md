@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#672)
+### Current provider/media checkpoint (#673)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -3129,3 +3129,18 @@ contains only slot index and final vendor/model/canonical-code/safe-description
 facts. Atomicity does not span both files. State/output write failures and
 cancellation retain their own errors, and resume alone replaces the partial.
 Runtime, APIs, tests, stable codes, schemas, providers, and media are unchanged.
+
+#673 implements only the serial flat-provider portion of the approved next
+phase. `batchify_images()`, `recognize_images_to_markdown()`, and
+`resume_images_to_markdown()` accept one exact provider or one nonempty exact
+built-in flat list. Complete preflight rejects invalid topology and definite
+duplicates before dispatch/side effects; omitted image size uses the smallest
+candidate default. Each unresolved slot visits candidates once from the
+invocation-local last successful index and stops at first success. Resume starts
+from candidate zero, reuses settled slots, and persists no cursor or settings.
+Successful fallback returns normal status with one bounded warning and ordered
+slot-indexed failure metadata; a wholly failed slot retains only the terminal
+candidate failure. Both presets still have empty retry rules, so no retry/wait
+executor, nested pool, concurrency, or schema change exists. Focused tests pass
+20 and the full offline suite passes 1,644 tests in 57.49 seconds. The next gate
+is one bounded real flat-fallback proof; retry remains separately evidence-led.

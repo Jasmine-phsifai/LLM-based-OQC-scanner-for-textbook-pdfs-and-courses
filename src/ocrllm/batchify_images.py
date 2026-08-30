@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .errors import ConfigError, InvalidSource
+from .normalize_provider_model_lane import normalize_provider_model_lane
 from .providers.provider_model import ProviderModel
 from .validate_image_group import validate_image_group
 
@@ -13,7 +14,7 @@ def batchify_images(
     sources: tuple[str | Path, ...],
     *,
     batch_size: int | None = None,
-    provider: ProviderModel | None = None,
+    provider: ProviderModel | list[ProviderModel] | None = None,
 ) -> tuple[tuple[Path, ...], ...]:
     """Validate and group concrete images while preserving caller order."""
     if type(sources) is not tuple or not sources:
@@ -21,27 +22,32 @@ def batchify_images(
             "batchify_images() requires a nonempty exact tuple of image sources.",
             code="SOURCE_INVALID",
         ) from None
-    if provider is not None and type(provider) is not ProviderModel:
-        raise ConfigError(
-            "batchify_images() provider must be an exact ProviderModel.",
-            code="CONFIG_INVALID",
-            details={"provider_calls_attempted": 0},
-        ) from None
+    provider_lane = (
+        normalize_provider_model_lane(
+            provider,
+            distinguish_runtime_settings=False,
+        )
+        if provider is not None
+        else None
+    )
     if batch_size is None:
-        if provider is None:
+        if provider_lane is None:
             raise ConfigError(
                 "batchify_images() requires batch_size or provider.",
                 code="CONFIG_MISSING",
                 details={"provider_calls_attempted": 0},
             ) from None
-        if not provider.supports_plain_ocr:
+        if any(not candidate.supports_plain_ocr for candidate in provider_lane):
             raise ConfigError(
-                "The selected ProviderModel does not support image OCR.",
+                "Every selected ProviderModel must support image OCR.",
                 code="CONFIG_INVALID",
                 details={"provider_calls_attempted": 0},
             ) from None
-        resolved_batch_size = provider.default_image_batch_size
-        assert resolved_batch_size is not None
+        defaults = tuple(
+            candidate.default_image_batch_size for candidate in provider_lane
+        )
+        assert all(value is not None for value in defaults)
+        resolved_batch_size = min(value for value in defaults if value is not None)
     elif type(batch_size) is not int or batch_size <= 0:
         raise ConfigError(
             "batchify_images() batch_size must be a positive integer.",

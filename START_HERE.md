@@ -247,7 +247,16 @@ that exact state without a fresh run, reuses the settled slot, calls only the
 failed slot once, publishes both slots, and removes the sidecar. Current usage
 is 2,401/298 input/output tokens, sources remain unchanged, and provider cleanup
 has no warning. The scalar merged-image live/resume gate is closed; flat
-fallback and finite retry evidence is the next separate plan phase.
+fallback and finite retry evidence is the next separate plan phase. #673 lands
+only its serial flat-list half: exact nonempty built-in provider lists preflight
+before side effects, omitted image batch size uses the smallest candidate
+default, and each unresolved slot traverses the supplied order once until first
+success. The next slot starts at this invocation's last successful candidate;
+resume starts again at the first candidate and persists no cursor. Successful
+fallback returns normal complete/partial status with one bounded warning and
+ordered failure metadata. The full offline suite passes 1,644 tests. Both
+presets still have empty retry rules, so finite retry remains unimplemented and
+the next gate is one bounded real flat-fallback proof.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

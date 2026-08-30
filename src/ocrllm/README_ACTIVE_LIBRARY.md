@@ -84,9 +84,16 @@ re-batch. It writes one ordered Markdown. Some failed slots produce a durable
 partial Markdown and sidecar; zero settled slots raise
 `AllCandidatesExhausted` without creating a new Markdown. Pass the same explicit
 batches to `resume_images_to_markdown()`; it restores the saved task and exact
-group plan, may use a different scalar `ProviderModel`, and calls the provider
-only for unresolved slots. Provider lists, fallback, retry execution, pools,
-merged audio, and repair are not part of this slice.
+group plan, may use a different provider lane, and calls providers only for
+unresolved slots. `provider` may be one exact `ProviderModel` or one nonempty
+exact built-in flat list of them. A list is a serial fallback lane: each slot
+stops at first success, and the next slot begins at the provider that most
+recently succeeded during the current call. Resume begins again at the first
+candidate; no cursor is persisted. If `batchify_images()` receives a list and
+no explicit size, it uses the smallest candidate default. Successful fallback
+returns normal status plus one warning and bounded `provider_failures`
+metadata. Retry execution, nested lists, pools, merged audio, and repair are not
+part of this slice.
 
 Provider-free `inspect_video()`, `extract_video_frames()`, and
 `extract_video_audio()` are active. The package still exports

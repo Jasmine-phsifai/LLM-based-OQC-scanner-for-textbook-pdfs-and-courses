@@ -11,13 +11,13 @@ from .result import RecognitionResult
 def recognize_images_to_markdown(
     batches: tuple[tuple[str | Path, ...], ...],
     *,
-    provider: ProviderModel,
+    provider: ProviderModel | list[ProviderModel],
     image_task: str,
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
     overwrite: bool = False,
 ) -> RecognitionResult:
-    """Settle every caller-planned batch through one scalar provider."""
+    """Settle every caller-planned batch through one serial provider lane."""
     from .build_merged_image_resume_state import build_merged_image_resume_state
     from .clear_public_error import clear_public_error
     from .config import Config
@@ -26,6 +26,7 @@ def recognize_images_to_markdown(
     from .finalize_merged_image_result import finalize_merged_image_result
     from .fingerprint_merged_image_batches import fingerprint_merged_image_batches
     from .normalize_merged_image_batches import normalize_merged_image_batches
+    from .normalize_provider_model_lane import normalize_provider_model_lane
     from .output.output_target_claims import OutputTargetClaims
     from .output.preflight_merged_image_output import preflight_merged_image_output
     from .output.resolve_image_resume_state_path import resolve_image_resume_state_path
@@ -39,8 +40,17 @@ def recognize_images_to_markdown(
 
     public_error: OCRLLMError | None = None
     try:
+        provider_lane = normalize_provider_model_lane(
+            provider,
+            distinguish_runtime_settings=True,
+        )
         normalized_batches = normalize_merged_image_batches(batches)
-        prompt, prompt_version = resolve_merged_image_prompt(provider, image_task)
+        prompt, prompt_version = resolve_merged_image_prompt(
+            provider_lane[0],
+            image_task,
+        )
+        for candidate in provider_lane[1:]:
+            resolve_merged_image_prompt(candidate, image_task)
         Config(timeout_seconds=timeout_seconds, overwrite=overwrite)
         resolved_output_path = resolve_merged_image_output_path(
             normalized_batches,
@@ -63,10 +73,15 @@ def recognize_images_to_markdown(
                 overwrite=overwrite,
             )
             save_merged_image_resume_state_atomically(state_path, state)
-            state, current_usage, reused_slot_count = execute_merged_image_plan(
+            (
+                state,
+                current_usage,
+                reused_slot_count,
+                provider_failures,
+            ) = execute_merged_image_plan(
                 state,
                 normalized_batches,
-                provider=provider,
+                provider_lane=provider_lane,
                 prompt=prompt,
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,
@@ -78,6 +93,7 @@ def recognize_images_to_markdown(
                 current_usage=current_usage,
                 historical_usage=(),
                 reused_slot_count=reused_slot_count,
+                provider_failures=provider_failures,
                 overwrite=overwrite,
             )
     except OCRLLMError as error:

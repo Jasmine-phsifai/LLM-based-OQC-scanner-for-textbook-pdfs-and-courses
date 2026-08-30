@@ -1,6 +1,6 @@
 # Active State And Rules
 
-Status: **historical work log and defect archive.** Last verified 2026-08-29
+Status: **historical work log and defect archive.** Last verified 2026-08-30
 against the working tree, tests, and recorded commit history. Entries age;
 verify against code before trusting any claim here.
 
@@ -49,11 +49,11 @@ Verify the named code and tests before trusting any historical claim.
 provider-model/media-batch direction is approved; see #568 and the corrective
 #569/#571/#604/#610/#612 entries at the end of this file and
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md).
-Implementation is paused by the maintainer's discussion-first instruction;
-#647 records the current pruning and the maintainer's seven provider/media
-answers, but no runtime slice is currently authorized. The former exhaustive
-module build specification and its
-consumer-free Phase 1 are not authorized.
+Implementation resumed on the maintainer's 2026-08-30 instruction, one atomic
+slice at a time; #647 records the current pruning and the maintainer's seven
+provider/media answers, while plan section 0 records the active gate. The former
+exhaustive module build specification and its consumer-free Phase 1 remain
+unauthorized.
 Where the narrative below describes `recognize_video_to_markdown`, the video
 journal, or the non-resumable low-level `recognize_video()` as current product
 direction, those passages are superseded as direction (they remain true
@@ -13547,3 +13547,30 @@ file by file before their empty directories were removed; deletion is not
 recoverable. The scalar merged-image recognition/resume live gate is closed.
 The next plan phase is flat fallback and finite retry evidence, not nested
 pooling, audio, repair, or video-chain deletion.
+
+## Current working update: #673 implements serial flat provider fallback offline
+
+The merged-image planner, recognizer, and ordinary resume now accept either one
+exact `ProviderModel` or one nonempty exact built-in flat list. Complete shape,
+leaf, capability, and definite-duplicate validation happens before provider
+dispatch or output/state creation. Planning freezes caller order once and uses
+the smallest candidate image default when size is omitted; an explicit positive
+size still wins.
+
+For every unresolved slot, the executor traverses the supplied candidates
+serially and at most once, stops on first success, and begins the next slot at
+the provider that most recently succeeded during this invocation. A failed
+whole slot does not change that preference. Fresh and resume invocations both
+start at candidate zero, so provider cursor, settings, retry history, and
+blacklist state do not enter the sidecar. Settled resume slots are still reused
+without dispatch.
+
+A successful fallback returns the ordinary complete/partial result plus one
+aggregate warning and ordered slot-indexed provider failure facts, with each
+safe description capped at 512 characters. A wholly failed slot retains only
+the final candidate's terminal evidence in the established failed-slot record;
+later slots continue. Both shipped presets still carry empty retry maps, so no
+same-model retry, sleep, retry-label executor, nested lane, pool, or concurrency
+change was added. Focused regressions pass 20 tests and the full offline suite
+passes **1,644 tests / 57.49s**. One bounded real flat-fallback proof remains
+the next gate; finite retry still requires separate real evidence.

@@ -245,3 +245,45 @@ def test_batchify_images_uses_provider_default_and_explicit_size_wins(tmp_path):
         sources[2:],
     )
     assert batchify_images(sources, provider=provider, batch_size=3) == (sources,)
+
+
+def test_batchify_images_uses_smallest_flat_provider_default(tmp_path):
+    sources = tuple(
+        write_test_image(tmp_path / f"page-{index}.png", color=(index, index, index))
+        for index in range(3)
+    )
+    first = ProviderModel(
+        vendor="google",
+        model="gemini-test-a",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(),
+        **_image_fields(default_image_batch_size=3),
+    )
+    second = ProviderModel(
+        vendor="google",
+        model="gemini-test-b",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(),
+        **_image_fields(default_image_batch_size=2),
+    )
+
+    assert batchify_images(sources, provider=[first, second]) == (
+        sources[:2],
+        sources[2:],
+    )
+    assert batchify_images(
+        sources,
+        provider=[first, second],
+        batch_size=3,
+    ) == (sources,)
+
+    duplicate_model = ProviderModel(
+        vendor="google",
+        model="gemini-test-a",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(api_key="another-test-key"),
+        **_image_fields(default_image_batch_size=1),
+    )
+    with pytest.raises(ConfigError) as captured:
+        batchify_images(sources, provider=[first, duplicate_model])
+    assert captured.value.details["provider_calls_attempted"] == 0

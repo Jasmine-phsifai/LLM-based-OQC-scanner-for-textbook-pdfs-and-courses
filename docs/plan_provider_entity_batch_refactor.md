@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #672)
+## 0. Current pruning and execution checkpoint (2026-08-30, #673)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -179,6 +179,37 @@ schema, timeout, retry, fallback, or provider policy changed. Phase 3 of the
 evidence-first order is therefore complete. The next separately authorized
 slice is phase 4 flat fallback and finite retry evidence; it must not pull in
 nested lanes, parallel pools, merged audio, repair, or old-video deletion.
+
+### #673 implements only the serial flat-fallback half of phase 4
+
+`batchify_images()` now also accepts one nonempty exact built-in flat list of
+exact `ProviderModel` values. With no explicit size it freezes groups once from
+the smallest candidate default; an explicit positive size still wins. Planning
+rejects repeated vendor/model identities. Recognition and resume accept the
+same exact flat shape, snapshot it once, and reject only definite duplicate
+routes: the same vendor/model plus the same settings object. Empty, nested,
+mixed, lazy, subclassed, tuple, and custom iterable shapes fail complete
+preflight with zero provider calls and no output/state creation.
+
+Each unresolved slot traverses the supplied candidates serially and circularly
+at most once, beginning at the last provider that succeeded during this
+invocation. A whole-slot failure does not move that preference. Fresh and
+resume calls both begin at candidate zero; no cursor, provider blacklist, retry
+history, or settings identity is persisted. Traversal stops immediately on the
+first success. Successful fallback remains a normal complete/partial result
+according to slot settlement and adds one aggregate warning plus ordered,
+bounded `provider_failures` facts. A fully failed slot retains only its final
+provider/code/safe-description terminal evidence in the existing failed-slot
+record; later slots still run.
+
+Both admitted presets still have empty retry mappings, and current evidence
+does not provide a trustworthy same-model retry count or delay. This slice
+therefore adds no retry executor, sleep, disposition scheduler, nested lane,
+parallel pool, or new state schema. Focused flat-list, rotation, exhaustion,
+preflight, batching, and resume regressions pass, and the complete offline suite
+is **1,644 passed / 57.49s**. The next gate is one bounded real flat-fallback
+proof; finite retry remains a separate evidence-led sub-slice rather than an
+automatic consequence of list support.
 
 The destination is one visible, caller-composed pair of media flows:
 
