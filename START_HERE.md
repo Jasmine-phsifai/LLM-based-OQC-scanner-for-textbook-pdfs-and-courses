@@ -612,6 +612,14 @@ work; 16 selected sources were unchanged and no output/state/second child was
 created. This is not Google or library evidence. Image repair live success stays
 open for a later correctly formed invocation.
 
+#692 confirms the remaining image-repair live blocker is delegated Windows argv
+assembly, not OCRLLM or Google. After a parent-key preflight correction, one child
+still received Python itself as the first argument and exited before the runner;
+sources stayed unchanged and output/state/provider calls were absent. No second
+child ran. After two controller-only failures, the next gate will have the
+primary construct/start the exact command and Luna only wait/record/clean. Live
+success remains open.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

@@ -3351,3 +3351,11 @@ repair-stage errors. One delegated controller then omitted the runner script
 argument and exited 2 before runner/provider work; selected 16-image aggregate
 hash stayed unchanged, no output/state or second child existed, and evidence was
 removed. This is controller failure only; image repair live success remains open.
+
+#692 repeats no API call but establishes the remaining image live blocker. Even
+after an exact argv manifest, delegated `ProcessStartInfo` duplicated Python as
+its first argument; one child exited 1 before runner/provider work. Sources were
+unchanged, output/state absent, no second child/credential residue existed, and
+evidence was removed. After two consecutive controller-only failures, primary
+will construct/start the next exact child while Luna only waits/records/cleans.
+No tracked runtime/runner/test changed; live success remains open.

@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #691)
+## 0. Current pruning and execution checkpoint (2026-08-31, #692)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -823,6 +823,34 @@ zero, and no second child was launched. The no-second-child rule prevented an
 in-iteration correction. This is a controller invocation failure, not Google or
 library evidence. The evidence root was removed; the image repair live-success
 gate remains open for one later correctly formed independent child.
+
+### #692 proves delegated Windows argv assembly is the remaining live blocker
+
+No runner or product change was needed after #691. The committed runner blob,
+absolute path, and compilation were revalidated. A stricter external controller
+manifest required the absolute runner after Python, two populated 8-image groups,
+repair/timeout flags, nonexistent owned output/state, exact QSettings key/property,
+proxy, zero processes, and exact command booleans before launch.
+
+The first preflight again checked the parent registry key despite the explicit
+`ui` subkey instruction and stopped before child/API. Correcting only the key
+reused the exact deterministic sources. The controller then claimed
+`python_first_argument_is_runner=true`, but its actual `ProcessStartInfo` set
+Python as both executable and first argument. The one child therefore attempted
+to parse the Python binary, exited 1 immediately, produced no safe runner stdout,
+and never reached the tracked runner/provider. Actual-command evidence correctly
+overrode the contradictory preflight claim. Sources remained 1,642,612 bytes
+with unchanged aggregate hash; output/state/markers were absent, process and
+credential residue were zero, and no second child was launched.
+
+Two consecutive iterations now establish a subagent-specific mechanical block:
+free-form Windows argv construction is not reliable enough for this live gate.
+The next independent attempt changes workflow, not product: the primary agent
+will construct and launch the exact child command, then delegate only waiting,
+safe evidence collection, and cleanup to Luna. This preserves the maintainer's
+request not to make the primary poll mechanical work while removing the proven
+source of command mutation. The three-file, 3,320-byte evidence root was removed;
+image repair live success remains open.
 
 The destination is one visible, caller-composed pair of media flows:
 

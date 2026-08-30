@@ -14237,3 +14237,26 @@ one directory / 1,219 bytes were permanently removed after review; a PowerShell
 5.1 `Test-Path -Force` wrapper check erred after deletion, while independent
 root-absence verification passed. Archive/repo/other TEMP were untouched. The
 image repair live-success gate remains open.
+
+## Current working update: #692 identifies delegated argv assembly as the block
+
+The committed strict image runner was unchanged and revalidated. A new controller
+manifest was supposed to prove Python's first argument was the absolute runner
+before launching. The first preflight still used the parent QSettings registry
+level and stopped before child/API. After only that correction, the manifest
+claimed the runner argument was present, but actual `ProcessStartInfo` duplicated
+the Python executable as its own first argument. One child exited 1 parsing the
+binary; runner/provider calls, output, state, markers, and transcript were absent.
+
+The deterministic 16-source 8+8 selection remained 1,642,612 bytes with the same
+aggregate hash; proxy/key presence, process absence, and credential nonpersistence
+were safely recorded. No second child was allowed. Three evidence files totaling
+3,320 bytes and the exact root were permanently removed; archive, repo, and other
+TEMP stayed unchanged.
+
+This is the second consecutive controller-only launch failure after a strict
+runner passed review. It is now a subagent-proven workflow block, not a reason to
+add launch machinery to OCRLLM. On the next independent gate, the primary agent
+will construct/start the exact command once and Luna will handle only waiting,
+evidence, and cleanup. No production/runner/test change occurred, and image
+repair live success remains open.
