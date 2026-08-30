@@ -46,7 +46,12 @@ open without replay. #664 fixes that catalog failure boundary offline: with no
 successful cache it preserves the existing canonical network/auth/permission/
 rate/server cause plus zero-call evidence, while malformed or empty data gets
 only the fixed `catalog_malformed` reason. Stale-success fallback is unchanged;
-there is no retry, preset, public rewrite, or live call. The older Stage M/A plan supplies detail only where
+there is no retry, preset, public rewrite, or live call. #665 then closes the
+DashScope scalar image gate with one exact `qwen3.5-ocr` entity generation,
+4,357/297 input/output tokens, and a closed client. Both built-in scalar image
+transports are live-proven. The next slice may add only a small credential-free
+preset set and image facts backed by real evidence; do not skip directly to a
+public merged rewrite or predeclare audio/retry/pool behavior. The older Stage M/A plan supplies detail only where
 that board has not superseded it. #078 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the

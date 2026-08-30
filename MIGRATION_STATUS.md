@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#664)
+### Current provider/media checkpoint (#665)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -192,6 +192,13 @@ existing error mapper, marks the operation as catalog with zero generation
 calls, and gives malformed/empty catalog data one fixed safe reason. This is an
 offline defect correction only; it does not close the DashScope proof gate or
 authorize preset/public merged-interface work.
+#665 closes that remaining scalar gate with exactly one later live entity call:
+the current 246-row catalog contains exact `qwen3.5-ocr`, one generation returns
+4,357/297 input/output tokens, and the client closes. No retry, fallback, switch,
+artifact, runtime edit, or second request is involved. Google and DashScope are
+therefore both proven through the private scalar consumer. The next migration
+slice is the smallest evidence-backed preset/image-fact admission, not yet the
+public merged recognizer or any audio/retry/pool surface.
 Only capability/default facts supported by a successful proof may join the
 still-private value. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,

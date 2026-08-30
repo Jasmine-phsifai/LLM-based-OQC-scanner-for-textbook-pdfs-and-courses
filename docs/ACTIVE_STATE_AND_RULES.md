@@ -13317,3 +13317,26 @@ request. Focused catalog/adapter/runner/entity/credential-pool regression passes
 150 tests. The DashScope scalar success gate therefore remains open, but its
 next bounded attempt can now distinguish an external outage from malformed
 catalog data honestly.
+
+## Current working update: #665 closes the DashScope scalar image gate
+
+#665 makes no production change. After the required interval, the maintained
+DashScope image runner passes 33 focused offline runner/entity/catalog checks.
+One delegated credential-isolated child then uses its explicit private
+`--provider-model` mode, current Beijing catalog discovery, exact
+`qwen3.5-ocr`, and the unchanged 116,507-byte formula board. The source SHA-256
+is unchanged before and after the run.
+
+The current catalog contains 246 models and the exact model is present. One
+generation completes in about 9.48 seconds; the safe result reports 4,357 input
+tokens, 297 output tokens, exactly one provider call, and a closed client.
+Stderr is empty and there is no retry, model switch, fallback, second child or
+generation, output artifact, temporary residue, process residue, credential,
+path, recognized content, or provider body retention.
+
+This closes the DashScope scalar image success gate. Together with #662, both
+built-in image transports are now proven through the private `ProviderModel`
+consumer. #665 does not add a preset or infer untested audio, retry, detail-OCR,
+or default facts. The next atomic migration slice may admit only a small preset
+set and image fields supported by existing real evidence before any public
+merged-interface rewrite.

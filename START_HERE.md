@@ -209,6 +209,12 @@ network/auth/permission/rate/server classifications and exact zero-generation
 evidence; malformed or empty JSON reports only `catalog_malformed`. A stale
 successful catalog still permits progress. No retry or new provider framework
 was added, and the DashScope success gate remains open.
+#665 then performs exactly one later entity run after offline preflight. Current
+catalog discovery finds 246 models and exact `qwen3.5-ocr` completes one formula-
+board generation with 4,357/297 input/output tokens and a closed client. Both
+Google and DashScope scalar image transports are now live-proven. No runtime
+change or preset lands in #665; the next slice may admit only the small preset
+and image facts supported by real evidence before any public merged rewrite.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
