@@ -97,7 +97,11 @@ image consumer builds the existing `Config` and reuses the existing resolver
 and provider-call boundary. It is not exported and adds no preset, capability
 guess, retry rule, fallback, audio API, pool, persistence, or public facade.
 The focused new and neighboring provider/import suites pass 130 tests. The next
-gate is a bounded live scalar image proof before any public-call rewrite.
+gate is a bounded live scalar image proof before any public-call rewrite. #658
+reaches that real DashScope generation boundary once, but receives honest
+request-scoped `PROVIDER_RESPONSE_INVALID`; it therefore proves dispatch/error
+handling, not successful preset admission. No retry, fallback, switch, output,
+or preset was added, and one later bounded success remains required.
 
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
@@ -143,16 +147,17 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#657)
+### Current provider/media checkpoint (#658)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
-holds the closed decisions, pruning rules, and active order. The next slice is
-the bounded scalar preset/image proof through the new private consumer, first
-without a public-call rewrite. Only image capability/default facts supported by
-that live proof may join the still-private value. There is no remaining #646
-product choice and no blanket authorization for retry, fallback, audio, pools,
-merged media, or other later topology.
+holds the closed decisions, pruning rules, and active order. #658 made one
+bounded DashScope entity request and retained its honest response-invalid
+failure. The next slice is still a successful scalar image proof through the
+private consumer, without a public-call rewrite. Only capability/default facts
+supported by that success may join the still-private value. There is no
+remaining #646 product choice and no blanket authorization for retry, fallback,
+audio, pools, merged media, or other later topology.
 
 The fixed destination has no second video black box. Callers visibly compose
 provider-free video inspection/extraction with independent merged-image and

@@ -19,6 +19,7 @@ def recognize_provider_model_images(
     image_paths: Sequence[Path],
     *,
     prompt: str,
+    timeout_seconds: float = 120.0,
 ) -> str | VisionProviderResponse:
     """Dispatch one no-fallback image request through an existing adapter."""
     if type(provider_model) is not ProviderModel:
@@ -30,6 +31,7 @@ def recognize_provider_model_images(
     config = Config(
         provider=provider_model.settings,
         vision_model=VisionModelSettings(name=provider_model.model),
+        timeout_seconds=timeout_seconds,
     )
     resolved_provider = resolve_vision_provider(config)
     return call_vision_provider(

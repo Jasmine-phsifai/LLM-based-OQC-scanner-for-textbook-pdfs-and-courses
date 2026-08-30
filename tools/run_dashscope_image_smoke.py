@@ -11,9 +11,15 @@ from typing import Any
 
 from ocrllm import Config, DashScopeSettings, VisionModelSettings, recognize
 from ocrllm.errors import ConfigError, OCRLLMError, ProviderError
+from ocrllm.profiles.build_board_prompt import build_board_prompt
 from ocrllm.providers.dashscope.resolve_dashscope_model import (
     fetch_dashscope_model_catalog,
 )
+from ocrllm.providers.provider_model import ProviderModel
+from ocrllm.providers.recognize_provider_model_images import (
+    recognize_provider_model_images,
+)
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 
 
 class _LiveSmokeFailure(Exception):
@@ -31,6 +37,11 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model", required=True)
     parser.add_argument("--image", required=True, type=Path)
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument(
+        "--provider-model",
+        action="store_true",
+        help="Exercise the private scalar ProviderModel consumer.",
+    )
     return parser.parse_args(argv)
 
 
@@ -63,24 +74,64 @@ def run_dashscope_image_smoke(arguments: argparse.Namespace) -> dict[str, object
         ) from None
 
     try:
-        result = recognize(
-            arguments.image,
-            config=Config(
-                provider=settings,
-                vision_model=VisionModelSettings(name=arguments.model),
+        if arguments.provider_model:
+            provider_model = ProviderModel(
+                vendor="dashscope",
+                model=arguments.model,
+                adapter_id="dashscope_openai_compatible",
+                settings=settings,
+            )
+            response = recognize_provider_model_images(
+                provider_model,
+                (arguments.image,),
+                prompt=build_board_prompt(),
                 timeout_seconds=arguments.timeout,
-            ),
-        )
-        recognition = _safe_recognition_summary(result, arguments.model)
+            )
+            recognition = _safe_provider_model_summary(response, arguments.model)
+        else:
+            result = recognize(
+                arguments.image,
+                config=Config(
+                    provider=settings,
+                    vision_model=VisionModelSettings(name=arguments.model),
+                    timeout_seconds=arguments.timeout,
+                ),
+            )
+            recognition = _safe_recognition_summary(result, arguments.model)
     except OCRLLMError as error:
         raise _LiveSmokeFailure("recognition", error) from None
     except Exception:
         raise _LiveSmokeFailure("recognition", None) from None
-    return {
+    summary = {
         "status": "passed",
         "catalog_count": len(models),
         "model": arguments.model,
         "recognition": recognition,
+    }
+    if arguments.provider_model:
+        summary["runtime_path"] = "provider_model"
+    return summary
+
+
+def _safe_provider_model_summary(
+    response: str | VisionProviderResponse,
+    model: str,
+) -> dict[str, object]:
+    """Validate one no-retry entity response without exposing its content."""
+    if (
+        type(response) is not VisionProviderResponse
+        or response.client_closed is not True
+    ):
+        raise ConfigError(
+            "The ProviderModel live request returned incomplete success evidence.",
+            code="CONFIG_INVALID",
+        ) from None
+    return {
+        "provider_call_count": 1,
+        "model": model,
+        "input_tokens": response.input_tokens,
+        "output_tokens": response.output_tokens,
+        "client_closed": True,
     }
 
 

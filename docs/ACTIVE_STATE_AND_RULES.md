@@ -13133,3 +13133,34 @@ Google/DashScope/config/import tests pass **130** in 2.11 seconds. Plain import
 still avoids Google/OpenAI SDK loading. Current `recognize()`, injected clients,
 workers, contracts, media APIs, legacy code, and the four protected untracked
 files are unchanged.
+
+## Current working update: #658 reaches DashScope through the private entity path
+
+#658 performs the first real request through #657's internal scalar consumer.
+The maintained DashScope image smoke now has an explicit `--provider-model`
+mode that constructs one exact entity, reuses the existing board prompt and
+adapter, and accepts the existing positive request timeout. Its default public
+`recognize()` mode is unchanged. A separate proposed entity-only runner and
+test file totaled about 340 lines of duplicated catalog, redaction, and error
+scaffolding; primary review removed them and retained only the explicit mode in
+the existing provider smoke.
+
+One credential-isolated child used the enabled local proxy, the current Beijing
+catalog, exact `qwen3.5-ocr`, and the repo-owned 116,507-byte formula board. It
+made one generation attempt in about 3.66 seconds and exited with the existing
+typed `PROVIDER_RESPONSE_INVALID`, request scope, and recognition stage. The
+runner made no retry, fallback, model switch, second generation, output file,
+or sidecar. Stderr was empty; source size and SHA-256 remained exact; owned
+temporary residue was removed. Because the request failed, token totals and
+client cleanup were not exposed and remain unknown rather than invented.
+
+This is positive evidence that the entity reaches the real compatible endpoint
+and preserves honest failure, but it does not close the scalar success gate or
+prove a preset capability/default. No response-parser change is justified from
+one intermittent invalid response: the same adapter and prompt completed the
+same model/fixture previously, and the safe failure output did not identify a
+new deterministic local defect. A later bounded request may seek the still-open
+success gate; it must remain one generation with no retry or model switch. The
+affected provider/model/runner/import suites pass 175 tests. No package-root
+export, preset, capability schema, retry rule, fallback, pool, audio, resume,
+merged media, worker/contracts, legacy, or social-media code changed.

@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #657)
+## 0. Current pruning and execution checkpoint (2026-08-30, #658)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -436,6 +436,24 @@ for their own consumers. The next gate is one bounded DashScope scalar image
 request through this private consumer, then the corresponding native-Google
 proof; each remains one generation call with no retry, fallback, or model
 switch. Current `recognize()` and injected-provider behavior are unchanged.
+
+#658 reaches the real DashScope generation boundary through that private
+consumer but does not close the success gate. Exact `qwen3.5-ocr` on the
+repo-owned formula board made one generation attempt and returned the existing
+typed `PROVIDER_RESPONSE_INVALID` with request scope. There was no retry,
+fallback, model switch, output artifact, source mutation, or leaked content;
+the runner could not claim token or client-cleanup evidence from the failed
+response. This is an honest scalar transport/error proof, not admission of a
+preset or capability/default fact. One later bounded success is still required
+before the first preset or public-call rewrite.
+
+The private consumer now accepts the already-existing positive request timeout,
+and the maintained DashScope image smoke exposes the entity path only behind
+explicit `--provider-model`. A separate 340-line runner/test pair was removed
+during self-review and folded into the existing provider smoke because its
+catalog, redaction, and error scaffolding duplicated a working gate. This adds
+no retry executor, diagnostic result type, response-parser exception, or second
+provider framework.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level

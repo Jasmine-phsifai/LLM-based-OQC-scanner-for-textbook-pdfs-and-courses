@@ -171,7 +171,12 @@ image consumer that reuses the existing Config, resolver, and provider-call
 boundary. Settings do not enter repr/equality/hash/dataclass serialization. The
 type is not exported and has no preset, unproven capability/default facts,
 retry, fallback, pool, audio, resume, or merged-media behavior. Focused new and
-neighboring suites pass 130 tests; bounded scalar live image proof is next.
+neighboring suites pass 130 tests. #658 then reaches DashScope through that
+private consumer with one exact `qwen3.5-ocr` generation attempt, but the
+provider returns honest `PROVIDER_RESPONSE_INVALID` request-scoped evidence.
+No retry, switch, fallback, output, or preset follows. The maintained image
+smoke now has an explicit `--provider-model` mode; a later bounded success is
+still required before adding preset capability/default facts.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

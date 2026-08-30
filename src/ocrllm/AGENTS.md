@@ -24,10 +24,12 @@ The approved current provider/media board is section 0 of
 `../../docs/plan_provider_entity_batch_refactor.md`, subject to
 `../../docs/ACTIVE_STATE_AND_RULES.md`; #656 resumed runtime migration one
 atomic section-0 slice at a time, and #657 added only the first private scalar
-provider-model identity/settings consumer. Do not export that incomplete type
-or pull presets, retry, fallback, audio, pools, or merged recognition into its
-slice. The older Stage M/A plan supplies detail only where that board has not
-superseded it. #078 closed P1-c with one bounded
+provider-model identity/settings consumer. #658 reached DashScope once through
+that consumer but returned honest request-scoped `PROVIDER_RESPONSE_INVALID`,
+so no preset or capability/default fact is admitted yet. Do not export that
+incomplete type or pull retry, fallback, audio, pools, or merged recognition
+into its slice. The older Stage M/A plan supplies detail only where that board
+has not superseded it. #078 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the
 new library does not consume legacy localized repair Markdown, and ordinary

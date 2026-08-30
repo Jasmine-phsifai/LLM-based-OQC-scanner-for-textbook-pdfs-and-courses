@@ -108,3 +108,24 @@ def test_provider_model_image_consumer_reuses_existing_zero_call_preflight(tmp_p
     assert captured.value.details["provider_calls_attempted"] == 0
     assert "google.genai" not in sys.modules
     assert "openai" not in sys.modules
+
+
+def test_provider_model_image_consumer_validates_request_timeout_before_dispatch():
+    provider_model = ProviderModel(
+        vendor="google",
+        model="gemini-test-model",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(api_key="test-only-google-key"),
+    )
+
+    with pytest.raises(ConfigError) as captured:
+        recognize_provider_model_images(
+            provider_model,
+            (),
+            prompt="Recognize this image.",
+            timeout_seconds=0,
+        )
+
+    assert captured.value.code == "CONFIG_INVALID"
+    assert "google.genai" not in sys.modules
+    assert "openai" not in sys.modules

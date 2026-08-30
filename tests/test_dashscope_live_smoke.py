@@ -10,6 +10,8 @@ from types import MappingProxyType, SimpleNamespace
 import pytest
 
 from ocrllm.errors import ConfigError, ProviderError
+from ocrllm.providers.provider_model import ProviderModel
+from ocrllm.providers.vision_provider_response import VisionProviderResponse
 from tools import run_dashscope_image_smoke as smoke
 
 
@@ -127,6 +129,72 @@ def test_dashscope_live_smoke_emits_only_safe_one_call_summary(monkeypatch, caps
     assert "single.png" not in raw
 
 
+def test_dashscope_live_smoke_can_exercise_private_provider_model(monkeypatch, capsys):
+    secret = "unit-test-dashscope-key-never-print"
+    markdown = "PRIVATE RECOGNIZED BODY"
+    monkeypatch.setenv("DASHSCOPE_API_KEY", secret)
+    calls: list[tuple[object, ...]] = []
+
+    monkeypatch.setattr(
+        smoke,
+        "fetch_dashscope_model_catalog",
+        lambda settings: frozenset((MODEL, "another-model")),
+    )
+
+    def fake_provider_model_call(
+        provider_model, image_paths, *, prompt, timeout_seconds
+    ):
+        assert type(provider_model) is ProviderModel
+        assert provider_model.vendor == "dashscope"
+        assert provider_model.model == MODEL
+        assert provider_model.adapter_id == "dashscope_openai_compatible"
+        assert provider_model.settings.api_key is None
+        assert prompt
+        assert timeout_seconds == 9.0
+        calls.append(tuple(image_paths))
+        return VisionProviderResponse(
+            markdown=markdown,
+            input_tokens=11,
+            output_tokens=7,
+        )
+
+    monkeypatch.setattr(
+        smoke,
+        "recognize_provider_model_images",
+        fake_provider_model_call,
+    )
+
+    assert smoke.main(
+        [
+            "--model",
+            MODEL,
+            "--image",
+            "single.png",
+            "--timeout",
+            "9",
+            "--provider-model",
+        ]
+    ) == 0
+    raw = capsys.readouterr().out.strip()
+    assert json.loads(raw) == {
+        "catalog_count": 2,
+        "model": MODEL,
+        "recognition": {
+            "client_closed": True,
+            "input_tokens": 11,
+            "model": MODEL,
+            "output_tokens": 7,
+            "provider_call_count": 1,
+        },
+        "runtime_path": "provider_model",
+        "status": "passed",
+    }
+    assert calls == [(Path("single.png"),)]
+    assert secret not in raw
+    assert markdown not in raw
+    assert "single.png" not in raw
+
+
 def test_dashscope_live_smoke_missing_model_makes_zero_recognition_calls(
     monkeypatch, capsys
 ):
@@ -212,5 +280,19 @@ def test_dashscope_live_smoke_rejects_unproven_success(status, updates):
 
     with pytest.raises(ConfigError) as captured:
         smoke._safe_recognition_summary(result, MODEL)
+
+    assert captured.value.code == "CONFIG_INVALID"
+
+
+@pytest.mark.parametrize(
+    "response",
+    (
+        "plain string",
+        VisionProviderResponse(markdown="ok", client_closed=False),
+    ),
+)
+def test_dashscope_live_smoke_rejects_unproven_provider_model_success(response):
+    with pytest.raises(ConfigError) as captured:
+        smoke._safe_provider_model_summary(response, MODEL)
 
     assert captured.value.code == "CONFIG_INVALID"
