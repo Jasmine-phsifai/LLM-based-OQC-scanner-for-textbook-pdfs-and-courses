@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #692)
+## 0. Current pruning and execution checkpoint (2026-08-31, #693)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -851,6 +851,37 @@ safe evidence collection, and cleanup to Luna. This preserves the maintainer's
 request not to make the primary poll mechanical work while removing the proven
 source of command mutation. The three-file, 3,320-byte evidence root was removed;
 image repair live success remains open.
+
+### #693 resolves command construction and records a real Google image timeout
+
+The primary agent constructed one synchronous PowerShell session and delegated
+only exit/process/evidence waiting to Luna. An initial `New-Item -LiteralPath`
+compatibility error stopped before evidence/source/key/child work; replacing it
+with `-Path` was permitted because no child existed. The corrected preflight
+verified the committed runner blob, exact Python/runner argv order, two 8-image
+groups, repair/timeout flags, owned absent output/state, exact QSettings key and
+property, proxy listener, and zero matching processes. It then invoked exactly
+`& $python @runnerArgs`, eliminating `Start-Process` argument rewriting. Luna
+observed only the owned exit file/process; primary polled the live session once
+after termination for direct stdout/exit.
+
+The exact child reached the strict runner and provider. The served
+`gemini-2.5-flash` slot made one generation but ended `PROVIDER_TIMEOUT`; the
+deliberately unserved slot ended `PROVIDER_UNAVAILABLE` before generation. With
+0/2 settled, `recognize_images_to_markdown()` correctly raised
+`ALL_CANDIDATES_EXHAUSTED`, published no Markdown, retained a 5,730-byte v1
+sidecar with both failed slots and one Google call with unknown token dimensions,
+and never entered state deletion or repair. Cleanup failure was false, stderr
+empty, direct exit 1, process absent, sources unchanged, and the credential was
+absent from evidence. This is real provider failure and honest resume-state
+evidence, not a controller/library defect or repair success.
+
+No second child or immediate retry was made. Together with #688's later-stage
+repair partial, this shows current Google image availability is unstable but
+does not prove an immediate same-model retry count/wait. The image repair live-
+success gate remains open and is deferred until a later provider-state change;
+no production/runner fix follows. The five-file, 7,660-byte evidence root,
+including private source URIs, was permanently removed after safe state review.
 
 The destination is one visible, caller-composed pair of media flows:
 

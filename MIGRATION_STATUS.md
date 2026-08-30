@@ -3359,3 +3359,11 @@ unchanged, output/state absent, no second child/credential residue existed, and
 evidence was removed. After two consecutive controller-only failures, primary
 will construct/start the next exact child while Luna only waits/records/cleans.
 No tracked runtime/runner/test changed; live success remains open.
+
+#693 removes the delegated argv block by primary-launch/Luna-wait workflow and
+reaches the real image provider once. The valid slot made one generation then
+timed out; the unserved slot failed before generation. The library honestly
+raised all-candidates-exhausted, wrote no Markdown, retained two failed slots in
+a 5,730-byte state with one unknown-token call, and reported clean source/client
+lifecycle. No second child/retry or code fix followed; evidence was removed and
+image repair live success remains deferred/open.

@@ -620,6 +620,14 @@ child ran. After two controller-only failures, the next gate will have the
 primary construct/start the exact command and Luna only wait/record/clean. Live
 success remains open.
 
+#693 resolves the command block by having primary construct/start exactly one
+PowerShell-native Python argv while Luna only waits/records. The child reached
+Google: the served image slot made one generation then timed out, while the
+unserved slot failed before generation. With 0/2 settled, no Markdown/repair ran;
+one clean 5,730-byte resume state retained both failures and one unknown-token
+call. No retry or code change followed. Image repair live success remains open
+until later provider conditions improve.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

@@ -14260,3 +14260,29 @@ add launch machinery to OCRLLM. On the next independent gate, the primary agent
 will construct/start the exact command once and Luna will handle only waiting,
 evidence, and cleanup. No production/runner/test change occurred, and image
 repair live success remains open.
+
+## Current working update: #693 reaches Google honestly; image repair still waits
+
+Primary command construction removed the two-iteration delegated argv block.
+The first PowerShell attempt used unsupported `New-Item -LiteralPath` and stopped
+before root/source/key/child activity. With no child to retry, the corrected
+session used the generated safe path with `New-Item -Path`, verified committed
+runner/Python/argv/batches/output/state/key/property/proxy/process facts, and
+called exactly `& $python @runnerArgs`. Luna only waited for the owned exit file;
+primary read the session once after it ended.
+
+The sole runner child reached Google. The valid model recorded one generation
+then `PROVIDER_TIMEOUT`; the intentionally unserved slot recorded
+`PROVIDER_UNAVAILABLE` with no generation. The runner returned repair/fresh
+`ALL_CANDIDATES_EXHAUSTED`, calls 1, sources unchanged, provider cleanup false,
+stderr 0, exit 1. No output/heading/marker existed. The retained 5,730-byte v1
+state held 16 sources, two failed slots, valid/unserved model identities, and
+one Google usage row with unknown tokens. State/output behavior was honest, so
+no production or runner change is justified.
+
+No second child/immediate retry occurred. Five evidence files / 7,660 bytes were
+permanently removed after content-free state review; private URIs, sources,
+archive, repo, and other TEMP were not modified. Image repair has offline proof,
+one live later-stage partial, and this fresh provider timeout, but no live success;
+the gate is deferred until provider conditions change. These failures do not
+establish a numeric same-model retry policy.
