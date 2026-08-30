@@ -132,13 +132,15 @@ an explicit value wins over provider defaults. Planning fully decodes duration,
 uses the existing 30-second boundary context for intervals, creates no physical
 clips/state/output, and makes no provider call.
 
-Merged audio recognition accepts one model or one nonempty exact built-in flat
-list, writes all ordered slots into one Markdown, checkpoints each
-speech/no-speech/failure outcome, and continues after ordinary provider failure.
-Only one interval clip exists at a time. Whole audio through 300 seconds uses
-native inline transport; longer whole audio and explicit intervals use Google
-Files. Provider file/client cleanup failure is surfaced without claiming false
-success.
+Merged audio recognition accepts one model, one nonempty exact built-in flat
+list, or one nonempty exact list of nonempty exact model lists. It writes all
+ordered slots into one Markdown, checkpoints each speech/no-speech/failure
+outcome, and continues after ordinary provider failure. Nested lane `j` owns
+absolute slots `j, j + lane_count, ...`; lanes advance independently with one
+active request-owned interval clip each and never steal or rescue another lane's
+work. Whole audio through 300 seconds uses native inline transport; longer whole
+audio and explicit intervals use Google Files. Provider file/client cleanup
+failure is surfaced without claiming false success.
 
 Resume binds exact source bytes, ranges, and prompt mode. Settled slots are not
 replayed; failed/unresolved slots begin the supplied lane from candidate zero.
@@ -146,10 +148,11 @@ Provider cursor and retry history are not persisted. A provider can be changed
 explicitly between invocations.
 
 The scalar/flat image and audio paths, including fallback and ordinary resume,
-have bounded real Google evidence. Fixed two-lane image pooling is also
-live-proven with two concurrent-capable slots and exact aggregate usage. Audio
-nested lanes, same-model retry, other audio formats, and experimental repair are
-not implemented.
+have bounded real Google evidence. Fixed two-lane image pooling is live-proven.
+Nested audio has complete SDK/FFmpeg concurrency, cleanup, and resume proof; its
+first real gate produced honest network/rate-limit failures and retained state,
+so successful live nested audio remains pending ordinary resume. Same-model
+retry, other audio formats, and experimental repair are not implemented.
 
 ## PDF
 

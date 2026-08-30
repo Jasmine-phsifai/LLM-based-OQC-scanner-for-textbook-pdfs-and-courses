@@ -532,6 +532,14 @@ zero. A real two-lane/two-batch Google run completed two calls with 4,802/911
 tokens, matching output, removed state, and unchanged sources. Audio remains
 scalar/flat only.
 
+#682 completes nested topology in audio planning/fresh/resume with an
+audio-specific state owner and one active clip per lane. Controlled FFmpeg/SDK
+tests prove overlap, lane-local fallback, no-speech, no rescue, cleanup, ordered
+publication, usage, and changed-lane-count resume. The first real two-lane,
+three-slot Google gate ended honestly with two network errors and one rate limit,
+one confirmed generation, no Markdown, and clean retained resume state. Do not
+start another fresh gate; the next evidence step is ordinary resume.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

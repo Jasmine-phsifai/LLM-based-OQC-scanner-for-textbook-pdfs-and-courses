@@ -35,6 +35,11 @@ def main() -> int:
         provider = [_unserved_audio_provider(), GOOGLE_GEMINI_2_5_FLASH]
     elif args.unserved_only:
         provider = _unserved_audio_provider()
+    elif args.nested_lanes:
+        provider = [
+            [GOOGLE_GEMINI_2_5_FLASH],
+            [GOOGLE_GEMINI_2_5_FLASH],
+        ]
     else:
         provider = GOOGLE_GEMINI_2_5_FLASH
     if len(slices) != args.expected_slots:
@@ -72,6 +77,7 @@ def main() -> int:
                 {
                     "status": "error",
                     "provider_mode": _provider_mode(args),
+                    "lane_count": 2 if args.nested_lanes else 1,
                     "code": error.code,
                     "provider_calls_attempted": _nonnegative_int(
                         error.details.get("provider_calls_attempted")
@@ -93,6 +99,7 @@ def main() -> int:
     summary = {
         "status": result.status,
         "provider_mode": _provider_mode(args),
+        "lane_count": 2 if args.nested_lanes else 1,
         "planning_mode": "whole" if args.interval_minutes == -1 else "interval",
         "duration_seconds": slices[-1].logical_end_seconds,
         "slot_count": result.metadata.get("slot_count"),
@@ -153,6 +160,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--flat-fallback", action="store_true")
     parser.add_argument("--unserved-only", action="store_true")
+    parser.add_argument("--nested-lanes", action="store_true")
     args = parser.parse_args()
     if (
         args.interval_minutes != -1 and args.interval_minutes <= 0
@@ -165,12 +173,18 @@ def _parse_args() -> argparse.Namespace:
         parser.error("numeric scenario arguments are outside their fixed bounds")
     if args.interval_minutes == -1 and args.expected_slots != 1:
         parser.error("whole mode requires exactly one expected slot")
-    if args.flat_fallback and args.unserved_only:
+    if sum((args.flat_fallback, args.unserved_only, args.nested_lanes)) > 1:
         parser.error("provider scenario modes are mutually exclusive")
-    if args.resume and (args.flat_fallback or args.unserved_only):
+    if args.resume and (
+        args.flat_fallback or args.unserved_only or args.nested_lanes
+    ):
         parser.error("fixed provider failure scenarios are fresh-only")
     if args.unserved_only and args.expected_current_calls != 0:
         parser.error("unserved-only expects zero generation calls")
+    if args.nested_lanes and (
+        args.interval_minutes <= 0 or args.expected_slots < 2
+    ):
+        parser.error("nested-lanes requires a multi-slot interval scenario")
     return args
 
 
@@ -179,6 +193,8 @@ def _provider_mode(args: argparse.Namespace) -> str:
         return "flat_fallback"
     if args.unserved_only:
         return "unserved_only"
+    if args.nested_lanes:
+        return "nested"
     return "scalar"
 
 

@@ -18,7 +18,11 @@ from .output.save_merged_image_resume_state_atomically import (
     save_merged_image_resume_state_atomically,
 )
 from .providers.provider_model import ProviderModel
-from .provider_model_usage import ProviderModelUsage
+from .provider_model_usage import (
+    ProviderModelUsage,
+    add_provider_model_usage,
+    build_provider_model_usage_order,
+)
 from .providers.recognize_provider_model_images import (
     recognize_provider_model_images,
 )
@@ -135,7 +139,7 @@ class _MergedImageStateOwner:
         self._state = state
         self._state_path = state_path
         self._current_usage: tuple[ProviderModelUsage, ...] = ()
-        self._usage_order = _build_usage_order(
+        self._usage_order = build_provider_model_usage_order(
             provider_lanes,
             slot_count=len(state.slots),
         )
@@ -309,25 +313,21 @@ def _checkpoint_outcome(
 ) -> tuple[MergedImageResumeState, tuple[ProviderModelUsage, ...]]:
     slots = list(state.slots)
     slots[outcome.index] = outcome
-    usage = _sort_usage(
-        _add_usage(
-            state.usage,
-            provider=provider,
-            calls=calls,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-        ),
-        usage_order,
+    usage = add_provider_model_usage(
+        state.usage,
+        provider=provider,
+        calls=calls,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        usage_order=usage_order,
     )
-    current_usage = _sort_usage(
-        _add_usage(
-            current_usage,
-            provider=provider,
-            calls=calls,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-        ),
-        usage_order,
+    current_usage = add_provider_model_usage(
+        current_usage,
+        provider=provider,
+        calls=calls,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        usage_order=usage_order,
     )
     updated = replace(
         state,
@@ -344,76 +344,6 @@ def _checkpoint_outcome(
         )
         raise
     return updated, current_usage
-
-
-def _build_usage_order(
-    provider_lanes: tuple[tuple[ProviderModel, ...], ...],
-    *,
-    slot_count: int,
-) -> dict[tuple[str, str], int]:
-    order: dict[tuple[str, str], int] = {}
-    lane_count = len(provider_lanes)
-    for slot_index in range(slot_count):
-        for provider in provider_lanes[slot_index % lane_count]:
-            identity = (provider.vendor, provider.model)
-            if identity not in order:
-                order[identity] = len(order)
-    return order
-
-
-def _sort_usage(
-    usage: tuple[ProviderModelUsage, ...],
-    usage_order: dict[tuple[str, str], int],
-) -> tuple[ProviderModelUsage, ...]:
-    indexed = tuple(enumerate(usage))
-    return tuple(
-        row
-        for _, row in sorted(
-            indexed,
-            key=lambda item: usage_order.get(
-                (item[1].vendor, item[1].model),
-                len(usage_order) + item[0],
-            ),
-        )
-    )
-
-
-def _add_usage(
-    usage: tuple[ProviderModelUsage, ...],
-    *,
-    provider: ProviderModel,
-    calls: int,
-    input_tokens: int | None,
-    output_tokens: int | None,
-) -> tuple[ProviderModelUsage, ...]:
-    if calls == 0:
-        return usage
-    rows = list(usage)
-    for index, row in enumerate(rows):
-        if (row.vendor, row.model) == (provider.vendor, provider.model):
-            rows[index] = ProviderModelUsage(
-                vendor=row.vendor,
-                model=row.model,
-                calls=row.calls + calls,
-                input_tokens=_add_known(row.input_tokens, input_tokens),
-                output_tokens=_add_known(row.output_tokens, output_tokens),
-            )
-            break
-    else:
-        rows.append(
-            ProviderModelUsage(
-                vendor=provider.vendor,
-                model=provider.model,
-                calls=calls,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-            )
-        )
-    return tuple(rows)
-
-
-def _add_known(left: int | None, right: int | None) -> int | None:
-    return left + right if left is not None and right is not None else None
 
 
 def _usage_from_error(error: ProviderError) -> tuple[int, int | None, int | None]:

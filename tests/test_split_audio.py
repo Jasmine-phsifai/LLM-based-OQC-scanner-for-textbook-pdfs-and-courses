@@ -90,6 +90,23 @@ def test_split_audio_uses_smallest_provider_default_and_explicit_wins(monkeypatc
     ) == 4
 
 
+def test_split_audio_flattens_nested_defaults_and_allows_cross_lane_reuse(
+    monkeypatch,
+):
+    monkeypatch.setattr(split_module, "probe_product_mp3", lambda _source: 1200.0)
+    first = _audio_provider("gemini-a", default_minutes=30)
+    second = _audio_provider("gemini-b", default_minutes=10)
+    same_model_other_lane = _audio_provider("gemini-a", default_minutes=5)
+
+    assert len(split_audio("lecture.mp3", provider=[[first], [second]])) == 2
+    assert len(
+        split_audio(
+            "lecture.mp3",
+            provider=[[first], [same_model_other_lane]],
+        )
+    ) == 4
+
+
 @pytest.mark.parametrize("value", (True, 0, -2, 1.5, "5"))
 def test_split_audio_rejects_invalid_intervals_before_source(value):
     with pytest.raises(ConfigError) as captured:

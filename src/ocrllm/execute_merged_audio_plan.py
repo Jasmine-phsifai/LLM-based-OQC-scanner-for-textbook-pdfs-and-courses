@@ -1,11 +1,13 @@
-"""Execute unresolved audio slices through one serial provider lane."""
+"""Execute audio slices through fixed provider lanes."""
 
 from __future__ import annotations
 
 import hashlib
 from collections.abc import Mapping
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
+from threading import Event, Lock
 from typing import Literal
 
 from .audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
@@ -17,12 +19,16 @@ from .audio.materialize_long_audio_interval import materialize_long_audio_interv
 from .audio.probe_short_mp3 import MAX_SHORT_MP3_DURATION_SECONDS
 from .audio.snapshot_long_mp3 import LongMP3Snapshot
 from .audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT
-from .errors import NoSpeechDetected, OutputError, ProviderError
+from .errors import NoSpeechDetected, OCRLLMError, OutputError, ProviderError
 from .merged_audio_resume_state import MergedAudioResumeState, MergedAudioSlot
 from .output.save_merged_audio_resume_state_atomically import (
     save_merged_audio_resume_state_atomically,
 )
-from .provider_model_usage import ProviderModelUsage
+from .provider_model_usage import (
+    ProviderModelUsage,
+    add_provider_model_usage,
+    build_provider_model_usage_order,
+)
 from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_audio import recognize_provider_model_audio
 
@@ -34,7 +40,7 @@ def execute_merged_audio_plan(
     state: MergedAudioResumeState,
     snapshot: LongMP3Snapshot,
     *,
-    provider_lane: tuple[ProviderModel, ...],
+    provider_lanes: tuple[tuple[ProviderModel, ...], ...],
     state_path: Path,
     timeout_seconds: float,
 ) -> tuple[
@@ -43,80 +49,211 @@ def execute_merged_audio_plan(
     int,
     tuple[dict[str, int | str], ...],
 ]:
-    """Settle unresolved audio slots through one serial fallback lane."""
-    current_usage: tuple[ProviderModelUsage, ...] = ()
-    reused_slot_count = 0
-    provider_failures: list[dict[str, int | str]] = []
-    last_success_index = 0
-    for slot in state.slots:
-        if slot.status == "settled":
-            reused_slot_count += 1
-            continue
-        if state.mode == "whole":
-            transport = (
-                "inline"
-                if snapshot.duration_seconds <= MAX_SHORT_MP3_DURATION_SECONDS
-                else "files"
+    """Settle fixed audio lane assignments with one serialized state owner."""
+    reused_slot_count = sum(slot.status == "settled" for slot in state.slots)
+    active_lanes = tuple(
+        lane_index
+        for lane_index in range(min(len(provider_lanes), len(state.slots)))
+        if any(
+            state.slots[slot_index].status != "settled"
+            for slot_index in range(
+                lane_index,
+                len(state.slots),
+                len(provider_lanes),
             )
-            (
+        )
+    )
+    if not active_lanes:
+        return state, (), reused_slot_count, ()
+
+    stop = Event()
+    owner = _MergedAudioStateOwner(
+        state,
+        state_path=state_path,
+        provider_lanes=provider_lanes,
+    )
+    lane_failures: list[dict[str, int | str]] = []
+    if len(active_lanes) == 1:
+        lane_failures.extend(
+            _execute_merged_audio_lane(
                 state,
-                current_usage,
-                slot_failures,
-                success_index,
-            ) = _execute_audio_slot(
-                state,
-                slot,
                 snapshot,
-                provider_lane=provider_lane,
-                start_index=last_success_index,
-                prompt=AUDIO_TRANSCRIPTION_PROMPT,
-                transport=transport,
-                state_path=state_path,
+                lane_index=active_lanes[0],
+                provider_lanes=provider_lanes,
                 timeout_seconds=timeout_seconds,
-                current_usage=current_usage,
+                owner=owner,
+                stop=stop,
             )
-        else:
-            window = _window_from_slot(slot)
-            with materialize_long_audio_interval(
-                snapshot.path,
-                window=window,
-            ) as segment:
-                upload = build_long_audio_interval_upload_snapshot(
-                    segment,
-                    duration_seconds=(
-                        slot.actual_end_seconds - slot.actual_start_seconds
-                    ),
+        )
+    else:
+        primary_error: BaseException | None = None
+        with ThreadPoolExecutor(
+            max_workers=len(active_lanes),
+            thread_name_prefix="ocrllm-audio-lane",
+        ) as executor:
+            futures = tuple(
+                executor.submit(
+                    _execute_merged_audio_lane,
+                    state,
+                    snapshot,
+                    lane_index=lane_index,
+                    provider_lanes=provider_lanes,
+                    timeout_seconds=timeout_seconds,
+                    owner=owner,
+                    stop=stop,
                 )
-                (
-                    state,
-                    current_usage,
-                    slot_failures,
-                    success_index,
-                ) = _execute_audio_slot(
-                    state,
+                for lane_index in active_lanes
+            )
+            for future in as_completed(futures):
+                try:
+                    lane_failures.extend(future.result())
+                except BaseException as error:
+                    stop.set()
+                    if primary_error is None:
+                        primary_error = error
+        if primary_error is not None:
+            if isinstance(primary_error, OCRLLMError):
+                primary_error._add_safe_detail(
+                    "provider_calls_attempted",
+                    owner.current_call_count(),
+                )
+            raise primary_error
+
+    settled_state, current_usage = owner.result()
+    provider_failures = tuple(
+        sorted(lane_failures, key=lambda row: row["slot_index"])
+    )
+    return settled_state, current_usage, reused_slot_count, provider_failures
+
+
+class _MergedAudioStateOwner:
+    """Serialize sparse audio state and usage merges across active lanes."""
+
+    def __init__(
+        self,
+        state: MergedAudioResumeState,
+        *,
+        state_path: Path,
+        provider_lanes: tuple[tuple[ProviderModel, ...], ...],
+    ) -> None:
+        self._lock = Lock()
+        self._state = state
+        self._state_path = state_path
+        self._current_usage: tuple[ProviderModelUsage, ...] = ()
+        self._usage_order = build_provider_model_usage_order(
+            provider_lanes,
+            slot_count=len(state.slots),
+        )
+
+    def checkpoint(
+        self,
+        outcome: MergedAudioSlot,
+        *,
+        provider: ProviderModel,
+        calls: int,
+        input_tokens: int | None,
+        output_tokens: int | None,
+        cleanup_failed: bool,
+    ) -> None:
+        with self._lock:
+            self._state, self._current_usage = _checkpoint_outcome(
+                self._state,
+                outcome,
+                provider=provider,
+                calls=calls,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cleanup_failed=cleanup_failed,
+                state_path=self._state_path,
+                current_usage=self._current_usage,
+                usage_order=self._usage_order,
+            )
+
+    def result(
+        self,
+    ) -> tuple[MergedAudioResumeState, tuple[ProviderModelUsage, ...]]:
+        with self._lock:
+            return self._state, self._current_usage
+
+    def current_call_count(self) -> int:
+        with self._lock:
+            return sum(row.calls for row in self._current_usage)
+
+
+def _execute_merged_audio_lane(
+    initial_state: MergedAudioResumeState,
+    snapshot: LongMP3Snapshot,
+    *,
+    lane_index: int,
+    provider_lanes: tuple[tuple[ProviderModel, ...], ...],
+    timeout_seconds: float,
+    owner: _MergedAudioStateOwner,
+    stop: Event,
+) -> tuple[dict[str, int | str], ...]:
+    """Run one fixed audio lane serially with one active clip at a time."""
+    provider_lane = provider_lanes[lane_index]
+    lane_count = len(provider_lanes)
+    last_success_index = 0
+    provider_failures: list[dict[str, int | str]] = []
+    try:
+        for slot_index in range(lane_index, len(initial_state.slots), lane_count):
+            slot = initial_state.slots[slot_index]
+            if slot.status == "settled":
+                continue
+            if stop.is_set():
+                break
+            if initial_state.mode == "whole":
+                transport: Literal["inline", "files"] = (
+                    "inline"
+                    if snapshot.duration_seconds <= MAX_SHORT_MP3_DURATION_SECONDS
+                    else "files"
+                )
+                slot_failures, success_index = _execute_audio_slot(
                     slot,
-                    upload,
+                    snapshot,
                     provider_lane=provider_lane,
                     start_index=last_success_index,
-                    prompt=build_long_audio_interval_prompt(window),
-                    transport="files",
-                    state_path=state_path,
+                    prompt=AUDIO_TRANSCRIPTION_PROMPT,
+                    transport=transport,
                     timeout_seconds=timeout_seconds,
-                    current_usage=current_usage,
+                    owner=owner,
+                    stop=stop,
                 )
-        if success_index is not None:
-            provider_failures.extend(slot_failures)
-            last_success_index = success_index
-    return (
-        state,
-        current_usage,
-        reused_slot_count,
-        tuple(provider_failures),
-    )
+            else:
+                window = _window_from_slot(slot)
+                with materialize_long_audio_interval(
+                    snapshot.path,
+                    window=window,
+                ) as segment:
+                    upload = build_long_audio_interval_upload_snapshot(
+                        segment,
+                        duration_seconds=(
+                            slot.actual_end_seconds - slot.actual_start_seconds
+                        ),
+                    )
+                    slot_failures, success_index = _execute_audio_slot(
+                        slot,
+                        upload,
+                        provider_lane=provider_lane,
+                        start_index=last_success_index,
+                        prompt=build_long_audio_interval_prompt(window),
+                        transport="files",
+                        timeout_seconds=timeout_seconds,
+                        owner=owner,
+                        stop=stop,
+                    )
+            if stop.is_set():
+                break
+            if success_index is not None:
+                provider_failures.extend(slot_failures)
+                last_success_index = success_index
+        return tuple(provider_failures)
+    except BaseException:
+        stop.set()
+        raise
 
 
 def _execute_audio_slot(
-    state: MergedAudioResumeState,
     slot: MergedAudioSlot,
     request_snapshot: LongMP3Snapshot,
     *,
@@ -124,18 +261,18 @@ def _execute_audio_slot(
     start_index: int,
     prompt: str,
     transport: Literal["inline", "files"],
-    state_path: Path,
     timeout_seconds: float,
-    current_usage: tuple[ProviderModelUsage, ...],
+    owner: _MergedAudioStateOwner,
+    stop: Event,
 ) -> tuple[
-    MergedAudioResumeState,
-    tuple[ProviderModelUsage, ...],
     tuple[dict[str, int | str], ...],
     int | None,
 ]:
     """Attempt one prepared audio slot through each candidate at most once."""
     slot_failures: list[dict[str, int | str]] = []
     for offset in range(len(provider_lane)):
+        if stop.is_set():
+            break
         provider_index = (start_index + offset) % len(provider_lane)
         provider = provider_lane[provider_index]
         try:
@@ -149,33 +286,27 @@ def _execute_audio_slot(
         except NoSpeechDetected as error:
             calls, input_tokens, output_tokens = _usage_from_error(error)
             outcome = _settled_slot(slot, provider=provider, no_speech=True)
-            state, current_usage = _checkpoint_outcome(
-                state,
+            owner.checkpoint(
                 outcome,
                 provider=provider,
                 calls=calls,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cleanup_failed=_cleanup_failed(error),
-                state_path=state_path,
-                current_usage=current_usage,
             )
-            return state, current_usage, tuple(slot_failures), provider_index
+            return tuple(slot_failures), provider_index
         except ProviderError as error:
             calls, input_tokens, output_tokens = _usage_from_error(error)
             outcome = _failed_slot(slot, provider=provider, error=error)
             assert outcome.error_description is not None
             description = outcome.error_description
-            state, current_usage = _checkpoint_outcome(
-                state,
+            owner.checkpoint(
                 outcome,
                 provider=provider,
                 calls=calls,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cleanup_failed=_cleanup_failed(error),
-                state_path=state_path,
-                current_usage=current_usage,
             )
             slot_failures.append(
                 {
@@ -196,19 +327,16 @@ def _execute_audio_slot(
             provider=provider,
             markdown=response.markdown,
         )
-        state, current_usage = _checkpoint_outcome(
-            state,
+        owner.checkpoint(
             outcome,
             provider=provider,
             calls=1,
             input_tokens=response.input_tokens,
             output_tokens=response.output_tokens,
             cleanup_failed=cleanup_failed,
-            state_path=state_path,
-            current_usage=current_usage,
         )
-        return state, current_usage, tuple(slot_failures), provider_index
-    return state, current_usage, (), None
+        return tuple(slot_failures), provider_index
+    return (), None
 
 
 def _window_from_slot(slot: MergedAudioSlot) -> LongAudioIntervalWindow:
@@ -278,22 +406,25 @@ def _checkpoint_outcome(
     cleanup_failed: bool,
     state_path: Path,
     current_usage: tuple[ProviderModelUsage, ...],
+    usage_order: dict[tuple[str, str], int],
 ) -> tuple[MergedAudioResumeState, tuple[ProviderModelUsage, ...]]:
     slots = list(state.slots)
     slots[outcome.index] = outcome
-    usage = _add_usage(
+    usage = add_provider_model_usage(
         state.usage,
         provider=provider,
         calls=calls,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        usage_order=usage_order,
     )
-    current_usage = _add_usage(
+    current_usage = add_provider_model_usage(
         current_usage,
         provider=provider,
         calls=calls,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        usage_order=usage_order,
     )
     updated = replace(
         state,
@@ -310,44 +441,6 @@ def _checkpoint_outcome(
         )
         raise
     return updated, current_usage
-
-
-def _add_usage(
-    usage: tuple[ProviderModelUsage, ...],
-    *,
-    provider: ProviderModel,
-    calls: int,
-    input_tokens: int | None,
-    output_tokens: int | None,
-) -> tuple[ProviderModelUsage, ...]:
-    if calls == 0:
-        return usage
-    rows = list(usage)
-    for index, row in enumerate(rows):
-        if (row.vendor, row.model) == (provider.vendor, provider.model):
-            rows[index] = ProviderModelUsage(
-                vendor=row.vendor,
-                model=row.model,
-                calls=row.calls + calls,
-                input_tokens=_add_known(row.input_tokens, input_tokens),
-                output_tokens=_add_known(row.output_tokens, output_tokens),
-            )
-            break
-    else:
-        rows.append(
-            ProviderModelUsage(
-                vendor=provider.vendor,
-                model=provider.model,
-                calls=calls,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-            )
-        )
-    return tuple(rows)
-
-
-def _add_known(left: int | None, right: int | None) -> int | None:
-    return left + right if left is not None and right is not None else None
 
 
 def _usage_from_error(error: ProviderError | NoSpeechDetected) -> tuple[

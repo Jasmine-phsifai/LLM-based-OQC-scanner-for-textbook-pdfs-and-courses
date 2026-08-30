@@ -109,9 +109,11 @@ result = recognize_audio_to_markdown(
 An explicit `interval_minutes=-1` selects the whole MP3; positive exact integers
 select minute windows. Planning returns immutable range identities without
 creating clips. Recognition materializes at most one active interval, writes
-ordered slots into one Markdown, supports scalar/flat fallback, and resumes only
-failed or unresolved work. Short whole audio uses native inline input; long
-whole and interval work use the provider Files lifecycle.
+ordered slots into one Markdown, supports scalar/flat fallback or fixed nested
+lanes, and resumes only failed or unresolved work. A nested plan assigns absolute
+slots round-robin and allows one active request-owned clip per lane; lanes do not
+rescue or steal another lane's work. Short whole audio uses native inline input;
+long whole and interval work use the provider Files lifecycle.
 
 ## Provider-free video
 

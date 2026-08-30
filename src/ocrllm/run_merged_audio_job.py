@@ -13,7 +13,7 @@ from .execute_merged_audio_plan import execute_merged_audio_plan
 from .finalize_merged_audio_result import finalize_merged_audio_result
 from .fingerprint_audio_snapshot import fingerprint_audio_snapshot
 from .normalize_audio_slices import normalize_audio_slices
-from .normalize_provider_model_lane import normalize_provider_model_lane
+from .normalize_provider_model_lanes import normalize_provider_model_lanes
 from .output.load_merged_audio_resume_state import load_merged_audio_resume_state
 from .output.output_target_claims import OutputTargetClaims
 from .output.preflight_resumable_markdown_output import (
@@ -35,18 +35,24 @@ from .result import RecognitionResult
 def run_merged_audio_job(
     slices: tuple[AudioSlice, ...],
     *,
-    provider: ProviderModel | list[ProviderModel],
+    provider: (
+        ProviderModel
+        | list[ProviderModel]
+        | list[list[ProviderModel]]
+    ),
     output_path: str | Path | None,
     timeout_seconds: float,
     resume: bool,
     overwrite: bool,
 ) -> RecognitionResult:
     """Validate, snapshot, settle, checkpoint, and publish one audio plan."""
-    provider_lane = normalize_provider_model_lane(
+    provider_lanes = normalize_provider_model_lanes(
         provider,
         distinguish_runtime_settings=True,
     )
-    for candidate in provider_lane:
+    for candidate in (
+        candidate for lane in provider_lanes for candidate in lane
+    ):
         validate_audio_provider_model(candidate)
     slices = normalize_audio_slices(slices)
     Config(timeout_seconds=timeout_seconds, overwrite=overwrite)
@@ -94,7 +100,7 @@ def run_merged_audio_job(
             ) = execute_merged_audio_plan(
                 state,
                 snapshot,
-                provider_lane=provider_lane,
+                provider_lanes=provider_lanes,
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,
             )

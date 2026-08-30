@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #681)
+## 0. Current pruning and execution checkpoint (2026-08-30, #682)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -492,6 +492,64 @@ known exact Windows QSettings registry location without installing UI dependenci
 All eight owned evidence files were reviewed and permanently removed. No audio
 nested lane, generic scheduler, retry/sleep, worker/contracts edit, repair, new
 preset, or public lane telemetry was added.
+
+### #682 ships nested audio lanes; the real success gate remains open
+
+`split_audio()`, fresh merged-audio recognition, and resume now accept the same
+exact scalar/flat/nested provider topology as merged images. Omitted interval
+planning flattens all validated lanes only to select one common smallest positive
+integer-minute default; explicit `-1` or positive minutes still wins. The shared
+nonrecursive normalizer owns exact lists, 1–32 lanes, lane-local duplicate
+rejection, and cross-lane reuse. Audio no longer needs the flat restriction
+wrapper.
+
+Absolute audio slot `i` stays with lane `i % lane_count`. One thread per active
+lane processes one request-owned slot/clip at a time, and candidates remain
+serial within that lane. Whole mode naturally activates only lane 0 because it
+has one slot. Interval mode may hold one materialized clip per active lane; no
+other intervals are prebuilt. No epoch barrier, stealing, cross-lane rescue,
+global queue, or persisted topology/cursor exists. Speech and exact no-speech
+both settle a slot and update only lane-local preference.
+
+One audio-specific locked owner merges the latest immutable slot state, cleanup
+flag, and usage before every candidate advance and atomically replaces the one
+sidecar. Provider upload/generation/delete and FFmpeg materialization remain
+outside the lock. Image and audio now share only deterministic provider-model
+usage merging/order through `provider_model_usage.py`; they do not share a
+scheduler, slot type, snapshot, response, or state owner.
+
+Real-FFmpeg plus fake Google SDK tests prove lanes 0/1 own slots 0/2 and 1/3,
+lane 1 progresses while lane 0 blocks, no rescue occurs, lane-local fallback and
+no-speech settle correctly, four logical slots create four unique clips despite
+six provider attempts, at most two clips/uploads are active, every upload/delete/
+client/local clip is cleaned, Markdown and usage remain deterministic, and a
+changed three-lane resume dispatches only absolute slot 2 to lane 2. Nested
+planning defaults and invalid topology/bounds also pass. The final image/audio/
+planning/import set is **53 tests / 4.04s**.
+
+The maintained audio runner gained only fresh `--nested-lanes`, fixed to two
+identical Google lanes and a multi-slot positive interval. Credential-free
+Stage 0 over the authorized 124.012-second MP3 proved nested/lane-count-2
+`CONFIG_MISSING`, calls 0, no output, and a 1,384-byte state with three unresolved
+slots/empty usage/source integrity; its safe stdout was not preserved, but state,
+exit, stderr, and source facts were independently reviewed, so Stage 0 was not
+replayed.
+
+The sole live child ended honestly rather than passing: slots 0/1 recorded
+`PROVIDER_NETWORK`, slot 2 `PROVIDER_RATE_LIMITED`, top-level
+`ALL_CANDIDATES_EXHAUSTED`, exactly one confirmed generation call with unknown
+tokens, no Markdown, a retained 1,725-byte three-failed-slot state, unchanged
+source, no cleanup failure, and no runner/interval/snapshot residue. The SDK also
+warned that both Google credential environment variables were present; values
+were not exposed. This real evidence validates bounded nested failure settlement
+and resume state, not successful nested recognition. Do not run another fresh
+call. The exact external state/log/output root is retained for the next atomic
+ordinary-resume gate after the rate/network condition changes.
+
+No retry/sleep, audio format, generic scheduler, repair, worker/contracts edit,
+public lane telemetry, or provider preset was added. Three unrelated 2026-08-25
+`ocrllm-audio-repro-*` directories were observed and deliberately left untouched;
+they are not #682 residue.
 
 The destination is one visible, caller-composed pair of media flows:
 

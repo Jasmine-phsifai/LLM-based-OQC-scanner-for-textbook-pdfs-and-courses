@@ -164,6 +164,16 @@ global barrier, stealing, cross-lane rescue, persisted cursor, audio nested lane
 retry/sleep, or public dispatch telemetry. The two-lane real gate completed two
 eight-image calls with 4,802/911 tokens and no state/warnings/source drift.
 
+#682 extends the same exact 1-32 nested topology to `split_audio()`, merged-audio
+fresh recognition, and resume. Audio keeps its own lane workers/state owner:
+one active request-owned clip per lane, serial fallback and no-speech settlement
+inside each lane, fixed absolute slot assignment, deterministic shared usage,
+and no persisted cursor/rescue/barrier. Image/audio share topology and usage
+merging only, not a scheduler or media callbacks. The first real two-lane audio
+gate ended with two network failures and one rate limit, exactly one confirmed
+generation, no output, and a clean retained three-failed-slot state. Do not run
+another fresh gate; use ordinary resume in the next atomic evidence slice.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

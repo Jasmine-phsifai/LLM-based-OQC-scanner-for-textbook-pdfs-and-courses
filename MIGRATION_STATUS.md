@@ -3253,3 +3253,16 @@ no rescue, deterministic usage, and changed-lane-count resume. The focused set
 passes 50 tests. One real two-lane Google run completed two eight-image calls in
 16.6 seconds with 4,802/911 tokens, matching 1,863-byte Markdown, no state or
 warning, and unchanged sources. No audio nested lanes or generic scheduler exist.
+
+#682 extends exact nested lanes to `split_audio()` and merged-audio fresh/resume.
+Planning flattens candidates only to select one common integer-minute default.
+Audio slots use fixed absolute assignment, one active request-owned clip per
+lane, serial lane-local fallback/no-speech, a locked latest-state owner, and the
+same deterministic provider-model usage merger as images. No generic scheduler
+or persisted lane topology exists. Controlled FFmpeg/SDK tests prove concurrency,
+four unique clips for four slots, six balanced upload/delete lifecycles, no
+rescue, ordered output, and a three-lane resume dispatching only slot 2; the
+focused set passes 53. The first real 2-lane/3-slot gate retained honest state
+after `PROVIDER_NETWORK`, `PROVIDER_NETWORK`, and `PROVIDER_RATE_LIMITED`, with
+one confirmed generation and no cleanup/source/output falsehood. Successful live
+nested audio remains open for ordinary resume; no fresh replay is authorized.

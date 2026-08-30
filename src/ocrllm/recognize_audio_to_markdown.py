@@ -12,12 +12,16 @@ from .result import RecognitionResult
 def recognize_audio_to_markdown(
     slices: tuple[AudioSlice, ...],
     *,
-    provider: ProviderModel | list[ProviderModel],
+    provider: (
+        ProviderModel
+        | list[ProviderModel]
+        | list[list[ProviderModel]]
+    ),
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
     overwrite: bool = False,
 ) -> RecognitionResult:
-    """Settle every explicit audio range through one serial provider lane."""
+    """Settle explicit audio ranges through fixed provider lanes."""
     from .clear_public_error import clear_public_error
     from .errors import OCRLLMError
     from .run_merged_audio_job import run_merged_audio_job

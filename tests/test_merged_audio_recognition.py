@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import importlib
+import re
 import subprocess
 from pathlib import Path
+from threading import Event, Lock
 from types import SimpleNamespace
 
 import pytest
@@ -41,18 +43,29 @@ class _Files:
     def __init__(self) -> None:
         self.upload_count = 0
         self.delete_count = 0
+        self.lock = Lock()
+        self.active_names: set[str] = set()
+        self.maximum_active = 0
+        self.upload_paths: list[Path] = []
 
     def upload(self, *, file):
         assert Path(file).is_file()
-        self.upload_count += 1
+        with self.lock:
+            self.upload_count += 1
+            name = f"files/test-{self.upload_count}"
+            self.active_names.add(name)
+            self.maximum_active = max(self.maximum_active, len(self.active_names))
+            self.upload_paths.append(Path(file))
         return SimpleNamespace(
-            name=f"files/test-{self.upload_count}",
+            name=name,
             state=SimpleNamespace(name="ACTIVE"),
         )
 
     def delete(self, *, name: str):
         assert name.startswith("files/test-")
-        self.delete_count += 1
+        with self.lock:
+            self.delete_count += 1
+            self.active_names.remove(name)
 
 
 class _Models:
@@ -60,11 +73,15 @@ class _Models:
         self,
         responses: list[str | Exception],
         served_models: tuple[str, ...],
+        behavior=None,
     ) -> None:
         self.responses = responses
         self.served_models = served_models
+        self.behavior = behavior
         self.generate_count = 0
         self.calls: list[str] = []
+        self.slot_calls: list[tuple[str, int]] = []
+        self.lock = Lock()
 
     def list(self):
         return tuple(
@@ -79,18 +96,28 @@ class _Models:
     def generate_content(self, *, model: str, contents):
         assert model in self.served_models
         assert type(contents[0]) is str
-        self.generate_count += 1
-        self.calls.append(model)
-        response = self.responses.pop(0)
+        slot_index = _slot_index_from_prompt(contents[0])
+        with self.lock:
+            self.generate_count += 1
+            call_index = self.generate_count
+            self.calls.append(model)
+            self.slot_calls.append((model, slot_index))
+            response = (
+                None if self.behavior is not None else self.responses.pop(0)
+            )
+        if self.behavior is not None:
+            response = self.behavior(model, slot_index)
         if isinstance(response, Exception):
             raise response
+        if type(response) is SimpleNamespace:
+            return response
         return SimpleNamespace(
             text=response,
             candidates=(),
             prompt_feedback=None,
             usage_metadata=SimpleNamespace(
-                prompt_token_count=100 + self.generate_count,
-                candidates_token_count=10 + self.generate_count,
+                prompt_token_count=100 + call_index,
+                candidates_token_count=10 + call_index,
             ),
         )
 
@@ -112,9 +139,10 @@ class _FakeGoogleModule:
         self,
         responses: list[str | Exception],
         served_models: tuple[str, ...],
+        behavior=None,
     ) -> None:
         self.files = _Files()
-        self.models = _Models(responses, served_models)
+        self.models = _Models(responses, served_models, behavior)
         self.clients: list[_Client] = []
 
     def Client(self, **_kwargs):
@@ -143,8 +171,9 @@ def _install_fake_sdk(
     responses: list[str | Exception],
     *,
     served_models: tuple[str, ...] = (MODEL,),
+    behavior=None,
 ):
-    fake = _FakeGoogleModule(responses, served_models)
+    fake = _FakeGoogleModule(responses, served_models, behavior)
     adapter = importlib.import_module(
         "ocrllm.providers.google_genai.recognize_uploaded_mp3"
     )
@@ -156,7 +185,33 @@ def _install_fake_sdk(
     return fake
 
 
+def _slot_index_from_prompt(prompt: str) -> int:
+    matched = re.search(
+        r"Transcribe only content occurring from ([0-9]+(?:\.[0-9]+)?) to ",
+        prompt,
+    )
+    if matched is None:
+        return 0
+    return int(float(matched.group(1)) // 60.0)
+
+
+def _raw_audio_response(text: str, *, input_tokens: int, output_tokens: int):
+    return SimpleNamespace(
+        text=text,
+        candidates=(),
+        prompt_feedback=None,
+        usage_metadata=SimpleNamespace(
+            prompt_token_count=input_tokens,
+            candidates_token_count=output_tokens,
+        ),
+    )
+
+
 def _write_sixty_one_second_mp3(path: Path) -> Path:
+    return _write_synthetic_mp3(path, duration_seconds=61)
+
+
+def _write_synthetic_mp3(path: Path, *, duration_seconds: int) -> Path:
     from ocrllm.audio.load_audio_ffmpeg_executable import (
         load_audio_ffmpeg_executable,
     )
@@ -172,7 +227,7 @@ def _write_sixty_one_second_mp3(path: Path) -> Path:
             "-f",
             "lavfi",
             "-i",
-            "sine=frequency=440:sample_rate=16000:duration=61",
+            f"sine=frequency=440:sample_rate=16000:duration={duration_seconds}",
             "-c:a",
             "libmp3lame",
             "-b:a",
@@ -317,7 +372,13 @@ def test_flat_provider_shape_rejects_before_source_or_provider(tmp_path):
         ProviderList([provider]),
         (provider,),
         [provider, object()],
-        [[provider]],
+        [[]],
+        [provider, [provider]],
+        [[provider], provider],
+        [[[provider]]],
+        [ProviderList([provider])],
+        [[provider, provider]],
+        [[_provider(f"gemini-lane-{index}")] for index in range(33)],
         [provider, provider],
     )
     for invalid in invalid_values:
@@ -489,3 +550,205 @@ def test_flat_audio_resume_restarts_at_first_candidate_and_reuses_settled_slice(
         "recovered final second"
     )
     assert not (tmp_path / "result.ocrllm-state.json").exists()
+
+
+def test_nested_audio_lanes_advance_independently_and_clean_every_clip(
+    tmp_path,
+    monkeypatch,
+):
+    source = _write_synthetic_mp3(
+        tmp_path / "nested.mp3",
+        duration_seconds=181,
+    )
+    slices = split_audio(source, interval_minutes=1)
+    output = tmp_path / "nested.md"
+    lane_zero_first = "gemini-audio-lane-zero-a"
+    lane_zero_second = "gemini-audio-lane-zero-b"
+    lane_one = "gemini-audio-lane-one"
+    lane_one_slot_three_started = Event()
+    events: list[tuple[str, str, int]] = []
+    events_lock = Lock()
+
+    def record(kind: str, model: str, slot_index: int) -> None:
+        with events_lock:
+            events.append((kind, model, slot_index))
+
+    def behavior(model: str, slot_index: int):
+        record("start", model, slot_index)
+        if model == lane_zero_first and slot_index == 0:
+            assert lane_one_slot_three_started.wait(timeout=5.0)
+            record("end", model, slot_index)
+            raise ProviderError(
+                "The first audio lane candidate timed out.",
+                code="PROVIDER_TIMEOUT",
+                details={"provider_calls_attempted": 1},
+            )
+        if slot_index == 2:
+            record("end", model, slot_index)
+            raise ProviderError(
+                f"{model} could not settle slot two.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        if model == lane_one and slot_index == 3:
+            lane_one_slot_three_started.set()
+        record("end", model, slot_index)
+        if model == lane_one and slot_index == 1:
+            return _raw_audio_response(
+                "NOSPEECH4OCRLLM",
+                input_tokens=201,
+                output_tokens=0,
+            )
+        return _raw_audio_response(
+            f"slot {slot_index} {model}",
+            input_tokens=200 + slot_index,
+            output_tokens=20 + slot_index,
+        )
+
+    fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=(lane_zero_first, lane_zero_second, lane_one),
+        behavior=behavior,
+    )
+    result = recognize_audio_to_markdown(
+        slices,
+        provider=[
+            [_provider(lane_zero_first), _provider(lane_zero_second)],
+            [_provider(lane_one)],
+        ],
+        output_path=output,
+    )
+
+    starts = [event for event in events if event[0] == "start"]
+    assert [event[1:] for event in starts if event[1] != lane_one] == [
+        (lane_zero_first, 0),
+        (lane_zero_second, 0),
+        (lane_zero_second, 2),
+        (lane_zero_first, 2),
+    ]
+    assert [event[1:] for event in starts if event[1] == lane_one] == [
+        (lane_one, 1),
+        (lane_one, 3),
+    ]
+    assert events.index(("start", lane_one, 3)) < events.index(
+        ("end", lane_zero_first, 0)
+    )
+    assert ("start", lane_one, 2) not in events
+    assert result.status == "partial"
+    assert result.metadata["provider_call_count"] == 6
+    assert result.metadata["no_speech_slot_count"] == 1
+    assert tuple(
+        (row["model"], row["calls"], row["input_tokens"], row["output_tokens"])
+        for row in result.metadata["current_provider_model_usage"]
+    ) == (
+        (lane_zero_first, 2, None, None),
+        (lane_zero_second, 2, None, None),
+        (lane_one, 2, 404, 23),
+    )
+    assert tuple(
+        (row["slot_index"], row["model"], row["code"])
+        for row in result.metadata["provider_failures"]
+    ) == ((0, lane_zero_first, "PROVIDER_TIMEOUT"),)
+    assert result.metadata["failed_slots"][0]["slot_index"] == 2
+    assert result.metadata["failed_slots"][0]["model"] == lane_zero_first
+    assert result.markdown.index(f"slot 0 {lane_zero_second}") < result.markdown.index(
+        "OCRLLM_NO_SPEECH_AUDIO_SLOT index=2"
+    ) < result.markdown.index("OCRLLM_FAILED_AUDIO_SLOT index=3") < result.markdown.index(
+        f"slot 3 {lane_one}"
+    )
+    assert output.read_text(encoding="utf-8") == result.markdown
+    assert (tmp_path / "nested.ocrllm-state.json").is_file()
+    assert fake.files.upload_count == fake.files.delete_count == 6
+    assert fake.files.maximum_active == 2
+    assert len(set(fake.files.upload_paths)) == 4
+    assert all(not path.exists() for path in fake.files.upload_paths)
+    assert all(client.closed for client in fake.clients)
+
+
+def test_nested_audio_resume_uses_absolute_slot_with_changed_lane_count(
+    tmp_path,
+    monkeypatch,
+):
+    source = _write_synthetic_mp3(
+        tmp_path / "resume.mp3",
+        duration_seconds=181,
+    )
+    slices = split_audio(source, interval_minutes=1)
+    output = tmp_path / "resume.md"
+    first_lane = "gemini-audio-first-lane"
+    second_lane = "gemini-audio-second-lane"
+
+    def first_behavior(model: str, slot_index: int):
+        if model == first_lane and slot_index == 2:
+            raise ProviderError(
+                "The original audio lane could not settle slot two.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        return _raw_audio_response(
+            f"initial slot {slot_index}",
+            input_tokens=30 + slot_index,
+            output_tokens=3,
+        )
+
+    first_fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=(first_lane, second_lane),
+        behavior=first_behavior,
+    )
+    partial = recognize_audio_to_markdown(
+        slices,
+        provider=[[_provider(first_lane)], [_provider(second_lane)]],
+        output_path=output,
+    )
+    assert partial.status == "partial"
+    assert set(first_fake.models.slot_calls) == {
+        (first_lane, 0),
+        (first_lane, 2),
+        (second_lane, 1),
+        (second_lane, 3),
+    }
+
+    resume_models = (
+        "gemini-audio-resume-zero",
+        "gemini-audio-resume-one",
+        "gemini-audio-resume-two",
+    )
+
+    def resume_behavior(model: str, slot_index: int):
+        return _raw_audio_response(
+            f"resumed slot {slot_index} {model}",
+            input_tokens=60,
+            output_tokens=6,
+        )
+
+    resume_fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=resume_models,
+        behavior=resume_behavior,
+    )
+    resumed = resume_audio_to_markdown(
+        slices,
+        provider=[[_provider(model)] for model in resume_models],
+        output_path=output,
+    )
+
+    assert resume_fake.models.slot_calls == [(resume_models[2], 2)]
+    assert resumed.status == "complete"
+    assert resumed.metadata["reused_slot_count"] == 3
+    assert resumed.metadata["provider_call_count"] == 1
+    assert resumed.markdown.index("initial slot 0") < resumed.markdown.index(
+        "initial slot 1"
+    ) < resumed.markdown.index(
+        f"resumed slot 2 {resume_models[2]}"
+    ) < resumed.markdown.index("initial slot 3")
+    assert not (tmp_path / "resume.ocrllm-state.json").exists()
+    assert first_fake.files.upload_count == first_fake.files.delete_count == 4
+    assert resume_fake.files.upload_count == resume_fake.files.delete_count == 1
+    assert all(not path.exists() for path in first_fake.files.upload_paths)
+    assert all(not path.exists() for path in resume_fake.files.upload_paths)
+    assert all(client.closed for client in first_fake.clients)
+    assert all(client.closed for client in resume_fake.clients)

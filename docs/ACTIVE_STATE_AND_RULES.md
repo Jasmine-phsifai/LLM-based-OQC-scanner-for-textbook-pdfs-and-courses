@@ -13918,3 +13918,66 @@ not open recognized content. Eight owned evidence files totalling 9,205 bytes
 and their two stage directories were permanently removed from the exact D: root.
 No audio nested plan, generic scheduler, retry/sleep, worker/contracts change,
 repair, provider preset, or public lane telemetry was added.
+
+## Current working update: #682 ships nested audio lanes; live resume remains open
+
+`split_audio()`, merged-audio fresh recognition, and resume now accept the exact
+scalar/flat/nested provider topology. Omitted planning flattens all validated
+lanes only to select one common smallest positive integer-minute default;
+explicit whole or interval values still win. The shared nonrecursive topology
+normalizer owns exact lists, 1–32 lanes, lane-local duplicate rejection, and
+cross-lane reuse. The flat-only wrapper remains only for call sites that still
+intentionally reject nested topology.
+
+Audio slot `i` belongs to lane `i % lane_count`. One thread per active lane owns
+only that lane's serial slots/candidates and at most one request-owned interval
+clip at a time. Whole mode has one slot and therefore only lane 0 can be active.
+Speech and exact no-speech both settle successfully and change only lane-local
+preference. Full failure does not move preference or invite another lane. Resume
+reuses settled absolute slots, maps unresolved indexes through the current lane
+count, and starts each current lane at candidate zero.
+
+One private `_MergedAudioStateOwner` locks only latest immutable state/usage/
+cleanup merge and atomic sidecar replacement; FFmpeg materialization and Files
+upload/generation/delete remain outside the lock. Every candidate failure or
+success checkpoints before that lane advances. Image and audio now share only
+`build_provider_model_usage_order()` / `add_provider_model_usage()` in the
+existing usage module, removing duplicated completion-order accounting. They do
+not share lane workers, state schemas, snapshots, clips, responses, or scheduler
+callbacks.
+
+The old audio invalid-shape test initially failed because it still rejected the
+now-valid `[[provider]]`; it was replaced with empty/mixed/deep/subclassed/
+same-lane-duplicate/33-lane cases. Nested default planning accepts cross-lane
+model reuse. Real FFmpeg plus fake Google SDK tests prove fixed 0/2 and 1/3
+assignment, lane 1 progress while lane 0 blocks, lane-local fallback, no rescue,
+exact no-speech settlement, deterministic usage/output, four unique materialized
+clips for four slots despite six provider attempts, at most two active uploads,
+balanced six upload/delete/client lifecycles, full local clip cleanup, and a
+three-lane resume dispatching only absolute slot 2. The final related set passes
+**53 / 4.04s**; compileall, runner compile, and diff checks pass.
+
+The maintained audio runner adds only fresh `--nested-lanes`, fixed to two lanes,
+positive multi-slot intervals, and the existing Google preset. Credential-free
+Stage 0 used the authorized 1,986,191-byte MP3 (124.012 seconds), produced three
+one-minute slots, returned nested/lane-count-2 `CONFIG_MISSING`, calls 0, no
+output, and a 1,384-byte three-unresolved-slot state with empty usage/source
+integrity/stderr 0. Its safe stdout was not preserved by the external harness;
+primary state/exit/source review was sufficient and Stage 0 was not replayed.
+
+The sole live child did not pass, and the library did not claim success. Slots
+0/1 ended `PROVIDER_NETWORK`; slot 2 ended `PROVIDER_RATE_LIMITED`; top-level
+was `ALL_CANDIDATES_EXHAUSTED`. Exactly one generation call was confirmed with
+unknown token dimensions, no Markdown was written, all three failed slots plus
+usage were atomically retained in a 1,725-byte sidecar, source bytes matched,
+cleanup failure was false, stderr contained only the SDK warning that both
+credential environment names were present, and no runner/snapshot/interval
+residue remained. Credential values were not printed. The real gate therefore
+proves bounded nested failure settlement and resumability, not successful nested
+audio. Do not run another fresh call; the exact external Stage 1 state/log root
+is intentionally retained for the next ordinary-resume heartbeat.
+
+Three unrelated `ocrllm-audio-repro-*` roots date from 2026-08-25 and contain
+small MP4 reproduction files. They are not #682 residue and were not deleted.
+No retry/sleep, generic scheduler, worker/contracts change, repair, public lane
+telemetry, provider preset, or audio format was added.
