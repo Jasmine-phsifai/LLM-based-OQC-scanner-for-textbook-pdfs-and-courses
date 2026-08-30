@@ -531,7 +531,65 @@ with snapshot_short_mp3(Path(sys.argv[1]), temp_dir=Path(sys.argv[2])) as snapsh
 
             if ($profile -eq 'image,dashscope') {
                 $dashscopeSmoke = @'
-from ocrllm import Config, DashScopeSettings, VisionModelSettings
+import os
+from pathlib import Path
+import sys
+from urllib import request as urllib_request
+
+from PIL import Image
+from ocrllm import (
+    Config,
+    ConfigError,
+    DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+    DashScopeSettings,
+    VisionModelSettings,
+    recognize_images_to_markdown,
+)
+
+root = Path(sys.argv[1])
+image_path = root / 'dashscope-zero-call.png'
+output_path = root / 'dashscope-zero-call.md'
+state_path = root / 'dashscope-zero-call.ocrllm-state.json'
+Image.new('RGB', (16, 12), color=(48, 96, 144)).save(
+    image_path,
+    format='PNG',
+)
+os.environ.pop('DASHSCOPE_API_KEY', None)
+network_calls = 0
+
+def reject_network(*_args, **_kwargs):
+    global network_calls
+    network_calls += 1
+    raise AssertionError('credential failure must precede network')
+
+original_urlopen = urllib_request.urlopen
+urllib_request.urlopen = reject_network
+try:
+    try:
+        recognize_images_to_markdown(
+            ((image_path,),),
+            provider=DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+            image_task='detail_ocr',
+            output_path=output_path,
+        )
+    except ConfigError as error:
+        assert error.code == 'CONFIG_MISSING'
+        assert error.details['provider_operation'] == 'catalog'
+        assert error.details['provider_calls_attempted'] == 0
+    else:
+        raise AssertionError('credential-free DashScope unexpectedly succeeded')
+finally:
+    urllib_request.urlopen = original_urlopen
+
+assert network_calls == 0
+assert 'openai' not in sys.modules
+assert not output_path.exists()
+assert state_path.is_file() and not state_path.is_symlink()
+assert state_path.stat().st_size > 0
+state_path.unlink()
+image_path.unlink()
+assert not state_path.exists()
+assert not image_path.exists()
 
 settings = DashScopeSettings(
     region='cn-beijing',
@@ -560,7 +618,7 @@ client = create_dashscope_openai_client(
 client.close()
 print(openai_module.__version__)
 '@
-                $dashscopeSmoke | & $profilePython -I -
+                $dashscopeSmoke | & $profilePython -I - $profileVenv
                 Assert-LastExitCode 'DashScope offline construction smoke failed'
             }
 

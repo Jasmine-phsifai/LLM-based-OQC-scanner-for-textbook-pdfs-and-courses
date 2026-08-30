@@ -275,6 +275,25 @@ def test_audio_profiles_include_the_interval_backend_and_bounded_smoke() -> None
     assert "materialize_long_audio_interval" in script
 
 
+def test_dashscope_profile_proves_installed_missing_credential_is_zero_call() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+    dashscope_smoke = script.split(
+        "if ($profile -eq 'image,dashscope') {",
+        maxsplit=1,
+    )[1].split("if ($profile -eq 'google') {", maxsplit=1)[0]
+
+    assert "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING" in dashscope_smoke
+    assert "recognize_images_to_markdown(" in dashscope_smoke
+    assert "error.code == 'CONFIG_MISSING'" in dashscope_smoke
+    assert "error.details['provider_operation'] == 'catalog'" in dashscope_smoke
+    assert "error.details['provider_calls_attempted'] == 0" in dashscope_smoke
+    assert "credential failure must precede network" in dashscope_smoke
+    assert "assert network_calls == 0" in dashscope_smoke
+    assert "assert 'openai' not in sys.modules" in dashscope_smoke
+    assert "state_path.unlink()" in dashscope_smoke
+    assert "$profileVenv" in dashscope_smoke
+
+
 def test_ocr_profile_runs_real_installed_inference_without_network() -> None:
     script = GATE_SCRIPT.read_text(encoding="utf-8")
     smoke = OCR_SMOKE.read_text(encoding="utf-8")
