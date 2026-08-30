@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #706)
+## 0. Current pruning and execution checkpoint (2026-08-31, #707)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1240,6 +1240,28 @@ widened, and no runtime, API, test, provider, dependency, state or frozen-bounda
 behavior changes. This is a public-document correction, not a new capability or
 a reason to replay either deferred live gate. Existing merged-image,
 merged-audio and lightweight-import checks pass 36 tests.
+
+### #707 removes the package-local instruction transcript
+
+`src/ocrllm/AGENTS.md` had grown to 1,003 lines / 70,234 bytes with 136
+numbered historical entries. Its opening incorrectly said the lagging
+`ACTIVE_STATE_AND_RULES.md` outranked every other document, while a later
+“current delivery evidence” block described deleted combined-video behavior and
+ended hundreds of iterations behind this board. The same history remains in
+Git, this plan, migration status, and the Chinese diary.
+
+The file is now a 125-line / 6,715-byte current package boundary. It points to
+root `AGENTS.md` as top authority and section 0 here as the current migration
+board, then retains the active import/package rules, exact image/audio planning,
+narrow repair, provider-free video/no-crop boundary, unresolved PDF ownership,
+provider evidence/privacy/retry constraints, frozen `contracts/worker`, public-
+behavior testing, vertical slices, and work-record duties. The independent
+read-only retention audit and primary review found no active rule requiring the
+removed chronology. Numbered history and authority contradictions are both zero.
+
+No runtime, API, test, provider, dependency, state, product decision, or frozen
+code changes. This reduction must not be used to erase evidence from the
+authoritative records or to treat a deferred feature as approved.
 
 The destination is one visible, caller-composed pair of media flows:
 

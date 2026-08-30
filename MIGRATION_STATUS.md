@@ -3540,3 +3540,11 @@ repair's complete live-success gate open. Same-model retry and non-MP3 audio
 formats remain unimplemented. Existing merged-image, merged-audio and
 lightweight-import checks pass 36 tests. No runtime, API, test, provider,
 dependency, state, migration boundary or frozen code changes.
+
+#707 reduces `src/ocrllm/AGENTS.md` from a 1,003-line chronological transcript
+to a 125-line current package boundary. It removes one direct authority
+contradiction and 136 obsolete numbered history entries while retaining the
+active import, media, provider, video/no-crop, PDF-decision, testing, frozen-code
+and work-record rules. History remains in Git, the current plan, migration
+status, ACTIVE_STATE and diary. No runtime/API/test/provider/dependency/state or
+product-boundary behavior changes.

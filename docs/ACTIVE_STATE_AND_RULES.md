@@ -14302,3 +14302,18 @@ Only that public claim is corrected. Same-model retry and non-MP3 audio formats
 remain unimplemented. No runtime, API, test, provider call, dependency, state,
 repair contract, frozen boundary or immediate live replay is added. Existing
 merged-image, merged-audio and lightweight-import checks pass 36 tests.
+
+## Current working update: #707 prunes the nested instruction transcript
+
+The package-local `src/ocrllm/AGENTS.md` previously mixed active rules with
+1,003 lines of iteration history. Its first authority statement contradicted
+root `AGENTS.md`, and its “current delivery evidence” still described the
+deleted combined-video family. One independent read-only audit and primary
+review classified the chronological blocks as duplicated historical evidence.
+
+The replacement is 125 lines and preserves the current package/import, media,
+provider, no-crop/video supersession, unresolved PDF, frozen
+`contracts/worker`, testing and record rules. It contains zero numbered history
+entries and zero claims that this historical log outranks root authority. No
+runtime, API, test, provider call, dependency, state, product decision, or frozen
+code changes.
