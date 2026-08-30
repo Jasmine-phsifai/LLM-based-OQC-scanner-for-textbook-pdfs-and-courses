@@ -195,6 +195,23 @@ def test_deferred_pdf_capabilities_distinguish_direct_vision_and_resume() -> Non
     )
 
 
+def test_deferred_video_capabilities_distinguish_direct_extraction() -> None:
+    reports = _by_name()
+
+    assert reports["video.mp4-h264"].status == "deferred"
+    assert reports["video.mp4-h264"].reason == (
+        "Direct MP4 inspection and caller-owned frame extraction are "
+        "implemented, real-long-media, and installed-proven; shared "
+        "capability/worker registration remains deferred."
+    )
+    assert reports["video.mp4-h264-aac"].status == "deferred"
+    assert reports["video.mp4-h264-aac"].reason == (
+        "Direct MP4 inspection, caller-owned frame extraction, and audio "
+        "extraction are implemented, real-long-media, and installed-proven; "
+        "shared capability/worker registration remains deferred."
+    )
+
+
 def test_get_capabilities_freshly_revalidates_exact_config() -> None:
     config = _proven_config()
     assert type(config.provider) is DashScopeSettings

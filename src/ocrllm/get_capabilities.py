@@ -69,8 +69,16 @@ _DEFERRED_REASON_BY_CAPABILITY = {
     "audio.long.m4a-aac-lc": (
         "Intentionally deferred to a later audio-format gate."
     ),
-    "video.mp4-h264": "Intentionally deferred to Phase 5.",
-    "video.mp4-h264-aac": "Intentionally deferred to Phase 5.",
+    "video.mp4-h264": (
+        "Direct MP4 inspection and caller-owned frame extraction are "
+        "implemented, real-long-media, and installed-proven; shared "
+        "capability/worker registration remains deferred."
+    ),
+    "video.mp4-h264-aac": (
+        "Direct MP4 inspection, caller-owned frame extraction, and audio "
+        "extraction are implemented, real-long-media, and installed-proven; "
+        "shared capability/worker registration remains deferred."
+    ),
 }
 
 

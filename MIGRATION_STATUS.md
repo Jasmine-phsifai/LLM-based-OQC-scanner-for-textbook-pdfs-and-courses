@@ -3521,3 +3521,13 @@ resume. Retry maps stay empty; video-density changes need missed-content proof;
 M4A needs a separate decision. Social, full catalog mirrors, PDF text, worker
 v1alpha2, shared registration, Rust and combined video remain deferred. No code,
 test, provider, media or frozen-boundary change occurs.
+
+#705 fixes the two stale MP4 reasons in the shared capability registry without
+changing their deferred status. `video.mp4-h264` now distinguishes shipped,
+real/installed direct inspection and caller-owned frame extraction from deferred
+shared worker registration; `video.mp4-h264-aac` also names shipped direct audio
+extraction. All 20 names/order and other statuses remain exact. Fifty-four
+capability/worker/import tests pass. A dependency-empty installed wheel returns
+the new reasons with no optional imports; wheel/base sizes are 327,377 and
+1,683,726 bytes. The proof root is removed. No runtime/API/dependency/provider/
+worker-contract behavior changes.

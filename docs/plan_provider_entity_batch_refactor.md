@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #704)
+## 0. Current pruning and execution checkpoint (2026-08-31, #705)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1203,6 +1203,26 @@ No other active runtime slice is both unimplemented and authorized. Test pruning
 remains opportunistic: remove fake-live/micro-test duplication only when the
 same public branch is already covered and the relevant subsystem changes; do
 not create a cleanup project or delete branchy contract coverage mechanically.
+
+### #705 corrects MP4 capability reasons without claiming worker availability
+
+`get_capabilities()` is the frozen shared capability/worker registry, so the
+`video.mp4-h264` and `video.mp4-h264-aac` statuses correctly remain `deferred`:
+no shared video worker registration was added. Their old identical reason,
+“Intentionally deferred to Phase 5,” was nevertheless false about the direct
+library. The H.264 row now states that direct MP4 inspection and caller-owned
+frame extraction are implemented, real-long-media and installed-proven. The
+H.264+AAC row adds direct audio extraction. Both reasons explicitly retain
+deferred shared capability/worker registration.
+
+The existing capability test file freezes exact statuses and reasons; registry
+order, all 20 names, configured image/provider behavior, privacy and lightweight
+imports remain unchanged. Capability/worker/lightweight tests pass 54. A local
+wheel is 327,377 bytes (303 bytes under the fixed cap); its dependency-empty
+install is 1,683,726 bytes and returns both exact reasons without importing
+Pillow, PDFium, OpenAI, Google, OpenCV, NumPy, FFmpeg or miniaudio. The exact
+2,011,103-byte proof root is removed. No video runtime, status, API, dependency,
+worker/contracts surface or provider/media behavior changed.
 
 The destination is one visible, caller-composed pair of media flows:
 
