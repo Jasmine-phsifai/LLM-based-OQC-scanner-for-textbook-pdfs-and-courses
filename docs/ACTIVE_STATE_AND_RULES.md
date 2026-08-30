@@ -13363,3 +13363,46 @@ yet. It also does not add capability booleans, default image count, audio facts,
 or retry mappings before their first merged-image consumer. No provider call,
 registry, factory hierarchy, catalog mirror, model classifier, SDK import,
 credential access, or dependency change occurs.
+
+## Current working update: #667 publishes provider planning without a half-resume API
+
+#667 initially targeted the first scalar merged-image writer. Reconciliation
+with section 0 found that the fixed partial-settlement contract also requires a
+durable resumable sidecar. Publishing a merged facade that returned or wrote
+partial slots without that state would make paid work unrecoverable and repeat
+the old overdesigned video lifecycle in a fourth incomplete form. The iteration
+therefore stops at the independently useful planning boundary.
+
+`ProviderModel` now has the complete public data shape required before package-
+root export: exact vendor/model/adapter and typed runtime settings; plain OCR,
+detail OCR, and audio booleans; positive capability-dependent image/audio
+defaults; and an immutable exact-dict mapping from canonical provider codes to
+finite `(label, extra_retries, wait_seconds)` tuples. Detail implies plain;
+unsupported media cannot carry a default; audio defaults are exact positive
+integer minutes. Settings remain absent from repr/equality/hash/serialization.
+The retry mapping has no executor, and both current presets keep it empty.
+
+Current official model pages corroborate the committed facts: Google documents
+`gemini-2.5-flash` image and audio input, while Alibaba documents
+`qwen3.5-ocr` as image-input/text-output and its OCR guide covers LaTeX document
+and formula parsing. Repository live evidence already proves both scalar image
+routes, Google short audio, and the selected image grouping evidence. The
+package now exports only these two credential-free presets; it does not mirror
+either catalog or claim the defaults are hard provider limits.
+
+New `batchify_images()` consumes the first public entity fact. It requires a
+nonempty exact tuple of string/Path sources and either a positive integer size,
+one exact scalar provider, or both. Explicit size wins. It returns exact ordered
+tuple groups after existing image validation, makes zero provider calls, and
+writes no output, temporary media, or resume state. Lists/generators, provider
+lists, adaptive rebatching, plan objects, recognition, fallback, audio, and pool
+behavior remain absent. Entity/runner/import checks pass 58 focused tests; the
+broader provider/batch/lightweight set passes 96, and the complete offline suite
+passes 1,634. No credential or provider request was used.
+
+The overdesign review keeps the complete retry field only because the approved
+public entity contract requires a complete shape before export. Its strict,
+immutable data validation is bounded; no dispatcher, labels-as-state-machine,
+timer, retry history, or speculative numeric rule was added. The next atomic
+slice is scalar merged image recognition plus its state/resume owner, not a
+flat/nested provider scheduler.

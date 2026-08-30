@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#666)
+### Current provider/media checkpoint (#667)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -206,8 +206,18 @@ credential. `ProviderModel` and the presets remain off the package root because
 there is not yet a supported public operation that accepts them. The next
 scalar merged-image slice must add and consume only the image capability/default
 facts it actually needs before exposing a usable public contract.
-Only capability/default facts supported by a successful proof may join the
-still-private value. There is no
+#667 completes and exports the provider data boundary together with its first
+ordinary consumer. `ProviderModel`, the two exact presets, and
+`batchify_images()` are now package-root APIs. The entity carries the three
+capability flags, positive capability-dependent defaults, exact typed settings,
+and immutable finite retry-rule data; both presets keep retry rules empty and no
+executor/fallback/pool behavior was added. `batchify_images()` consumes only the
+scalar image default, preserves exact caller order, validates all resulting
+groups, and performs no provider or output work. The merged recognizer remains
+unpublished because partial settlement and its resumable sidecar must be
+implemented as one coherent next slice rather than a non-resumable facade.
+Only capability/default facts supported by successful real evidence may join
+the curated public presets. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,
 audio, pools, merged media, or other later topology.
 
@@ -217,7 +227,7 @@ merged-audio recognition/resume. The old six-symbol video recognition family
 remains shipped but frozen; its verified deletion closure is removed only when
 the selected deletion timing and replacement gates allow it.
 
-After the pause is lifted, the first runtime slice is the provider-model entity,
+The first runtime slice was the provider-model entity,
 exact typed settings, and private controlled entity resolver; per #651 no
 injected-adapter contract is designed before its first merged-list consumer.
 Then one exact native-Google image entry and one exact

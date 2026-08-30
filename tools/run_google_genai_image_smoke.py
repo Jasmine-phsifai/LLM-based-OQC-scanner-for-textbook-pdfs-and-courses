@@ -62,6 +62,12 @@ def run_google_genai_image_smoke(arguments: argparse.Namespace) -> dict[str, obj
                     model=arguments.model,
                     adapter_id="google_genai",
                     settings=settings,
+                    supports_plain_ocr=True,
+                    supports_detail_ocr=True,
+                    supports_audio=False,
+                    default_image_batch_size=1,
+                    default_audio_minutes=None,
+                    retry_rules={},
                 )
             )
             response = recognize_provider_model_images(

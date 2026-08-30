@@ -1,4 +1,4 @@
-"""Offline contract for the first private provider-model runtime slice."""
+"""Offline contract for the public provider-model planning slice."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import sys
 
 import pytest
 
+from ocrllm import batchify_images
 from ocrllm.errors import ConfigError, InvalidSource
 from ocrllm.providers.dashscope.provider_settings import DashScopeSettings
 from ocrllm.providers.google_genai.provider_settings import GoogleGenAISettings
@@ -18,6 +19,20 @@ from ocrllm.providers.provider_model_presets import (
 from ocrllm.providers.recognize_provider_model_images import (
     recognize_provider_model_images,
 )
+from write_test_image import write_test_image
+
+
+def _image_fields(**overrides):
+    fields = {
+        "supports_plain_ocr": True,
+        "supports_detail_ocr": True,
+        "supports_audio": False,
+        "default_image_batch_size": 1,
+        "default_audio_minutes": None,
+        "retry_rules": {},
+    }
+    fields.update(overrides)
+    return fields
 
 
 def test_provider_model_identity_is_immutable_and_secret_safe():
@@ -28,12 +43,14 @@ def test_provider_model_identity_is_immutable_and_secret_safe():
         model="gemini-test-model",
         adapter_id="google_genai",
         settings=GoogleGenAISettings(api_key=first_secret),
+        **_image_fields(),
     )
     second = ProviderModel(
         vendor="google",
         model="gemini-test-model",
         adapter_id="google_genai",
         settings=GoogleGenAISettings(api_key=second_secret),
+        **_image_fields(),
     )
 
     assert first == second
@@ -57,8 +74,19 @@ def test_live_proven_image_presets_are_credential_free_exact_entities():
         model="gemini-2.5-flash",
         adapter_id="google_genai",
         settings=GoogleGenAISettings(api_key="test-only-google-key"),
+        **_image_fields(
+            supports_audio=True,
+            default_image_batch_size=8,
+            default_audio_minutes=30,
+        ),
     )
     assert GOOGLE_GEMINI_2_5_FLASH.settings.api_key is None
+    assert GOOGLE_GEMINI_2_5_FLASH.supports_plain_ocr is True
+    assert GOOGLE_GEMINI_2_5_FLASH.supports_detail_ocr is True
+    assert GOOGLE_GEMINI_2_5_FLASH.supports_audio is True
+    assert GOOGLE_GEMINI_2_5_FLASH.default_image_batch_size == 8
+    assert GOOGLE_GEMINI_2_5_FLASH.default_audio_minutes == 30
+    assert GOOGLE_GEMINI_2_5_FLASH.retry_rules == {}
 
     assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING == ProviderModel(
         vendor="dashscope",
@@ -68,9 +96,16 @@ def test_live_proven_image_presets_are_credential_free_exact_entities():
             "cn-beijing",
             api_key="test-only-dashscope-key",
         ),
+        **_image_fields(),
     )
     assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.settings.api_key is None
     assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.settings.region == "cn-beijing"
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.supports_plain_ocr is True
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.supports_detail_ocr is True
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.supports_audio is False
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.default_image_batch_size == 1
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.default_audio_minutes is None
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.retry_rules == {}
 
 
 @pytest.mark.parametrize(
@@ -81,18 +116,21 @@ def test_live_proven_image_presets_are_credential_free_exact_entities():
             "model": "gemini-test-model",
             "adapter_id": "google_genai",
             "settings": DashScopeSettings.for_region("cn-beijing"),
+            **_image_fields(),
         },
         {
             "vendor": "google",
             "model": "gemini-test-model",
             "adapter_id": "unknown",
             "settings": GoogleGenAISettings(),
+            **_image_fields(),
         },
         {
             "vendor": "google ",
             "model": "gemini-test-model",
             "adapter_id": "google_genai",
             "settings": GoogleGenAISettings(),
+            **_image_fields(),
         },
     ),
 )
@@ -123,6 +161,7 @@ def test_provider_model_image_consumer_reuses_existing_zero_call_preflight(tmp_p
         model="gemini-test-model",
         adapter_id="google_genai",
         settings=GoogleGenAISettings(api_key="test-only-google-key"),
+        **_image_fields(),
     )
 
     with pytest.raises(InvalidSource) as captured:
@@ -146,6 +185,7 @@ def test_provider_model_image_consumer_validates_request_timeout_before_dispatch
         model="gemini-test-model",
         adapter_id="google_genai",
         settings=GoogleGenAISettings(api_key="test-only-google-key"),
+        **_image_fields(),
     )
 
     with pytest.raises(ConfigError) as captured:
@@ -159,3 +199,49 @@ def test_provider_model_image_consumer_validates_request_timeout_before_dispatch
     assert captured.value.code == "CONFIG_INVALID"
     assert ("google.genai" in sys.modules) is google_genai_was_loaded
     assert ("openai" in sys.modules) is openai_was_loaded
+
+
+def test_provider_model_rejects_inconsistent_capabilities_and_retry_rules():
+    with pytest.raises(ConfigError):
+        ProviderModel(
+            vendor="google",
+            model="gemini-test-model",
+            adapter_id="google_genai",
+            settings=GoogleGenAISettings(),
+            **_image_fields(
+                supports_plain_ocr=False,
+                supports_detail_ocr=True,
+                default_image_batch_size=None,
+            ),
+        )
+
+    with pytest.raises(ConfigError):
+        ProviderModel(
+            vendor="google",
+            model="gemini-test-model",
+            adapter_id="google_genai",
+            settings=GoogleGenAISettings(),
+            **_image_fields(
+                retry_rules={"PROVIDER_TIMEOUT": ("current", -1, 1)}
+            ),
+        )
+
+
+def test_batchify_images_uses_provider_default_and_explicit_size_wins(tmp_path):
+    sources = tuple(
+        write_test_image(tmp_path / f"page-{index}.png", color=(index, index, index))
+        for index in range(3)
+    )
+    provider = ProviderModel(
+        vendor="google",
+        model="gemini-test-model",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(),
+        **_image_fields(default_image_batch_size=2),
+    )
+
+    assert batchify_images(sources, provider=provider) == (
+        sources[:2],
+        sources[2:],
+    )
+    assert batchify_images(sources, provider=provider, batch_size=3) == (sources,)

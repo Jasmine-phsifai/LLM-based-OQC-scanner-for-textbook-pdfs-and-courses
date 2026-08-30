@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 # Bind lightweight facade functions before callers can import their same-named
 # submodules and replace these public package attributes.
+from .batchify_images import batchify_images as batchify_images
 from .compose_video_result import compose_video_result as compose_video_result
 from .publish_video_result import publish_video_result as publish_video_result
 from .recognize import recognize as recognize
@@ -19,6 +20,7 @@ from .recognize_video_to_markdown import (
 if TYPE_CHECKING:
     from .audio_model_settings import AudioModelSettings as AudioModelSettings
     from .batch_item_outcome import BatchItemOutcome as BatchItemOutcome
+    from .batchify_images import batchify_images as batchify_images
     from .capability_report import CapabilityReport as CapabilityReport
     from .config import Config as Config
     from .compose_video_result import compose_video_result as compose_video_result
@@ -74,6 +76,11 @@ if TYPE_CHECKING:
     from .providers.google_genai.provider_settings import (
         GoogleGenAISettings as GoogleGenAISettings,
     )
+    from .providers.provider_model import ProviderModel as ProviderModel
+    from .providers.provider_model_presets import (
+        DASHSCOPE_QWEN3_5_OCR_CN_BEIJING as DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+        GOOGLE_GEMINI_2_5_FLASH as GOOGLE_GEMINI_2_5_FLASH,
+    )
     from .publish_video_result import publish_video_result as publish_video_result
     from .recognition_execution_policy import (
         RecognitionExecutionPolicy as RecognitionExecutionPolicy,
@@ -107,6 +114,7 @@ _PUBLIC_IMPORTS = {
     "AudioModelSettings": (".audio_model_settings", "AudioModelSettings"),
     "AllCandidatesExhausted": (".errors", "AllCandidatesExhausted"),
     "BatchItemOutcome": (".batch_item_outcome", "BatchItemOutcome"),
+    "batchify_images": (".batchify_images", "batchify_images"),
     "Cancelled": (".errors", "Cancelled"),
     "CapabilityReport": (".capability_report", "CapabilityReport"),
     "ConcurrencyLimited": (".errors", "ConcurrencyLimited"),
@@ -156,6 +164,15 @@ _PUBLIC_IMPORTS = {
         "ProviderErrorDisposition",
     ),
     "ProviderPermissionDenied": (".errors", "ProviderPermissionDenied"),
+    "ProviderModel": (".providers.provider_model", "ProviderModel"),
+    "GOOGLE_GEMINI_2_5_FLASH": (
+        ".providers.provider_model_presets",
+        "GOOGLE_GEMINI_2_5_FLASH",
+    ),
+    "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING": (
+        ".providers.provider_model_presets",
+        "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING",
+    ),
     "ProviderRequestInvalid": (".errors", "ProviderRequestInvalid"),
     "ProviderUnavailable": (".errors", "ProviderUnavailable"),
     "publish_video_result": (".publish_video_result", "publish_video_result"),
@@ -209,6 +226,7 @@ _PUBLIC_IMPORTS = {
 __all__ = [
     "AudioModelSettings",
     "BatchItemOutcome",
+    "batchify_images",
     "Cancelled",
     "ConcurrencyLimited",
     "Config",
@@ -233,6 +251,7 @@ __all__ = [
     "OutputExists",
     "PDFError",
     "ProviderError",
+    "ProviderModel",
     "ProviderAccountSuspended",
     "ProviderContentBlocked",
     "ProviderErrorDisposition",
@@ -265,6 +284,8 @@ __all__ = [
     "get_capabilities",
     "list_google_genai_models",
     "get_provider_error_disposition",
+    "GOOGLE_GEMINI_2_5_FLASH",
+    "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING",
 ]
 __version__ = "0.1.0"
 

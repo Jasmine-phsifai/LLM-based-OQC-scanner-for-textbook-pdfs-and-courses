@@ -28,6 +28,12 @@ def recognize_provider_model_images(
             code="CONFIG_INVALID",
             details={"provider_calls_attempted": 0},
         ) from None
+    if not provider_model.supports_plain_ocr:
+        raise ConfigError(
+            "The selected ProviderModel does not support image OCR.",
+            code="CONFIG_INVALID",
+            details={"provider_calls_attempted": 0},
+        ) from None
     config = Config(
         provider=provider_model.settings,
         vision_model=VisionModelSettings(name=provider_model.model),

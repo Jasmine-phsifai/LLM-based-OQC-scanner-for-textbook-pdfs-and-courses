@@ -845,6 +845,26 @@ captured text, no retry or fallback, and both temporary roots removed.
 
 ## Current Maturation Boundary
 
+The first public provider-planning slice is available without importing either
+vendor SDK:
+
+```python
+from ocrllm import GOOGLE_GEMINI_2_5_FLASH, batchify_images
+
+batches = batchify_images(
+    ("page-01.png", "page-02.png"),
+    provider=GOOGLE_GEMINI_2_5_FLASH,
+)
+```
+
+`ProviderModel` represents one exact vendor/model and carries validated task
+capabilities, OCRLLM planning defaults, exact runtime settings, and inert finite
+retry-rule data. The only shipped presets are the bounded live-proven Google
+and Beijing DashScope entries. `batchify_images()` currently accepts one scalar
+provider only, validates every image, preserves order, and neither calls a
+provider nor writes files. Merged image recognition/resume, fallback lists,
+audio splitting, and retry execution are not public in this slice.
+
 The authoritative defect register is in
 `../../docs/ACTIVE_STATE_AND_RULES.md`. D1-D7, F1-F4, and G1-G10 are closed in
 offline code and tests. #339 closed Stage M's bounded DashScope live exit; the

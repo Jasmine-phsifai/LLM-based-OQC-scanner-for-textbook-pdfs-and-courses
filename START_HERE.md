@@ -221,6 +221,15 @@ them on exact model matches. Importing them loads neither vendor SDK nor a
 credential. They remain off the package root until a public merged-image
 consumer can actually accept them; capability/default/audio/retry fields are
 not guessed in this staging slice.
+#667 supersedes that internal-only boundary by publishing one coherent planning
+slice: package-root `ProviderModel`, the two exact presets, and
+`batchify_images()`. The entity now has the complete approved data shape, but
+its retry mapping remains inert and empty for both presets. `batchify_images()`
+accepts an exact source tuple plus an explicit positive size or one scalar
+provider default, returns ordered tuple groups, and performs no dispatch or
+publication. Merged recognition is still absent: its partial-output contract
+must land with the resumable sidecar instead of exposing an unrecoverable
+half-result.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

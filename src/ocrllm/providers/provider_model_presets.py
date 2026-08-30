@@ -14,6 +14,12 @@ GOOGLE_GEMINI_2_5_FLASH: Final = ProviderModel(
     model="gemini-2.5-flash",
     adapter_id="google_genai",
     settings=GoogleGenAISettings(),
+    supports_plain_ocr=True,
+    supports_detail_ocr=True,
+    supports_audio=True,
+    default_image_batch_size=8,
+    default_audio_minutes=30,
+    retry_rules={},
 )
 
 DASHSCOPE_QWEN3_5_OCR_CN_BEIJING: Final = ProviderModel(
@@ -21,4 +27,10 @@ DASHSCOPE_QWEN3_5_OCR_CN_BEIJING: Final = ProviderModel(
     model="qwen3.5-ocr",
     adapter_id="dashscope_openai_compatible",
     settings=DashScopeSettings.for_region("cn-beijing"),
+    supports_plain_ocr=True,
+    supports_detail_ocr=True,
+    supports_audio=False,
+    default_image_batch_size=1,
+    default_audio_minutes=None,
+    retry_rules={},
 )

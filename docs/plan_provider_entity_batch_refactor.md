@@ -11,13 +11,47 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #666)
+## 0. Current pruning and execution checkpoint (2026-08-30, #667)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
 authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
+
+### #667 publishes only the provider-data and image-planning slice
+
+`ProviderModel` is now a package-root public immutable value with the complete
+approved data shape: exact vendor/model/controlled adapter, exact typed runtime
+settings, three capability booleans, capability-dependent image/audio defaults,
+and an immutable canonical-code retry-rule mapping. The mapping is data only;
+no retry executor, fallback traversal, wait, or provider pool exists. Both first
+presets intentionally have empty retry maps because no same-model recovery rule
+has passed its separate real-failure gate.
+
+The two package-root presets remain exactly the live-proven entries. Google
+`gemini-2.5-flash` supports image and audio input according to the current
+[official model page](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash)
+and this repository's image, formula-board, PDF, and short-audio runs. Its
+planning defaults are eight images and thirty integer minutes. Beijing
+`qwen3.5-ocr` is image-input/text-output according to the current
+[official model page](https://help.aliyun.com/zh/model-studio/qwen3-5-ocr),
+and the official OCR guide documents LaTeX document/formula parsing; its
+planning default remains one image and it does not claim audio support. These
+are OCRLLM recommendations, not advertised provider hard limits.
+
+The new package-root `batchify_images()` is the first ordinary public consumer.
+It accepts a nonempty exact source tuple plus an explicit positive integer size,
+one exact scalar `ProviderModel`, or both. An explicit size wins; omission reads
+the provider's positive image default. It returns exact ordered tuple groups,
+validates every image group with the existing limits, makes no provider call,
+and writes no output/state. Flat/nested provider shapes remain later slices.
+
+The initially considered merged recognizer was deliberately not published in
+this iteration. The approved partial-settlement contract requires one resumable
+sidecar together with failed Markdown slots; exposing a partial result without
+that owner would create a non-resumable half-contract. Scalar merged
+recognition, its sidecar, and ordinary resume therefore land together next.
 
 The destination is one visible, caller-composed pair of media flows:
 
