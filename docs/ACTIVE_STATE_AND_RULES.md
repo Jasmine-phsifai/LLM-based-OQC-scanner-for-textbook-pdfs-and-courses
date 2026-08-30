@@ -13981,3 +13981,34 @@ Three unrelated `ocrllm-audio-repro-*` roots date from 2026-08-25 and contain
 small MP4 reproduction files. They are not #682 residue and were not deleted.
 No retry/sleep, generic scheduler, worker/contracts change, repair, public lane
 telemetry, provider preset, or audio format was added.
+
+## Current working update: #683 closes nested-audio live success by resume
+
+Before any credential access, the retained #682 state was revalidated against
+its recorded facts: 1,725 bytes, SHA-256 `77ADEF9F...258`, v1 interval mode at
+one minute, three failed slots with network/network/rate-limit codes, one
+historical Google call with unknown input/output tokens, cleanup false, source
+size/hash unchanged, output absent, and no runner process.
+
+The maintained merged-audio runner's evidence contract now permits nested lanes
+with resume and adds `--expected-historical-calls`. Its pass gate therefore
+distinguishes one historical failed generation from three current resume calls.
+Flat fallback and unserved-only fresh failure modes remain resume-incompatible.
+No production API, state schema, executor, provider setting, or retry policy
+changed.
+
+Exactly one child then ran `resume_audio_to_markdown()` on the same source,
+three slices, two lanes, and Stage 1 output/state. It exited 0 with safe
+`gate=passed`: complete, three settled slots, three current calls, 7,600 input
+and 50 output tokens, historical calls 1 with null token dimensions, reused 0,
+no failed/provider-failure rows or warnings, matching 308-byte Markdown with
+SHA-256 `01C67D...8A14`, removed state, unchanged source, empty stderr, and no
+runner process. The child environment explicitly removed the second Google key
+name, so the #682 dual-key warning did not recur.
+
+This is a later independent ordinary resume, not a same-call fallback or retry.
+No fresh call, model switch, second resume, sleep, or hidden re-planning occurred.
+Primary review did not open transcript content. The six retained evidence files
+totalling 5,550 bytes and stage-0/1/2 directories were verified and permanently
+removed; source/archive/repo/other TEMP were untouched. The nested-audio real
+success gate is now closed, but no evidence supports automatic same-model retry.

@@ -540,6 +540,12 @@ three-slot Google gate ended honestly with two network errors and one rate limit
 one confirmed generation, no Markdown, and clean retained resume state. Do not
 start another fresh gate; the next evidence step is ordinary resume.
 
+#683 consumes that exact retained state once through nested ordinary resume. The
+runner separately requires historical call count 1 and current calls 3. All
+three slots settled with 7,600/50 current tokens, matching 308-byte Markdown,
+removed state, unchanged source, empty stderr, and exit 0. Nested audio live
+success is closed without adding automatic retry or provider switching.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

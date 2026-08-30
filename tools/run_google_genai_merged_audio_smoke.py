@@ -133,6 +133,8 @@ def main() -> int:
         and summary["settled_slot_count"] == args.expected_slots
         and summary["reused_slot_count"] == args.expected_reused_slots
         and summary["provider_call_count"] == args.expected_current_calls
+        and _usage_call_count(summary["historical_provider_model_usage"])
+        == args.expected_historical_calls
         and summary["output_exists"] is True
         and summary["output_matches_result"] is True
         and summary["state_exists"] is False
@@ -156,6 +158,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-slots", type=int, required=True)
     parser.add_argument("--expected-current-calls", type=int, required=True)
     parser.add_argument("--expected-reused-slots", type=int, default=0)
+    parser.add_argument("--expected-historical-calls", type=int, default=0)
     parser.add_argument("--timeout-seconds", type=float, default=600.0)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--flat-fallback", action="store_true")
@@ -168,6 +171,7 @@ def _parse_args() -> argparse.Namespace:
         or args.expected_current_calls < 0
         or args.expected_reused_slots < 0
         or args.expected_reused_slots > args.expected_slots
+        or args.expected_historical_calls < 0
         or args.timeout_seconds <= 0
     ):
         parser.error("numeric scenario arguments are outside their fixed bounds")
@@ -175,9 +179,7 @@ def _parse_args() -> argparse.Namespace:
         parser.error("whole mode requires exactly one expected slot")
     if sum((args.flat_fallback, args.unserved_only, args.nested_lanes)) > 1:
         parser.error("provider scenario modes are mutually exclusive")
-    if args.resume and (
-        args.flat_fallback or args.unserved_only or args.nested_lanes
-    ):
+    if args.resume and (args.flat_fallback or args.unserved_only):
         parser.error("fixed provider failure scenarios are fresh-only")
     if args.unserved_only and args.expected_current_calls != 0:
         parser.error("unserved-only expects zero generation calls")
@@ -345,6 +347,19 @@ def _safe_usage_documents(
                 }
             )
     return tuple(safe)
+
+
+def _usage_call_count(value: object) -> int | None:
+    if not isinstance(value, (tuple, list)):
+        return None
+    calls = tuple(
+        row.get("calls") for row in value if isinstance(row, Mapping)
+    )
+    if len(calls) != len(value) or any(
+        type(count) is not int or count < 0 for count in calls
+    ):
+        return None
+    return sum(calls)
 
 
 if __name__ == "__main__":

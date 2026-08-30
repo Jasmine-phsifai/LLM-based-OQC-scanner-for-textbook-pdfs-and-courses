@@ -3266,3 +3266,12 @@ focused set passes 53. The first real 2-lane/3-slot gate retained honest state
 after `PROVIDER_NETWORK`, `PROVIDER_NETWORK`, and `PROVIDER_RATE_LIMITED`, with
 one confirmed generation and no cleanup/source/output falsehood. Successful live
 nested audio remains open for ordinary resume; no fresh replay is authorized.
+
+#683 closes that retained nested-audio gate with exactly one ordinary resume.
+The runner now accepts nested resume and validates historical calls separately.
+The exact #682 state/source/output identity was unchanged before launch. One
+child made three current `gemini-2.5-flash` generations, retained the historical
+one-call/unknown-token row, reported 7,600/50 current tokens, settled all three
+slots, published matching 308-byte Markdown, removed state, preserved source,
+and exited 0 with empty stderr. No production code, retry, fallback, model switch,
+or second call was added.

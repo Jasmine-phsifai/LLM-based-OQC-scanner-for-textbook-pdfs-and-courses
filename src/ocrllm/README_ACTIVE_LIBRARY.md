@@ -150,9 +150,11 @@ explicitly between invocations.
 The scalar/flat image and audio paths, including fallback and ordinary resume,
 have bounded real Google evidence. Fixed two-lane image pooling is live-proven.
 Nested audio has complete SDK/FFmpeg concurrency, cleanup, and resume proof; its
-first real gate produced honest network/rate-limit failures and retained state,
-so successful live nested audio remains pending ordinary resume. Same-model
-retry, other audio formats, and experimental repair are not implemented.
+first real gate produced honest network/rate-limit failures and retained state.
+One later ordinary resume settled those exact three slots with three generations,
+published matching Markdown, and removed state. Successful nested audio is now
+live-proven across invocations. Same-model retry, other audio formats, and
+experimental repair are not implemented.
 
 ## PDF
 

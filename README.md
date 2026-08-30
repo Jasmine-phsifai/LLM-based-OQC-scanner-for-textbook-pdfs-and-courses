@@ -115,6 +115,11 @@ slots round-robin and allows one active request-owned clip per lane; lanes do no
 rescue or steal another lane's work. Short whole audio uses native inline input;
 long whole and interval work use the provider Files lifecycle.
 
+Nested audio is live-proven across separate invocations: a fresh two-lane call
+retained three failed slots after network/rate-limit errors, and one later
+ordinary resume settled those exact slots in three generations, published one
+ordered Markdown, and removed state. This is explicit resume, not hidden retry.
+
 ## Provider-free video
 
 ```python

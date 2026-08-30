@@ -174,6 +174,14 @@ gate ended with two network failures and one rate limit, exactly one confirmed
 generation, no output, and a clean retained three-failed-slot state. Do not run
 another fresh gate; use ordinary resume in the next atomic evidence slice.
 
+#683 consumes that exact failed nested-audio state through one ordinary resume.
+Runner evidence now asserts historical call count separately from current calls.
+The resume made exactly three generations, retained the one historical unknown-
+token call, settled all three slots with 7,600/50 current tokens, published
+matching Markdown, removed state, and preserved source/cleanup. The production
+runtime did not change. This closes nested-audio live success but does not prove
+same-model retry or authorize retry/sleep policy.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

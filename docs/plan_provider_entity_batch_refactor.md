@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #682)
+## 0. Current pruning and execution checkpoint (2026-08-30, #683)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -550,6 +550,33 @@ No retry/sleep, audio format, generic scheduler, repair, worker/contracts edit,
 public lane telemetry, or provider preset was added. Three unrelated 2026-08-25
 `ocrllm-audio-repro-*` directories were observed and deliberately left untouched;
 they are not #682 residue.
+
+### #683 closes the real nested-audio success gate through ordinary resume
+
+The retained #682 state was revalidated before credential access: exact
+1,725-byte/SHA-256 identity, interval mode at one minute, three terminal failed
+slots (`NETWORK`, `NETWORK`, `RATE_LIMITED`), one historical Google generation
+with unknown token dimensions, no cleanup failure, unchanged source fingerprint,
+no output, and no running child.
+
+The maintained audio runner now permits `--nested-lanes` with `--resume` and adds
+one nonnegative `--expected-historical-calls` assertion. Fresh flat/unserved-only
+failure modes remain incompatible with resume. This is evidence tooling only;
+production topology, state, execution, and provider policy are unchanged.
+
+Exactly one credential-isolated resume child used the same source, three saved
+slices, two lanes, and Stage 1 output/state. It exited 0 with `gate=passed`:
+three settled slots, three current generation calls, 7,600 input and 50 output
+tokens, the one historical call retained with unknown tokens, zero reused slots,
+no failures/warnings, matching 308-byte Markdown, removed state, unchanged source,
+empty stderr, and no process residue. No fresh re-plan, fallback, model switch,
+retry, or second resume occurred.
+
+Primary review verified disk/result hashes and source identity without opening
+the transcript. The complete six-file, 5,550-byte #682/#683 evidence root and its
+three stage directories were then permanently removed. The nested-audio live
+success gate is closed; this does not supply same-model retry evidence or justify
+retry/sleep policy.
 
 The destination is one visible, caller-composed pair of media flows:
 
