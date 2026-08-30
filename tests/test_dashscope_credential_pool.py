@@ -592,7 +592,8 @@ def test_pooled_catalog_outage_releases_lease_before_sdk_loading(
             config=_explicit_pooled_config(pool, workspace="offline-outage"),
         )
 
-    assert captured.value.code == "PROVIDER_CATALOG_UNAVAILABLE"
+    assert captured.value.code == "PROVIDER_NETWORK"
+    assert captured.value.details["provider_operation"] == "catalog"
     assert captured.value.details["provider_calls_attempted"] == 0
     slot = pool.snapshot().slots[0]
     assert slot.in_flight == 0

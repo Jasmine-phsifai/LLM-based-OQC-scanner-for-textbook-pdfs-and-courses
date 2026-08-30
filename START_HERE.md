@@ -203,6 +203,12 @@ failures and a closed runner whitelist. Its sole live child stopped at current
 catalog unavailability with zero generations, so no reason was emitted and the
 success gate remains open. The request was not replayed; public/preset work still
 waits for a later successful DashScope entity run.
+#664 corrects that catalog observability boundary without another live call.
+With no successful cache, the catalog fetch now preserves existing canonical
+network/auth/permission/rate/server classifications and exact zero-generation
+evidence; malformed or empty JSON reports only `catalog_malformed`. A stale
+successful catalog still permits progress. No retry or new provider framework
+was added, and the DashScope success gate remains open.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

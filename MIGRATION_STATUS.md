@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#663)
+### Current provider/media checkpoint (#664)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -186,6 +186,12 @@ reason and lets the maintained runner report only whitelisted values. One live
 child then stops at catalog unavailability with zero generations, so it emits no
 response reason and does not close the DashScope gate. There is no replay,
 parser relaxation, retry, preset, or public-call rewrite.
+#664 preserves the actual typed cause of a DashScope catalog failure when no
+successful cache exists, while retaining stale-success fallback. It reuses the
+existing error mapper, marks the operation as catalog with zero generation
+calls, and gives malformed/empty catalog data one fixed safe reason. This is an
+offline defect correction only; it does not close the DashScope proof gate or
+authorize preset/public merged-interface work.
 Only capability/default facts supported by a successful proof may join the
 still-private value. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,

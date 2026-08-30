@@ -61,8 +61,8 @@ def fetch_dashscope_model_catalog(
     settings,
     *,
     catalog_api_key: str | None = None,
-) -> frozenset[str] | None:
-    """Return a fresh catalog, or the last success during a refresh outage."""
+) -> frozenset[str]:
+    """Return a fresh catalog or a stale success; otherwise raise safely."""
     cache_key = settings.base_url
     now = monotonic()
     with _CATALOG_LOCK:
@@ -104,15 +104,35 @@ def fetch_dashscope_model_catalog(
                 raise ValueError("DashScope returned a model row without an id.")
             model_names.append(model_name)
         names = frozenset(model_names)
-    except Exception:
+        if not names:
+            raise ValueError("DashScope returned an empty model catalog.")
+    except Exception as error:
         with _CATALOG_LOCK:
             latest_cached = _CATALOG_CACHE.get(cache_key)
-        return latest_cached[0] if latest_cached is not None else None
+        if latest_cached is not None:
+            return latest_cached[0]
+        if isinstance(error, ValueError):
+            public_error = ProviderError(
+                "DashScope returned a malformed model catalog.",
+                code="PROVIDER_RESPONSE_INVALID",
+                details={
+                    "provider": "dashscope",
+                    "failure_scope": "provider",
+                    "reason": "catalog_malformed",
+                },
+            )
+        else:
+            from .map_dashscope_error import map_dashscope_error
 
-    if not names:
-        with _CATALOG_LOCK:
-            latest_cached = _CATALOG_CACHE.get(cache_key)
-        return latest_cached[0] if latest_cached is not None else None
+            public_error = map_dashscope_error(
+                error,
+                openai_module=None,
+                model=None,
+            )
+        public_error._add_safe_detail("provider_operation", "catalog")
+        public_error._add_safe_detail("provider_calls_attempted", 0)
+        raise public_error from None
+
     with _CATALOG_LOCK:
         _CATALOG_CACHE[cache_key] = (names, monotonic())
     return names

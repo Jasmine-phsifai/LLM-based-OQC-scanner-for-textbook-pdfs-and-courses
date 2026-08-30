@@ -278,6 +278,7 @@ def _safe_failure_reason(error: OCRLLMError) -> str | None:
     reason = error.details.get("reason")
     safe_reasons = {
         "empty",
+        "catalog_malformed",
         "incomplete",
         "invalid_choice",
         "invalid_encoding",

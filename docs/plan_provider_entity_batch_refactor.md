@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #663)
+## 0. Current pruning and execution checkpoint (2026-08-30, #664)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -550,6 +550,17 @@ retry, switch, fallback, second child, source mutation, stderr, or residue. This
 is honest provider-boundary evidence, not a scalar success or parser diagnosis.
 The DashScope gate remains open; do not replay it immediately merely to seek a
 reason. Google remains closed, and no preset/public merged rewrite starts.
+
+#664 fixes the catalog boundary exposed by that zero-generation run. A failed
+DashScope catalog refresh still returns the last successful cached catalog, but
+when no cache exists the fetcher no longer collapses authentication, permission,
+rate-limit, server, and network failures into `None`. It reuses the existing
+canonical DashScope mapper and adds only `provider_operation="catalog"` and
+zero-call evidence. Malformed or empty catalog JSON becomes the fixed,
+content-free `catalog_malformed` reason. There is no new status matrix, retry,
+cache policy, catalog result type, preset, or live request. The DashScope scalar
+success gate remains open; the next live attempt may now distinguish a provider
+or network outage from invalid catalog data without inspecting private text.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level

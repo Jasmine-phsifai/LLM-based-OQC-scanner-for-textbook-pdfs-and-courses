@@ -70,16 +70,17 @@ _TIMEOUT_CODES = frozenset(
 def map_dashscope_error(
     error: Exception,
     *,
-    openai_module: object,
-    model: str,
+    openai_module: object | None,
+    model: str | None,
 ) -> OCRLLMError:
     """Classify one trusted-adapter failure without exposing provider text."""
     status = _safe_integer_attribute(error, "status_code")
+    if status is None:
+        status = _safe_integer_attribute(error, "code")
     provider_code = _extract_provider_code(error)
-    details: dict[str, str | int] = {
-        "provider": "dashscope",
-        "model": model,
-    }
+    details: dict[str, str | int] = {"provider": "dashscope"}
+    if model is not None:
+        details["model"] = model
     if status is not None:
         details["http_status"] = status
     if provider_code is not None:
@@ -148,8 +149,10 @@ def map_dashscope_error(
             code="PROVIDER_TIMEOUT",
             details=_scoped(details, "provider"),
         )
-    if _is_sdk_error(error, openai_module, "APIConnectionError") or isinstance(
-        error, ConnectionError
+    if (
+        _is_sdk_error(error, openai_module, "APIConnectionError")
+        or isinstance(error, ConnectionError)
+        or (status is None and isinstance(error, OSError))
     ):
         return ProviderError(
             "The DashScope service could not be reached.",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import json
+from urllib.error import HTTPError
 
 import pytest
 
@@ -64,12 +65,26 @@ def test_failed_catalog_fetch_is_not_cached(monkeypatch) -> None:
         nonlocal calls
         calls += 1
         if calls == 1:
-            raise OSError("temporary catalog outage")
+            raise HTTPError(
+                "https://private.invalid/catalog",
+                401,
+                "PRIVATE CATALOG AUTH BODY",
+                None,
+                None,
+            )
         return _CatalogResponse("provider-model")
 
     monkeypatch.setattr(urllib_request, "urlopen", fail_then_succeed)
 
-    assert resolver.fetch_dashscope_model_catalog(_settings()) is None
+    with pytest.raises(ProviderError) as captured:
+        resolver.fetch_dashscope_model_catalog(_settings())
+
+    assert captured.value.code == "PROVIDER_AUTHENTICATION"
+    assert captured.value.details["http_status"] == 401
+    assert captured.value.details["provider_operation"] == "catalog"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert "PRIVATE CATALOG AUTH BODY" not in str(captured.value)
+    assert "PRIVATE CATALOG AUTH BODY" not in repr(captured.value.details)
     assert resolver.fetch_dashscope_model_catalog(_settings()) == frozenset(
         {"provider-model"}
     )
@@ -115,7 +130,9 @@ def test_unknown_model_fails_closed_when_catalog_has_never_succeeded(
     with pytest.raises(ProviderError) as captured:
         resolver.resolve_dashscope_model("possibly-typoed-model", settings=_settings())
 
-    assert captured.value.code == "PROVIDER_CATALOG_UNAVAILABLE"
+    assert captured.value.code == "PROVIDER_NETWORK"
+    assert captured.value.details["provider_operation"] == "catalog"
+    assert captured.value.details["provider_calls_attempted"] == 0
     assert captured.value.retryable is True
     disposition = get_provider_error_disposition(captured.value)
     assert disposition.action == "retry"
@@ -137,8 +154,11 @@ def test_malformed_catalog_row_cannot_become_a_partial_catalog(monkeypatch) -> N
     with pytest.raises(ProviderError) as captured:
         resolver.resolve_dashscope_model("another-model", settings=_settings())
 
-    assert captured.value.code == "PROVIDER_CATALOG_UNAVAILABLE"
-    assert captured.value.retryable is True
+    assert captured.value.code == "PROVIDER_RESPONSE_INVALID"
+    assert captured.value.retryable is False
+    assert captured.value.details["reason"] == "catalog_malformed"
+    assert captured.value.details["provider_operation"] == "catalog"
+    assert captured.value.details["provider_calls_attempted"] == 0
 
 
 def test_credential_error_propagates_without_catalog_outage_mapping(

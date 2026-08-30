@@ -42,7 +42,11 @@ cleanup evidence. Google scalar success is closed without a package change;
 DashScope remains open and no preset/public rewrite is admitted. #663 adds only
 fixed content-free reasons to existing DashScope parser failures; its one live
 child stopped at catalog unavailability with zero generations, so the gate stays
-open without replay. The older Stage M/A plan supplies detail only where
+open without replay. #664 fixes that catalog failure boundary offline: with no
+successful cache it preserves the existing canonical network/auth/permission/
+rate/server cause plus zero-call evidence, while malformed or empty data gets
+only the fixed `catalog_malformed` reason. Stale-success fallback is unchanged;
+there is no retry, preset, public rewrite, or live call. The older Stage M/A plan supplies detail only where
 that board has not superseded it. #078 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the

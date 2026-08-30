@@ -13297,3 +13297,23 @@ reason. There is no retry, model switch, fallback, second child, source change,
 stderr, process, or temp residue. The new discriminator remains ready for a
 later generation-stage failure, but the scalar success gate is still open and
 must not be replayed immediately just to force that branch.
+
+## Current working update: #664 preserves DashScope catalog failure causes
+
+#664 corrects the exact zero-generation ambiguity exposed by #663 without
+making another provider request. `fetch_dashscope_model_catalog()` continues to
+return the most recent successful catalog during a refresh failure. If no such
+cache exists, it now reuses the established DashScope error mapper rather than
+returning `None`: standard HTTP errors retain authentication, permission,
+rate-limit, server, or request classification; status-free OS/network failures
+become `PROVIDER_NETWORK`. Every such error records the fixed `catalog`
+operation and exact zero provider calls without provider text or credentials.
+
+Malformed rows, malformed JSON, invalid encoding, and empty catalogs share one
+fixed content-free `catalog_malformed` reason under
+`PROVIDER_RESPONSE_INVALID`. This adds no second error matrix, result wrapper,
+catalog retry, cache refresh policy, preset, fallback, pool, public API, or live
+request. Focused catalog/adapter/runner/entity/credential-pool regression passes
+150 tests. The DashScope scalar success gate therefore remains open, but its
+next bounded attempt can now distinguish an external outage from malformed
+catalog data honestly.
