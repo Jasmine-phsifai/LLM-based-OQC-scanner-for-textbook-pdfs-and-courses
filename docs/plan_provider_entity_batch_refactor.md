@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #695)
+## 0. Current pruning and execution checkpoint (2026-08-31, #696)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -927,6 +927,38 @@ was persisted. No retry, second child, fallback, model switch, or production fix
 followed. This proves the live repair path reaches its provider boundary but
 does not close the success gate; do not immediately replay it while quota is
 exhausted.
+
+### #696 proves full-frame extraction on one real 161-minute archive video
+
+The provider-free visible-video boundary had synthetic unit/install evidence but
+no maintained explicit-source real-video scenario after deletion of the old
+recognition chain. `tools/run_video_frame_extraction_smoke.py` now calls only
+package-root `inspect_video()` and `extract_video_frames()`, requires a new
+caller-owned output directory, and reports content-free source/output/ordering/
+dimension/residue facts. It keeps output for inspection; the external owner
+cleans it. Full-source SHA-256 is checked before and after, while failure
+summaries also expose staging residue. The tool does not instrument private scan
+functions or attempt to detect board/crop geometry.
+
+No archive MP4 met the initial 20–120 minute and 50–750 MiB bound. After rejecting
+one out-of-bound selection and confirming 71.6 GB free TEMP capacity, the single
+run used the only already-inspected candidate: a regular non-reparse 2.665 GB,
+161.39-minute, 1920x1080 MP4. It completed in 57.78 seconds. The public path
+bounded itself to a 1,938-sample upper limit, published 82 ordered full-resolution
+JPEGs / 23,421,340 bytes, retained the true final frame, left no snapshot/staging
+residue, and preserved the source's exact SHA-256. Output density was 30.48
+frames/hour; the first retained segment-end representative was at 155.008
+seconds.
+
+That first timestamp alone does not prove content loss: the current selector
+deliberately represents a stable segment by its final candidate, and recognized
+content was not opened. It does prove the current selector remains target-
+density-driven through 28–40 frames/hour, a time-based stable-segment cap, and a
+final uniform cap path. Do not silently replace that policy from one metadata
+run. Any later content-driven-only change must be an explicit maintainer choice
+and must compare actual retained/missed lecture content. Runtime, dependencies,
+public APIs, provider behavior, and selection code are unchanged; adjacent
+inspect/extract tests pass 33.
 
 The destination is one visible, caller-composed pair of media flows:
 

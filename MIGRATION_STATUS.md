@@ -3397,3 +3397,17 @@ cleanup is clean, credential residue is zero, and the runner exits 1. No retry,
 second child, model switch, fallback, or runtime change is made. Live execution
 is proven through the repair provider boundary, but successful repair remains
 open and must not be replayed immediately while quota is exhausted.
+
+#696 adds one maintained content-free real-video scenario for the surviving
+provider-free public path. A single authorized 2.665 GB / 161.39-minute /
+1920x1080 MP4 runs through package-root inspection and frame extraction in
+57.78 seconds. The source SHA-256 is unchanged, 82 ordered full-resolution JPEGs
+totaling 23,421,340 bytes are published, the true final frame is retained, and
+snapshot/staging residue is zero. Density is 30.48 frames/hour and the first
+segment-end representative occurs at 155.008 seconds. This proves the current
+28–40/hour feedback target remains active but does not by itself prove opening
+content loss, so selection runtime is not rewritten. The new tool leaves
+caller-owned evidence for external review and reports SHA/residue on failures;
+33 adjacent public video tests pass. Exact TEMP evidence is removed without
+touching the archive. No provider, dependency, public API, or runtime behavior
+changes.
