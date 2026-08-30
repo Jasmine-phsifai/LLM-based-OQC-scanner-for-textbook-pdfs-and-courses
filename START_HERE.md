@@ -579,6 +579,15 @@ only fingerprints PNGs. No common runtime framework is justified. README now
 correctly says the current direct PDF facade remains Config/injected-provider
 and fail-fast rather than already using provider-model merged recognition.
 
+#688 exports experimental `repair_images_to_markdown()` for current OCRLLM
+partial Markdown after the ordinary sidecar is lost. It trusts explicit current
+batches, strictly validates failed-slot/source markers, keeps absolute provider
+lanes and serial fallback, and writes each success atomically before continuing.
+A present sidecar requires resume; no repair state or legacy parser exists.
+Focused tests pass 35. The first bounded live repair child returned honest
+partial with one surviving marker and no state; safe runner reporting was fixed
+without replay, so live repair success remains open.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

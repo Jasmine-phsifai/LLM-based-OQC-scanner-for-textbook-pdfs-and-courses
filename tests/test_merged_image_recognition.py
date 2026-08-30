@@ -9,12 +9,19 @@ from types import SimpleNamespace
 
 import pytest
 
-from ocrllm import recognize_images_to_markdown, resume_images_to_markdown, resume_video
+from ocrllm import (
+    recognize_images_to_markdown,
+    repair_images_to_markdown,
+    resume_images_to_markdown,
+    resume_video,
+)
 from ocrllm.errors import (
     AllCandidatesExhausted,
     ConfigError,
+    InvalidSource,
     OutputError,
     ProviderError,
+    ResumeStateError,
 )
 from ocrllm.providers.google_genai.provider_settings import GoogleGenAISettings
 from ocrllm.providers.provider_model import ProviderModel
@@ -727,3 +734,231 @@ def test_nested_image_resume_uses_absolute_slot_with_changed_lane_count(
     assert not (tmp_path / "resume.ocrllm-state.json").exists()
     assert all(client.closed for client in first_fake.clients)
     assert all(client.closed for client in resume_fake.clients)
+
+
+def _make_repairable_partial(
+    tmp_path,
+    monkeypatch,
+    batches,
+    *,
+    failed_slots: frozenset[int],
+):
+    initial_model = "gemini-repair-initial"
+
+    def initial_behavior(model: str, slot_index: int):
+        if slot_index in failed_slots:
+            raise ProviderError(
+                f"Initial slot {slot_index} failed.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        return _google_image_response(
+            f"initial settled slot {slot_index}",
+            input_tokens=10 + slot_index,
+            output_tokens=2,
+        )
+
+    fake = _install_nested_google(
+        monkeypatch,
+        batches,
+        (initial_model,),
+        initial_behavior,
+    )
+    result = recognize_images_to_markdown(
+        batches,
+        provider=_provider(initial_model),
+        image_task="detail_ocr",
+    )
+    assert result.status == "partial"
+    assert result.output_path is not None
+    output = result.output_path
+    state_path = output.with_name(f"{output.stem}.ocrllm-state.json")
+    assert state_path.is_file()
+    state_path.unlink()
+    return output, fake
+
+
+def test_image_repair_preserves_paid_success_and_flat_lane_rotation(
+    tmp_path,
+    monkeypatch,
+):
+    batches = _four_single_batches(tmp_path)
+    source_hashes = tuple(
+        hashlib.sha256(batch[0].read_bytes()).hexdigest() for batch in batches
+    )
+    output, initial_fake = _make_repairable_partial(
+        tmp_path,
+        monkeypatch,
+        batches,
+        failed_slots=frozenset({1, 2}),
+    )
+    first_model = "gemini-repair-a"
+    second_model = "gemini-repair-b"
+
+    def repair_behavior(model: str, slot_index: int):
+        if (slot_index, model) in {
+            (1, first_model),
+            (2, first_model),
+            (2, second_model),
+        }:
+            raise ProviderError(
+                f"{model} could not repair slot {slot_index}.",
+                code="PROVIDER_TIMEOUT",
+                details={"provider_calls_attempted": 1},
+            )
+        return _google_image_response(
+            f"repaired slot {slot_index} with {model}",
+            input_tokens=100 + slot_index,
+            output_tokens=10 + slot_index,
+        )
+
+    repair_fake = _install_nested_google(
+        monkeypatch,
+        batches,
+        (first_model, second_model),
+        repair_behavior,
+    )
+    partial = repair_images_to_markdown(
+        batches,
+        provider=[_provider(first_model), _provider(second_model)],
+        image_task="detail_ocr",
+        output_path=output,
+    )
+
+    assert repair_fake.models.calls == [
+        (first_model, 1),
+        (second_model, 1),
+        (second_model, 2),
+        (first_model, 2),
+    ]
+    assert partial.status == "partial"
+    assert partial.metadata["provider_call_count"] == 4
+    assert partial.metadata["repaired_slot_count"] == 1
+    assert partial.metadata["failed_slots"][0]["slot_index"] == 2
+    assert tuple(
+        (row["slot_index"], row["model"])
+        for row in partial.metadata["provider_failures"]
+    ) == ((1, first_model),)
+    assert "initial settled slot 0" in partial.markdown
+    assert f"repaired slot 1 with {second_model}" in partial.markdown
+    assert "OCRLLM_FAILED_IMAGE_SLOT index=3 sources=3" in partial.markdown
+    assert "initial settled slot 3" in partial.markdown
+    assert output.read_text(encoding="utf-8") == partial.markdown
+    assert not output.with_name(f"{output.stem}.ocrllm-state.json").exists()
+
+    final_model = "gemini-repair-final"
+    final_fake = _install_nested_google(
+        monkeypatch,
+        batches,
+        (final_model,),
+        lambda model, slot_index: _google_image_response(
+            f"finally repaired slot {slot_index} with {model}",
+            input_tokens=77,
+            output_tokens=7,
+        ),
+    )
+    completed = repair_images_to_markdown(
+        batches,
+        provider=_provider(final_model),
+        image_task="detail_ocr",
+        output_path=output,
+    )
+
+    assert final_fake.models.calls == [(final_model, 2)]
+    assert completed.status == "complete"
+    assert completed.metadata["repair_marker_count"] == 1
+    assert completed.metadata["provider_call_count"] == 1
+    assert "OCRLLM_FAILED_IMAGE_SLOT" not in completed.markdown
+    assert f"repaired slot 1 with {second_model}" in completed.markdown
+    assert f"finally repaired slot 2 with {final_model}" in completed.markdown
+    assert tuple(
+        hashlib.sha256(batch[0].read_bytes()).hexdigest() for batch in batches
+    ) == source_hashes
+    assert all(client.closed for client in initial_fake.clients)
+    assert all(client.closed for client in repair_fake.clients)
+    assert all(client.closed for client in final_fake.clients)
+
+
+def test_image_repair_uses_absolute_nested_lane_assignment(tmp_path, monkeypatch):
+    batches = _four_single_batches(tmp_path)
+    output, _ = _make_repairable_partial(
+        tmp_path,
+        monkeypatch,
+        batches,
+        failed_slots=frozenset({1, 2}),
+    )
+    lane_zero = "gemini-repair-lane-zero"
+    lane_one = "gemini-repair-lane-one"
+    fake = _install_nested_google(
+        monkeypatch,
+        batches,
+        (lane_zero, lane_one),
+        lambda model, slot_index: _google_image_response(
+            f"nested repair {slot_index} {model}",
+            input_tokens=20 + slot_index,
+            output_tokens=2,
+        ),
+    )
+
+    result = repair_images_to_markdown(
+        batches,
+        provider=[[_provider(lane_zero)], [_provider(lane_one)]],
+        image_task="detail_ocr",
+    )
+
+    assert fake.models.calls == [(lane_one, 1), (lane_zero, 2)]
+    assert result.status == "complete"
+    assert tuple(row["model"] for row in result.metadata["current_provider_model_usage"]) == (
+        lane_zero,
+        lane_one,
+    )
+
+
+def test_image_repair_preflight_rejects_state_and_bad_markers_before_provider(
+    tmp_path,
+    monkeypatch,
+):
+    batches = _four_single_batches(tmp_path)
+    output, _ = _make_repairable_partial(
+        tmp_path,
+        monkeypatch,
+        batches,
+        failed_slots=frozenset({1}),
+    )
+    model = "gemini-repair-preflight"
+    fake = _install_nested_google(
+        monkeypatch,
+        batches,
+        (model,),
+        lambda _model, _slot: (_ for _ in ()).throw(AssertionError()),
+    )
+    valid_markdown = output.read_text(encoding="utf-8")
+    state_path = output.with_name(f"{output.stem}.ocrllm-state.json")
+    state_path.write_text("{}", encoding="utf-8")
+    with pytest.raises(ResumeStateError) as state_error:
+        repair_images_to_markdown(
+            batches,
+            provider=_provider(model),
+            image_task="detail_ocr",
+            output_path=output,
+        )
+    assert state_error.value.details["provider_calls_attempted"] == 0
+    state_path.unlink()
+
+    invalid_markdowns = (
+        valid_markdown.replace("sources=2", "sources=99"),
+        valid_markdown + "\n<!-- OCRLLM_FAILED_IMAGE_SLOT index=2 sources=2 code=PROVIDER_UNAVAILABLE -->\n",
+        valid_markdown.replace("OCRLLM_FAILED_IMAGE_SLOT", "OCRLLM_FAILED_SLOT"),
+    )
+    for invalid_markdown in invalid_markdowns:
+        output.write_text(invalid_markdown, encoding="utf-8")
+        with pytest.raises(InvalidSource) as marker_error:
+            repair_images_to_markdown(
+                batches,
+                provider=_provider(model),
+                image_task="detail_ocr",
+                output_path=output,
+            )
+        assert marker_error.value.details["provider_calls_attempted"] == 0
+
+    assert fake.models.calls == []

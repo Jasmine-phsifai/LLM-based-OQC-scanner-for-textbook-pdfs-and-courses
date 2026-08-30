@@ -75,6 +75,7 @@ from ocrllm import (
     GOOGLE_GEMINI_2_5_FLASH,
     batchify_images,
     recognize_images_to_markdown,
+    repair_images_to_markdown,
     resume_images_to_markdown,
 )
 
@@ -94,6 +95,12 @@ slots, one Markdown, atomic state, scalar/flat fallback or fixed nested lanes,
 per-model usage, and ordinary resume. Nested lanes own fixed round-robin slots,
 advance independently with one active slot each, and never rescue another lane.
 Settled slots are not replayed.
+
+Use ordinary `resume_images_to_markdown()` while the sidecar exists. If that
+state was lost but a current OCRLLM partial Markdown remains,
+`repair_images_to_markdown()` can trust the caller's explicit current batches,
+read only strict failed-slot markers, and replace each newly settled marker
+atomically. It creates no replacement state and does not accept legacy formats.
 
 ## Merged audio
 

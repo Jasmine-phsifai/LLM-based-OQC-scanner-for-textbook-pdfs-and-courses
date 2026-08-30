@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #687)
+## 0. Current pruning and execution checkpoint (2026-08-31, #688)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -676,6 +676,48 @@ chooses. Main review did reproduce one current documentation defect: root
 README described the future merged-image PDF route as shipped. It and the
 active-library guide now state that the direct PDF facade still uses the older
 Config/injected-provider grouped image path. #687 changes documentation only.
+
+### #688 ships strict state-loss repair for merged images
+
+Package-root `repair_images_to_markdown()` accepts the exact current batches,
+scalar/flat/nested provider topology, required image task, optional existing
+Markdown target, and timeout. It is available only when the ordinary sidecar is
+absent. A present sidecar rejects before dispatch and directs the caller to
+ordinary resume. It trusts the caller's current batches as explicitly approved;
+it adds no historical source hash, task/provider snapshot, partial schema,
+repair sidecar, or legacy parser.
+
+One narrow parser accepts only complete library failure sections whose heading,
+one-based slot, flattened source range, provider error code, order, and unique
+comment exactly match the supplied batches. Missing, malformed, duplicate,
+or all-failed documents are not repair input. After complete provider/task/
+source/output/marker preflight, repair visits only failed absolute slots
+serially. Slot `i` keeps lane `i % lane_count`; each lane has one invocation-
+local last-success cursor and serial fallback. A whole failed slot leaves that
+cursor unchanged.
+
+Each successful provider result replaces exactly its failed comment through
+the existing atomic writer while its immutable image snapshot is still alive.
+Therefore a later provider failure or snapshot-cleanup warning cannot erase or
+cause replay of earlier paid content. Failed markers remain unchanged; the
+returned partial result records only current terminal failures, current calls/
+tokens, bounded successful-fallback facts, and cleanup warnings. Historical
+usage is not inferred from Markdown. Image/audio executors and repair now share
+one 50-line provider failure evidence reader, removing their duplicated usage/
+cleanup/description parsing without sharing media execution.
+
+Three SDK-boundary public scenarios prove immediate paid-success persistence,
+flat lane rotation, absolute nested assignment, a later repair of only the
+remaining marker, source integrity, optional output resolution, and zero-call
+state/marker rejection. The final focused image/audio/import/wheel set passes
+35 tests. The maintained live runner gained one fixed partial-state-loss repair
+mode. Its sole two-by-eight-image child proved the intended fresh partial setup,
+then repair returned honest partial rather than success: one failed marker
+remained, the 1,047-byte Markdown survived, state was absent, stderr was empty,
+and no retry occurred. The original runner collapsed that useful result into
+`INCOMPLETE_LIVE_EVIDENCE`; it now preserves safe partial repair calls/usage/
+code/source facts on future runs. No production change is justified by the
+provider failure, and the bounded live repair-success gate remains open.
 
 The destination is one visible, caller-composed pair of media flows:
 

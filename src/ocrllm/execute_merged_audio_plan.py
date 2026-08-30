@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
@@ -29,11 +28,13 @@ from .provider_model_usage import (
     add_provider_model_usage,
     build_provider_model_usage_order,
 )
+from .provider_failure_evidence import (
+    bounded_provider_failure_description,
+    provider_cleanup_failed,
+    provider_failure_usage,
+)
 from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_audio import recognize_provider_model_audio
-
-
-_MAX_PROVIDER_FAILURE_DESCRIPTION_CHARS = 512
 
 
 def execute_merged_audio_plan(
@@ -284,7 +285,7 @@ def _execute_audio_slot(
                 timeout_seconds=timeout_seconds,
             )
         except NoSpeechDetected as error:
-            calls, input_tokens, output_tokens = _usage_from_error(error)
+            calls, input_tokens, output_tokens = provider_failure_usage(error)
             outcome = _settled_slot(slot, provider=provider, no_speech=True)
             owner.checkpoint(
                 outcome,
@@ -292,11 +293,11 @@ def _execute_audio_slot(
                 calls=calls,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cleanup_failed=_cleanup_failed(error),
+                cleanup_failed=provider_cleanup_failed(error),
             )
             return tuple(slot_failures), provider_index
         except ProviderError as error:
-            calls, input_tokens, output_tokens = _usage_from_error(error)
+            calls, input_tokens, output_tokens = provider_failure_usage(error)
             outcome = _failed_slot(slot, provider=provider, error=error)
             assert outcome.error_description is not None
             description = outcome.error_description
@@ -306,7 +307,7 @@ def _execute_audio_slot(
                 calls=calls,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cleanup_failed=_cleanup_failed(error),
+                cleanup_failed=provider_cleanup_failed(error),
             )
             slot_failures.append(
                 {
@@ -391,7 +392,7 @@ def _failed_slot(
         vendor=provider.vendor,
         model=provider.model,
         error_code=error.code,
-        error_description=_bounded_error_description(error),
+        error_description=bounded_provider_failure_description(error),
     )
 
 
@@ -441,42 +442,3 @@ def _checkpoint_outcome(
         )
         raise
     return updated, current_usage
-
-
-def _usage_from_error(error: ProviderError | NoSpeechDetected) -> tuple[
-    int,
-    int | None,
-    int | None,
-]:
-    calls = error.details.get("provider_calls_attempted")
-    if type(calls) is not int or calls < 0:
-        calls = 0
-    input_tokens: int | None = None
-    output_tokens: int | None = None
-    rows = error.details.get("settled_model_usage")
-    if type(rows) is tuple:
-        for row in rows:
-            if not isinstance(row, Mapping) or row.get("unit") != "tokens":
-                continue
-            candidate_input = row.get("input_count")
-            candidate_output = row.get("output_count")
-            input_tokens = candidate_input if type(candidate_input) is int else None
-            output_tokens = candidate_output if type(candidate_output) is int else None
-            break
-    return calls, input_tokens, output_tokens
-
-
-def _cleanup_failed(error: ProviderError | NoSpeechDetected) -> bool:
-    return bool(
-        error.details.get("provider_file_cleanup_failed") is True
-        or error.details.get("remote_file_deleted") is False
-        or error.details.get("provider_client_cleanup_failed") is True
-        or error.details.get("provider_client_closed") is False
-    )
-
-
-def _bounded_error_description(error: ProviderError) -> str:
-    description = str(error).strip()
-    if len(description) <= _MAX_PROVIDER_FAILURE_DESCRIPTION_CHARS:
-        return description
-    return description[: _MAX_PROVIDER_FAILURE_DESCRIPTION_CHARS - 3] + "..."

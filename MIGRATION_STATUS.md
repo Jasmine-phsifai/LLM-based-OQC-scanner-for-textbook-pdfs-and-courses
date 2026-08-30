@@ -3312,3 +3312,15 @@ the required explicit original PDF even though merged state fingerprints only
 PNG leaves. No route-independent runtime abstraction is justified. The root and
 active-library READMEs now correct their false implication that current PDF is
 already provider-model merged-image-backed; runtime remains unchanged.
+
+#688 adds package-root `repair_images_to_markdown()` only for a current merged-
+image partial Markdown whose ordinary sidecar is absent. Exact current batches,
+provider topology, image task, and optional output are preflighted; strict
+current markers select failed absolute slots. Repair remains serial, preserves
+nested lane assignment and flat rotation, atomically writes each paid success,
+keeps failures partial, and records current-only usage. No second state, source
+identity artifact, legacy parser, PDF/video owner, or generic repair executor is
+added. Focused tests pass 35. One bounded live child retained honest partial
+output with one marker/state absent; runner reporting was narrowed to preserve
+safe partial evidence next time, and no API replay occurred. Live success stays
+open.

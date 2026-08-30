@@ -14109,3 +14109,39 @@ claim that PDF already reused provider-model merged recognition; the direct
 facade actually remains on Config/injected-provider fail-fast groups. README and
 the active-library guide now say so. #687 is documentation-only and makes no
 provider call, media write, runtime, test, dependency, or output-format change.
+
+## Current working update: #688 adds narrow merged-image state-loss repair
+
+The package root now exposes `repair_images_to_markdown()` for one deliberately
+small case: current OCRLLM partial Markdown survives but its ordinary merged-
+image sidecar is gone. Exact batches, provider topology, image task, and current
+output are explicit; omitted output uses the existing deterministic resolver.
+A present state path rejects with zero calls and tells the caller to resume.
+There is no historical source identity, saved provider/task/batch parameter,
+repair state, legacy compatibility, or PDF/video owner.
+
+The strict parser accepts only unique ordered current-library failure sections
+whose heading slot/source range and comment slot/source range match the caller's
+flattened batches and carry a canonical provider error code. Complete preflight
+validates every provider and image group before dispatch. Repair is serial;
+absolute slot-to-nested-lane mapping and lane-local last-success rotation remain,
+but pool concurrency is intentionally absent from this manual side path. Each
+success atomically replaces its exact marker before its snapshot exits, so later
+failure cannot discard paid content. Remaining failures return partial with
+current-only calls/tokens and terminal evidence.
+
+The public facade is 127 lines, the marker parser 98, and the image-only repair
+owner 230; no oversized all-in-one function or generic repair executor was kept.
+A 50-line provider failure evidence module replaces duplicated image/audio
+usage, cleanup, and bounded-description helpers. Three feature scenarios plus
+adjacent audio/import/wheel checks pass 35 tests.
+
+One authorized live two-by-eight-image runner child created the fixed partial
+input and deleted only its owned state, but the subsequent repair returned
+partial. Primary marker-only review found two headings and the original slot-2
+`PROVIDER_UNAVAILABLE` marker in the surviving 1,047-byte Markdown; state was
+absent, stderr empty, and the process ended. The old runner emitted only
+`INCOMPLETE_LIVE_EVIDENCE`, losing the in-memory safe current repair failure
+facts, so runner reporting now preserves partial code/calls/usage/source facts.
+No API replay or production fix followed. This is honest partial/failure
+evidence, not a live repair-success proof; that gate remains open.

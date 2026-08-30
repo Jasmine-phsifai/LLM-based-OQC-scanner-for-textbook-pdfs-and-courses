@@ -87,6 +87,11 @@ route-independent defect was documentation: the root README incorrectly stated
 that the current PDF facade already reused provider-model merged recognition.
 #687 corrects that claim only.
 
+#688 now ships the independently useful merged-image marker consumer described
+above. It does not make the old fail-fast PDF facade repairable: only current
+merged-image Markdown can contain its accepted marker, and PDF A/B ownership
+remains the same explicit maintainer choice.
+
 Do not implement repair against the old fail-fast PDF path or add failure
 publication to that path merely to create repair input. Image/audio repair may
 remain independently useful, but whether PDF first becomes visibly composed or

@@ -12,14 +12,17 @@ from pathlib import Path
 from ocrllm import (
     GOOGLE_GEMINI_2_5_FLASH,
     recognize_images_to_markdown,
+    repair_images_to_markdown,
     resume_images_to_markdown,
 )
 from ocrllm.errors import OCRLLMError, STABLE_ERROR_CODES
+from ocrllm.providers.provider_model import ProviderModel
 
 
 BATCH_COUNT = 2
 BATCH_SIZE = 8
 IMAGE_TASK = "detail_ocr"
+UNSERVED_REPAIR_MODEL = "ocrllm-deliberately-unserved-repair"
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -45,11 +48,18 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="run the fixed fresh two-lane provider-pool scenario",
     )
+    parser.add_argument(
+        "--repair",
+        action="store_true",
+        help="run one fixed partial-state-loss then marker-repair scenario",
+    )
     arguments = parser.parse_args(argv)
     if len(arguments.batch) != BATCH_COUNT:
         parser.error("--batch must be supplied exactly twice")
     if arguments.resume and arguments.nested_lanes:
         parser.error("the fixed nested-lane live scenario is fresh-only")
+    if arguments.repair and (arguments.resume or arguments.nested_lanes):
+        parser.error("the fixed repair scenario is separate from resume/nested modes")
     return arguments
 
 
@@ -60,6 +70,13 @@ def run_google_genai_merged_image_smoke(
     batches = tuple(tuple(Path(path) for path in batch) for batch in arguments.batch)
     output_path = Path(arguments.output)
     state_path = output_path.with_name(f"{output_path.stem}.ocrllm-state.json")
+    if arguments.repair:
+        return _run_repair_scenario(
+            batches,
+            output_path=output_path,
+            state_path=state_path,
+            timeout_seconds=arguments.timeout,
+        )
     before: tuple[tuple[int, str], ...] | None = None
     provider = (
         [[GOOGLE_GEMINI_2_5_FLASH], [GOOGLE_GEMINI_2_5_FLASH]]
@@ -84,7 +101,7 @@ def run_google_genai_merged_image_smoke(
                 timeout_seconds=arguments.timeout,
             )
     except OCRLLMError as error:
-        return _failure_summary(
+        summary = _failure_summary(
             error,
             batches,
             before,
@@ -103,6 +120,168 @@ def run_google_genai_merged_image_smoke(
         state_path,
         resume=arguments.resume,
         nested_lanes=arguments.nested_lanes,
+    )
+
+
+def _run_repair_scenario(
+    batches: tuple[tuple[Path, ...], ...],
+    *,
+    output_path: Path,
+    state_path: Path,
+    timeout_seconds: float,
+) -> dict[str, object]:
+    before: tuple[tuple[int, str], ...] | None = None
+    try:
+        before = _source_fingerprints(batches)
+        partial = recognize_images_to_markdown(
+            batches,
+            provider=[
+                [GOOGLE_GEMINI_2_5_FLASH],
+                [_unserved_repair_provider()],
+            ],
+            image_task=IMAGE_TASK,
+            output_path=output_path,
+            timeout_seconds=timeout_seconds,
+        )
+        partial_metadata = partial.metadata
+        partial_usage = _safe_usage(
+            partial_metadata.get("current_provider_model_usage")
+        )
+        partial_failed = partial_metadata.get("failed_slots")
+        partial_output = _artifact_summary(output_path)
+        valid_partial = (
+            partial.status == "partial"
+            and partial.output_path == output_path
+            and partial_metadata.get("slot_count") == BATCH_COUNT
+            and partial_metadata.get("settled_slot_count") == 1
+            and partial_metadata.get("provider_call_count") == 1
+            and partial_usage is not None
+            and partial_usage["calls"] == 1
+            and type(partial_failed) is tuple
+            and len(partial_failed) == 1
+            and isinstance(partial_failed[0], Mapping)
+            and partial_failed[0].get("slot_index") == 1
+            and partial_failed[0].get("model") == UNSERVED_REPAIR_MODEL
+            and partial_failed[0].get("code") == "PROVIDER_UNAVAILABLE"
+            and partial_output.get("exists") is True
+            and state_path.is_file()
+        )
+        if not valid_partial:
+            return _invalid_summary(
+                output_path,
+                state_path,
+                result_status=getattr(partial, "status", None),
+            )
+        state_path.unlink()
+        repaired = repair_images_to_markdown(
+            batches,
+            provider=GOOGLE_GEMINI_2_5_FLASH,
+            image_task=IMAGE_TASK,
+            output_path=output_path,
+            timeout_seconds=timeout_seconds,
+        )
+    except OCRLLMError as error:
+        return _failure_summary(
+            error,
+            batches,
+            before,
+            output_path,
+            state_path,
+            resume=False,
+            nested_lanes=False,
+        )
+        summary["operation"] = "repair"
+        return summary
+    except Exception:
+        return _invalid_summary(output_path, state_path)
+
+    metadata = repaired.metadata
+    usage = _safe_usage(metadata.get("current_provider_model_usage"))
+    final_output = _artifact_summary(output_path)
+    valid_repair = (
+        repaired.status == "complete"
+        and repaired.source_type == "image"
+        and repaired.profile == IMAGE_TASK
+        and repaired.output_path == output_path
+        and repaired.warnings == ()
+        and metadata.get("slot_count") == BATCH_COUNT
+        and metadata.get("repair_marker_count") == 1
+        and metadata.get("repaired_slot_count") == 1
+        and metadata.get("settled_slot_count") == BATCH_COUNT
+        and metadata.get("provider_call_count") == 1
+        and usage is not None
+        and usage["calls"] == 1
+        and "OCRLLM_FAILED_IMAGE_SLOT" not in repaired.markdown
+        and final_output.get("exists") is True
+        and final_output != partial_output
+        and not state_path.exists()
+        and before is not None
+        and _sources_unchanged(batches, before)
+    )
+    if repaired.status == "partial":
+        failed_slots = _safe_failed_slots(metadata.get("failed_slots"))
+        calls = metadata.get("provider_call_count")
+        if (
+            failed_slots is not None
+            and len(failed_slots) == 1
+            and type(calls) is int
+            and calls >= 0
+            and before is not None
+            and _sources_unchanged(batches, before)
+        ):
+            return {
+                "status": "partial",
+                "operation": "repair",
+                "provider": "google",
+                "model": GOOGLE_GEMINI_2_5_FLASH.model,
+                "image_task": IMAGE_TASK,
+                "batch_count": BATCH_COUNT,
+                "failed_slot_count": 1,
+                "repair_provider_call_count": calls,
+                "repair_provider_usage": usage,
+                "failed_slots": failed_slots,
+                "sources_unchanged": True,
+                "output": final_output,
+                "state": _artifact_summary(state_path),
+            }
+    if not valid_repair:
+        return _invalid_summary(
+            output_path,
+            state_path,
+            result_status=getattr(repaired, "status", None),
+        )
+    return {
+        "status": "passed",
+        "operation": "repair",
+        "provider": "google",
+        "model": GOOGLE_GEMINI_2_5_FLASH.model,
+        "image_task": IMAGE_TASK,
+        "batch_count": BATCH_COUNT,
+        "batch_sizes": [BATCH_SIZE, BATCH_SIZE],
+        "failed_slot_count": 1,
+        "fresh_provider_call_count": 1,
+        "repair_provider_call_count": 1,
+        "repair_input_tokens": usage["input_tokens"],
+        "repair_output_tokens": usage["output_tokens"],
+        "sources_unchanged": True,
+        "partial_output": partial_output,
+        "output": final_output,
+        "state": {"exists": False},
+    }
+
+
+def _unserved_repair_provider() -> ProviderModel:
+    return ProviderModel(
+        vendor=GOOGLE_GEMINI_2_5_FLASH.vendor,
+        model=UNSERVED_REPAIR_MODEL,
+        adapter_id=GOOGLE_GEMINI_2_5_FLASH.adapter_id,
+        settings=GOOGLE_GEMINI_2_5_FLASH.settings,
+        supports_plain_ocr=True,
+        supports_detail_ocr=True,
+        supports_audio=False,
+        default_image_batch_size=BATCH_SIZE,
+        default_audio_minutes=None,
+        retry_rules={},
     )
 
 

@@ -64,6 +64,7 @@ from ocrllm import (
     GOOGLE_GEMINI_2_5_FLASH,
     batchify_images,
     recognize_images_to_markdown,
+    repair_images_to_markdown,
     resume_images_to_markdown,
 )
 
@@ -101,6 +102,15 @@ raises `AllCandidatesExhausted`. Resume requires the exact source/group/task
 identity, reuses settled slots, and calls providers only for unresolved work.
 Each resume invocation starts every supplied lane from its first candidate; lane
 topology and cursors are not persisted.
+
+Experimental `repair_images_to_markdown()` is only for a current OCRLLM partial
+Markdown after its ordinary sidecar has been lost. It requires the explicit
+current batches, provider topology, and image task; an omitted output uses the
+same deterministic rule as recognition. A still-present sidecar is rejected in
+favor of ordinary resume. Repair parses only exact library failed-slot comments,
+keeps absolute nested-lane assignment, runs serially, writes every paid success
+back before advancing, and never creates repair state or accepts legacy
+Markdown.
 
 ## Audio
 

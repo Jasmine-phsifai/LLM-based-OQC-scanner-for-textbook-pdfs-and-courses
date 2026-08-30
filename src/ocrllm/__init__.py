@@ -15,6 +15,9 @@ from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
 from .recognize_images_to_markdown import (
     recognize_images_to_markdown as recognize_images_to_markdown,
 )
+from .repair_images_to_markdown import (
+    repair_images_to_markdown as repair_images_to_markdown,
+)
 from .resume_images_to_markdown import (
     resume_images_to_markdown as resume_images_to_markdown,
 )
@@ -103,6 +106,9 @@ if TYPE_CHECKING:
     from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
     from .recognize_images_to_markdown import (
         recognize_images_to_markdown as recognize_images_to_markdown,
+    )
+    from .repair_images_to_markdown import (
+        repair_images_to_markdown as repair_images_to_markdown,
     )
     from .resume_images_to_markdown import (
         resume_images_to_markdown as resume_images_to_markdown,
@@ -225,6 +231,10 @@ _PUBLIC_IMPORTS = {
         ".recognize_images_to_markdown",
         "recognize_images_to_markdown",
     ),
+    "repair_images_to_markdown": (
+        ".repair_images_to_markdown",
+        "repair_images_to_markdown",
+    ),
     "resume_images_to_markdown": (
         ".resume_images_to_markdown",
         "resume_images_to_markdown",
@@ -290,6 +300,7 @@ __all__ = [
     "recognize_batch",
     "recognize_long_mp3",
     "recognize_images_to_markdown",
+    "repair_images_to_markdown",
     "resume_images_to_markdown",
     "resume_audio_to_markdown",
     "resume_video",
