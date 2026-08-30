@@ -198,6 +198,12 @@ def test_base_install_probe_resolves_public_class_type_hints() -> None:
     assert "error.details['provider_calls_attempted'] == 0" in base_probe
     assert "assert callable(repair_images_to_markdown)" in base_probe
     assert "assert callable(repair_audio_to_markdown)" in base_probe
+    assert "usage['input_tokens'] == 17" in base_probe
+    assert "usage['output_tokens'] is None" in base_probe
+    assert "usage['provider_token'] == '[REDACTED]'" in base_probe
+    assert "invalid_usage['input_tokens'] == '[REDACTED]'" in base_probe
+    assert "invalid_usage['output_tokens'] == '[REDACTED]'" in base_probe
+    assert "token_secret not in repr(usage_error.details)" in base_probe
 
 
 def test_base_wheel_budget_keeps_bounded_product_headroom() -> None:

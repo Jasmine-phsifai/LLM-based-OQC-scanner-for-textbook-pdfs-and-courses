@@ -265,6 +265,7 @@ from ocrllm import (
     DashScopeSettings,
     GOOGLE_GEMINI_2_5_FLASH,
     InvalidSource,
+    ProviderError,
     RecognitionResult,
     repair_audio_to_markdown,
     repair_images_to_markdown,
@@ -283,6 +284,28 @@ assert DashScopeCredentialPool in typing.get_args(
     factory_hints['credential_pool']
 )
 assert factory_hints['return'] is DashScopeSettings
+token_secret = 'INSTALLED-TOKEN-SECRET-DO-NOT-RENDER'
+usage_error = ProviderError(
+    details={
+        'usage': {
+            'input_tokens': 17,
+            'output_tokens': None,
+            'provider_token': token_secret,
+        },
+        'invalid_usage': {
+            'input_tokens': token_secret,
+            'output_tokens': -1,
+        },
+    }
+)
+usage = usage_error.details['usage']
+invalid_usage = usage_error.details['invalid_usage']
+assert usage['input_tokens'] == 17
+assert usage['output_tokens'] is None
+assert usage['provider_token'] == '[REDACTED]'
+assert invalid_usage['input_tokens'] == '[REDACTED]'
+assert invalid_usage['output_tokens'] == '[REDACTED]'
+assert token_secret not in repr(usage_error.details)
 missing_image_output = pathlib.Path.cwd() / 'missing-image-repair.md'
 missing_audio_output = pathlib.Path.cwd() / 'missing-audio-repair.md'
 try:
