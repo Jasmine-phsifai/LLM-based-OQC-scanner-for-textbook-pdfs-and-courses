@@ -570,6 +570,15 @@ and an authorized marker-only archive scan found no real failure sample. The
 next PDF choice is visible page extraction composed with merged image APIs, or
 a new one-call provider-model PDF lifecycle. Runtime remains unchanged.
 
+#687 supplies the concrete tradeoff without choosing for the maintainer. Visible
+extraction can reuse unchanged PDF snapshot/inspection/transient group rendering
+and atomically publish caller-owned ordered PNGs with no state or provider. The
+one-call route must also own retained pages, cleanup, PDF result adaptation, all
+provider topologies, and original-PDF identity for resume because merged state
+only fingerprints PNGs. No common runtime framework is justified. README now
+correctly says the current direct PDF facade remains Config/injected-provider
+and fail-fast rather than already using provider-model merged recognition.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

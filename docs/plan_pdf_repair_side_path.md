@@ -48,6 +48,45 @@ One maintainer choice remains:
    completion. This is more convenient but must coexist with the shipped
    Config/injected-provider PDF path and therefore carries more lifecycle code.
 
+### Feasibility refinement (2026-08-30, #687)
+
+Route A can reuse the current snapshot, inspection, and transient eight-page
+renderer without changing their contracts. One new `extract_pdf_pages()` owner
+can render each existing bounded group into a private group directory, move the
+validated PNGs into one publication staging directory while the group context
+is open, and atomically rename the complete directory to the caller's exact
+target. The default target follows the maintainer's same-stem sibling-directory
+rule; any existing file, directory, symlink, junction, or reparse target is
+rejected. Returned paths are the exact ordered `page-000001.png` leaves, and the
+caller owns them. No manifest, `PdfPage`, page plan, provider input, cleanup
+callback, or new state is needed.
+
+Extraction still renders in the current groups of at most eight, preserving the
+current group-based pixel allocation. A later `batchify_images()` call validates
+its chosen groups normally. An explicit group larger than eight may be rejected
+by the existing aggregate image limits; extraction does not adaptively rerender
+or bind itself to a provider. Normal 200-DPI A4 pages are below the eight-page
+pixel budget, so this is primarily an explicit edge boundary rather than a new
+quality algorithm.
+
+Route B is materially larger than thin delegation. It must accept the already-
+public scalar/flat/nested provider topology, resolve a PDF-specific Markdown and
+owned page directory, persist pages across partial/zero-settlement outcomes,
+adapt the merged-image result from image to PDF, and clean only known pages
+after complete publication. More importantly, the current merged-image sidecar
+fingerprints rendered PNGs, not the caller's explicit original PDF. A PDF-level
+resume that accepts the required explicit source therefore needs an additional
+source-identity owner, a retained source snapshot, or a complete provider-free
+rerender comparison. Omitting the source or silently trusting unrelated pages
+would contradict the maintainer's explicit-source resume rule.
+
+There is no route-independent runtime refactor to land before this choice. A
+retention flag on the transient renderer, a generic directory publisher, or a
+standalone page-state layer would encode undecided ownership. The one proven
+route-independent defect was documentation: the root README incorrectly stated
+that the current PDF facade already reused provider-model merged recognition.
+#687 corrects that claim only.
+
 Do not implement repair against the old fail-fast PDF path or add failure
 publication to that path merely to create repair input. Image/audio repair may
 remain independently useful, but whether PDF first becomes visibly composed or

@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #686)
+## 0. Current pruning and execution checkpoint (2026-08-30, #687)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -647,6 +647,35 @@ PDF page extraction composed with the merged-image APIs (recommended), or a new
 one-call provider-model PDF owner with deterministic retained pages and cleanup.
 No runtime, parser, artifact, provider call, test, or source mutation changed in
 #686.
+
+### #687 turns the PDF choice into concrete ownership and fixes current docs
+
+Route A needs one provider-free `extract_pdf_pages()` owner plus a package-root
+export. It can reuse unchanged snapshot/inspection and the unchanged transient
+eight-page renderer: move each validated group into one private staging tree,
+then publish one complete caller-owned same-stem directory. It returns exact
+ordered PNG paths; current `batchify_images()` and merged recognize/resume own
+everything later. There is no page DTO, manifest, provider parameter, PDF state,
+or automatic deletion after publication. Existing PDF tests must be extended
+rather than adding a one-test-file-per-function mirror, and the installed
+`pdf-vision` profile supplies the real provider-free gate.
+
+Route B needs more than fresh/resume wrappers. It must keep all public provider
+topologies, plan PDF-specific output/page ownership, retain pages through
+partial and zero settlement, adapt image results to PDF, and clean known files
+only after complete publication. Current merged state fingerprints only the
+rendered PNG leaves; it does not bind the explicit original PDF required by a
+PDF resume call. Route B therefore needs a PDF source-identity owner, retained
+source snapshot, or full rerender comparison. A scalar-only facade or resume
+without explicit source would narrow already-fixed product contracts and is
+rejected.
+
+No renderer retention flag, generic directory publisher, common page state, or
+other route-independent runtime change is justified before the maintainer
+chooses. Main review did reproduce one current documentation defect: root
+README described the future merged-image PDF route as shipped. It and the
+active-library guide now state that the direct PDF facade still uses the older
+Config/injected-provider grouped image path. #687 changes documentation only.
 
 The destination is one visible, caller-composed pair of media flows:
 

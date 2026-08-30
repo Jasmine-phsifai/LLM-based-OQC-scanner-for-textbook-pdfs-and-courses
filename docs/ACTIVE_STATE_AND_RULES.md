@@ -14084,3 +14084,28 @@ product choice is therefore explicit caller-owned page extraction composed with
 merged image APIs (recommended), or a new one-call provider-model PDF lifecycle
 that owns deterministic retained pages and cleanup. #686 changes documentation
 only and adds no parser, artifact, provider call, test, or runtime behavior.
+
+## Current working update: #687 bounds both PDF routes and corrects a false claim
+
+Two independent read-only audits and primary code review traced both PDF choices.
+Visible extraction can remain small: one public owner reuses the unchanged PDF
+snapshot, inspection, and transient eight-page renderer, moves each validated
+group into a private staging directory, and atomically publishes one ordered
+caller-owned page directory. It adds no provider, page object/manifest, state,
+or cleanup after publication. Existing PDF feature tests and installed-profile
+smoke are the verification homes; a one-test-file-per-function mirror is not.
+
+The one-call route is not four thin wrappers. It must preserve scalar/flat/nested
+providers, own PDF-specific targets and retained pages, adapt image results to
+PDF, and clean only after complete publication. The merged sidecar fingerprints
+rendered PNGs rather than the explicit original PDF, so PDF resume additionally
+needs a source-identity owner, retained snapshot, or full rerender comparison.
+Dropping the source argument or shipping scalar-only first would contradict
+current maintainer decisions.
+
+No common renderer flag/state/publisher was edited because it would encode the
+unselected lifecycle. The root README did contain a reproduced false current
+claim that PDF already reused provider-model merged recognition; the direct
+facade actually remains on Config/injected-provider fail-fast groups. README and
+the active-library guide now say so. #687 is documentation-only and makes no
+provider call, media write, runtime, test, dependency, or output-format change.

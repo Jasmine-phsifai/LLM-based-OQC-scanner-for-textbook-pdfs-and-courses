@@ -26,14 +26,20 @@ Read these files before changing the package:
 - `contracts/` and `worker/` remain frozen until a real consumer justifies a
   same-slice protocol change.
 
-The active media flow is visible and caller-composed:
+The current media boundaries are:
 
 ```text
 images -> batchify_images -> recognize/resume one merged image Markdown
-PDF    -> render ordered pages -> reuse merged image recognition/resume
+PDF    -> current recognize(Config) renders fail-fast groups of up to 8 pages
 MP3    -> split_audio -> recognize/resume one merged audio Markdown
 video  -> inspect/extract full frames and audio -> use the image/audio flows
 ```
+
+The provider-model PDF path is not yet merged-image-backed. The current product
+choice is whether to expose caller-owned page extraction before the existing
+merged-image APIs, or add a separate one-call provider-model PDF lifecycle.
+Earlier wording that described the future merged route as already shipped was
+incorrect and was fixed by iteration #687.
 
 The obsolete combined video recognition, journal, outcome, composition, and
 publication surface has been removed after its merged image/audio replacements

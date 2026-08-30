@@ -166,9 +166,11 @@ coordinate branches, compose Markdown, or clean extraction outputs.
 ## PDF
 
 The direct PDF vision facade snapshots one local PDF, renders ordered pages with
-PDFium, and reuses image recognition in groups of at most eight. Rendered pages
-are removed after settlement. Ordinary image sidecars provide resume; the new
-library does not parse legacy application repair Markdown.
+PDFium, and reuses the original Config/injected-provider image recognition in
+groups of at most eight. Rendered pages are removed after each group. Ordinary
+child image sidecars provide resume. This facade does not yet call
+`batchify_images()` or the provider-model merged-image recognition/resume APIs,
+and it does not parse legacy application repair Markdown.
 
 Install `ocrllm[pdf-vision]` plus the selected image-provider extra. PDF text
 extraction, passwords, arbitrary page ranges, and batch-PDF input are not part

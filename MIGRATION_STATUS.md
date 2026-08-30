@@ -3302,3 +3302,13 @@ marker-only scan of four authorized archive Markdown files / 6,409 lines found
 no real failure artifact. PDF must next choose visible caller-owned page
 extraction plus merged image APIs, or a new one-call provider-model PDF owner.
 No runtime behavior changed.
+
+#687 reduces the open PDF choice to concrete ownership. Visible extraction can
+reuse unchanged snapshot/inspection/transient eight-page rendering and publish
+one complete caller-owned same-stem page directory before existing merged-image
+planning. A one-call provider-model owner must additionally preserve all
+provider topologies, own retained pages and cleanup, adapt PDF results, and bind
+the required explicit original PDF even though merged state fingerprints only
+PNG leaves. No route-independent runtime abstraction is justified. The root and
+active-library READMEs now correct their false implication that current PDF is
+already provider-model merged-image-backed; runtime remains unchanged.
