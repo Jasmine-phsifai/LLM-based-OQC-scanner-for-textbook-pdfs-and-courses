@@ -78,6 +78,8 @@ def main() -> int:
     result_bytes = result.markdown.encode("utf-8")
     summary = {
         "status": result.status,
+        "planning_mode": "whole" if args.interval_minutes == -1 else "interval",
+        "duration_seconds": slices[-1].logical_end_seconds,
         "slot_count": result.metadata.get("slot_count"),
         "settled_slot_count": result.metadata.get("settled_slot_count"),
         "no_speech_slot_count": result.metadata.get("no_speech_slot_count"),
@@ -128,7 +130,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     if (
-        args.interval_minutes <= 0
+        args.interval_minutes != -1 and args.interval_minutes <= 0
         or args.expected_slots <= 0
         or args.expected_current_calls < 0
         or args.expected_reused_slots < 0
@@ -136,6 +138,8 @@ def _parse_args() -> argparse.Namespace:
         or args.timeout_seconds <= 0
     ):
         parser.error("numeric scenario arguments are outside their fixed bounds")
+    if args.interval_minutes == -1 and args.expected_slots != 1:
+        parser.error("whole mode requires exactly one expected slot")
     return args
 
 

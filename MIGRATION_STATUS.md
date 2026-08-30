@@ -3188,3 +3188,15 @@ two-slot Google run completed, published 1,171 bytes, removed state, and left
 the source unchanged; its process exited 1 afterward because the safe reporter
 could not JSON-serialize immutable usage metadata. The reporter is fixed and
 the API call was not replayed.
+
+#677 proves the scalar short-whole branch through that fixed reporter without
+changing production runtime. A credential-free public whole call stopped at
+`CONFIG_MISSING` with zero calls, no Markdown, one initial sidecar, and unchanged
+source. Exactly one later credential/proxy-isolated child processed the same
+123.9707-second authorized speech source as one whole slot: one generation,
+4,009/69 input/output tokens, zero warnings, matching 337-byte Markdown, removed
+state, unchanged source, and runner exit 0 with `gate=passed`. The maintained
+runner now admits exact `-1` and reports whole/interval mode plus duration. The
+existing <=300-second branch and SDK-boundary test identify inline transport;
+no public debug metadata, production API/schema, fallback, retry, pool, repair,
+or old-video change was added.

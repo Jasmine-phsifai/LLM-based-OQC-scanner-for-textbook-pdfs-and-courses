@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #676)
+## 0. Current pruning and execution checkpoint (2026-08-30, #677)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -304,6 +304,33 @@ library had returned; the tool now projects those rows to ordinary safe dicts.
 The API operation was not replayed. This is complete recognition evidence with
 an honest harness-reporting defect, not a provider/runtime failure. Flat audio
 fallback and retry remain later separately evidenced slices.
+
+### #677 closes the scalar short-whole live gate without runtime expansion
+
+The maintained merged-audio runner now accepts exact `interval_minutes=-1` as
+the already-public whole-source plan and emits safe planning mode plus decoded
+duration facts. Its immutable usage projection was separately exercised before
+the provider call; no fake live pytest or second runner framework was added.
+
+One existing authorized 123.9707-second speech MP3 first reached
+`CONFIG_MISSING` through the public whole path with zero calls, no Markdown, one
+unresolved sidecar, and unchanged bytes. One subsequent credential/proxy-
+isolated child then completed with native exit 0: one whole slot, one generation,
+4,009 input and 69 output tokens, zero warnings, a 337-byte Markdown matching
+the returned result, no remaining sidecar, unchanged source, and fixed-runner
+`gate=passed`. The source code's <=300-second whole branch and the existing
+SDK-boundary assertion together identify the inline route; no transport debug
+field was added to the public result merely for this gate. No retry, fallback,
+resume, model switch, or second live child was invoked by the scenario.
+
+The delegated controller initially had one complex launch command rejected
+before startup; the split controller then ran exactly one Stage A and one Stage
+B child. An early report incorrectly claimed Stage A artifacts had been deleted;
+timestamps and direct follow-up established they had never been deleted or
+recreated. Primary review confirmed safe JSON, state schema, output digest,
+source size/hash, and zero remaining runner processes. All four owned evidence
+files were then removed from the exact TEMP root. Production code, API, schema,
+tests, provider policy, and the frozen video family are unchanged.
 
 The destination is one visible, caller-composed pair of media flows:
 

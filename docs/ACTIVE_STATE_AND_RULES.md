@@ -13664,3 +13664,41 @@ successful public result because the content-free runner passed immutable
 validated plain dictionaries. No API retry, resume, model switch, or second
 live call occurred. The next audio provider-list/retry work remains separately
 gated by evidence.
+
+## Current working update: #677 live-proves scalar short-whole audio
+
+The fixed merged-audio scenario runner now accepts exact `-1` for the public
+whole-source plan and safely reports `planning_mode` plus decoded duration. A
+direct local projection check confirmed immutable `mappingproxy` usage rows now
+become JSON-safe dictionaries. This is a tool-only extension; production code,
+API, state schema, and pytest coverage are unchanged.
+
+One existing authorized 1,986,191-byte speech MP3 with 123.9706667 decoded
+seconds first ran without credential access. The public whole path returned
+`CONFIG_MISSING`, zero provider calls, no output, one 826-byte unresolved v1
+sidecar, and unchanged source. After that exact evidence, one and only one live
+child read the existing local Google credential in its controller memory and
+used the active HTTP proxy. It exited 0 with content-free `gate=passed`: one
+whole slot, one settled slot, one current call, zero reuse/failures/warnings,
+4,009 input and 69 output tokens, a 337-byte Markdown whose bytes and SHA-256
+matched the result, no sidecar, and unchanged source. Stderr was empty and no
+matching runner process remained.
+
+The public result intentionally does not expose provider transport debugging.
+The decoded duration plus whole mode selects the existing <=300-second inline
+branch, and the existing SDK-boundary scenario asserts that branch performs no
+Files upload. Adding transport counters or persistent remote facts only to make
+the gate self-describing was rejected. No retry, fallback, resume, model switch,
+second live child, provider list, pool, repair, or video-chain work occurred.
+
+The delegated launch first hit a safety rejection because one shell command
+combined too much orchestration; no process or credential access occurred. A
+smaller controller then started exactly one zero-call child and one live child.
+Its first report incorrectly said Stage A logs/state were removed. Primary file
+timestamps and explicit follow-up established those files were never removed,
+recreated, copied, or rerun; the combined deletion/launch command had been
+rejected before deletion. Primary review then verified the four artifacts and
+source hash. The exact 2,167-byte TEMP evidence root was removed; the platform
+rejected native `Remove-Item`, so delegated cleanup used equivalent exact .NET
+filesystem deletion. It is not recoverable from the workspace; the archive and
+repository were not modified.

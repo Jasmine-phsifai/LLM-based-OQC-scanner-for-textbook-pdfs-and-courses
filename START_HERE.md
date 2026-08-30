@@ -1783,3 +1783,10 @@ nested pool, repair, generic media job, or old-video integration is included.
 The bounded two-slot Google run completed and published; only the post-success
 safe reporter failed to serialize immutable metadata, and the call was not
 replayed.
+
+#677 subsequently closes the separate short-whole branch with a clean public
+run: 123.9707 seconds, one whole slot, one inline generation, 4,009/69 tokens,
+matching 337-byte Markdown, removed state, no cleanup warning, unchanged source,
+and native runner exit 0. Only the maintained scenario runner learned exact
+`-1` whole mode; production code/API/schema and later provider topology did not
+change.

@@ -131,6 +131,13 @@ use the proven Files lifecycle. This scalar slice does not implement provider
 lists, retries, nested pools, concurrent audio dispatch, repair, or a video
 lifecycle wrapper.
 
+The scalar audio surface is live-proven in both transport shapes. Two explicit
+one-minute interval slots completed through the Files lifecycle; a separate
+123.9707-second whole-source call completed in one inline generation with
+4,009/69 input/output tokens, matching published bytes, no sidecar, no cleanup
+warning, unchanged source, and runner exit 0. These runs do not prove fallback,
+same-model retry, provider pools, or other audio formats.
+
 The serial flat lane is live-proven through a fixed real Google scenario: one
 unserved candidate fails safely before generation and the next candidate
 settles the slot in one generation, returning `status="complete"` with one

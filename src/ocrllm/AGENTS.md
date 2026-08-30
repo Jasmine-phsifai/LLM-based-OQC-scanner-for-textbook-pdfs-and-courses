@@ -114,6 +114,16 @@ or old-video consumption in this slice. The bounded two-slot Google run
 completed and published; its exit-1 was a post-success safe-reporter
 `mappingproxy` serialization defect, now fixed without replaying the API call.
 
+#677 closes the remaining scalar short-whole evidence gap. One public
+`split_audio(..., interval_minutes=-1)` plus
+`recognize_audio_to_markdown()` run processed 123.9707 seconds through one
+generation, returned 4,009/69 input/output tokens, published matching Markdown,
+removed state, emitted no cleanup warning, preserved source bytes, and exited 0
+with the fixed safe reporter. The <=300-second whole branch remains inline by
+the existing route and SDK-boundary assertion; do not add public transport
+diagnostics solely for a test. No production API/schema/test/provider policy or
+later provider topology changed.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded
