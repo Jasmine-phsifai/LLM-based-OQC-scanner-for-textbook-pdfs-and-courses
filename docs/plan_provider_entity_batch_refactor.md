@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #703)
+## 0. Current pruning and execution checkpoint (2026-08-31, #704)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1152,6 +1152,57 @@ import budgets: 1,466 tests pass with one expected RapidOCR skip; wheel size is
 327,312 bytes and base target size is 1,683,054 bytes. The exact proof root self-
 cleans. Runtime is unchanged from #702, the 320 KiB/2 MiB budgets remain fixed,
 and no provider, credential, media or network action occurs.
+
+### #704 audits the shipped boundary and reduces the remaining queue
+
+The provider/media migration sequence is now implemented rather than merely
+planned. The current package-root product matrix is:
+
+| Area | Shipped direct-library boundary | Current evidence / limitation |
+| --- | --- | --- |
+| Image | `batchify_images`; scalar/flat/nested merged recognition, ordinary resume, experimental marker repair | Google scalar/flat/nested and DashScope scalar/merged/resume have real evidence; image repair is offline-complete and live-partial, but Google repair success remains external-state deferred |
+| Audio | MP3 whole/integer-minute planning; scalar/flat/nested merged recognition, ordinary resume, experimental interval repair | Google inline/Files, nested resume and audio repair are real-live-proven; WAV/M4A and DashScope audio remain deliberately deferred |
+| Video | `inspect_video`, caller-owned frame/audio extraction, frame batching, audio splitting, stateless one-branch `resume_video` router | Both provider-free branches are real long-media and installed-proven; no combined video recognition/state/composer exists or is planned |
+| PDF | Existing direct `recognize(PDF, Config)` PDFium/grouped-image path | Direct vision is live-proven, but it is not the provider-model merged path and cannot produce current repair markers; replacement ownership remains undecided |
+| Providers | Google native and DashScope compatible adapters, two presets, live discovery, scalar/flat/nested lanes | Same-vendor fallback and both vendors are live; one real cross-vendor traversal reached DashScope but timed out; same-model retry maps remain empty |
+| Local/release | RapidOCR image mode, JSONL v1alpha1 worker, dependency-empty wheel plus extras | Local OCR/worker/install gates are shipped; frozen worker/contracts and later shared registry versions are not migration targets |
+
+This audit corrects two read-only-agent misclassifications: #681 already closes a
+real nested-image gate, and both image/audio marker repair APIs are implemented;
+only image repair's real complete result remains open. It also rejects wholesale
+`contracts/` deletion: active source fingerprints and worker protocol consumers
+remain. Historical generic batch/registry/combined-video proposals and full
+catalog mirrors are obsolete, not queued work.
+
+The remaining queue is now classified explicitly:
+
+1. **Implementation-ready, no new product authority:** correct the stale
+   `get_capabilities()` reasons for `video.mp4-h264` and
+   `video.mp4-h264-aac`. Shared registry status may remain `deferred`, but the
+   reason must acknowledge that direct inspection/frame/audio extraction is
+   shipped and real/installed-proven. This is the next atomic slice.
+2. **External live-evidence deferred:** Google image-repair complete success and
+   same-call Google-to-DashScope fallback success. Their latest calls reached
+   quota/timeout respectively; do not replay immediately or infer retry values.
+3. **Evidence-gated, not implementation-ready:** same-model retry rules. Keep
+   both preset maps empty until one bounded real failure/recovery observation
+   proves a finite count/wait.
+4. **Maintainer-decision blocked:** choose PDF Route A (caller-owned page
+   extraction composed with existing merged-image APIs) or Route B (a one-call
+   provider-model PDF owner with PDF identity, retained pages, cleanup and
+   resume). Do not implement either by treating the recommended route as
+   authorization.
+5. **Separate later decisions:** replacing the current density-targeted video
+   selector requires actual missed-content evidence; public long-M4A exposure
+   requires its own format/ownership decision. Neither blocks the PDF choice.
+6. **Deliberately deferred/out of scope:** social media, full model mirrors,
+   WAV/other audio widening, PDF text mode, worker v1alpha2, shared capability
+   registration, Rust/PyO3, and a combined video lifecycle.
+
+No other active runtime slice is both unimplemented and authorized. Test pruning
+remains opportunistic: remove fake-live/micro-test duplication only when the
+same public branch is already covered and the relevant subsystem changes; do
+not create a cleanup project or delete branchy contract coverage mechanically.
 
 The destination is one visible, caller-composed pair of media flows:
 

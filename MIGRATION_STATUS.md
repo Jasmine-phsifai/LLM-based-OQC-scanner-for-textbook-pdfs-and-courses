@@ -3502,3 +3502,22 @@ metadata/import checks, a 327,312-byte wheel and 1,683,054-byte base target.
 Optional profiles are intentionally skipped because #701 already proved all
 nine and no dependency/profile behavior changed. The proof root self-cleans;
 runtime/API/dependency/provider behavior is unchanged.
+
+#704 audits the post-migration active boundary and reduces the queue without
+runtime work. Shipped package-root behavior now includes provider-model image
+and MP3 planning/recognition, scalar/flat/nested lanes, ordinary resume,
+experimental image/audio repair, provider-free video inspection/extraction,
+stateless `resume_video`, local OCR, the existing direct PDF facade, JSONL
+v1alpha1 and clean-wheel profiles. Nested image/audio, audio repair and
+DashScope merged resume all have real success evidence; image repair complete
+and same-call cross-vendor success remain external-state live gates.
+
+The next implementation-ready defect is stale capability wording: MP4 rows may
+remain deferred for shared registry/worker registration, but their reasons must
+acknowledge shipped real/installed direct extraction. PDF runtime remains
+blocked on one maintainer choice: caller-owned page extraction composed through
+merged-image APIs, or a one-call PDF owner with source identity/pages/cleanup/
+resume. Retry maps stay empty; video-density changes need missed-content proof;
+M4A needs a separate decision. Social, full catalog mirrors, PDF text, worker
+v1alpha2, shared registration, Rust and combined video remain deferred. No code,
+test, provider, media or frozen-boundary change occurs.
