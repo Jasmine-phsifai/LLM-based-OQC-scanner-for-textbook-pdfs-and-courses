@@ -13164,3 +13164,33 @@ success gate; it must remain one generation with no retry or model switch. The
 affected provider/model/runner/import suites pass 175 tests. No package-root
 export, preset, capability schema, retry rule, fallback, pool, audio, resume,
 merged media, worker/contracts, legacy, or social-media code changed.
+
+## Current working update: #659 stops honestly at DashScope catalog discovery
+
+#659 reuses the consolidated maintained `--provider-model` mode rather than the
+deleted one-use runner. Offline runner/entity checks passed before credential
+access. The local proxy was listening and the legacy UI credential was injected
+only into one child. That child made one DashScope catalog request; the catalog
+was unavailable, so it exited after about 5.11 seconds with safe
+`PROVIDER_CATALOG_UNAVAILABLE` and exactly zero generation calls. There was no
+retry, model switch, fallback, stderr, source mutation, temporary residue, or
+second child.
+
+The safe live JSON reported `scope=null`. This is a deterministic runner
+observability gap, not an unknown product classification: the existing
+`ProviderErrorDisposition` table already maps `PROVIDER_CATALOG_UNAVAILABLE` to
+provider scope. The DashScope smoke now uses that canonical resolver whenever a
+provider error has no explicit scope, instead of repeating scope literals at
+catalog construction sites. Focused offline evidence proves a future identical
+failure reports `scope="provider"`; the historical live output remains null and
+is not rewritten retroactively. The affected runner, disposition,
+provider-model, DashScope adapter/catalog, request-builder, and import suites
+pass **192 tests**.
+
+The change is limited to the diagnostic runner and one regression. Production
+catalog fetching, adapters, error objects, retry behavior, public APIs, the
+private entity, and the scalar success gate are unchanged. #658 and #659 now
+show two expected external failure boundaries—one invalid generation response
+and one pre-generation catalog outage—but neither justifies retry or a preset.
+One later bounded successful generation remains required before capability or
+default facts enter the entity.

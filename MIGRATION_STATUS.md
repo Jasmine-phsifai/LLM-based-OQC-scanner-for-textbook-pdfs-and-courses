@@ -103,6 +103,14 @@ request-scoped `PROVIDER_RESPONSE_INVALID`; it therefore proves dispatch/error
 handling, not successful preset admission. No retry, fallback, switch, output,
 or preset was added, and one later bounded success remains required.
 
+#659 invokes the consolidated maintained entity mode after the required
+interval. Its sole DashScope catalog request returned
+`PROVIDER_CATALOG_UNAVAILABLE`, so generation calls remained zero and the
+success gate stayed open. The live safe JSON exposed only a runner-reporting
+gap: scope was null even though the canonical disposition already says
+provider. The runner now derives that existing scope; production errors,
+catalog behavior, retry policy, presets, and public APIs are unchanged.
+
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
 negative-feedback/similarity selection already belongs to the one extraction
@@ -147,14 +155,15 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#658)
+### Current provider/media checkpoint (#659)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
-holds the closed decisions, pruning rules, and active order. #658 made one
-bounded DashScope entity request and retained its honest response-invalid
-failure. The next slice is still a successful scalar image proof through the
-private consumer, without a public-call rewrite. Only capability/default facts
+holds the closed decisions, pruning rules, and active order. #658 reached one
+generation and retained an honest response-invalid failure; #659 then stopped
+honestly at a transient catalog-unavailable boundary with zero generations.
+The next slice is still a successful scalar image proof through the private
+consumer, without a public-call rewrite. Only capability/default facts
 supported by that success may join the still-private value. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,
 audio, pools, merged media, or other later topology.

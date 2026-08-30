@@ -176,7 +176,11 @@ private consumer with one exact `qwen3.5-ocr` generation attempt, but the
 provider returns honest `PROVIDER_RESPONSE_INVALID` request-scoped evidence.
 No retry, switch, fallback, output, or preset follows. The maintained image
 smoke now has an explicit `--provider-model` mode; a later bounded success is
-still required before adding preset capability/default facts.
+still required before adding preset capability/default facts. #659 then used
+that consolidated mode, but its sole catalog request returned
+`PROVIDER_CATALOG_UNAVAILABLE` before generation. The runner now reports the
+existing canonical provider scope when an error omits an explicit scope; no
+retry, fallback, preset, or production provider behavior changed.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

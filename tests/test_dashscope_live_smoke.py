@@ -216,6 +216,27 @@ def test_dashscope_live_smoke_missing_model_makes_zero_recognition_calls(
     }
 
 
+def test_dashscope_live_smoke_reports_canonical_catalog_failure_scope(
+    monkeypatch, capsys
+):
+    monkeypatch.setattr(smoke, "fetch_dashscope_model_catalog", lambda settings: None)
+    monkeypatch.setattr(
+        smoke,
+        "recognize",
+        lambda *args, **kwargs: pytest.fail("recognition must not start"),
+    )
+
+    assert smoke.main(["--model", MODEL, "--image", "private.png"]) == 1
+    assert json.loads(capsys.readouterr().out) == {
+        "error": {
+            "code": "PROVIDER_CATALOG_UNAVAILABLE",
+            "scope": "provider",
+            "stage": "catalog",
+        },
+        "status": "failed",
+    }
+
+
 @pytest.mark.parametrize("failure_stage", ("catalog", "recognition"))
 def test_dashscope_live_smoke_sanitizes_provider_failures(
     failure_stage, monkeypatch, capsys

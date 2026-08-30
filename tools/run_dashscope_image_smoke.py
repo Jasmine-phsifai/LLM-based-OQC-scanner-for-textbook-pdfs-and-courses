@@ -11,6 +11,7 @@ from typing import Any
 
 from ocrllm import Config, DashScopeSettings, VisionModelSettings, recognize
 from ocrllm.errors import ConfigError, OCRLLMError, ProviderError
+from ocrllm.provider_error_disposition import get_provider_error_disposition
 from ocrllm.profiles.build_board_prompt import build_board_prompt
 from ocrllm.providers.dashscope.resolve_dashscope_model import (
     fetch_dashscope_model_catalog,
@@ -244,13 +245,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         return _report_failure(
             code=failure.error.code,
-            scope=failure.error.details.get("failure_scope"),
+            scope=_safe_failure_scope(failure.error),
             stage=failure.stage,
         )
     except OCRLLMError as error:
         return _report_failure(
             code=error.code,
-            scope=error.details.get("failure_scope"),
+            scope=_safe_failure_scope(error),
             stage=None,
         )
     except Exception:
@@ -261,6 +262,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
     return 0
+
+
+def _safe_failure_scope(error: OCRLLMError) -> str | None:
+    """Report an explicit scope or the existing canonical provider default."""
+    if not isinstance(error, ProviderError):
+        return None
+    return get_provider_error_disposition(error).scope
 
 
 def _report_failure(*, code: str, scope: object, stage: str | None) -> int:

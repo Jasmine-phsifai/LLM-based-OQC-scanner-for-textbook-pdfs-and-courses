@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #658)
+## 0. Current pruning and execution checkpoint (2026-08-30, #659)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -454,6 +454,22 @@ during self-review and folded into the existing provider smoke because its
 catalog, redaction, and error scaffolding duplicated a working gate. This adds
 no retry executor, diagnostic result type, response-parser exception, or second
 provider framework.
+
+#659 exercises the consolidated maintained mode after the required interval.
+The enabled proxy and credential preflight passed, but the sole catalog request
+returned unavailable in 5.11 seconds. The runner emitted the existing typed
+`PROVIDER_CATALOG_UNAVAILABLE`; generation calls were exactly zero, with no
+retry, switch, fallback, source mutation, stderr, or residue. This does not
+reclassify #658's later-stage invalid response or close the scalar success gate.
+
+The failed safe JSON exposed one local runner omission: it reported a null
+scope even though the existing canonical disposition already defines this code
+as provider-scoped. The runner now derives provider-error scope through
+`get_provider_error_disposition()` instead of duplicating `failure_scope` at
+each error constructor. This changes diagnostics only; it adds no production
+retry, catalog fallback, error type, or shared runner framework. The live output
+itself remains recorded as null, while focused offline evidence proves future
+reports use `scope="provider"`.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level
