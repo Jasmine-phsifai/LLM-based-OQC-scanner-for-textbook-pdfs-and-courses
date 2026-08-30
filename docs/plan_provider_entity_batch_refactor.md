@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #668)
+## 0. Current pruning and execution checkpoint (2026-08-30, #669)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -80,6 +80,23 @@ there is still no cross-file commit marker, rollback log, cross-process lock,
 state registry, or media-neutral job abstraction. Focused and full offline
 regressions are complete; the required bounded live merged-image batches remain
 the next independent evidence gate before flat fallback or merged audio.
+
+### #669 does not close the live gate because its evidence capture failed
+
+One delegated bounded attempt exercised the public merged-image entry with two
+exact batches of eight existing authorized images, the Google 2.5 Flash preset,
+and `detail_ocr`. It made no retry, model switch, fallback, or second attempt.
+The child ended after about 58 seconds and its temporary directory was removed,
+but the disposable PowerShell/`python -c` wrapper did not preserve an exit code,
+safe JSON summary, stdout, stderr, Markdown, or sidecar. The result is therefore
+unknown: it is neither a successful library proof nor a typed library failure.
+
+No runtime change is justified by missing harness evidence. The next atomic
+gate must first make the disposable live runner preserve an explicit exit code
+and content-free result/error summary outside its self-deleting scratch area,
+prove that capture without a provider call, and then perform at most one new
+bounded call. Flat fallback, retry execution, provider pools, and merged audio
+remain behind the still-open scalar merged-image live gate.
 
 The destination is one visible, caller-composed pair of media flows:
 

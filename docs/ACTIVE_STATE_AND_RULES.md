@@ -13438,3 +13438,26 @@ the intended library import boundary. Focused tests pass and the full offline
 suite is **1,639 passed / 61.82s**. Ruff is not installed in the active
 environment, so no lint success is claimed. Bounded live merged-image batches
 remain the next independent gate.
+
+## Current working update: #669 live merged-image result remains unknown
+
+#669 delegated one bounded public `recognize_images_to_markdown()` attempt with
+two exact batches of eight existing authorized images, required `detail_ocr`,
+the exact Google 2.5 Flash preset, an explicit scratch output, and a 600-second
+timeout. Proxy and credential values existed only in the child; there was no
+retry, model switch, fallback, model sweep, second call, archive mutation, or
+repository edit.
+
+The child ended after about 58 seconds, but the disposable combined
+PowerShell/`python -c` harness returned no captured stdout or stderr and did not
+preserve the process exit code. Its `finally` block also removed the scratch
+directory, so no Markdown or sidecar remained for independent inspection. This
+is an evidence-capture failure, not proof of either OCRLLM success or an OCRLLM
+defect. No production code was changed, and the live scalar merged-image gate
+remains open. The unchanged merged-image offline contract still passes its five
+focused tests.
+
+The next atomic iteration must first prove explicit exit-code and content-free
+summary capture without a provider call, then allow at most one new bounded
+live attempt. It must not respond to this unknown result by adding retry,
+fallback, proxy discovery, a provider pool, or generalized diagnostics.
