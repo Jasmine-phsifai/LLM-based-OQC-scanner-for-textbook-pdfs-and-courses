@@ -90,6 +90,17 @@ is unchanged. This admits no same-model retry: both preset retry maps remain
 empty because the run proves fallback, not retry efficacy. The next slice must
 not infer retry counts/waits or skip to nested pools.
 
+#675 starts the explicit audio replacement with public `split_audio()` and
+immutable `AudioSlice` values only. The planner accepts the current MP3 source
+plus exact `-1`, a positive integer-minute interval, or a validated scalar/flat
+provider lane; an explicit interval wins, otherwise the smallest positive audio
+default wins. It reuses the existing 30-second context-window primitive and the
+inclusive ten-hour product ceiling. Keep this slice free of physical clips,
+output/state ownership, cleanup registries, provider calls, retry, a generic
+media planner, or provider-specific request limits. Non-path inputs must remain
+typed `SOURCE_INVALID`. The next consumer is scalar merged-audio
+recognition/resume; do not extend the frozen old video family to consume it.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

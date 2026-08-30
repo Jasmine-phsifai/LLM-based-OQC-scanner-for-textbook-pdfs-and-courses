@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 # Bind lightweight facade functions before callers can import their same-named
 # submodules and replace these public package attributes.
 from .batchify_images import batchify_images as batchify_images
+from .split_audio import split_audio as split_audio
 from .compose_video_result import compose_video_result as compose_video_result
 from .publish_video_result import publish_video_result as publish_video_result
 from .recognize import recognize as recognize
@@ -25,8 +26,10 @@ from .recognize_video_to_markdown import (
 
 if TYPE_CHECKING:
     from .audio_model_settings import AudioModelSettings as AudioModelSettings
+    from .audio_slice import AudioSlice as AudioSlice
     from .batch_item_outcome import BatchItemOutcome as BatchItemOutcome
     from .batchify_images import batchify_images as batchify_images
+    from .split_audio import split_audio as split_audio
     from .capability_report import CapabilityReport as CapabilityReport
     from .config import Config as Config
     from .compose_video_result import compose_video_result as compose_video_result
@@ -124,9 +127,11 @@ if TYPE_CHECKING:
 
 _PUBLIC_IMPORTS = {
     "AudioModelSettings": (".audio_model_settings", "AudioModelSettings"),
+    "AudioSlice": (".audio_slice", "AudioSlice"),
     "AllCandidatesExhausted": (".errors", "AllCandidatesExhausted"),
     "BatchItemOutcome": (".batch_item_outcome", "BatchItemOutcome"),
     "batchify_images": (".batchify_images", "batchify_images"),
+    "split_audio": (".split_audio", "split_audio"),
     "Cancelled": (".errors", "Cancelled"),
     "CapabilityReport": (".capability_report", "CapabilityReport"),
     "ConcurrencyLimited": (".errors", "ConcurrencyLimited"),
@@ -245,8 +250,10 @@ _PUBLIC_IMPORTS = {
 
 __all__ = [
     "AudioModelSettings",
+    "AudioSlice",
     "BatchItemOutcome",
     "batchify_images",
+    "split_audio",
     "Cancelled",
     "ConcurrencyLimited",
     "Config",

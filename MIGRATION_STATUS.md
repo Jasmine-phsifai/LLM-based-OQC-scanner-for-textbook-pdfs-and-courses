@@ -3158,3 +3158,17 @@ unchanged, and the child exited 0. No retry rule/executor, schema, timeout,
 nested pool, or provider policy changed. The run proves fallback only, so both
 preset retry maps remain empty and retry waits/counts still require separate
 real evidence.
+
+#675 adds the first explicit audio replacement boundary without changing audio
+recognition. Package-root `split_audio()` returns an exact tuple of immutable
+`AudioSlice` identities for one MP3. Exact `-1` selects the whole source;
+positive exact integers select minutes; an explicit value wins; a provider-only
+call uses the smallest positive integer `default_audio_minutes` across its
+validated scalar/flat lane. It rejects invalid topology, duplicates,
+audio-incapable candidates, missing arguments, and invalid source types before
+provider dispatch. It accepts short MP3s through the inclusive ten-hour/2 GB
+product boundary, reuses existing 30-second context windows, and creates no
+physical clips, output, state, cleanup registry, or API call. Focused tests pass
+47 in 1.18 seconds and the full offline suite passes 1,656 in 65.52 seconds.
+The next replacement slice is scalar merged-audio recognition/resume; retry,
+nested pools, repair, and old-video deletion remain gated.

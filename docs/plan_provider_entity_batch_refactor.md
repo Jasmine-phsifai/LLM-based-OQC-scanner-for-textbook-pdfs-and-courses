@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #674)
+## 0. Current pruning and execution checkpoint (2026-08-30, #675)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -242,6 +242,34 @@ same-model retry helps. Phase 4's flat-fallback half is closed. Retry maps stay
 empty until a separately bounded real failure/recovery observation supplies a
 finite count and wait; nested lanes, pools, audio, repair, and video deletion
 remain later gates.
+
+### #675 adds only the explicit audio-range planning boundary
+
+The next replacement slice is package-root `split_audio()`. It accepts the
+library's current MP3 source plus either exact `interval_minutes` or a validated
+scalar/flat provider lane. Exact `-1` means one whole-source range; a positive
+exact integer means that many minutes; an explicit interval wins when both are
+present. If only providers are supplied, planning uses the smallest positive
+integer `default_audio_minutes` across all candidates. Every supplied candidate
+must support audio, and invalid topology, duplicate planning identity, missing
+arguments, or an invalid interval fails before source decoding.
+
+The result is an exact tuple of immutable `AudioSlice` values carrying source,
+ordered index, logical result bounds, and the existing 30-second context-padded
+read bounds. Planning accepts short MP3s, fully decodes for duration, and applies
+the product's 2 GB input safety boundary and inclusive ten-hour ceiling. It does
+not apply Google's narrower 9.5-hour whole-request limit; provider hard limits
+belong to later recognition. It creates no physical clips, output, checkpoint,
+cleanup registry, provider call, retry, or second planning object.
+
+An adversarial review caught one concrete contract leak: non-path objects had
+escaped as native `TypeError`. They now fail as `InvalidSource` with
+`SOURCE_INVALID`. Focused audio/provider/import regressions pass **47 tests /
+1.18s** and the full offline suite passes **1,656 tests / 65.52s**. No live API
+call belongs to this provider-free planner. The next replacement slice is the
+smallest scalar merged-audio recognition/resume consumer of these stable range
+identities; retry execution, nested pools, repair, and old-video deletion remain
+gated.
 
 The destination is one visible, caller-composed pair of media flows:
 

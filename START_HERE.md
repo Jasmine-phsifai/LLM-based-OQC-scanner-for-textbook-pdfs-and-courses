@@ -1760,3 +1760,13 @@ presets and uses live discovery plus explicit construction for other IDs, or
 intentionally keeps a complete executable source mirror. No mirror, descriptor
 framework, runtime type, preset, catalog call, provider call, or interface
 changed in #641.
+
+#675 begins the explicit audio replacement path without adding a video wrapper.
+Package-root `split_audio()` accepts the current MP3 source plus exact `-1`, a
+positive integer-minute interval, or a validated scalar/flat provider lane whose
+smallest audio default is used. It returns immutable `AudioSlice` logical and
+30-second context-padded ranges only. It does not create clips, outputs, state,
+provider calls, retries, or repair behavior. This planner accepts short MP3s
+through the inclusive ten-hour product ceiling; provider-specific request limits
+belong to the later recognition consumer. The next active slice is scalar merged
+audio recognition/resume over these explicit identities.

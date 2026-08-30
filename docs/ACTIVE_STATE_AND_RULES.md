@@ -13601,3 +13601,28 @@ changed. The serial flat-fallback live gate is closed. This evidence does not
 show that an immediate same-model retry is useful, so both preset retry maps
 remain empty and no retry executor is admitted. Nested lanes/pools, merged
 audio, repair, and old-video deletion remain separately gated.
+
+## Current working update: #675 exposes provider-free audio range planning
+
+The first audio replacement slice is now public as `split_audio()` and
+`AudioSlice`. It accepts the library's existing MP3 input with either exact
+`interval_minutes` or a validated scalar/flat `ProviderModel` lane. `-1` means
+one whole range; positive exact integers mean minutes; explicit input wins; a
+provider-only call uses the smallest positive integer audio default across all
+candidates. Missing or invalid arguments, invalid/duplicate provider topology,
+and audio-incapable candidates fail before source decoding or provider work.
+
+The planner reuses the existing 30-second context-window calculation and emits
+only immutable logical/actual range identities. It fully validates duration,
+allows short MP3s and exactly ten hours, rejects sources above the product's
+2 GB or ten-hour boundaries, and deliberately does not apply one provider's
+9.5-hour whole-request limit. It creates no clips, output, state, cleanup
+registry, provider call, retry, or generic media plan.
+
+A cold adversarial review found and fixed one native exception leak for
+non-path source objects; they now produce `SOURCE_INVALID`. Focused regressions
+pass **47 tests / 1.18s** and the complete offline suite passes **1,656 tests /
+65.52s**. No live API call was appropriate for this provider-free planning
+slice. The next gated product step is scalar merged-audio recognition/resume
+over these range identities, not retry speculation, a nested pool, repair, or
+old-video deletion.

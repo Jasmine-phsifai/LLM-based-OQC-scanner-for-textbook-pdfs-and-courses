@@ -9,6 +9,7 @@ this repo intended for direct import by other projects.
 from ocrllm import (
     AllCandidatesExhausted,
     AudioModelSettings,
+    AudioSlice,
     BatchItemOutcome,
     DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
     Cancelled,
@@ -61,6 +62,7 @@ from ocrllm import (
     recognize_images_to_markdown,
     recognize_long_mp3,
     resume_images_to_markdown,
+    split_audio,
     get_capabilities,
     get_provider_error_disposition,
     inspect_video,
@@ -94,6 +96,24 @@ no explicit size, it uses the smallest candidate default. Successful fallback
 returns normal status plus one warning and bounded `provider_failures`
 metadata. Retry execution, nested lists, pools, merged audio, and repair are not
 part of this slice.
+
+The visible audio preparation path has now started independently:
+
+```python
+slices = split_audio(audio_path, provider=GOOGLE_GEMINI_2_5_FLASH)
+# Or: split_audio(audio_path, interval_minutes=-1) for one whole-source range.
+```
+
+`split_audio()` currently accepts MP3 and returns an exact tuple of immutable
+`AudioSlice` identities. Exact `-1` selects one whole-source range; a positive
+exact integer selects minutes; an explicit interval wins over provider defaults.
+With one scalar or flat provider lane and no explicit interval, the smallest
+positive `default_audio_minutes` is used. Every supplied candidate must support
+audio. The planner fully validates duration and admits short MP3s through the
+inclusive ten-hour/2 GB product boundary. It reuses the existing 30-second
+context windows but creates no physical clips, output, state, cleanup work, or
+provider call. Merged-audio recognition and resume are the next separate slice;
+provider request limits and retry belong there, not in planning.
 
 The serial flat lane is live-proven through a fixed real Google scenario: one
 unserved candidate fails safely before generation and the next candidate
