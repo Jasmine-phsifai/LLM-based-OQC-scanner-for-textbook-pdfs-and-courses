@@ -24,6 +24,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--image", action="append", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument("--resume", action="store_true")
     arguments = parser.parse_args(argv)
     if len(arguments.image) != SOURCE_COUNT:
         parser.error("--image must be supplied exactly twice")
@@ -37,6 +38,7 @@ def run_dashscope_merged_image_smoke(
     images = tuple(Path(path).absolute() for path in arguments.image)
     output = Path(arguments.output).absolute()
     state = output.with_name(f"{output.stem}.ocrllm-state.json")
+    resume = bool(getattr(arguments, "resume", False))
     ocrllm = _load_checkout_ocrllm()
     if ocrllm is None:
         return {
@@ -55,25 +57,46 @@ def run_dashscope_merged_image_smoke(
             "output": _artifact_summary(output),
             "state": _artifact_summary(state),
         }
-    if os.path.lexists(output) or os.path.lexists(state):
+    before_output = _artifact_summary(output)
+    before_state = _artifact_summary(state)
+    if resume:
+        clean_target = (
+            before_output.get("exists") is True
+            and before_state.get("exists") is True
+        )
+    else:
+        clean_target = (
+            before_output.get("exists") is False
+            and before_state.get("exists") is False
+        )
+    if not clean_target:
         return {
             "status": "failed",
-            "code": "OUTPUT_NOT_CLEAN",
+            "code": "RESUME_ARTIFACT_MISSING" if resume else "OUTPUT_NOT_CLEAN",
+            "operation": "resume" if resume else "recognize",
             "package_origin_is_checkout": True,
             "sources_unchanged": _sources_unchanged(images, before),
-            "output": _artifact_summary(output),
-            "state": _artifact_summary(state),
+            "output": before_output,
+            "state": before_state,
         }
 
     batches = tuple((image,) for image in images)
     try:
-        result = ocrllm.recognize_images_to_markdown(
-            batches,
-            provider=ocrllm.DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
-            image_task=IMAGE_TASK,
-            output_path=output,
-            timeout_seconds=arguments.timeout,
-        )
+        if resume:
+            result = ocrllm.resume_images_to_markdown(
+                batches,
+                provider=ocrllm.DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+                output_path=output,
+                timeout_seconds=arguments.timeout,
+            )
+        else:
+            result = ocrllm.recognize_images_to_markdown(
+                batches,
+                provider=ocrllm.DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+                image_task=IMAGE_TASK,
+                output_path=output,
+                timeout_seconds=arguments.timeout,
+            )
     except ocrllm.OCRLLMError as error:
         return _failure_summary(
             error,
@@ -85,11 +108,15 @@ def run_dashscope_merged_image_smoke(
             stable_error_codes=importlib.import_module(
                 "ocrllm.errors"
             ).STABLE_ERROR_CODES,
+            operation="resume" if resume else "recognize",
+            before_output=before_output,
+            before_state=before_state,
         )
     except Exception:
         return {
             "status": "failed",
             "code": "UNEXPECTED_SAFE_FAILURE",
+            "operation": "resume" if resume else "recognize",
             "package_origin_is_checkout": True,
             "sources_unchanged": _sources_unchanged(images, before),
             "output": _artifact_summary(output),
@@ -105,6 +132,10 @@ def run_dashscope_merged_image_smoke(
         metadata.get("current_provider_model_usage"),
         provider=provider,
     )
+    historical_usage = _safe_usage(
+        metadata.get("historical_provider_model_usage"),
+        provider=provider,
+    )
     output_bytes = _read_bytes(output)
     sources_unchanged = _sources_unchanged(images, before)
     state_exists = os.path.lexists(state)
@@ -112,6 +143,15 @@ def run_dashscope_merged_image_smoke(
         output_bytes is not None
         and output_bytes == result.markdown.encode("utf-8")
     )
+    expected_current_calls = 1 if resume else SOURCE_COUNT
+    expected_reused_slots = 1 if resume else 0
+    if resume:
+        historical_valid = (
+            historical_usage is not None
+            and historical_usage["calls"] == SOURCE_COUNT
+        )
+    else:
+        historical_valid = metadata.get("historical_provider_model_usage") == ()
     common_valid = (
         result.source_type == "image"
         and result.profile == IMAGE_TASK
@@ -120,12 +160,12 @@ def run_dashscope_merged_image_smoke(
         and bool(result.markdown.strip())
         and result.warnings == ()
         and _exact_int(metadata.get("slot_count"), SOURCE_COUNT)
-        and _exact_int(metadata.get("reused_slot_count"), 0)
-        and _exact_int(metadata.get("provider_call_count"), SOURCE_COUNT)
-        and metadata.get("historical_provider_model_usage") == ()
+        and _exact_int(metadata.get("reused_slot_count"), expected_reused_slots)
+        and _exact_int(metadata.get("provider_call_count"), expected_current_calls)
+        and historical_valid
         and metadata.get("provider_failures") is None
         and usage is not None
-        and usage["calls"] == SOURCE_COUNT
+        and usage["calls"] == expected_current_calls
         and output_matches_result
         and sources_unchanged
     )
@@ -139,6 +179,10 @@ def run_dashscope_merged_image_smoke(
         and type(usage["output_tokens"]) is int
         and usage["output_tokens"] >= 0
         and not state_exists
+        and (
+            not resume
+            or _artifact_changed(before_output, _artifact_summary(output))
+        )
     )
     failed_slots = _safe_failed_slots(
         metadata.get("failed_slots"),
@@ -157,6 +201,7 @@ def run_dashscope_merged_image_smoke(
         "status": "passed" if complete else "partial" if partial else "failed",
         "code": None if complete or partial else "INVALID_SCENARIO_EVIDENCE",
         "result_status": result.status,
+        "operation": "resume" if resume else "recognize",
         "package_origin_is_checkout": True,
         "provider": provider.vendor,
         "model": provider.model,
@@ -167,13 +212,29 @@ def run_dashscope_merged_image_smoke(
         "source_sizes": tuple(row[0] for row in before),
         "source_sha256s": tuple(row[1] for row in before),
         "provider_call_count": metadata.get("provider_call_count"),
+        "reused_slot_count": metadata.get("reused_slot_count"),
         "input_tokens": usage["input_tokens"] if usage is not None else None,
         "output_tokens": usage["output_tokens"] if usage is not None else None,
+        "historical_provider_call_count": (
+            historical_usage["calls"] if historical_usage is not None else 0
+        ),
+        "historical_input_tokens": (
+            historical_usage["input_tokens"]
+            if historical_usage is not None
+            else None
+        ),
+        "historical_output_tokens": (
+            historical_usage["output_tokens"]
+            if historical_usage is not None
+            else None
+        ),
         "warning_count": len(result.warnings),
         "sources_unchanged": sources_unchanged,
         "output_matches_result": output_matches_result,
         "output": _artifact_summary(output),
         "state": _artifact_summary(state),
+        "before_output": before_output,
+        "before_state": before_state,
     }
     if partial:
         summary["failed_slots"] = failed_slots
@@ -189,11 +250,15 @@ def _failure_summary(
     state: Path,
     provider: object,
     stable_error_codes: frozenset[str],
+    operation: str,
+    before_output: dict[str, object],
+    before_state: dict[str, object],
 ) -> dict[str, object]:
     details = getattr(error, "details")
     return {
         "status": "failed",
         "code": getattr(error, "code"),
+        "operation": operation,
         "package_origin_is_checkout": True,
         "provider_call_count": _optional_count(
             details.get("provider_calls_attempted")
@@ -216,6 +281,8 @@ def _failure_summary(
         ),
         "output": _artifact_summary(output),
         "state": _artifact_summary(state),
+        "before_output": before_output,
+        "before_state": before_state,
     }
 
 
@@ -307,6 +374,19 @@ def _artifact_summary(path: Path) -> dict[str, object]:
         }
     except (OSError, ValueError):
         return {"exists": os.path.lexists(path), "inspectable": False}
+
+
+def _artifact_changed(
+    before: dict[str, object],
+    after: dict[str, object],
+) -> bool:
+    return (
+        before.get("exists") is True
+        and after.get("exists") is True
+        and type(before.get("sha256")) is str
+        and type(after.get("sha256")) is str
+        and before["sha256"] != after["sha256"]
+    )
 
 
 def _sha256(path: Path) -> str:

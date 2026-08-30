@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #699)
+## 0. Current pruning and execution checkpoint (2026-08-31, #700)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1056,6 +1056,30 @@ to invalid evidence; its strict partial branch is now locally proven, with no AP
 replay. The 23,423,164-byte exact root remains outside Git for the next atomic
 ordinary-resume gate, which must reuse slot 0 and dispatch only slot 1. Runtime
 retry/fallback/state schemas are unchanged; 149 focused tests pass.
+
+### #700 closes DashScope merged ordinary resume without replay
+
+The existing DashScope merged scenario now accepts explicit `--resume` rather
+than requiring another runner. Resume requires the existing Markdown and exact
+sidecar, the same two source batches, one current call, one reused slot, and the
+two-call historical usage row. It preserves nullable historical token dimensions
+and accepts either strict complete-with-state-removed or strict partial-with-
+state-retained. A complete resume must publish byte-matching changed Markdown;
+the runner reports before/after artifact hashes without content.
+
+A credential-free preflight used byte-for-byte copies of #699's 158-byte output
+and 1,555-byte state. It returned `CONFIG_MISSING`, calls 0, and left both copies
+and the original artifacts exact; the 1,713-byte copy root was removed. One live
+ordinary resume then dispatched only slot 1. It completed in one generation with
+2,397/32 input/output tokens, reported reused slots 1 and current calls 1, retained
+the historical calls 2 with honestly unknown token totals, settled both slots,
+changed the output to 153 bytes, removed state, and returned warnings 0. Source
+hashes, cleanup, process and credential-residue facts were clean.
+
+The exact 23,421,604-byte frame/output root was permanently removed after review.
+No fresh recognition, retry, second child, fallback, model switch, re-extraction,
+runtime code, state schema, dependency, or public API changed. The resume runner
+mode is locally complete-path-proven and 69 adjacent tests pass.
 
 The destination is one visible, caller-composed pair of media flows:
 

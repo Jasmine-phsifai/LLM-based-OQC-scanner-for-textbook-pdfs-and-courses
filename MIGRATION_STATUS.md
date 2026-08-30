@@ -3453,3 +3453,15 @@ and sources/credential residue are unchanged/zero. The runner's missing partial
 classification is fixed locally without replay. The 23,423,164-byte root is
 retained outside Git for the next ordinary resume, which must call only slot 1.
 No retry/fallback/schema change is added; 149 focused tests pass.
+
+#700 closes the retained DashScope merged partial through exactly one ordinary
+resume. The maintained runner gains one explicit resume mode with strict
+current/historical/reused/output/state evidence. A copied-state credential-free
+preflight returns `CONFIG_MISSING`, calls 0 and leaves output/state byte-exact.
+The sole live resume dispatches only failed slot 1, reports one reused slot, one
+current call with 2,397/32 tokens, and two historical calls with nullable token
+totals. Both slots settle, Markdown changes from 158 to 153 bytes and matches the
+result, the sidecar is removed, warnings are zero, and source/cleanup/credential
+facts remain clean. Exact TEMP evidence is removed; 69 adjacent tests pass. No
+fresh run, retry/fallback/model switch, runtime/schema/API/dependency change is
+added.
