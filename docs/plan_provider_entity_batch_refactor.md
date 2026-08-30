@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #705)
+## 0. Current pruning and execution checkpoint (2026-08-31, #706)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1223,6 +1223,23 @@ install is 1,683,726 bytes and returns both exact reasons without importing
 Pillow, PDFium, OpenAI, Google, OpenCV, NumPy, FFmpeg or miniaudio. The exact
 2,011,103-byte proof root is removed. No video runtime, status, API, dependency,
 worker/contracts surface or provider/media behavior changed.
+
+### #706 corrects the active README's contradictory repair claim
+
+The active-library README already documents both public experimental repair
+functions and their deliberately narrow state-loss contracts, but its later
+evidence paragraph still said experimental repair was not implemented. That
+sentence was stale: image repair shipped in #688, audio repair shipped in #689,
+and #690 closed audio repair's real-provider success gate. Image repair retains
+offline and live-partial evidence while its complete live-success gate remains
+externally deferred after the latest provider failure.
+
+The evidence paragraph now distinguishes those facts exactly. Same-model retry
+and non-MP3 audio formats remain unimplemented; neither repair contract is
+widened, and no runtime, API, test, provider, dependency, state or frozen-boundary
+behavior changes. This is a public-document correction, not a new capability or
+a reason to replay either deferred live gate. Existing merged-image,
+merged-audio and lightweight-import checks pass 36 tests.
 
 The destination is one visible, caller-composed pair of media flows:
 

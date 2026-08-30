@@ -3531,3 +3531,12 @@ capability/worker/import tests pass. A dependency-empty installed wheel returns
 the new reasons with no optional imports; wheel/base sizes are 327,377 and
 1,683,726 bytes. The proof root is removed. No runtime/API/dependency/provider/
 worker-contract behavior changes.
+
+#706 corrects one contradictory active-library README claim. Both experimental
+repair APIs are already public and documented: image repair shipped in #688 and
+audio repair in #689, with audio's real-provider success gate closed by #690.
+The later evidence paragraph now states that exact boundary and leaves image
+repair's complete live-success gate open. Same-model retry and non-MP3 audio
+formats remain unimplemented. Existing merged-image, merged-audio and
+lightweight-import checks pass 36 tests. No runtime, API, test, provider,
+dependency, state, migration boundary or frozen code changes.

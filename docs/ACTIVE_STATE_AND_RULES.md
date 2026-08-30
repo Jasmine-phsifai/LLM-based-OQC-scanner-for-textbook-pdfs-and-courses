@@ -14286,3 +14286,19 @@ archive, repo, and other TEMP were not modified. Image repair has offline proof,
 one live later-stage partial, and this fresh provider timeout, but no live success;
 the gate is deferred until provider conditions change. These failures do not
 establish a numeric same-model retry policy.
+
+## Current working update: #706 corrects the active README repair boundary
+
+The active-library README already described and imported
+`repair_images_to_markdown()` and `repair_audio_to_markdown()`, but a later
+evidence sentence still grouped “experimental repair” with same-model retry and
+other audio formats as unimplemented. Code, public exports, focused offline
+coverage and current migration records contradict that sentence: image repair
+shipped in #688, audio repair in #689, and #690 closed audio repair's bounded
+real-provider success gate. Image repair has offline and live-partial evidence;
+its complete live-success gate remains externally deferred.
+
+Only that public claim is corrected. Same-model retry and non-MP3 audio formats
+remain unimplemented. No runtime, API, test, provider call, dependency, state,
+repair contract, frozen boundary or immediate live replay is added. Existing
+merged-image, merged-audio and lightweight-import checks pass 36 tests.

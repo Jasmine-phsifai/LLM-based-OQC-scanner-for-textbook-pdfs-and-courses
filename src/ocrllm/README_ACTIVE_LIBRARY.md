@@ -174,8 +174,11 @@ Nested audio has complete SDK/FFmpeg concurrency, cleanup, and resume proof; its
 first real gate produced honest network/rate-limit failures and retained state.
 One later ordinary resume settled those exact three slots with three generations,
 published matching Markdown, and removed state. Successful nested audio is now
-live-proven across invocations. Same-model retry, other audio formats, and
-experimental repair are not implemented.
+live-proven across invocations. Same-model retry and other audio formats are not
+implemented. Experimental image and audio repair are implemented as described
+above: audio repair has a complete real-provider success gate, while image
+repair has offline and live-partial evidence but not a complete live-success
+gate.
 
 `resume_video()` is a stateless package-root routing name for backend callers.
 It requires exact `media_type="image"` plus already-batched image tuples, or
