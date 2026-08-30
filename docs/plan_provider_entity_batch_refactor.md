@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #660)
+## 0. Current pruning and execution checkpoint (2026-08-30, #661)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -487,6 +487,32 @@ DashScope/catalog/response behavior rather than the common entity boundary; a
 Google failure remains honest evidence. Do not add a preset or rewrite public
 calls until the relevant success gates close. DashScope later resumes with one
 bounded diagnostic question, not an automatic retry loop or parser relaxation.
+
+#661 adds the same explicit private-entity mode to the maintained native-Google
+image smoke instead of creating a second runner. The default public mode stays
+unchanged. Existing provider-model contracts plus the actual runner execution
+prove the exact Google entity reaches the maintained board-prompt/native-client
+boundary, while success still requires strict `VisionProviderResponse` and
+client-close evidence. No package-root export was added. A broader combined run
+also corrected two order-dependent tests:
+zero-call preflight now proves that it does not newly load `google.genai`, rather
+than assuming no earlier test imported the SDK.
+
+The sole credential-isolated live child did not reach Google. With the required
+local proxy expressed as `socks5h://127.0.0.1:10080`, native SDK construction
+failed safely as `PROVIDER_RESPONSE_INVALID`, operation `client_setup`, request
+scope, and exact zero provider calls after about 1.44 seconds. A credential-free
+offline construction reproduced `ImportError`; the environment has
+`google-genai==2.9.0` and `httpx==0.28.1` but no `socksio`. This distinguishes an
+operator/dependency proxy gap from an entity, image, model, catalog, or response
+failure. There was no retry, model switch, fallback, second child, source change,
+stderr, residue, or dependency installation. The Google scalar success gate and
+the DashScope success gate both remain open. The next atomic decision must first
+settle the smallest supported proxy path or optional-dependency correction; it
+must not replay the API or add presets, retry, fallback, or provider pools.
+An initially added fake-live monkeypatch regression was removed during primary
+review because root testing policy assigns this proof to the scenario runner and
+diary; retaining it would have duplicated real evidence in the default suite.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level

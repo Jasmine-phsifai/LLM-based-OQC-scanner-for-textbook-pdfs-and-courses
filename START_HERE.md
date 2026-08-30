@@ -185,6 +185,13 @@ DashScope generation once more but received the same request-scoped invalid
 response. After two invalid generations and one catalog outage, the next
 heartbeat advances to the independently required native-Google scalar proof;
 the DashScope success gate is deferred, not declared passed.
+#661 adds that private Google mode to the existing maintained Google image
+smoke without changing its default public route. One bounded live child stopped
+before catalog/generation at native SDK client setup: the required SOCKS proxy
+met an environment with no `socksio`, reproduced offline as `ImportError`, and
+reported exact zero calls. No dependency was installed and no request was
+replayed. Google and DashScope scalar success gates remain open; the next slice
+must settle the narrow proxy/dependency boundary before another live attempt.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

@@ -164,16 +164,20 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#660)
+### Current provider/media checkpoint (#661)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
 holds the closed decisions, pruning rules, and active order. #658 reached one
 generation and retained an honest response-invalid failure; #659 then stopped
 honestly at a transient catalog-unavailable boundary with zero generations.
-After #660's second invalid generation, the next slice is the native-Google
-scalar image proof through the same private consumer, without a public-call
-rewrite. DashScope success remains open for a later bounded diagnostic run.
+After #660's second invalid generation, #661 adds the native-Google scalar mode
+to the maintained image smoke without a public-call rewrite. Its sole live
+child stops before catalog/generation because the required SOCKS proxy meets an
+environment lacking `socksio`; offline client construction reproduces the same
+`ImportError`. No dependency is installed and no API request is replayed.
+DashScope and Google success remain open; the next slice resolves only that
+proxy/dependency boundary before another bounded request.
 Only capability/default facts supported by a successful proof may join the
 still-private value. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,

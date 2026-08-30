@@ -13220,3 +13220,32 @@ provider policy, worker/contracts, media, legacy, dependency, or social feature
 changed in #660. Before any preset or public-call rewrite, a successful bounded
 transport proof is still required; the later DashScope return must pose one
 diagnostic question instead of replaying an identical request.
+
+## Current working update: #661 exposes the native-Google SOCKS dependency gap
+
+#661 adds an explicit `--provider-model` mode to the existing Google image smoke
+and retains its default public `recognize()` mode. It reuses the private scalar
+consumer and the existing native adapter, board prompt, timeout, safe reporting,
+and client-close evidence. No separate runner, shared smoke framework, public
+export, preset, capability/default field, retry, fallback, pool, audio, or merged
+recognizer is introduced. Focused and neighboring image/provider/import tests
+pass 84 checks. Two existing zero-call preflight tests are made order-independent
+by comparing SDK module state before and after the call rather than assuming the
+entire pytest process has never imported Google.
+
+One delegated child uses the enabled proxy, exact `gemini-2.5-flash`, and the
+unchanged 116,507-byte formula board. It exits after about 1.44 seconds with
+safe `PROVIDER_RESPONSE_INVALID`, operation `client_setup`, request scope, and
+exact zero provider calls. Stderr is empty; there is no catalog/generation,
+retry, model switch, fallback, second child, source mutation, process, or temp
+residue. A credential-free local client-construction probe reproduces
+`ImportError` under `socks5h://127.0.0.1:10080`; the active environment contains
+`google-genai==2.9.0` and `httpx==0.28.1` but no `socksio`. The current evidence
+therefore identifies a proxy optional-dependency/operator boundary, not a common
+entity defect or Google response failure. No package or dependency declaration
+changes in #661, and no API replay is allowed inside this iteration. Both scalar
+success gates remain open; the next atomic slice first chooses and proves the
+smallest supported proxy/dependency correction.
+An initially added 75-line fake-live runner regression was deleted during
+primary review: root testing policy keeps real scenario proof in the runner and
+diary instead of mirroring it with internal monkeypatches in default pytest.
