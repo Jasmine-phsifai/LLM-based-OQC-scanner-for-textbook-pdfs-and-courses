@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #696)
+## 0. Current pruning and execution checkpoint (2026-08-31, #697)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -959,6 +959,35 @@ run. Any later content-driven-only change must be an explicit maintainer choice
 and must compare actual retained/missed lecture content. Runtime, dependencies,
 public APIs, provider behavior, and selection code are unchanged; adjacent
 inspect/extract tests pass 33.
+
+### #697 proves real video-audio extraction and descriptor planning separately
+
+The sibling provider-free visible-video branch now has its own explicit-source
+scenario rather than being folded into the frame runner or a replacement video
+black box. `tools/run_video_audio_extraction_smoke.py` calls only package-root
+`inspect_video()`, `extract_video_audio()`, and `split_audio()`. It requires one
+new caller-owned MP3 target, verifies complete source SHA-256, output artifact,
+typed failures and staging residue, and retains the MP3 for external review.
+Whole, explicit 30-integer-minute, and Google-preset-default plans are compared
+without importing `google.genai`, materializing interval clips, or dispatching a
+provider.
+
+One run reused the exact #696 real MP4 after metadata/path-hash revalidation. It
+completed in 35.703 seconds and published a 38,734,640-byte mono 16 kHz MP3 with
+9,683.4989375 seconds of decoded audio, only 0.0310625 seconds shorter than the
+video container duration. Whole mode returned one exact descriptor. Explicit
+30-minute mode returned six ordered contiguous logical ranges with the fixed
+30-second physical context; the preset default returned the identical six
+ranges and final logical end. Source SHA-256 remained exact, provider calls were
+zero, Google SDK loading and snapshot/audio staging residue were zero.
+
+No runtime defect was exposed. In particular, the scenario does not require
+audio duration to equal video duration because a valid source may legitimately
+have a shorter stream, and it does not pretend a hard-coded counter dynamically
+monitors sockets. The provider-free call graph and absent provider SDK are the
+network boundary. The exact 38,734,751-byte evidence root was removed after
+review; adjacent extraction/planning tests pass 23. Runtime, dependencies,
+public APIs, and provider behavior remain unchanged.
 
 The destination is one visible, caller-composed pair of media flows:
 

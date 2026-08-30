@@ -3411,3 +3411,14 @@ caller-owned evidence for external review and reports SHA/residue on failures;
 33 adjacent public video tests pass. Exact TEMP evidence is removed without
 touching the archive. No provider, dependency, public API, or runtime behavior
 changes.
+
+#697 adds the matching content-free real-video-audio scenario without combining
+the two media branches. The exact #696 source produces one 38,734,640-byte MP3
+in 35.703 seconds; decoded duration is 9,683.4989375 seconds versus 9,683.53 for
+the video. Whole planning returns one descriptor, explicit integer 30-minute
+planning returns six contiguous context-padded descriptors, and the Google
+preset default returns the identical six without loading `google.genai` or
+calling a provider. Full source SHA-256 is unchanged and snapshot/audio staging
+residue is zero. The tool preserves caller-owned failure artifacts with safe
+hash/residue reporting; 23 adjacent extraction/planning tests pass. Exact TEMP
+evidence is removed, and no runtime/API/dependency/provider behavior changes.
