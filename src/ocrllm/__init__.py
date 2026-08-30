@@ -9,6 +9,9 @@ from .split_audio import split_audio as split_audio
 from .compose_video_result import compose_video_result as compose_video_result
 from .publish_video_result import publish_video_result as publish_video_result
 from .recognize import recognize as recognize
+from .recognize_audio_to_markdown import (
+    recognize_audio_to_markdown as recognize_audio_to_markdown,
+)
 from .recognize_batch import recognize_batch as recognize_batch
 from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
 from .recognize_images_to_markdown import (
@@ -16,6 +19,9 @@ from .recognize_images_to_markdown import (
 )
 from .resume_images_to_markdown import (
     resume_images_to_markdown as resume_images_to_markdown,
+)
+from .resume_audio_to_markdown import (
+    resume_audio_to_markdown as resume_audio_to_markdown,
 )
 from .recognize_video import recognize_video as recognize_video
 from .recognize_video_frames import recognize_video_frames as recognize_video_frames
@@ -98,6 +104,9 @@ if TYPE_CHECKING:
         RecognitionPreferences as RecognitionPreferences,
     )
     from .recognize import recognize as recognize
+    from .recognize_audio_to_markdown import (
+        recognize_audio_to_markdown as recognize_audio_to_markdown,
+    )
     from .recognize_batch import recognize_batch as recognize_batch
     from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
     from .recognize_images_to_markdown import (
@@ -105,6 +114,9 @@ if TYPE_CHECKING:
     )
     from .resume_images_to_markdown import (
         resume_images_to_markdown as resume_images_to_markdown,
+    )
+    from .resume_audio_to_markdown import (
+        resume_audio_to_markdown as resume_audio_to_markdown,
     )
     from .recognize_video_frames import (
         recognize_video_frames as recognize_video_frames,
@@ -226,6 +238,10 @@ _PUBLIC_IMPORTS = {
         "get_provider_error_disposition",
     ),
     "recognize": (".recognize", "recognize"),
+    "recognize_audio_to_markdown": (
+        ".recognize_audio_to_markdown",
+        "recognize_audio_to_markdown",
+    ),
     "recognize_batch": (".recognize_batch", "recognize_batch"),
     "recognize_long_mp3": (".recognize_long_mp3", "recognize_long_mp3"),
     "recognize_images_to_markdown": (
@@ -235,6 +251,10 @@ _PUBLIC_IMPORTS = {
     "resume_images_to_markdown": (
         ".resume_images_to_markdown",
         "resume_images_to_markdown",
+    ),
+    "resume_audio_to_markdown": (
+        ".resume_audio_to_markdown",
+        "resume_audio_to_markdown",
     ),
     "recognize_video_frames": (
         ".recognize_video_frames",
@@ -300,10 +320,12 @@ __all__ = [
     "compose_video_result",
     "publish_video_result",
     "recognize",
+    "recognize_audio_to_markdown",
     "recognize_batch",
     "recognize_long_mp3",
     "recognize_images_to_markdown",
     "resume_images_to_markdown",
+    "resume_audio_to_markdown",
     "recognize_video_frames",
     "recognize_video",
     "recognize_video_to_markdown",

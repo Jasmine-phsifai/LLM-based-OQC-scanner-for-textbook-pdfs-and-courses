@@ -59,8 +59,10 @@ from ocrllm import (
     extract_video_frames,
     recognize,
     recognize_batch,
+    recognize_audio_to_markdown,
     recognize_images_to_markdown,
     recognize_long_mp3,
+    resume_audio_to_markdown,
     resume_images_to_markdown,
     split_audio,
     get_capabilities,
@@ -97,11 +99,15 @@ returns normal status plus one warning and bounded `provider_failures`
 metadata. Retry execution, nested lists, pools, merged audio, and repair are not
 part of this slice.
 
-The visible audio preparation path has now started independently:
+The visible audio path is independent and caller-composed:
 
 ```python
 slices = split_audio(audio_path, provider=GOOGLE_GEMINI_2_5_FLASH)
 # Or: split_audio(audio_path, interval_minutes=-1) for one whole-source range.
+result = recognize_audio_to_markdown(
+    slices,
+    provider=GOOGLE_GEMINI_2_5_FLASH,
+)
 ```
 
 `split_audio()` currently accepts MP3 and returns an exact tuple of immutable
@@ -112,8 +118,18 @@ positive `default_audio_minutes` is used. Every supplied candidate must support
 audio. The planner fully validates duration and admits short MP3s through the
 inclusive ten-hour/2 GB product boundary. It reuses the existing 30-second
 context windows but creates no physical clips, output, state, cleanup work, or
-provider call. Merged-audio recognition and resume are the next separate slice;
-provider request limits and retry belong there, not in planning.
+provider call.
+
+`recognize_audio_to_markdown()` accepts only that exact nonempty slice tuple and
+one scalar audio-capable `ProviderModel`. It writes every ordered range into one
+Markdown, checkpoints each settled/no-speech/failed slot, continues after an
+ordinary provider failure, and retains a sidecar for incomplete work. Call
+`resume_audio_to_markdown()` with the same slices and output to reuse settled
+slots and dispatch only the remainder. Short whole-source audio uses the proven
+inline Google route through 300 seconds; longer whole-source and interval work
+use the proven Files lifecycle. This scalar slice does not implement provider
+lists, retries, nested pools, concurrent audio dispatch, repair, or a video
+lifecycle wrapper.
 
 The serial flat lane is live-proven through a fixed real Google scenario: one
 unserved candidate fails safely before generation and the next candidate

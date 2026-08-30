@@ -146,15 +146,15 @@ def _recognize(
                         from .output.load_image_resume_state import (
                             load_image_resume_state,
                         )
-                        from .output.resolve_image_resume_state_path import (
-                            resolve_image_resume_state_path,
+                        from .output.resolve_resume_state_path import (
+                            resolve_resume_state_path,
                         )
                         from .output.validate_image_resume_state_output_pair import (
                             validate_image_resume_state_output_pair,
                         )
                         from .reuse_image_resume_state import reuse_image_resume_state
 
-                        resume_state_path = resolve_image_resume_state_path(output_path)
+                        resume_state_path = resolve_resume_state_path(output_path)
                         if (
                             not cfg.resume
                             and os.path.lexists(resume_state_path)

@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #675)
+## 0. Current pruning and execution checkpoint (2026-08-30, #676)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -270,6 +270,40 @@ call belongs to this provider-free planner. The next replacement slice is the
 smallest scalar merged-audio recognition/resume consumer of these stable range
 identities; retry execution, nested pools, repair, and old-video deletion remain
 gated.
+
+### #676 ships the scalar merged-audio recognition/resume owner
+
+Package-root `recognize_audio_to_markdown()` now consumes the exact nonempty
+`AudioSlice` tuple produced by `split_audio()`, one scalar audio-capable
+`ProviderModel`, and one optional Markdown target. It validates the complete
+slice plan, decoded source, output plus sidecar, and provider route before
+generation; reserves every ordered range in one versioned sidecar; attempts
+each unresolved range once; checkpoints settled, no-speech, or failed outcomes;
+and publishes one ordered Markdown. `resume_audio_to_markdown()` requires the
+same source bytes and exact ranges, reuses settled slots, and dispatches only
+failed or unresolved slots. Complete work removes state, mixed work publishes
+explicit failed-slot markers and retains state, and zero settlement retains
+state without creating a new Markdown and raises `AllCandidatesExhausted`.
+
+The first slice is deliberately scalar and serial. It has no provider list,
+fallback, retry/wait rule execution, nested lane, concurrent scheduler, repair,
+physical pre-splitting, generic media job, or old-video integration. Short
+whole-file input (at most 300 seconds) preserves the existing inline Google
+transport; longer whole-file input and explicit interval slices preserve the
+existing Google Files lifecycle. Only one interval clip exists at a time and is
+deleted by the existing context manager. Usage remains cumulative per exact
+provider/model with unknown token dimensions kept as `None`.
+
+Focused audio/image/output/import regressions pass **98 tests / 3.53s**. A
+90-second authorized archive-derived MP3 was planned as two one-minute slots.
+The bounded live Google operation produced both ordered transcript slots,
+published 1,171 bytes, removed its complete-state sidecar, and left the source
+unchanged. The scenario process then exited 1 only because its safe reporter
+attempted to JSON-serialize immutable `mappingproxy` usage rows after the
+library had returned; the tool now projects those rows to ordinary safe dicts.
+The API operation was not replayed. This is complete recognition evidence with
+an honest harness-reporting defect, not a provider/runtime failure. Flat audio
+fallback and retry remain later separately evidenced slices.
 
 The destination is one visible, caller-composed pair of media flows:
 

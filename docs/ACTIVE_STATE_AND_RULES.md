@@ -13626,3 +13626,41 @@ pass **47 tests / 1.18s** and the complete offline suite passes **1,656 tests /
 slice. The next gated product step is scalar merged-audio recognition/resume
 over these range identities, not retry speculation, a nested pool, repair, or
 old-video deletion.
+
+## Current working update: #676 ships scalar merged-audio recognition and resume
+
+The package root now exposes `recognize_audio_to_markdown()` and
+`resume_audio_to_markdown()`. They consume one exact nonempty tuple of the
+public `AudioSlice` values and one exact audio-capable scalar `ProviderModel`.
+Before generation the owner validates the decoded source, canonical whole or
+integer-minute ranges, explicit/default Markdown and sidecar paths, and admitted
+adapter. It writes an initial audio-specific v1 sidecar, attempts each unresolved
+slot once in order, checkpoints speech, no-speech, or canonical provider failure,
+continues to later slots, and publishes one ordered Markdown. Resume binds exact
+source URI/size/SHA-256 plus ranges and prompt mode, reuses settled slots, and
+retries only failed/unresolved slots. Complete state is removed; partial state
+and failed markers remain; zero settlement retains state and raises existing
+`AllCandidatesExhausted` without a new Markdown.
+
+This does not wrap or extend the frozen video chain. It adds no flat or nested
+provider topology, retry/wait executor, pool, concurrency, repair, permanent
+clips, generic transaction, or media-job abstraction. Whole audio at or below
+the existing 300-second short threshold uses native inline transport. Longer
+whole audio and every explicit interval keep the already-proven Google Files
+upload/delete lifecycle; only the active interval clip exists. Existing atomic
+byte-state and Markdown primitives are reused. Duplicated image-only output
+preflight/state-path helpers were reduced to media-neutral filename owners, but
+image/audio schemas and job lifecycles remain separate.
+
+Focused image/audio/output/import regressions pass **98 tests / 3.53s**. The
+real zero-call path first proved a 492-character output target is rejected as
+`OUTPUT_PATH_INVALID` with zero calls and no files. A safe 236-character target
+then reached `CONFIG_MISSING` with zero calls and an initial sidecar. One bounded
+credential/proxy-isolated call processed a 90-second existing authorized MP3 as
+two one-minute slots: both transcripts published in order to 1,171 bytes, state
+was removed, and the source stayed unchanged. The child exited 1 only after the
+successful public result because the content-free runner passed immutable
+`mappingproxy` usage rows to `json.dumps`. The tool now converts those rows to
+validated plain dictionaries. No API retry, resume, model switch, or second
+live call occurred. The next audio provider-list/retry work remains separately
+gated by evidence.

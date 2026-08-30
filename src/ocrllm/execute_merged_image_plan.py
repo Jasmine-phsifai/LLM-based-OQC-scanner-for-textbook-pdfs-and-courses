@@ -11,15 +11,12 @@ from .config import Config
 from .errors import OCRLLMError, OutputError, ProviderError, ResumeStateError
 from .fingerprint_image_sources import fingerprint_image_sources
 from .imaging.snapshot_image_group import snapshot_image_group
-from .merged_image_resume_state import (
-    MergedImageResumeState,
-    MergedImageSlot,
-    ProviderModelUsage,
-)
+from .merged_image_resume_state import MergedImageResumeState, MergedImageSlot
 from .output.save_merged_image_resume_state_atomically import (
     save_merged_image_resume_state_atomically,
 )
 from .providers.provider_model import ProviderModel
+from .provider_model_usage import ProviderModelUsage
 from .providers.recognize_provider_model_images import (
     recognize_provider_model_images,
 )

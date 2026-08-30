@@ -6,7 +6,7 @@ from pathlib import Path
 
 from ..errors import OutputError
 from .normalize_output_stem import normalize_output_stem
-from .resolve_image_resume_state_path import resolve_image_resume_state_path
+from .resolve_resume_state_path import resolve_resume_state_path
 from .validate_atomic_output_path import validate_atomic_output_path
 
 
@@ -45,5 +45,5 @@ def resolve_merged_image_output_path(
             code="OUTPUT_PATH_INVALID",
         ) from None
     validate_atomic_output_path(resolved)
-    validate_atomic_output_path(resolve_image_resume_state_path(resolved))
+    validate_atomic_output_path(resolve_resume_state_path(resolved))
     return resolved

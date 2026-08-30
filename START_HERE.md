@@ -1770,3 +1770,16 @@ provider calls, retries, or repair behavior. This planner accepts short MP3s
 through the inclusive ten-hour product ceiling; provider-specific request limits
 belong to the later recognition consumer. The next active slice is scalar merged
 audio recognition/resume over these explicit identities.
+
+#676 completes that first scalar consumer. Package-root
+`recognize_audio_to_markdown()` writes an exact `AudioSlice` tuple into one
+ordered Markdown and durable sidecar; `resume_audio_to_markdown()` validates the
+same source bytes/ranges, reuses settled slots, and calls only unresolved work.
+Short whole audio preserves inline Google transport through 300 seconds;
+longer whole audio and interval slices preserve Google Files. Mixed settlement
+returns a partial Markdown plus retained state; zero settlement raises
+`AllCandidatesExhausted` without a new Markdown. No provider list, retry/wait,
+nested pool, repair, generic media job, or old-video integration is included.
+The bounded two-slot Google run completed and published; only the post-success
+safe reporter failed to serialize immutable metadata, and the call was not
+replayed.

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from .contracts.source_fingerprint import SourceFingerprint
 from .errors import ResumeStateError
+from .provider_model_usage import ProviderModelUsage
 
 
 MERGED_IMAGE_RESUME_STATE_VERSION = "ocrllm.merged-image-resume.v1"
@@ -108,26 +109,6 @@ class MergedImageSlot:
             )
         ):
             raise ValueError("unresolved merged-image slot carries outcome data")
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ProviderModelUsage:
-    """Keep cumulative trustworthy usage for one exact provider model."""
-
-    vendor: str
-    model: str
-    calls: int
-    input_tokens: int | None
-    output_tokens: int | None
-
-    def __post_init__(self) -> None:
-        if not _is_text(self.vendor) or not _is_text(self.model):
-            raise ValueError("provider-model usage identity is invalid")
-        if type(self.calls) is not int or self.calls < 1:
-            raise ValueError("provider-model usage calls are invalid")
-        for value in (self.input_tokens, self.output_tokens):
-            if value is not None and (type(value) is not int or value < 0):
-                raise ValueError("provider-model token usage is invalid")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

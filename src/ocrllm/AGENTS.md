@@ -101,6 +101,19 @@ media planner, or provider-specific request limits. Non-path inputs must remain
 typed `SOURCE_INVALID`. The next consumer is scalar merged-audio
 recognition/resume; do not extend the frozen old video family to consume it.
 
+#676 adds the first scalar consumer as public
+`recognize_audio_to_markdown()` / `resume_audio_to_markdown()`. Require the
+exact nonempty `AudioSlice` tuple, one exact audio-capable `ProviderModel`, one
+ordered Markdown, and one audio-specific durable sidecar. Settle each unresolved
+slot once, continue after ordinary provider failure, checkpoint every terminal
+outcome, and resume only non-settled slots. Short whole-file audio keeps the
+existing inline route through 300 seconds; longer whole-file and interval work
+keep Google Files. Do not add provider lists, retry/wait execution, nested
+lanes, concurrency, repair, physical pre-splitting, a generic media lifecycle,
+or old-video consumption in this slice. The bounded two-slot Google run
+completed and published; its exit-1 was a post-success safe-reporter
+`mappingproxy` serialization defect, now fixed without replaying the API call.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

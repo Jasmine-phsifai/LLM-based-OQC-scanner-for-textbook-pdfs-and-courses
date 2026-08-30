@@ -28,8 +28,10 @@ def recognize_images_to_markdown(
     from .normalize_merged_image_batches import normalize_merged_image_batches
     from .normalize_provider_model_lane import normalize_provider_model_lane
     from .output.output_target_claims import OutputTargetClaims
-    from .output.preflight_merged_image_output import preflight_merged_image_output
-    from .output.resolve_image_resume_state_path import resolve_image_resume_state_path
+    from .output.preflight_resumable_markdown_output import (
+        preflight_resumable_markdown_output,
+    )
+    from .output.resolve_resume_state_path import resolve_resume_state_path
     from .output.resolve_merged_image_output_path import (
         resolve_merged_image_output_path,
     )
@@ -63,10 +65,10 @@ def recognize_images_to_markdown(
             prompt_version=prompt_version,
             sources=sources,
         )
-        state_path = resolve_image_resume_state_path(resolved_output_path)
+        state_path = resolve_resume_state_path(resolved_output_path)
         with OutputTargetClaims() as claims:
             claims.claim(resolved_output_path)
-            preflight_merged_image_output(
+            preflight_resumable_markdown_output(
                 resolved_output_path,
                 state_path,
                 resume=False,

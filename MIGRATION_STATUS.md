@@ -3172,3 +3172,19 @@ physical clips, output, state, cleanup registry, or API call. Focused tests pass
 47 in 1.18 seconds and the full offline suite passes 1,656 in 65.52 seconds.
 The next replacement slice is scalar merged-audio recognition/resume; retry,
 nested pools, repair, and old-video deletion remain gated.
+
+#676 ships that scalar merged-audio owner. Package-root
+`recognize_audio_to_markdown()` consumes one exact nonempty `AudioSlice` tuple
+and scalar audio-capable `ProviderModel`, checkpoints every ordered slot, and
+publishes one Markdown; `resume_audio_to_markdown()` requires identical source
+bytes/ranges and reuses settled slots without replay. Short whole-file input
+uses the existing inline Google path through 300 seconds, while longer whole
+input and intervals use the existing Files lifecycle. Complete work removes
+state, mixed work retains state plus failed-slot markers, and zero settlement
+raises `AllCandidatesExhausted` without a new Markdown. The implementation adds
+no provider list, retry/wait executor, nested pool, repair, generic media job,
+or old-video integration. Focused regressions pass 98. One bounded 90-second,
+two-slot Google run completed, published 1,171 bytes, removed state, and left
+the source unchanged; its process exited 1 afterward because the safe reporter
+could not JSON-serialize immutable usage metadata. The reporter is fixed and
+the API call was not replayed.

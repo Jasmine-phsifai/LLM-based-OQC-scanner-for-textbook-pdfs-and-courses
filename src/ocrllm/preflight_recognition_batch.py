@@ -10,7 +10,7 @@ from .coerce_source_paths import coerce_source_paths
 from .config import Config
 from .errors import ConfigError, InvalidSource, OutputError, OutputExists
 from .output.load_image_resume_state import load_image_resume_state
-from .output.resolve_image_resume_state_path import resolve_image_resume_state_path
+from .output.resolve_resume_state_path import resolve_resume_state_path
 from .output.resolve_output_path import resolve_output_path
 from .output.validate_image_resume_state_output_pair import (
     validate_image_resume_state_output_pair,
@@ -73,7 +73,7 @@ def preflight_recognition_batch(
                 _validate_output_target_without_writing(output_path, config=config)
                 if config.resume:
                     resume_state = load_image_resume_state(
-                        resolve_image_resume_state_path(output_path)
+                        resolve_resume_state_path(output_path)
                     )
                     validate_image_resume_state_output_pair(
                         resume_state,
