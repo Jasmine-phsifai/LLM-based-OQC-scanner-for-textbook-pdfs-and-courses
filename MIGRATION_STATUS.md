@@ -3367,3 +3367,20 @@ raised all-candidates-exhausted, wrote no Markdown, retained two failed slots in
 a 5,730-byte state with one unknown-token call, and reported clean source/client
 lifecycle. No second child/retry or code fix followed; evidence was removed and
 image repair live success remains deferred/open.
+
+#694 refreshes the clean installed-wheel gate after both strict repair APIs.
+The dependency-empty installed probe now imports both package-root repair
+facades and proves invalid image batches and a missing audio source fail with
+typed errors, zero provider calls, no output/state, and no optional imports. The
+first exact installed probe exposed that all three merged-image batch-shape
+errors omitted the truthful zero-call detail; the shared normalizer now supplies
+it and the existing merged-image feature suite covers the public boundary.
+Release-size pressure was resolved through proven reductions only: one dead
+single-lane wrapper and two unused marker fields were removed, four duplicate
+usage projections were shared in the existing usage module, and the lazy public
+import map stopped storing names twice. The exact `21ab952` archive gate passes
+1,464 tests with one expected RapidOCR skip, all nine optional profiles, a
+327,187-byte wheel, a 1,681,609-byte base install, and the installed visible
+video-to-frame-batch/audio-slice flow. No provider call, dependency, media API,
+state schema, or retry behavior was added; image repair live success remains
+deferred/open.
