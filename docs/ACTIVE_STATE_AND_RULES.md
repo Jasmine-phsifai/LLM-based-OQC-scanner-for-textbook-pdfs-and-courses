@@ -14351,3 +14351,21 @@ source hash stayed exact, and no credential/process residue remained. Cleanup
 removed the exact 603-byte TEMP root. This closes same-call cross-vendor success
 without adding runtime, runner, retry, provider pool, dependency, state, API or
 provider-policy behavior; retry maps remain empty.
+
+## Current working update: #710 records the post-gate decision boundary
+
+After #708 and #709 closed the two external live-success gates, primary review
+and one independent read-only audit found no implementation-ready active-library
+defect or safely removable shipped runtime contract. Retry rules remain evidence-
+gated; video selector changes require missed-content proof; provider-model PDF
+and public long-M4A require maintainer decisions; the existing deferred list
+remains deferred.
+
+The current plan's destination sentence previously said PDF reuses the merged
+image backend, which could falsely imply Route A was chosen. It now states the
+shipped truth—PDFium plus the original Config/injected-provider grouped-image
+path—and makes Route A composition versus Route B PDF ownership conditional on
+an explicit choice. The neighboring old-video paragraph now calls the removed
+family the historical #680 deletion target rather than currently shipped. No
+runtime, API, test, provider/media action, dependency, state, public contract or
+frozen code changes.

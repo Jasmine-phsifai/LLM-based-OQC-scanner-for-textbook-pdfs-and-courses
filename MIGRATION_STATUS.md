@@ -3568,3 +3568,15 @@ tokens. Complete 494-byte Markdown matches the result; state, marker, credential
 residue and runner process are absent, and the source hash is unchanged. The
 owned 603-byte TEMP root is removed. No runtime/runner/API/dependency/state/
 retry/pool/provider-policy change occurs; retry maps remain empty.
+
+#710 re-audits the post-live-gate queue and finds no implementation-ready
+runtime defect or safe breaking simplification. Same-model retry and video
+selector changes remain real-evidence gated; provider-model PDF Route A/B and
+public long-M4A remain maintainer decisions; the recorded social/catalog/audio/
+PDF-text/worker/Rust/combined-video surfaces remain deferred. One ambiguous plan
+sentence is corrected: current direct PDF still uses PDFium plus the original
+Config/injected-provider groups; merged-image composition is conditional on
+Route A, while Route B would require an explicit PDF owner. The adjacent
+combined-video deletion text is also changed from stale “currently shipped”
+tense to the historical target completed in #680. No runtime/API/test/provider/
+media/dependency/state/public-contract/frozen-code change occurs.

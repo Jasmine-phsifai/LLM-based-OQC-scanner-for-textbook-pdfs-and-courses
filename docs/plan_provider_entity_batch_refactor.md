@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #709)
+## 0. Current pruning and execution checkpoint (2026-08-31, #710)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1328,6 +1328,40 @@ empty. Guarded cleanup removed the two owned files and one descendant directory
 (603 bytes) and confirmed the exact TEMP root absent without targeting repo,
 source, or other TEMP.
 
+### #710 leaves no autonomous runtime slice and clarifies PDF conditionality
+
+Primary export/code/document review plus one independent read-only audit found
+no concrete active-library defect or removable runtime structure after #708 and
+#709. The post-gate queue is now:
+
+1. **Implementation-ready without new authority:** none.
+2. **Real-evidence gated:** same-model retry rules remain empty until a bounded
+   real failure/recovery observation establishes a finite count and wait;
+   changing the video frame selector requires actual missed-content evidence.
+3. **Maintainer-decision blocked:** choose provider-model PDF Route A or B;
+   public long-M4A exposure remains a separate later ownership/format decision.
+4. **Deliberately deferred/out of scope:** social media, full catalog mirrors,
+   WAV/other audio widening, DashScope audio, PDF text mode, worker v1alpha2,
+   shared capability registration, Rust/PyO3, and combined video lifecycle.
+5. **Completed within stated boundaries:** provider-model image/MP3 planning,
+   scalar/flat/nested recognition, ordinary resume, experimental repair,
+   provider-free video extraction, stateless `resume_video`, local OCR, direct
+   PDF, worker v1alpha1, image/audio repair live success, and same-call
+   Google-to-DashScope fallback success.
+
+The older direct-facade policy and credential-pool public types are not deleted
+merely because the new provider-model path exists. They are shipped contracts
+with consumers/tests, and no dead-consumer or real-defect evidence supports a
+breaking cleanup. Test pruning likewise remains opportunistic, not a project.
+
+The prior destination wording said “PDF reuses the merged image backend,” which
+could be read as an already-made Route A choice. That was not authorized. The
+destination paragraph below now makes both routes conditional and keeps the
+currently shipped direct PDF behavior explicit. The adjacent old-video deletion
+paragraph also no longer calls the already-deleted family currently shipped; it
+is labeled as the historical target completed in #680. No runtime, API, test,
+provider, media, dependency, state, public contract, or frozen code changes.
+
 The destination is one visible, caller-composed pair of media flows:
 
 ```text
@@ -1338,14 +1372,20 @@ extract_video_audio -> split_audio
                     -> merged audio recognition/resume/experimental repair
 ```
 
-PDF reuses the merged image backend after page rendering. Image and audio own
-separate plans, sidecars, Markdown outputs, providers, and resume calls. There
-is no replacement `recognize_video` recognition/lifecycle black box. The thin
-package-root `resume_video` route fixed by #633 delegates exactly one already-
-extracted branch per call and owns no state, composition, or cleanup.
+The shipped direct PDF facade still uses PDFium with the original
+`Config`/injected-provider grouped-image path. If the maintainer selects Route A,
+caller-owned page extraction will compose with the existing merged-image
+backend; if Route B is selected, a PDF-specific owner must explicitly own source
+identity, retained pages, cleanup, provider topology and resume. Neither route
+is implemented by implication. Image and audio keep separate plans, sidecars,
+Markdown outputs, providers, and resume calls. There is no replacement
+`recognize_video` recognition/lifecycle black box. The thin package-root
+`resume_video` route fixed by #633 delegates exactly one already-extracted
+branch per call and owns no state, composition, or cleanup.
 
-The deletion target is the currently shipped **video recognition/orchestration
-family**: `recognize_video`, `recognize_video_to_markdown`,
+The historical deletion target completed in #680 was the then-shipped **video
+recognition/orchestration family**: `recognize_video`,
+`recognize_video_to_markdown`,
 `recognize_video_frames`, their image/audio job helpers, video journal/state,
 video result composition/publication, `VideoRecognitionOutcome`, and the video-
 specific audio recognizer. Keep provider-free `inspect_video`,
