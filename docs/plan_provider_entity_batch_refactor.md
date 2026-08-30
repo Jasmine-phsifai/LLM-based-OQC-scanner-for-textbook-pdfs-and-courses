@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #667)
+## 0. Current pruning and execution checkpoint (2026-08-30, #668)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -51,7 +51,35 @@ The initially considered merged recognizer was deliberately not published in
 this iteration. The approved partial-settlement contract requires one resumable
 sidecar together with failed Markdown slots; exposing a partial result without
 that owner would create a non-resumable half-contract. Scalar merged
-recognition, its sidecar, and ordinary resume therefore land together next.
+recognition, its sidecar, and ordinary resume therefore had to land together.
+
+### #668 ships the scalar merged-image recognition/resume owner
+
+Package-root `recognize_images_to_markdown()` now accepts only the exact
+already-batched tuple returned by visible planning, one scalar `ProviderModel`,
+and required exact `image_task`. It validates the complete task, target, image
+plan, and source fingerprints before dispatch; reserves every ordered slot in
+one versioned sidecar; attempts each unresolved slot once; and checkpoints each
+settled or failed outcome before advancing. It does not re-batch, retry, switch
+models, traverse a list, or hide video extraction.
+
+All-settled work publishes one ordered Markdown and removes temporary state.
+Mixed settlement publishes exact failed-slot markers, retains state, and
+returns the existing result with `status="partial"`. Zero settlement leaves no
+new Markdown, retains state, and raises existing `AllCandidatesExhausted`.
+Package-root `resume_images_to_markdown()` restores task, prompt version,
+source fingerprints, and immutable group membership; a changed scalar provider
+is allowed, while settled slots are reused and only unresolved slots dispatch.
+The sidecar stores one cumulative usage row per exact `(vendor, model)` and no
+credential, runtime settings, retry history, or response body.
+
+This slice also extracts the duplicated image/audio binary sidecar replacement
+code into one small atomic-byte writer. The media schemas, paths, and lifecycle
+rules remain separate. This is reduction, not a generic transaction framework:
+there is still no cross-file commit marker, rollback log, cross-process lock,
+state registry, or media-neutral job abstraction. Focused and full offline
+regressions are complete; the required bounded live merged-image batches remain
+the next independent evidence gate before flat fallback or merged audio.
 
 The destination is one visible, caller-composed pair of media flows:
 

@@ -13406,3 +13406,35 @@ immutable data validation is bounded; no dispatcher, labels-as-state-machine,
 timer, retry history, or speculative numeric rule was added. The next atomic
 slice is scalar merged image recognition plus its state/resume owner, not a
 flat/nested provider scheduler.
+
+## Current working update: #668 ships scalar merged-image recognition and resume
+
+#668 adds package-root `recognize_images_to_markdown()` and
+`resume_images_to_markdown()` as one coherent recovery owner. Fresh work accepts
+only exact pre-batched tuples, one exact `ProviderModel`, required exact
+`plain_ocr`/`detail_ocr`, and an optional Markdown target. Complete capability,
+target, media, grouping, and source-fingerprint preflight occurs before any
+provider dispatch. The engine reserves all slots first, attempts every
+unresolved slot once, and persists each success or safe typed failure before
+continuing.
+
+Complete settlement publishes one ordered Markdown and removes temporary state.
+Mixed settlement publishes ordered failed-slot markers, retains one versioned
+sidecar, and returns `status="partial"`; zero settlement retains state, creates
+no new Markdown, and raises existing `AllCandidatesExhausted`. Resume restores
+task, prompt version, exact source bytes/order, and group membership, permits a
+changed scalar provider, reuses settled Markdown, and dispatches only unresolved
+slots. Cumulative sidecar usage is keyed by exact vendor/model; calls are exact,
+and a missing trustworthy token dimension remains `None`.
+
+The implementation does not add a provider list, fallback, retry executor,
+pool, repair parser, audio fields, video wrapper, worker/contract change, or
+cross-file transaction. It also reduces existing duplication: image and long-
+audio state serializers keep their schemas and paths, while their identical
+binary atomic-replacement mechanics now use one small helper. A first direct
+package-root binding eagerly loaded execution/output helpers and failed four
+lightweight-import regressions; moving those imports inside the call restored
+the intended library import boundary. Focused tests pass and the full offline
+suite is **1,639 passed / 61.82s**. Ruff is not installed in the active
+environment, so no lint success is claimed. Bounded live merged-image batches
+remain the next independent gate.

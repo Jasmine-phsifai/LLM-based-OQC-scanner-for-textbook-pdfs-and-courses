@@ -230,6 +230,17 @@ provider default, returns ordered tuple groups, and performs no dispatch or
 publication. Merged recognition is still absent: its partial-output contract
 must land with the resumable sidecar instead of exposing an unrecoverable
 half-result.
+#668 lands that coherent scalar boundary. Package-root
+`recognize_images_to_markdown()` consumes exact prebuilt image tuples, required
+plain/detail task, and one `ProviderModel`, attempts later slots after a failure,
+and publishes one ordered complete or partial Markdown. Its versioned sidecar
+preserves source/group identity, settled slots, failed-slot evidence, and exact
+vendor/model cumulative usage. `resume_images_to_markdown()` restores the saved
+task/plan, accepts a changed scalar provider, and dispatches only unresolved
+slots. Full completion removes state; zero completion raises
+`AllCandidatesExhausted` and creates no Markdown. No fallback/list/pool/retry,
+merged audio, repair, or video-chain deletion is included. All 1,639 offline
+tests pass; bounded live merged-image proof remains next.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

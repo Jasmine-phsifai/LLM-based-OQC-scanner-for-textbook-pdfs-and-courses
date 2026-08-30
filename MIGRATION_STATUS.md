@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#667)
+### Current provider/media checkpoint (#668)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -220,6 +220,19 @@ Only capability/default facts supported by successful real evidence may join
 the curated public presets. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,
 audio, pools, merged media, or other later topology.
+#668 publishes the first complete replacement execution slice:
+`recognize_images_to_markdown()` and `resume_images_to_markdown()` own one
+ordered Markdown plus one versioned merged-image sidecar. Scalar task/provider,
+all sources, group membership, fingerprints, and targets are validated before
+dispatch. Later slots continue after one provider failure; partial output keeps
+failed markers and state, zero settlement raises `AllCandidatesExhausted`, and
+resume may change the scalar provider while reusing every settled slot. Usage is
+cumulative per exact vendor/model, with unknown token dimensions kept as
+unknown. The prior image and long-audio atomic byte writers now share one small
+core, removing duplicated lifecycle code without merging their schemas. There
+is still no fallback, retry executor, provider list/pool, merged audio, repair,
+video deletion, worker change, or cross-file transaction. The full offline
+suite passes 1,639 tests; bounded live merged-image proof is the next gate.
 
 The fixed destination has no second video black box. Callers visibly compose
 provider-free video inspection/extraction with independent merged-image and

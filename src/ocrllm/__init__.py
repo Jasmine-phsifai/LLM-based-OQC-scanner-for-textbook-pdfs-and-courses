@@ -10,6 +10,12 @@ from .publish_video_result import publish_video_result as publish_video_result
 from .recognize import recognize as recognize
 from .recognize_batch import recognize_batch as recognize_batch
 from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
+from .recognize_images_to_markdown import (
+    recognize_images_to_markdown as recognize_images_to_markdown,
+)
+from .resume_images_to_markdown import (
+    resume_images_to_markdown as resume_images_to_markdown,
+)
 from .recognize_video import recognize_video as recognize_video
 from .recognize_video_frames import recognize_video_frames as recognize_video_frames
 from .recognize_video_to_markdown import (
@@ -91,6 +97,12 @@ if TYPE_CHECKING:
     from .recognize import recognize as recognize
     from .recognize_batch import recognize_batch as recognize_batch
     from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
+    from .recognize_images_to_markdown import (
+        recognize_images_to_markdown as recognize_images_to_markdown,
+    )
+    from .resume_images_to_markdown import (
+        resume_images_to_markdown as resume_images_to_markdown,
+    )
     from .recognize_video_frames import (
         recognize_video_frames as recognize_video_frames,
     )
@@ -211,6 +223,14 @@ _PUBLIC_IMPORTS = {
     "recognize": (".recognize", "recognize"),
     "recognize_batch": (".recognize_batch", "recognize_batch"),
     "recognize_long_mp3": (".recognize_long_mp3", "recognize_long_mp3"),
+    "recognize_images_to_markdown": (
+        ".recognize_images_to_markdown",
+        "recognize_images_to_markdown",
+    ),
+    "resume_images_to_markdown": (
+        ".resume_images_to_markdown",
+        "resume_images_to_markdown",
+    ),
     "recognize_video_frames": (
         ".recognize_video_frames",
         "recognize_video_frames",
@@ -275,6 +295,8 @@ __all__ = [
     "recognize",
     "recognize_batch",
     "recognize_long_mp3",
+    "recognize_images_to_markdown",
+    "resume_images_to_markdown",
     "recognize_video_frames",
     "recognize_video",
     "recognize_video_to_markdown",

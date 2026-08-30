@@ -10,6 +10,7 @@ from ocrllm import (
     AllCandidatesExhausted,
     AudioModelSettings,
     BatchItemOutcome,
+    DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
     Cancelled,
     CapabilityReport,
     ConcurrencyLimited,
@@ -23,6 +24,7 @@ from ocrllm import (
     DashScopeSettings,
     DependencyMissing,
     GoogleGenAISettings,
+    GOOGLE_GEMINI_2_5_FLASH,
     InvalidSource,
     LocalOCRSettings,
     NoSpeechDetected,
@@ -33,6 +35,7 @@ from ocrllm import (
     OutputExists,
     PDFError,
     ProviderError,
+    ProviderModel,
     ProviderAccountSuspended,
     ProviderContentBlocked,
     ProviderErrorDisposition,
@@ -50,17 +53,40 @@ from ocrllm import (
     VideoError,
     VideoInfo,
     VisionModelSettings,
+    batchify_images,
     extract_video_audio,
     extract_video_frames,
     recognize,
     recognize_batch,
+    recognize_images_to_markdown,
     recognize_long_mp3,
+    resume_images_to_markdown,
     get_capabilities,
     get_provider_error_disposition,
     inspect_video,
     list_google_genai_models,
 )
 ```
+
+The visible merged-image path is now:
+
+```python
+batches = batchify_images(tuple(image_paths), provider=GOOGLE_GEMINI_2_5_FLASH)
+result = recognize_images_to_markdown(
+    batches,
+    provider=GOOGLE_GEMINI_2_5_FLASH,
+    image_task="detail_ocr",
+)
+```
+
+`recognize_images_to_markdown()` does not accept a generator or silently
+re-batch. It writes one ordered Markdown. Some failed slots produce a durable
+partial Markdown and sidecar; zero settled slots raise
+`AllCandidatesExhausted` without creating a new Markdown. Pass the same explicit
+batches to `resume_images_to_markdown()`; it restores the saved task and exact
+group plan, may use a different scalar `ProviderModel`, and calls the provider
+only for unresolved slots. Provider lists, fallback, retry execution, pools,
+merged audio, and repair are not part of this slice.
 
 Provider-free `inspect_video()`, `extract_video_frames()`, and
 `extract_video_audio()` are active. The package still exports
