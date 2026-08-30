@@ -13486,3 +13486,35 @@ The next run must use an explicit `.jpg`/`.jpeg`/`.png` predicate, prove the
 missing-credential zero-call path, and only then make one bounded live call.
 Invalid members remain fail-fast whole-batch rejections; the library must not
 auto-skip them or broaden formats to accommodate this controller mistake.
+
+## Current working update: #671 real merged-image run settles one of two slots
+
+The corrected selector supplied exactly 16 distinct validated JPEG/PNG leaves.
+The maintained runner first proved the no-credential path with
+`CONFIG_MISSING`, zero provider calls, unchanged sources, no Markdown, and one
+initial sidecar. That scratch state was inspected and removed before any key was
+read. One subsequent child-only Google invocation then used two exact groups of
+eight, `gemini-2.5-flash`, `detail_ocr`, and the HTTP proxy, with no retry,
+fallback, model switch, model sweep, or second fresh runner.
+
+The child ended naturally after about 674 seconds and emitted one content-free
+JSON object. It reported `status="partial"`, exactly two generation calls, one
+settled slot, one failed slot, unchanged source bytes, a 609-byte Markdown, a
+5,212-byte retained sidecar, unknown aggregate token dimensions, and no provider
+cleanup warning. A safe sidecar projection identifies the failed slot as index
+1 with canonical `PROVIDER_TIMEOUT`; no Markdown or error description was read
+or exposed. The numeric process exit was not retained by the external
+PowerShell parent and is not reconstructed.
+
+This duration is not itself a runtime timeout defect. The configured 600 seconds
+is passed to the native SDK per operation; total catalog/generation work can
+exceed one operation's bound, as prior complete live evidence already shows.
+No timeout or production code changed. The real run instead exposed a runner
+reporting gap: partial JSON omitted the canonical failed-slot code. The runner
+now includes only validated slot indexes and stable codes, never descriptions.
+Its helper probe, compilation, and the five focused merged-image tests pass.
+
+The partial Markdown and sidecar remain in their exact private TEMP scratch for
+the next atomic resume proof. That proof must make no fresh call, reuse settled
+slot 0, dispatch only failed slot 1, and remove state only after complete
+publication. The unrelated empty scratch was removed.

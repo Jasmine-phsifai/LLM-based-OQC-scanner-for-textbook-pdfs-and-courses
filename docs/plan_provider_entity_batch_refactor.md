@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #670)
+## 0. Current pruning and execution checkpoint (2026-08-30, #671)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -124,6 +124,32 @@ The next atomic gate must select exact `.jpg`/`.jpeg`/`.png` leaves with an
 explicit extension predicate, repeat the zero-call capture proof, and only then
 permit one bounded live invocation. Do not add automatic source skipping or
 broader format compatibility: invalid batch members remain whole-call rejects.
+
+### #671 proves real partial settlement and preserves it for live resume
+
+With an explicit `.jpg`/`.jpeg`/`.png` predicate, the zero-call stage reached
+the intended `CONFIG_MISSING` boundary: exact call count zero, unchanged 16
+sources, no Markdown, and one initial sidecar. After that state was inspected
+and removed, one and only one credential-isolated live runner invocation used
+the same two groups of eight through the HTTP proxy.
+
+The fresh live operation made exactly two generation calls. One slot settled;
+the other ended with canonical `PROVIDER_TIMEOUT`. The public result was
+`partial`, with 609 bytes of Markdown, one retained v1 merged-image sidecar,
+unchanged sources, no provider-client cleanup warning, and unknown aggregate
+input/output tokens rather than invented counts. The process ended naturally;
+its safe JSON was retained, but the external PowerShell parent again failed to
+retain a numeric exit code. The approximately 674-second outer duration does
+not prove a timeout defect: `timeout_seconds=600` is the existing per-operation
+SDK bound, and historical complete runners legitimately exceeded it in total.
+
+The live run exposed one safe-reporting omission in the scenario runner: its
+partial JSON counted failed slots but omitted their canonical codes. The runner
+now projects only validated slot indexes and stable error codes; descriptions,
+paths, and recognized text remain excluded. No production code, retry, fallback,
+timeout, or provider policy changed. The partial output/state is intentionally
+retained outside Git for the next atomic live-resume gate, which must dispatch
+only slot 1 and must not replay settled slot 0. Do not start another fresh run.
 
 The destination is one visible, caller-composed pair of media flows:
 

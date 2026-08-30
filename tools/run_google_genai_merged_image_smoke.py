@@ -10,7 +10,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from ocrllm import GOOGLE_GEMINI_2_5_FLASH, recognize_images_to_markdown
-from ocrllm.errors import OCRLLMError
+from ocrllm.errors import OCRLLMError, STABLE_ERROR_CODES
 
 
 BATCH_COUNT = 2
@@ -120,17 +120,18 @@ def _result_summary(
     ]:
         summary["status"] = "passed"
         return summary
-    failed_slots = metadata.get("failed_slots")
+    failed_slots = _safe_failed_slots(metadata.get("failed_slots"))
     if (
         status == "partial"
         and type(settled) is int
         and 0 < settled < BATCH_COUNT
-        and type(failed_slots) is tuple
+        and failed_slots is not None
         and len(failed_slots) == BATCH_COUNT - settled
         and state["exists"] is True
     ):
         summary["status"] = "partial"
         summary["failed_slot_count"] = len(failed_slots)
+        summary["failed_slots"] = failed_slots
         return summary
     return _invalid_summary(output_path, state_path, result_status=status)
 
@@ -160,6 +161,9 @@ def _failure_summary(
     usage = _safe_usage(error.details.get("current_provider_model_usage"))
     if usage is not None:
         summary["provider_model_usage"] = usage
+    failed_slots = _safe_failed_slots(error.details.get("failed_slots"))
+    if failed_slots is not None:
+        summary["failed_slots"] = failed_slots
     return summary
 
 
@@ -184,6 +188,31 @@ def _safe_usage(value: object) -> dict[str, int | None] | None:
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
     }
+
+
+def _safe_failed_slots(value: object) -> list[dict[str, int | str]] | None:
+    if type(value) is not tuple:
+        return None
+    safe: list[dict[str, int | str]] = []
+    indexes: set[int] = set()
+    for row in value:
+        if not isinstance(row, Mapping):
+            return None
+        index = row.get("slot_index")
+        code = row.get("code")
+        if (
+            type(index) is not int
+            or not 0 <= index < BATCH_COUNT
+            or index in indexes
+            or type(code) is not str
+            or code not in STABLE_ERROR_CODES
+            or row.get("provider") != "google"
+            or row.get("model") != GOOGLE_GEMINI_2_5_FLASH.model
+        ):
+            return None
+        indexes.add(index)
+        safe.append({"slot_index": index, "code": code})
+    return safe
 
 
 def _source_fingerprints(

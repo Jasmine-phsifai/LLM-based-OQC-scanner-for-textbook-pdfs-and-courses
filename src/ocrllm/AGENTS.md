@@ -62,8 +62,13 @@ fallback, retry execution, pools, or merged audio until its live gate closes.
 fixed, content-free `tools/run_google_genai_merged_image_smoke.py`, but its first
 zero-call run correctly stopped on non-image inputs from a faulty external
 selector. The next gate must explicitly select validated image extensions,
-prove zero-call capture, and then make at most one live call. The older Stage
-M/A plan supplies detail only where that board has not superseded it. #078
+prove zero-call capture, and then make at most one live call. #671 does so: one
+real two-batch run settles slot 0 and retains slot 1 as
+`PROVIDER_TIMEOUT`, with exactly two calls and no source/client-cleanup failure.
+Do not repeat fresh recognition. The next gate must resume that private TEMP
+state, reuse slot 0, and dispatch only slot 1; no fallback/retry/pool/audio work
+belongs in that proof. The older Stage M/A plan supplies detail only where that
+board has not superseded it. #078
 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the
