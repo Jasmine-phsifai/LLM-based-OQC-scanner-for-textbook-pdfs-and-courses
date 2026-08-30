@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #693)
+## 0. Current pruning and execution checkpoint (2026-08-31, #695)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -882,6 +882,51 @@ does not prove an immediate same-model retry count/wait. The image repair live-
 success gate remains open and is deferred until a later provider-state change;
 no production/runner fix follows. The five-file, 7,660-byte evidence root,
 including private source URIs, was permanently removed after safe state review.
+
+### #694 proves both repair facades ship in the clean dependency-empty wheel
+
+The maintained clean-archive gate now imports both package-root repair facades
+from the installed dependency-empty wheel and calls only failure-before-dispatch
+inputs. Empty image batches and a missing audio source return typed errors with
+exact zero provider calls, create no output/state, and do not import optional
+Google/OpenAI/image/audio/PDF/video/UI modules. The first exact installed probe
+exposed one real image preflight defect: all three merged-image batch-shape
+errors correctly rejected input but omitted `provider_calls_attempted=0`. The
+shared normalizer now supplies that fact at each error source; no facade wrapper
+or generic error framework was added.
+
+The 320 KiB wheel budget was met through evidence-backed reduction rather than
+raising the cap: remove one consumer-free single-lane normalizer already
+superseded by the general exact-lane normalizer, stop storing two marker fields
+that are validated but never consumed, share four identical usage projections
+in the existing usage module, and stop duplicating each public attribute name in
+the lazy import map. The exact `21ab952` archive gate passes 1,464 tests with one
+expected RapidOCR skip, every optional profile, a 327,187-byte wheel, a
+1,681,609-byte base install, and the installed visible video frame-batch/audio-
+slice flow. Provider behavior, dependencies, state schemas, and media APIs are
+unchanged.
+
+### #695 reaches real image repair again and records quota exhaustion honestly
+
+Forty-seven minutes after #693, the unchanged committed repair runner reused the
+same deterministic two batches of eight authorized images. A credential-free
+preflight first returned `CONFIG_MISSING`, exact calls zero, unchanged sources,
+no Markdown, and one owned unresolved sidecar; the sidecar was inspected only
+for safe counts and removed before live work. One and only one credential-
+isolated child then ran through the required proxy.
+
+Fresh recognition succeeded for the served lane with one generation and
+2,401/816 input/output tokens; the deliberately unserved lane left the expected
+partial marker. After the runner deleted only its owned sidecar, repair made one
+real `gemini-2.5-flash` generation but Google returned canonical
+`PROVIDER_QUOTA_EXHAUSTED` with unknown token dimensions. The public repair
+result remained honest partial: its 1,805-byte Markdown stayed byte-identical to
+the pre-repair partial, one failed marker remained, state was absent, sources
+were unchanged, cleanup warning was false, direct exit was 1, and no credential
+was persisted. No retry, second child, fallback, model switch, or production fix
+followed. This proves the live repair path reaches its provider boundary but
+does not close the success gate; do not immediately replay it while quota is
+exhausted.
 
 The destination is one visible, caller-composed pair of media flows:
 

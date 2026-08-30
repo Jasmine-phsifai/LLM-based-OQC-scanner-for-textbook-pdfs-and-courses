@@ -3384,3 +3384,16 @@ import map stopped storing names twice. The exact `21ab952` archive gate passes
 video-to-frame-batch/audio-slice flow. No provider call, dependency, media API,
 state schema, or retry behavior was added; image repair live success remains
 deferred/open.
+
+#695 re-enters the real image repair path once, 47 minutes after the earlier
+timeout, with the unchanged strict runner and deterministic two batches of eight
+authorized images. The credential-free preflight proves calls zero and cleanly
+removes only its owned unresolved sidecar. In the sole live child, fresh
+recognition settles the served batch with 2,401/816 tokens and leaves the fixed
+unserved batch partial; repair then makes exactly one real Google generation and
+receives canonical `PROVIDER_QUOTA_EXHAUSTED`. The 1,805-byte partial Markdown
+and its one marker remain byte-stable, state is absent, sources are unchanged,
+cleanup is clean, credential residue is zero, and the runner exits 1. No retry,
+second child, model switch, fallback, or runtime change is made. Live execution
+is proven through the repair provider boundary, but successful repair remains
+open and must not be replayed immediately while quota is exhausted.
