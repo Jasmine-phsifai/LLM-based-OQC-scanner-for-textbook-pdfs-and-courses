@@ -248,10 +248,14 @@ def test_visible_video_profile_uses_bounded_install_and_public_pipeline() -> Non
     ):
         assert distribution in script
     assert "if ($profile -eq 'video,audio,image')" in script
+    assert "GOOGLE_GEMINI_2_5_FLASH" in script
+    assert "assert callable(resume_video)" in script
+    assert "nested_provider = [" in script
     assert "extract_video_frames(" in script
     assert "batchify_images(" in script
+    assert "provider=nested_provider" in script
     assert "extract_video_audio(" in script
-    assert "split_audio(audio_path, interval_minutes=-1)" in script
+    assert "split_audio(audio_path, provider=nested_provider)" in script
     assert "distribution('google-genai')" in script
     assert "assert 'google' not in sys.modules" in script
 

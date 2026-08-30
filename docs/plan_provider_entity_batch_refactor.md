@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #684)
+## 0. Current pruning and execution checkpoint (2026-08-30, #685)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -604,6 +604,26 @@ errors before image execution or audio job helpers load. Package-root binding
 remains lightweight. The focused set passes **29 tests / 3.97s**. No provider,
 media, output, state, dependency, worker/contracts, compatibility, composition,
 or video lifecycle was added.
+
+### #685 refreshes the clean installed-wheel acceptance gate
+
+The existing combined installed-profile smoke now imports the public
+`resume_video` symbol and requires it to be callable. Its visible video flow
+still extracts frames and audio without provider work, but image batching and
+audio splitting now receive an exact two-lane nested plan made from the proven
+Google preset. This exercises common-minimum provider planning from the
+installed wheel while retaining the assertion that `google-genai` is not
+installed or imported by the combined media profile. It does not call the
+router, an adapter, or a provider.
+
+The focused gate/wheel/import set passes **26 tests / 3.08s**. The maintained
+clean-archive gate then passes from commit `fa01f94`: **1,457 passed / one
+expected RapidOCR skip**, a 316,624-byte wheel, a 1,626,648-byte base target,
+both import budgets, and all nine optional profiles. The visible installed
+flow returns two frames, one provider-derived image batch, and one
+provider-derived audio slice. No runtime source, dependency, media algorithm,
+provider call, retry, state, repair, worker/contracts surface, or second gate
+runner changed.
 
 The destination is one visible, caller-composed pair of media flows:
 

@@ -808,9 +808,11 @@ import sys
 
 import ocrllm
 from ocrllm import (
+    GOOGLE_GEMINI_2_5_FLASH,
     batchify_images,
     extract_video_audio,
     extract_video_frames,
+    resume_video,
     split_audio,
 )
 
@@ -824,6 +826,11 @@ except importlib.metadata.PackageNotFoundError:
 else:
     raise AssertionError('combined profile must not install google-genai')
 assert 'google' not in sys.modules
+nested_provider = [
+    [GOOGLE_GEMINI_2_5_FLASH],
+    [GOOGLE_GEMINI_2_5_FLASH],
+]
+assert callable(resume_video)
 frames = extract_video_frames(
     source,
     output_dir=root / 'visible-frames',
@@ -835,7 +842,7 @@ assert tuple(frame.frame_index for frame in frames) == tuple(
 )
 frame_batches = batchify_images(
     tuple(frame.path for frame in frames),
-    batch_size=8,
+    provider=nested_provider,
 )
 assert frame_batches
 assert tuple(path for batch in frame_batches for path in batch) == tuple(
@@ -846,7 +853,7 @@ audio_path = extract_video_audio(
     source,
     output_path=root / 'visible-audio.mp3',
 )
-audio_slices = split_audio(audio_path, interval_minutes=-1)
+audio_slices = split_audio(audio_path, provider=nested_provider)
 assert len(audio_slices) == 1
 assert audio_slices[0].source == audio_path
 assert audio_slices[0].logical_start_seconds == 0.0

@@ -553,6 +553,14 @@ one ordinary resume and returns its result/error unchanged. It does not accept a
 video path, infer media, coordinate outputs, search state, compose branches, or
 recreate the deleted lifecycle.
 
+#685 re-runs the clean installed-wheel gate after the nested media and router
+changes. The installed combined profile imports callable `resume_video` and
+uses an exact nested provider plan for `batchify_images()` and `split_audio()`
+without a provider SDK or network request. The archive reports 1,457 passing
+tests, one expected RapidOCR skip, all optional profiles, and a visible
+two-frame/one-batch/one-slice flow. This is packaging/import/planning evidence,
+not a new provider-recognition claim.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

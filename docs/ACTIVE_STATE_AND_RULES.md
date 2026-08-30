@@ -14040,3 +14040,25 @@ execution or audio job helpers load. Plain package import binds the lightweight
 router without optional dependencies. The focused merged-image/audio/import set
 passes **29 / 3.97s**. No provider/API call, media operation, state/output write,
 dependency, worker/contracts change, repair, or compatibility format was added.
+
+## Current working update: #685 refreshes the installed-wheel acceptance proof
+
+The existing `video,audio,image` installed-profile smoke now imports
+`resume_video` from the built wheel and requires it to be callable. The same
+provider-free extraction flow passes one exact two-lane nested Google preset
+plan to `batchify_images()` and `split_audio()`, so omitted media defaults are
+resolved by current public planning rather than hardcoded `8` and `-1` values.
+The profile still proves that `google-genai` is neither installed nor imported;
+no provider adapter, credential, request, resume operation, or recognition is
+run by this smoke.
+
+The focused gate/wheel/import set passes 26 tests. The clean archive at
+`fa01f94593f659bf05bd8a19f0afa0f3e1a0766c` passes 1,457 tests with one
+expected RapidOCR skip, fixture/compile/wheel checks, both import budgets, and
+all optional profiles. The wheel is 316,624 bytes and the base installed target
+is 1,626,648 bytes. Installed deltas are audio 91,524,837; image 17,325,121;
+OCR 328,937,791; image+DashScope 41,810,707; Google 41,952,414; audio+Google
+130,562,684; PDF vision 25,523,912; video 254,816,958; and combined
+video+audio+image 272,689,087 bytes. The installed visible flow returns two
+frames, one image batch, and one audio slice. The guarded proof root and reviewed
+external log were removed. No runtime source or product behavior changed.

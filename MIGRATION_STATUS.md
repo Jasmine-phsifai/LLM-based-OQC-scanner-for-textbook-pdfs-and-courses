@@ -3283,3 +3283,12 @@ Provider tree/output and returned result or error pass through unchanged. A bare
 audio/video path, paired branches, state lookup, timeout policy, composition,
 cleanup, and result wrapper are absent. Existing nested image/audio recovery
 tests consume both branches; fresh-process route validation stays import-light.
+
+#685 refreshes the shipped-package proof after #681-#684. The existing clean
+archive gate imports callable `resume_video` from the installed wheel and uses
+exact nested provider plans for visible frame batching and audio splitting,
+without installing/importing the provider SDK or making a request. It passes
+1,457 tests with one expected RapidOCR skip, every optional profile, a
+316,624-byte wheel, a 1,626,648-byte base target, and the installed
+two-frame/one-batch/one-slice flow. Runtime source and product behavior are
+unchanged.
