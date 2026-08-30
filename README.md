@@ -84,8 +84,10 @@ result = recognize_images_to_markdown(
 ```
 
 Planning writes nothing and makes no provider call. Recognition owns ordered
-slots, one Markdown, atomic state, serial scalar/flat fallback, per-model usage,
-and ordinary resume. Settled slots are not replayed.
+slots, one Markdown, atomic state, scalar/flat fallback or fixed nested lanes,
+per-model usage, and ordinary resume. Nested lanes own fixed round-robin slots,
+advance independently with one active slot each, and never rescue another lane.
+Settled slots are not replayed.
 
 ## Merged audio
 

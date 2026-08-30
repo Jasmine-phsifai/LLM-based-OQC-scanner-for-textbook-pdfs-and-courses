@@ -80,21 +80,27 @@ result = recognize_images_to_markdown(
 
 `batchify_images()` accepts an exact nonempty source tuple and an explicit
 positive batch size, a provider model, or both. Explicit size wins; omitted size
-uses the smallest positive recommendation across a validated scalar/flat lane.
-It validates all image groups, preserves order, writes nothing, and makes no
-provider call.
+uses the smallest positive recommendation across all validated scalar, flat, or
+nested candidates. It validates all image groups, preserves order, writes
+nothing, and makes no provider call.
 
-Merged recognition accepts the exact batch tuple and one model or one nonempty
-exact built-in flat model list. A flat lane visits candidates serially at most
-once per unresolved slot and stops at first success. Successful fallback returns
-ordinary complete/partial output with one warning and bounded
-`provider_failures`. A wholly failed slot retains only its terminal candidate.
+Merged recognition accepts the exact batch tuple and one model, one nonempty
+exact built-in flat model list, or one nonempty exact list of nonempty exact
+model lists. A flat lane visits candidates serially at most once per unresolved
+slot and stops at first success. Nested lane `j` owns absolute slots
+`j, j + lane_count, ...`; lanes advance independently with one active slot each,
+without barriers, stealing, or cross-lane rescue. A nested plan is limited to 32
+lanes. Successful fallback returns ordinary complete/partial output with one
+warning and bounded `provider_failures`. A wholly failed slot retains only its
+terminal candidate.
 
 All outcomes are checkpointed in one sidecar. Complete work writes one ordered
 Markdown and removes state. Mixed settlement writes failed-slot markers and
 retains state. Zero settlement retains state, creates no new Markdown, and
 raises `AllCandidatesExhausted`. Resume requires the exact source/group/task
 identity, reuses settled slots, and calls providers only for unresolved work.
+Each resume invocation starts every supplied lane from its first candidate; lane
+topology and cursors are not persisted.
 
 ## Audio
 
@@ -140,8 +146,10 @@ Provider cursor and retry history are not persisted. A provider can be changed
 explicitly between invocations.
 
 The scalar/flat image and audio paths, including fallback and ordinary resume,
-have bounded real Google evidence. This does not prove same-model retry,
-automatic provider pooling, other audio formats, or experimental repair.
+have bounded real Google evidence. Fixed two-lane image pooling is also
+live-proven with two concurrent-capable slots and exact aggregate usage. Audio
+nested lanes, same-model retry, other audio formats, and experimental repair are
+not implemented.
 
 ## PDF
 

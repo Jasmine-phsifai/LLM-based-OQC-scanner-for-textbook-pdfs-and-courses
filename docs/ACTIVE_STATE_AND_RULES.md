@@ -13852,3 +13852,69 @@ No provider call, retry, nested lane, repair, crop/ROI logic, worker/contracts
 change, or new combined result owner was introduced. Public extraction outputs
 remain caller-owned; independent merged image/audio calls own recognition,
 Markdown, provider choice, and resume.
+
+## Current working update: #681 ships fixed nested image provider lanes
+
+The image planning/fresh/resume surfaces now accept one exact model, one nonempty
+exact built-in flat list, or one nonempty exact built-in list of nonempty exact
+built-in lists. The new nonrecursive `normalize_provider_model_lanes()` snapshots
+these shapes to immutable private lanes, rejects empty/mixed/deep/subclassed/
+tuple/wrong-leaf forms, limits nested plans to 32 lanes, and rejects definite
+duplicates only within a lane. Cross-lane reuse remains valid. The previous
+flat-only normalizer now delegates to this single rules owner and explicitly
+rejects nested raw input, preserving audio's scalar/flat boundary without a
+second duplicate implementation.
+
+For lane count `N`, image slot `i` is permanently assigned to lane `i % N` for
+that invocation. One thread per active lane processes only that lane's fixed
+slots and finite candidates serially. A valid success changes only the lane's
+next start; full failure leaves it unchanged. Lanes do not wait at an epoch
+barrier, steal work, rescue another lane, or persist topology/cursors. Resume
+keeps settled absolute slots and maps only unresolved indexes through the current
+lane count, with every supplied lane beginning at candidate zero.
+
+Concurrent provider/media work never writes state directly. One private
+image-specific `_MergedImageStateOwner` protects only the latest immutable slot/
+usage merge and atomic sidecar save with a lock. Each provider failure or success
+passes that owner before the lane starts another attempt, preserving the existing
+flat durability contract and avoiding stale-state `os.replace` loss. Disk/fsync
+work is serialized, but provider calls and snapshots stay outside the lock.
+Provider usage rows follow a deterministic absolute-slot/lane-candidate order,
+not completion timing. A fatal lane stops new attempts; already running calls
+settle before propagation. No cancellation parameter was invented because the
+merged-image API exposes none.
+
+The first test command named nonexistent `tests/test_batchify_images.py`, so
+pytest ran zero tests; it was corrected to the existing provider-model feature
+file. The next run produced one expected failure because the old shape test still
+classified `[[provider]]` as invalid. That superseded entry was replaced by
+empty/mixed/deep/subclassed/duplicate/33-lane rejects. Existing scalar/flat tests
+then passed. Two SDK-boundary nested scenarios additionally prove fixed 0/2 and
+1/3 ownership, lane 1 starting slot 3 before lane 0 finishes slot 0, lane-local
+rotation, no cross-lane rescue, ordered Markdown despite completion order,
+deterministic per-model calls/tokens, and a three-lane resume dispatching only
+absolute slot 2 to lane 2. The final image/audio/planning/import set passes
+**50 / 2.77s**; compileall, runner compile/help, and diff checks pass.
+
+The maintained merged-image runner adds only fresh `--nested-lanes`, using the
+same live-proven Google model in two lanes for its two existing eight-image
+batches. Credential-free Stage 0 returned nested/lane-count-2 `CONFIG_MISSING`,
+calls 0, no output, one 5,467-byte state with two unresolved slots/16 matching
+sources/empty usage, and empty stderr. Three delegated launch wrappers then
+failed before any child: malformed archive-root text, a stray `--` root argument,
+and a manifest traversal that incorrectly reported zero sources. Primary's first
+shell command failed in the JavaScript string parser; the next stopped before
+child because OCRLLM intentionally lacks PyQt6. Direct read of the exact native
+QSettings registry value avoided installing UI dependencies. Across all these
+failures, live child/API count remained zero.
+
+The sole live child then completed in 16.6 seconds with exit 0: provider mode
+nested, lane count 2, two settled eight-image slots, two generation calls,
+4,802 input and 911 output tokens, no cleanup warning, matching 1,863-byte
+Markdown, no sidecar, unchanged 16 sources, empty stderr, and no runner process.
+Live aggregate metadata proves the public nested route and accounting, not timing;
+independence is claimed only from the controlled SDK trace. Primary review did
+not open recognized content. Eight owned evidence files totalling 9,205 bytes
+and their two stage directories were permanently removed from the exact D: root.
+No audio nested plan, generic scheduler, retry/sleep, worker/contracts change,
+repair, provider preset, or public lane telemetry was added.

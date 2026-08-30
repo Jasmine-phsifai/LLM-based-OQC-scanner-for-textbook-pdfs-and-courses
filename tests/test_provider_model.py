@@ -287,3 +287,42 @@ def test_batchify_images_uses_smallest_flat_provider_default(tmp_path):
     with pytest.raises(ConfigError) as captured:
         batchify_images(sources, provider=[first, duplicate_model])
     assert captured.value.details["provider_calls_attempted"] == 0
+
+
+def test_batchify_images_flattens_defaults_but_preserves_nested_duplicates(
+    tmp_path,
+):
+    sources = tuple(
+        write_test_image(tmp_path / f"page-{index}.png", color=(index, index, index))
+        for index in range(3)
+    )
+    first = ProviderModel(
+        vendor="google",
+        model="gemini-test-a",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(),
+        **_image_fields(default_image_batch_size=3),
+    )
+    second = ProviderModel(
+        vendor="google",
+        model="gemini-test-b",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(),
+        **_image_fields(default_image_batch_size=2),
+    )
+    same_model_other_lane = ProviderModel(
+        vendor="google",
+        model="gemini-test-a",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(api_key="other-lane-key"),
+        **_image_fields(default_image_batch_size=1),
+    )
+
+    assert batchify_images(sources, provider=[[first], [second]]) == (
+        sources[:2],
+        sources[2:],
+    )
+    assert batchify_images(
+        sources,
+        provider=[[first], [same_model_other_lane]],
+    ) == tuple((source,) for source in sources)

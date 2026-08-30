@@ -3240,3 +3240,16 @@ and the clean archive gate passes 1,450 tests with one expected RapidOCR skip,
 wheel/package/import budgets, every optional profile, and the visible installed
 two-frame/one-batch/one-slice flow. No compatibility or replacement combined
 lifecycle is added.
+
+#681 adds the approved third provider topology to merged images: a nonempty exact
+list of 1-32 nonempty exact provider lists. Scalar/flat/nested normalization has
+one rules owner; audio keeps a thin scalar/flat restriction. Image slots use
+fixed absolute round-robin assignment, one active slot per lane, serial
+lane-local fallback/rotation, no barrier/stealing/rescue, and no persisted lane
+cursor. One image-specific lock owner merges the latest immutable state and
+usage and atomically checkpoints every candidate before that lane advances.
+Controlled SDK-boundary tests prove independent progress, ordered publication,
+no rescue, deterministic usage, and changed-lane-count resume. The focused set
+passes 50 tests. One real two-lane Google run completed two eight-image calls in
+16.6 seconds with 4,802/911 tokens, matching 1,863-byte Markdown, no state or
+warning, and unchanged sources. No audio nested lanes or generic scheduler exist.

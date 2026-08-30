@@ -11,13 +11,17 @@ from .result import RecognitionResult
 def recognize_images_to_markdown(
     batches: tuple[tuple[str | Path, ...], ...],
     *,
-    provider: ProviderModel | list[ProviderModel],
+    provider: (
+        ProviderModel
+        | list[ProviderModel]
+        | list[list[ProviderModel]]
+    ),
     image_task: str,
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
     overwrite: bool = False,
 ) -> RecognitionResult:
-    """Settle every caller-planned batch through one serial provider lane."""
+    """Settle caller-planned batches through fixed provider lanes."""
     from .build_merged_image_resume_state import build_merged_image_resume_state
     from .clear_public_error import clear_public_error
     from .config import Config
@@ -26,7 +30,7 @@ def recognize_images_to_markdown(
     from .finalize_merged_image_result import finalize_merged_image_result
     from .fingerprint_merged_image_batches import fingerprint_merged_image_batches
     from .normalize_merged_image_batches import normalize_merged_image_batches
-    from .normalize_provider_model_lane import normalize_provider_model_lane
+    from .normalize_provider_model_lanes import normalize_provider_model_lanes
     from .output.output_target_claims import OutputTargetClaims
     from .output.preflight_resumable_markdown_output import (
         preflight_resumable_markdown_output,
@@ -42,16 +46,18 @@ def recognize_images_to_markdown(
 
     public_error: OCRLLMError | None = None
     try:
-        provider_lane = normalize_provider_model_lane(
+        provider_lanes = normalize_provider_model_lanes(
             provider,
             distinguish_runtime_settings=True,
         )
         normalized_batches = normalize_merged_image_batches(batches)
         prompt, prompt_version = resolve_merged_image_prompt(
-            provider_lane[0],
+            provider_lanes[0][0],
             image_task,
         )
-        for candidate in provider_lane[1:]:
+        for candidate in (
+            candidate for lane in provider_lanes for candidate in lane
+        ):
             resolve_merged_image_prompt(candidate, image_task)
         Config(timeout_seconds=timeout_seconds, overwrite=overwrite)
         resolved_output_path = resolve_merged_image_output_path(
@@ -83,7 +89,7 @@ def recognize_images_to_markdown(
             ) = execute_merged_image_plan(
                 state,
                 normalized_batches,
-                provider_lane=provider_lane,
+                provider_lanes=provider_lanes,
                 prompt=prompt,
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,

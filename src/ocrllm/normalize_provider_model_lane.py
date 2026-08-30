@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .errors import ConfigError
+from .normalize_provider_model_lanes import normalize_provider_model_lanes
 from .providers.provider_model import ProviderModel
 
 
@@ -12,32 +13,19 @@ def normalize_provider_model_lane(
     distinguish_runtime_settings: bool,
 ) -> tuple[ProviderModel, ...]:
     """Reject invalid provider topology and definite lane duplicates."""
-    if type(value) is ProviderModel:
-        lane = (value,)
-    elif type(value) is list and value:
-        lane = tuple(value)
-        if any(type(candidate) is not ProviderModel for candidate in lane):
-            raise _invalid_lane()
-    else:
+    if (
+        type(value) is list
+        and value
+        and all(type(candidate) is list for candidate in value)
+    ):
         raise _invalid_lane()
-
-    for index, candidate in enumerate(lane):
-        for previous in lane[:index]:
-            same_model = (previous.vendor, previous.model) == (
-                candidate.vendor,
-                candidate.model,
-            )
-            same_route = same_model and previous.settings is candidate.settings
-            duplicate = (
-                same_route if distinguish_runtime_settings else same_model
-            )
-            if duplicate:
-                raise ConfigError(
-                    "A provider fallback lane cannot contain a definite duplicate.",
-                    code="CONFIG_INVALID",
-                    details={"provider_calls_attempted": 0},
-                ) from None
-    return lane
+    lanes = normalize_provider_model_lanes(
+        value,
+        distinguish_runtime_settings=distinguish_runtime_settings,
+    )
+    if len(lanes) != 1:
+        raise _invalid_lane()
+    return lanes[0]
 
 
 def _invalid_lane() -> ConfigError:

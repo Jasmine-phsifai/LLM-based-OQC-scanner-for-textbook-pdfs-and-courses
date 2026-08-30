@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #680)
+## 0. Current pruning and execution checkpoint (2026-08-30, #681)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -445,6 +445,53 @@ No provider call, crop/ROI change, nested lane, retry, repair, worker/contracts
 edit, or replacement combined-video abstraction entered the deletion. Public
 extraction outputs remain caller-owned and independent image/audio recognition
 continues through the already-proven merged APIs.
+
+### #681 ships and live-proves fixed nested image lanes
+
+Image planning, fresh recognition, and resume now accept the third exact provider
+shape: one nonempty exact built-in list of nonempty exact built-in lists. One
+new nonrecursive topology normalizer snapshots scalar, flat, or nested input to
+private tuple lanes, rejects mixed/deep/empty/subclassed/tuple shapes, rejects
+definite duplicates only within each lane, permits cross-lane reuse, and rejects
+more than 32 lanes before media/output/provider work. The older flat-only helper
+is reduced to a thin wrapper over that single rules owner, so audio remains
+scalar/flat without duplicating validation logic.
+
+For `N` lanes, absolute slot `i` stays with lane `i % N`. One lane thread runs
+only its fixed slots and serial candidate fallback; lane-local last success never
+affects another lane and resets to candidate zero on every fresh/resume call.
+There is no global epoch barrier, work stealing, cross-lane rescue, queued-slot
+fairness layer, or persisted lane/provider cursor. A private image-specific state
+owner locks only the latest immutable state/usage merge plus atomic sidecar
+replacement. Provider/media work remains outside the lock. Every failed or
+successful candidate is checkpointed before that lane advances, preventing stale
+parallel writes and preserving paid-call evidence. Usage rows are deterministically
+ordered from absolute slot/lane candidate order rather than completion timing.
+
+SDK-boundary concurrency tests prove lane 0 owns slots 0/2, lane 1 owns 1/3,
+lane 1 can start slot 3 before lane 0 finishes slot 0, a fully failed lane-0 slot
+is not rescued by lane 1, reverse completion still publishes original slot order,
+and calls/tokens are counted once. A changed three-lane resume reuses three settled
+slots and dispatches only absolute slot 2 to lane 2. Exact shape/default/bound,
+flat audio compatibility, and lightweight import neighbors also pass. The final
+focused set is **50 tests / 2.77s**.
+
+The maintained merged-image runner gained only fixed fresh `--nested-lanes`:
+the existing two batches of eight use two one-model lanes, intentionally reusing
+the same live-proven Google model across lanes. After a zero-call nested preflight,
+exactly one live child completed in 16.6 seconds with lane count 2, two settled
+slots, two generation calls, 4,802 input and 911 output tokens, no warnings,
+matching 1,863-byte Markdown, no sidecar, unchanged 16 sources, empty stderr,
+and exit 0. Aggregate live metadata does not claim timing overlap; concurrency,
+assignment, and no-rescue are proved only by the controlled SDK trace.
+
+Three delegated launch wrappers and one primary JavaScript string failed before
+any child/API start; a later PyQt-based credential read also stopped before child
+because that environment intentionally lacks PyQt6. The sole live child used the
+known exact Windows QSettings registry location without installing UI dependencies.
+All eight owned evidence files were reviewed and permanently removed. No audio
+nested lane, generic scheduler, retry/sleep, worker/contracts edit, repair, new
+preset, or public lane telemetry was added.
 
 The destination is one visible, caller-composed pair of media flows:
 

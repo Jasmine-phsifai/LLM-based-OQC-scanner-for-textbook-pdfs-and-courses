@@ -1,8 +1,11 @@
-"""Focused public contract for scalar merged-image recognition and resume."""
+"""Focused public contract for merged-image provider topologies and resume."""
 
 from __future__ import annotations
 
+import hashlib
 import importlib
+from threading import Event, Lock
+from types import SimpleNamespace
 
 import pytest
 
@@ -20,6 +23,67 @@ from write_test_image import write_test_image
 
 
 executor = importlib.import_module("ocrllm.execute_merged_image_plan")
+
+
+class _NestedGooglePart:
+    @staticmethod
+    def from_bytes(*, data: bytes, mime_type: str):
+        return SimpleNamespace(data=data, mime_type=mime_type)
+
+
+class _NestedGoogleHttpOptions:
+    def __init__(self, *, timeout: int) -> None:
+        self.timeout = timeout
+
+
+class _NestedGoogleModels:
+    def __init__(self, models, slot_digests, behavior) -> None:
+        self.served_models = tuple(models)
+        self.slot_digests = slot_digests
+        self.behavior = behavior
+        self.calls: list[tuple[str, int]] = []
+        self.lock = Lock()
+
+    def list(self):
+        return tuple(
+            SimpleNamespace(
+                name=f"models/{model}",
+                supported_actions=["generateContent"],
+            )
+            for model in self.served_models
+        )
+
+    def generate_content(self, *, model: str, contents):
+        part = next(value for value in contents if type(value) is not str)
+        slot_index = self.slot_digests[hashlib.sha256(part.data).hexdigest()]
+        with self.lock:
+            self.calls.append((model, slot_index))
+        return self.behavior(model, slot_index)
+
+
+class _NestedGoogleClient:
+    def __init__(self, models: _NestedGoogleModels) -> None:
+        self.models = models
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _NestedGoogleModule:
+    types = SimpleNamespace(
+        HttpOptions=_NestedGoogleHttpOptions,
+        Part=_NestedGooglePart,
+    )
+
+    def __init__(self, models, slot_digests, behavior) -> None:
+        self.models = _NestedGoogleModels(models, slot_digests, behavior)
+        self.clients: list[_NestedGoogleClient] = []
+
+    def Client(self, **_kwargs):
+        client = _NestedGoogleClient(self.models)
+        self.clients.append(client)
+        return client
 
 
 def _provider(model: str) -> ProviderModel:
@@ -43,6 +107,42 @@ def _three_batches(tmp_path):
         for index in range(4)
     )
     return ((images[0], images[1]), (images[2],), (images[3],))
+
+
+def _four_single_batches(tmp_path):
+    images = tuple(
+        write_test_image(
+            tmp_path / "nested" / f"slot-{index}.png",
+            color=(index * 30, index * 20, index * 10),
+        )
+        for index in range(4)
+    )
+    return tuple((image,) for image in images)
+
+
+def _slot_digests(batches):
+    return {
+        hashlib.sha256(batch[0].read_bytes()).hexdigest(): index
+        for index, batch in enumerate(batches)
+    }
+
+
+def _install_nested_google(monkeypatch, batches, models, behavior):
+    fake = _NestedGoogleModule(models, _slot_digests(batches), behavior)
+    adapter = importlib.import_module("ocrllm.providers.google_genai.recognize_images")
+    monkeypatch.setattr(adapter, "load_google_genai", lambda: fake)
+    return fake
+
+
+def _google_image_response(markdown: str, *, input_tokens: int, output_tokens: int):
+    return SimpleNamespace(
+        text=markdown,
+        candidates=(),
+        usage_metadata=SimpleNamespace(
+            prompt_token_count=input_tokens,
+            candidates_token_count=output_tokens,
+        ),
+    )
 
 
 def test_complete_merged_image_run_publishes_one_ordered_file(tmp_path, monkeypatch):
@@ -424,7 +524,13 @@ def test_flat_provider_shape_rejects_before_output_or_dispatch(
         [],
         ProviderList([provider]),
         [provider, object()],
-        [[provider]],
+        [[]],
+        [provider, [provider]],
+        [[provider], provider],
+        [[[provider]]],
+        [ProviderList([provider])],
+        [[provider, provider]],
+        [[_provider(f"gemini-lane-{index}")] for index in range(33)],
         [provider, provider],
     )
     for invalid in invalid_values:
@@ -439,3 +545,184 @@ def test_flat_provider_shape_rejects_before_output_or_dispatch(
         assert not output.exists()
         assert not (tmp_path / "result.ocrllm-state.json").exists()
     assert called is False
+
+
+def test_nested_image_lanes_advance_independently_and_publish_by_slot(
+    tmp_path,
+    monkeypatch,
+):
+    batches = _four_single_batches(tmp_path)
+    output = tmp_path / "nested.md"
+    lane_zero_first = "gemini-lane-zero-a"
+    lane_zero_second = "gemini-lane-zero-b"
+    lane_one = "gemini-lane-one"
+    lane_one_slot_three_started = Event()
+    events: list[tuple[str, str, int]] = []
+    events_lock = Lock()
+
+    def record(kind: str, model: str, slot_index: int) -> None:
+        with events_lock:
+            events.append((kind, model, slot_index))
+
+    def behavior(model: str, slot_index: int):
+        record("start", model, slot_index)
+        if model == lane_zero_first and slot_index == 0:
+            assert lane_one_slot_three_started.wait(timeout=5.0)
+            record("end", model, slot_index)
+            raise ProviderError(
+                "The first lane candidate timed out.",
+                code="PROVIDER_TIMEOUT",
+                details={"provider_calls_attempted": 1},
+            )
+        if slot_index == 2:
+            record("end", model, slot_index)
+            raise ProviderError(
+                f"{model} could not settle slot two.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        if model == lane_one and slot_index == 3:
+            lane_one_slot_three_started.set()
+        record("end", model, slot_index)
+        return _google_image_response(
+            f"slot {slot_index} {model}",
+            input_tokens=100 + slot_index,
+            output_tokens=10 + slot_index,
+        )
+
+    fake = _install_nested_google(
+        monkeypatch,
+        batches,
+        (lane_zero_first, lane_zero_second, lane_one),
+        behavior,
+    )
+    result = recognize_images_to_markdown(
+        batches,
+        provider=[
+            [_provider(lane_zero_first), _provider(lane_zero_second)],
+            [_provider(lane_one)],
+        ],
+        image_task="detail_ocr",
+        output_path=output,
+    )
+
+    starts = [event for event in events if event[0] == "start"]
+    assert [event[1:] for event in starts if event[1] != lane_one] == [
+        (lane_zero_first, 0),
+        (lane_zero_second, 0),
+        (lane_zero_second, 2),
+        (lane_zero_first, 2),
+    ]
+    assert [event[1:] for event in starts if event[1] == lane_one] == [
+        (lane_one, 1),
+        (lane_one, 3),
+    ]
+    assert events.index(("start", lane_one, 3)) < events.index(
+        ("end", lane_zero_first, 0)
+    )
+    assert ("start", lane_one, 2) not in events
+    assert result.status == "partial"
+    assert result.metadata["provider_call_count"] == 6
+    assert tuple(
+        (row["model"], row["calls"], row["input_tokens"], row["output_tokens"])
+        for row in result.metadata["current_provider_model_usage"]
+    ) == (
+        (lane_zero_first, 2, None, None),
+        (lane_zero_second, 2, None, None),
+        (lane_one, 2, 204, 24),
+    )
+    assert tuple(
+        (row["slot_index"], row["model"], row["code"])
+        for row in result.metadata["provider_failures"]
+    ) == ((0, lane_zero_first, "PROVIDER_TIMEOUT"),)
+    assert result.metadata["failed_slots"][0]["slot_index"] == 2
+    assert result.metadata["failed_slots"][0]["model"] == lane_zero_first
+    assert result.markdown.index(f"slot 0 {lane_zero_second}") < result.markdown.index(
+        f"slot 1 {lane_one}"
+    ) < result.markdown.index("OCRLLM_FAILED_IMAGE_SLOT index=3") < result.markdown.index(
+        f"slot 3 {lane_one}"
+    )
+    assert output.read_text(encoding="utf-8") == result.markdown
+    assert (tmp_path / "nested.ocrllm-state.json").is_file()
+    assert all(client.closed for client in fake.clients)
+
+
+def test_nested_image_resume_uses_absolute_slot_with_changed_lane_count(
+    tmp_path,
+    monkeypatch,
+):
+    batches = _four_single_batches(tmp_path)
+    output = tmp_path / "resume.md"
+    first_lane = "gemini-first-lane"
+    second_lane = "gemini-second-lane"
+
+    def first_behavior(model: str, slot_index: int):
+        if model == first_lane and slot_index == 2:
+            raise ProviderError(
+                "The original lane could not settle slot two.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        return _google_image_response(
+            f"initial slot {slot_index}",
+            input_tokens=20 + slot_index,
+            output_tokens=2,
+        )
+
+    first_fake = _install_nested_google(
+        monkeypatch,
+        batches,
+        (first_lane, second_lane),
+        first_behavior,
+    )
+    partial = recognize_images_to_markdown(
+        batches,
+        provider=[[_provider(first_lane)], [_provider(second_lane)]],
+        image_task="plain_ocr",
+        output_path=output,
+    )
+    assert partial.status == "partial"
+    assert set(first_fake.models.calls) == {
+        (first_lane, 0),
+        (first_lane, 2),
+        (second_lane, 1),
+        (second_lane, 3),
+    }
+
+    resume_models = (
+        "gemini-resume-lane-zero",
+        "gemini-resume-lane-one",
+        "gemini-resume-lane-two",
+    )
+
+    def resume_behavior(model: str, slot_index: int):
+        return _google_image_response(
+            f"resumed slot {slot_index} {model}",
+            input_tokens=50,
+            output_tokens=5,
+        )
+
+    resume_fake = _install_nested_google(
+        monkeypatch,
+        batches,
+        resume_models,
+        resume_behavior,
+    )
+    resumed = resume_images_to_markdown(
+        batches,
+        provider=[[_provider(model)] for model in resume_models],
+        output_path=output,
+    )
+
+    assert resume_fake.models.calls == [(resume_models[2], 2)]
+    assert resumed.status == "complete"
+    assert resumed.metadata["reused_slot_count"] == 3
+    assert resumed.metadata["provider_call_count"] == 1
+    assert resumed.markdown.index("initial slot 0") < resumed.markdown.index(
+        "initial slot 1"
+    ) < resumed.markdown.index(
+        f"resumed slot 2 {resume_models[2]}"
+    ) < resumed.markdown.index("initial slot 3")
+    assert not (tmp_path / "resume.ocrllm-state.json").exists()
+    assert all(client.closed for client in first_fake.clients)
+    assert all(client.closed for client in resume_fake.clients)

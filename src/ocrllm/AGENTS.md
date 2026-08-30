@@ -154,6 +154,16 @@ full-frame/audio extraction, `RetainedVideoFrame`, `VideoInfo`, video errors, an
 the `video` extra. Installed combined profiles now prove only the visible
 extract/batchify/split workflow before independent merged recognition calls.
 
+#681 adds the first exact nested provider topology only to merged images. A
+nested plan has 1-32 nonempty exact built-in list lanes; absolute slot `i` stays
+with lane `i % lane_count`. Each lane is serial internally, advances independently,
+and may reuse models appearing in another lane. One image-specific locked state
+owner serializes every candidate checkpoint and deterministic per-model usage;
+provider/media work remains outside the lock. Do not add a generic scheduler,
+global barrier, stealing, cross-lane rescue, persisted cursor, audio nested lanes,
+retry/sleep, or public dispatch telemetry. The two-lane real gate completed two
+eight-image calls with 4,802/911 tokens and no state/warnings/source drift.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

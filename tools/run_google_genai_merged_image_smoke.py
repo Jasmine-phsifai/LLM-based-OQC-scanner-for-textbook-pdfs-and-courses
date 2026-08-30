@@ -40,9 +40,16 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="resume the supplied output instead of starting a fresh job",
     )
+    parser.add_argument(
+        "--nested-lanes",
+        action="store_true",
+        help="run the fixed fresh two-lane provider-pool scenario",
+    )
     arguments = parser.parse_args(argv)
     if len(arguments.batch) != BATCH_COUNT:
         parser.error("--batch must be supplied exactly twice")
+    if arguments.resume and arguments.nested_lanes:
+        parser.error("the fixed nested-lane live scenario is fresh-only")
     return arguments
 
 
@@ -54,19 +61,24 @@ def run_google_genai_merged_image_smoke(
     output_path = Path(arguments.output)
     state_path = output_path.with_name(f"{output_path.stem}.ocrllm-state.json")
     before: tuple[tuple[int, str], ...] | None = None
+    provider = (
+        [[GOOGLE_GEMINI_2_5_FLASH], [GOOGLE_GEMINI_2_5_FLASH]]
+        if arguments.nested_lanes
+        else GOOGLE_GEMINI_2_5_FLASH
+    )
     try:
         before = _source_fingerprints(batches)
         if arguments.resume:
             result = resume_images_to_markdown(
                 batches,
-                provider=GOOGLE_GEMINI_2_5_FLASH,
+                provider=provider,
                 output_path=output_path,
                 timeout_seconds=arguments.timeout,
             )
         else:
             result = recognize_images_to_markdown(
                 batches,
-                provider=GOOGLE_GEMINI_2_5_FLASH,
+                provider=provider,
                 image_task=IMAGE_TASK,
                 output_path=output_path,
                 timeout_seconds=arguments.timeout,
@@ -79,6 +91,7 @@ def run_google_genai_merged_image_smoke(
             output_path,
             state_path,
             resume=arguments.resume,
+            nested_lanes=arguments.nested_lanes,
         )
     except Exception:
         return _invalid_summary(output_path, state_path)
@@ -89,6 +102,7 @@ def run_google_genai_merged_image_smoke(
         output_path,
         state_path,
         resume=arguments.resume,
+        nested_lanes=arguments.nested_lanes,
     )
 
 
@@ -100,6 +114,7 @@ def _result_summary(
     state_path: Path,
     *,
     resume: bool,
+    nested_lanes: bool,
 ) -> dict[str, object]:
     metadata = getattr(result, "metadata", None)
     output = _artifact_summary(output_path)
@@ -155,6 +170,8 @@ def _result_summary(
         "batch_count": BATCH_COUNT,
         "batch_sizes": [BATCH_SIZE, BATCH_SIZE],
         "operation": "resume" if resume else "recognize",
+        "provider_mode": "nested" if nested_lanes else "scalar",
+        "lane_count": 2 if nested_lanes else 1,
         "slot_count": BATCH_COUNT,
         "settled_slot_count": settled,
         "reused_slot_count": expected_reused,
@@ -198,10 +215,13 @@ def _failure_summary(
     state_path: Path,
     *,
     resume: bool,
+    nested_lanes: bool,
 ) -> dict[str, object]:
     summary: dict[str, object] = {
         "status": "failed",
         "operation": "resume" if resume else "recognize",
+        "provider_mode": "nested" if nested_lanes else "scalar",
+        "lane_count": 2 if nested_lanes else 1,
         "error": {
             "code": error.code,
             "scope": _safe_scope(error.details.get("failure_scope")),

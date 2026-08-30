@@ -523,6 +523,15 @@ archive gate passes 1,450 tests with one expected RapidOCR skip, all optional
 profiles, and a visible installed flow of two frames, one image batch, and one
 audio slice. No compatibility wrapper replaces the deleted lifecycle.
 
+#681 publishes exact nested image provider lanes. Planning flattens all validated
+candidates only to choose one common batch size; recognition fixes slot
+assignment by absolute index modulo lane count. Up to 32 lanes advance
+independently with serial lane-local fallback and one serialized checkpoint owner.
+Resume reuses settled absolute slots and starts each current lane at candidate
+zero. A real two-lane/two-batch Google run completed two calls with 4,802/911
+tokens, matching output, removed state, and unchanged sources. Audio remains
+scalar/flat only.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group
