@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #665)
+## 0. Current pruning and execution checkpoint (2026-08-30, #666)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -577,6 +577,26 @@ actually supported by existing real evidence. It does not itself add a preset,
 prove every capability/default, export `ProviderModel`, or authorize skipping
 straight to merged public recognition. Audio/retry fields still wait for their
 own consumers and evidence.
+
+#666 centralizes exactly those two proven routes as internal, credential-free
+constants: `GOOGLE_GEMINI_2_5_FLASH` and
+`DASHSCOPE_QWEN3_5_OCR_CN_BEIJING`. Their settings contain no key, remain
+frozen, and resolve environment credentials only at the existing adapter call
+boundary. The two maintained image runners now consume the constants for exact
+model matches while preserving explicit construction for other live-discovered
+model IDs. This removes duplicated identity/settings construction without a
+registry, factory hierarchy, full catalog mirror, or model-name classifier.
+
+The constants and `ProviderModel` remain off the package root because no public
+recognition facade accepts them yet. Publishing them now would expose a value a
+normal caller cannot use through a supported public operation. Capability
+booleans, default image count, audio facts, and empty retry mappings also remain
+absent: although ordinary image transport is proven, the exact task/default
+fields have no merged-image consumer yet and some detail/default facts remain
+unproven. The first scalar merged-image consumer must add and immediately use
+only its required image fields, then export the type/presets with that usable
+operation. Do not reinterpret this staged internal seed as the final complete
+preset contract.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level

@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#665)
+### Current provider/media checkpoint (#666)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -199,6 +199,13 @@ artifact, runtime edit, or second request is involved. Google and DashScope are
 therefore both proven through the private scalar consumer. The next migration
 slice is the smallest evidence-backed preset/image-fact admission, not yet the
 public merged recognizer or any audio/retry/pool surface.
+#666 adds the first reusable internal preset seed: exact credential-free
+`gemini-2.5-flash` and Beijing `qwen3.5-ocr` constants, consumed by the existing
+maintained image runners. Their import is SDK-lazy and the settings carry no
+credential. `ProviderModel` and the presets remain off the package root because
+there is not yet a supported public operation that accepts them. The next
+scalar merged-image slice must add and consume only the image capability/default
+facts it actually needs before exposing a usable public contract.
 Only capability/default facts supported by a successful proof may join the
 still-private value. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,

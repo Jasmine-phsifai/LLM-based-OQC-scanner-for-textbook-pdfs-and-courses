@@ -18,6 +18,7 @@ from ocrllm import (
 from ocrllm.errors import ConfigError, OCRLLMError
 from ocrllm.profiles.build_board_prompt import build_board_prompt
 from ocrllm.providers.provider_model import ProviderModel
+from ocrllm.providers.provider_model_presets import GOOGLE_GEMINI_2_5_FLASH
 from ocrllm.providers.recognize_provider_model_images import (
     recognize_provider_model_images,
 )
@@ -53,11 +54,15 @@ def run_google_genai_image_smoke(arguments: argparse.Namespace) -> dict[str, obj
     provider_model_mode = getattr(arguments, "provider_model", False)
     try:
         if provider_model_mode:
-            provider_model = ProviderModel(
-                vendor="google",
-                model=arguments.model,
-                adapter_id="google_genai",
-                settings=settings,
+            provider_model = (
+                GOOGLE_GEMINI_2_5_FLASH
+                if arguments.model == GOOGLE_GEMINI_2_5_FLASH.model
+                else ProviderModel(
+                    vendor="google",
+                    model=arguments.model,
+                    adapter_id="google_genai",
+                    settings=settings,
+                )
             )
             response = recognize_provider_model_images(
                 provider_model,

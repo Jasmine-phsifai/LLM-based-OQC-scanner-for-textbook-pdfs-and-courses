@@ -17,6 +17,9 @@ from ocrllm.providers.dashscope.resolve_dashscope_model import (
     fetch_dashscope_model_catalog,
 )
 from ocrllm.providers.provider_model import ProviderModel
+from ocrllm.providers.provider_model_presets import (
+    DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+)
 from ocrllm.providers.recognize_provider_model_images import (
     recognize_provider_model_images,
 )
@@ -76,11 +79,15 @@ def run_dashscope_image_smoke(arguments: argparse.Namespace) -> dict[str, object
 
     try:
         if arguments.provider_model:
-            provider_model = ProviderModel(
-                vendor="dashscope",
-                model=arguments.model,
-                adapter_id="dashscope_openai_compatible",
-                settings=settings,
+            provider_model = (
+                DASHSCOPE_QWEN3_5_OCR_CN_BEIJING
+                if arguments.model == DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.model
+                else ProviderModel(
+                    vendor="dashscope",
+                    model=arguments.model,
+                    adapter_id="dashscope_openai_compatible",
+                    settings=settings,
+                )
             )
             response = recognize_provider_model_images(
                 provider_model,

@@ -215,6 +215,12 @@ board generation with 4,357/297 input/output tokens and a closed client. Both
 Google and DashScope scalar image transports are now live-proven. No runtime
 change or preset lands in #665; the next slice may admit only the small preset
 and image facts supported by real evidence before any public merged rewrite.
+#666 adds exactly two internal credential-free preset constants for the proven
+Google and Beijing DashScope identities and makes both maintained runners use
+them on exact model matches. Importing them loads neither vendor SDK nor a
+credential. They remain off the package root until a public merged-image
+consumer can actually accept them; capability/default/audio/retry fields are
+not guessed in this staging slice.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

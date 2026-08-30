@@ -13340,3 +13340,26 @@ consumer. #665 does not add a preset or infer untested audio, retry, detail-OCR,
 or default facts. The next atomic migration slice may admit only a small preset
 set and image fields supported by existing real evidence before any public
 merged-interface rewrite.
+
+## Current working update: #666 adds only two internal proven preset seeds
+
+#666 introduces `providers/provider_model_presets.py` with exactly two frozen,
+credential-free constants: `GOOGLE_GEMINI_2_5_FLASH` and
+`DASHSCOPE_QWEN3_5_OCR_CN_BEIJING`. They reuse the already-live-proven exact
+model, adapter, and default settings combinations. Both settings values contain
+no API key. Importing the module does not load `google.genai` or `openai` and
+does not read an environment credential.
+
+The maintained Google and DashScope image runners use the corresponding preset
+only when their explicit model argument exactly matches it. Other current model
+IDs retain the existing explicit-entity path, so live catalog exploration is
+not converted into a hardcoded allowlist. One credential-free execution probe
+confirms both exact runner paths pass the identical preset object to the private
+scalar consumer. Focused entity/runner/lightweight-import checks pass 56 tests.
+
+This slice deliberately does not export `ProviderModel` or the constants from
+the package root because no supported public recognition operation accepts them
+yet. It also does not add capability booleans, default image count, audio facts,
+or retry mappings before their first merged-image consumer. No provider call,
+registry, factory hierarchy, catalog mirror, model classifier, SDK import,
+credential access, or dependency change occurs.

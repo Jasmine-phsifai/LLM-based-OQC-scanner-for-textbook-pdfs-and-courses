@@ -11,6 +11,10 @@ from ocrllm.errors import ConfigError, InvalidSource
 from ocrllm.providers.dashscope.provider_settings import DashScopeSettings
 from ocrllm.providers.google_genai.provider_settings import GoogleGenAISettings
 from ocrllm.providers.provider_model import ProviderModel
+from ocrllm.providers.provider_model_presets import (
+    DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+    GOOGLE_GEMINI_2_5_FLASH,
+)
 from ocrllm.providers.recognize_provider_model_images import (
     recognize_provider_model_images,
 )
@@ -45,6 +49,28 @@ def test_provider_model_identity_is_immutable_and_secret_safe():
         first.model = "replacement"  # type: ignore[misc]
     with pytest.raises(AttributeError):
         del first._model
+
+
+def test_live_proven_image_presets_are_credential_free_exact_entities():
+    assert GOOGLE_GEMINI_2_5_FLASH == ProviderModel(
+        vendor="google",
+        model="gemini-2.5-flash",
+        adapter_id="google_genai",
+        settings=GoogleGenAISettings(api_key="test-only-google-key"),
+    )
+    assert GOOGLE_GEMINI_2_5_FLASH.settings.api_key is None
+
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING == ProviderModel(
+        vendor="dashscope",
+        model="qwen3.5-ocr",
+        adapter_id="dashscope_openai_compatible",
+        settings=DashScopeSettings.for_region(
+            "cn-beijing",
+            api_key="test-only-dashscope-key",
+        ),
+    )
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.settings.api_key is None
+    assert DASHSCOPE_QWEN3_5_OCR_CN_BEIJING.settings.region == "cn-beijing"
 
 
 @pytest.mark.parametrize(

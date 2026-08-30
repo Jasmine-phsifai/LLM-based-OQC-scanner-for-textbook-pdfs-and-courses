@@ -51,7 +51,12 @@ DashScope scalar image gate with one exact `qwen3.5-ocr` entity generation,
 4,357/297 input/output tokens, and a closed client. Both built-in scalar image
 transports are live-proven. The next slice may add only a small credential-free
 preset set and image facts backed by real evidence; do not skip directly to a
-public merged rewrite or predeclare audio/retry/pool behavior. The older Stage M/A plan supplies detail only where
+public merged rewrite or predeclare audio/retry/pool behavior. #666 now stores
+exact Google and Beijing DashScope internal preset constants and makes the two
+maintained runners consume them. They deliberately remain off the package root
+until the first public merged-image operation can accept them; do not add a
+registry, full catalog constants, guessed fields, or a public unusable value in
+the meantime. The older Stage M/A plan supplies detail only where
 that board has not superseded it. #078 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the
