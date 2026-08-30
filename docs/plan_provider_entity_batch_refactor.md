@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #701)
+## 0. Current pruning and execution checkpoint (2026-08-31, #702)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1102,6 +1102,38 @@ batch and one audio slice. Final wheel size is 327,216 bytes and dependency-
 empty target size is 1,682,135 bytes. The official proof root self-cleans; the
 separate 327,216-byte local audit is also removed. Runtime, dependencies, public
 APIs, provider behavior, and state schemas are unchanged.
+
+### #702 reaches real cross-vendor fallback and fixes usage-token over-redaction
+
+The maintained Google flat-fallback runner now has one explicit
+`--dashscope-second` mode instead of a duplicate cross-provider tool. Default
+Google-to-Google behavior is unchanged. Cross mode supplies exactly one lane:
+an intentionally unserved Google model followed by the shipped DashScope
+`qwen3.5-ocr` preset. It requires one Google failure record, one fallback
+warning, one successful DashScope usage row with exact integer tokens, complete
+output/state cleanup and unchanged source. Its checkout origin is checked before
+public imports, and success/error summaries now carry exact source size/SHA and
+safe terminal usage/failed-slot evidence.
+
+The credential-free gate on the tracked 116,507-byte formula image returned
+`CONFIG_MISSING`, calls 0, no Markdown and one 562-byte owned state that was
+removed. One live child then advanced past the unserved Google candidate with
+zero generation and attempted DashScope once. DashScope ended
+`PROVIDER_TIMEOUT`; total calls were 1, no output was published, and the 713-byte
+state stored terminal vendor/model DashScope/qwen3.5-ocr with calls 1, unknown
+tokens and clean cleanup. No retry or second child followed, so same-call cross-
+vendor success remains open.
+
+The failure exposed an independent public error defect. Merged finalizers place
+`current_provider_model_usage` in typed error details, but the generic secret
+redactor treated numeric `input_tokens` and `output_tokens` as credential text
+and replaced them with `[REDACTED]`. Those exact two field names now remain
+visible only for `None` or exact nonnegative integers; strings, booleans,
+negative values and every other token-named key remain redacted. Existing secret
+redaction is preserved, and the runner can safely project error usage. The
+worktree wheel is 327,312 bytes with 368 bytes headroom; 84 focused tests pass.
+Both exact TEMP roots (failed state/path and local wheel) are removed. No
+fallback/retry/state/API/dependency behavior changed beyond truthful error usage.
 
 The destination is one visible, caller-composed pair of media flows:
 

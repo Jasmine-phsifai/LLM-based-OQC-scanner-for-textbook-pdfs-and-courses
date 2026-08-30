@@ -87,6 +87,7 @@ _SENSITIVE_DETAIL_KEY_PARTS = (
     "token",
     "traceback",
 )
+_SAFE_USAGE_DETAIL_KEYS = frozenset({"inputtokens", "outputtokens"})
 
 
 class OCRLLMError(Exception):
@@ -378,7 +379,9 @@ def _redact_frozen_mapping(
 ) -> Mapping[str, FrozenJSONValue]:
     redacted: dict[str, FrozenJSONValue] = {}
     for key, item in value.items():
-        if _is_sensitive_detail_key(key):
+        if _is_safe_usage_detail(key, item):
+            redacted[key] = item
+        elif _is_sensitive_detail_key(key):
             redacted[key] = _REDACTED
         else:
             redacted[key] = _redact_frozen_value(item)
@@ -398,3 +401,12 @@ def _is_sensitive_detail_key(key: str) -> bool:
         character for character in key.casefold() if character.isalnum()
     )
     return any(part in normalized for part in _SENSITIVE_DETAIL_KEY_PARTS)
+
+
+def _is_safe_usage_detail(key: str, value: FrozenJSONValue) -> bool:
+    normalized = "".join(
+        character for character in key.casefold() if character.isalnum()
+    )
+    return normalized in _SAFE_USAGE_DETAIL_KEYS and (
+        value is None or (type(value) is int and value >= 0)
+    )

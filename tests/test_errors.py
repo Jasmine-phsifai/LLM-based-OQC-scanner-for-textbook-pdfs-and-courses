@@ -115,6 +115,32 @@ def test_error_details_are_copied_frozen_and_known_secrets_are_redacted():
         context["api_key"] = "changed"  # type: ignore[index]
 
 
+def test_numeric_usage_tokens_remain_visible_but_token_secrets_stay_redacted():
+    secret = "DETAIL-TOKEN-SECRET-a91f"
+    error = ProviderError(
+        details={
+            "usage": {
+                "input_tokens": 17,
+                "output_tokens": None,
+                "provider_token": secret,
+            },
+            "invalid_usage": {
+                "input_tokens": secret,
+                "output_tokens": -1,
+            },
+        }
+    )
+
+    usage = error.details["usage"]
+    invalid_usage = error.details["invalid_usage"]
+    assert usage["input_tokens"] == 17  # type: ignore[index]
+    assert usage["output_tokens"] is None  # type: ignore[index]
+    assert usage["provider_token"] == "[REDACTED]"  # type: ignore[index]
+    assert invalid_usage["input_tokens"] == "[REDACTED]"  # type: ignore[index]
+    assert invalid_usage["output_tokens"] == "[REDACTED]"  # type: ignore[index]
+    assert secret not in repr(error.details)
+
+
 @pytest.mark.parametrize("bad_detail", [math.nan, math.inf, object()])
 def test_error_details_reject_unsupported_values_without_stringifying_them(bad_detail):
     secret = "DETAIL-INVALID-SECRET-9981"

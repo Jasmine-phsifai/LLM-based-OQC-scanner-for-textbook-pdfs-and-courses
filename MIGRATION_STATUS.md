@@ -3476,3 +3476,19 @@ all nine profiles, a 327,216-byte wheel, a 1,682,135-byte base install and the
 installed 2-frame/1-batch/1-audio-slice visible flow. Exact proof roots are
 removed. No runtime/API/dependency/schema/provider behavior changes and the
 release budgets remain unchanged.
+
+#702 extends the existing Google flat-fallback scenario with an explicit real
+Google-to-DashScope mode. Credential-free preflight returns `CONFIG_MISSING`,
+calls 0 and an owned state that is removed. In the sole live child, the fixed
+unserved Google model advances with zero generation and DashScope makes the one
+actual call, then times out. No Markdown is published; a 713-byte state records
+terminal DashScope/qwen3.5-ocr, calls 1, unknown tokens and clean cleanup. No
+retry/replay occurs, so real cross-vendor success remains open.
+
+This failure also proves numeric usage fields in public error details were being
+over-redacted by the generic `token` substring rule. Exact `input_tokens` and
+`output_tokens` now remain visible only when `None` or nonnegative exact ints;
+secret strings, booleans, negative values and other token keys remain redacted.
+The runner now safely reports terminal usage/slot evidence. The current wheel is
+327,312 bytes with 368 bytes headroom, 84 focused tests pass, and exact evidence
+roots are removed. Fallback/retry/state/API/dependency behavior is unchanged.
