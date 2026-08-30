@@ -187,11 +187,17 @@ heartbeat advances to the independently required native-Google scalar proof;
 the DashScope success gate is deferred, not declared passed.
 #661 adds that private Google mode to the existing maintained Google image
 smoke without changing its default public route. One bounded live child stopped
-before catalog/generation at native SDK client setup: the required SOCKS proxy
-met an environment with no `socksio`, reproduced offline as `ImportError`, and
+before catalog/generation at native SDK client setup: that child forced SOCKS
+in an environment with no `socksio`, reproduced offline as `ImportError`, and
 reported exact zero calls. No dependency was installed and no request was
 replayed. Google and DashScope scalar success gates remain open; the next slice
 must settle the narrow proxy/dependency boundary before another live attempt.
+#662 settles that boundary without a package change: 10080 is a mixed proxy,
+and the native SDK constructs through its HTTP form without `socksio`. One
+later entity run completed exact `gemini-2.5-flash` with one generation, 595
+input tokens, 269 output tokens, and a closed client. Google scalar success is
+now proven; DashScope success remains independently open, and no preset or
+public merged-interface rewrite is admitted by this proof alone.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

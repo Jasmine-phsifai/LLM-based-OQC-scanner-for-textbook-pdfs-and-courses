@@ -51,6 +51,12 @@ reorder that board.
   maintained gate is proven with uppercase `HTTP_PROXY`, `HTTPS_PROXY`, and
   `ALL_PROXY`; do not add product-side environment normalization for this
   operator boundary.
+- #662 verifies that the current 10080 listener is a mixed proxy. For native
+  Google SDK smoke children in the current environment, use the HTTP form of
+  that rechecked endpoint; forcing the SOCKS form requires HTTPX's optional
+  `socksio` dependency and failed during local client construction. This is a
+  dated operator fact, not permission to hardcode a proxy, discover Windows
+  proxy state in the library, or add SOCKS support to `ocrllm[google]`.
 - For bounded DashScope quality trials, prefer live-discovered capable smaller
   models around the maintainer's intended 27B class, including an OCR-tuned or
   general reasoning candidate when currently served. Evaluate formulas, LaTeX,

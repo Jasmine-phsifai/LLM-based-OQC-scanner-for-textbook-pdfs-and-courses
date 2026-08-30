@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#661)
+### Current provider/media checkpoint (#662)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -173,11 +173,14 @@ generation and retained an honest response-invalid failure; #659 then stopped
 honestly at a transient catalog-unavailable boundary with zero generations.
 After #660's second invalid generation, #661 adds the native-Google scalar mode
 to the maintained image smoke without a public-call rewrite. Its sole live
-child stops before catalog/generation because the required SOCKS proxy meets an
-environment lacking `socksio`; offline client construction reproduces the same
+child stops before catalog/generation because its forced SOCKS proxy form meets
+an environment lacking `socksio`; offline client construction reproduces the same
 `ImportError`. No dependency is installed and no API request is replayed.
-DashScope and Google success remain open; the next slice resolves only that
-proxy/dependency boundary before another bounded request.
+#662 then proves the same listener accepts HTTP proxying and the native client
+constructs without SOCKS support. One bounded entity run completes exact
+`gemini-2.5-flash` in one generation with 595/269 input/output tokens and a
+closed client. No package dependency or runtime code changes. Google scalar
+success is closed; DashScope remains open for a later diagnostic run.
 Only capability/default facts supported by a successful proof may join the
 still-private value. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,

@@ -13249,3 +13249,25 @@ smallest supported proxy/dependency correction.
 An initially added 75-line fake-live runner regression was deleted during
 primary review: root testing policy keeps real scenario proof in the runner and
 diary instead of mirroring it with internal monkeypatches in default pytest.
+
+## Current working update: #662 closes the native-Google scalar success gate
+
+#662 proves that #661 was a disposable-controller protocol mismatch, not a
+package dependency defect. The current 10080 listener accepts both HTTP CONNECT
+and SOCKS5 for a bounded no-credential HTTPS request. Native `google.genai.Client`
+also constructs and closes with a dummy key when the child uses the HTTP proxy
+form. HTTPX exposes SOCKS as an optional extra, but OCRLLM does not need that
+extra for the already-working HTTP route. No dependency, proxy discovery,
+runtime setting, adapter, runner, public API, or product behavior changes.
+
+One later credential-isolated child uses uppercase HTTP proxy variables, exact
+`gemini-2.5-flash`, and the unchanged 116,507-byte formula board. The same
+private `ProviderModel` mode performs adapter-owned catalog validation and one
+generation, then exits 0 after about 15.67 seconds. Its safe JSON reports one
+provider call, 595 input tokens, 269 output tokens, and `client_closed=true`.
+There is no retry, model switch, fallback, second generation, output artifact,
+source mutation, stderr, temporary residue, process residue, or credential/body
+disclosure. The native-Google scalar success gate is closed. This does not add
+a preset or establish untested capability/default/audio facts; DashScope's
+separate scalar success gate remains open and public merged-interface work does
+not start in #662.

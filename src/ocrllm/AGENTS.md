@@ -34,9 +34,12 @@ scope. #660 then reached generation and received a second request-scoped invalid
 response; the next atomic proof advances to native Google while the DashScope
 success gate remains open. #661 adds that private Google mode to the maintained
 Google image runner, but its only live child stops at SDK client setup with zero
-calls because the required SOCKS proxy lacks installed `socksio` support. The
+calls because that child forced SOCKS without installed `socksio` support. The
 failure is reproduced offline; no dependency is installed or API request
-replayed, and both transport success gates remain open. The older Stage M/A plan supplies detail only where
+replayed. #662 then proves the same listener's HTTP form needs no SOCKS extra
+and completes one exact Google entity generation with honest token and client-
+cleanup evidence. Google scalar success is closed without a package change;
+DashScope remains open and no preset/public rewrite is admitted. The older Stage M/A plan supplies detail only where
 that board has not superseded it. #078 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the

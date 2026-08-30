@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #661)
+## 0. Current pruning and execution checkpoint (2026-08-30, #662)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -513,6 +513,25 @@ must not replay the API or add presets, retry, fallback, or provider pools.
 An initially added fake-live monkeypatch regression was removed during primary
 review because root testing policy assigns this proof to the scenario runner and
 diary; retaining it would have duplicated real evidence in the default suite.
+
+#662 corrects the #661 operator diagnosis and closes the native-Google scalar
+success gate without changing the package. The current 10080 listener is a mixed
+proxy: bounded no-credential HTTPS probes succeeded through both HTTP CONNECT
+and SOCKS5, and a dummy native client constructed and closed through the HTTP
+form. HTTPX metadata confirms SOCKS support is optional. Therefore the smaller
+route is to use `http://127.0.0.1:10080` in the disposable child, not add
+`socksio` to `ocrllm[google]` or teach the library to discover proxies.
+
+Exactly one credential-isolated `gemini-2.5-flash` entity run then completed the
+unchanged formula board in 15.67 seconds. Adapter-owned catalog validation and
+one generation succeeded; safe output reports 595 input tokens, 269 output
+tokens, one provider call, and a closed client. There was no retry, model switch,
+fallback, second generation, source mutation, stderr, process, or temporary
+residue. This proves the private Google entity/call boundary only. It does not
+admit a preset, infer plain/detail OCR capability or default batch size, prove
+audio defaults, authorize public-call rewrite, or waive the separately open
+DashScope success gate. The next DashScope action must still ask a new bounded
+diagnostic question rather than replaying the same invalid response blindly.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level
