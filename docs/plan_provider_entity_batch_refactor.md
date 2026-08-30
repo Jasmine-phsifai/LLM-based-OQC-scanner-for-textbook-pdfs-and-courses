@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #669)
+## 0. Current pruning and execution checkpoint (2026-08-30, #670)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -97,6 +97,33 @@ and content-free result/error summary outside its self-deleting scratch area,
 prove that capture without a provider call, and then perform at most one new
 bounded call. Flat fallback, retry execution, provider pools, and merged audio
 remain behind the still-open scalar merged-image live gate.
+
+### #670 replaces the disposable controller; the live gate stays open
+
+`tools/run_google_genai_merged_image_smoke.py` now owns exactly the missing
+scenario: two explicit eight-image batches, the proven Google 2.5 Flash preset,
+required `detail_ocr`, and one explicit Markdown target. It has no model/task
+selection, credential store, proxy discovery, retry, fallback, cleanup policy,
+or provider list. It reports only fixed identity/count/token facts, source-byte
+stability, and output/sidecar size and digest; it exits zero only after two
+settled slots, exactly two calls, no cleanup warning, published Markdown, and a
+removed complete-state sidecar. Partial and typed failure remain inspectable
+nonzero outcomes. Unlike #669's wrapper, it leaves evidence for its caller to
+inspect and clean.
+
+The first zero-call controller check returned one captured JSON object and exit
+code 1, proving the evidence path, but the result was `UNSUPPORTED_FORMAT`
+instead of the intended missing-credential failure. Read-only forensics found
+that the external PowerShell `Get-ChildItem -Include` selector had not filtered
+extensions: 13 of 16 inputs were MP4/ZIP/PART/JSON/MP3/Markdown/text files; the
+three actual JPEGs passed complete Pillow validation. No credential was read,
+no provider call was made, and the test was not rerun. This is a disposable
+selector error, not a library or image-validator defect.
+
+The next atomic gate must select exact `.jpg`/`.jpeg`/`.png` leaves with an
+explicit extension predicate, repeat the zero-call capture proof, and only then
+permit one bounded live invocation. Do not add automatic source skipping or
+broader format compatibility: invalid batch members remain whole-call rejects.
 
 The destination is one visible, caller-composed pair of media flows:
 

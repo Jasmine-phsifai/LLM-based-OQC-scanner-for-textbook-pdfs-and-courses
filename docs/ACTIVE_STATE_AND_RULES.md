@@ -13461,3 +13461,28 @@ The next atomic iteration must first prove explicit exit-code and content-free
 summary capture without a provider call, then allow at most one new bounded
 live attempt. It must not respond to this unknown result by adding retry,
 fallback, proxy discovery, a provider pool, or generalized diagnostics.
+
+## Current working update: #670 adds the auditable merged-image live runner
+
+`tools/run_google_genai_merged_image_smoke.py` replaces #669's opaque
+PowerShell/`python -c` controller for the new public merged-image gate. It is
+fixed to two batches of eight, Google 2.5 Flash, `detail_ocr`, one explicit
+target, and at most two generation calls. Its JSON excludes paths and recognized
+content while retaining exact calls/tokens, source-byte stability, cleanup
+warning state, and output/sidecar size plus digest. It neither reads QSettings
+nor owns proxy, credential, retry, fallback, model selection, or scratch cleanup.
+
+The required zero-call capture stage ended with exit code 1 and one valid safe
+JSON summary, so the #669 stdout/exit-evidence defect is closed. It correctly
+reported `UNSUPPORTED_FORMAT`, unchanged sources, no Markdown/state, and no
+provider dispatch. Forensics then showed that the disposable input selector had
+passed 13 non-image files and only three actual JPEGs; all three JPEGs passed the
+library's full decoder preflight. The selector used `Get-ChildItem -Include`
+without a filtering wildcard and therefore did not implement its stated image
+predicate.
+
+No credential was read, no live request was made, and no library code changed.
+The next run must use an explicit `.jpg`/`.jpeg`/`.png` predicate, prove the
+missing-credential zero-call path, and only then make one bounded live call.
+Invalid members remain fail-fast whole-batch rejections; the library must not
+auto-skip them or broaden formats to accommodate this controller mistake.

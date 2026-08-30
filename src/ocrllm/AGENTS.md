@@ -51,13 +51,20 @@ DashScope scalar image gate with one exact `qwen3.5-ocr` entity generation,
 4,357/297 input/output tokens, and a closed client. Both built-in scalar image
 transports are live-proven. The next slice may add only a small credential-free
 preset set and image facts backed by real evidence; do not skip directly to a
-public merged rewrite or predeclare audio/retry/pool behavior. #666 now stores
-exact Google and Beijing DashScope internal preset constants and makes the two
-maintained runners consume them. They deliberately remain off the package root
-until the first public merged-image operation can accept them; do not add a
-registry, full catalog constants, guessed fields, or a public unusable value in
-the meantime. The older Stage M/A plan supplies detail only where
-that board has not superseded it. #078 closed P1-c with one bounded
+public merged rewrite or predeclare audio/retry/pool behavior. #666 stores exact
+Google and Beijing DashScope preset constants and makes the two maintained
+adapter runners consume them. #667 then publishes the complete two-entry
+provider data shape, both presets, and exact-tuple `batchify_images()`. #668
+publishes scalar `recognize_images_to_markdown()` and
+`resume_images_to_markdown()` together with one ordered sidecar; do not add flat
+fallback, retry execution, pools, or merged audio until its live gate closes.
+#669's disposable controller lost all result evidence. #670 replaces it with
+fixed, content-free `tools/run_google_genai_merged_image_smoke.py`, but its first
+zero-call run correctly stopped on non-image inputs from a faulty external
+selector. The next gate must explicitly select validated image extensions,
+prove zero-call capture, and then make at most one live call. The older Stage
+M/A plan supplies detail only where that board has not superseded it. #078
+closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the
 new library does not consume legacy localized repair Markdown, and ordinary
