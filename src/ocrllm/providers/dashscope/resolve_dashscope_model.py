@@ -6,7 +6,7 @@ import json
 from threading import Lock
 from time import monotonic
 
-from ...errors import ConfigError, ProviderError
+from ...errors import ConfigError, OCRLLMError, ProviderError
 
 
 DEFAULT_DASHSCOPE_MODEL = "qwen3.7-plus-2026-05-26"
@@ -77,14 +77,19 @@ def fetch_dashscope_model_catalog(
     from .resolve_dashscope_credential import resolve_dashscope_credential
     from .validate_dashscope_api_key import validate_dashscope_api_key
 
-    api_key = (
-        resolve_dashscope_credential(settings)
-        if catalog_api_key is None
-        else validate_dashscope_api_key(
-            catalog_api_key,
-            field_name="leased DashScope catalog credential",
+    try:
+        api_key = (
+            resolve_dashscope_credential(settings)
+            if catalog_api_key is None
+            else validate_dashscope_api_key(
+                catalog_api_key,
+                field_name="leased DashScope catalog credential",
+            )
         )
-    )
+    except OCRLLMError as error:
+        error._add_safe_detail("provider_operation", "catalog")
+        error._add_safe_detail("provider_calls_attempted", 0)
+        raise
     try:
         request = Request(
             f"{settings.base_url.rstrip('/')}/models",

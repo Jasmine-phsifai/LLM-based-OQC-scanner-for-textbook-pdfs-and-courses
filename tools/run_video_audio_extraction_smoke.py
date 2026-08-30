@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
+import importlib.util
 import json
 import math
 import os
@@ -11,16 +13,7 @@ import stat
 import sys
 import time
 from pathlib import Path
-
-import ocrllm
-from ocrllm import (
-    AudioSlice,
-    GOOGLE_GEMINI_2_5_FLASH,
-    OCRLLMError,
-    extract_video_audio,
-    inspect_video,
-    split_audio,
-)
+from types import ModuleType
 
 
 INTERVAL_MINUTES = 30
@@ -46,8 +39,8 @@ def run_video_audio_extraction_smoke(
     """Return content-free evidence while leaving caller-owned audio in place."""
     source = source.absolute()
     output = output.absolute()
-    package_origin_is_checkout = _package_origin_is_checkout()
-    if not package_origin_is_checkout:
+    ocrllm = _load_checkout_ocrllm()
+    if ocrllm is None:
         return {
             "status": "failed",
             "code": "PACKAGE_ORIGIN_MISMATCH",
@@ -84,15 +77,18 @@ def run_video_audio_extraction_smoke(
         }
     started = time.monotonic()
     try:
-        video_info = inspect_video(source)
-        extracted = extract_video_audio(source, output_path=output)
-        whole = split_audio(extracted, interval_minutes=-1)
-        explicit = split_audio(extracted, interval_minutes=INTERVAL_MINUTES)
-        provider_default = split_audio(
+        video_info = ocrllm.inspect_video(source)
+        extracted = ocrllm.extract_video_audio(source, output_path=output)
+        whole = ocrllm.split_audio(extracted, interval_minutes=-1)
+        explicit = ocrllm.split_audio(
             extracted,
-            provider=GOOGLE_GEMINI_2_5_FLASH,
+            interval_minutes=INTERVAL_MINUTES,
         )
-    except OCRLLMError as error:
+        provider_default = ocrllm.split_audio(
+            extracted,
+            provider=ocrllm.GOOGLE_GEMINI_2_5_FLASH,
+        )
+    except ocrllm.OCRLLMError as error:
         return _failure_summary(error, source, before, before_sha256, output)
     except Exception:
         return {
@@ -110,7 +106,11 @@ def run_video_audio_extraction_smoke(
         }
 
     output_info = output.stat()
-    audio_duration = _whole_duration(whole, output)
+    audio_duration = _whole_duration(
+        whole,
+        output,
+        audio_slice_type=ocrllm.AudioSlice,
+    )
     expected_interval_count = (
         math.ceil(audio_duration / float(INTERVAL_MINUTES * 60))
         if audio_duration is not None
@@ -122,6 +122,7 @@ def run_video_audio_extraction_smoke(
             explicit,
             source=output,
             duration_seconds=audio_duration,
+            audio_slice_type=ocrllm.AudioSlice,
         )
     )
     provider_default_matches = (
@@ -133,7 +134,6 @@ def run_video_audio_extraction_smoke(
     google_genai_sdk_loaded = _google_genai_sdk_loaded()
     passed = (
         extracted == output
-        and package_origin_is_checkout
         and stat.S_ISREG(output_info.st_mode)
         and not output.is_symlink()
         and output_info.st_size > 0
@@ -152,7 +152,7 @@ def run_video_audio_extraction_smoke(
         "source_bytes": before[2],
         "source_sha256": before_sha256,
         "source_unchanged": source_unchanged,
-        "package_origin_is_checkout": package_origin_is_checkout,
+        "package_origin_is_checkout": True,
         "video_duration_seconds": video_info.duration_seconds,
         "audio_duration_seconds": audio_duration,
         "duration_delta_seconds": (
@@ -166,7 +166,7 @@ def run_video_audio_extraction_smoke(
         "explicit_interval_minutes": INTERVAL_MINUTES,
         "explicit_interval_slice_count": len(explicit),
         "provider_default_minutes": (
-            GOOGLE_GEMINI_2_5_FLASH.default_audio_minutes
+            ocrllm.GOOGLE_GEMINI_2_5_FLASH.default_audio_minutes
         ),
         "provider_default_matches_explicit": provider_default_matches,
         "final_logical_end_seconds": (
@@ -182,11 +182,13 @@ def run_video_audio_extraction_smoke(
 def _whole_duration(
     whole: object,
     source: Path,
+    *,
+    audio_slice_type: type,
 ) -> float | None:
     if (
         type(whole) is not tuple
         or len(whole) != 1
-        or type(whole[0]) is not AudioSlice
+        or type(whole[0]) is not audio_slice_type
     ):
         return None
     item = whole[0]
@@ -207,6 +209,7 @@ def _valid_interval_plan(
     *,
     source: Path,
     duration_seconds: float,
+    audio_slice_type: type,
 ) -> bool:
     if type(plan) is not tuple or not plan:
         return False
@@ -215,7 +218,7 @@ def _valid_interval_plan(
     for index, item in enumerate(plan):
         logical_end = min(logical_start + interval_seconds, duration_seconds)
         if (
-            type(item) is not AudioSlice
+            type(item) is not audio_slice_type
             or item.source != source
             or item.index != index
             or item.logical_start_seconds != logical_start
@@ -317,10 +320,19 @@ def _google_genai_sdk_loaded() -> bool:
     )
 
 
-def _package_origin_is_checkout() -> bool:
-    origin = getattr(ocrllm, "__file__", None)
-    expected = Path(__file__).resolve().parents[1] / "src" / "ocrllm"
-    return type(origin) is str and Path(origin).resolve().parent == expected
+def _load_checkout_ocrllm() -> ModuleType | None:
+    expected = Path(__file__).resolve().parents[1] / "src" / "ocrllm" / "__init__.py"
+    try:
+        spec = importlib.util.find_spec("ocrllm")
+        if spec is None or spec.origin is None:
+            return None
+        if Path(spec.origin).resolve() != expected:
+            return None
+        module = importlib.import_module("ocrllm")
+        origin = getattr(module, "__file__", None)
+        return module if type(origin) is str and Path(origin).resolve() == expected else None
+    except (ImportError, OSError, ValueError):
+        return None
 
 
 def main() -> int:

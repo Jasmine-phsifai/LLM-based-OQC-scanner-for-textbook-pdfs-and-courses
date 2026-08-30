@@ -3434,3 +3434,22 @@ and lifecycle facts stay clean. An audit's proposed path/residue fixes are
 rejected after tracing the actual `<output>/<stem>/frames` and in-output staging
 layout. Evidence is removed and 48 adjacent tests pass. Only scenario tools and
 records change; runtime/API/dependency/provider/selector behavior does not.
+
+#699 composes two real retained video frames into the first live DashScope
+merged-image run. Before live work, all three real-media tools move their
+checkout-origin check ahead of public imports; a stale environment now returns
+safe mismatch JSON instead of `ImportError`. The new explicit two-batch runner
+also keeps exact source SHA and strict safe failed-slot evidence.
+
+The credential-free public gate exposes and closes two zero-call omissions:
+non-pooled adapter credential resolution and pre-adapter catalog credential
+resolution now attach `provider_calls_attempted=0`; the latter also identifies
+the catalog operation. The final preflight returns `CONFIG_MISSING`, calls 0,
+no Markdown, unchanged sources and one owned state. In the sole live child,
+DashScope settles slot 0 and times out on slot 1 after two calls. The library
+publishes matching 158-byte partial Markdown and retains a 1,555-byte
+settled/failed sidecar; token totals remain honestly unknown, cleanup is clean,
+and sources/credential residue are unchanged/zero. The runner's missing partial
+classification is fixed locally without replay. The 23,423,164-byte root is
+retained outside Git for the next ordinary resume, which must call only slot 1.
+No retry/fallback/schema change is added; 149 focused tests pass.

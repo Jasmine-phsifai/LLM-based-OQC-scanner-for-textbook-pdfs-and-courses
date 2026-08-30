@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #698)
+## 0. Current pruning and execution checkpoint (2026-08-31, #699)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1015,6 +1015,47 @@ therefore retained the correct three-parent path check and residue root instead
 of patching to the audit's false layout. The exact 23,421,451-byte evidence root
 was removed; adjacent frame/inspection/planning tests pass 48. Runtime, tests,
 dependencies, public APIs, provider behavior, and selector policy are unchanged.
+
+### #699 reaches DashScope merged partial and fixes two zero-call omissions
+
+The visible real-frame path now reaches the second live-proven image transport
+through one separate explicit-source scenario. A new DashScope merged runner
+accepts exactly two one-image batches and one Markdown target, uses only the
+package-root `qwen3.5-ocr` preset and `recognize_images_to_markdown()`, and emits
+content-free output/state/source/call/token evidence. It recognizes complete and
+strict partial outcomes separately; no extraction, provider choice, retry,
+fallback, resume, or cleanup policy is hidden inside it.
+
+Runner review exposed that all three new media tools imported public symbols
+before their checkout-origin guard. A stale installed package missing a new
+export could therefore raise `ImportError` before safe JSON. Each tool now uses
+standard-library `find_spec()` plus exact expected `__init__.py` comparison
+before importing `ocrllm`; the known stale environment returns
+`PACKAGE_ORIGIN_MISMATCH`/exit 1 without source work. No shared loader framework
+or `sys.path` mutation was added. DashScope source SHA rows and failed-slot
+provider/model/index/code validation were also made exact.
+
+The credential-free merged gate then reproduced a real error-honesty defect:
+`CONFIG_MISSING` correctly performed no catalog/generation request but omitted
+`provider_calls_attempted`. The non-pooled adapter credential branch sat outside
+the annotation already used by pooled credentials; separately, non-default model
+catalog credential resolution occurred before the catalog failure block. Both
+sources now attach exact calls zero, and the catalog source also identifies
+`provider_operation="catalog"`. Existing adapter/catalog tests cover each owner;
+the final public merged preflight reports calls 0, no Markdown, unchanged image
+hashes, and only one owned unresolved sidecar.
+
+One live child then used the first two returned-order frames from a clean #698
+frame extraction. DashScope settled slot 0 and timed out on slot 1 after exactly
+two calls. The library atomically published a 158-byte partial Markdown, retained
+one strict failure marker and a 1,555-byte sidecar with statuses settled/failed,
+and preserved cumulative token dimensions as unknown because the timeout had no
+trustworthy usage. Cleanup failure was false, sources were unchanged, and no
+credential residue was found. The first runner version collapsed valid partial
+to invalid evidence; its strict partial branch is now locally proven, with no API
+replay. The 23,423,164-byte exact root remains outside Git for the next atomic
+ordinary-resume gate, which must reuse slot 0 and dispatch only slot 1. Runtime
+retry/fallback/state schemas are unchanged; 149 focused tests pass.
 
 The destination is one visible, caller-composed pair of media flows:
 

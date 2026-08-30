@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
+import importlib.util
 import json
 import math
 import os
@@ -11,16 +13,7 @@ import stat
 import sys
 import time
 from pathlib import Path
-
-import ocrllm
-from ocrllm import (
-    GOOGLE_GEMINI_2_5_FLASH,
-    OCRLLMError,
-    RetainedVideoFrame,
-    batchify_images,
-    extract_video_frames,
-    inspect_video,
-)
+from types import ModuleType
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -41,8 +34,8 @@ def run_video_frame_extraction_smoke(
     """Return content-free evidence while leaving caller-owned frames in place."""
     source = source.absolute()
     output_dir = output_dir.absolute()
-    package_origin_is_checkout = _package_origin_is_checkout()
-    if not package_origin_is_checkout:
+    ocrllm = _load_checkout_ocrllm()
+    if ocrllm is None:
         return {
             "status": "failed",
             "code": "PACKAGE_ORIGIN_MISMATCH",
@@ -61,19 +54,20 @@ def run_video_frame_extraction_smoke(
 
     started = time.monotonic()
     try:
-        info = inspect_video(source)
-        retained = extract_video_frames(source, output_dir=output_dir)
+        info = ocrllm.inspect_video(source)
+        retained = ocrllm.extract_video_frames(source, output_dir=output_dir)
         valid, output_bytes = _validate_retained_frames(
             retained,
+            retained_frame_type=ocrllm.RetainedVideoFrame,
             output_dir=output_dir,
             width_pixels=info.width_pixels,
             height_pixels=info.height_pixels,
         )
-        image_batches = batchify_images(
+        image_batches = ocrllm.batchify_images(
             tuple(frame.path for frame in retained),
-            provider=GOOGLE_GEMINI_2_5_FLASH,
+            provider=ocrllm.GOOGLE_GEMINI_2_5_FLASH,
         )
-    except OCRLLMError as error:
+    except ocrllm.OCRLLMError as error:
         return _failure_summary(error, source, before, before_sha256, output_dir)
     except Exception:
         return {
@@ -96,6 +90,7 @@ def run_video_frame_extraction_smoke(
     batch_order_matches_frames = flattened_batch_paths == frame_paths
     batch_sizes = tuple(len(batch) for batch in image_batches)
     google_genai_sdk_loaded = _google_genai_sdk_loaded()
+    default_batch_size = ocrllm.GOOGLE_GEMINI_2_5_FLASH.default_image_batch_size
     comparison_sample_upper_bound = (
         math.ceil(
             min(
@@ -108,7 +103,6 @@ def run_video_frame_extraction_smoke(
     )
     passed = (
         valid
-        and package_origin_is_checkout
         and source_unchanged
         and residue_count == 0
         and bool(retained)
@@ -118,11 +112,10 @@ def run_video_frame_extraction_smoke(
         and 0.0 <= timestamps[0] <= timestamps[-1] <= info.duration_seconds
         and comparison_sample_upper_bound <= 10_000
         and type(image_batches) is tuple
-        and len(image_batches)
-        == math.ceil(len(retained) / GOOGLE_GEMINI_2_5_FLASH.default_image_batch_size)
+        and len(image_batches) == math.ceil(len(retained) / default_batch_size)
         and all(
             type(batch) is tuple
-            and 0 < len(batch) <= GOOGLE_GEMINI_2_5_FLASH.default_image_batch_size
+            and 0 < len(batch) <= default_batch_size
             for batch in image_batches
         )
         and batch_order_matches_frames
@@ -134,7 +127,7 @@ def run_video_frame_extraction_smoke(
         "source_bytes": before[2],
         "source_sha256": before_sha256,
         "source_unchanged": source_unchanged,
-        "package_origin_is_checkout": package_origin_is_checkout,
+        "package_origin_is_checkout": True,
         "frame_count": info.frame_count,
         "frames_per_second": info.frames_per_second,
         "duration_seconds": info.duration_seconds,
@@ -150,9 +143,7 @@ def run_video_frame_extraction_smoke(
         "first_retained_timestamp_seconds": timestamps[0],
         "last_retained_timestamp_seconds": timestamps[-1],
         "retained_output_bytes": output_bytes,
-        "provider_default_batch_size": (
-            GOOGLE_GEMINI_2_5_FLASH.default_image_batch_size
-        ),
+        "provider_default_batch_size": default_batch_size,
         "image_batch_count": len(image_batches),
         "image_batch_sizes": batch_sizes,
         "batch_order_matches_frames": batch_order_matches_frames,
@@ -167,6 +158,7 @@ def run_video_frame_extraction_smoke(
 def _validate_retained_frames(
     retained: object,
     *,
+    retained_frame_type: type,
     output_dir: Path,
     width_pixels: int,
     height_pixels: int,
@@ -179,7 +171,7 @@ def _validate_retained_frames(
 
     total_bytes = 0
     for frame in retained:
-        if type(frame) is not RetainedVideoFrame:
+        if type(frame) is not retained_frame_type:
             return False, total_bytes
         expected_name = f"frame-{frame.frame_index:08d}.jpg"
         path = frame.path
@@ -270,10 +262,19 @@ def _staging_residue_count(output_dir: Path) -> int | None:
         return None
 
 
-def _package_origin_is_checkout() -> bool:
-    origin = getattr(ocrllm, "__file__", None)
-    expected = Path(__file__).resolve().parents[1] / "src" / "ocrllm"
-    return type(origin) is str and Path(origin).resolve().parent == expected
+def _load_checkout_ocrllm() -> ModuleType | None:
+    expected = Path(__file__).resolve().parents[1] / "src" / "ocrllm" / "__init__.py"
+    try:
+        spec = importlib.util.find_spec("ocrllm")
+        if spec is None or spec.origin is None:
+            return None
+        if Path(spec.origin).resolve() != expected:
+            return None
+        module = importlib.import_module("ocrllm")
+        origin = getattr(module, "__file__", None)
+        return module if type(origin) is str and Path(origin).resolve() == expected else None
+    except (ImportError, OSError, ValueError):
+        return None
 
 
 def _google_genai_sdk_loaded() -> bool:

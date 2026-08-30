@@ -946,6 +946,7 @@ def test_missing_dashscope_key_fails_before_sdk_load(tmp_path, monkeypatch):
         )
 
     assert captured.value.code == "CONFIG_MISSING"
+    assert captured.value.details["provider_calls_attempted"] == 0
 
 
 def test_sdk_authentication_failure_is_typed_and_redacted(tmp_path, monkeypatch):

@@ -46,7 +46,11 @@ def recognize_images(
 
     credential_lease: _DashScopeCredentialLease | None = None
     if settings.credential_pool is None:
-        api_key = resolve_dashscope_credential(settings)
+        try:
+            api_key = resolve_dashscope_credential(settings)
+        except OCRLLMError as error:
+            error._add_safe_detail("provider_calls_attempted", 0)
+            raise
     else:
         try:
             credential_lease = settings.credential_pool._acquire(

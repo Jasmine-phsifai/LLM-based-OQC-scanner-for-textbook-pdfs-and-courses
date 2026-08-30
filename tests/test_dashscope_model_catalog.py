@@ -177,6 +177,8 @@ def test_credential_error_propagates_without_catalog_outage_mapping(
         resolver.fetch_dashscope_model_catalog(_settings(api_key=None))
 
     assert captured.value.code == "CONFIG_MISSING"
+    assert captured.value.details["provider_operation"] == "catalog"
+    assert captured.value.details["provider_calls_attempted"] == 0
 
 
 def test_pinned_baseline_model_never_fetches_catalog(monkeypatch) -> None:
