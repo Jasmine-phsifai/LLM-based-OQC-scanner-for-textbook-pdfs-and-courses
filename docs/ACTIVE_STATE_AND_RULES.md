@@ -14062,3 +14062,25 @@ OCR 328,937,791; image+DashScope 41,810,707; Google 41,952,414; audio+Google
 video+audio+image 272,689,087 bytes. The installed visible flow returns two
 frames, one image batch, and one audio slice. The guarded proof root and reviewed
 external log were removed. No runtime source or product behavior changed.
+
+## Current working update: #686 prunes repair and exposes the PDF ordering choice
+
+The current merged-image partial document already carries exact failed slot and
+source-index markers. The current merged-audio document carries exact failed
+slot markers plus three-decimal logical second ranges in the adjacent OCRLLM
+heading. Latest maintainer authority says experimental repair may trust such an
+OCRLLM result for the explicit current source supplied by the caller. It does
+not require resume-strength source hashes, prompt/provider identity, saved
+batch/interval parameters, a second partial schema, or legacy compatibility.
+Zero settlement publishes no Markdown, so repair cannot recover it after state
+loss.
+
+Current PDF behavior does not yet produce repair input. It renders groups of at
+most eight pages through the older Config image path, stops on an OCRLLM error,
+and combines `ocrllm:pdf-pages` markers only after every group returns. A
+privacy-bounded marker-only scan of `D:\archieve` found four Markdown files and
+6,409 lines but no attributable OCRLLM/legacy failure marker. The next PDF
+product choice is therefore explicit caller-owned page extraction composed with
+merged image APIs (recommended), or a new one-call provider-model PDF lifecycle
+that owns deterministic retained pages and cleanup. #686 changes documentation
+only and adds no parser, artifact, provider call, test, or runtime behavior.

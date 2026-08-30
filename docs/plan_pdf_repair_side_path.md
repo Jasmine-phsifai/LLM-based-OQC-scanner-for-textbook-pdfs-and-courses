@@ -1,6 +1,59 @@
 # PDF Repair Side-Path Decision Plan
 
-Status: **product choice required; no runtime implementation is authorized.**
+Status: **the source-bound `.partial.md` proposal below is superseded; one PDF
+composition decision remains before runtime repair work.**
+
+## Current checkpoint (2026-08-30, #686)
+
+The maintainer's later direction is narrower than the historical proposal in
+this file. Experimental repair may trust that its explicit Markdown target is
+an OCRLLM partial result for the explicit current source supplied by the caller.
+It derives failed image source indexes or audio logical ranges from strict
+library-written headings/comments, accepts the current provider and output
+explicitly, and does not restore saved batch/interval/provider parameters.
+Resume remains the primary recovery path.
+
+Do not add a second source-bound partial-document schema, embedded PDF/source
+digest, prompt/provider identity, parameter snapshot, repair sidecar, generic
+Markdown parser, or legacy compatibility layer. Malformed, duplicate,
+out-of-range, or absent current-library markers fail before dispatch. A result
+with zero settled slots has no Markdown and is therefore not repairable after
+its sidecar is lost; repair does not manufacture evidence that never existed.
+
+Current merged-image partial Markdown already writes exact
+`OCRLLM_FAILED_IMAGE_SLOT` comments with slot and source indexes. Current
+merged-audio partial Markdown writes exact `OCRLLM_FAILED_AUDIO_SLOT` comments,
+and the immediately adjacent library heading carries the three-decimal logical
+second range. These are mechanically sufficient under the maintainer's explicit
+trust boundary when the caller supplies the current image batches or audio
+source. They are not promoted to resume-strength source identity.
+
+The current PDF facade is the blocker for the original use case. It renders
+groups of up to eight pages through the older `Config` image path, fails fast,
+and publishes aggregate page-marked Markdown only after all groups return. It
+cannot currently leave a failed-page marker for repair. A bounded privacy-safe
+scan of the authorized `D:\archieve` tree found four Markdown files / 6,409
+lines and no attributable OCRLLM or legacy failure marker, so there is no real
+production artifact that resolves this API choice.
+
+One maintainer choice remains:
+
+1. **Visible PDF composition (recommended):** publish provider-free PDF page
+   extraction, then let callers use existing `batchify_images()`, merged image
+   recognize/resume, and the later image repair. Caller-owned extracted pages
+   make source ownership explicit and avoid a second PDF state machine.
+2. **One-call provider-model PDF facade:** add a new orchestration owner that
+   renders pages, retains deterministic page files/state after partial failure,
+   delegates to merged image recognition, and cleans owned pages only after
+   completion. This is more convenient but must coexist with the shipped
+   Config/injected-provider PDF path and therefore carries more lifecycle code.
+
+Do not implement repair against the old fail-fast PDF path or add failure
+publication to that path merely to create repair input. Image/audio repair may
+remain independently useful, but whether PDF first becomes visibly composed or
+gains a new one-call owner affects the real PDF repair entry and cleanup rules.
+
+## Historical proposal (superseded by the checkpoint above)
 
 Iteration #451 rechecked the decision chronology. The maintainer's earlier
 "first A, second B" response belongs to the older video-cancellation and
@@ -8,7 +61,7 @@ long-audio decisions. It does not answer this later PDF-specific artifact
 choice. The routes below therefore remain open until one is selected
 explicitly for PDF repair.
 
-## Problem
+### Historical problem
 
 The active PDF facade is serial and fail-fast. It recognizes complete page
 groups of at most eight, saves ordinary image sidecars, and publishes the

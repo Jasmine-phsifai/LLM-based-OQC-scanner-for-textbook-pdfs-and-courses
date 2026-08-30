@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #685)
+## 0. Current pruning and execution checkpoint (2026-08-30, #686)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -624,6 +624,29 @@ flow returns two frames, one provider-derived image batch, and one
 provider-derived audio slice. No runtime source, dependency, media algorithm,
 provider call, retry, state, repair, worker/contracts surface, or second gate
 runner changed.
+
+### #686 reconciles repair with the surviving Markdown and current PDF path
+
+Current merged-image partial output identifies each failed slot and exact source
+index range. Current merged-audio partial output identifies each failed slot and
+places its logical second range in the immediately adjacent library heading.
+Under the maintainer's explicit experimental-repair trust boundary, those
+strict markers plus caller-supplied current sources are sufficient to select
+work after a sidecar is lost. Repair does not gain source hashes, saved prompts,
+provider identity, interval parameters, another partial schema, or legacy
+format support. Zero-settlement operations publish no Markdown and are not
+repairable after state loss.
+
+The current PDF facade cannot yet produce that input: it renders at most eight
+pages per group through the older Config path, fails fast, and combines page
+markers only after every group returns. A privacy-bounded marker-only scan of
+the authorized archive found four Markdown files / 6,409 lines but no OCRLLM or
+legacy failure marker, so no real production document closes the PDF API choice.
+Before implementing PDF repair, the maintainer must choose visible caller-owned
+PDF page extraction composed with the merged-image APIs (recommended), or a new
+one-call provider-model PDF owner with deterministic retained pages and cleanup.
+No runtime, parser, artifact, provider call, test, or source mutation changed in
+#686.
 
 The destination is one visible, caller-composed pair of media flows:
 

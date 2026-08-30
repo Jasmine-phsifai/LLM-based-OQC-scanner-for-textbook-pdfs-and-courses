@@ -561,6 +561,15 @@ tests, one expected RapidOCR skip, all optional profiles, and a visible
 two-frame/one-batch/one-slice flow. This is packaging/import/planning evidence,
 not a new provider-recognition claim.
 
+#686 reconciles repair planning with current code. Merged image/audio partial
+Markdown already carries strict failed-slot source indexes or adjacent logical
+audio ranges; latest maintainer authority allows experimental repair to trust
+those markers with explicit current sources, without another identity artifact.
+The current fail-fast PDF facade cannot produce a failed-page partial document,
+and an authorized marker-only archive scan found no real failure sample. The
+next PDF choice is visible page extraction composed with merged image APIs, or
+a new one-call provider-model PDF lifecycle. Runtime remains unchanged.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

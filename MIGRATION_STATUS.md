@@ -3292,3 +3292,13 @@ without installing/importing the provider SDK or making a request. It passes
 316,624-byte wheel, a 1,626,648-byte base target, and the installed
 two-frame/one-batch/one-slice flow. Runtime source and product behavior are
 unchanged.
+
+#686 confirms that current merged image/audio partial Markdown already contains
+enough strict slot/source-index or slot/logical-range markers for the explicitly
+trusted experimental repair side path. It rejects the stale proposal for a
+second source-bound `.partial.md` schema. Current PDF remains fail-fast on the
+older Config image path and cannot publish a failed-page repair marker. A
+marker-only scan of four authorized archive Markdown files / 6,409 lines found
+no real failure artifact. PDF must next choose visible caller-owned page
+extraction plus merged image APIs, or a new one-call provider-model PDF owner.
+No runtime behavior changed.
