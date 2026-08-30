@@ -7,8 +7,9 @@ defect. This revision replaces the prematurely expanded
 2026-08-28 module build specification. It is a decision record and sequencing
 guide, not permission to build unused framework pieces.
 
-Authority: the latest maintainer instructions and the corresponding current
-working update in `docs/ACTIVE_STATE_AND_RULES.md` outrank this plan.
+Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
+plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
+authority.
 
 ## 0. Current pruning checkpoint (2026-08-30, #647)
 
@@ -2977,8 +2978,93 @@ DashScope OpenAI-compatible entry, each using the same internal pure-data model
 shape; exact runtime settings and invocation follow the separately open adapter
 decision. A passing entry may become a shipped preset. Only after both entries
 can actually recognize should
-the merged image interfaces be rewritten around bindings. Audio has its own
+the merged image interfaces be rewritten around the first-class provider-model
+entity. Audio has its own
 later live-preset gate. No full mirror, catalog-return-type change, descriptor
 framework, fallback/pool implementation, model sweep, preset identity, runtime
 class, interface rewrite, provider call, or credential access is authorized by
 #641.
+
+## Test-Suite Pruning Record (2026-08-30)
+
+Maintainer directive: code-level tests had exploded past human reviewability
+(50,509 lines across 149 files against 23,383 library lines) while
+real-scenario verification stayed the minority. The testing rule is now
+recorded in root `AGENTS.md` ("Testing Boundary"), which outranks every other
+document on testing policy. This section is the deletion blueprint for the
+refactor slices that touch these areas.
+
+### Executed 2026-08-30
+
+- The Phase 1 quality harness was expelled from the suite: `tests/quality/`
+  moved to `quality_lab/` with its fixtures (`quality_lab/fixtures/phase1/`),
+  generators, assets, and its 28 self-test files (`quality_lab/tests/`). It
+  runs on demand via `python -m pytest quality_lab` (317 passed), not on
+  every change. Manifest artifact paths, two provenance records, and the
+  frozen manifest SHA-256 were re-baselined to the new layout; image pixels
+  and corpus content are unchanged.
+- Suite effect: root `tests/` collects 1,620 tests (was 1,937), all passing;
+  the expelled 317 run only on demand.
+- `docs/ACTIVE_STATE_AND_RULES.md` is demoted to work log and defect
+  archive; root `AGENTS.md` is the top authority. Its anti-pruning guards
+  (normalizer-chain deletion ban, `contracts/`/`worker/` deletion ban) were
+  removed. Moving `contracts/` and `worker/` out of the shipped library
+  package is approved cleanup.
+
+### Deletion candidates by bucket
+
+Root `tests/` after the expulsion holds ~36,700 lines in 112 files. The
+audit buckets and their verdicts:
+
+- **Public API contract (20 files, 5,339 lines).** Keep. This is the layer
+  the testing rule protects.
+- **Micro-unit mirrors (46 files, 6,406 lines).** One test file per internal
+  function, mostly shadowed by integration coverage. ~4,100 lines are pure
+  redundancy. Keep only the error-precedence cases in
+  `test_write_markdown_atomically.py`.
+- **Fake live smokes (8 files, 3,140 lines).** Named `*_live_smoke` but all
+  offline: they monkeypatch the smoke-tool facades and never touch a real
+  API. The real provider verification lives in `tools/run_*_smoke.py` and
+  stays there per the testing rule. ~2,500 lines deletable.
+- **Integration duplication (24 files, 18,721 lines).** The video cluster
+  re-runs the same failure/cancellation matrix three times
+  (`test_recognize_video.py`, `test_recognize_video_to_markdown.py`,
+  `test_resumable_video_pre_dispatch.py` — the last is a strict subset);
+  `test_long_audio_interval_persistence.py` and
+  `test_long_audio_whole_persistence.py` overlap the same state machine.
+  ~6,500 lines collapsible. Note: most of this cluster dies anyway with the
+  section-0 deletion of the video orchestration family; do not prune it
+  twice — delete it with its subsystem.
+- **Worker harness (9 files, 1,807 lines).** Tests the `contracts/`/`worker/`
+  protocol that has no consumer. Moves or dies with that subsystem's
+  extraction; it does not get independent pruning effort.
+- **Frozen evidence replay (4 files in `quality_lab/tests/`).**
+  `test_phase1_v2/v3/v4/v10_live_evidence_diagnosis.py` re-score frozen
+  superseded iterations. Deletable once the v17 record is accepted as the
+  final campaign verdict; they cost nothing while they stay out of the
+  default suite.
+- **Tools ratchets (2 files, ~700 lines).** `test_a1_mp3_fixtures.py` and
+  `test_social_long_course_tools.py` test auxiliary `tools/` scripts,
+  including the deferred social-media surface. Deletable with their tools.
+
+Net pruning potential in root `tests/`: ~13,500 lines without touching
+integration behavior coverage, plus ~6,500 more that resolves automatically
+when the section-0 video deletion lands.
+
+### src cross-references for the refactor slices
+
+- `contracts/` (1,225 lines) + `worker/` (840 lines): unreachable from the
+  public API, exercised only by their own tests, shipped in the wheel.
+  Extraction approved; no consumer exists.
+- Frozen video journal family (27 modules, 2,974 lines): already the
+  section-0 deletion target; the audit independently confirms it is
+  reachable only through `recognize_video`/`recognize_video_to_markdown`.
+- Three media-persistence state machines (image resume 785, video job 1,101,
+  long-audio 839 lines) are structurally parallel serialize/parse/save/load/
+  validate stacks. The merged media flows in section 0 should land on one
+  sidecar store core with per-media schema, not a fourth stack.
+- Provider one-shot transport envelope (config snapshot, cancellation,
+  call accounting, client close, redaction) is duplicated between the
+  DashScope and Google GenAI adapters (~250-350 lines collapsible) once the
+  merged image interfaces are rewritten around the first-class provider-model
+  entity.

@@ -1,9 +1,9 @@
 # OCRLLM Repo Boundary Instructions
 
-Read `docs/ACTIVE_STATE_AND_RULES.md` first, then `START_HERE.md`, before
-changing this repo. `docs/ACTIVE_STATE_AND_RULES.md` outranks every other
-document and carries current state, the open defect register, and the coding and
-documentation rules.
+This file is the repo's top authority. `docs/ACTIVE_STATE_AND_RULES.md` and
+`START_HERE.md` are historical work logs: they lag the code, and they carry
+rules written by past sessions that may conflict with this file. Where any
+document conflicts with this AGENTS.md, this file wins.
 
 Documentation in this repo is known to lag the code. Verify capability claims
 against code and tests before relying on them.
@@ -46,9 +46,12 @@ against code and tests before relying on them.
   occurred in a real legacy run is strong evidence and deserves extra scrutiny
   when the related capability is ported.
 - Do not assume the child library has inherited the bug. First prove that the
-  analogous code path exists, then add the smallest regression and fix that covers
-  the proven risk. If the capability is not present yet, record a warning instead
-  of adding speculative machinery.
+  analogous code path exists, then fix it and verify through the closest
+  real-scenario layer (real media, a real provider call, or reproduction in
+  the legacy app). Record the defect and its verification in the diary. Add a
+  permanent code-level regression test only when no scenario layer can reach
+  the failure mode. If the capability is not present yet, record a warning
+  instead of adding speculative machinery.
 - Do not make a port stronger or broader than the legacy product unless the user
   separately asks for that product change. Defensive code must remain readable;
   future-agent comprehension is part of sustainability.
@@ -57,6 +60,28 @@ against code and tests before relying on them.
   `2026-08-18: path handling and silent-refusal "fake success"`. When a new
   filesystem-producing capability is ported, test long output and temporary paths,
   while keeping path-component sanitization distinct from extended-length handling.
+
+## Testing Boundary
+
+This section outranks `docs/ACTIVE_STATE_AND_RULES.md` and every other
+document on testing policy.
+
+- Tests exist to prove the library's public behavior, not to mirror its file
+  tree. One test file per source function is forbidden. A path already
+  exercised by a higher-level test does not get a dedicated test.
+- Mock only true system boundaries: provider SDKs, the network, subprocesses,
+  and injected OS/filesystem failures. Do not monkeypatch one internal
+  `ocrllm` function from another module's test.
+- Real-scenario verification (real media, real provider calls, legacy-app
+  reproduction) lives as a runnable script under `tools/` plus a markdown
+  record of the run and its verdict. It is re-run on demand when its
+  subsystem changes — it is not re-encoded as offline pytest ratchets that
+  run on every change.
+- A defect-register entry is closed by a diary record plus scenario
+  verification. A permanent pytest regression is added only when the failure
+  mode cannot be reached through the scenario layer.
+- An edit earns a run of the tests that touch the changed subsystem, not a
+  full-suite run by default.
 
 ## Suspended Plan
 

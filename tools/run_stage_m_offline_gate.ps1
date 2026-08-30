@@ -210,7 +210,7 @@ try {
         -TimeoutSeconds $ArchivedSourceTestTimeoutSeconds
     & uv run --no-project --isolated --with 'Pillow==12.3.0' `
         --python $python `
-        python -m tests.quality.generators.generate_phase1_fixtures --check
+        python -m quality_lab.generators.generate_phase1_fixtures --check
     Assert-LastExitCode 'archived-source fixture check failed'
     & $python -m compileall -q src tests
     Assert-LastExitCode 'archived-source compileall failed'

@@ -1,9 +1,9 @@
 # OCRLLM Migration Status
 
-This is a navigation aid. The authoritative current state, open defects, and
-documentation rules are in
+This is a navigation aid. The repo's top authority is
+[`AGENTS.md`](AGENTS.md); current state, open defects, and the work log are in
 [`docs/ACTIVE_STATE_AND_RULES.md`](docs/ACTIVE_STATE_AND_RULES.md). If this
-file and that file differ, that file wins.
+file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
@@ -66,6 +66,16 @@ contract is defined with the first merged-list consumer that needs it; audio,
 retry, pool, resume, and cleanup members are not designed in advance. This is
 an ordering correction only; no runtime API or source changed.
 
+#655 completes the authorized repository-only quality-harness relocation.
+`quality_lab/` now owns the Phase 1 fixtures, generators, scorers, runner, and
+their 28 self-tests; root `tests/` remains the default public-behavior suite.
+The lab runs explicitly with `python -m pytest quality_lab`, is not selected by
+the default pytest configuration, and is not packaged in the `ocrllm` wheel.
+Active commands and paths now use `quality_lab`; dated historical records retain
+their original paths. Two redundant nested fixture scopes were removed because
+their parent `quality_lab` scope already provides the same boundary. No runtime,
+provider, media, legacy, public API, or dependency behavior changed.
+
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
 negative-feedback/similarity selection already belongs to the one extraction
@@ -124,8 +134,9 @@ remains shipped but frozen; its verified deletion closure is removed only when
 the selected deletion timing and replacement gates allow it.
 
 After the pause is lifted, the first runtime slice is the provider-model entity,
-exact typed settings, private controlled entity resolver, and small explicit
-injected-adapter contract. Then one exact native-Google image entry and one exact
+exact typed settings, and private controlled entity resolver; per #651 no
+injected-adapter contract is designed before its first merged-list consumer.
+Then one exact native-Google image entry and one exact
 DashScope OpenAI-compatible image entry must pass bounded live proof before
 public merged-interface work. Fallback/pooling, audio, repair, and old-video
 deletion do not block that proof. Exact downstream contracts stay in plan

@@ -3,13 +3,13 @@
 This repo currently contains two codebases. Treat the directory boundary as a
 hard signal before editing or importing anything.
 
-**Read `docs/ACTIVE_STATE_AND_RULES.md` first.** It outranks every other file,
-including this one, and it carries current state, the open defect register, and
-the coding and documentation rules.
+**Read `AGENTS.md` first.** It is the repo's top authority, including over
+this file. `docs/ACTIVE_STATE_AND_RULES.md` is the work log and defect
+archive; it lags the code and holds rules written by past sessions.
 
-Current state lives in `docs/ACTIVE_STATE_AND_RULES.md`. Dated phase, decision,
-checkpoint, review, and incident files keep history only; they never override
-that file. Verify capability claims against the named code and tests.
+Dated phase, decision, checkpoint, review, and incident files keep history
+only; they never override `AGENTS.md`. Verify capability claims against the
+named code and tests.
 
 ## Active New Library
 
@@ -25,7 +25,9 @@ Use for:
 Read in this order:
 
 ```text
-docs/ACTIVE_STATE_AND_RULES.md        Current truth, defects, rules. Outranks all.
+AGENTS.md                             Repo boundary instructions. Top authority.
+docs/ACTIVE_STATE_AND_RULES.md        Work log and defect archive; verify
+                                      against code before trusting it.
 docs/MAINTAINER_PRODUCT_DECISIONS.md  Maintainer choices preserved across handoffs;
                                       scope changes still require authority updates.
 docs/plan_provider_entity_batch_refactor.md
@@ -146,6 +148,13 @@ rule means one initial dispatch and zero extra calls, even when the disposition
 is retryable. The three approved reporting labels remain in the later finite
 rule shape, but the first scalar Google/DashScope proofs add no retry executor
 and do not copy legacy six-attempt/backoff/model-memory machinery.
+#651 defers a new provider adapter contract until the first merged-list injected
+consumer exists; the first scalar built-in proof does not pre-design audio,
+retry, pool, resume, or cleanup methods.
+#655 moves the Phase 1 quality harness, fixtures, generators, scorers, and its
+self-tests to repository-only `quality_lab/`. Root `tests/` remains the default
+public-behavior suite; run `python -m pytest quality_lab` only when that evidence
+is relevant. The wheel still packages only `src/ocrllm`.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
@@ -933,11 +942,11 @@ The pinned offline checkpoint checks are:
 uv run --no-project --isolated --with 'Pillow==12.3.0' `
   --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
   --python 'D:\Anaconda\envs\OCRLLM\python.exe' `
-  python -m pytest -q -p no:cacheprovider
+  python -m pytest -q -p no:cacheprovider tests quality_lab
 uv run --no-project --isolated --with 'Pillow==12.3.0' `
   --python 'D:\Anaconda\envs\OCRLLM\python.exe' `
-  python -m tests.quality.generators.generate_phase1_fixtures --check
-& 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests
+  python -m quality_lab.generators.generate_phase1_fixtures --check
+& 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests quality_lab
 ```
 
 The pytest command includes two real Node worker-harness checks. `node` must be

@@ -632,7 +632,7 @@ repository root with authorized images:
 # GOOGLE_API_KEY is already present in this process; do not echo it.
 python tools/run_google_genai_image_smoke.py `
   --model gemini-2.5-flash `
-  --image tests/fixtures/phase1/images/bilingual_printed_slide.png `
+  --image quality_lab/fixtures/phase1/images/bilingual_printed_slide.png `
   --timeout 120
 ```
 

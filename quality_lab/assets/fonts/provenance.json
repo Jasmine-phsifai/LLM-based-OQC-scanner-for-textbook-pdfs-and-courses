@@ -1,0 +1,18 @@
+{
+  "schema_version": "ocrllm.quality-font-provenance.v1",
+  "family": "Noto Sans CJK SC",
+  "style": "Regular",
+  "version": "2.004",
+  "artifact_path": "quality_lab/assets/fonts/NotoSansCJKsc-Regular.otf",
+  "artifact_bytes": 16437364,
+  "artifact_sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+  "upstream_repository": "https://github.com/notofonts/noto-cjk",
+  "upstream_commit": "523d033d6cb47f4a80c58a35753646f5c3608a78",
+  "upstream_path": "Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
+  "delivery_url": "https://fastly.jsdelivr.net/gh/notofonts/noto-cjk@523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
+  "copyright_notice": "Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'.",
+  "license_spdx": "OFL-1.1",
+  "license_path": "quality_lab/assets/fonts/OFL-1.1.txt",
+  "license_source": "https://openfontlicense.org/documents/OFL.txt",
+  "redistribution": "allowed_unmodified_with_license"
+}

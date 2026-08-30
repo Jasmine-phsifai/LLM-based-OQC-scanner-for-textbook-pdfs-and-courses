@@ -1,11 +1,11 @@
 # Active State And Rules
 
-Status: **authoritative and current.** Last verified 2026-08-29 against the
-working tree, tests, and recorded commit history.
+Status: **historical work log and defect archive.** Last verified 2026-08-29
+against the working tree, tests, and recorded commit history. Entries age;
+verify against code before trusting any claim here.
 
-This file outranks every other document in this repository. Read it before
-`docs/ocrllm_library_go_no_go.md`, before `START_HERE.md`, and before any
-`phase*` file.
+The repository root `AGENTS.md` is the top authority. Where this file
+conflicts with `AGENTS.md`, `AGENTS.md` wins.
 
 ## Document Precedence
 
@@ -13,34 +13,35 @@ Contradictions between documents are resolved in this order. A lower-ranked
 file never overrides a higher-ranked one.
 
 ```text
-1. docs/ACTIVE_STATE_AND_RULES.md     This file. Current truth and rules.
-2. docs/plan_provider_entity_batch_refactor.md
+1. AGENTS.md                          Repo boundary instructions. Top authority.
+2. docs/ACTIVE_STATE_AND_RULES.md     This file. Work log and defect archive.
+                                      Its old rules persist only where
+                                      AGENTS.md has not replaced them.
+3. docs/plan_provider_entity_batch_refactor.md
                                       Current discussion-paused provider/media
                                       board; section 0 controls ordering.
-3. docs/plan_phase1_maturation_and_phase2_audio.md
+4. docs/plan_phase1_maturation_and_phase2_audio.md
                                       Retained detailed Stage M/A plan; the
                                       current board supersedes conflicting order.
-4. docs/plan_phase1_defects_and_provider_split.md
+5. docs/plan_phase1_defects_and_provider_split.md
                                       Stage 1 history; its standalone provider
                                       split is superseded by executable slices.
-5. docs/ocrllm_library_go_no_go.md    Execution contract, gates, boundaries.
+6. docs/ocrllm_library_go_no_go.md    Execution contract, gates, boundaries.
                                       Its dated verification log is history.
-6. MIGRATION_STATUS.md / START_HERE.md  Navigation copies of this state.
-7. docs/phase*, *_decision_*, *_checkpoint_*
+7. MIGRATION_STATUS.md / START_HERE.md  Navigation copies of this state.
+8. docs/phase*, *_decision_*, *_checkpoint_*
                                       Immutable historical records. Never cite
                                       them as current state.
 ```
 
 Open maintainer choices are preserved in
 [`MAINTAINER_PRODUCT_DECISIONS.md`](MAINTAINER_PRODUCT_DECISIONS.md) so that
-handoffs do not lose product direction. That record does not silently override
-this authority: any accepted choice that changes current behavior or scope must
-first be reflected in this file.
+handoffs do not lose product direction. Any accepted choice that changes
+current behavior or scope should be reflected in this log.
 
 Every dated phase, decision, checkpoint, and incident file is a frozen record
-of one past attempt. It keeps the trace but does not define the present. Read
-this file first, then verify the named code and tests before trusting any
-historical claim.
+of one past attempt. It keeps the trace but does not define the present.
+Verify the named code and tests before trusting any historical claim.
 
 ## Project Posture Changed
 
@@ -4192,14 +4193,13 @@ floor only, not proof of current provider behavior.
 
 Future agents must assume the following and verify before trusting any claim:
 
-- **Fixture byte-reproduction is environment-bound (redesigned 2026-08-19).** The Phase 1 generated-image corpus can only be byte-reproduced in the exact Pillow wheel build that created it; that environment is lost and no installable 12.x build reproduces the pinned pixels. `tests/quality/generators/generate_phase1_fixtures.py` now checks three layers instead: manifest-hash integrity (every environment), same-environment determinism, and reproduction that is byte-strict only under the recorded `GENERATOR_ENVIRONMENT` and pixel-tolerant otherwise. Do not re-baseline the committed images without a maintainer decision: they are the pixels the v17 live evidence was scored against.
+- **Fixture byte-reproduction is environment-bound (redesigned 2026-08-19).** The Phase 1 generated-image corpus can only be byte-reproduced in the exact Pillow wheel build that created it; that environment is lost and no installable 12.x build reproduces the pinned pixels. `quality_lab/generators/generate_phase1_fixtures.py` checks three layers instead: manifest-hash integrity (every environment), same-environment determinism, and reproduction that is byte-strict only under the recorded `GENERATOR_ENVIRONMENT` and pixel-tolerant otherwise. The committed images are the pixels the v17 live evidence was scored against.
 
-- **Quality normalizers v2-v7 are an evidence protocol, not duplicate utilities.**
-  The current v7 path executes the cumulative v7→v6→v5→v4→v3→v2 chain,
-  and the preserved v17 evidence records each file in its quality code identity.
-  Do not merge, delete, or rewrite these stages as routine cleanup. A future
-  migration requires byte-for-byte differential normalization and score proof
-  over preserved evidence plus an explicit archived-identity strategy.
+- **The Phase 1 quality harness lives outside the test suite (moved 2026-08-30).**
+  It sits in `quality_lab/` with its fixtures, generators, and its own tests,
+  and runs on demand (`python -m pytest quality_lab`), not on every change.
+  The paid live campaign concluded 2026-07-12 with v17 passing; its verdicts
+  are frozen in the dated `docs/phase1_live_quality_result_v*.md` records.
 
 - **Dated documentation is history.** Old phase and review files deliberately
    retain their original conclusions. Current navigation documents must point
@@ -4797,8 +4797,11 @@ correct: `SourceDescriptor.media_type`, `Artifact.media_type`, and
 
 ### Keep but freeze
 
-`contracts/` and `worker/` stay in the tree. They are tested and they encode a
-real decision about process isolation. Do not delete them.
+`contracts/` and `worker/` stay in the tree for now. They encode a real
+decision about process isolation, but they have no consumer and are dead
+weight in the shipped wheel. Moving them out of the library package (into the
+test harness or a separate package) is approved cleanup, not a direction
+change.
 
 **Freeze confirmed 2026-08-18. They are closed to change.** No new fields, no
 new commands or events, no protocol version bump, and no new tests. They have no
@@ -7392,8 +7395,9 @@ The `docs/` directory contains both current policy and immutable historical
 records. This section prevents the historical volume from becoming a second
 source of current truth.
 
-1. **One current-state file.** This file. Update it in place; do not add a
-   parallel status document.
+1. **One work log.** This file is the append-only work log and defect
+   archive; `AGENTS.md` carries the current rules. Do not add a parallel
+   status document.
 2. **Historical records are immutable and clearly dated.** A `phase*` file is
    never edited after its gate closes and never cited as current state.
 3. **Do not create a decision file and a checkpoint file per slice.** One entry

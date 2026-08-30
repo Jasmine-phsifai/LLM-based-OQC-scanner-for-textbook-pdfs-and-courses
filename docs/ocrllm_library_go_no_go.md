@@ -689,53 +689,53 @@ and decoder failures to `SOURCE_INVALID`; map `DecompressionBombWarning` and
 `DecompressionBombError` to `SOURCE_TOO_LARGE`. Do not change Pillow's global
 pixel-limit setting.
 
-### Quality test files
+### Quality lab files
 
 ```text
 tests/fakes/fake_vision_provider.py
     Return deterministic Markdown for processor and worker tests only.
 
-tests/fixtures/phase1/manifest.json
+quality_lab/fixtures/phase1/manifest.json
     Byte-freeze licenses, hashes, languages, dispatches, expected content,
     critical slots, formulas, tables, and ordered anchors.
 
-tests/quality/generators/generate_phase1_fixtures.py
+quality_lab/generators/generate_phase1_fixtures.py
     Regenerate four repo-owned images and byte-check them against the corpus.
 
-tests/quality/load_fixture_manifest.py
+quality_lab/load_fixture_manifest.py
     Strictly parse and validate the frozen Phase 1 evidence contract.
 
-tests/quality/verify_fixture_artifacts.py
+quality_lab/verify_fixture_artifacts.py
     Verify every artifact's path, size, hash, license, and corpus budget.
 
-tests/quality/normalize_content_units.py
+quality_lab/normalize_content_units.py
     Apply only the fixed NFKC, newline, whitespace, and declared-equivalence
     normalization rules.
 
-tests/quality/calculate_language_token_metrics.py
+quality_lab/calculate_language_token_metrics.py
     Calculate required-token recall and content-unit precision per language.
 
-tests/quality/score_critical_slots.py
+quality_lab/score_critical_slots.py
     Require exact identifiers, numbers, signs, units, names, and dates.
 
-tests/quality/score_formula_signatures.py
+quality_lab/score_formula_signatures.py
     Compare formula identifiers, values, operators, relations, exponents, and
     subscripts.
 
-tests/quality/score_table_cells.py
+quality_lab/score_table_cells.py
     Compare normalized cells by row and column coordinate.
 
-tests/quality/score_ordered_anchors.py
+quality_lab/score_ordered_anchors.py
     Require unique anchors to appear in source order.
 
-tests/quality/score_recognition_result.py
+quality_lab/score_recognition_result.py
     Integrate every Phase 1 scorer only after authenticating the supplied
     manifest against a freshly strict-loaded frozen manifest.
 
-tests/quality/assert_quality_thresholds.py
+quality_lab/assert_quality_thresholds.py
     Apply only the frozen Phase 1 per-fixture and per-language thresholds.
 
-tests/quality/run_phase1_quality.py
+quality_lab/run_phase1_quality.py
     Execute and checkpoint the guarded smoke plus two full Phase 1 runs.
 ```
 
@@ -2075,13 +2075,13 @@ The exact pinned offline corpus/scorer checkpoint checks are:
 uv run --no-project --isolated --with 'Pillow==12.3.0' `
   --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
   --python 'D:\Anaconda\envs\OCRLLM\python.exe' `
-  python -m pytest -q -p no:cacheprovider
+  python -m pytest -q -p no:cacheprovider tests quality_lab
 if ($LASTEXITCODE -ne 0) { throw "pytest failed" }
 uv run --no-project --isolated --with 'Pillow==12.3.0' `
   --python 'D:\Anaconda\envs\OCRLLM\python.exe' `
-  python -m tests.quality.generators.generate_phase1_fixtures --check
+  python -m quality_lab.generators.generate_phase1_fixtures --check
 if ($LASTEXITCODE -ne 0) { throw "generated fixture bytes drifted" }
-& 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests
+& 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests quality_lab
 if ($LASTEXITCODE -ne 0) { throw "compileall failed" }
 ```
 
@@ -2143,13 +2143,13 @@ New-Item -ItemType Directory -Path $sourceRoot, $wheelDir, $targetDir | Out-Null
 uv run --no-project --isolated --with 'Pillow==12.3.0' `
   --with 'pytest>=8,<10' --with 'openai>=2.30,<3' `
   --python 'D:\Anaconda\envs\OCRLLM\python.exe' `
-  python -m pytest -q -p no:cacheprovider
+  python -m pytest -q -p no:cacheprovider tests quality_lab
 if ($LASTEXITCODE -ne 0) { throw "pytest failed" }
 uv run --no-project --isolated --with 'Pillow==12.3.0' `
   --python 'D:\Anaconda\envs\OCRLLM\python.exe' `
-  python -m tests.quality.generators.generate_phase1_fixtures --check
+  python -m quality_lab.generators.generate_phase1_fixtures --check
 if ($LASTEXITCODE -ne 0) { throw "generated fixture bytes drifted" }
-& 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests
+& 'D:\Anaconda\envs\OCRLLM\python.exe' -m compileall -q src tests quality_lab
 if ($LASTEXITCODE -ne 0) { throw "compileall failed" }
 git archive --format=zip --output=$sourceArchive HEAD
 if ($LASTEXITCODE -ne 0) { throw "git archive failed" }
