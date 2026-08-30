@@ -588,6 +588,14 @@ Focused tests pass 35. The first bounded live repair child returned honest
 partial with one surviving marker and no state; safe runner reporting was fixed
 without replay, so live repair success remains open.
 
+#689 exports experimental `repair_audio_to_markdown()` for current OCRLLM
+multi-slot interval partial Markdown after ordinary state loss. It derives exact
+failed logical ranges from strict headings and decoded duration, reconstructs
+fixed context, preserves provider lanes, and writes each speech/no-speech result
+before local cleanup. It restores no split parameters or state; whole failure
+has no repairable Markdown. Real-FFmpeg/SDK tests pass 38. A bounded live speech
+repair gate remains the next independent task.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

@@ -10,6 +10,9 @@ from .recognize import recognize as recognize
 from .recognize_audio_to_markdown import (
     recognize_audio_to_markdown as recognize_audio_to_markdown,
 )
+from .repair_audio_to_markdown import (
+    repair_audio_to_markdown as repair_audio_to_markdown,
+)
 from .recognize_batch import recognize_batch as recognize_batch
 from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
 from .recognize_images_to_markdown import (
@@ -101,6 +104,9 @@ if TYPE_CHECKING:
     from .recognize import recognize as recognize
     from .recognize_audio_to_markdown import (
         recognize_audio_to_markdown as recognize_audio_to_markdown,
+    )
+    from .repair_audio_to_markdown import (
+        repair_audio_to_markdown as repair_audio_to_markdown,
     )
     from .recognize_batch import recognize_batch as recognize_batch
     from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
@@ -225,6 +231,10 @@ _PUBLIC_IMPORTS = {
         ".recognize_audio_to_markdown",
         "recognize_audio_to_markdown",
     ),
+    "repair_audio_to_markdown": (
+        ".repair_audio_to_markdown",
+        "repair_audio_to_markdown",
+    ),
     "recognize_batch": (".recognize_batch", "recognize_batch"),
     "recognize_long_mp3": (".recognize_long_mp3", "recognize_long_mp3"),
     "recognize_images_to_markdown": (
@@ -297,6 +307,7 @@ __all__ = [
     "VisionModelSettings",
     "recognize",
     "recognize_audio_to_markdown",
+    "repair_audio_to_markdown",
     "recognize_batch",
     "recognize_long_mp3",
     "recognize_images_to_markdown",

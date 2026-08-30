@@ -3324,3 +3324,12 @@ added. Focused tests pass 35. One bounded live child retained honest partial
 output with one marker/state absent; runner reporting was narrowed to preserve
 safe partial evidence next time, and no API replay occurred. Live success stays
 open.
+
+#689 adds package-root `repair_audio_to_markdown()` for a current multi-slot
+interval partial Markdown whose ordinary sidecar is gone. It derives contiguous
+three-decimal logical ranges from strict headings, clamps the final bound to the
+decoded MP3 duration, and reconstructs only the fixed 30-second context. Failed
+absolute slots keep current lane mapping/rotation and use existing FFmpeg/Files
+transport; speech/no-speech is atomically written before local cleanup. No whole
+guess, saved split/provider parameters, historical usage, or repair state is
+added. Focused tests pass 38; the two-call live speech repair gate is next.

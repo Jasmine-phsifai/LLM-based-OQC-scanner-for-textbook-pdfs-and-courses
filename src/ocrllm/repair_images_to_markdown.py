@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from .providers.provider_model import ProviderModel
@@ -38,6 +37,7 @@ def repair_images_to_markdown(
     from .parse_merged_image_failure_markers import (
         parse_merged_image_failure_markers,
     )
+    from .read_repair_markdown import read_repair_markdown
     from .resolve_merged_image_prompt import resolve_merged_image_prompt
     from .repair_marked_image_batches import repair_marked_image_batches
     from .validate_image_group import validate_image_group
@@ -66,7 +66,7 @@ def repair_images_to_markdown(
         )
         state_path = resolve_resume_state_path(resolved_output_path)
         with claim_output_target(resolved_output_path):
-            markdown = _read_repair_markdown(
+            markdown = read_repair_markdown(
                 resolved_output_path,
                 state_path=state_path,
             )
@@ -88,40 +88,3 @@ def repair_images_to_markdown(
         public_error = error
     clear_public_error(public_error)
     raise public_error from None
-
-
-def _read_repair_markdown(output_path: Path, *, state_path: Path) -> str:
-    from .errors import InvalidSource, OutputError, ResumeStateError
-
-    if os.path.lexists(state_path):
-        raise ResumeStateError(
-            "The ordinary image resume state still exists; use resume instead.",
-            code="RESUME_STATE_INVALID",
-            details={"provider_calls_attempted": 0},
-        ) from None
-    if not os.path.lexists(output_path):
-        raise InvalidSource(
-            "The partial image Markdown does not exist.",
-            code="SOURCE_NOT_FOUND",
-            details={"provider_calls_attempted": 0},
-        ) from None
-    if not output_path.is_file():
-        raise OutputError(
-            "The partial image Markdown target is not a regular file.",
-            code="OUTPUT_PATH_INVALID",
-            details={"provider_calls_attempted": 0},
-        ) from None
-    try:
-        return output_path.read_text(encoding="utf-8")
-    except UnicodeError as error:
-        raise InvalidSource(
-            "The partial image Markdown is not valid UTF-8.",
-            code="SOURCE_INVALID",
-            details={"provider_calls_attempted": 0},
-        ) from error
-    except (OSError, ValueError) as error:
-        raise InvalidSource(
-            "The partial image Markdown could not be read.",
-            code="SOURCE_UNREADABLE",
-            details={"provider_calls_attempted": 0},
-        ) from error

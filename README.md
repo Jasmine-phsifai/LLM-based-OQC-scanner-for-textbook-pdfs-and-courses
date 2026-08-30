@@ -108,6 +108,7 @@ atomically. It creates no replacement state and does not accept legacy formats.
 from ocrllm import (
     GOOGLE_GEMINI_2_5_FLASH,
     recognize_audio_to_markdown,
+    repair_audio_to_markdown,
     resume_audio_to_markdown,
     split_audio,
 )
@@ -127,6 +128,13 @@ lanes, and resumes only failed or unresolved work. A nested plan assigns absolut
 slots round-robin and allows one active request-owned clip per lane; lanes do not
 rescue or steal another lane's work. Short whole audio uses native inline input;
 long whole and interval work use the provider Files lifecycle.
+
+If an interval partial Markdown survives after its ordinary sidecar is lost,
+`repair_audio_to_markdown()` accepts the explicit original MP3 and derives only
+failed logical ranges from strict OCRLLM headings. It reconstructs the fixed
+30-second context, writes every speech/no-speech success atomically, and saves no
+split parameters or repair state. Whole-audio failure has no partial Markdown
+and is not repairable after state loss.
 
 Nested audio is live-proven across separate invocations: a fresh two-lane call
 retained three failed slots after network/rate-limit errors, and one later

@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass
 
 
-_INTERVAL_CONTEXT_SECONDS = 30.0
+INTERVAL_CONTEXT_SECONDS = 30.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,11 +49,11 @@ def build_long_audio_interval_windows(
                 logical_end_seconds=logical_end,
                 actual_start_seconds=max(
                     0.0,
-                    logical_start - _INTERVAL_CONTEXT_SECONDS,
+                    logical_start - INTERVAL_CONTEXT_SECONDS,
                 ),
                 actual_end_seconds=min(
                     duration,
-                    logical_end + _INTERVAL_CONTEXT_SECONDS,
+                    logical_end + INTERVAL_CONTEXT_SECONDS,
                 ),
             )
         )

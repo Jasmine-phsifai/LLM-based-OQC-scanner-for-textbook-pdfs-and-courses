@@ -120,6 +120,7 @@ Audio preparation is explicit and currently accepts MP3:
 from ocrllm import (
     GOOGLE_GEMINI_2_5_FLASH,
     recognize_audio_to_markdown,
+    repair_audio_to_markdown,
     resume_audio_to_markdown,
     split_audio,
 )
@@ -151,6 +152,16 @@ active request-owned interval clip each and never steal or rescue another lane's
 work. Whole audio through 300 seconds uses native inline transport; longer whole
 audio and explicit intervals use Google Files. Provider file/client cleanup
 failure is surfaced without claiming false success.
+
+Experimental `repair_audio_to_markdown()` applies only to a current OCRLLM
+multi-slot interval partial Markdown after its ordinary sidecar is lost. It
+accepts the original MP3, current provider topology, optional existing output,
+and timeout. Exact adjacent headings/comments supply failed logical seconds;
+the source's decoded duration and the fixed 30-second context reconstruct the
+temporary Files request. Speech and typed no-speech replace their markers before
+local clip/source cleanup. It restores no interval length, mode, provider, or
+historical usage and creates no repair state. A whole-audio failure publishes no
+partial Markdown, so it remains non-repairable after state loss.
 
 Resume binds exact source bytes, ranges, and prompt mode. Settled slots are not
 replayed; failed/unresolved slots begin the supplied lane from candidate zero.

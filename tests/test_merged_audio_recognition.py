@@ -15,11 +15,18 @@ from ocrllm import (
     AudioSlice,
     ProviderModel,
     recognize_audio_to_markdown,
+    repair_audio_to_markdown,
     resume_audio_to_markdown,
     resume_video,
     split_audio,
 )
-from ocrllm.errors import AllCandidatesExhausted, ConfigError, InvalidSource, ProviderError
+from ocrllm.errors import (
+    AllCandidatesExhausted,
+    ConfigError,
+    InvalidSource,
+    ProviderError,
+    ResumeStateError,
+)
 from ocrllm.providers.google_genai.provider_settings import GoogleGenAISettings
 
 
@@ -754,3 +761,238 @@ def test_nested_audio_resume_uses_absolute_slot_with_changed_lane_count(
     assert all(not path.exists() for path in resume_fake.files.upload_paths)
     assert all(client.closed for client in first_fake.clients)
     assert all(client.closed for client in resume_fake.clients)
+
+
+def _make_audio_repairable_partial(
+    source: Path,
+    monkeypatch,
+    *,
+    failed_slots: frozenset[int],
+):
+    slices = split_audio(source, interval_minutes=1)
+    initial_model = "gemini-audio-repair-initial"
+
+    def initial_behavior(model: str, slot_index: int):
+        if slot_index in failed_slots:
+            raise ProviderError(
+                f"Initial audio slot {slot_index} failed.",
+                code="PROVIDER_UNAVAILABLE",
+                details={"provider_calls_attempted": 1},
+            )
+        return _raw_audio_response(
+            f"initial settled audio slot {slot_index}",
+            input_tokens=30 + slot_index,
+            output_tokens=3,
+        )
+
+    fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=(initial_model,),
+        behavior=initial_behavior,
+    )
+    result = recognize_audio_to_markdown(
+        slices,
+        provider=_provider(initial_model),
+    )
+    assert result.status == "partial"
+    assert result.output_path is not None
+    output = result.output_path
+    state_path = output.with_name(f"{output.stem}.ocrllm-state.json")
+    assert state_path.is_file()
+    state_path.unlink()
+    return output, fake
+
+
+def test_audio_repair_preserves_no_speech_success_and_flat_lane_rotation(
+    tmp_path,
+    monkeypatch,
+):
+    source = _write_synthetic_mp3(
+        tmp_path / "repair.mp3",
+        duration_seconds=121,
+    )
+    source_bytes = source.read_bytes()
+    output, initial_fake = _make_audio_repairable_partial(
+        source,
+        monkeypatch,
+        failed_slots=frozenset({0, 1}),
+    )
+    first_model = "gemini-audio-repair-a"
+    second_model = "gemini-audio-repair-b"
+
+    def repair_behavior(model: str, slot_index: int):
+        if slot_index == 0 and model == first_model:
+            raise ProviderError(
+                "The first repair candidate timed out.",
+                code="PROVIDER_TIMEOUT",
+                details={"provider_calls_attempted": 1},
+            )
+        if slot_index == 0:
+            return _raw_audio_response(
+                "NOSPEECH4OCRLLM",
+                input_tokens=201,
+                output_tokens=0,
+            )
+        raise ProviderError(
+            f"{model} could not repair audio slot {slot_index}.",
+            code="PROVIDER_UNAVAILABLE",
+            details={"provider_calls_attempted": 1},
+        )
+
+    repair_fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=(first_model, second_model),
+        behavior=repair_behavior,
+    )
+    partial = repair_audio_to_markdown(
+        source,
+        provider=[_provider(first_model), _provider(second_model)],
+        output_path=output,
+    )
+
+    assert repair_fake.models.slot_calls == [
+        (first_model, 0),
+        (second_model, 0),
+        (second_model, 1),
+        (first_model, 1),
+    ]
+    assert partial.status == "partial"
+    assert partial.metadata["provider_call_count"] == 4
+    assert partial.metadata["repaired_slot_count"] == 1
+    assert partial.metadata["no_speech_repaired_slot_count"] == 1
+    assert partial.metadata["failed_slots"][0]["slot_index"] == 1
+    assert tuple(
+        (row["slot_index"], row["model"])
+        for row in partial.metadata["provider_failures"]
+    ) == ((0, first_model),)
+    assert "OCRLLM_NO_SPEECH_AUDIO_SLOT index=1" in partial.markdown
+    assert "OCRLLM_FAILED_AUDIO_SLOT index=2" in partial.markdown
+    assert "initial settled audio slot 2" in partial.markdown
+    assert output.read_text(encoding="utf-8") == partial.markdown
+
+    final_model = "gemini-audio-repair-final"
+    final_fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=(final_model,),
+        behavior=lambda model, slot_index: _raw_audio_response(
+            f"finally repaired audio slot {slot_index} with {model}",
+            input_tokens=88,
+            output_tokens=8,
+        ),
+    )
+    complete = repair_audio_to_markdown(
+        source,
+        provider=_provider(final_model),
+        output_path=output,
+    )
+
+    assert final_fake.models.slot_calls == [(final_model, 1)]
+    assert complete.status == "complete"
+    assert complete.metadata["repair_marker_count"] == 1
+    assert complete.metadata["provider_call_count"] == 1
+    assert "OCRLLM_FAILED_AUDIO_SLOT" not in complete.markdown
+    assert "OCRLLM_NO_SPEECH_AUDIO_SLOT index=1" in complete.markdown
+    assert f"finally repaired audio slot 1 with {final_model}" in complete.markdown
+    assert source.read_bytes() == source_bytes
+    assert initial_fake.files.upload_count == initial_fake.files.delete_count == 3
+    assert repair_fake.files.upload_count == repair_fake.files.delete_count == 4
+    assert final_fake.files.upload_count == final_fake.files.delete_count == 1
+    assert all(not path.exists() for path in initial_fake.files.upload_paths)
+    assert all(not path.exists() for path in repair_fake.files.upload_paths)
+    assert all(not path.exists() for path in final_fake.files.upload_paths)
+
+
+def test_audio_repair_uses_absolute_nested_lane_assignment(tmp_path, monkeypatch):
+    source = _write_synthetic_mp3(
+        tmp_path / "nested-repair.mp3",
+        duration_seconds=181,
+    )
+    output, _ = _make_audio_repairable_partial(
+        source,
+        monkeypatch,
+        failed_slots=frozenset({1, 2}),
+    )
+    lane_zero = "gemini-audio-repair-lane-zero"
+    lane_one = "gemini-audio-repair-lane-one"
+    fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=(lane_zero, lane_one),
+        behavior=lambda model, slot_index: _raw_audio_response(
+            f"nested audio repair {slot_index} {model}",
+            input_tokens=50 + slot_index,
+            output_tokens=5,
+        ),
+    )
+
+    result = repair_audio_to_markdown(
+        source,
+        provider=[[_provider(lane_zero)], [_provider(lane_one)]],
+    )
+
+    assert fake.models.slot_calls == [(lane_one, 1), (lane_zero, 2)]
+    assert result.status == "complete"
+    assert tuple(row["model"] for row in result.metadata["current_provider_model_usage"]) == (
+        lane_zero,
+        lane_one,
+    )
+    assert fake.files.upload_count == fake.files.delete_count == 2
+    assert all(not path.exists() for path in fake.files.upload_paths)
+
+
+def test_audio_repair_preflight_rejects_state_and_bad_ranges_before_provider(
+    tmp_path,
+    monkeypatch,
+):
+    source = _write_sixty_one_second_mp3(tmp_path / "preflight-repair.mp3")
+    output, _ = _make_audio_repairable_partial(
+        source,
+        monkeypatch,
+        failed_slots=frozenset({1}),
+    )
+    model = "gemini-audio-repair-preflight"
+    fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=(model,),
+        behavior=lambda _model, _slot: (_ for _ in ()).throw(AssertionError()),
+    )
+    valid_markdown = output.read_text(encoding="utf-8")
+    state_path = output.with_name(f"{output.stem}.ocrllm-state.json")
+    state_path.write_text("{}", encoding="utf-8")
+    with pytest.raises(ResumeStateError) as state_error:
+        repair_audio_to_markdown(
+            source,
+            provider=_provider(model),
+            output_path=output,
+        )
+    assert state_error.value.details["provider_calls_attempted"] == 0
+    state_path.unlink()
+
+    invalid_markdowns = (
+        valid_markdown.replace(
+            "OCRLLM_FAILED_AUDIO_SLOT index=2",
+            "OCRLLM_FAILED_AUDIO_SLOT index=3",
+        ),
+        valid_markdown.replace("60.000-", "59.000-"),
+        valid_markdown
+        + "\n<!-- OCRLLM_FAILED_AUDIO_SLOT index=2 code=PROVIDER_UNAVAILABLE -->\n",
+        valid_markdown.replace(
+            "OCRLLM_FAILED_AUDIO_SLOT",
+            "OCRLLM_FAILED_SLOT",
+        ),
+    )
+    for invalid_markdown in invalid_markdowns:
+        output.write_text(invalid_markdown, encoding="utf-8")
+        with pytest.raises(InvalidSource) as marker_error:
+            repair_audio_to_markdown(
+                source,
+                provider=_provider(model),
+                output_path=output,
+            )
+        assert marker_error.value.details["provider_calls_attempted"] == 0
+
+    assert fake.models.generate_count == 0

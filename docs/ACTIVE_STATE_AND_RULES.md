@@ -14145,3 +14145,35 @@ absent, stderr empty, and the process ended. The old runner emitted only
 facts, so runner reporting now preserves partial code/calls/usage/source facts.
 No API replay or production fix followed. This is honest partial/failure
 evidence, not a live repair-success proof; that gate remains open.
+
+## Current working update: #689 adds marker-derived merged-audio repair
+
+The package root now exposes `repair_audio_to_markdown(source, *, provider,
+output_path=None, timeout_seconds=120.0)`. It is only for current OCRLLM interval
+partial Markdown after ordinary state is lost. A present state path rejects
+before source decoding or provider dispatch. The explicit MP3 and its decoded
+duration are current truth; repair restores no interval/provider/prompt/token
+parameters and stores no new identity or state.
+
+The strict audio parser validates all library headings as one contiguous,
+ordered, three-decimal range sequence from zero to decoded duration. Failed
+comments must be adjacent, unique, ordered, index-matching, and canonical. A
+rounded final bound is clamped to the exact duration, and fixed 30-second
+context recreates each actual request range. Whole mode has only one slot and no
+partial Markdown on failure, so it is deliberately outside repair rather than
+guessed from an ambiguous full-source heading.
+
+The audio-only repair owner serially keeps `slot_index % lane_count` and a
+lane-local last-success cursor. Every failed range uses the existing FFmpeg
+materializer, interval prompt, upload snapshot, and Files adapter. Speech and
+typed no-speech atomically replace their exact marker before local clip/source
+snapshot cleanup. Adapter-owned remote cleanup still finishes before response;
+repair preserves its facts rather than splitting the SDK lifecycle. Remaining
+provider failures leave markers and return partial with current-only usage.
+
+The identical state-absent/existing-UTF-8 output read was reduced out of image
+repair into one 44-line media-neutral I/O owner; provider execution remains
+separate. The public facade is 104 lines, strict parser 147, and audio-only
+owner 271. Three real-FFmpeg/SDK-boundary scenarios plus adjacent image/import/
+wheel checks pass 38 tests in 6.70s. No live API call or runner edit occurred;
+the next independent gate is one bounded two-call speech interval repair run.

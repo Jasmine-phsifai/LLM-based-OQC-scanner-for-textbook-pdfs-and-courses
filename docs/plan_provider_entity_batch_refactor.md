@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #688)
+## 0. Current pruning and execution checkpoint (2026-08-31, #689)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -718,6 +718,43 @@ and no retry occurred. The original runner collapsed that useful result into
 `INCOMPLETE_LIVE_EVIDENCE`; it now preserves safe partial repair calls/usage/
 code/source facts on future runs. No production change is justified by the
 provider failure, and the bounded live repair-success gate remains open.
+
+### #689 ships strict range-derived repair for merged audio
+
+Package-root `repair_audio_to_markdown()` accepts one explicit original MP3,
+scalar/flat/nested provider topology, optional current Markdown target, and
+timeout. It requires the ordinary sidecar to be absent and restores no saved
+mode, interval minutes, prompt version, provider, token history, or source
+identity. The media-neutral 44-line repair reader now owns the identical
+state-absent/existing-UTF-8-output rule used by both image and audio facades.
+
+The audio parser validates every current OCRLLM slot heading, requiring exact
+one-based order, contiguous three-decimal logical ranges from 0.000 through the
+decoded source duration, and at least two slots with at least one settled slot.
+Only immediately adjacent failed comments with matching unique ordered indexes
+and canonical provider codes are repair markers. The final three-decimal end is
+clamped back to exact decoded duration. Each failed range receives the existing
+fixed 30-second context; no saved splitter parameter is consulted.
+
+Whole recognition has one slot, and zero settlement publishes no Markdown, so
+there is no honest whole-audio repair input after state loss. Repair therefore
+uses only the existing interval prompt, FFmpeg materialization, honest upload
+snapshot, and Google Files transport. Remote delete/client cleanup remains
+inside the adapter; returned cleanup facts are preserved. Speech and typed
+no-speech both atomically replace their comment while the local clip and outer
+source snapshot are still alive. Repair remains serial, keeps absolute nested
+lane assignment and invocation-local rotation, and returns current-only calls/
+tokens, successful-fallback facts, remaining terminal failures, and cleanup
+warnings without creating state.
+
+Three public scenarios use real FFmpeg plus the Google SDK boundary to prove
+no-speech paid-success persistence before a later full-slot failure, flat lane
+rotation, a second repair that touches only the remaining range, absolute nested
+assignment, balanced upload/delete/client/local-clip lifecycle, unchanged source,
+optional output resolution, and zero-call state/index/range/marker rejection.
+The final merged audio/image/import/wheel/typing set passes 38 tests in 6.70s.
+No live provider call belongs to this offline implementation slice; one bounded
+two-call speech interval partial-then-repair gate is the next independent task.
 
 The destination is one visible, caller-composed pair of media flows:
 
