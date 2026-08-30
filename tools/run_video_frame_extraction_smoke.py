@@ -8,10 +8,19 @@ import json
 import math
 import os
 import stat
+import sys
 import time
 from pathlib import Path
 
-from ocrllm import OCRLLMError, RetainedVideoFrame, extract_video_frames, inspect_video
+import ocrllm
+from ocrllm import (
+    GOOGLE_GEMINI_2_5_FLASH,
+    OCRLLMError,
+    RetainedVideoFrame,
+    batchify_images,
+    extract_video_frames,
+    inspect_video,
+)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -32,6 +41,14 @@ def run_video_frame_extraction_smoke(
     """Return content-free evidence while leaving caller-owned frames in place."""
     source = source.absolute()
     output_dir = output_dir.absolute()
+    package_origin_is_checkout = _package_origin_is_checkout()
+    if not package_origin_is_checkout:
+        return {
+            "status": "failed",
+            "code": "PACKAGE_ORIGIN_MISMATCH",
+            "package_origin_is_checkout": False,
+            "output_exists": os.path.lexists(output_dir),
+        }
     before = _source_identity(source)
     if os.path.lexists(output_dir):
         return {
@@ -52,6 +69,10 @@ def run_video_frame_extraction_smoke(
             width_pixels=info.width_pixels,
             height_pixels=info.height_pixels,
         )
+        image_batches = batchify_images(
+            tuple(frame.path for frame in retained),
+            provider=GOOGLE_GEMINI_2_5_FLASH,
+        )
     except OCRLLMError as error:
         return _failure_summary(error, source, before, before_sha256, output_dir)
     except Exception:
@@ -68,6 +89,13 @@ def run_video_frame_extraction_smoke(
     source_unchanged = _source_unchanged(source, before, before_sha256)
     residue_count = _staging_residue_count(output_dir)
     duration_hours = info.duration_seconds / 3600.0
+    frame_paths = tuple(frame.path for frame in retained)
+    flattened_batch_paths = tuple(
+        path for batch in image_batches for path in batch
+    )
+    batch_order_matches_frames = flattened_batch_paths == frame_paths
+    batch_sizes = tuple(len(batch) for batch in image_batches)
+    google_genai_sdk_loaded = _google_genai_sdk_loaded()
     comparison_sample_upper_bound = (
         math.ceil(
             min(
@@ -80,6 +108,7 @@ def run_video_frame_extraction_smoke(
     )
     passed = (
         valid
+        and package_origin_is_checkout
         and source_unchanged
         and residue_count == 0
         and bool(retained)
@@ -88,6 +117,16 @@ def run_video_frame_extraction_smoke(
         and 0 <= indexes[0] <= indexes[-1] < info.frame_count
         and 0.0 <= timestamps[0] <= timestamps[-1] <= info.duration_seconds
         and comparison_sample_upper_bound <= 10_000
+        and type(image_batches) is tuple
+        and len(image_batches)
+        == math.ceil(len(retained) / GOOGLE_GEMINI_2_5_FLASH.default_image_batch_size)
+        and all(
+            type(batch) is tuple
+            and 0 < len(batch) <= GOOGLE_GEMINI_2_5_FLASH.default_image_batch_size
+            for batch in image_batches
+        )
+        and batch_order_matches_frames
+        and not google_genai_sdk_loaded
     )
     return {
         "status": "passed" if passed else "failed",
@@ -95,6 +134,7 @@ def run_video_frame_extraction_smoke(
         "source_bytes": before[2],
         "source_sha256": before_sha256,
         "source_unchanged": source_unchanged,
+        "package_origin_is_checkout": package_origin_is_checkout,
         "frame_count": info.frame_count,
         "frames_per_second": info.frames_per_second,
         "duration_seconds": info.duration_seconds,
@@ -110,8 +150,16 @@ def run_video_frame_extraction_smoke(
         "first_retained_timestamp_seconds": timestamps[0],
         "last_retained_timestamp_seconds": timestamps[-1],
         "retained_output_bytes": output_bytes,
+        "provider_default_batch_size": (
+            GOOGLE_GEMINI_2_5_FLASH.default_image_batch_size
+        ),
+        "image_batch_count": len(image_batches),
+        "image_batch_sizes": batch_sizes,
+        "batch_order_matches_frames": batch_order_matches_frames,
         "full_frame_dimensions": valid,
         "staging_residue_count": residue_count,
+        "google_genai_sdk_loaded": google_genai_sdk_loaded,
+        "provider_call_count": 0,
         "elapsed_seconds": time.monotonic() - started,
     }
 
@@ -220,6 +268,19 @@ def _staging_residue_count(output_dir: Path) -> int | None:
         return len(tuple(output_dir.rglob(".ocrllm-video-*")))
     except (OSError, ValueError):
         return None
+
+
+def _package_origin_is_checkout() -> bool:
+    origin = getattr(ocrllm, "__file__", None)
+    expected = Path(__file__).resolve().parents[1] / "src" / "ocrllm"
+    return type(origin) is str and Path(origin).resolve().parent == expected
+
+
+def _google_genai_sdk_loaded() -> bool:
+    return any(
+        name == "google.genai" or name.startswith("google.genai.")
+        for name in sys.modules
+    )
 
 
 def main() -> int:

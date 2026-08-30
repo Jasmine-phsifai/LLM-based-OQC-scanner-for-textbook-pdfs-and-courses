@@ -3422,3 +3422,15 @@ calling a provider. Full source SHA-256 is unchanged and snapshot/audio staging
 residue is zero. The tool preserves caller-owned failure artifacts with safe
 hash/residue reporting; 23 adjacent extraction/planning tests pass. Exact TEMP
 evidence is removed, and no runtime/API/dependency/provider behavior changes.
+
+#698 proves #696–#697 actually imported this checkout rather than stale
+site-packages: ordinary, isolated, and tool-script origins all resolve to the
+current `src/ocrllm`, and both real-media tools now reject mismatched origin
+before media work. The frame runner also closes the visible planning gap. One
+same-source run retains 82 frames and `batchify_images()` forms eleven ordered
+Google-default batches sized `8,8,8,8,8,8,8,8,8,8,2`; flattening exactly matches
+frame order, `google.genai` remains unloaded, provider calls are zero, source SHA
+and lifecycle facts stay clean. An audit's proposed path/residue fixes are
+rejected after tracing the actual `<output>/<stem>/frames` and in-output staging
+layout. Evidence is removed and 48 adjacent tests pass. Only scenario tools and
+records change; runtime/API/dependency/provider/selector behavior does not.

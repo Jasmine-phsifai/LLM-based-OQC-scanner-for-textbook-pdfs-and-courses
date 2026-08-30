@@ -12,6 +12,7 @@ import sys
 import time
 from pathlib import Path
 
+import ocrllm
 from ocrllm import (
     AudioSlice,
     GOOGLE_GEMINI_2_5_FLASH,
@@ -45,6 +46,14 @@ def run_video_audio_extraction_smoke(
     """Return content-free evidence while leaving caller-owned audio in place."""
     source = source.absolute()
     output = output.absolute()
+    package_origin_is_checkout = _package_origin_is_checkout()
+    if not package_origin_is_checkout:
+        return {
+            "status": "failed",
+            "code": "PACKAGE_ORIGIN_MISMATCH",
+            "package_origin_is_checkout": False,
+            "output": _artifact_summary(output),
+        }
     try:
         before = _source_identity(source)
     except (OSError, ValueError):
@@ -124,6 +133,7 @@ def run_video_audio_extraction_smoke(
     google_genai_sdk_loaded = _google_genai_sdk_loaded()
     passed = (
         extracted == output
+        and package_origin_is_checkout
         and stat.S_ISREG(output_info.st_mode)
         and not output.is_symlink()
         and output_info.st_size > 0
@@ -142,6 +152,7 @@ def run_video_audio_extraction_smoke(
         "source_bytes": before[2],
         "source_sha256": before_sha256,
         "source_unchanged": source_unchanged,
+        "package_origin_is_checkout": package_origin_is_checkout,
         "video_duration_seconds": video_info.duration_seconds,
         "audio_duration_seconds": audio_duration,
         "duration_delta_seconds": (
@@ -304,6 +315,12 @@ def _google_genai_sdk_loaded() -> bool:
         name == "google.genai" or name.startswith("google.genai.")
         for name in sys.modules
     )
+
+
+def _package_origin_is_checkout() -> bool:
+    origin = getattr(ocrllm, "__file__", None)
+    expected = Path(__file__).resolve().parents[1] / "src" / "ocrllm"
+    return type(origin) is str and Path(origin).resolve().parent == expected
 
 
 def main() -> int:

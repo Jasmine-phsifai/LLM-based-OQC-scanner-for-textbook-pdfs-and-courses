@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #697)
+## 0. Current pruning and execution checkpoint (2026-08-31, #698)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -988,6 +988,33 @@ monitors sockets. The provider-free call graph and absent provider SDK are the
 network boundary. The exact 38,734,751-byte evidence root was removed after
 review; adjacent extraction/planning tests pass 23. Runtime, dependencies,
 public APIs, and provider behavior remain unchanged.
+
+### #698 binds real-media evidence to this checkout and completes frame batching
+
+Both real-video tools were originally launched through the OCRLLM environment;
+ordinary, isolated, and tool-script probes now prove that environment resolves
+exactly this checkout's `src/ocrllm/__init__.py`, so #696–#697 did not exercise
+stale site-packages. The tools now enforce that provenance themselves before any
+source hash or media work and return `PACKAGE_ORIGIN_MISMATCH` otherwise. A
+direct self-test proves current origin passes and a simulated stale origin fails.
+The audio scenario was not replayed merely to test this preflight.
+
+The frame scenario now performs the remaining visible public step after
+extraction: `batchify_images()` consumes every returned frame path with the
+Google preset's default size. One exact rerun on the same real MP4 retained the
+same 82 full-resolution frames and formed eleven exact ordered batches with
+sizes `8,8,8,8,8,8,8,8,8,8,2`. Flattening them reproduced retained-frame order.
+The runner verified checkout origin, source SHA-256, final frame, full dimensions
+and zero staging residue; `google.genai` remained unloaded and provider calls
+were zero. Direct exit was 0 in 62.735 seconds.
+
+A read-only audit incorrectly assumed frames were published directly under
+`output_dir/frames` and staging beside `output_dir`; production actually uses
+`output_dir/<normalized-stem>/frames` and stages inside `output_dir`. Main review
+therefore retained the correct three-parent path check and residue root instead
+of patching to the audit's false layout. The exact 23,421,451-byte evidence root
+was removed; adjacent frame/inspection/planning tests pass 48. Runtime, tests,
+dependencies, public APIs, provider behavior, and selector policy are unchanged.
 
 The destination is one visible, caller-composed pair of media flows:
 
