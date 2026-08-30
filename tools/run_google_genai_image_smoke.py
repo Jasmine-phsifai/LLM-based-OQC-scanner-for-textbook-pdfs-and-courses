@@ -48,7 +48,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def run_google_genai_image_smoke(arguments: argparse.Namespace) -> dict[str, object]:
-    """Run one public image recognition with adapter-owned catalog validation."""
+    """Run one image recognition with adapter-owned catalog validation."""
     settings = GoogleGenAISettings()
     provider_model_mode = getattr(arguments, "provider_model", False)
     try:
