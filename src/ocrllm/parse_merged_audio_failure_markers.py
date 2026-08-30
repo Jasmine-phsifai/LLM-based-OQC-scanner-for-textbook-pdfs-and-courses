@@ -39,7 +39,6 @@ class MergedAudioFailureMarker:
     slot_index: int
     window: LongAudioIntervalWindow
     comment: str
-    code: str
 
 
 def parse_merged_audio_failure_markers(
@@ -122,7 +121,6 @@ def parse_merged_audio_failure_markers(
                     ),
                 ),
                 comment=match.group("comment"),
-                code=code,
             )
         )
 

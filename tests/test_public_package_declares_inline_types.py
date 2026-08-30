@@ -23,12 +23,20 @@ def test_static_public_exports_match_runtime_exports() -> None:
     ]
 
     assert len(type_checking_blocks) == 1
-    static_aliases = tuple(
+    eager_aliases = tuple(
+        alias
+        for statement in module.body
+        if isinstance(statement, ast.ImportFrom)
+        for alias in statement.names
+        if alias.asname is not None
+    )
+    checking_aliases = tuple(
         alias
         for statement in type_checking_blocks[0].body
         if isinstance(statement, ast.ImportFrom)
         for alias in statement.names
     )
+    static_aliases = (*eager_aliases, *checking_aliases)
     assert all(alias.asname == alias.name for alias in static_aliases)
     static_exports = {alias.asname for alias in static_aliases}
     assert static_exports == set(ocrllm.__all__)

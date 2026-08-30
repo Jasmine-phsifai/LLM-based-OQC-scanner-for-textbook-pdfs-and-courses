@@ -15,6 +15,7 @@ def normalize_merged_image_batches(
         raise InvalidSource(
             "Merged-image recognition requires a nonempty exact tuple of batches.",
             code="SOURCE_INVALID",
+            details={"provider_calls_attempted": 0},
         ) from None
     normalized: list[tuple[Path, ...]] = []
     for batch in batches:
@@ -22,11 +23,13 @@ def normalize_merged_image_batches(
             raise InvalidSource(
                 "Each merged-image batch must be a nonempty exact tuple.",
                 code="SOURCE_INVALID",
+                details={"provider_calls_attempted": 0},
             ) from None
         if any(not isinstance(source, (str, Path)) for source in batch):
             raise InvalidSource(
                 "Merged-image batches may contain only strings or Paths.",
                 code="SOURCE_INVALID",
+                details={"provider_calls_attempted": 0},
             ) from None
         normalized.append(tuple(Path(source) for source in batch))
     return tuple(normalized)

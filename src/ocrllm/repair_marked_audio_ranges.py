@@ -15,7 +15,7 @@ from .audio.build_long_audio_interval_upload_snapshot import (
 from .audio.materialize_long_audio_interval import materialize_long_audio_interval
 from .audio.snapshot_long_mp3 import LongMP3Snapshot
 from .config import Config
-from .errors import NoSpeechDetected, OCRLLMError, OutputError, ProviderError
+from .errors import NoSpeechDetected, OutputError, ProviderError
 from .output.write_markdown_atomically import write_markdown_atomically
 from .parse_merged_audio_failure_markers import MergedAudioFailureMarker
 from .provider_failure_evidence import (
@@ -26,7 +26,9 @@ from .provider_failure_evidence import (
 from .provider_model_usage import (
     ProviderModelUsage,
     add_provider_model_usage,
+    attach_current_provider_model_usage,
     build_provider_model_usage_order,
+    provider_model_usage_documents,
 )
 from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_audio import recognize_provider_model_audio
@@ -151,7 +153,7 @@ def repair_marked_audio_ranges(
                             overwrite=True,
                         )
                     except OutputError as error:
-                        _attach_current_usage(error, usage)
+                        attach_current_provider_model_usage(error, usage)
                         raise
                     markdown = updated_markdown
                     publication_succeeded = True
@@ -167,7 +169,7 @@ def repair_marked_audio_ranges(
             ):
                 interval_cleanup_failure = True
             else:
-                _attach_current_usage(error, usage)
+                attach_current_provider_model_usage(error, usage)
                 raise
 
         if not publication_succeeded:
@@ -206,7 +208,7 @@ def repair_marked_audio_ranges(
         "no_speech_repaired_slot_count": no_speech_repaired_slot_count,
         "settled_slot_count": slot_count - len(failed_slots),
         "provider_call_count": sum(row.calls for row in usage),
-        "current_provider_model_usage": _usage_documents(usage),
+        "current_provider_model_usage": provider_model_usage_documents(usage),
         "duration_seconds": snapshot.duration_seconds,
         "byte_size": snapshot.byte_size,
     }
@@ -240,32 +242,3 @@ def _materialized_request(
                 - marker.window.actual_start_seconds
             ),
         )
-
-
-def _attach_current_usage(
-    error: OCRLLMError,
-    usage: tuple[ProviderModelUsage, ...],
-) -> None:
-    error._add_safe_detail(
-        "provider_calls_attempted",
-        sum(row.calls for row in usage),
-    )
-    error._add_safe_detail(
-        "current_provider_model_usage",
-        _usage_documents(usage),
-    )
-
-
-def _usage_documents(
-    usage: tuple[ProviderModelUsage, ...],
-) -> tuple[dict[str, str | int | None], ...]:
-    return tuple(
-        {
-            "vendor": row.vendor,
-            "model": row.model,
-            "calls": row.calls,
-            "input_tokens": row.input_tokens,
-            "output_tokens": row.output_tokens,
-        }
-        for row in usage
-    )

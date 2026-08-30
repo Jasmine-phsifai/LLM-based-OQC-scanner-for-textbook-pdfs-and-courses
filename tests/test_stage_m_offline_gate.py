@@ -193,6 +193,11 @@ def test_base_install_probe_resolves_public_class_type_hints() -> None:
     ):
         assert target in base_probe
     assert base_probe.count("assert not loaded & forbidden, loaded & forbidden") == 2
+    assert "repair_images_to_markdown(" in base_probe
+    assert "repair_audio_to_markdown(" in base_probe
+    assert "error.details['provider_calls_attempted'] == 0" in base_probe
+    assert "assert callable(repair_images_to_markdown)" in base_probe
+    assert "assert callable(repair_audio_to_markdown)" in base_probe
 
 
 def test_base_wheel_budget_keeps_bounded_product_headroom() -> None:

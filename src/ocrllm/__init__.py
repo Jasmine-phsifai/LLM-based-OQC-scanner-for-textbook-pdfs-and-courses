@@ -34,8 +34,6 @@ if TYPE_CHECKING:
     from .audio_model_settings import AudioModelSettings as AudioModelSettings
     from .audio_slice import AudioSlice as AudioSlice
     from .batch_item_outcome import BatchItemOutcome as BatchItemOutcome
-    from .batchify_images import batchify_images as batchify_images
-    from .split_audio import split_audio as split_audio
     from .capability_report import CapabilityReport as CapabilityReport
     from .config import Config as Config
     from .credential_pool_policy import CredentialPoolPolicy as CredentialPoolPolicy
@@ -101,28 +99,6 @@ if TYPE_CHECKING:
     from .recognition_preferences import (
         RecognitionPreferences as RecognitionPreferences,
     )
-    from .recognize import recognize as recognize
-    from .recognize_audio_to_markdown import (
-        recognize_audio_to_markdown as recognize_audio_to_markdown,
-    )
-    from .repair_audio_to_markdown import (
-        repair_audio_to_markdown as repair_audio_to_markdown,
-    )
-    from .recognize_batch import recognize_batch as recognize_batch
-    from .recognize_long_mp3 import recognize_long_mp3 as recognize_long_mp3
-    from .recognize_images_to_markdown import (
-        recognize_images_to_markdown as recognize_images_to_markdown,
-    )
-    from .repair_images_to_markdown import (
-        repair_images_to_markdown as repair_images_to_markdown,
-    )
-    from .resume_images_to_markdown import (
-        resume_images_to_markdown as resume_images_to_markdown,
-    )
-    from .resume_audio_to_markdown import (
-        resume_audio_to_markdown as resume_audio_to_markdown,
-    )
-    from .resume_video import resume_video as resume_video
     from .retained_video_frame import RetainedVideoFrame as RetainedVideoFrame
     from .result import RecognitionResult as RecognitionResult
     from .video.extract_video_frames import extract_video_frames as extract_video_frames
@@ -133,128 +109,73 @@ if TYPE_CHECKING:
 
 
 _PUBLIC_IMPORTS = {
-    "AudioModelSettings": (".audio_model_settings", "AudioModelSettings"),
-    "AudioSlice": (".audio_slice", "AudioSlice"),
-    "AllCandidatesExhausted": (".errors", "AllCandidatesExhausted"),
-    "BatchItemOutcome": (".batch_item_outcome", "BatchItemOutcome"),
-    "batchify_images": (".batchify_images", "batchify_images"),
-    "split_audio": (".split_audio", "split_audio"),
-    "Cancelled": (".errors", "Cancelled"),
-    "CapabilityReport": (".capability_report", "CapabilityReport"),
-    "ConcurrencyLimited": (".errors", "ConcurrencyLimited"),
-    "Config": (".config", "Config"),
-    "ConfigError": (".errors", "ConfigError"),
-    "CredentialPoolPolicy": (".credential_pool_policy", "CredentialPoolPolicy"),
-    "DashScopeCredential": (
-        ".providers.dashscope.credential",
-        "DashScopeCredential",
-    ),
-    "DashScopeCredentialPool": (
-        ".providers.dashscope.credential_pool",
-        "DashScopeCredentialPool",
-    ),
-    "DashScopeCredentialPoolReport": (
-        ".providers.dashscope.credential_pool_report",
-        "DashScopeCredentialPoolReport",
-    ),
-    "DashScopeCredentialSlotReport": (
-        ".providers.dashscope.credential_pool_report",
-        "DashScopeCredentialSlotReport",
-    ),
-    "DashScopeSettings": (
-        ".providers.dashscope.provider_settings",
-        "DashScopeSettings",
-    ),
-    "DependencyMissing": (".errors", "DependencyMissing"),
-    "InvalidSource": (".errors", "InvalidSource"),
-    "GoogleGenAISettings": (
-        ".providers.google_genai.provider_settings",
-        "GoogleGenAISettings",
-    ),
-    "LocalOCRSettings": (".local_ocr_settings", "LocalOCRSettings"),
-    "NoSpeechDetected": (".errors", "NoSpeechDetected"),
-    "NoTextDetected": (".errors", "NoTextDetected"),
-    "OCRBackendError": (".errors", "OCRBackendError"),
-    "OCRLLMError": (".errors", "OCRLLMError"),
-    "OutputError": (".errors", "OutputError"),
-    "OutputExists": (".errors", "OutputExists"),
-    "PDFError": (".errors", "PDFError"),
-    "ProviderAccountSuspended": (".errors", "ProviderAccountSuspended"),
-    "ProviderContentBlocked": (".errors", "ProviderContentBlocked"),
-    "ProviderError": (".errors", "ProviderError"),
-    "ProviderErrorDisposition": (
-        ".provider_error_disposition",
-        "ProviderErrorDisposition",
-    ),
-    "ProviderPermissionDenied": (".errors", "ProviderPermissionDenied"),
-    "ProviderModel": (".providers.provider_model", "ProviderModel"),
-    "GOOGLE_GEMINI_2_5_FLASH": (
-        ".providers.provider_model_presets",
-        "GOOGLE_GEMINI_2_5_FLASH",
-    ),
-    "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING": (
-        ".providers.provider_model_presets",
-        "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING",
-    ),
-    "ProviderRequestInvalid": (".errors", "ProviderRequestInvalid"),
-    "ProviderUnavailable": (".errors", "ProviderUnavailable"),
-    "QuotaExhausted": (".errors", "QuotaExhausted"),
-    "RateLimited": (".errors", "RateLimited"),
-    "RecognitionExecutionPolicy": (
-        ".recognition_execution_policy",
-        "RecognitionExecutionPolicy",
-    ),
-    "RecognitionPreferences": (
-        ".recognition_preferences",
-        "RecognitionPreferences",
-    ),
-    "RecognitionResult": (".result", "RecognitionResult"),
-    "RetainedVideoFrame": (".retained_video_frame", "RetainedVideoFrame"),
-    "ResumeStateError": (".errors", "ResumeStateError"),
-    "UnsupportedFormat": (".errors", "UnsupportedFormat"),
-    "VideoError": (".errors", "VideoError"),
-    "VisionModelSettings": (".vision_model_settings", "VisionModelSettings"),
-    "VideoInfo": (".video_info", "VideoInfo"),
-    "get_capabilities": (".get_capabilities", "get_capabilities"),
-    "extract_video_frames": (".video.extract_video_frames", "extract_video_frames"),
-    "extract_video_audio": (".video.extract_video_audio", "extract_video_audio"),
-    "list_google_genai_models": (
-        ".providers.google_genai.list_google_genai_models",
-        "list_google_genai_models",
-    ),
-    "get_provider_error_disposition": (
-        ".provider_error_disposition",
-        "get_provider_error_disposition",
-    ),
-    "recognize": (".recognize", "recognize"),
-    "recognize_audio_to_markdown": (
-        ".recognize_audio_to_markdown",
-        "recognize_audio_to_markdown",
-    ),
-    "repair_audio_to_markdown": (
-        ".repair_audio_to_markdown",
-        "repair_audio_to_markdown",
-    ),
-    "recognize_batch": (".recognize_batch", "recognize_batch"),
-    "recognize_long_mp3": (".recognize_long_mp3", "recognize_long_mp3"),
-    "recognize_images_to_markdown": (
-        ".recognize_images_to_markdown",
-        "recognize_images_to_markdown",
-    ),
-    "repair_images_to_markdown": (
-        ".repair_images_to_markdown",
-        "repair_images_to_markdown",
-    ),
-    "resume_images_to_markdown": (
-        ".resume_images_to_markdown",
-        "resume_images_to_markdown",
-    ),
-    "resume_audio_to_markdown": (
-        ".resume_audio_to_markdown",
-        "resume_audio_to_markdown",
-    ),
-    "resume_video": (".resume_video", "resume_video"),
-    "inspect_video": (".video.inspect_video", "inspect_video"),
+    **{
+        name: ".errors"
+        for name in (
+            "AllCandidatesExhausted",
+            "Cancelled",
+            "ConcurrencyLimited",
+            "ConfigError",
+            "DependencyMissing",
+            "InvalidSource",
+            "NoSpeechDetected",
+            "NoTextDetected",
+            "OCRBackendError",
+            "OCRLLMError",
+            "OutputError",
+            "OutputExists",
+            "PDFError",
+            "ProviderAccountSuspended",
+            "ProviderContentBlocked",
+            "ProviderError",
+            "ProviderPermissionDenied",
+            "ProviderRequestInvalid",
+            "ProviderUnavailable",
+            "QuotaExhausted",
+            "RateLimited",
+            "ResumeStateError",
+            "UnsupportedFormat",
+            "VideoError",
+        )
+    },
+    **{
+        name: ".providers.dashscope.credential_pool_report"
+        for name in ("DashScopeCredentialPoolReport", "DashScopeCredentialSlotReport")
+    },
+    **{
+        name: ".providers.provider_model_presets"
+        for name in (
+            "GOOGLE_GEMINI_2_5_FLASH",
+            "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING",
+        )
+    },
+    **{
+        name: ".provider_error_disposition"
+        for name in ("ProviderErrorDisposition", "get_provider_error_disposition")
+    },
+    "AudioModelSettings": ".audio_model_settings",
+    "AudioSlice": ".audio_slice",
+    "BatchItemOutcome": ".batch_item_outcome",
+    "CapabilityReport": ".capability_report",
+    "Config": ".config",
+    "CredentialPoolPolicy": ".credential_pool_policy",
+    "DashScopeCredential": ".providers.dashscope.credential",
+    "DashScopeCredentialPool": ".providers.dashscope.credential_pool",
+    "DashScopeSettings": ".providers.dashscope.provider_settings",
+    "GoogleGenAISettings": ".providers.google_genai.provider_settings",
+    "LocalOCRSettings": ".local_ocr_settings",
+    "ProviderModel": ".providers.provider_model",
+    "RecognitionExecutionPolicy": ".recognition_execution_policy",
+    "RecognitionPreferences": ".recognition_preferences",
+    "RecognitionResult": ".result",
+    "RetainedVideoFrame": ".retained_video_frame",
+    "VideoInfo": ".video_info",
+    "VisionModelSettings": ".vision_model_settings",
+    "extract_video_audio": ".video.extract_video_audio",
+    "extract_video_frames": ".video.extract_video_frames",
+    "get_capabilities": ".get_capabilities",
+    "inspect_video": ".video.inspect_video",
+    "list_google_genai_models": ".providers.google_genai.list_google_genai_models",
 }
 
 __all__ = [
@@ -330,13 +251,13 @@ __version__ = "0.1.0"
 def __getattr__(name: str):
     """Load one public API object on first access."""
     try:
-        module_name, attribute_name = _PUBLIC_IMPORTS[name]
+        module_name = _PUBLIC_IMPORTS[name]
     except KeyError:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
 
     from importlib import import_module
 
-    value = getattr(import_module(module_name, __name__), attribute_name)
+    value = getattr(import_module(module_name, __name__), name)
     globals()[name] = value
     return value
 

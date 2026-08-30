@@ -8,7 +8,10 @@ from .compose_merged_image_markdown import compose_merged_image_markdown
 from .errors import AllCandidatesExhausted
 from .merged_image_resume_state import MergedImageResumeState
 from .output.write_markdown_atomically import write_markdown_atomically
-from .provider_model_usage import ProviderModelUsage
+from .provider_model_usage import (
+    ProviderModelUsage,
+    provider_model_usage_documents,
+)
 from .result import RecognitionResult
 
 
@@ -43,7 +46,9 @@ def finalize_merged_image_result(
             details={
                 "failed_slots": failed_slots,
                 "provider_calls_attempted": current_calls,
-                "current_provider_model_usage": _usage_documents(current_usage),
+                "current_provider_model_usage": provider_model_usage_documents(
+                    current_usage
+                ),
             },
         ) from None
 
@@ -71,8 +76,10 @@ def finalize_merged_image_result(
         "settled_slot_count": settled_count,
         "reused_slot_count": reused_slot_count,
         "provider_call_count": current_calls,
-        "current_provider_model_usage": _usage_documents(current_usage),
-        "historical_provider_model_usage": _usage_documents(historical_usage),
+        "current_provider_model_usage": provider_model_usage_documents(current_usage),
+        "historical_provider_model_usage": provider_model_usage_documents(
+            historical_usage
+        ),
     }
     if failed_slots:
         metadata["failed_slots"] = failed_slots
@@ -86,19 +93,4 @@ def finalize_merged_image_result(
         output_path=output_path,
         warnings=tuple(warnings),
         metadata=metadata,
-    )
-
-
-def _usage_documents(
-    usage: tuple[ProviderModelUsage, ...],
-) -> tuple[dict[str, str | int | None], ...]:
-    return tuple(
-        {
-            "vendor": row.vendor,
-            "model": row.model,
-            "calls": row.calls,
-            "input_tokens": row.input_tokens,
-            "output_tokens": row.output_tokens,
-        }
-        for row in usage
     )

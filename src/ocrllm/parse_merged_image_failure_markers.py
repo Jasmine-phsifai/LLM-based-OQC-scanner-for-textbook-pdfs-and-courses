@@ -28,7 +28,6 @@ class MergedImageFailureMarker:
 
     slot_index: int
     comment: str
-    code: str
 
 
 def parse_merged_image_failure_markers(
@@ -68,7 +67,6 @@ def parse_merged_image_failure_markers(
             MergedImageFailureMarker(
                 slot_index=slot_index,
                 comment=match.group("comment"),
-                code=code,
             )
         )
 

@@ -263,7 +263,11 @@ from ocrllm import (
     Config,
     DashScopeCredentialPool,
     DashScopeSettings,
+    GOOGLE_GEMINI_2_5_FLASH,
+    InvalidSource,
     RecognitionResult,
+    repair_audio_to_markdown,
+    repair_images_to_markdown,
 )
 from ocrllm.providers.vision_provider import VisionProvider
 config_hints = typing.get_type_hints(Config)
@@ -279,6 +283,38 @@ assert DashScopeCredentialPool in typing.get_args(
     factory_hints['credential_pool']
 )
 assert factory_hints['return'] is DashScopeSettings
+missing_image_output = pathlib.Path.cwd() / 'missing-image-repair.md'
+missing_audio_output = pathlib.Path.cwd() / 'missing-audio-repair.md'
+try:
+    repair_images_to_markdown(
+        (),
+        provider=GOOGLE_GEMINI_2_5_FLASH,
+        image_task='detail_ocr',
+        output_path=missing_image_output,
+    )
+except InvalidSource as error:
+    assert error.code == 'SOURCE_INVALID'
+    assert error.details['provider_calls_attempted'] == 0
+else:
+    raise AssertionError('empty image repair unexpectedly succeeded')
+try:
+    repair_audio_to_markdown(
+        pathlib.Path.cwd() / 'missing-audio.mp3',
+        provider=GOOGLE_GEMINI_2_5_FLASH,
+        output_path=missing_audio_output,
+    )
+except InvalidSource as error:
+    assert error.code == 'SOURCE_NOT_FOUND'
+    assert error.details['provider_calls_attempted'] == 0
+else:
+    raise AssertionError('missing audio repair unexpectedly succeeded')
+assert callable(repair_images_to_markdown)
+assert callable(repair_audio_to_markdown)
+assert not missing_image_output.exists()
+assert not missing_audio_output.exists()
+assert not missing_audio_output.with_name(
+    'missing-audio-repair.ocrllm-state.json'
+).exists()
 loaded = {name.split('.')[0] for name in sys.modules}
 assert not loaded & forbidden, loaded & forbidden
 print(ocrllm.__version__, origin)

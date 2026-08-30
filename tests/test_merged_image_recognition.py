@@ -152,6 +152,35 @@ def _google_image_response(markdown: str, *, input_tokens: int, output_tokens: i
     )
 
 
+def test_invalid_merged_image_batch_shapes_report_zero_provider_calls(
+    tmp_path,
+    monkeypatch,
+):
+    output = tmp_path / "result.md"
+    called = False
+
+    def should_not_run(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError
+
+    monkeypatch.setattr(executor, "recognize_provider_model_images", should_not_run)
+    for invalid in ((), ((),), ((object(),),)):
+        with pytest.raises(InvalidSource) as captured:
+            recognize_images_to_markdown(
+                invalid,  # type: ignore[arg-type]
+                provider=_provider("gemini-test-a"),
+                image_task="detail_ocr",
+                output_path=output,
+            )
+        assert captured.value.code == "SOURCE_INVALID"
+        assert captured.value.details["provider_calls_attempted"] == 0
+
+    assert called is False
+    assert not output.exists()
+    assert not (tmp_path / "result.ocrllm-state.json").exists()
+
+
 def test_complete_merged_image_run_publishes_one_ordered_file(tmp_path, monkeypatch):
     batches = _three_batches(tmp_path)[:2]
     output = tmp_path / "frames_ocrllm.md"

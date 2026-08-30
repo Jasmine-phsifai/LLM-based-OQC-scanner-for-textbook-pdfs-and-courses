@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .config import Config
-from .errors import OCRLLMError, OutputError, ProviderError
+from .errors import OutputError, ProviderError
 from .imaging.snapshot_image_group import snapshot_image_group
 from .output.write_markdown_atomically import write_markdown_atomically
 from .parse_merged_image_failure_markers import MergedImageFailureMarker
@@ -17,7 +17,9 @@ from .provider_failure_evidence import (
 from .provider_model_usage import (
     ProviderModelUsage,
     add_provider_model_usage,
+    attach_current_provider_model_usage,
     build_provider_model_usage_order,
+    provider_model_usage_documents,
 )
 from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_images import (
@@ -133,7 +135,7 @@ def repair_marked_image_batches(
                             overwrite=True,
                         )
                     except OutputError as error:
-                        _attach_current_usage(error, usage)
+                        attach_current_provider_model_usage(error, usage)
                         raise
                     markdown = updated_markdown
                     publication_succeeded = True
@@ -147,7 +149,7 @@ def repair_marked_image_batches(
             ):
                 snapshot_cleanup_failure = True
             else:
-                _attach_current_usage(error, usage)
+                attach_current_provider_model_usage(error, usage)
                 raise
 
         if not publication_succeeded:
@@ -184,7 +186,7 @@ def repair_marked_image_batches(
         "repaired_slot_count": repaired_slot_count,
         "settled_slot_count": len(batches) - len(failed_slots),
         "provider_call_count": sum(row.calls for row in usage),
-        "current_provider_model_usage": _usage_documents(usage),
+        "current_provider_model_usage": provider_model_usage_documents(usage),
     }
     if failed_slots:
         metadata["failed_slots"] = tuple(failed_slots)
@@ -198,33 +200,4 @@ def repair_marked_image_batches(
         output_path=output_path,
         warnings=tuple(warnings),
         metadata=metadata,
-    )
-
-
-def _attach_current_usage(
-    error: OCRLLMError,
-    usage: tuple[ProviderModelUsage, ...],
-) -> None:
-    error._add_safe_detail(
-        "provider_calls_attempted",
-        sum(row.calls for row in usage),
-    )
-    error._add_safe_detail(
-        "current_provider_model_usage",
-        _usage_documents(usage),
-    )
-
-
-def _usage_documents(
-    usage: tuple[ProviderModelUsage, ...],
-) -> tuple[dict[str, str | int | None], ...]:
-    return tuple(
-        {
-            "vendor": row.vendor,
-            "model": row.model,
-            "calls": row.calls,
-            "input_tokens": row.input_tokens,
-            "output_tokens": row.output_tokens,
-        }
-        for row in usage
     )

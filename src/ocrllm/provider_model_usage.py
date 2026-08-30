@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .errors import OCRLLMError
 from .providers.provider_model import ProviderModel
 
 
@@ -85,6 +86,37 @@ def add_provider_model_usage(
                 len(usage_order) + item[0],
             ),
         )
+    )
+
+
+def provider_model_usage_documents(
+    usage: tuple[ProviderModelUsage, ...],
+) -> tuple[dict[str, str | int | None], ...]:
+    """Project immutable usage rows into public JSON-safe documents."""
+    return tuple(
+        {
+            "vendor": row.vendor,
+            "model": row.model,
+            "calls": row.calls,
+            "input_tokens": row.input_tokens,
+            "output_tokens": row.output_tokens,
+        }
+        for row in usage
+    )
+
+
+def attach_current_provider_model_usage(
+    error: OCRLLMError,
+    usage: tuple[ProviderModelUsage, ...],
+) -> None:
+    """Attach exact current calls and public usage rows to one typed failure."""
+    error._add_safe_detail(
+        "provider_calls_attempted",
+        sum(row.calls for row in usage),
+    )
+    error._add_safe_detail(
+        "current_provider_model_usage",
+        provider_model_usage_documents(usage),
     )
 
 
