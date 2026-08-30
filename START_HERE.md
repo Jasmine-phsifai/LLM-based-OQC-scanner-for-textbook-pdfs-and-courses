@@ -165,6 +165,13 @@ reporting success; 17 focused tests and an offline negative probe pass. The
 maintainer also resumes migration at the first atomic provider-model slice;
 retry, fallback, pooling, merged media, repair, and old-video deletion remain
 ordered later gates.
+#657 lands the first private runtime sub-slice: an immutable scalar
+provider-model identity with exact Google/DashScope settings and one internal
+image consumer that reuses the existing Config, resolver, and provider-call
+boundary. Settings do not enter repr/equality/hash/dataclass serialization. The
+type is not exported and has no preset, unproven capability/default facts,
+retry, fallback, pool, audio, resume, or merged-media behavior. Focused new and
+neighboring suites pass 130 tests; bounded scalar live image proof is next.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

@@ -22,9 +22,12 @@ to it, or create another video lifecycle wrapper.
 
 The approved current provider/media board is section 0 of
 `../../docs/plan_provider_entity_batch_refactor.md`, subject to
-`../../docs/ACTIVE_STATE_AND_RULES.md`; runtime implementation remains
-discussion-paused. The older Stage M/A plan supplies detail only where that
-board has not superseded it. #078 closed P1-c with one bounded
+`../../docs/ACTIVE_STATE_AND_RULES.md`; #656 resumed runtime migration one
+atomic section-0 slice at a time, and #657 added only the first private scalar
+provider-model identity/settings consumer. Do not export that incomplete type
+or pull presets, retry, fallback, audio, pools, or merged recognition into its
+slice. The older Stage M/A plan supplies detail only where that board has not
+superseded it. #078 closed P1-c with one bounded
 16-page Google run through exactly two serial image requests, complementing the
 existing offline resume and installed-wheel proofs. #120 answered P1-d no: the
 new library does not consume legacy localized repair Markdown, and ordinary

@@ -13102,3 +13102,34 @@ resolution required by its scalar consumer. This does not authorize retry,
 fallback, pools, merged media, repair, old-video deletion, a public adapter
 hierarchy, a credential bridge in the library, or a model sweep. The four
 protected untracked files remain untouched.
+
+## Current working update: #657 implements the first private scalar provider-model consumer
+
+#657 begins runtime migration after #656's explicit authorization. The new
+internal `ProviderModel` holds only the fields consumed by the first scalar
+image proof: exact vendor, exact model, one controlled adapter ID, and one exact
+Google or DashScope settings object. It is immutable and intentionally not a
+dataclass. Runtime settings can contain a credential or mutable credential pool,
+so they remain directly available for dispatch but do not participate in repr,
+equality, hashing, or `dataclasses.asdict()`. Exact vendor/adapter/settings
+combinations are validated without credential or network access.
+
+One private `recognize_provider_model_images()` consumer constructs the existing
+`Config` from that entity and reuses `resolve_vision_provider()` plus
+`call_vision_provider()`. It does not duplicate SDK calls, response parsing,
+error mapping, cleanup, pacing, or Markdown validation. A separate proposed
+provider-model resolver was deleted during primary review because it repeated
+the existing Google/DashScope branch and would create another drift point. A
+real missing-image probe reached the existing native-Google preflight and
+returned `SOURCE_NOT_FOUND` with `provider_calls_attempted=0`, proving the
+private path is consumed without touching network or credentials.
+
+The type remains internal and incomplete by design: no package-root export,
+preset, serializer, public compatibility promise, capability/default fields,
+retry mapping, fallback, audio, pool, resume, or merged-media behavior exists.
+The first live-proven preset will add only image facts supported by that proof;
+audio and retry fields wait for their own consumers. New plus neighboring
+Google/DashScope/config/import tests pass **130** in 2.11 seconds. Plain import
+still avoids Google/OpenAI SDK loading. Current `recognize()`, injected clients,
+workers, contracts, media APIs, legacy code, and the four protected untracked
+files are unchanged.

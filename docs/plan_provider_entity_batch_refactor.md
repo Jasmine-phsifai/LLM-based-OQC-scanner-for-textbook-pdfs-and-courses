@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #656)
+## 0. Current pruning and execution checkpoint (2026-08-30, #657)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -416,6 +416,26 @@ Markdown validation, redacted error mapping, and optional usage extraction.
 The first two built-in scalar proofs use their private controlled resolver. The
 existing Config injection remains the working escape hatch until a new merged
 API supplies the narrower, consumer-driven second path.
+
+#657 implements only the private first scalar sub-slice. Internal
+`ProviderModel` stores exact vendor/model/controlled-adapter identity plus one
+exact Google or DashScope settings value. It is deliberately not a dataclass:
+runtime settings may contain credentials or a mutable credential pool and are
+therefore absent from repr, equality, hashing, and `dataclasses.asdict()`.
+Construction validates the exact vendor/adapter/settings combination. One
+private image consumer converts that entity into the existing `Config`, then
+reuses the existing `resolve_vision_provider()` and `call_vision_provider()`
+chain. A proposed second resolver module was removed during self-review because
+it duplicated the same two adapter branches and could drift.
+
+The type has no package-root export, preset, capability/default/retry fields,
+serializer, resume identity, or compatibility promise yet. Those fields are
+not guessed in this slice: the first live-proven preset adds only the capability
+and default facts its image proof can support, while audio and retry facts wait
+for their own consumers. The next gate is one bounded DashScope scalar image
+request through this private consumer, then the corresponding native-Google
+proof; each remains one generation call with no retry, fallback, or model
+switch. Current `recognize()` and injected-provider behavior are unchanged.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level

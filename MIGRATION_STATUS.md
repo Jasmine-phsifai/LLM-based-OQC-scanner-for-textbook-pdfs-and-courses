@@ -89,6 +89,16 @@ No public/runtime API changed. The maintainer separately authorizes the next
 atomic provider-model migration slice; later retry, fallback, pool, merged-
 media, repair, and old-video deletion stages remain gated by section 0 order.
 
+#657 starts the authorized runtime migration with one private scalar
+provider-model path. The immutable value contains only exact vendor, model,
+controlled adapter ID, and exact runtime settings; settings are excluded from
+repr, equality, hashing, and generic dataclass serialization. One internal
+image consumer builds the existing `Config` and reuses the existing resolver
+and provider-call boundary. It is not exported and adds no preset, capability
+guess, retry rule, fallback, audio API, pool, persistence, or public facade.
+The focused new and neighboring provider/import suites pass 130 tests. The next
+gate is a bounded live scalar image proof before any public-call rewrite.
+
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
 negative-feedback/similarity selection already belongs to the one extraction
@@ -133,15 +143,16 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#656)
+### Current provider/media checkpoint (#657)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
 holds the closed decisions, pruning rules, and active order. The next slice is
-limited to immutable provider-model facts, exact typed settings, and the
-smallest private controlled resolution required by its scalar consumer. There
-is no remaining #646 product choice and no blanket authorization for later
-topology.
+the bounded scalar preset/image proof through the new private consumer, first
+without a public-call rewrite. Only image capability/default facts supported by
+that live proof may join the still-private value. There is no remaining #646
+product choice and no blanket authorization for retry, fallback, audio, pools,
+merged media, or other later topology.
 
 The fixed destination has no second video black box. Callers visibly compose
 provider-free video inspection/extraction with independent merged-image and
