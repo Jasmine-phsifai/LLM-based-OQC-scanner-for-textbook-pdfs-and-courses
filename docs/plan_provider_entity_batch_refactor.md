@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #659)
+## 0. Current pruning and execution checkpoint (2026-08-30, #660)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -470,6 +470,23 @@ each error constructor. This changes diagnostics only; it adds no production
 retry, catalog fallback, error type, or shared runner framework. The live output
 itself remains recorded as null, while focused offline evidence proves future
 reports use `scope="provider"`.
+
+#660 makes the third bounded DashScope entity attempt and then changes the
+proof order rather than repeating it blindly. Catalog discovery succeeded and
+one exact generation attempt reached `qwen3.5-ocr`, but the response again
+ended as the existing request-scoped `PROVIDER_RESPONSE_INVALID`. The corrected
+runner reported the canonical request scope; there was no retry, model switch,
+fallback, source change, stderr, residue, or second child.
+
+The three entity attempts now provide two generation-stage invalid responses
+and one catalog outage, with zero successful completions. This is enough to
+defer—not waive—the DashScope success gate. The next atomic transport proof is
+the already-required native-Google scalar image path through the same private
+consumer. A Google success would isolate the remaining problem to current
+DashScope/catalog/response behavior rather than the common entity boundary; a
+Google failure remains honest evidence. Do not add a preset or rewrite public
+calls until the relevant success gates close. DashScope later resumes with one
+bounded diagnostic question, not an automatic retry loop or parser relaxation.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level

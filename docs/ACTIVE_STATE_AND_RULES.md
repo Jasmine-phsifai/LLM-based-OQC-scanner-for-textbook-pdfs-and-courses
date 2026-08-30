@@ -13194,3 +13194,29 @@ show two expected external failure boundaries—one invalid generation response
 and one pre-generation catalog outage—but neither justifies retry or a preset.
 One later bounded successful generation remains required before capability or
 default facts enter the entity.
+
+## Current working update: #660 defers repeated DashScope proof after a third attempt
+
+#660 starts after the required interval and first re-proves the corrected
+runner/disposition/entity boundary with 41 offline tests. One credential-
+isolated child then uses the enabled proxy and unchanged repo formula board.
+DashScope catalog discovery succeeds and the private entity makes exactly one
+`qwen3.5-ocr` generation attempt. It exits after about 3.08 seconds with the
+existing request-scoped `PROVIDER_RESPONSE_INVALID`. The corrected scope is
+present in live safe JSON. There is no retry, model switch, fallback, second
+child, stderr, source mutation, temporary residue, or leaked content.
+
+Across #658--#660, the private DashScope route has now made two generation
+attempts that both returned invalid responses, with one intervening catalog
+outage. Repeating the same request every heartbeat would no longer answer a new
+product question. The DashScope success gate therefore remains open but is
+deferred. The next atomic slice advances to the separately required native-
+Google scalar image proof through the same private consumer. This can distinguish
+a common entity defect from current DashScope transport behavior without adding
+retry or changing parsers.
+
+No runtime, test, adapter, error, preset, capability/default field, public API,
+provider policy, worker/contracts, media, legacy, dependency, or social feature
+changed in #660. Before any preset or public-call rewrite, a successful bounded
+transport proof is still required; the later DashScope return must pose one
+diagnostic question instead of replaying an identical request.

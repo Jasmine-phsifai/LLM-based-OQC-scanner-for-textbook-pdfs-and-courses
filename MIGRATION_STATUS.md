@@ -111,6 +111,15 @@ gap: scope was null even though the canonical disposition already says
 provider. The runner now derives that existing scope; production errors,
 catalog behavior, retry policy, presets, and public APIs are unchanged.
 
+#660 passes DashScope catalog discovery and reaches one more exact
+`qwen3.5-ocr` generation, which again returns request-scoped
+`PROVIDER_RESPONSE_INVALID`. Three bounded entity runs have now produced two
+invalid generation responses and one catalog outage without a success. The
+DashScope gate stays open, but the next atomic proof advances to the separately
+required native-Google scalar path so the common entity boundary can be tested
+through another transport. This is an order change, not a preset admission,
+retry policy, parser relaxation, or abandoned DashScope requirement.
+
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
 negative-feedback/similarity selection already belongs to the one extraction
@@ -155,16 +164,18 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#659)
+### Current provider/media checkpoint (#660)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
 holds the closed decisions, pruning rules, and active order. #658 reached one
 generation and retained an honest response-invalid failure; #659 then stopped
 honestly at a transient catalog-unavailable boundary with zero generations.
-The next slice is still a successful scalar image proof through the private
-consumer, without a public-call rewrite. Only capability/default facts
-supported by that success may join the still-private value. There is no
+After #660's second invalid generation, the next slice is the native-Google
+scalar image proof through the same private consumer, without a public-call
+rewrite. DashScope success remains open for a later bounded diagnostic run.
+Only capability/default facts supported by a successful proof may join the
+still-private value. There is no
 remaining #646 product choice and no blanket authorization for retry, fallback,
 audio, pools, merged media, or other later topology.
 

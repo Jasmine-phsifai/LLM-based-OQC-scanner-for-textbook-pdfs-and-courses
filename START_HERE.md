@@ -180,7 +180,11 @@ still required before adding preset capability/default facts. #659 then used
 that consolidated mode, but its sole catalog request returned
 `PROVIDER_CATALOG_UNAVAILABLE` before generation. The runner now reports the
 existing canonical provider scope when an error omits an explicit scope; no
-retry, fallback, preset, or production provider behavior changed.
+retry, fallback, preset, or production provider behavior changed. #660 reached
+DashScope generation once more but received the same request-scoped invalid
+response. After two invalid generations and one catalog outage, the next
+heartbeat advances to the independently required native-Google scalar proof;
+the DashScope success gate is deferred, not declared passed.
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy
