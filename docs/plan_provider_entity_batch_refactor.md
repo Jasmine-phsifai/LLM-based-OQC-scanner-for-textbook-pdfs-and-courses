@@ -156,12 +156,16 @@ implement splitting, dispatch, retry, fallback, pooling, resume, or repair.
 
 The already-shipped `Config(provider=ExistingVisionClient())` injection route
 remains unchanged as a second escape hatch. A caller-supplied object used as a
-leaf in a **new** merged provider list must instead explicitly satisfy the later
-small `ProviderAdapter` contract, including stable identity, exact task
-capabilities, invocation, and safe error/usage reporting. Missing capabilities
-are a configuration error; the new engine does not guess them through duck
-typing or silently default them to false. Keep this protocol narrow and do not
-wrap injected objects in a public entity hierarchy.
+leaf in a **new** merged provider list will instead explicitly satisfy a later
+small `ProviderAdapter` contract. That contract is not part of the first
+provider-model or two-built-in scalar proof. Define it only in the same slice as
+the first merged-list caller that actually consumes an injected leaf, and give
+it only the task-specific identity, capability, invocation, and safe
+error/usage members that caller needs. Missing required capabilities are a
+configuration error; the new engine does not guess them through duck typing or
+silently default them to false. Keep this protocol narrow and do not wrap
+injected objects in a public entity hierarchy or predeclare unused audio,
+retry, pool, resume, or cleanup methods.
 
 That injected route is an in-process Python contract. Current `recognize()` and
 `recognize_batch()` call it directly; the latter uses threads in the same
@@ -282,8 +286,9 @@ The maintainer has now closed all seven #646 decision groups:
    positive integer minutes. Caller-only `-1` still means whole audio.
 3. Do not add `ProviderBinding`. The provider-model entity is the first-class
    route; existing injected vision clients remain compatible, and new merged
-   lists may also accept an explicit small `ProviderAdapter` escape-hatch
-   contract. Missing task capabilities reject before dispatch.
+   lists may later accept an explicit small `ProviderAdapter` escape-hatch
+   contract. Create that contract only with its first real merged-list consumer;
+   missing task capabilities then reject before dispatch.
 4. Prove merged image/audio recognition plus resume parity, then delete the old
    video recognition family. The old Config-based `recognize` and
    `recognize_batch` line remains available.
@@ -348,7 +353,9 @@ The proposal also contains several points that must be pruned before code:
    exact model facts plus the exact typed adapter settings it needs; a private
    controlled resolver lazily selects known Google-native, OpenAI-compatible,
    or local execution code. An injected escape-hatch object follows the small
-   explicit adapter protocol instead of being converted into an entity.
+   explicit adapter protocol once a merged-list caller exists, instead of being
+   converted into an entity. The first built-in scalar proof needs no new
+   protocol and leaves the shipped one-method `VisionProvider` route unchanged.
 5. Do not implement scalar, flat fallback, nested pooling, image, audio, resume,
    repair, and token persistence in one slice. Each later slice may add only the
    next topology already consumed by a public flow.
@@ -378,11 +385,13 @@ slice and must not complicate the first scalar proof.
 The smallest safe runtime sequence after the maintainer resumes work is:
 
 1. add only immutable provider-model facts, exact typed settings, private
-   controlled adapter resolution, and the smallest injected-adapter contract;
+   controlled adapter resolution, and no new injected-adapter contract;
 2. ship a few complete presets and live-prove one native Google image entry and
    one DashScope OpenAI-compatible image entry before rewriting public calls;
 3. implement merged image planning/recognition/resume first for one scalar
-   provider, then flat fallback; do not begin nested pooling yet;
+   provider, then flat fallback; if that flat-list slice first accepts injected
+   leaves, define its smallest image-only adapter contract in that same slice;
+   do not begin nested pooling or predeclare audio members yet;
 4. implement explicit audio extraction/splitting and merged audio
    recognition/resume with the same scalar-then-flat sequence;
 5. prove both replacement owners, then delete the verified 34-file old video
@@ -393,6 +402,17 @@ The smallest safe runtime sequence after the maintainer resumes work is:
 This ordering is not permission to implement. It prevents the provider object
 from becoming a scheduler, state store, retry executor, output planner, or media
 owner before those consumers exist.
+
+#651 confirms this timing from current code rather than from the future schema.
+The shipped `VisionProvider` has one synchronous `recognize_images(...)` method;
+the resolver preserves an injected object, while the common caller owns timeout,
+Markdown validation, redacted error mapping, and optional usage extraction.
+`ResolvedVisionProvider` is only a four-field metadata value, and no
+`ProviderModel` runtime or merged-list consumer exists. A final image/audio
+`ProviderAdapter` created now would therefore freeze methods with no caller.
+The first two built-in scalar proofs use their private controlled resolver. The
+existing Config injection remains the working escape hatch until a new merged
+API supplies the narrower, consumer-driven second path.
 
 The current-code audit also gives a concrete reduction target. At #647,
 `src/ocrllm` contains 302 Python files and 23,383 lines, including 91 root-level

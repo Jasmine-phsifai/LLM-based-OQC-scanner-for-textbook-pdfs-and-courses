@@ -57,6 +57,15 @@ rescue do not migrate without a bounded real failure/retry proof. Current and
 legacy focused classifier/candidate suites pass 88 and 36 tests respectively;
 no runtime or schema changed.
 
+#651 removes a consumer-free `ProviderAdapter` Protocol from the first runtime
+slice. Current direct injection already has one narrow `VisionProvider` method,
+and no merged-list caller exists. The provider-model entity and two built-in
+scalar live proofs therefore use only private controlled resolution. The
+maintainer-approved injected second path remains, but its smallest image-only
+contract is defined with the first merged-list consumer that needs it; audio,
+retry, pool, resume, and cleanup members are not designed in advance. This is
+an ordering correction only; no runtime API or source changed.
+
 #612 removes the proposed public `dedupe_video_frames` step. The visible frame
 path is `inspect_video -> extract_video_frames -> batchify_images` because
 negative-feedback/similarity selection already belongs to the one extraction

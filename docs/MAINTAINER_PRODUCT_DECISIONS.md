@@ -981,6 +981,17 @@ model, provider, credential, and account failures. Existing live timeout,
 rate-limit, response-invalid, and project-precondition outcomes prove honest
 mapping only; none proves a numeric immediate-retry default.
 
+#651 fixes when the new injected escape-hatch contract is introduced. It is not
+a prerequisite for the provider-model entity or the first native-Google and
+DashScope scalar proofs. Those built-in proofs use private controlled resolution,
+while the shipped `Config(provider=ExistingVisionClient())` one-method image
+route remains unchanged. Only when a new merged-list API first accepts an
+injected leaf may that same implementation slice add the smallest explicit,
+task-specific `ProviderAdapter` contract its caller needs. Do not predeclare a
+combined image/audio interface, retry executor, pool, resume, or cleanup members
+before a consumer exists. This defers an abstraction; it does not remove the
+maintainer-approved injected second path.
+
 #612 records the latest discussion without authorizing implementation. The
 public frame workflow is `inspect_video -> extract_video_frames ->
 batchify_images`; negative-feedback/similarity selection remains inside
@@ -1061,9 +1072,11 @@ unresolved detail in the following fixed choice list:
    its exact typed adapter settings. A private lazy resolver owns built-in
    execution. There is no `ProviderBinding` type. Existing injected
    `VisionProvider` use remains unchanged; new merged lists may additionally
-   accept an object that explicitly satisfies the small `ProviderAdapter`
-   contract. Executables, generic invocation mappings, permissive capability
-   guessing, and a public adapter hierarchy are rejected.
+   accept an object that explicitly satisfies a small `ProviderAdapter`
+   contract, but that protocol is created only with its first real merged-list
+   consumer and contains no unused media or lifecycle methods. Executables,
+   generic invocation mappings, permissive capability guessing, and a public
+   adapter hierarchy are rejected.
 9. **Fixed token contract:** persist one cumulative aggregate per exact
    `(vendor, model)` with exact calls and nullable input/output totals,
    including trustworthy failed-attempt evidence. Treat the loaded value as the
