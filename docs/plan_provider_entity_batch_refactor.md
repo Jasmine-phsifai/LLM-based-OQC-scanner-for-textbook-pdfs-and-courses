@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #678)
+## 0. Current pruning and execution checkpoint (2026-08-30, #679)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -370,6 +370,33 @@ credential resolution; primary review corrected the predicate before the only
 live child. Eight owned evidence files were reviewed and removed. No production
 defect, retry/sleep, nested lane, concurrent pool, schema change, generic media
 executor, repair, or frozen-video edit was added.
+
+### #679 closes the real ordinary merged-audio resume gate
+
+The maintained merged-audio runner now has one fixed fresh-only
+`--unserved-only` mode. It uses the same local audio-capable model deliberately
+absent from the current Google catalog, requires zero generation calls, reports
+only safe provider mode and terminal failed-slot identity, and remains mutually
+exclusive with flat fallback and resume. Expected recognition failure keeps
+exit 1; the tool does not relabel an incomplete product result as success.
+
+One credential-free preflight first returned `CONFIG_MISSING`, calls 0, no
+Markdown, one 826-byte unresolved whole state, and unchanged source. One
+credential-isolated live fresh child then reached the real catalog, produced
+top-level `ALL_CANDIDATES_EXHAUSTED` with terminal slot-0
+`PROVIDER_UNAVAILABLE`, made zero generations, wrote no Markdown, and retained a
+946-byte failed state with empty usage. After primary state/source review,
+exactly one live resume child used the same source/ranges/output with scalar
+`gemini-2.5-flash`. It made one generation, reported 4,009 input and 61 output
+tokens, published matching 297-byte Markdown, removed state, returned complete
+with no warning/failure rows, preserved source bytes, and exited 0.
+
+This is ordinary resume evidence, not retry or fallback: the failed live child
+ended before the later resume invocation, no settled slot was replayed, the
+changed provider was caller-supplied, and historical usage correctly remained
+empty because the first provider made no generation call. No production code,
+API, schema, test, retry/sleep, nested lane, pool, repair, or video deletion
+changed. Eight owned evidence files were reviewed and permanently removed.
 
 The destination is one visible, caller-composed pair of media flows:
 

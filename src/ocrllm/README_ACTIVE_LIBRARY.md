@@ -144,6 +144,14 @@ recorded one unserved Google candidate and completed through
 263-byte Markdown, removed state, unchanged source, and runner exit 0. These
 runs do not prove same-model retry, provider pools, or other audio formats.
 
+Ordinary audio resume is also live-proven across separate invocations. One
+fresh request using an intentionally unserved Google model retained a failed
+whole slot with zero generation calls and no Markdown. A later call to
+`resume_audio_to_markdown()` supplied `gemini-2.5-flash`, made exactly one
+generation with 4,009/61 tokens, published matching 297-byte Markdown, removed
+the sidecar, and left the source unchanged. This is caller-directed resume, not
+an automatic retry or hidden model switch.
+
 The serial flat lane is live-proven through a fixed real Google scenario: one
 unserved candidate fails safely before generation and the next candidate
 settles the slot in one generation, returning `status="complete"` with one

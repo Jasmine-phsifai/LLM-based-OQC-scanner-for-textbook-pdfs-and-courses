@@ -3215,3 +3215,15 @@ then completed through `gemini-2.5-flash` in one generation with 4,009/59 tokens
 matching 263-byte Markdown, removed state, unchanged source, and runner exit 0.
 No retry/wait, nested pool, concurrency, schema, repair, generic media executor,
 or video change was added.
+
+#679 real-proves merged-audio ordinary resume through two separate invocations.
+One fresh whole request using the fixed intentionally unserved Google model
+reached live catalog membership, made zero generations, raised
+`ALL_CANDIDATES_EXHAUSTED`, wrote no Markdown, and retained one failed v1 slot
+with terminal `PROVIDER_UNAVAILABLE` and empty usage. One later scalar resume
+with the exact source/ranges/output and `gemini-2.5-flash` made one generation,
+reported 4,009/61 input/output tokens, published matching 297-byte Markdown,
+removed state, returned complete without warnings, preserved source bytes, and
+exited 0. The maintained runner gained only a fixed fresh unserved-only mode;
+production code/API/schema/tests, retry, nested pool, repair, and video code are
+unchanged.

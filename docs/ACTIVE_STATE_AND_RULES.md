@@ -13754,3 +13754,40 @@ no sidecar, unchanged source, empty stderr, native exit 0, and no live runner.
 Primary review did not open the transcript. Eight owned TEMP evidence files
 totalling 2,420 bytes were removed from the exact root and are not recoverable;
 the archive and repository inputs were unchanged.
+
+## Current working update: #679 closes real merged-audio ordinary resume
+
+The maintained merged-audio scenario runner now accepts one fixed fresh-only
+`--unserved-only` provider mode. It constructs the same exact audio-capable
+Google model deliberately absent from the live catalog, requires expected
+generation calls to be zero, reports safe terminal failed-slot provider/model/
+code facts, and rejects combination with flat fallback or resume. Recognition
+failure remains exit 1; the runner does not call a failed product result a pass.
+
+The first credential-free whole request returned `CONFIG_MISSING`, calls 0, no
+Markdown, one 826-byte v1 unresolved state, empty stderr, and unchanged source.
+After primary review, one credential-isolated fresh child reached the real
+catalog using the intentionally unserved model. It ended with
+`ALL_CANDIDATES_EXHAUSTED`; failed slot 0 recorded google, the exact unserved
+model, and `PROVIDER_UNAVAILABLE`. Generation/call usage stayed zero, no Markdown
+was written, one 946-byte failed state remained with empty usage and no cleanup
+failure, source bytes matched, stderr was empty, and the child ended normally.
+
+Primary review confirmed the safe JSON, exact terminal state, source fingerprint,
+and absence of output before authorizing resume. Exactly one later child called
+the existing public `resume_audio_to_markdown()` through the runner's ordinary
+scalar mode with the same source, ranges, and Stage 1 output target. It made one
+`gemini-2.5-flash` generation, reported 4,009 input and 61 output tokens, returned
+complete with one settled slot, zero reused slots, no failed/provider-failure
+rows or warnings, matching 297-byte Markdown, removed sidecar, unchanged source,
+empty stderr, runner exit 0, and no remaining runner process. Historical usage
+correctly remained empty because the failed catalog lookup made no generation.
+
+This is two separate terminal invocations and caller-directed ordinary resume,
+not retry, automatic fallback, or a hidden provider switch. No production code,
+API, state schema, pytest, timeout, provider policy, nested pool, concurrency,
+repair, or video code changed. The only runtime-tool edit is the fixed
+unserved-only scenario and safe provider-mode/failed-slot projection. Primary
+review did not open the transcript. Eight owned evidence files totalling 2,596
+bytes and their three stage directories were permanently removed from the exact
+TEMP root; the archive, repository inputs, and other TEMP roots were untouched.

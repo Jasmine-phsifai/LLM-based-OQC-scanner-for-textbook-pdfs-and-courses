@@ -135,6 +135,16 @@ candidate. One real unserved-Google -> `gemini-2.5-flash` lane completed with
 one generation and 4,009/59 tokens. Keep retry/wait, nested lists, concurrency,
 generic media execution, repair, and old-video edits out of this slice.
 
+#679 real-proves ordinary merged-audio resume without runtime changes. A live
+fresh whole request through one intentionally unserved model made zero
+generations, retained one failed v1 slot, and raised
+`ALL_CANDIDATES_EXHAUSTED`; one later scalar resume with the same source/ranges/
+output made exactly one `gemini-2.5-flash` generation, published matching
+Markdown, removed state, and preserved source bytes. Empty historical usage is
+correct because the failed catalog lookup consumed no generation. This does
+not authorize retry, automatic switching, nested pools, repair, or old-video
+deletion by itself.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

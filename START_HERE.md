@@ -510,6 +510,14 @@ tokens, one warning/failure record, matching 263-byte output, removed state,
 unchanged source, and exit 0. No retry, nested pool, concurrency, repair, schema,
 or video-chain change is included.
 
+#679 closes the separate real audio-resume gate without production changes. A
+live fresh whole request through an intentionally unserved model retained one
+failed slot with zero generation calls and no Markdown. One later scalar resume
+on the exact source/ranges/output used `gemini-2.5-flash` once, reported
+4,009/61 tokens, published matching 297-byte Markdown, removed state, preserved
+the source, and exited 0. It is ordinary caller-directed resume, not retry,
+automatic fallback, pooling, or repair.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

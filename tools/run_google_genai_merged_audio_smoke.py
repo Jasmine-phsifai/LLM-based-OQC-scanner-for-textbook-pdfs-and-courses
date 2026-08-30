@@ -31,11 +31,12 @@ def main() -> int:
     state = output.with_name(f"{output.stem}.ocrllm-state.json")
     before = _source_facts(source)
     slices = split_audio(source, interval_minutes=args.interval_minutes)
-    provider = (
-        [_unserved_audio_provider(), GOOGLE_GEMINI_2_5_FLASH]
-        if args.flat_fallback
-        else GOOGLE_GEMINI_2_5_FLASH
-    )
+    if args.flat_fallback:
+        provider = [_unserved_audio_provider(), GOOGLE_GEMINI_2_5_FLASH]
+    elif args.unserved_only:
+        provider = _unserved_audio_provider()
+    else:
+        provider = GOOGLE_GEMINI_2_5_FLASH
     if len(slices) != args.expected_slots:
         print(
             json.dumps(
@@ -70,6 +71,7 @@ def main() -> int:
             json.dumps(
                 {
                     "status": "error",
+                    "provider_mode": _provider_mode(args),
                     "code": error.code,
                     "provider_calls_attempted": _nonnegative_int(
                         error.details.get("provider_calls_attempted")
@@ -90,6 +92,7 @@ def main() -> int:
     result_bytes = result.markdown.encode("utf-8")
     summary = {
         "status": result.status,
+        "provider_mode": _provider_mode(args),
         "planning_mode": "whole" if args.interval_minutes == -1 else "interval",
         "duration_seconds": slices[-1].logical_end_seconds,
         "slot_count": result.metadata.get("slot_count"),
@@ -149,6 +152,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout-seconds", type=float, default=600.0)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--flat-fallback", action="store_true")
+    parser.add_argument("--unserved-only", action="store_true")
     args = parser.parse_args()
     if (
         args.interval_minutes != -1 and args.interval_minutes <= 0
@@ -161,9 +165,21 @@ def _parse_args() -> argparse.Namespace:
         parser.error("numeric scenario arguments are outside their fixed bounds")
     if args.interval_minutes == -1 and args.expected_slots != 1:
         parser.error("whole mode requires exactly one expected slot")
-    if args.resume and args.flat_fallback:
-        parser.error("the fixed live fallback scenario is fresh-only")
+    if args.flat_fallback and args.unserved_only:
+        parser.error("provider scenario modes are mutually exclusive")
+    if args.resume and (args.flat_fallback or args.unserved_only):
+        parser.error("fixed provider failure scenarios are fresh-only")
+    if args.unserved_only and args.expected_current_calls != 0:
+        parser.error("unserved-only expects zero generation calls")
     return args
+
+
+def _provider_mode(args: argparse.Namespace) -> str:
+    if args.flat_fallback:
+        return "flat_fallback"
+    if args.unserved_only:
+        return "unserved_only"
+    return "scalar"
 
 
 def _unserved_audio_provider() -> ProviderModel:
@@ -203,9 +219,27 @@ def _safe_failed_slots(value: object) -> tuple[dict[str, int | str], ...]:
         if not isinstance(item, Mapping):
             continue
         index = item.get("slot_index")
+        provider = item.get("provider")
+        model = item.get("model")
         code = item.get("code")
-        if type(index) is int and index >= 0 and type(code) is str and code:
-            safe.append({"slot_index": index, "code": code})
+        if (
+            type(index) is int
+            and index >= 0
+            and type(provider) is str
+            and provider
+            and type(model) is str
+            and model
+            and type(code) is str
+            and code
+        ):
+            safe.append(
+                {
+                    "slot_index": index,
+                    "provider": provider,
+                    "model": model,
+                    "code": code,
+                }
+            )
     return tuple(safe)
 
 
