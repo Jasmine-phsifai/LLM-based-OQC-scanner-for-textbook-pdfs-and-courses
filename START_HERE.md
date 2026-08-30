@@ -257,6 +257,15 @@ fallback returns normal complete/partial status with one bounded warning and
 ordered failure metadata. The full offline suite passes 1,644 tests. Both
 presets still have empty retry rules, so finite retry remains unimplemented and
 the next gate is one bounded real flat-fallback proof.
+
+#674 closes that gate with one real archive image. A deliberately unserved
+Google model first returns slot-0 `PROVIDER_UNAVAILABLE` without generation;
+`gemini-2.5-flash` then completes exactly one generation with 595/12
+input/output tokens. The result remains complete with one fallback warning,
+the 47-byte published Markdown matches returned bytes, state is removed, and
+the source is unchanged. This proves live serial fallback, not immediate
+same-model retry; retry maps and the retry executor remain empty/unimplemented.
+
 The former standalone Stage 2
 scaffold was removed from the queue. The bounded Stage A1 direct slice is
 implemented and live-proven: the lazy

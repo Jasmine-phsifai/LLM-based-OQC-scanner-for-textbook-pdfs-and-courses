@@ -95,6 +95,12 @@ returns normal status plus one warning and bounded `provider_failures`
 metadata. Retry execution, nested lists, pools, merged audio, and repair are not
 part of this slice.
 
+The serial flat lane is live-proven through a fixed real Google scenario: one
+unserved candidate fails safely before generation and the next candidate
+settles the slot in one generation, returning `status="complete"` with one
+fallback warning and bounded failure metadata. This is fallback evidence, not
+evidence for same-model retry; the shipped presets still carry empty retry maps.
+
 Provider-free `inspect_video()`, `extract_video_frames()`, and
 `extract_video_audio()` are active. The package still exports
 `recognize_video_frames`, `recognize_video`, `VideoRecognitionOutcome`,

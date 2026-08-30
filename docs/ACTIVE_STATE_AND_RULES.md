@@ -13574,3 +13574,30 @@ same-model retry, sleep, retry-label executor, nested lane, pool, or concurrency
 change was added. Focused regressions pass 20 tests and the full offline suite
 passes **1,644 tests / 57.49s**. One bounded real flat-fallback proof remains
 the next gate; finite retry still requires separate real evidence.
+
+## Current working update: #674 live-proves serial flat fallback
+
+A fixed content-free runner supplied one real archive image to two exact Google
+provider models. Candidate zero was structurally valid but deliberately absent
+from the live catalog; candidate one was the proven `gemini-2.5-flash`. A first
+credential-free run proved the harness boundary with `CONFIG_MISSING`, numeric
+exit 1, zero provider calls, unchanged source bytes, no Markdown, and one
+initial sidecar. That exact scratch was inspected and removed before any key
+was read.
+
+One subsequent child received the existing local Google credential and HTTP
+proxy only through its environment. Candidate zero returned one canonical
+slot-0 `PROVIDER_UNAVAILABLE` record without generation. Candidate one then
+made exactly one generation call and completed with 595 input and 12 output
+tokens. The public result stayed `complete`, carried exactly one fallback
+warning and one bounded failure record, published a 47-byte Markdown whose
+bytes matched the returned result, removed state, and left the source unchanged.
+The child exited 0 and no longer existed. Its five-byte stderr artifact was
+only a PowerShell UTF-8 BOM plus CRLF, not provider diagnostics. Exact TEMP
+artifacts were reviewed and deleted individually.
+
+No production code, state schema, retry rule, timeout, or provider policy
+changed. The serial flat-fallback live gate is closed. This evidence does not
+show that an immediate same-model retry is useful, so both preset retry maps
+remain empty and no retry executor is admitted. Nested lanes/pools, merged
+audio, repair, and old-video deletion remain separately gated.

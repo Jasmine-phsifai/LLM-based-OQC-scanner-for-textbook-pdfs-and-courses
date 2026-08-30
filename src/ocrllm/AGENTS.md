@@ -80,6 +80,16 @@ failure. Both presets still have empty retry rules, so no same-model retry or
 wait executor exists. The full offline suite passes 1,644 tests; one bounded
 real flat-fallback proof remains the next gate. Nested lanes, parallel pools,
 merged audio, repair, and old-video deletion remain later.
+
+#674 closes that live gate with one real image: a deliberately unserved Google
+candidate yields one safe `PROVIDER_UNAVAILABLE` record and zero generations,
+then `gemini-2.5-flash` succeeds in exactly one generation with 595/12
+input/output tokens. The public result remains complete with one warning,
+published bytes match the returned Markdown, state is removed, and the source
+is unchanged. This admits no same-model retry: both preset retry maps remain
+empty because the run proves fallback, not retry efficacy. The next slice must
+not infer retry counts/waits or skip to nested pools.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

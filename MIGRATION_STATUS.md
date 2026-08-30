@@ -164,7 +164,7 @@ a different compatible ID-only catalog. #647 now selects transient discovery of
 all current rows plus a small live-proven executable preset set, not a checked-in
 class or preset for every volatile row.
 
-### Current provider/media checkpoint (#673)
+### Current provider/media checkpoint (#674)
 
 Runtime implementation is now authorized one atomic slice at a time; section 0 of
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md)
@@ -3144,3 +3144,17 @@ candidate failure. Both presets still have empty retry rules, so no retry/wait
 executor, nested pool, concurrency, or schema change exists. Focused tests pass
 20 and the full offline suite passes 1,644 tests in 57.49 seconds. The next gate
 is one bounded real flat-fallback proof; retry remains separately evidence-led.
+
+#674 closes that real flat-fallback gate without changing production runtime.
+One fixed content-free runner first proved `CONFIG_MISSING` with numeric exit 1,
+zero calls, unchanged source, no Markdown, and one initial sidecar. After exact
+scratch cleanup, one credential/proxy-isolated child supplied one real image to
+a deliberately unserved Google candidate followed by `gemini-2.5-flash`. The
+first produced slot-0 `PROVIDER_UNAVAILABLE` without generation; the second
+completed exactly one generation with 595/12 input/output tokens. The public
+result was complete with one bounded fallback warning/record, its 47-byte
+published Markdown matched returned bytes, state was removed, the source stayed
+unchanged, and the child exited 0. No retry rule/executor, schema, timeout,
+nested pool, or provider policy changed. The run proves fallback only, so both
+preset retry maps remain empty and retry waits/counts still require separate
+real evidence.

@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #673)
+## 0. Current pruning and execution checkpoint (2026-08-30, #674)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -210,6 +210,38 @@ preflight, batching, and resume regressions pass, and the complete offline suite
 is **1,644 passed / 57.49s**. The next gate is one bounded real flat-fallback
 proof; finite retry remains a separate evidence-led sub-slice rather than an
 automatic consequence of list support.
+
+### #674 closes the real serial flat-fallback gate
+
+`tools/run_google_genai_flat_fallback_smoke.py` fixes one content-free live
+scenario instead of adding another product abstraction. It supplies one real
+archive image to a two-candidate Google lane: a locally valid but deliberately
+unserved model first, followed by the live-proven `gemini-2.5-flash`. The runner
+accepts no model/task choice, never reads a credential store, and reports no
+path, image content, Markdown, provider description, raw response, or secret.
+It requires exact candidate/failure order, one aggregate warning, one settled
+slot, one generation call, one successful-model usage row, byte-identical
+returned/published Markdown, unchanged source bytes, and removed state.
+
+The credential-free gate returned `CONFIG_MISSING`, numeric exit 1, zero
+provider calls, unchanged source bytes, no Markdown, and one initial sidecar.
+After that exact scratch was reviewed and removed, one child-only live run used
+the active HTTP proxy. The deliberately unserved candidate produced one safe
+slot-0 `PROVIDER_UNAVAILABLE` record without a generation call; the second
+candidate completed exactly one generation. The public result was `complete`
+with one fallback warning, 595 input and 12 output tokens, a 47-byte published
+Markdown, no sidecar, and unchanged source bytes. The child exited 0 and ended;
+the apparent five-byte stderr file was only its PowerShell wrapper's UTF-8 BOM
+plus CRLF, not provider/runtime diagnostics. All exact TEMP evidence was then
+removed file by file.
+
+No production runtime or schema changed. The live result proves serial
+ProviderError fallback, stop-on-success, accounting, warning metadata,
+publication, cleanup, and source integrity; it does not prove that immediate
+same-model retry helps. Phase 4's flat-fallback half is closed. Retry maps stay
+empty until a separately bounded real failure/recovery observation supplies a
+finite count and wait; nested lanes, pools, audio, repair, and video deletion
+remain later gates.
 
 The destination is one visible, caller-composed pair of media flows:
 
