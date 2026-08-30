@@ -15,9 +15,9 @@ provider-model/media-batch refactor (#568/#569 in
 [`docs/plan_provider_entity_batch_refactor.md`](docs/plan_provider_entity_batch_refactor.md))
 supersedes the video journal and `recognize_video_to_markdown` descriptions
 below as direction. Public image/audio batch resume replaces the video journal;
-callers compose visible media steps and no replacement `recognize_video` wrapper
-is currently reserved. The video job-state layer is deleted after replacement
-merged-image, merged-audio, and resume proof. #569 withdraws the former
+callers compose visible media steps and no replacement combined lifecycle is
+reserved. The obsolete video recognition/job-state/result layer was deleted
+after replacement merged-image, merged-audio, and resume proof. #569 withdraws the former
 consumer-free provider Phase 1 and exhaustive module blueprint; no replacement
 runtime had shipped through #655. #607 paused implementation and #615 narrowed
 the then-current wording conflicts; #656 now resumes migration at the first
@@ -641,8 +641,8 @@ second defect list in this file.
   dependencies out of plain `import ocrllm`.
 - `worker/` and `contracts/` are frozen until a real consumer justifies a
   protocol revision in the same slice.
-- The old video recognition/orchestration family remains importable but frozen;
-  do not select or extend it for new work.
+- The old video recognition/orchestration family has been removed. Keep only
+  provider-free inspection/extraction and caller-composed image/audio flows.
 - Replacement provider/media runtime has resumed at the first atomic section-0
   slice. Retained provider-free inspect/extract may still receive the smallest
   proven fix, but neither route authorizes later refactor stages early.
@@ -3227,3 +3227,16 @@ removed state, returned complete without warnings, preserved source bytes, and
 exited 0. The maintained runner gained only a fixed fresh unserved-only mode;
 production code/API/schema/tests, retry, nested pool, repair, and video code are
 unchanged.
+
+#680 executes the approved replacement-gated video cleanup. Fresh AST/rg audits
+confirmed the exact 34 production modules had no consumer outside the obsolete
+combined family except six package-root exports. Those modules/exports, twelve
+dedicated tests, and the old Google video runner are removed. Provider-free
+inspect/frame/audio extraction, `RetainedVideoFrame`, `VideoInfo`, errors, the
+`video` package, and the optional extra remain. The installed combined profile
+now exercises only visible extraction plus `batchify_images`/`split_audio`.
+Focused retained tests pass 66, wheel/typing tests pass 3, all 1,451 tests collect,
+and the clean archive gate passes 1,450 tests with one expected RapidOCR skip,
+wheel/package/import budgets, every optional profile, and the visible installed
+two-frame/one-batch/one-slice flow. No compatibility or replacement combined
+lifecycle is added.

@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #679)
+## 0. Current pruning and execution checkpoint (2026-08-30, #680)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -397,6 +397,54 @@ changed provider was caller-supplied, and historical usage correctly remained
 empty because the first provider made no generation call. No production code,
 API, schema, test, retry/sleep, nested lane, pool, repair, or video deletion
 changed. Eight owned evidence files were reviewed and permanently removed.
+
+### #680 deletes the superseded combined-video lifecycle
+
+Two independent read-only audits and primary reverse-reference review rederived
+the #635 manifest against current code before deletion. All 34 production files
+still formed one closed old recognition/journal/result/audio-wrapper family;
+their only external production consumer was the six package-root exports. No
+additional old-video module was found. The complete provider-free `video/`
+package, `inspect_video`, `extract_video_frames`, `extract_video_audio`,
+`RetainedVideoFrame`, `VideoInfo`, video errors, and the `video` extra remain.
+
+The 34 files, six root exports, twelve dedicated tests, and obsolete Google
+combined-video runner are removed without a compatibility wrapper. Three mixed
+tests were narrowed rather than deleted: extraction no longer calls the retired
+frame recognizer; lightweight import keeps the retained video values/functions;
+and the installed gate replaces combined recognition with the visible
+`extract_video_frames -> batchify_images` and
+`extract_video_audio -> split_audio` flow. Root/package READMEs were reduced to
+current product guidance, leaving historical evidence in the work log and
+migration records. The pre-gate diff removed 14,297 lines while adding 375 lines
+of current docs/gate code.
+
+Focused retained video/import/gate tests pass **66 tests / 5.65s** and wheel/
+typing selection tests pass **3 / 0.07s**. Full test collection imports cleanly
+at **1,451 tests**. Current source/test/tool/README references to the deleted
+public names and journal modules are zero. Compileall and diff checks pass.
+
+The maintained clean-archive installed gate then passed from temporary commit
+`ef6d693`: **1,450 passed / 1 expected RapidOCR skip**, fixture and compile
+checks, a 311,950-byte wheel, a 1,594,390-byte base target, both import budgets,
+and every optional profile. Installed deltas were audio 91,492,461; image
+17,292,745; OCR 328,905,419; image+DashScope 41,778,311; Google 41,920,036;
+audio+Google 130,530,294; PDF vision 25,491,526; video 254,784,582; and combined
+video+audio+image 272,656,687 bytes. The installed visible video flow returned
+two frames, one image batch, and one whole audio slice. The gate cleaned its
+proof root; its reviewed external log was also removed.
+
+A separate no-network/no-deps wheel proof then inspected the same 311,950-byte
+wheel (SHA-256 `6C6BB751...128FE`): all 34 deleted production paths were absent,
+the five retained video entry/type paths were present among 314 members, and a
+fresh isolated install exposed the retained API while all six deleted package
+attributes and module specs were absent. No heavy optional module loaded. The
+50,346,025-byte proof root was reviewed and removed.
+
+No provider call, crop/ROI change, nested lane, retry, repair, worker/contracts
+edit, or replacement combined-video abstraction entered the deletion. Public
+extraction outputs remain caller-owned and independent image/audio recognition
+continues through the already-proven merged APIs.
 
 The destination is one visible, caller-composed pair of media flows:
 

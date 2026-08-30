@@ -11,14 +11,15 @@ gates and file responsibilities.
 
 `../../docs/plan_provider_entity_batch_refactor.md` controls current video
 replacement work. Provider-free `inspect_video`, `extract_video_frames`, and
-`extract_video_audio` remain active. Every later numbered instruction about
+`extract_video_audio` remain active. The old combined recognition, journal,
+result, composition, and publication family was deleted after the independent
+merged-image and merged-audio paths plus both ordinary resumes passed their
+gates. There is no compatibility wrapper or replacement combined lifecycle.
+Every later numbered instruction about
 `recognize_video_frames`, `recognize_video`, `VideoRecognitionOutcome`,
 `compose_video_result`, `publish_video_result`,
 `recognize_video_to_markdown`, video job state/journals, or the combined-video
-runner is historical evidence only. That family remains shipped but frozen
-until independently resumable merged-image and merged-audio replacements pass
-their deletion gates, then it is deleted. Do not extend it, recruit new callers
-to it, or create another video lifecycle wrapper.
+runner is historical evidence only. Do not recreate or wrap it.
 
 The approved current provider/media board is section 0 of
 `../../docs/plan_provider_entity_batch_refactor.md`, subject to
@@ -144,6 +145,14 @@ Markdown, removed state, and preserved source bytes. Empty historical usage is
 correct because the failed catalog lookup consumed no generation. This does
 not authorize retry, automatic switching, nested pools, repair, or old-video
 deletion by itself.
+
+#680 completes the planned deletion after both replacement resumes passed live
+gates. The 34-file combined recognition/journal/result closure, six root exports,
+twelve dedicated tests, and its Google runner are gone. Do not recreate a
+compatibility wrapper or combined lifecycle. Keep provider-free video inspection,
+full-frame/audio extraction, `RetainedVideoFrame`, `VideoInfo`, video errors, and
+the `video` extra. Installed combined profiles now prove only the visible
+extract/batchify/split workflow before independent merged recognition calls.
 
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078

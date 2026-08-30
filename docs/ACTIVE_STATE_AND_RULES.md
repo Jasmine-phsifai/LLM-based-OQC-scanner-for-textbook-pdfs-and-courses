@@ -13791,3 +13791,64 @@ unserved-only scenario and safe provider-mode/failed-slot projection. Primary
 review did not open the transcript. Eight owned evidence files totalling 2,596
 bytes and their three stage directories were permanently removed from the exact
 TEMP root; the archive, repository inputs, and other TEMP roots were untouched.
+
+## Current working update: #680 removes the obsolete combined-video lifecycle
+
+After #679 closed the last ordinary-resume live prerequisite, two independent
+Luna audits and primary AST/rg review rederived the deletion closure instead of
+trusting the old plan mechanically. All 34 listed production files still existed
+and imported only one another; the only outside production references were six
+package-root exports. No additional old-video production module was found. The
+complete `src/ocrllm/video/` package, provider-free inspection/frame/audio
+extraction, `RetainedVideoFrame`, `VideoInfo`, video errors, and the `video`
+optional extra were outside the closure and remain.
+
+The 34 production modules, six root exports, twelve dedicated tests, and old
+Google combined-video runner are deleted with no compatibility wrapper. Three
+mixed tests/gates were narrowed: `test_extract_video_audio.py` no longer invokes
+retired frame recognition; the lightweight import test keeps only provider-free
+video values/callables; and the installed `video,audio,image` profile now runs
+the visible `extract_video_frames -> batchify_images` and
+`extract_video_audio -> split_audio` flow. The old combined smoke was removed.
+The package description now says video extraction workflows. Root and package
+READMEs were reduced from stale phase/incident narratives to current APIs and
+links to historical records. Before final records, the diff removed 14,297 lines
+and added 375 lines.
+
+One leftover static gate assertion still expected the retired image-snapshot
+directory. The first retained test run therefore produced **65 pass / 1 fail**.
+The visible flow performs planning only and creates no recognition snapshot, so
+the obsolete assertion was deleted rather than recreating dead temporary work.
+The final retained video/import/gate set passes **66 / 5.65s**; wheel/inline-type
+tests pass **3 / 0.07s**; compileall and diff checks pass; and a complete
+`pytest --collect-only` imports **1,451** current tests without a deleted-module
+error. Current source/test/tool/README references to the deleted public names and
+journal modules are zero.
+
+Because the maintained installed gate requires a clean `git archive HEAD`, the
+deletion was first committed locally as temporary `ef6d693` and not pushed. The
+full gate then ran that exact archive: **1,450 passed / 1 expected RapidOCR
+skip**, fixtures and compileall passed, the wheel package check passed, wheel
+size was 311,950 bytes, base installed target 1,594,390 bytes, and both import
+budgets passed. All optional profiles passed: audio 91,492,461; image 17,292,745;
+OCR 328,905,419; image+DashScope 41,778,311; Google 41,920,036; audio+Google
+130,530,294; PDF vision 25,491,526; video 254,784,582; and
+video+audio+image 272,656,687 installed bytes. The visible installed video flow
+returned two frames, one frame batch, and one whole audio slice. Gate exit was 0
+and its proof root was removed. Primary review verified the 67,940-byte safe log
+and then permanently deleted it.
+
+One additional no-network/no-deps proof built the same 311,950-byte wheel with
+SHA-256 `6C6BB751...128FE`. ZIP inspection found 314 members, all 34 deleted
+production paths absent, and the retained inspect/frame/audio/type paths present.
+After isolated target install, the retained API was available, all six deleted
+package attributes and module specs were absent, and no heavy optional module
+loaded. Primary review's first `python -c` attempt lost quotes in PowerShell and
+ended at `SyntaxError`; it changed nothing and was not counted. A stdin
+here-string rerun of only the inspection passed. The 1,396-file / 50,346,025-byte
+proof root was then permanently removed.
+
+No provider call, retry, nested lane, repair, crop/ROI logic, worker/contracts
+change, or new combined result owner was introduced. Public extraction outputs
+remain caller-owned; independent merged image/audio calls own recognition,
+Markdown, provider choice, and resume.

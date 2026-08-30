@@ -801,72 +801,22 @@ print(info, len(frames), audio_output.stat().st_size)
             }
 
             if ($profile -eq 'video,audio,image') {
-                $combinedVideoSmoke = @'
-import importlib
+                $visibleVideoFlowSmoke = @'
 import importlib.metadata
 from pathlib import Path
 import sys
 
-from PIL import Image
+import ocrllm
 from ocrllm import (
-    AudioModelSettings,
-    Config,
-    GoogleGenAISettings,
-    compose_video_result,
-    publish_video_result,
-    recognize_video,
-)
-from ocrllm.providers.google_genai.google_genai_audio_response import (
-    GoogleGenAIAudioResponse,
+    batchify_images,
+    extract_video_audio,
+    extract_video_frames,
+    split_audio,
 )
 
 root = Path(sys.argv[1])
 source = root / 'generated-with-audio.mp4'
 assert source.is_file()
-
-
-class ImageProvider:
-    def __init__(self):
-        self.calls = 0
-        self.snapshots = []
-        self.configs = []
-
-    def recognize_images(self, image_paths, *, prompt, config):
-        paths = tuple(Path(path) for path in image_paths)
-        assert 1 <= len(paths) <= 8
-        assert 'input order' in prompt
-        for path in paths:
-            with Image.open(path) as image:
-                assert image.format == 'JPEG'
-                image.verify()
-        self.snapshots.append(paths)
-        self.configs.append(config)
-        self.calls += 1
-        return '# Installed frame recognition\n'
-
-
-observed_audio_snapshots = []
-
-
-def fake_google_audio(snapshot, *, prompt, config):
-    assert snapshot.path.is_file()
-    assert snapshot.duration_seconds > 0
-    assert snapshot.path.parent.parent == root / 'audio-snapshots'
-    assert type(config.provider) is GoogleGenAISettings
-    assert config.provider.api_key == 'offline-package-probe'
-    assert config.audio_model.name == 'gemini-offline-package-probe'
-    observed_audio_snapshots.append(snapshot.path)
-    return GoogleGenAIAudioResponse(
-        markdown='# Installed audio recognition\n',
-        input_tokens=7,
-        output_tokens=2,
-        client_closed=True,
-    )
-
-
-processor = importlib.import_module('ocrllm.processors.recognize_video_mp3')
-processor.recognize_short_mp3 = fake_google_audio
-image_provider = ImageProvider()
 try:
     importlib.metadata.distribution('google-genai')
 except importlib.metadata.PackageNotFoundError:
@@ -874,75 +824,45 @@ except importlib.metadata.PackageNotFoundError:
 else:
     raise AssertionError('combined profile must not install google-genai')
 assert 'google' not in sys.modules
-outcome = recognize_video(
+frames = extract_video_frames(
     source,
-    output_dir=root / 'combined-output',
-    image_config=Config(
-        provider=image_provider,
-        temp_dir=root / 'image-snapshots',
-    ),
-    audio_config=Config(
-        provider=GoogleGenAISettings(api_key='offline-package-probe'),
-        audio_model=AudioModelSettings(name='gemini-offline-package-probe'),
-        temp_dir=root / 'audio-snapshots',
-    ),
+    output_dir=root / 'visible-frames',
+)
+assert frames
+assert all(frame.path.is_file() for frame in frames)
+assert tuple(frame.frame_index for frame in frames) == tuple(
+    sorted({frame.frame_index for frame in frames})
+)
+frame_batches = batchify_images(
+    tuple(frame.path for frame in frames),
+    batch_size=8,
+)
+assert frame_batches
+assert tuple(path for batch in frame_batches for path in batch) == tuple(
+    frame.path for frame in frames
 )
 
-assert outcome.status == 'complete'
-assert image_provider.calls == 1
-assert len(outcome.frame_outcomes) == 1
-assert image_provider.calls == len(outcome.frame_outcomes)
-assert outcome.frame_outcomes[0].succeeded
-assert len(image_provider.snapshots) == len(outcome.frame_outcomes)
-assert tuple(
-    tuple(path.name for path in group) for group in image_provider.snapshots
-) == (
-    tuple(frame.path.name for frame in outcome.retained_frames),
+audio_path = extract_video_audio(
+    source,
+    output_path=root / 'visible-audio.mp3',
 )
-assert all(config.provider is image_provider for config in image_provider.configs)
-assert all(not path.exists() for group in image_provider.snapshots for path in group)
-assert len(observed_audio_snapshots) == 1
-assert not observed_audio_snapshots[0].exists()
-assert not tuple((root / 'image-snapshots').glob('ocrllm-images-*'))
-assert not tuple((root / 'audio-snapshots').glob('ocrllm-audio-*'))
-assert 'google' not in sys.modules
-assert outcome.audio_result is not None
-assert outcome.audio_error is None
-assert outcome.audio_artifact is not None and outcome.audio_artifact.is_file()
-assert all(frame.path.is_file() for frame in outcome.retained_frames)
-
-result = compose_video_result(outcome)
-assert result.status == 'complete'
-assert result.output_path is None
-assert result.metadata['current_run_provider_call_count'] == 2
-assert result.metadata['current_model_token_usage'] == (
-    {
-        'model': 'gemini-offline-package-probe',
-        'input_tokens': 7,
-        'output_tokens': 2,
-    },
-)
-assert result.assets == tuple(
-    frame.path for frame in outcome.retained_frames
-) + (outcome.audio_artifact,)
-assert all(asset.is_file() for asset in result.assets)
-
-published_path = root / 'combined-video.md'
-published = publish_video_result(outcome, published_path)
-assert published.status == 'complete'
-assert published.output_path == published_path
-assert published.markdown == result.markdown
-assert published.assets == result.assets
-assert published_path.read_text(encoding='utf-8') == result.markdown
+audio_slices = split_audio(audio_path, interval_minutes=-1)
+assert len(audio_slices) == 1
+assert audio_slices[0].source == audio_path
+assert audio_slices[0].logical_start_seconds == 0.0
+assert audio_slices[0].logical_end_seconds > 0.0
+assert audio_slices[0].actual_start_seconds == 0.0
+assert audio_slices[0].actual_end_seconds == audio_slices[0].logical_end_seconds
 assert not tuple(root.rglob('.ocrllm-video-source-*'))
 assert not tuple(root.rglob('.ocrllm-video-*.tmp'))
 assert not tuple(root.rglob('.ocrllm-audio-*'))
 assert not tuple(root.rglob('.ocrllm-*.tmp'))
-print(len(outcome.retained_frames), image_provider.calls, len(observed_audio_snapshots))
+assert 'google' not in sys.modules
+print(len(frames), len(frame_batches), len(audio_slices))
 '@
-                $combinedVideoSmoke | & $profilePython -I - $profileVenv
+                $visibleVideoFlowSmoke | & $profilePython -I - $profileVenv
                 Assert-LastExitCode (
-                    'installed public combined-video recognition smoke failed'
+                    'installed visible video extraction/planning smoke failed'
                 )
             }
 

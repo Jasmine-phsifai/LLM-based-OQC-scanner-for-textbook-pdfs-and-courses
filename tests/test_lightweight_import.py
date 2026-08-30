@@ -30,7 +30,6 @@ def test_plain_import_does_not_load_optional_image_or_provider_packages():
 
     assert completed.returncode == 0, completed.stderr
 
-
 def test_plain_import_binds_recognition_facades_but_defers_execution_helpers():
     source_root = Path(__file__).resolve().parents[1] / "src"
     probe = (
@@ -77,7 +76,7 @@ def test_plain_import_binds_recognition_facades_but_defers_execution_helpers():
     assert completed.returncode == 0, completed.stderr
 
 
-def test_public_video_symbols_do_not_load_the_optional_backend():
+def test_provider_free_video_symbols_do_not_load_the_optional_backend():
     source_root = Path(__file__).resolve().parents[1] / "src"
     probe = (
         "import sys; "
@@ -86,12 +85,6 @@ def test_public_video_symbols_do_not_load_the_optional_backend():
         "inspect_video=ocrllm.inspect_video; "
         "extract_video_frames=ocrllm.extract_video_frames; "
         "extract_video_audio=ocrllm.extract_video_audio; "
-        "recognize_video_frames=ocrllm.recognize_video_frames; "
-        "recognize_video=ocrllm.recognize_video; "
-        "recognize_video_to_markdown=ocrllm.recognize_video_to_markdown; "
-        "compose_video_result=ocrllm.compose_video_result; "
-        "publish_video_result=ocrllm.publish_video_result; "
-        "VideoRecognitionOutcome=ocrllm.VideoRecognitionOutcome; "
         "recognize=ocrllm.recognize; "
         "recognize_batch=ocrllm.recognize_batch; "
         "RetainedVideoFrame=ocrllm.RetainedVideoFrame; "
@@ -99,12 +92,6 @@ def test_public_video_symbols_do_not_load_the_optional_backend():
         "assert callable(inspect_video); "
         "assert callable(extract_video_frames); "
         "assert callable(extract_video_audio); "
-        "assert callable(recognize_video_frames); "
-        "assert callable(recognize_video); "
-        "assert callable(recognize_video_to_markdown); "
-        "assert callable(compose_video_result); "
-        "assert callable(publish_video_result); "
-        "assert VideoRecognitionOutcome.__module__ == 'ocrllm.video_recognition_outcome'; "
         "assert callable(recognize); "
         "assert callable(recognize_batch); "
         "assert RetainedVideoFrame.__module__ == 'ocrllm.retained_video_frame'; "
@@ -224,90 +211,6 @@ def test_public_recognition_callables_survive_explicit_submodule_import(
     assert completed.returncode == 0, completed.stderr
 
 
-@pytest.mark.parametrize(
-    "submodule_name",
-    (
-        "ocrllm.recognize_video",
-        "ocrllm.recognize_video_frames",
-        "ocrllm.recognize_video_to_markdown",
-    ),
-)
-def test_public_video_callables_survive_explicit_submodule_import(submodule_name):
-    source_root = Path(__file__).resolve().parents[1] / "src"
-    probe = (
-        "import importlib, sys; "
-        "sys.path.insert(0, sys.argv[1]); "
-        "import ocrllm; "
-        "importlib.import_module(sys.argv[2]); "
-        "from ocrllm import recognize_video, recognize_video_frames, recognize_video_to_markdown; "
-        "assert callable(recognize_video), type(recognize_video); "
-        "assert callable(recognize_video_frames), type(recognize_video_frames); "
-        "assert callable(recognize_video_to_markdown), type(recognize_video_to_markdown); "
-        "assert recognize_video is importlib.import_module("
-        "'ocrllm.recognize_video').recognize_video; "
-        "assert recognize_video_frames is importlib.import_module("
-        "'ocrllm.recognize_video_frames').recognize_video_frames; "
-        "assert recognize_video_to_markdown is importlib.import_module("
-        "'ocrllm.recognize_video_to_markdown').recognize_video_to_markdown; "
-        "loaded={name.split('.')[0] for name in sys.modules}; "
-        "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
-        "assert not loaded & forbidden, loaded & forbidden"
-    )
-
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-I",
-            "-c",
-            probe,
-            str(source_root),
-            submodule_name,
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-
-    assert completed.returncode == 0, completed.stderr
-
-
-def test_public_video_callables_support_standard_runtime_type_hints():
-    source_root = Path(__file__).resolve().parents[1] / "src"
-    probe = (
-        "import importlib, sys, typing; "
-        "sys.path.insert(0, sys.argv[1]); "
-        "importlib.import_module('ocrllm.recognize_video'); "
-        "from ocrllm import recognize_video, recognize_video_frames; "
-        "video_hints=typing.get_type_hints(recognize_video); "
-        "frame_hints=typing.get_type_hints(recognize_video_frames); "
-        "from ocrllm import Config, RetainedVideoFrame, VideoRecognitionOutcome; "
-        "from ocrllm.batch_item_outcome import BatchItemOutcome; "
-        "assert video_hints['image_config'] is Config; "
-        "assert video_hints['audio_config'] is Config; "
-        "assert video_hints['return'] is VideoRecognitionOutcome; "
-        "assert frame_hints['config'] == Config | None; "
-        "assert frame_hints['frames'] == tuple[RetainedVideoFrame, ...]; "
-        "assert frame_hints['return'] == list[BatchItemOutcome]; "
-        "loaded={name.split('.')[0] for name in sys.modules}; "
-        "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
-        "assert not loaded & forbidden, loaded & forbidden; "
-        "assert 'ocrllm.preflight_recognition_batch' not in sys.modules; "
-        "assert 'ocrllm.output.output_target_claims' not in sys.modules; "
-        "assert 'ocrllm.validate_config' not in sys.modules"
-    )
-
-    completed = subprocess.run(
-        [sys.executable, "-I", "-c", probe, str(source_root)],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-
-    assert completed.returncode == 0, completed.stderr
-
-
 def test_public_long_mp3_callable_survives_explicit_submodule_import():
     source_root = Path(__file__).resolve().parents[1] / "src"
     probe = (
@@ -330,56 +233,6 @@ def test_public_long_mp3_callable_survives_explicit_submodule_import():
 
     completed = subprocess.run(
         [sys.executable, "-I", "-c", probe, str(source_root)],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-
-    assert completed.returncode == 0, completed.stderr
-
-
-@pytest.mark.parametrize(
-    "submodule_name",
-    ("ocrllm.compose_video_result", "ocrllm.publish_video_result"),
-)
-def test_public_video_output_callables_survive_explicit_submodule_import(
-    submodule_name,
-):
-    source_root = Path(__file__).resolve().parents[1] / "src"
-    probe = (
-        "import importlib, sys, typing; "
-        "sys.path.insert(0, sys.argv[1]); "
-        "import ocrllm; "
-        "importlib.import_module(sys.argv[2]); "
-        "from ocrllm import compose_video_result, publish_video_result; "
-        "assert callable(compose_video_result), type(compose_video_result); "
-        "assert callable(publish_video_result), type(publish_video_result); "
-        "assert compose_video_result is importlib.import_module("
-        "'ocrllm.compose_video_result').compose_video_result; "
-        "assert publish_video_result is importlib.import_module("
-        "'ocrllm.publish_video_result').publish_video_result; "
-        "compose_hints=typing.get_type_hints(compose_video_result); "
-        "publish_hints=typing.get_type_hints(publish_video_result); "
-        "assert compose_hints['return'] is publish_hints['return']; "
-        "assert compose_hints['outcome'] is publish_hints['outcome']; "
-        "loaded={name.split('.')[0] for name in sys.modules}; "
-        "forbidden={'cv2','numpy','imageio_ffmpeg','miniaudio','google','openai','httpx','legacy_app'}; "
-        "assert not loaded & forbidden, loaded & forbidden; "
-        "assert 'ocrllm.preflight_recognition_batch' not in sys.modules; "
-        "assert 'ocrllm.output.output_target_claims' not in sys.modules; "
-        "assert 'ocrllm.validate_config' not in sys.modules"
-    )
-
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-I",
-            "-c",
-            probe,
-            str(source_root),
-            submodule_name,
-        ],
         check=False,
         capture_output=True,
         text=True,

@@ -61,14 +61,11 @@ from ocrllm import Config, GoogleGenAISettings, VisionModelSettings, recognize
 ```
 
 Current video boundary: provider-free `inspect_video()`,
-`extract_video_frames()`, and `extract_video_audio()` are active. The shipped
-`recognize_video_frames`, `recognize_video`, `VideoRecognitionOutcome`,
-`compose_video_result`, `publish_video_result`, and
-`recognize_video_to_markdown` family is frozen historical compatibility, not a
-recommended integration path. It is deleted after independent merged-image and
-merged-audio recognition/resume replacements pass their gates. Callers will
-compose the visible steps; no replacement `recognize_video` lifecycle wrapper
-is planned. The long numbered `#...` narrative below is implementation history
+`extract_video_frames()`, and `extract_video_audio()` are active. The obsolete
+combined recognition/journal/result surface was removed after independent
+merged-image and merged-audio recognition/resume gates passed. Callers compose
+the visible steps; no compatibility or replacement combined lifecycle wrapper
+exists. The long numbered `#...` narrative below is implementation history
 unless the current authority explicitly reaffirms it.
 
 Current distribution evidence: #555 is the latest complete nine-profile clean
@@ -517,6 +514,14 @@ on the exact source/ranges/output used `gemini-2.5-flash` once, reported
 4,009/61 tokens, published matching 297-byte Markdown, removed state, preserved
 the source, and exited 0. It is ordinary caller-directed resume, not retry,
 automatic fallback, pooling, or repair.
+
+#680 removes the obsolete combined video recognition/journal/result family after
+the exact 34-file closure and twelve dedicated tests were independently
+revalidated. Provider-free inspect/frame/audio extraction remains public and the
+installed combined profile now proves `extract -> batchify/split`. The clean
+archive gate passes 1,450 tests with one expected RapidOCR skip, all optional
+profiles, and a visible installed flow of two frames, one image batch, and one
+audio slice. No compatibility wrapper replaces the deleted lifecycle.
 
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
@@ -970,11 +975,10 @@ short-audio recognition remains memory-only. Standalone Google Files long-MP3
 whole/interval publication and resume are shipped; their published live gates
 are lifecycle evidence, not transcription-quality evaluations. PDF repair
 remains unavailable. Provider-free video inspection and frame/audio extraction
-are active. The old recognition/orchestration family remains importable but
-frozen until its independent image/audio replacements pass the deletion gate;
-its previous combined journal and live proofs are historical evidence, not
-current usage guidance. No replacement video lifecycle wrapper or video worker
-routing is planned. Provider-free video extraction remains lazy, so plain
+are active. The old recognition/orchestration family has been removed; its
+previous combined journal and live proofs are historical evidence only. No
+replacement combined lifecycle or video worker routing is planned.
+Provider-free video extraction remains lazy, so plain
 package import does not load heavy media or provider modules. Local user
 PDFs/screenshots under `docs/` are untracked
 supplemental material, not redistributable gate evidence.

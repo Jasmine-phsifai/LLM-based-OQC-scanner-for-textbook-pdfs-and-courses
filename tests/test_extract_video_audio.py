@@ -8,22 +8,13 @@ from pathlib import Path
 import pytest
 
 from ocrllm import (
-    AudioModelSettings,
-    Config,
     DependencyMissing,
-    GoogleGenAISettings,
     OutputError,
     OutputExists,
-    RetainedVideoFrame,
     VideoError,
     extract_video_audio,
-    recognize,
-    recognize_video_frames,
 )
 from ocrllm.audio.probe_short_mp3 import probe_short_mp3
-from ocrllm.providers.google_genai.google_genai_audio_response import (
-    GoogleGenAIAudioResponse,
-)
 
 from write_test_image import write_test_image
 
@@ -366,65 +357,3 @@ def test_video_audio_backend_reports_missing_optional_extra(
         loader.load_imageio_ffmpeg_executable()
 
     assert captured.value.details == {"extra": "video"}
-
-
-def test_video_frames_and_audio_use_independent_provider_configs(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    source = _write_mp4_with_audio(tmp_path / "lecture.mp4")
-    audio_path = extract_video_audio(source, output_path=tmp_path / "audio.mp3")
-    frame_path = write_test_image(tmp_path / "frame.jpg")
-    frames = (RetainedVideoFrame(0, 0.0, frame_path),)
-
-    class ImageProvider:
-        def __init__(self) -> None:
-            self.calls: list[tuple[Path, ...]] = []
-
-        def recognize_images(self, image_paths, *, prompt, config):
-            self.calls.append(tuple(image_paths))
-            return "# Frame transcript\n"
-
-    image_provider = ImageProvider()
-    observed_audio: dict[str, object] = {}
-
-    def fake_google_audio(snapshot, *, prompt, config):
-        observed_audio["path"] = snapshot.path
-        observed_audio["provider"] = config.provider
-        return GoogleGenAIAudioResponse(
-            markdown="# Audio transcript\n",
-            input_tokens=12,
-            output_tokens=3,
-        )
-
-    processor = __import__(
-        "ocrllm.processors.recognize_short_mp3",
-        fromlist=["unused"],
-    )
-    monkeypatch.setattr(processor, "recognize_short_mp3", fake_google_audio)
-
-    frame_outcomes = recognize_video_frames(
-        frames,
-        config=Config(provider=image_provider),
-    )
-    audio_result = recognize(
-        audio_path,
-        config=Config(
-            provider=GoogleGenAISettings(api_key="test-only-google-key"),
-            audio_model=AudioModelSettings(name="test-audio-model"),
-            temp_dir=tmp_path / "snapshots",
-        ),
-    )
-
-    assert frame_outcomes[0].succeeded
-    assert len(image_provider.calls) == 1
-    observed_frame_path = image_provider.calls[0][0]
-    assert observed_frame_path.name == frame_path.name
-    assert observed_frame_path.suffix == ".jpg"
-    assert not observed_frame_path.exists()
-    assert audio_result.source_type == "audio"
-    assert audio_result.metadata["provider"] == "google"
-    assert type(observed_audio["provider"]) is GoogleGenAISettings
-    assert Path(observed_audio["path"]).name == "source.mp3"
-    assert not Path(observed_audio["path"]).exists()
-    assert not tuple((tmp_path / "snapshots").iterdir())
