@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #689)
+## 0. Current pruning and execution checkpoint (2026-08-31, #690)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -755,6 +755,40 @@ optional output resolution, and zero-call state/index/range/marker rejection.
 The final merged audio/image/import/wheel/typing set passes 38 tests in 6.70s.
 No live provider call belongs to this offline implementation slice; one bounded
 two-call speech interval partial-then-repair gate is the next independent task.
+
+### #690 closes the real merged-audio repair success gate
+
+The maintained merged-audio runner now has one fixed `--repair` mode. It accepts
+only one-minute planning, exactly two slots, one expected fresh generation, one
+expected repair generation, zero reused/history, and no other scenario flag.
+Fresh uses fixed nested lanes: `gemini-2.5-flash` owns absolute slot 0 and one
+deliberately unserved model owns slot 1. Only after strict partial validation
+does the runner delete its owned sidecar and invoke `repair_audio_to_markdown()`
+with the proven model.
+
+A Luna audit caught false-pass risks before live work: cleanup warnings were not
+gated; safe row filters could drop malformed extras or accept negative tokens;
+usage/model identity, residual markers, source type/output identity, and true
+state-path absence were incomplete; Python booleans/floats could equal integer
+counts; and error cleanup facts/source reads were underreported. The runner now
+uses exact-type count checks, exact single Google usage/failure rows, warning/
+provider-failure absence, `lexists`, marker absence, guarded reads, and safe
+cleanup booleans. A valid-shape missing-source probe and invalid fixed-shape
+probe both stop before provider work with content-free runner errors.
+
+The first controller preflight used the wrong registry level and stopped before
+any child/API. Correcting it to the authoritative QSettings `ui` subkey reused
+the same owned excerpt and launched exactly one child; this was not a provider
+retry. The child completed with direct exit 0: a 61.000-second, 16-kHz mono,
+64-kbps speech MP3 produced two interval slots; fresh made one generation and
+retained one unserved failure; repair made one generation with 1,201 input and
+3 output tokens; both slots settled, warnings were zero, final Markdown matched,
+the failure marker and state were absent, source/archive hashes were unchanged,
+stderr was empty, and no runner process or credential residue remained. The
+partial/final Markdown sizes were 215/157 bytes. Transcript content was not
+reviewed. The runner now also emits the already-strictly-validated fresh usage
+row on future runs; that numeric row was not retained by this invocation and no
+API replay was made. The bounded audio repair live-success gate is closed.
 
 The destination is one visible, caller-composed pair of media flows:
 

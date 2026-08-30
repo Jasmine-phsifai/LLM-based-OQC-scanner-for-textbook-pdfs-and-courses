@@ -14177,3 +14177,35 @@ separate. The public facade is 104 lines, strict parser 147, and audio-only
 owner 271. Three real-FFmpeg/SDK-boundary scenarios plus adjacent image/import/
 wheel checks pass 38 tests in 6.70s. No live API call or runner edit occurred;
 the next independent gate is one bounded two-call speech interval repair run.
+
+## Current working update: #690 live-proves merged-audio repair
+
+The maintained audio runner's fixed repair mode requires exactly two one-minute
+slots and one current call in each stage. Fresh nested lanes bind slot 0 to the
+proven Google model and slot 1 to an unserved model; it must return one-settled
+partial output, exact Google usage, one exact unserved terminal failure, no
+cleanup warning/provider-failure rows, matching output, retained state, and
+unchanged source before the runner deletes only that state. Repair must then
+return audio/complete on the same target with one marker repaired, one exact
+Google usage row, no remaining marker/state/failure/warning, changed matching
+output, and unchanged source.
+
+Pre-live review fixed runner-only false-pass gaps: malformed extra rows can no
+longer be silently dropped; tokens and counters require exact nonnegative ints
+rather than bool/float equality; source/output reads are guarded; cleanup facts,
+model identity, historical/reused zeroes, result media/target, marker absence,
+and state `lexists` are hard gates. Missing-source and invalid-shape probes stop
+without provider work.
+
+One initial controller preflight checked the parent registry key and aborted
+before child/API. The corrected authoritative QSettings `ui` value reused the
+same owned source and launched exactly one child, not a retry. Direct exit was
+0. The derived speech input was 61.000 seconds, 16-kHz mono, 64 kbps, 489,068
+bytes, and fully decoded. Fresh used one generation to settle slot 0 and left
+the fixed unserved slot 1; repair used one generation with 1,201/3 input/output
+tokens. Final status was complete, 2/2 slots settled, warnings 0, failure marker
+0, output/result matching, state absent, source and immutable archive unchanged,
+stderr empty, process absent, and credential persistence count 0. Partial/final
+Markdown sizes were 215/157 bytes; transcript content was not opened. Future
+runner output now includes fresh usage too; this run did not retain its numeric
+fresh tokens and was not replayed. Audio repair live success is closed.

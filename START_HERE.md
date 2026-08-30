@@ -596,6 +596,14 @@ before local cleanup. It restores no split parameters or state; whole failure
 has no repairable Markdown. Real-FFmpeg/SDK tests pass 38. A bounded live speech
 repair gate remains the next independent task.
 
+#690 closes the bounded audio-repair live gate. After strict runner false-pass
+review, one 61-second speech child produced a one-call fresh partial with one
+fixed unserved slot, deleted only owned state, then repaired that range in one
+generation with 1,201/3 tokens. Both slots completed, output matched, marker/
+state/warnings were absent, source/archive unchanged, stderr empty, and no
+credential/process remained. An earlier wrong registry-level preflight launched
+no child/API; no retry or production fix followed.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

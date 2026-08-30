@@ -3333,3 +3333,13 @@ absolute slots keep current lane mapping/rotation and use existing FFmpeg/Files
 transport; speech/no-speech is atomically written before local cleanup. No whole
 guess, saved split/provider parameters, historical usage, or repair state is
 added. Focused tests pass 38; the two-call live speech repair gate is next.
+
+#690 closes that audio repair live gate through one maintained-runner child.
+Strict runner review first fixed cleanup/identity/row/type/marker/state/source
+false-pass gaps. A controller registry-path mistake aborted before API; the
+corrected authoritative QSettings path reused the same 61-second speech excerpt
+and launched once. Fresh made one generation plus one unserved slot; after owned
+state deletion, repair made one generation with 1,201/3 tokens and completed
+2/2 slots. Output matched, marker/state/warnings were absent, source/archive were
+unchanged, stderr empty, process absent, and no credential persisted. No retry
+or production change occurred.
