@@ -14334,3 +14334,20 @@ source hashes. Direct exit was zero; output/manifest/environment contained no
 credential and runner processes were zero. Both image and audio repair now have
 bounded real-provider success. No runtime, runner, retry, fallback, model switch,
 dependency, state, API or frozen-code change follows.
+
+## Current working update: #709 live-proves cross-vendor fallback success
+
+The unchanged flat-fallback runner received one bounded recheck seven iterations
+after #702. Credential-free preflight returned `CONFIG_MISSING`, calls zero,
+checkout origin true, unchanged tracked source, no output and one exact owned
+sidecar that was verified and removed. One child then received both configured
+credentials through the existing proxy.
+
+The fixed unserved Google model advanced with `PROVIDER_UNAVAILABLE` and no
+generation; DashScope Beijing `qwen3.5-ocr` settled the same slot in exactly one
+call with 4,357/297 tokens. Direct exit was zero. The complete 494-byte Markdown
+matched the result, carried one heading and no failure marker, state was absent,
+source hash stayed exact, and no credential/process residue remained. Cleanup
+removed the exact 603-byte TEMP root. This closes same-call cross-vendor success
+without adding runtime, runner, retry, provider pool, dependency, state, API or
+provider-policy behavior; retry maps remain empty.

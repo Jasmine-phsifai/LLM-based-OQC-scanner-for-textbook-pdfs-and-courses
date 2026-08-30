@@ -170,6 +170,8 @@ explicitly between invocations.
 
 The scalar/flat image and audio paths, including fallback and ordinary resume,
 have bounded real Google evidence. Fixed two-lane image pooling is live-proven.
+One flat image lane from an unserved Google candidate to DashScope
+`qwen3.5-ocr` is also live-proven in a single invocation.
 Nested audio has complete SDK/FFmpeg concurrency, cleanup, and resume proof; its
 first real gate produced honest network/rate-limit failures and retained state.
 One later ordinary resume settled those exact three slots with three generations,

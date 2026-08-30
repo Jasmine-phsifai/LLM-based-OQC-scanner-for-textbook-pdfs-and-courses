@@ -3558,3 +3558,13 @@ complete Markdown, removes state, emits no warning, and preserves all source
 hashes. Fresh/repair usage is 2,401/444 and 2,401/971 input/output tokens. No
 runtime/runner/API/dependency/state/retry/fallback/provider-policy change occurs;
 retry maps remain empty because this is success evidence, not failure/recovery.
+
+#709 closes real same-call Google-to-DashScope flat fallback success. The
+credential-free gate returns `CONFIG_MISSING`, checkout origin true and calls
+zero. One later proxy-bound child records the fixed unserved Google
+`PROVIDER_UNAVAILABLE` failure without generation, then DashScope
+`qwen3.5-ocr` settles the one tracked image in exactly one call with 4,357/297
+tokens. Complete 494-byte Markdown matches the result; state, marker, credential
+residue and runner process are absent, and the source hash is unchanged. The
+owned 603-byte TEMP root is removed. No runtime/runner/API/dependency/state/
+retry/pool/provider-policy change occurs; retry maps remain empty.

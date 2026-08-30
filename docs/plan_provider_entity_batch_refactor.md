@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #708)
+## 0. Current pruning and execution checkpoint (2026-08-31, #709)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1294,6 +1294,39 @@ policy, model switch, fallback, or second child was added. After exact invocatio
 count reached zero, the owned TEMP root (two files / two directories / 5,013
 bytes) was removed and confirmed absent; repo/archive/other TEMP were not
 targeted.
+
+### #709 closes same-call Google-to-DashScope fallback success
+
+Seven iterations after #702's DashScope timeout, the unchanged maintained
+flat-fallback runner received one bounded recheck. Luna selected the same
+git-tracked authorized formula-board PNG: 116,507 bytes, 2560×1600 RGB, SHA-256
+`b329e0734d406e8a02404a66df0f8178a7b7ee7335818aa6bea42a236a8ecb7b`.
+Pillow validation passed and neither repository nor source changed.
+
+Credential-free `--dashscope-second` preflight returned `CONFIG_MISSING`,
+checkout origin true, calls zero, unchanged source, no output and one owned
+562-byte sidecar with SHA-256
+`db0773832ae0f9bc2cb22bae501856d0bf4e1859b3f38df009bd66b1722da3fe`.
+Its exact type/size/hash were verified and only that sidecar was removed. With
+both configured credentials present only in one child and the proxy listener
+active, the direct invocation then exited zero in 6.75 seconds.
+
+The intentionally unserved Google candidate produced the exact safe
+`PROVIDER_UNAVAILABLE` failure and no generation. DashScope Beijing
+`qwen3.5-ocr` then settled the only slot in exactly one generation with
+4,357/297 input/output tokens. The complete result has the one fixed fallback
+warning/failure row, a byte-matching 494-byte Markdown (SHA-256
+`df2e1e073ca8672e81cf84db8a8399b0b8f718d6443b7fcb6fc7b25e2b278f14`),
+one ordered heading, no failure marker/state, unchanged source hash, and no
+credential environment/output/manifest residue or runner process.
+
+This closes the real same-call cross-vendor settlement gate. It proves only the
+existing caller-supplied flat order; no adapter retry, same-model recovery,
+provider pool, model switch outside that list, second child, runtime, runner,
+API, dependency, state or provider-policy change follows. Retry maps remain
+empty. Guarded cleanup removed the two owned files and one descendant directory
+(603 bytes) and confirmed the exact TEMP root absent without targeting repo,
+source, or other TEMP.
 
 The destination is one visible, caller-composed pair of media flows:
 
