@@ -1,4 +1,4 @@
-"""Own one fresh or resumed scalar merged-audio job lifecycle."""
+"""Own one fresh or resumed merged-audio job lifecycle."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from .execute_merged_audio_plan import execute_merged_audio_plan
 from .finalize_merged_audio_result import finalize_merged_audio_result
 from .fingerprint_audio_snapshot import fingerprint_audio_snapshot
 from .normalize_audio_slices import normalize_audio_slices
+from .normalize_provider_model_lane import normalize_provider_model_lane
 from .output.load_merged_audio_resume_state import load_merged_audio_resume_state
 from .output.output_target_claims import OutputTargetClaims
 from .output.preflight_resumable_markdown_output import (
@@ -34,14 +35,19 @@ from .result import RecognitionResult
 def run_merged_audio_job(
     slices: tuple[AudioSlice, ...],
     *,
-    provider: ProviderModel,
+    provider: ProviderModel | list[ProviderModel],
     output_path: str | Path | None,
     timeout_seconds: float,
     resume: bool,
     overwrite: bool,
 ) -> RecognitionResult:
     """Validate, snapshot, settle, checkpoint, and publish one audio plan."""
-    provider = validate_audio_provider_model(provider)
+    provider_lane = normalize_provider_model_lane(
+        provider,
+        distinguish_runtime_settings=True,
+    )
+    for candidate in provider_lane:
+        validate_audio_provider_model(candidate)
     slices = normalize_audio_slices(slices)
     Config(timeout_seconds=timeout_seconds, overwrite=overwrite)
     source_path = slices[0].source
@@ -80,10 +86,15 @@ def run_merged_audio_job(
                 state = requested_state
                 historical_usage = ()
                 save_merged_audio_resume_state_atomically(state_path, state)
-            state, current_usage, reused_slot_count = execute_merged_audio_plan(
+            (
+                state,
+                current_usage,
+                reused_slot_count,
+                provider_failures,
+            ) = execute_merged_audio_plan(
                 state,
                 snapshot,
-                provider=provider,
+                provider_lane=provider_lane,
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,
             )
@@ -94,6 +105,7 @@ def run_merged_audio_job(
                 current_usage=current_usage,
                 historical_usage=historical_usage,
                 reused_slot_count=reused_slot_count,
+                provider_failures=provider_failures,
                 overwrite=overwrite,
             )
 

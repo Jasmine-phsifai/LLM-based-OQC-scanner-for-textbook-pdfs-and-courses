@@ -3200,3 +3200,18 @@ runner now admits exact `-1` and reports whole/interval mode plus duration. The
 existing <=300-second branch and SDK-boundary test identify inline transport;
 no public debug metadata, production API/schema, fallback, retry, pool, repair,
 or old-video change was added.
+
+#678 extends the public merged-audio fresh/resume entries to one scalar or one
+nonempty exact built-in flat provider list. Complete preflight validates every
+candidate and definite duplicate before source/output/state work. Unresolved
+slots traverse candidates once from an invocation-local last-success index,
+stop at speech/no-speech settlement, continue after full-slot failure, and
+checkpoint every outcome. Resume starts at candidate zero and reuses settled
+slots; no cursor or attempt ledger enters the unchanged sidecar. Successful
+fallback returns the existing one warning plus bounded `provider_failures`;
+terminal failed slots retain only their final candidate. Focused tests pass 33.
+One real whole-audio lane recorded an intentionally unserved Google candidate,
+then completed through `gemini-2.5-flash` in one generation with 4,009/59 tokens,
+matching 263-byte Markdown, removed state, unchanged source, and runner exit 0.
+No retry/wait, nested pool, concurrency, schema, repair, generic media executor,
+or video change was added.

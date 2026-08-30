@@ -13702,3 +13702,55 @@ source hash. The exact 2,167-byte TEMP evidence root was removed; the platform
 rejected native `Remove-Item`, so delegated cleanup used equivalent exact .NET
 filesystem deletion. It is not recoverable from the workspace; the archive and
 repository were not modified.
+
+## Current working update: #678 ships and proves serial flat audio fallback
+
+The public merged-audio fresh and resume functions now accept one exact
+`ProviderModel` or one nonempty exact built-in flat list. The existing lane
+normalizer snapshots the list once and rejects empty, nested, lazy, subclassed,
+mixed, tuple, and definite duplicate routes. Every candidate then passes the
+audio capability and admitted-adapter check before source decoding, output/state
+creation, or provider dispatch.
+
+Each unresolved slot circularly visits candidates at most once from this
+invocation's last successful index. Provider failures checkpoint the slot and
+current per-model usage before the next candidate. Speech and explicit no-speech
+both settle the slot, stop traversal, and change the next slot's start. Full
+exhaustion leaves the terminal candidate in durable slot state but does not move
+the preference; later slots still run. Fresh and resume calls initialize at
+candidate zero, settled slots are reused, and no cursor, blacklist, retry history,
+or per-attempt ledger is persisted. Eventually successful slots add one bounded
+warning and ordered `provider_failures`; terminal failed slots remain in
+`failed_slots`. The state schema is unchanged.
+
+The implementation keeps interval materialization, prompt/range identity,
+inline versus Files routing, remote/client cleanup, token accumulation, and
+publication inside the existing audio executor. A generic image/audio fallback
+executor was considered and rejected: it would need a cross-media request/
+response protocol and callbacks merely to remove a small amount of parallel
+structure. No same-model retry, sleep, nested lane, parallel pool, repair,
+generic media job, or frozen-video edit entered this slice. Existing production
+code-level proof plus the four new branchy public scenarios pass **33 tests /
+2.21s**; no per-function test file or internal `ocrllm` monkeypatch was added.
+
+The fixed real runner adds only fresh `--flat-fallback`: one local exact audio-
+capable Google model intentionally absent from the live catalog, followed by
+`gemini-2.5-flash`. The first delegated zero-call child mistakenly used the
+stale `D:\Anaconda\envs\local-bench-ocrllm` installed package and failed import
+before credentials or provider work. The corrected child used explicit
+`D:\Anaconda\envs\OCRLLM\python.exe`, reached `CONFIG_MISSING` with zero calls,
+no Markdown, one 826-byte unresolved state, and unchanged source. The controller
+then incorrectly labelled the required initial state as a mismatch; primary
+review corrected that predicate rather than changing the library or rerunning
+the zero-call stage.
+
+Exactly one live child subsequently used the existing QSettings credential only
+in controller/child memory and child-only proxies. On the 123.9706667-second
+authorized whole source, the unserved candidate produced slot-0
+`PROVIDER_UNAVAILABLE` before generation; `gemini-2.5-flash` then completed one
+generation with 4,009 input and 59 output tokens. Safe JSON reported complete,
+one settled slot, one call, one warning/failure record, matching 263-byte output,
+no sidecar, unchanged source, empty stderr, native exit 0, and no live runner.
+Primary review did not open the transcript. Eight owned TEMP evidence files
+totalling 2,420 bytes were removed from the exact root and are not recoverable;
+the archive and repository inputs were unchanged.

@@ -1,4 +1,4 @@
-"""Execute unresolved explicit audio slices through one scalar provider."""
+"""Execute unresolved audio slices through one serial provider lane."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import hashlib
 from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
+from typing import Literal
 
 from .audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
 from .audio.build_long_audio_interval_upload_snapshot import (
@@ -33,58 +34,121 @@ def execute_merged_audio_plan(
     state: MergedAudioResumeState,
     snapshot: LongMP3Snapshot,
     *,
-    provider: ProviderModel,
+    provider_lane: tuple[ProviderModel, ...],
     state_path: Path,
     timeout_seconds: float,
-) -> tuple[MergedAudioResumeState, tuple[ProviderModelUsage, ...], int]:
-    """Settle every unresolved audio slot once and checkpoint each outcome."""
+) -> tuple[
+    MergedAudioResumeState,
+    tuple[ProviderModelUsage, ...],
+    int,
+    tuple[dict[str, int | str], ...],
+]:
+    """Settle unresolved audio slots through one serial fallback lane."""
     current_usage: tuple[ProviderModelUsage, ...] = ()
     reused_slot_count = 0
+    provider_failures: list[dict[str, int | str]] = []
+    last_success_index = 0
     for slot in state.slots:
         if slot.status == "settled":
             reused_slot_count += 1
             continue
-        try:
-            if state.mode == "whole":
-                transport = (
-                    "inline"
-                    if snapshot.duration_seconds <= MAX_SHORT_MP3_DURATION_SECONDS
-                    else "files"
+        if state.mode == "whole":
+            transport = (
+                "inline"
+                if snapshot.duration_seconds <= MAX_SHORT_MP3_DURATION_SECONDS
+                else "files"
+            )
+            (
+                state,
+                current_usage,
+                slot_failures,
+                success_index,
+            ) = _execute_audio_slot(
+                state,
+                slot,
+                snapshot,
+                provider_lane=provider_lane,
+                start_index=last_success_index,
+                prompt=AUDIO_TRANSCRIPTION_PROMPT,
+                transport=transport,
+                state_path=state_path,
+                timeout_seconds=timeout_seconds,
+                current_usage=current_usage,
+            )
+        else:
+            window = _window_from_slot(slot)
+            with materialize_long_audio_interval(
+                snapshot.path,
+                window=window,
+            ) as segment:
+                upload = build_long_audio_interval_upload_snapshot(
+                    segment,
+                    duration_seconds=(
+                        slot.actual_end_seconds - slot.actual_start_seconds
+                    ),
                 )
-                response = recognize_provider_model_audio(
-                    provider,
-                    snapshot,
-                    prompt=AUDIO_TRANSCRIPTION_PROMPT,
-                    transport=transport,
+                (
+                    state,
+                    current_usage,
+                    slot_failures,
+                    success_index,
+                ) = _execute_audio_slot(
+                    state,
+                    slot,
+                    upload,
+                    provider_lane=provider_lane,
+                    start_index=last_success_index,
+                    prompt=build_long_audio_interval_prompt(window),
+                    transport="files",
+                    state_path=state_path,
                     timeout_seconds=timeout_seconds,
+                    current_usage=current_usage,
                 )
-            else:
-                transport = "files"
-                window = _window_from_slot(slot)
-                with materialize_long_audio_interval(
-                    snapshot.path,
-                    window=window,
-                ) as segment:
-                    upload = build_long_audio_interval_upload_snapshot(
-                        segment,
-                        duration_seconds=(
-                            slot.actual_end_seconds - slot.actual_start_seconds
-                        ),
-                    )
-                    response = recognize_provider_model_audio(
-                        provider,
-                        upload,
-                        prompt=build_long_audio_interval_prompt(window),
-                        transport=transport,
-                        timeout_seconds=timeout_seconds,
-                    )
+        if success_index is not None:
+            provider_failures.extend(slot_failures)
+            last_success_index = success_index
+    return (
+        state,
+        current_usage,
+        reused_slot_count,
+        tuple(provider_failures),
+    )
+
+
+def _execute_audio_slot(
+    state: MergedAudioResumeState,
+    slot: MergedAudioSlot,
+    request_snapshot: LongMP3Snapshot,
+    *,
+    provider_lane: tuple[ProviderModel, ...],
+    start_index: int,
+    prompt: str,
+    transport: Literal["inline", "files"],
+    state_path: Path,
+    timeout_seconds: float,
+    current_usage: tuple[ProviderModelUsage, ...],
+) -> tuple[
+    MergedAudioResumeState,
+    tuple[ProviderModelUsage, ...],
+    tuple[dict[str, int | str], ...],
+    int | None,
+]:
+    """Attempt one prepared audio slot through each candidate at most once."""
+    slot_failures: list[dict[str, int | str]] = []
+    for offset in range(len(provider_lane)):
+        provider_index = (start_index + offset) % len(provider_lane)
+        provider = provider_lane[provider_index]
+        try:
+            response = recognize_provider_model_audio(
+                provider,
+                request_snapshot,
+                prompt=prompt,
+                transport=transport,
+                timeout_seconds=timeout_seconds,
+            )
         except NoSpeechDetected as error:
             calls, input_tokens, output_tokens = _usage_from_error(error)
-            outcome = _settled_slot(
-                slot,
-                provider=provider,
-                no_speech=True,
-            )
+            outcome = _settled_slot(slot, provider=provider, no_speech=True)
             state, current_usage = _checkpoint_outcome(
                 state,
                 outcome,
@@ -96,10 +160,12 @@ def execute_merged_audio_plan(
                 state_path=state_path,
                 current_usage=current_usage,
             )
-            continue
+            return state, current_usage, tuple(slot_failures), provider_index
         except ProviderError as error:
             calls, input_tokens, output_tokens = _usage_from_error(error)
             outcome = _failed_slot(slot, provider=provider, error=error)
+            assert outcome.error_description is not None
+            description = outcome.error_description
             state, current_usage = _checkpoint_outcome(
                 state,
                 outcome,
@@ -110,6 +176,15 @@ def execute_merged_audio_plan(
                 cleanup_failed=_cleanup_failed(error),
                 state_path=state_path,
                 current_usage=current_usage,
+            )
+            slot_failures.append(
+                {
+                    "slot_index": slot.index,
+                    "vendor": provider.vendor,
+                    "model": provider.model,
+                    "code": error.code,
+                    "description": description,
+                }
             )
             continue
 
@@ -132,7 +207,8 @@ def execute_merged_audio_plan(
             state_path=state_path,
             current_usage=current_usage,
         )
-    return state, current_usage, reused_slot_count
+        return state, current_usage, tuple(slot_failures), provider_index
+    return state, current_usage, (), None
 
 
 def _window_from_slot(slot: MergedAudioSlot) -> LongAudioIntervalWindow:

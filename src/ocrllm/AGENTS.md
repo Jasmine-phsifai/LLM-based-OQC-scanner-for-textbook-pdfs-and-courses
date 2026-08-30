@@ -124,6 +124,17 @@ the existing route and SDK-boundary assertion; do not add public transport
 diagnostics solely for a test. No production API/schema/test/provider policy or
 later provider topology changed.
 
+#678 extends merged-audio recognition/resume only to one exact scalar or
+nonempty exact built-in flat `ProviderModel` list. Validate every candidate's
+audio capability/adapter before source or output work. Each unresolved slot
+visits candidates once from the invocation-local last success, stops at speech
+or no-speech settlement, and checkpoints every failure; resume begins at
+candidate zero and reuses settled slots. Successful fallback uses one bounded
+warning plus ordered `provider_failures`; exhausted slots retain only the final
+candidate. One real unserved-Google -> `gemini-2.5-flash` lane completed with
+one generation and 4,009/59 tokens. Keep retry/wait, nested lists, concurrency,
+generic media execution, repair, and old-video edits out of this slice.
+
 The older Stage M/A plan supplies detail only where that board has not
 superseded it. #078
 closed P1-c with one bounded

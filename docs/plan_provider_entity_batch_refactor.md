@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-30, #677)
+## 0. Current pruning and execution checkpoint (2026-08-30, #678)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -331,6 +331,45 @@ recreated. Primary review confirmed safe JSON, state schema, output digest,
 source size/hash, and zero remaining runner processes. All four owned evidence
 files were then removed from the exact TEMP root. Production code, API, schema,
 tests, provider policy, and the frozen video family are unchanged.
+
+### #678 adds and live-proves serial flat fallback for merged audio
+
+`recognize_audio_to_markdown()` and `resume_audio_to_markdown()` now accept the
+same exact scalar-or-nonempty-built-in-flat-list provider shape as merged images.
+Complete preflight snapshots the lane and validates every candidate's audio
+capability and admitted adapter before source decoding, output/state creation,
+or provider work. Invalid, empty, nested, lazy, subclassed, mixed, tuple, and
+definite duplicate routes fail with zero calls.
+
+Each unresolved audio slot traverses the lane circularly at most once from this
+invocation's last successful provider and stops at its first speech or no-speech
+settlement. A wholly failed slot does not move the start preference and retains
+only its terminal candidate in durable slot state; later slots still run. Fresh
+and resume invocations begin at candidate zero, settled slots are reused, and no
+cursor or per-attempt ledger is persisted. Successful fallback adds the existing
+single warning and bounded ordered `provider_failures`; usage remains cumulative
+per exact provider/model. The audio-specific interval materialization, inline/
+Files selection, cleanup, checkpoint, and publication paths remain unchanged.
+
+Focused public audio/planning/import tests pass **33 tests / 2.21s**. The fixed
+merged-audio runner gained only a fresh `--flat-fallback` scenario with one
+locally valid but intentionally unserved Google candidate followed by
+`gemini-2.5-flash`. After a corrected zero-call gate, exactly one live child
+completed one 123.9707-second whole slot: the first candidate produced
+`PROVIDER_UNAVAILABLE` before generation; the second made one generation with
+4,009 input and 59 output tokens. The result was complete with one warning and
+one failure record, matching 263-byte Markdown, removed state, unchanged source,
+empty stderr, and runner exit 0.
+
+The first delegated zero-call child accidentally used stale
+`local-bench-ocrllm` site-packages and failed import; no credential or provider
+was reached. The corrected child used the explicit OCRLLM environment. Its
+successful initial state was then mistakenly reported as a mismatch by the
+controller even though fresh recognition is required to reserve state before
+credential resolution; primary review corrected the predicate before the only
+live child. Eight owned evidence files were reviewed and removed. No production
+defect, retry/sleep, nested lane, concurrent pool, schema change, generic media
+executor, repair, or frozen-video edit was added.
 
 The destination is one visible, caller-composed pair of media flows:
 

@@ -20,6 +20,7 @@ def finalize_merged_audio_result(
     current_usage: tuple[ProviderModelUsage, ...],
     historical_usage: tuple[ProviderModelUsage, ...],
     reused_slot_count: int,
+    provider_failures: tuple[dict[str, int | str], ...],
     overwrite: bool,
 ) -> RecognitionResult:
     """Publish complete/partial Markdown or raise when no slice settled."""
@@ -41,7 +42,7 @@ def finalize_merged_audio_result(
     current_calls = sum(row.calls for row in current_usage)
     if settled_count == 0:
         raise AllCandidatesExhausted(
-            "The provider could not settle any merged-audio slot.",
+            "No provider candidate could settle any merged-audio slot.",
             details={
                 "failed_slots": failed_slots,
                 "provider_calls_attempted": current_calls,
@@ -52,6 +53,10 @@ def finalize_merged_audio_result(
     markdown = compose_merged_audio_markdown(state.slots)
     write_markdown_atomically(output_path, markdown, overwrite=overwrite)
     warnings: list[str] = []
+    if provider_failures:
+        warnings.append(
+            "Recognition completed after one or more provider candidates failed."
+        )
     if state.provider_cleanup_failed:
         warnings.append(
             "At least one provider audio upload or client could not be cleaned up."
@@ -77,6 +82,8 @@ def finalize_merged_audio_result(
     }
     if failed_slots:
         metadata["failed_slots"] = failed_slots
+    if provider_failures:
+        metadata["provider_failures"] = provider_failures
     return RecognitionResult(
         markdown=markdown,
         source_type="audio",

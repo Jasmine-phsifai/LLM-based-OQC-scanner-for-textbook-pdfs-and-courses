@@ -10,11 +10,18 @@ from pathlib import Path
 
 from ocrllm import (
     GOOGLE_GEMINI_2_5_FLASH,
+    ProviderModel,
     recognize_audio_to_markdown,
     resume_audio_to_markdown,
     split_audio,
 )
 from ocrllm.errors import OCRLLMError
+
+
+UNSERVED_MODEL = "ocrllm-intentionally-unserved-audio-fallback-probe"
+FALLBACK_WARNING = (
+    "Recognition completed after one or more provider candidates failed."
+)
 
 
 def main() -> int:
@@ -24,6 +31,11 @@ def main() -> int:
     state = output.with_name(f"{output.stem}.ocrllm-state.json")
     before = _source_facts(source)
     slices = split_audio(source, interval_minutes=args.interval_minutes)
+    provider = (
+        [_unserved_audio_provider(), GOOGLE_GEMINI_2_5_FLASH]
+        if args.flat_fallback
+        else GOOGLE_GEMINI_2_5_FLASH
+    )
     if len(slices) != args.expected_slots:
         print(
             json.dumps(
@@ -42,14 +54,14 @@ def main() -> int:
         if args.resume:
             result = resume_audio_to_markdown(
                 slices,
-                provider=GOOGLE_GEMINI_2_5_FLASH,
+                provider=provider,
                 output_path=output,
                 timeout_seconds=args.timeout_seconds,
             )
         else:
             result = recognize_audio_to_markdown(
                 slices,
-                provider=GOOGLE_GEMINI_2_5_FLASH,
+                provider=provider,
                 output_path=output,
                 timeout_seconds=args.timeout_seconds,
             )
@@ -92,6 +104,9 @@ def main() -> int:
             result.metadata.get("historical_provider_model_usage")
         ),
         "failed_slots": _safe_failed_slots(result.metadata.get("failed_slots")),
+        "provider_failures": _safe_provider_failures(
+            result.metadata.get("provider_failures")
+        ),
         "warning_count": len(result.warnings),
         "output_exists": output_bytes is not None,
         "output_matches_result": output_bytes == result_bytes,
@@ -112,6 +127,11 @@ def main() -> int:
         and summary["output_matches_result"] is True
         and summary["state_exists"] is False
         and summary["sources_unchanged"] is True
+        and _fallback_evidence_matches(
+            result.warnings,
+            summary["provider_failures"],
+            enabled=args.flat_fallback,
+        )
     )
     summary["gate"] = "passed" if passed else "not_passed"
     print(json.dumps(summary, sort_keys=True))
@@ -128,6 +148,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-reused-slots", type=int, default=0)
     parser.add_argument("--timeout-seconds", type=float, default=600.0)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--flat-fallback", action="store_true")
     args = parser.parse_args()
     if (
         args.interval_minutes != -1 and args.interval_minutes <= 0
@@ -140,7 +161,24 @@ def _parse_args() -> argparse.Namespace:
         parser.error("numeric scenario arguments are outside their fixed bounds")
     if args.interval_minutes == -1 and args.expected_slots != 1:
         parser.error("whole mode requires exactly one expected slot")
+    if args.resume and args.flat_fallback:
+        parser.error("the fixed live fallback scenario is fresh-only")
     return args
+
+
+def _unserved_audio_provider() -> ProviderModel:
+    return ProviderModel(
+        vendor="google",
+        model=UNSERVED_MODEL,
+        adapter_id="google_genai",
+        settings=GOOGLE_GEMINI_2_5_FLASH.settings,
+        supports_plain_ocr=True,
+        supports_detail_ocr=True,
+        supports_audio=True,
+        default_image_batch_size=8,
+        default_audio_minutes=30,
+        retry_rules={},
+    )
 
 
 def _source_facts(path: Path) -> tuple[int, str]:
@@ -169,6 +207,58 @@ def _safe_failed_slots(value: object) -> tuple[dict[str, int | str], ...]:
         if type(index) is int and index >= 0 and type(code) is str and code:
             safe.append({"slot_index": index, "code": code})
     return tuple(safe)
+
+
+def _safe_provider_failures(
+    value: object,
+) -> tuple[dict[str, int | str], ...]:
+    if not isinstance(value, (tuple, list)):
+        return ()
+    safe: list[dict[str, int | str]] = []
+    for item in value:
+        if not isinstance(item, Mapping):
+            continue
+        index = item.get("slot_index")
+        vendor = item.get("vendor")
+        model = item.get("model")
+        code = item.get("code")
+        if (
+            type(index) is int
+            and index >= 0
+            and type(vendor) is str
+            and vendor
+            and type(model) is str
+            and model
+            and type(code) is str
+            and code
+        ):
+            safe.append(
+                {
+                    "slot_index": index,
+                    "vendor": vendor,
+                    "model": model,
+                    "code": code,
+                }
+            )
+    return tuple(safe)
+
+
+def _fallback_evidence_matches(
+    warnings: tuple[str, ...],
+    provider_failures: object,
+    *,
+    enabled: bool,
+) -> bool:
+    if not enabled:
+        return not provider_failures
+    return warnings == (FALLBACK_WARNING,) and provider_failures == (
+        {
+            "slot_index": 0,
+            "vendor": "google",
+            "model": UNSERVED_MODEL,
+            "code": "PROVIDER_UNAVAILABLE",
+        },
+    )
 
 
 def _safe_usage_documents(

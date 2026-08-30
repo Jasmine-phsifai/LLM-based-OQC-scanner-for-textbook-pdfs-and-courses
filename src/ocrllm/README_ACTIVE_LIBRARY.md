@@ -121,22 +121,28 @@ context windows but creates no physical clips, output, state, cleanup work, or
 provider call.
 
 `recognize_audio_to_markdown()` accepts only that exact nonempty slice tuple and
-one scalar audio-capable `ProviderModel`. It writes every ordered range into one
-Markdown, checkpoints each settled/no-speech/failed slot, continues after an
-ordinary provider failure, and retains a sidecar for incomplete work. Call
+one audio-capable `ProviderModel` or one nonempty exact built-in flat list. It
+writes every ordered range into one Markdown, checkpoints each settled/no-speech/
+failed slot, continues after an ordinary provider failure, and retains a sidecar
+for incomplete work. A flat lane visits each candidate at most once, stops at
+the first settlement, and starts the next unresolved slot from the current
+call's last successful candidate. Call
 `resume_audio_to_markdown()` with the same slices and output to reuse settled
 slots and dispatch only the remainder. Short whole-source audio uses the proven
 inline Google route through 300 seconds; longer whole-source and interval work
-use the proven Files lifecycle. This scalar slice does not implement provider
-lists, retries, nested pools, concurrent audio dispatch, repair, or a video
-lifecycle wrapper.
+use the proven Files lifecycle. Resume starts its lane at candidate zero and
+persists no cursor. Retry, nested pools, concurrent audio dispatch, repair, and
+a video lifecycle wrapper are not implemented.
 
 The scalar audio surface is live-proven in both transport shapes. Two explicit
 one-minute interval slots completed through the Files lifecycle; a separate
 123.9707-second whole-source call completed in one inline generation with
 4,009/69 input/output tokens, matching published bytes, no sidecar, no cleanup
-warning, unchanged source, and runner exit 0. These runs do not prove fallback,
-same-model retry, provider pools, or other audio formats.
+warning, unchanged source, and runner exit 0. A separate real flat lane then
+recorded one unserved Google candidate and completed through
+`gemini-2.5-flash` in one generation with 4,009/59 tokens, one warning, matching
+263-byte Markdown, removed state, unchanged source, and runner exit 0. These
+runs do not prove same-model retry, provider pools, or other audio formats.
 
 The serial flat lane is live-proven through a fixed real Google scenario: one
 unserved candidate fails safely before generation and the next candidate

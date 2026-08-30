@@ -500,6 +500,16 @@ state; permission, path, and other cleanup errors remain disclosed. Provider
 calls, sidecar content, resume, final publication, and repair behavior do not
 change.
 
+#678 adds the corresponding serial flat-provider lane to merged audio. Both
+fresh and resume accept one exact model or one nonempty exact built-in flat
+list; each unresolved slot visits candidates once, stops on first settlement,
+and the next slot starts at the current invocation's last success. Resume starts
+at candidate zero and persists no cursor. One real unserved-Google ->
+`gemini-2.5-flash` whole-audio lane completed in one generation with 4,009/59
+tokens, one warning/failure record, matching 263-byte output, removed state,
+unchanged source, and exit 0. No retry, nested pool, concurrency, repair, schema,
+or video-chain change is included.
+
 #359 proves the #358 retained state through its actual public consumer rather
 than treating file existence as sufficient evidence. After the first child
 publication failure, an explicit `resume=True` call reuses the one-group

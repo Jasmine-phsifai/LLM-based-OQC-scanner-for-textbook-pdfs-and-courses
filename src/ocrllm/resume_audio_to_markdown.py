@@ -12,11 +12,11 @@ from .result import RecognitionResult
 def resume_audio_to_markdown(
     slices: tuple[AudioSlice, ...],
     *,
-    provider: ProviderModel,
+    provider: ProviderModel | list[ProviderModel],
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
 ) -> RecognitionResult:
-    """Restore one exact audio plan and dispatch only unresolved ranges."""
+    """Restore one exact audio plan and resume through one serial lane."""
     from .clear_public_error import clear_public_error
     from .errors import OCRLLMError
     from .run_merged_audio_job import run_merged_audio_job
