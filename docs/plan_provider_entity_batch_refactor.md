@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #700)
+## 0. Current pruning and execution checkpoint (2026-08-31, #701)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1080,6 +1080,28 @@ The exact 23,421,604-byte frame/output root was permanently removed after review
 No fresh recognition, retry, second child, fallback, model switch, re-extraction,
 runtime code, state schema, dependency, or public API changed. The resume runner
 mode is locally complete-path-proven and 69 adjacent tests pass.
+
+### #701 release-proves DashScope zero-call fixes in the installed wheel
+
+The current committed wheel measures 327,216 bytes, leaving 464 bytes under the
+unchanged 320 KiB release cap; no reduction or cap increase is justified. The
+existing `image,dashscope` optional profile now owns one additional installed-
+wheel smoke rather than introducing another profile or gate. It creates one
+valid synthetic PNG, removes inherited DashScope credentials, blocks the true
+`urllib` network boundary, and calls the public merged-image owner with the
+credential-free `qwen3.5-ocr` preset. The installed package must return
+`CONFIG_MISSING`, `provider_operation="catalog"`, calls 0, no Markdown, no
+OpenAI import/network call, and one owned state that the smoke removes. Existing
+explicit-fake-key OpenAI client construction still runs afterward.
+
+The exact clean archive commit `a0f1788` passes 1,465 tests with one expected
+RapidOCR skip, fixture validation, wheel/build/install checks, import budgets,
+and all nine optional profiles. Installed profile deltas remain within their
+bounds; the combined visible-video smoke still produces two frames, one image
+batch and one audio slice. Final wheel size is 327,216 bytes and dependency-
+empty target size is 1,682,135 bytes. The official proof root self-cleans; the
+separate 327,216-byte local audit is also removed. Runtime, dependencies, public
+APIs, provider behavior, and state schemas are unchanged.
 
 The destination is one visible, caller-composed pair of media flows:
 

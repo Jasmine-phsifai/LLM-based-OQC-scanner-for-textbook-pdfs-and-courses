@@ -3465,3 +3465,14 @@ result, the sidecar is removed, warnings are zero, and source/cleanup/credential
 facts remain clean. Exact TEMP evidence is removed; 69 adjacent tests pass. No
 fresh run, retry/fallback/model switch, runtime/schema/API/dependency change is
 added.
+
+#701 refreshes the exact installed-wheel gate after the DashScope credential
+accounting fixes. The existing `image,dashscope` profile now proves one valid
+synthetic image reaches installed public merged preflight and returns
+`CONFIG_MISSING`, catalog operation, calls 0, no Markdown, no network/OpenAI
+import, and only an owned state that is removed. Existing SDK construction stays
+in the same profile. Commit `a0f1788` passes 1,465 tests with one expected skip,
+all nine profiles, a 327,216-byte wheel, a 1,682,135-byte base install and the
+installed 2-frame/1-batch/1-audio-slice visible flow. Exact proof roots are
+removed. No runtime/API/dependency/schema/provider behavior changes and the
+release budgets remain unchanged.
