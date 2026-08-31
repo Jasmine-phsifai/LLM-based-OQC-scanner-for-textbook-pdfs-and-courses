@@ -3622,3 +3622,11 @@ copy, hash, TEMP root, runner, test, provider, network or product change occurs.
 The installed synthetic PDFium proof and generated-PDF Google Route A proof stay
 valid but are not called archive-PDF evidence. An explicit real PDF source is
 required before adding or running a dedicated scenario.
+
+#716 adds one on-demand fixed synthetic endurance tool and runs it once. Commit
+`4d6afa2` generates 700 real PDFium 5.11.0 blank pages, extracts and decodes all
+700 in 9.796 seconds, batchifies exactly `87×8 + 4`, preserves the 85,626-byte
+source hash, writes 412,300 PNG bytes, and leaves staging/provider calls/provider
+SDKs/TEMP roots/processes at zero. This is not real archive-PDF or quality
+evidence. No production API/runtime/dependency/state/limit/default-test change
+or generic stress framework is added.

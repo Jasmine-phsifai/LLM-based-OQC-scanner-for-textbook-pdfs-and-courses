@@ -14428,3 +14428,15 @@ TEMP manifest exists. The current PDF evidence remains installed real PDFium ove
 a generated document plus real Google Route A composition, not an archive-PDF
 claim. No unused runner or substitute download is added. A real archive-PDF gate
 waits for one explicit authorized source.
+
+## Current working update: #716 passes fixed 700-page PDF extraction stress
+
+One committed on-demand tool generates exactly 700 small real-PDFium pages and
+tests only public Route A extraction plus explicit batchification. The sole run
+finishes in 9.796 seconds: 700 valid ordered PNGs, 88 batches (`87×8 + 4`),
+unchanged 85,626-byte PDF, 412,300 output bytes, and zero staging, provider calls,
+provider SDKs, TEMP roots or processes.
+
+The result is synthetic lifecycle/endurance evidence, not archive-PDF content or
+quality evidence. No production code, API, page ceiling, provider, state,
+dependency, default test or stress framework changes.

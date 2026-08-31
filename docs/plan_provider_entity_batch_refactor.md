@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #715)
+## 0. Current pruning and execution checkpoint (2026-08-31, #716)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1462,6 +1462,30 @@ would create an unexercised one-function scenario silo. No download, unrelated
 private-folder scan, substitute fixture, runtime, runner, test, provider, network,
 dependency, state or cleanup action follows. A real archive-PDF scenario remains
 external-input deferred until the maintainer supplies or identifies one source.
+
+### #716 passes one fixed 700-page provider-free extraction stress gate
+
+Because #715 found no real archive PDF, the separately authorized pressure gate
+uses a generated content-free PDF and is labeled synthetic endurance evidence.
+Committed tool `run_pdf_page_extraction_stress.py` has no arguments or production
+configuration: it creates exactly 700 real PDFium 5.11.0 pages at 72×72 points,
+calls package-root `extract_pdf_pages()`, validates every exact ordered 200×200
+PNG and directory member, then explicitly batchifies at eight. It is on-demand
+and is not part of pytest or the release gate.
+
+Exact runner commit `4d6afa2e1b730768810147469aa944714d82ee66`
+completes its sole run with direct exit zero in **9.796 seconds**. All 700 pages
+publish and decode; batching is exactly 88 groups (`87×8 + 4`) with flattened
+order equal to the page tuple. The generated PDF is 85,626 bytes / SHA-256
+`1d6ddc468d9bfe3578c9f0b96ceccbe316448b607d93862c18547ce2b9b8eab2`
+and remains unchanged. Rendered PNGs total 412,300 bytes. Staging residue,
+provider calls, loaded Google/OpenAI SDKs, surviving temporary roots and matching
+processes are all zero.
+
+No memory number or real-document quality claim is inferred. No runtime, public
+API, page-count ceiling, manifest, state, provider, retry, dependency, default
+test, or cleanup framework changes; the tool answers only the fixed lifecycle
+pressure question.
 
 The destination is one visible, caller-composed pair of media flows:
 
