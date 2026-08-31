@@ -3609,3 +3609,9 @@ tokens. Output is complete/published/state-free; source images, generated PDF
 and extracted pages stay exact; temporary/credential/process residue is zero.
 The 2,239-byte selection root is removed. No PDF wrapper, hidden batching,
 retry/pool/Route-B/runtime extraction/state/API expansion or second call follows.
+
+Exact follow-up commit `2a24af6` passes the full clean gate: 1,475 tests plus one
+expected skip, 329,553-byte wheel, 1,697,571-byte base install, every optional
+profile, installed Google credential failure with client/calls zero, and the
+installed PDF `2 16` extraction/direct smoke. New-cap headroom is 2,223 bytes;
+the gate root self-cleans and no provider/credential/cloud call occurs.

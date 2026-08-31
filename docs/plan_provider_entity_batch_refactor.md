@@ -1438,6 +1438,16 @@ Route B behavior, runtime extraction change, or second live child is added. The
 owned 2,239-byte selection root is removed after exact verification; archive,
 repo, other TEMP and protected files are untouched.
 
+Exact commit `2a24af6b032a544f682b8bd9e294f0a4f60cabb2` then passes
+the complete clean gate: **1,475 tests pass / one expected RapidOCR skip / 38.43
+seconds**, fixture equivalence, wheel selection, base install and both import
+budgets pass. Wheel size is **329,553 bytes** (2,223 bytes below 324 KiB) and
+base install size is **1,697,571 bytes**. All optional profiles pass; the
+installed Google profile proves missing credentials construct no client and
+report exact calls zero, while installed PDFium still reports `2 16`. The exact
+gate root self-cleans, processes are absent, and no provider, credential or cloud
+call occurs.
+
 The destination is one visible, caller-composed pair of media flows:
 
 ```text

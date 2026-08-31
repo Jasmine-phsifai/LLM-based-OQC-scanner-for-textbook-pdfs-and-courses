@@ -14413,3 +14413,9 @@ manifest root is removed.
 No hidden batching, PDF result adapter, retry, pool, model switch, PDF-owned
 state/repair/cleanup, Route B behavior, extraction runtime change or second live
 child is introduced.
+
+Exact commit `2a24af6` passes the complete clean gate: 1,475 tests with one
+expected skip, 329,553-byte wheel, 1,697,571-byte base install, all optional
+profiles, installed Google missing-credential client/calls zero, and installed
+PDF `2 16`. Wheel headroom is 2,223 bytes. The gate root and processes are absent;
+no provider, credential or cloud call occurs.
