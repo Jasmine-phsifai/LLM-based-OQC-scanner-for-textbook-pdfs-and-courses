@@ -14385,9 +14385,12 @@ before one final rename. Failures publish nothing. Four public branches plus
 lazy export pass 66 focused tests, and real PDFium 5.11.0 extracts 16 varying
 pages with source bytes unchanged and no staging residue.
 
-The new module contributes 1,731 compressed wheel bytes; measured wheel size is
-329,320 bytes. The fixed base alarm moves from 320 to 324 KiB instead of merging
-unrelated responsibilities, leaving 2,456 bytes. Dependencies, 2 MiB installed
-budget, optional profiles, direct PDF behavior, provider/media state and frozen
-code remain unchanged. The installed `pdf-vision` smoke now includes extraction;
-its clean committed run is the remaining release proof.
+The new module contributes 1,731 compressed wheel bytes, so the fixed base alarm
+moves from 320 to 324 KiB instead of merging unrelated responsibilities. Exact
+commit `025ff0f` passes the clean gate: 1,471 tests plus one expected skip,
+329,518-byte wheel, 1,697,249-byte base install, all optional profiles, and real
+installed PDFium 5.11.0 extraction of 16 pages before the older two-group PDF
+recognition smoke. The new cap retains 2,258 bytes; `pdf-vision` measures
+25,604,705 installed bytes. The gate root self-cleans. Dependencies, import
+budgets, direct PDF behavior, provider/media state and frozen code remain
+unchanged; no provider/credential/cloud call occurs.

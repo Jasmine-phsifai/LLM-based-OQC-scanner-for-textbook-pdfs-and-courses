@@ -1389,14 +1389,19 @@ path bound. PDF/backend/import/export/gate checks pass **66**. A real local
 PDFium 5.11.0 run created and extracted 16 varying pages, preserved source
 bytes, retained all returned files after call return, and left zero staging.
 
-The worktree wheel is 329,320 bytes. Archive inspection attributes 1,731
+The first worktree wheel was 329,320 bytes. Archive inspection attributes 1,731
 compressed bytes to the new single-responsibility module and finds no accidental
 payload; the former 320 KiB cap is therefore moved once to **324 KiB** rather
-than merging extraction into the transient renderer. Current headroom is 2,456
-bytes. Base dependencies, 2 MiB installed target and import/profile budgets do
-not change. The maintained installed `pdf-vision` smoke now exercises the new
-public extraction before the older direct recognition gate; its exact clean-
-archive run remains the release check after commit.
+than merging extraction into the transient renderer.
+
+Exact product commit `025ff0f924c55f46d8adb2a5db8bbfe7cf312d3c` then passes
+the complete clean gate: **1,471 tests pass / one expected RapidOCR skip / 40.29
+seconds**, fixture equivalence and both import budgets pass, wheel size is
+**329,518 bytes** (2,258 bytes below the new cap), and base install size is
+**1,697,249 bytes**. Every optional profile passes. The installed `pdf-vision`
+smoke uses PDFium 5.11.0, proves 16 retained extraction pages and the older two
+recognition groups (`2 16`), and measures 25,604,705 installed bytes. The exact
+gate root self-cleans and no provider, credential or cloud call occurs.
 
 The destination is one visible, caller-composed pair of media flows:
 

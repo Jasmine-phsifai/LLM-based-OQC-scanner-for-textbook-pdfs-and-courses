@@ -3591,6 +3591,9 @@ existing plain parent. There is no provider, batch plan, manifest, DTO, PDF
 state, page subset, password, compatibility format or automatic deletion. Sixty-
 six focused checks and one real local 16-page PDFium 5.11.0 extraction pass.
 Wheel growth is exactly attributable to the 1,731-byte compressed new module;
-the base cap moves from 320 to 324 KiB with 2,456 bytes headroom, while all
-dependency/import/install/profile budgets stay fixed. Installed `pdf-vision`
-extraction remains the post-commit clean gate.
+the base cap moves from 320 to 324 KiB. Exact commit `025ff0f` passes the clean
+gate: 1,471 tests plus one expected skip, 329,518-byte wheel, 1,697,249-byte base
+install, all optional profiles, and installed PDFium 5.11.0 extraction of 16
+caller-owned pages before the older two-group direct PDF smoke. The new cap has
+2,258 bytes headroom; `pdf-vision` measures 25,604,705 installed bytes. The gate
+root self-cleans and no provider/credential/cloud call occurs.
