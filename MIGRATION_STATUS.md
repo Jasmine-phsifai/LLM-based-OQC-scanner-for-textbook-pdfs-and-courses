@@ -3638,3 +3638,13 @@ checks remain inside `snapshot_pdf`. Removing the stored field/return passes 49
 focused tests and reduces the worktree wheel from 329,553 to 329,532 bytes; the
 324 KiB cap and all public behavior stay unchanged. Shared runner helpers,
 eight-page constants, provider calls and stress reruns are deliberately rejected.
+
+#718 completes the current authorized OCRLLM maturity goal after primary and
+independent requirement audits. Image, MP3 audio, provider-free video, PDF Route
+A, provider topologies/fallback/errors/usage, resume/repair, RapidOCR, worker
+v1alpha1, package/import/release and path/lifecycle boundaries all have current
+code plus focused/real/installed evidence. Empty retry maps and unavailable real
+archive PDF input are evidence/external gates; M4A/other audio, PDF text, worker
+v1alpha2/shared registration, Route B, Electron expansion, catalog mirrors,
+social and Rust remain explicit deferrals. No current authorized implementation
+item is missing and no runtime/test/provider change is made for this checkpoint.

@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #717)
+## 0. Current pruning and execution checkpoint (2026-08-31, #718)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1508,6 +1508,39 @@ bytes**, 21 bytes below the preceding committed 329,553-byte wheel and 2,244
 bytes below the unchanged 324 KiB cap. This is a readability reduction, not a
 cap-driven field hunt: no other unconsumed/frozen field, runner helper, constant,
 API, test, provider call or pressure rerun changes.
+
+### #718 completes the current authorized maturity goal
+
+Primary requirement-by-requirement review and one independent read-only audit
+find no missing implementation item inside the current product boundary:
+
+| Area | Completion evidence |
+| --- | --- |
+| Package/release | Dependency-free lazy base, typed facade, optional extras, clean wheel/install/import/profile gates |
+| Images | Exact planning; scalar/flat/nested recognition; fallback; partial state; ordinary resume; experimental repair; real Google/DashScope evidence |
+| MP3 audio | Whole/integer-minute planning; inline/Files transport; scalar/flat/nested execution; no-speech; resume; interval repair; live evidence |
+| Video | Provider-free inspection/frame/audio extraction, caller composition, real long-media and installed evidence; no combined lifecycle |
+| PDF | Route A caller-owned atomic page publication, explicit batching, live Google composition, installed PDFium and 700-page endurance |
+| Providers | Two admitted live-proven presets, live Google discovery, injected escape path, typed/redacted errors, usage and same/cross-vendor fallback |
+| Recovery | Image/audio ordinary resume and narrow state-loss repair; `resume_video()` remains an intentional one-branch router |
+| Local/release integration | RapidOCR boundary and JSONL worker v1alpha1 are shipped and package-proven |
+| Safety/maintenance | Windows-path evidence, stable snapshots, atomic publication, caller-owned results, bounded operations, frozen contracts/worker, recent reduction audit |
+| Product scope | Legacy UI stays separate; social downloading/recognition and the deleted combined-video family are excluded |
+
+The remaining recorded items do not block maturity: retry maps stay empty until
+real same-model failure/recovery proves finite values; a real archive PDF waits
+for an external source; video selector changes wait for missed-content evidence;
+long M4A, other audio formats, PDF text, worker v1alpha2, shared registration,
+Route B, Electron expansion, full catalog mirrors, social media and Rust/PyO3
+remain explicitly deferred or outside this goal.
+
+The latest exact full gate is product commit `2a24af6` (1,475 pass / one expected
+skip, all installed profiles). Subsequent product changes are only the on-demand
+stress tool and #717's internal unused-field removal, verified by its real run,
+49 focused tests and a clean wheel build. No completion requirement relies on an
+unexecuted plan, stale historical claim, unavailable source, or inferred provider
+success. No code, test, media, provider, network, credential, dependency, state
+or frozen-boundary change occurs in this completion checkpoint.
 
 The destination is one visible, caller-composed pair of media flows:
 

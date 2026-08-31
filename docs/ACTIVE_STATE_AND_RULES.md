@@ -14453,3 +14453,17 @@ Forty-nine focused tests pass. The worktree wheel is 329,532 bytes, 21 bytes
 smaller than the preceding committed wheel and 2,244 bytes below the unchanged
 cap. No public API, safety bound, tool contract, provider call, stress rerun,
 dependency, state or frozen code changes.
+
+## Current working update: #718 current authorized maturity goal is complete
+
+Primary and independent audits map every current requirement to shipped code and
+focused, real-scenario or installed evidence. Images, MP3 audio, provider-free
+video, PDF Route A, provider/fallback/error/usage boundaries, recovery, local OCR,
+worker v1alpha1, packaging/import and Windows lifecycle safety are complete within
+their documented contracts.
+
+Retry numbers remain evidence-gated; real archive PDF evidence lacks an input;
+long M4A and the remaining format/protocol/application expansions are explicitly
+deferred. They are not silently reclassified as shipped, but none is a missing
+current requirement. This checkpoint changes no code, test, provider, media,
+dependency, state or frozen boundary.
