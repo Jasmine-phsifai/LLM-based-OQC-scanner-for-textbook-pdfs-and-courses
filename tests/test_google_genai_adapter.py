@@ -235,6 +235,24 @@ def test_google_catalog_filters_generate_content_normalizes_ids_and_closes(monke
     assert fake.client_kwargs[0]["http_options"].timeout == 7500
 
 
+def test_google_catalog_missing_credential_reports_exact_zero_calls(monkeypatch):
+    catalog = importlib.import_module(
+        "ocrllm.providers.google_genai.list_google_genai_models"
+    )
+    fake = _FakeGoogleModule()
+    monkeypatch.setattr(catalog, "load_google_genai", lambda: fake)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    with pytest.raises(ConfigError) as captured:
+        ocrllm.list_google_genai_models(_google_settings(api_key=None))
+
+    assert captured.value.code == "CONFIG_MISSING"
+    assert captured.value.details["provider_operation"] == "credential"
+    assert captured.value.details["provider_calls_attempted"] == 0
+    assert fake.clients == []
+
+
 def test_google_catalog_client_setup_failure_identifies_operation(monkeypatch):
     catalog = importlib.import_module(
         "ocrllm.providers.google_genai.list_google_genai_models"

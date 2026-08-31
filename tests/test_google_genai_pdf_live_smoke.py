@@ -23,9 +23,14 @@ def test_pdf_live_tool_requires_exactly_sixteen_page_images() -> None:
             [*common, *sum((["--page-image", f"{i}.png"] for i in range(15)), [])]
         )
     parsed = smoke.parse_arguments(
-        [*common, *sum((["--page-image", f"{i}.png"] for i in range(16)), [])]
+        [
+            *common,
+            "--route-a",
+            *sum((["--page-image", f"{i}.png"] for i in range(16)), []),
+        ]
     )
     assert len(parsed.page_image) == 16
+    assert parsed.route_a is True
 
 
 def test_pdf_live_fixture_has_sixteen_real_pdfium_pages(tmp_path: Path) -> None:
@@ -46,7 +51,7 @@ def test_pdf_live_result_summary_excludes_markdown_and_paths(tmp_path: Path) -> 
         "<!-- ocrllm:pdf-pages start=1 end=8 -->\nPRIVATE ONE\n"
         "<!-- ocrllm:pdf-pages start=9 end=16 -->\nPRIVATE TWO\n"
     )
-    output_path.write_text(private_markdown, encoding="utf-8")
+    output_path.write_bytes(private_markdown.encode("utf-8"))
     state = {
         "state_version": "ocrllm.image-resume.v2",
         "result": {"status": "complete"},
@@ -95,3 +100,78 @@ def test_pdf_live_result_summary_excludes_markdown_and_paths(tmp_path: Path) -> 
     assert summary["checkpoint_count"] == 2
     assert "PRIVATE" not in serialized
     assert str(tmp_path) not in serialized
+
+
+def test_pdf_route_a_result_summary_excludes_markdown_and_paths(
+    tmp_path: Path,
+) -> None:
+    page_directory = tmp_path / "pages"
+    page_directory.mkdir()
+    page_paths = tuple(
+        write_test_image(page_directory / f"page-{page_number:06d}.png")
+        for page_number in range(1, 17)
+    )
+    batches = (page_paths[:8], page_paths[8:])
+    output_path = tmp_path / "output" / "input_board.md"
+    output_path.parent.mkdir()
+    private_markdown = (
+        "## OCRLLM image slot 1 (1-8)\n\nPRIVATE ONE\n\n"
+        "## OCRLLM image slot 2 (9-16)\n\nPRIVATE TWO\n"
+    )
+    output_path.write_bytes(private_markdown.encode("utf-8"))
+    result = SimpleNamespace(
+        source_type="image",
+        profile=smoke.ROUTE_A_IMAGE_TASK,
+        status="complete",
+        markdown=private_markdown,
+        output_path=output_path,
+        warnings=(),
+        metadata=MappingProxyType(
+            {
+                "slot_count": 2,
+                "settled_slot_count": 2,
+                "reused_slot_count": 0,
+                "provider_call_count": 2,
+                "historical_provider_model_usage": (),
+                "current_provider_model_usage": (
+                    {
+                        "vendor": "google",
+                        "model": MODEL,
+                        "calls": 2,
+                        "input_tokens": 20,
+                        "output_tokens": 4,
+                    },
+                ),
+            }
+        ),
+    )
+
+    summary = smoke._safe_route_a_result_summary(
+        result,
+        model=MODEL,
+        output_path=output_path,
+        page_paths=page_paths,
+        batches=batches,
+    )
+
+    serialized = json.dumps(summary)
+    assert summary["page_count"] == 16
+    assert summary["batch_count"] == 2
+    assert summary["provider_call_count"] == 2
+    assert summary["state_retained"] is False
+    assert "PRIVATE" not in serialized
+    assert str(tmp_path) not in serialized
+
+
+def test_pdf_route_a_rejects_an_unproven_model_before_source_or_catalog_work() -> None:
+    arguments = SimpleNamespace(
+        page_image=[Path("missing.png")] * 16,
+        model=MODEL,
+        timeout=1.0,
+        route_a=True,
+    )
+
+    with pytest.raises(smoke.ConfigError) as captured:
+        smoke.run_google_genai_pdf_smoke(arguments)
+
+    assert captured.value.code == "CONFIG_INVALID"

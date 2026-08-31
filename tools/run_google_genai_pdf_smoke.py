@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import tempfile
@@ -12,17 +13,23 @@ from typing import Any
 
 from ocrllm import (
     Config,
+    GOOGLE_GEMINI_2_5_FLASH,
     GoogleGenAISettings,
     RecognitionExecutionPolicy,
     RecognitionPreferences,
     VisionModelSettings,
+    batchify_images,
+    extract_pdf_pages,
     list_google_genai_models,
     recognize,
+    recognize_images_to_markdown,
 )
 from ocrllm.errors import ConfigError, OCRLLMError
 
 
 PDF_PAGE_COUNT = 16
+ROUTE_A_BATCH_SIZE = 8
+ROUTE_A_IMAGE_TASK = "detail_ocr"
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -37,6 +44,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="repeat exactly 16 times in desired PDF page order",
     )
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument("--route-a", action="store_true")
     arguments = parser.parse_args(argv)
     if len(arguments.page_image) != PDF_PAGE_COUNT:
         parser.error("--page-image must be supplied exactly 16 times")
@@ -51,6 +59,13 @@ def run_google_genai_pdf_smoke(arguments: argparse.Namespace) -> dict[str, objec
             "The Google PDF live gate requires exactly 16 page images.",
             code="CONFIG_INVALID",
         ) from None
+    route_a = getattr(arguments, "route_a", False)
+    if route_a and arguments.model != GOOGLE_GEMINI_2_5_FLASH.model:
+        raise ConfigError(
+            "The Route A PDF live gate uses the proven Google preset.",
+            code="CONFIG_INVALID",
+        ) from None
+    source_fingerprints = _file_fingerprints(page_images)
     settings = GoogleGenAISettings()
     catalog = list_google_genai_models(settings, arguments.timeout)
     if arguments.model not in catalog:
@@ -65,23 +80,38 @@ def run_google_genai_pdf_smoke(arguments: argparse.Namespace) -> dict[str, objec
         output_directory = temporary_root / "output"
         snapshot_directory = temporary_root / "snapshots"
         _build_pdf_from_images(page_images, pdf_path)
-        result = recognize(
-            pdf_path,
-            config=Config(
-                provider=settings,
-                vision_model=VisionModelSettings(name=arguments.model),
-                execution=RecognitionExecutionPolicy(max_parallel_requests=4),
-                preferences=RecognitionPreferences(review_passes=0),
-                output_dir=output_directory,
-                temp_dir=snapshot_directory,
+        pdf_fingerprint = _file_fingerprint(pdf_path)
+        if route_a:
+            safe_result = _run_route_a_pdf_smoke(
+                pdf_path,
+                model=arguments.model,
+                output_directory=output_directory,
+                temporary_root=temporary_root,
                 timeout_seconds=arguments.timeout,
-            ),
-        )
-        safe_result = _safe_pdf_result_summary(
-            result,
-            model=arguments.model,
-            output_directory=output_directory,
-        )
+            )
+        else:
+            result = recognize(
+                pdf_path,
+                config=Config(
+                    provider=settings,
+                    vision_model=VisionModelSettings(name=arguments.model),
+                    execution=RecognitionExecutionPolicy(max_parallel_requests=4),
+                    preferences=RecognitionPreferences(review_passes=0),
+                    output_dir=output_directory,
+                    temp_dir=snapshot_directory,
+                    timeout_seconds=arguments.timeout,
+                ),
+            )
+            safe_result = _safe_pdf_result_summary(
+                result,
+                model=arguments.model,
+                output_directory=output_directory,
+            )
+        if (
+            _file_fingerprint(pdf_path) != pdf_fingerprint
+            or _file_fingerprints(page_images) != source_fingerprints
+        ):
+            _raise_invalid_result()
 
     if temporary_root.exists():
         raise ConfigError(
@@ -90,10 +120,165 @@ def run_google_genai_pdf_smoke(arguments: argparse.Namespace) -> dict[str, objec
         ) from None
     return {
         "status": "passed",
+        "route": "route_a" if route_a else "direct",
         "model": arguments.model,
         "catalog_count": len(catalog),
+        "source_images_unchanged": True,
+        "pdf_source_unchanged": True,
+        "temporary_root_cleaned": True,
         **safe_result,
     }
+
+
+def _run_route_a_pdf_smoke(
+    pdf_path: Path,
+    *,
+    model: str,
+    output_directory: Path,
+    temporary_root: Path,
+    timeout_seconds: float,
+) -> dict[str, object]:
+    page_directory = temporary_root / "pages"
+    page_paths = extract_pdf_pages(pdf_path, output_dir=page_directory)
+    expected_paths = tuple(
+        page_directory / f"page-{page_number:06d}.png"
+        for page_number in range(1, PDF_PAGE_COUNT + 1)
+    )
+    if page_paths != expected_paths or not all(path.is_file() for path in page_paths):
+        _raise_invalid_result()
+    page_fingerprints = _file_fingerprints(page_paths)
+    batches = batchify_images(
+        tuple(page_paths),
+        batch_size=ROUTE_A_BATCH_SIZE,
+    )
+    if (
+        len(batches) != 2
+        or tuple(len(batch) for batch in batches) != (8, 8)
+        or tuple(path for batch in batches for path in batch) != page_paths
+    ):
+        _raise_invalid_result()
+    output_directory.mkdir()
+    output_path = output_directory / "input_board.md"
+    result = recognize_images_to_markdown(
+        batches,
+        provider=GOOGLE_GEMINI_2_5_FLASH,
+        image_task=ROUTE_A_IMAGE_TASK,
+        output_path=output_path,
+        timeout_seconds=timeout_seconds,
+    )
+    summary = _safe_route_a_result_summary(
+        result,
+        model=model,
+        output_path=output_path,
+        page_paths=page_paths,
+        batches=batches,
+    )
+    if _file_fingerprints(page_paths) != page_fingerprints:
+        _raise_invalid_result()
+    return summary
+
+
+def _safe_route_a_result_summary(
+    result: Any,
+    *,
+    model: str,
+    output_path: Path,
+    page_paths: tuple[Path, ...],
+    batches: tuple[tuple[Path, ...], ...],
+) -> dict[str, object]:
+    metadata = getattr(result, "metadata", None)
+    markdown = getattr(result, "markdown", None)
+    warnings = getattr(result, "warnings", None)
+    usage = _safe_route_a_usage(
+        metadata.get("current_provider_model_usage")
+        if isinstance(metadata, Mapping)
+        else None,
+        model=model,
+    )
+    state_path = output_path.with_name(f"{output_path.stem}.ocrllm-state.json")
+    if (
+        getattr(result, "source_type", None) != "image"
+        or getattr(result, "profile", None) != ROUTE_A_IMAGE_TASK
+        or getattr(result, "status", None) != "complete"
+        or getattr(result, "output_path", None) != output_path
+        or type(markdown) is not str
+        or not markdown.strip()
+        or warnings != ()
+        or not isinstance(metadata, Mapping)
+        or metadata.get("slot_count") != 2
+        or metadata.get("settled_slot_count") != 2
+        or metadata.get("reused_slot_count") != 0
+        or metadata.get("provider_call_count") != 2
+        or metadata.get("historical_provider_model_usage") != ()
+        or metadata.get("failed_slots") is not None
+        or metadata.get("provider_failures") is not None
+        or usage is None
+        or markdown.count("## OCRLLM image slot ") != 2
+        or "OCRLLM_FAILED_IMAGE_SLOT" in markdown
+        or not output_path.is_file()
+        or output_path.read_bytes() != markdown.encode("utf-8")
+        or state_path.exists()
+        or page_paths != tuple(path for batch in batches for path in batch)
+        or not all(path.is_file() for path in page_paths)
+    ):
+        _raise_invalid_result()
+    return {
+        "page_count": len(page_paths),
+        "batch_count": len(batches),
+        "provider_call_count": usage["calls"],
+        "settled_slot_count": 2,
+        "input_tokens": usage["input_tokens"],
+        "output_tokens": usage["output_tokens"],
+        "published": True,
+        "state_retained": False,
+        "caller_owned_page_count": len(page_paths),
+        "pages_unchanged": True,
+    }
+
+
+def _safe_route_a_usage(
+    value: object,
+    *,
+    model: str,
+) -> dict[str, int] | None:
+    if type(value) is not tuple or len(value) != 1:
+        return None
+    row = value[0]
+    if not isinstance(row, Mapping):
+        return None
+    calls = row.get("calls")
+    input_tokens = row.get("input_tokens")
+    output_tokens = row.get("output_tokens")
+    if (
+        row.get("vendor") != "google"
+        or row.get("model") != model
+        or type(calls) is not int
+        or calls != 2
+        or type(input_tokens) is not int
+        or input_tokens < 0
+        or type(output_tokens) is not int
+        or output_tokens < 0
+    ):
+        return None
+    return {
+        "calls": calls,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+    }
+
+
+def _file_fingerprints(paths: Sequence[Path]) -> tuple[tuple[int, str], ...]:
+    return tuple(_file_fingerprint(Path(path)) for path in paths)
+
+
+def _file_fingerprint(path: Path) -> tuple[int, str]:
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            size += len(chunk)
+            digest.update(chunk)
+    return size, digest.hexdigest()
 
 
 def _build_pdf_from_images(source_paths: tuple[Path, ...], pdf_path: Path) -> None:
@@ -228,9 +413,14 @@ def _raise_invalid_result() -> None:
     ) from None
 
 
-def _safe_failure_summary(error: OCRLLMError) -> dict[str, object]:
+def _safe_failure_summary(
+    error: OCRLLMError,
+    *,
+    route: str,
+) -> dict[str, object]:
     return {
         "status": "failed",
+        "route": route,
         "error": {
             "code": error.code,
             "scope": error.details.get("failure_scope"),
@@ -240,6 +430,7 @@ def _safe_failure_summary(error: OCRLLMError) -> dict[str, object]:
             "settled_pdf_group_count": error.details.get(
                 "settled_pdf_group_count"
             ),
+            "settled_slot_count": error.details.get("settled_slot_count"),
         },
     }
 
@@ -249,7 +440,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         summary = run_google_genai_pdf_smoke(arguments)
     except OCRLLMError as error:
-        summary = _safe_failure_summary(error)
+        summary = _safe_failure_summary(
+            error,
+            route="route_a" if arguments.route_a else "direct",
+        )
         print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
         return 1
     except Exception:

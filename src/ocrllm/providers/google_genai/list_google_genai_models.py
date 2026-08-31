@@ -26,7 +26,12 @@ def list_google_genai_models(
         ) from None
     timeout = _validate_timeout(timeout_seconds)
     google_module = load_google_genai()
-    api_key = resolve_google_genai_credential(settings)
+    try:
+        api_key = resolve_google_genai_credential(settings)
+    except OCRLLMError as error:
+        error._add_safe_detail("provider_operation", "credential")
+        error._add_safe_detail("provider_calls_attempted", 0)
+        raise error from None
     client = None
     public_error: OCRLLMError | None = None
     models: tuple[str, ...] | None = None
