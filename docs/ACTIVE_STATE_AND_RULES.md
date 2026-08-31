@@ -14394,3 +14394,22 @@ recognition smoke. The new cap retains 2,258 bytes; `pdf-vision` measures
 25,604,705 installed bytes. The gate root self-cleans. Dependencies, import
 budgets, direct PDF behavior, provider/media state and frozen code remain
 unchanged; no provider/credential/cloud call occurs.
+
+## Current working update: #714 live-proves Route A caller composition
+
+The maintained Google PDF runner now has one explicit Route A mode while the
+default direct facade remains unchanged. It composes public extraction, explicit
+8+8 batching and merged-image `detail_ocr`; it does not add a product wrapper.
+
+Credential-free execution first exposed missing call accounting in public Google
+catalog credential failure. The catalog owner now reports credential operation
+and exact calls zero; 52 focused tests pass and preflight returns
+`CONFIG_MISSING/calls0`. One later live child completes 16 authorized pages in
+two Google generations with 4,802/1,231 tokens, two settled slots, complete
+published Markdown and no state. Input images, generated PDF and extracted pages
+remain exact; all runner/credential/temporary residue is absent and the owned
+manifest root is removed.
+
+No hidden batching, PDF result adapter, retry, pool, model switch, PDF-owned
+state/repair/cleanup, Route B behavior, extraction runtime change or second live
+child is introduced.

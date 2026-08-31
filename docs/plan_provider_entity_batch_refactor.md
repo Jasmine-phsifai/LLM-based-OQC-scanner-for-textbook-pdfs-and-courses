@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #713)
+## 0. Current pruning and execution checkpoint (2026-08-31, #714)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1402,6 +1402,41 @@ seconds**, fixture equivalence and both import budgets pass, wheel size is
 smoke uses PDFium 5.11.0, proves 16 retained extraction pages and the older two
 recognition groups (`2 16`), and measures 25,604,705 installed bytes. The exact
 gate root self-cleans and no provider, credential or cloud call occurs.
+
+### #714 live-proves caller composition and fixes Google catalog zero calls
+
+The existing `run_google_genai_pdf_smoke.py` adds one explicit `--route-a` mode
+instead of a second runner. Its default direct-facade path remains unchanged.
+The fixed mode accepts only the proven `gemini-2.5-flash` preset, builds the
+existing 16-page fixture, calls `extract_pdf_pages()`, freezes explicit 8+8
+batches with `batchify_images()`, then calls the ordinary merged-image owner with
+`detail_ocr`. It adds no PDF convenience wrapper or production lifecycle.
+
+The first credential-free execution exposed a real public accounting defect:
+`list_google_genai_models()` returned `CONFIG_MISSING` before network/client work
+but omitted `provider_calls_attempted`, so the runner honestly reported null.
+The catalog owner now labels credential-stage errors with
+`provider_operation="credential"` and exact calls zero. One existing Google
+adapter test covers the branch; adapter/runner checks pass **52**, and repeated
+credential-free Route A preflight reports `CONFIG_MISSING/calls0`. Commit
+`dec22ff61a7845bae737001d2542cfa42ac98240` contains the fixed public error and
+the maintained runner mode.
+
+One and only one credential-isolated Route A child then used the unchanged 16
+authorized JPEGs (1,642,612 bytes, aggregate SHA-256
+`d092583bdd93436d8def0856da8c1cd62111fc42dc31ba8c188ad8a2ce1377ad`)
+through the required proxy. Direct exit is zero. Live catalog count is 39; two
+eight-page batches settle two merged-image slots in exactly two generations
+with 4,802/1,231 input/output tokens. The result is complete, published,
+state-free and reports 16 caller-owned pages during the run. Original images,
+generated PDF and extracted pages remain byte-exact; the runner temporary root,
+credential environment and process are absent afterward.
+
+This proves only explicit caller composition. No hidden batching, PDF result
+adapter, retry, fallback, model switch, provider pool, PDF state/repair/cleanup,
+Route B behavior, runtime extraction change, or second live child is added. The
+owned 2,239-byte selection root is removed after exact verification; archive,
+repo, other TEMP and protected files are untouched.
 
 The destination is one visible, caller-composed pair of media flows:
 

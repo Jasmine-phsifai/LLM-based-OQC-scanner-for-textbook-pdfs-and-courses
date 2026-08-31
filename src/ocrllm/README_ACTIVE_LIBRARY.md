@@ -207,6 +207,10 @@ after every full page succeeds. The exact PNG tuple is caller-owned. There is no
 provider work, batch plan, manifest, state, repair metadata, or automatic
 deletion.
 
+The complete Route A composition is live-proven with Google: 16 extracted pages
+form two explicit batches, settle two merged-image slots in two generations, and
+publish one state-free Markdown while the page/PDF/source bytes remain unchanged.
+
 The direct PDF vision facade snapshots one local PDF, renders ordered pages with
 PDFium, and reuses the original Config/injected-provider image recognition in
 groups of at most eight. Rendered pages are removed after each group. Ordinary

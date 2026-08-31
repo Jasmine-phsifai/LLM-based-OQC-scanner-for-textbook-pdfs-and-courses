@@ -3597,3 +3597,15 @@ install, all optional profiles, and installed PDFium 5.11.0 extraction of 16
 caller-owned pages before the older two-group direct PDF smoke. The new cap has
 2,258 bytes headroom; `pdf-vision` measures 25,604,705 installed bytes. The gate
 root self-cleans and no provider/credential/cloud call occurs.
+
+#714 extends the existing Google PDF smoke with one explicit Route A mode and
+leaves its direct-facade mode unchanged. Credential-free execution exposed that
+public Google catalog `CONFIG_MISSING` omitted call evidence; commit `dec22ff`
+adds `provider_operation=credential` and exact calls zero at the catalog owner,
+with 52 focused adapter/runner checks passing. One later proxy-bound child
+extracts 16 authorized pages, forms 8+8 batches, and settles two merged-image
+slots through exactly two `gemini-2.5-flash` generations with 4,802/1,231
+tokens. Output is complete/published/state-free; source images, generated PDF
+and extracted pages stay exact; temporary/credential/process residue is zero.
+The 2,239-byte selection root is removed. No PDF wrapper, hidden batching,
+retry/pool/Route-B/runtime extraction/state/API expansion or second call follows.

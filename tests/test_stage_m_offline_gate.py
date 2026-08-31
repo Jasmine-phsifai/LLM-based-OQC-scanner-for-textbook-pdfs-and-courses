@@ -281,6 +281,19 @@ def test_audio_profiles_include_the_interval_backend_and_bounded_smoke() -> None
     assert "materialize_long_audio_interval" in script
 
 
+def test_google_profile_proves_installed_catalog_missing_credential_zero_call() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+    google_smoke = script.split(
+        "if ($profile -eq 'google') {",
+        maxsplit=1,
+    )[1].split("if ($profile -eq 'audio,google') {", maxsplit=1)[0]
+
+    assert "list_google_genai_models(GoogleGenAISettings())" in google_smoke
+    assert "error.details['provider_operation'] == 'credential'" in google_smoke
+    assert "error.details['provider_calls_attempted'] == 0" in google_smoke
+    assert "client_calls == 0" in google_smoke
+
+
 def test_dashscope_profile_proves_installed_missing_credential_is_zero_call() -> None:
     script = GATE_SCRIPT.read_text(encoding="utf-8")
     dashscope_smoke = script.split(

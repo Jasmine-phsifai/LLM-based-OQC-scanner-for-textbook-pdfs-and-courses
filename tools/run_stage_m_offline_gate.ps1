@@ -647,12 +647,38 @@ print(openai_module.__version__)
 
             if ($profile -eq 'google') {
                 $googleSmoke = @'
-from ocrllm import GoogleGenAISettings
+import os
+
+from ocrllm import ConfigError, GoogleGenAISettings, list_google_genai_models
 from ocrllm.providers.google_genai.load_google_genai import load_google_genai
 
+os.environ.pop('GOOGLE_API_KEY', None)
+os.environ.pop('GEMINI_API_KEY', None)
+google_module = load_google_genai()
+client_calls = 0
+original_client = google_module.Client
+
+def reject_client(*_args, **_kwargs):
+    global client_calls
+    client_calls += 1
+    raise AssertionError('credential failure must precede client construction')
+
+google_module.Client = reject_client
+try:
+    try:
+        list_google_genai_models(GoogleGenAISettings())
+    except ConfigError as error:
+        assert error.code == 'CONFIG_MISSING'
+        assert error.details['provider_operation'] == 'credential'
+        assert error.details['provider_calls_attempted'] == 0
+    else:
+        raise AssertionError('credential-free Google catalog unexpectedly succeeded')
+finally:
+    google_module.Client = original_client
+
+assert client_calls == 0
 settings = GoogleGenAISettings(api_key='offline-package-probe')
 assert 'offline-package-probe' not in repr(settings)
-google_module = load_google_genai()
 assert callable(google_module.Client)
 assert callable(google_module.types.HttpOptions)
 assert callable(google_module.types.Part.from_bytes)
