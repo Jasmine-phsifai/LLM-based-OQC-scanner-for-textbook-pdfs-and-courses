@@ -30,16 +30,16 @@ The current media boundaries are:
 
 ```text
 images -> batchify_images -> recognize/resume one merged image Markdown
-PDF    -> current recognize(Config) renders fail-fast groups of up to 8 pages
+PDF    -> extract_pdf_pages -> batchify_images -> merged image flow
+       -> or current recognize(Config) fail-fast groups of up to 8 pages
 MP3    -> split_audio -> recognize/resume one merged audio Markdown
 video  -> inspect/extract full frames and audio -> use the image/audio flows
 ```
 
-The provider-model PDF path is not yet merged-image-backed. The current product
-choice is whether to expose caller-owned page extraction before the existing
-merged-image APIs, or add a separate one-call provider-model PDF lifecycle.
-Earlier wording that described the future merged route as already shipped was
-incorrect and was fixed by iteration #687.
+Route A is selected: `extract_pdf_pages()` publishes one complete caller-owned
+directory of ordered full-page PNGs, which can be passed to the existing merged-
+image APIs. The older direct PDF facade remains available; no one-call provider-
+model PDF lifecycle was added.
 
 The obsolete combined video recognition, journal, outcome, composition, and
 publication surface has been removed after its merged image/audio replacements
@@ -101,6 +101,22 @@ state was lost but a current OCRLLM partial Markdown remains,
 `repair_images_to_markdown()` can trust the caller's explicit current batches,
 read only strict failed-slot markers, and replace each newly settled marker
 atomically. It creates no replacement state and does not accept legacy formats.
+
+## PDF page extraction
+
+```python
+from ocrllm import batchify_images, extract_pdf_pages
+
+pages = extract_pdf_pages(pdf_path)
+batches = batchify_images(tuple(pages), batch_size=8)
+```
+
+The default target is the normalized same-stem sibling directory. An explicit
+`output_dir` is the exact target and its parent must already be a plain
+directory. Extraction publishes only after every PDFium-rendered page succeeds,
+returns exact ordered PNG paths, performs no provider call, creates no state or
+manifest, and never deletes the caller-owned result. Pages remain complete and
+uncropped. Call merged image recognition/resume/repair separately.
 
 ## Merged audio
 

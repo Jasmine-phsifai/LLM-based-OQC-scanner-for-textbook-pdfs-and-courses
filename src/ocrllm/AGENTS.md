@@ -67,9 +67,10 @@ This file adds package-local rules for `src/ocrllm/`. The repository-root
   injected-provider grouped-image path. It is not the provider-model merged
   image path. Do not add PyMuPDF or `fitz`; the active PDF backend is
   `pypdfium2`.
-- Provider-model PDF ownership remains a maintainer decision between visible
-  caller-owned page extraction and a one-call PDF lifecycle. Do not implement
-  either route until the maintainer chooses it.
+- Route A is selected. `extract_pdf_pages()` publishes one complete caller-owned
+  ordered PNG directory; callers compose it with existing image planning,
+  recognition, resume, and repair. Do not add a PDF manifest, page DTO, provider
+  parameter, PDF state, automatic cleanup, or a one-call PDF lifecycle.
 - Social-media recognition/downloading, PDF text mode, full model-catalog
   mirrors, WAV/M4A widening, shared worker registration, Rust/PyO3, and a
   combined video lifecycle remain deferred. HarmonyOS/ArkTS integration is also

@@ -14369,3 +14369,25 @@ an explicit choice. The neighboring old-video paragraph now calls the removed
 family the historical #680 deletion target rather than currently shipped. No
 runtime, API, test, provider/media action, dependency, state, public contract or
 frozen code changes.
+
+## Current working update: #713 selects PDF Route A and exposes page extraction
+
+The maintainer answered **A**. Package-root `extract_pdf_pages()` now publishes
+one complete caller-owned ordered full-page PNG directory, defaulting to the
+normalized same-stem sibling or accepting one exact explicit target with an
+existing plain parent. It performs no provider call and owns no later image
+planning, Markdown, state, repair, or cleanup.
+
+The implementation reuses the existing stable PDF snapshot, whole-page
+inspection, PDFium lock/render limits and transient groups of eight. Validated
+pages move into one private staging tree; snapshot/backend cleanup finishes
+before one final rename. Failures publish nothing. Four public branches plus
+lazy export pass 66 focused tests, and real PDFium 5.11.0 extracts 16 varying
+pages with source bytes unchanged and no staging residue.
+
+The new module contributes 1,731 compressed wheel bytes; measured wheel size is
+329,320 bytes. The fixed base alarm moves from 320 to 324 KiB instead of merging
+unrelated responsibilities, leaving 2,456 bytes. Dependencies, 2 MiB installed
+budget, optional profiles, direct PDF behavior, provider/media state and frozen
+code remain unchanged. The installed `pdf-vision` smoke now includes extraction;
+its clean committed run is the remaining release proof.

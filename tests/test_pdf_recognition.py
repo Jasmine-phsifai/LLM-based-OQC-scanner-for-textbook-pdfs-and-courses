@@ -26,6 +26,7 @@ from ocrllm import (
     PDFError,
     RecognitionExecutionPolicy,
     VisionModelSettings,
+    extract_pdf_pages,
     recognize,
     recognize_batch,
 )
@@ -201,6 +202,110 @@ def _pdf_config(
         cancellation=cancellation,
         execution=RecognitionExecutionPolicy(max_parallel_requests=4),
     )
+
+
+def test_extract_pdf_pages_publishes_one_complete_ordered_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from PIL import Image
+
+    _install_fake_pdfium(monkeypatch, page_count=16)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    source_bytes = source.read_bytes()
+
+    pages = extract_pdf_pages(source)
+
+    target = tmp_path / "book"
+    assert type(pages) is tuple
+    assert pages == tuple(
+        target / f"page-{page_number:06d}.png"
+        for page_number in range(1, 17)
+    )
+    assert target.is_dir()
+    assert all(path.is_file() for path in pages)
+    with Image.open(pages[0]) as first, Image.open(pages[-1]) as last:
+        assert first.getpixel((0, 0)) == (1, 1, 1)
+        assert last.getpixel((0, 0)) == (16, 16, 16)
+    assert source.read_bytes() == source_bytes
+    assert not tuple(tmp_path.glob(".ocrllm-pdf-*.tmp"))
+
+
+def test_extract_pdf_pages_uses_explicit_directory_and_rejects_collision(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_pdfium(monkeypatch, page_count=1)
+    source = _write_pdf_placeholder(tmp_path / "book.pdf")
+    target = tmp_path / "caller-owned-pages"
+
+    pages = extract_pdf_pages(source, output_dir=target)
+
+    assert pages == (target / "page-000001.png",)
+    assert pages[0].is_file()
+    assert not (target / "book").exists()
+    monkeypatch.setitem(sys.modules, "pypdfium2", object())
+    with pytest.raises(OutputError) as captured:
+        extract_pdf_pages(source, output_dir=target)
+    assert captured.value.code == "OUTPUT_EXISTS"
+    assert pages[0].is_file()
+
+    missing_target = tmp_path / "missing-parent" / "pages"
+    with pytest.raises(OutputError) as captured:
+        extract_pdf_pages(source, output_dir=missing_target)
+    assert captured.value.code == "OUTPUT_PATH_INVALID"
+    assert not missing_target.parent.exists()
+
+
+def test_extract_pdf_pages_failure_publishes_no_partial_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FailingNinthPageDocument(_FakePdfDocument):
+        def get_page(self, page_index: int) -> _FakePdfPage:
+            if page_index == 8:
+                raise RuntimeError("test-only ninth-page render failure")
+            return super().get_page(page_index)
+
+    monkeypatch.setitem(
+        sys.modules,
+        "pypdfium2",
+        SimpleNamespace(
+            PYPDFIUM_INFO=SimpleNamespace(api_tag=(5, 11, 0), beta=None),
+            PdfDocument=lambda _path: FailingNinthPageDocument(9),
+        ),
+    )
+    source = _write_pdf_placeholder(tmp_path / "broken.pdf")
+    target = tmp_path / "published-pages"
+
+    with pytest.raises(PDFError) as captured:
+        extract_pdf_pages(source, output_dir=target)
+
+    assert captured.value.code == "PDF_INVALID"
+    assert captured.value.details["page_number"] == 9
+    assert not target.exists()
+    assert not tuple(tmp_path.glob(".ocrllm-pdf-*.tmp"))
+
+
+def test_extract_pdf_pages_stays_within_legacy_windows_limit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if _windows_path_units(tmp_path) >= 111:
+        pytest.skip("pytest temporary path is already too long for this boundary")
+    _install_fake_pdfium(monkeypatch, page_count=8)
+    output_parent = _make_directory_with_windows_path_units(tmp_path, 111)
+    long_stem = "p" * 96
+    source = _write_pdf_placeholder(tmp_path / f"{long_stem}.pdf")
+    target = output_parent / long_stem
+    _enforce_legacy_windows_open_limit(monkeypatch)
+
+    pages = extract_pdf_pages(source, output_dir=target)
+
+    created_paths = (target, *pages)
+    assert max(_windows_path_units(path) for path in created_paths) <= 259
+    assert all(str(path).count(long_stem) == 1 for path in created_paths)
+    assert not tuple(output_parent.glob(".ocrllm-pdf-*.tmp"))
 
 
 def test_public_pdf_uses_two_ordered_bounded_image_groups(

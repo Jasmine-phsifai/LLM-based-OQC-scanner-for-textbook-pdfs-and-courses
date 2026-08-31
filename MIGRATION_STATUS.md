@@ -3580,3 +3580,17 @@ Route A, while Route B would require an explicit PDF owner. The adjacent
 combined-video deletion text is also changed from stale “currently shipped”
 tense to the historical target completed in #680. No runtime/API/test/provider/
 media/dependency/state/public-contract/frozen-code change occurs.
+
+#713 records the maintainer's explicit Route A choice and ships package-root
+`extract_pdf_pages(source, output_dir=None)`. It reuses the existing stable PDF
+snapshot, inspection, PDFium lock/limits and transient eight-page renderer, moves
+validated groups into one private staging tree, and publishes one complete
+caller-owned ordered PNG directory only after all cleanup succeeds. Default is
+the normalized same-stem sibling; explicit output is the exact target with an
+existing plain parent. There is no provider, batch plan, manifest, DTO, PDF
+state, page subset, password, compatibility format or automatic deletion. Sixty-
+six focused checks and one real local 16-page PDFium 5.11.0 extraction pass.
+Wheel growth is exactly attributable to the 1,731-byte compressed new module;
+the base cap moves from 320 to 324 KiB with 2,456 bytes headroom, while all
+dependency/import/install/profile budgets stay fixed. Installed `pdf-vision`
+extraction remains the post-commit clean gate.

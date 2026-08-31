@@ -226,9 +226,9 @@ try {
     if ($null -eq $wheel) {
         throw 'wheel build produced no wheel'
     }
-    $baseWheelMaximumBytes = 327680
+    $baseWheelMaximumBytes = 331776
     if ($wheel.Length -gt $baseWheelMaximumBytes) {
-        throw "base wheel exceeds 320 KiB: $($wheel.Length)"
+        throw "base wheel exceeds 324 KiB: $($wheel.Length)"
     }
 
     $wheelChecker = Join-Path $sourceRoot 'tools\check_built_wheel.py'
@@ -730,6 +730,7 @@ from ocrllm import (
     Config,
     RecognitionExecutionPolicy,
     RecognitionPreferences,
+    extract_pdf_pages,
     recognize,
 )
 
@@ -747,6 +748,23 @@ with pdfium.PdfDocument.new() as created:
         created_page.close()
     created.save(pdf_path)
 assert created.raw is None
+
+page_directory = smoke_root / 'extracted-pages'
+page_paths = extract_pdf_pages(pdf_path, output_dir=page_directory)
+assert type(page_paths) is tuple
+assert page_paths == tuple(
+    page_directory / f'page-{page_number:06d}.png'
+    for page_number in range(1, 17)
+)
+extracted_widths = []
+for page_path in page_paths:
+    with Image.open(page_path) as rendered:
+        assert rendered.format == 'PNG'
+        rendered.load()
+        extracted_widths.append(rendered.width)
+assert extracted_widths == sorted(extracted_widths)
+assert len(set(extracted_widths)) == 16
+assert not tuple(smoke_root.glob('.ocrllm-pdf-*.tmp'))
 
 class Provider:
     resume_identity = 'offline-installed-pdf-provider-v1'
@@ -838,6 +856,7 @@ print(
     pdfium.PYPDFIUM_INFO.tag,
     pdfium.PDFIUM_INFO.tag,
     result.metadata['pdf_group_count'],
+    len(page_paths),
 )
 '@
                 $pdfiumSmoke | & $profilePython -I - $profileVenv

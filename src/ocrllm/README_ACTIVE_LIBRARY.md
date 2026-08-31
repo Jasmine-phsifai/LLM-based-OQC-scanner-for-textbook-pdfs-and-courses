@@ -190,6 +190,23 @@ coordinate branches, compose Markdown, or clean extraction outputs.
 
 ## PDF
 
+Route A exposes provider-free caller-owned pages:
+
+```python
+from ocrllm import batchify_images, extract_pdf_pages
+
+pages = extract_pdf_pages(pdf_path)
+batches = batchify_images(tuple(pages), batch_size=8)
+```
+
+`extract_pdf_pages()` defaults to a normalized same-stem sibling directory; an
+explicit `output_dir` is the exact target and requires an existing plain parent.
+It snapshots and inspects the PDF once, renders ordered groups of at most eight
+through the existing PDFium limits, and atomically publishes the directory only
+after every full page succeeds. The exact PNG tuple is caller-owned. There is no
+provider work, batch plan, manifest, state, repair metadata, or automatic
+deletion.
+
 The direct PDF vision facade snapshots one local PDF, renders ordered pages with
 PDFium, and reuses the original Config/injected-provider image recognition in
 groups of at most eight. Rendered pages are removed after each group. Ordinary

@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     )
     from .get_capabilities import get_capabilities as get_capabilities
     from .local_ocr_settings import LocalOCRSettings as LocalOCRSettings
+    from .pdf.extract_pdf_pages import extract_pdf_pages as extract_pdf_pages
     from .provider_error_disposition import (
         ProviderErrorDisposition as ProviderErrorDisposition,
         get_provider_error_disposition as get_provider_error_disposition,
@@ -173,6 +174,7 @@ _PUBLIC_IMPORTS = {
     "VisionModelSettings": ".vision_model_settings",
     "extract_video_audio": ".video.extract_video_audio",
     "extract_video_frames": ".video.extract_video_frames",
+    "extract_pdf_pages": ".pdf.extract_pdf_pages",
     "get_capabilities": ".get_capabilities",
     "inspect_video": ".video.inspect_video",
     "list_google_genai_models": ".providers.google_genai.list_google_genai_models",
@@ -236,6 +238,7 @@ __all__ = [
     "resume_images_to_markdown",
     "resume_audio_to_markdown",
     "resume_video",
+    "extract_pdf_pages",
     "extract_video_frames",
     "extract_video_audio",
     "inspect_video",

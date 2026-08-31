@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #710)
+## 0. Current pruning and execution checkpoint (2026-08-31, #713)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1362,6 +1362,42 @@ paragraph also no longer calls the already-deleted family currently shipped; it
 is labeled as the historical target completed in #680. No runtime, API, test,
 provider, media, dependency, state, public contract, or frozen code changes.
 
+### #713 selects Route A and publishes provider-free PDF pages
+
+The maintainer explicitly selected **A** after the #710 decision stop. Package-
+root `extract_pdf_pages(source, *, output_dir=None)` is now the first Route A
+vertical slice. Omitted output uses the normalized same-stem sibling directory;
+an explicit value is the exact target. Its parent must already be a plain
+directory and every existing target type is rejected before snapshot/backend
+work.
+
+The PDF-owned implementation reuses the unchanged 100 MiB stable snapshot,
+whole-document inspection, PDFium lock, 200-DPI/side/pixel limits, full-page PNG
+validation, and transient groups of at most eight. Each yielded group is moved
+inside one private same-parent staging tree before the old renderer cleans its
+transient paths. The source snapshot and PDFium objects finish cleanup before a
+single directory rename publishes all pages. Failure leaves no final directory;
+success returns an exact ordered `Path` tuple and transfers permanent ownership
+to the caller. There is no provider, automatic batching, manifest, DTO, PDF
+state, repair metadata, compatibility format, page selection, password, or
+automatic deletion.
+
+Four public cases extend the existing PDF test home: 16-page ordering/ownership,
+exact explicit target plus pre-backend collision/missing-parent rejection,
+ninth-page failure with zero partial publication, and the real legacy Windows
+path bound. PDF/backend/import/export/gate checks pass **66**. A real local
+PDFium 5.11.0 run created and extracted 16 varying pages, preserved source
+bytes, retained all returned files after call return, and left zero staging.
+
+The worktree wheel is 329,320 bytes. Archive inspection attributes 1,731
+compressed bytes to the new single-responsibility module and finds no accidental
+payload; the former 320 KiB cap is therefore moved once to **324 KiB** rather
+than merging extraction into the transient renderer. Current headroom is 2,456
+bytes. Base dependencies, 2 MiB installed target and import/profile budgets do
+not change. The maintained installed `pdf-vision` smoke now exercises the new
+public extraction before the older direct recognition gate; its exact clean-
+archive run remains the release check after commit.
+
 The destination is one visible, caller-composed pair of media flows:
 
 ```text
@@ -1373,15 +1409,14 @@ extract_video_audio -> split_audio
 ```
 
 The shipped direct PDF facade still uses PDFium with the original
-`Config`/injected-provider grouped-image path. If the maintainer selects Route A,
-caller-owned page extraction will compose with the existing merged-image
-backend; if Route B is selected, a PDF-specific owner must explicitly own source
-identity, retained pages, cleanup, provider topology and resume. Neither route
-is implemented by implication. Image and audio keep separate plans, sidecars,
-Markdown outputs, providers, and resume calls. There is no replacement
-`recognize_video` recognition/lifecycle black box. The thin package-root
-`resume_video` route fixed by #633 delegates exactly one already-extracted
-branch per call and owns no state, composition, or cleanup.
+`Config`/injected-provider grouped-image path. Selected Route A now publishes
+caller-owned page PNGs for explicit composition with the existing merged-image
+backend. Route B's PDF-specific source identity, retained-page lifecycle,
+provider topology, cleanup and resume owner are not implemented. Image and audio
+keep separate plans, sidecars, Markdown outputs, providers, and resume calls.
+There is no replacement `recognize_video` recognition/lifecycle black box. The
+thin package-root `resume_video` route fixed by #633 delegates exactly one
+already-extracted branch per call and owns no state, composition, or cleanup.
 
 The historical deletion target completed in #680 was the then-shipped **video
 recognition/orchestration family**: `recognize_video`,
