@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #714)
+## 0. Current pruning and execution checkpoint (2026-08-31, #715)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1447,6 +1447,21 @@ installed Google profile proves missing credentials construct no client and
 report exact calls zero, while installed PDFium still reports `2 16`. The exact
 gate root self-cleans, processes are absent, and no provider, credential or cloud
 call occurs.
+
+### #715 finds no authorized real archive PDF and does not build an unused runner
+
+A bounded deterministic selection audit scanned `D:\archieve`: 146,212 regular
+files and zero `.pdf` leaves. No candidate was opened, rendered, copied, or
+hashed; no TEMP manifest was created, and archive/repository state stayed
+unchanged. The installed PDFium 5.11.0 synthetic extraction gate from #713 and
+the real Google Route A composition over a generated 16-page PDF from #714
+remain the current evidence, but neither is mislabeled as an archive-PDF run.
+
+Without an explicit real PDF source, adding `run_pdf_page_extraction_smoke.py`
+would create an unexercised one-function scenario silo. No download, unrelated
+private-folder scan, substitute fixture, runtime, runner, test, provider, network,
+dependency, state or cleanup action follows. A real archive-PDF scenario remains
+external-input deferred until the maintainer supplies or identifies one source.
 
 The destination is one visible, caller-composed pair of media flows:
 

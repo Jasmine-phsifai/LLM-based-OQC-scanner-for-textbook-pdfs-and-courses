@@ -3615,3 +3615,10 @@ expected skip, 329,553-byte wheel, 1,697,571-byte base install, every optional
 profile, installed Google credential failure with client/calls zero, and the
 installed PDF `2 16` extraction/direct smoke. New-cap headroom is 2,223 bytes;
 the gate root self-cleans and no provider/credential/cloud call occurs.
+
+#715 attempts the next real-media PDF gate but a deterministic read-only scan of
+`D:\archieve` finds 146,212 regular files and zero PDFs. No candidate, render,
+copy, hash, TEMP root, runner, test, provider, network or product change occurs.
+The installed synthetic PDFium proof and generated-PDF Google Route A proof stay
+valid but are not called archive-PDF evidence. An explicit real PDF source is
+required before adding or running a dedicated scenario.

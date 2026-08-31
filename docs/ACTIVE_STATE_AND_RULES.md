@@ -14419,3 +14419,12 @@ expected skip, 329,553-byte wheel, 1,697,571-byte base install, all optional
 profiles, installed Google missing-credential client/calls zero, and installed
 PDF `2 16`. Wheel headroom is 2,223 bytes. The gate root and processes are absent;
 no provider, credential or cloud call occurs.
+
+## Current working update: #715 real archive PDF input is unavailable
+
+One bounded deterministic audit scans `D:\archieve` and finds 146,212 regular
+files but no `.pdf` leaves. Nothing is opened, rendered, copied or written; no
+TEMP manifest exists. The current PDF evidence remains installed real PDFium over
+a generated document plus real Google Route A composition, not an archive-PDF
+claim. No unused runner or substitute download is added. A real archive-PDF gate
+waits for one explicit authorized source.
