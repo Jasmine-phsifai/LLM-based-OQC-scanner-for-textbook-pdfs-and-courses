@@ -3630,3 +3630,11 @@ source hash, writes 412,300 PNG bytes, and leaves staging/provider calls/provide
 SDKs/TEMP roots/processes at zero. This is not real archive-PDF or quality
 evidence. No production API/runtime/dependency/state/limit/default-test change
 or generic stress framework is added.
+
+#717 audits the recent Route A owner/runners for overdesign and finds no false-
+pass or broad refactor to justify. The only proven dead value is internal
+`PDFSnapshot.byte_size`: no PDF consumer reads it, while size/copy completeness
+checks remain inside `snapshot_pdf`. Removing the stored field/return passes 49
+focused tests and reduces the worktree wheel from 329,553 to 329,532 bytes; the
+324 KiB cap and all public behavior stay unchanged. Shared runner helpers,
+eight-page constants, provider calls and stress reruns are deliberately rejected.

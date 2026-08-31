@@ -11,7 +11,7 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #716)
+## 0. Current pruning and execution checkpoint (2026-08-31, #717)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
@@ -1486,6 +1486,28 @@ No memory number or real-document quality claim is inferred. No runtime, public
 API, page-count ceiling, manifest, state, provider, retry, dependency, default
 test, or cleanup framework changes; the tool answers only the fixed lifecycle
 pressure question.
+
+### #717 removes one proven-unused PDF snapshot field and rejects broad refactors
+
+Primary review plus one independent read-only audit found no Route A false-pass,
+unbounded lifecycle, oversized production function, or justified generic helper.
+The two runners duplicate small fingerprint/origin checks intentionally so each
+scenario remains standalone; the three eight-page limits belong to separate
+owners and remain guarded by the renderer. Extracting common tool/framework code
+or merging the PDF owner into another module would increase coupling.
+
+One internal value was demonstrably dead: `PDFSnapshot.byte_size` was computed
+and stored, but every source/test/tool consumer uses only `.path` and `.root`.
+The type is not public. Removing the field and `_copy_open_pdf()` return changes
+no safety behavior: expected size still comes from validated `fstat`, the copy
+loop still counts every byte, rejects short/extra data, verifies each write,
+flushes/fsyncs, and preserves cleanup error precedence.
+
+PDF/backend/import checks pass **49**. One worktree wheel measures **329,532
+bytes**, 21 bytes below the preceding committed 329,553-byte wheel and 2,244
+bytes below the unchanged 324 KiB cap. This is a readability reduction, not a
+cap-driven field hunt: no other unconsumed/frozen field, runner helper, constant,
+API, test, provider call or pressure rerun changes.
 
 The destination is one visible, caller-composed pair of media flows:
 

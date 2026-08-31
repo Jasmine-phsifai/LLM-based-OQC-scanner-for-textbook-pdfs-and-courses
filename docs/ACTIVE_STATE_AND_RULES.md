@@ -14440,3 +14440,16 @@ provider SDKs, TEMP roots or processes.
 The result is synthetic lifecycle/endurance evidence, not archive-PDF content or
 quality evidence. No production code, API, page ceiling, provider, state,
 dependency, default test or stress framework changes.
+
+## Current working update: #717 prunes one internal PDF snapshot value
+
+A primary and independent overdesign audit finds no Route A lifecycle defect or
+justified runner/framework refactor. Internal `PDFSnapshot.byte_size` has no
+consumer; PDF recognition and extraction use only its path/root, while copy size
+validation remains fully enforced inside the snapshot owner. The field and
+private copy return are removed.
+
+Forty-nine focused tests pass. The worktree wheel is 329,532 bytes, 21 bytes
+smaller than the preceding committed wheel and 2,244 bytes below the unchanged
+cap. No public API, safety bound, tool contract, provider call, stress rerun,
+dependency, state or frozen code changes.

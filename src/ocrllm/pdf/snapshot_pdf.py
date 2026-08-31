@@ -25,7 +25,6 @@ class PDFSnapshot:
 
     path: Path
     root: Path
-    byte_size: int
 
 
 @contextmanager
@@ -54,7 +53,7 @@ def snapshot_pdf(
                     code="OUTPUT_WRITE_FAILED",
                 ) from error
             snapshot_path = snapshot_root / "source.pdf"
-            copied_size = _copy_open_pdf(
+            _copy_open_pdf(
                 source_stream,
                 snapshot_path,
                 expected_size=expected_size,
@@ -68,7 +67,6 @@ def snapshot_pdf(
         yield PDFSnapshot(
             path=snapshot_path,
             root=snapshot_root,
-            byte_size=copied_size,
         )
     except BaseException as error:
         primary_error = error
@@ -154,7 +152,7 @@ def _validate_pdf_stat(source_stat: os.stat_result) -> int:
     return source_stat.st_size
 
 
-def _copy_open_pdf(source_stream, snapshot_path: Path, *, expected_size: int) -> int:
+def _copy_open_pdf(source_stream, snapshot_path: Path, *, expected_size: int) -> None:
     try:
         snapshot_stream = snapshot_path.open("xb")
     except (OSError, ValueError) as error:
@@ -214,7 +212,6 @@ def _copy_open_pdf(source_stream, snapshot_path: Path, *, expected_size: int) ->
         raise
     finally:
         _close_snapshot_stream(snapshot_stream, primary_error=primary_error)
-    return copied_size
 
 
 def _close_pdf_stream(source_stream, *, primary_error: BaseException | None) -> None:
