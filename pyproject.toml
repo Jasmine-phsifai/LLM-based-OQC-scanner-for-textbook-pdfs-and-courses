@@ -35,6 +35,7 @@ video = [
     "opencv-python>=4.13,<4.14",
 ]
 dashscope = ["openai>=2.30,<3"]
+openai-compatible = ["openai>=2.30,<3"]
 google = ["google-genai>=2.9,<3"]
 pdf-vision = [
     "pypdfium2>=5.11.0,<5.12",

@@ -209,9 +209,9 @@ def test_base_install_probe_resolves_public_class_type_hints() -> None:
 def test_base_wheel_budget_keeps_bounded_product_headroom() -> None:
     script = GATE_SCRIPT.read_text(encoding="utf-8")
 
-    assert "$baseWheelMaximumBytes = 331776" in script
+    assert "$baseWheelMaximumBytes = 344064" in script
     assert "if ($wheel.Length -gt $baseWheelMaximumBytes)" in script
-    assert "base wheel exceeds 324 KiB" in script
+    assert "base wheel exceeds 336 KiB" in script
 
 
 @pytest.mark.parametrize(
@@ -311,6 +311,24 @@ def test_dashscope_profile_proves_installed_missing_credential_is_zero_call() ->
     assert "assert 'openai' not in sys.modules" in dashscope_smoke
     assert "state_path.unlink()" in dashscope_smoke
     assert "$profileVenv" in dashscope_smoke
+
+
+def test_openai_compatible_profile_is_installed_and_zero_call_without_key() -> None:
+    script = GATE_SCRIPT.read_text(encoding="utf-8")
+    smoke = script.split(
+        "if ($profile -eq 'image,openai-compatible') {",
+        maxsplit=1,
+    )[1].split("if ($profile -eq 'google') {", maxsplit=1)[0]
+
+    assert "'image,openai-compatible' = 67108864" in script
+    assert "'image,openai-compatible' = @('Pillow', 'openai')" in script
+    assert "GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE" in smoke
+    assert "error.code == 'CONFIG_MISSING'" in smoke
+    assert "error.details['provider_calls_attempted'] == 0" in smoke
+    assert "assert 'openai' not in sys.modules" in smoke
+    assert "state_path.unlink()" in smoke
+    assert "OpenAICompatibleSettings(" in smoke
+    assert "max_retries=0" in smoke
 
 
 def test_ocr_profile_runs_real_installed_inference_without_network() -> None:

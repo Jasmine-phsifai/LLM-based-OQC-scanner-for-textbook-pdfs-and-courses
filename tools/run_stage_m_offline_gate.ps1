@@ -226,9 +226,9 @@ try {
     if ($null -eq $wheel) {
         throw 'wheel build produced no wheel'
     }
-    $baseWheelMaximumBytes = 331776
+    $baseWheelMaximumBytes = 344064
     if ($wheel.Length -gt $baseWheelMaximumBytes) {
-        throw "base wheel exceeds 324 KiB: $($wheel.Length)"
+        throw "base wheel exceeds 336 KiB: $($wheel.Length)"
     }
 
     $wheelChecker = Join-Path $sourceRoot 'tools\check_built_wheel.py'
@@ -389,6 +389,7 @@ print(sorted(declared_extras))
             'image' = 26214400
             'ocr' = 536870912
             'image,dashscope' = 67108864
+            'image,openai-compatible' = 67108864
             'google' = 67108864
             'audio,google' = 146800640
             'pdf-vision' = 36700160
@@ -407,6 +408,7 @@ print(sorted(declared_extras))
                 'omegaconf'
             )
             'image,dashscope' = @('Pillow', 'openai')
+            'image,openai-compatible' = @('Pillow', 'openai')
             'google' = @('google-genai')
             'audio,google' = @('miniaudio', 'imageio-ffmpeg', 'google-genai')
             'pdf-vision' = @('pypdfium2', 'Pillow')
@@ -424,6 +426,7 @@ print(sorted(declared_extras))
             'image',
             'ocr',
             'image,dashscope',
+            'image,openai-compatible',
             'google',
             'audio,google',
             'pdf-vision',
@@ -643,6 +646,69 @@ print(openai_module.__version__)
 '@
                 $dashscopeSmoke | & $profilePython -I - $profileVenv
                 Assert-LastExitCode 'DashScope offline construction smoke failed'
+            }
+
+            if ($profile -eq 'image,openai-compatible') {
+                $compatibleSmoke = @'
+import os
+from pathlib import Path
+import sys
+
+from PIL import Image
+from ocrllm import (
+    ConfigError,
+    GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE,
+    OpenAICompatibleSettings,
+    recognize_images_to_markdown,
+)
+
+root = Path(sys.argv[1])
+image_path = root / 'compatible-zero-call.png'
+output_path = root / 'compatible-zero-call.md'
+state_path = root / 'compatible-zero-call.ocrllm-state.json'
+Image.new('RGB', (16, 12), color=(48, 96, 144)).save(image_path, format='PNG')
+for name in ('GEMINI_API_KEY', 'GOOGLE_API_KEY', 'OPENAI_API_KEY'):
+    os.environ.pop(name, None)
+
+try:
+    recognize_images_to_markdown(
+        ((image_path,),),
+        provider=GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE,
+        image_task='detail_ocr',
+        output_path=output_path,
+    )
+except ConfigError as error:
+    assert error.code == 'CONFIG_MISSING'
+    assert error.details['provider_calls_attempted'] == 0
+else:
+    raise AssertionError('credential-free compatible provider unexpectedly succeeded')
+
+assert 'openai' not in sys.modules
+assert not output_path.exists()
+assert state_path.is_file() and not state_path.is_symlink()
+state_path.unlink()
+image_path.unlink()
+
+settings = OpenAICompatibleSettings(
+    base_url='http://127.0.0.1:8000/v1',
+    api_key_env='LOCAL_LLM_KEY',
+    api_key='offline-package-probe',
+)
+assert 'offline-package-probe' not in repr(settings)
+import openai
+client = openai.OpenAI(
+    api_key=settings.api_key,
+    base_url=settings.base_url,
+    timeout=3.0,
+    max_retries=0,
+)
+client.close()
+print(openai.__version__)
+'@
+                $compatibleSmoke | & $profilePython -I - $profileVenv
+                Assert-LastExitCode (
+                    'OpenAI-compatible offline construction smoke failed'
+                )
             }
 
             if ($profile -eq 'google') {

@@ -89,10 +89,15 @@ if TYPE_CHECKING:
     from .providers.google_genai.provider_settings import (
         GoogleGenAISettings as GoogleGenAISettings,
     )
+    from .providers.openai_compatible.provider_settings import (
+        OpenAICompatibleSettings as OpenAICompatibleSettings,
+    )
     from .providers.provider_model import ProviderModel as ProviderModel
     from .providers.provider_model_presets import (
         DASHSCOPE_QWEN3_5_OCR_CN_BEIJING as DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+        DASHSCOPE_QWEN3_5_OCR_OPENAI_COMPATIBLE_CN_BEIJING as DASHSCOPE_QWEN3_5_OCR_OPENAI_COMPATIBLE_CN_BEIJING,
         GOOGLE_GEMINI_2_5_FLASH as GOOGLE_GEMINI_2_5_FLASH,
+        GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE as GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE,
     )
     from .recognition_execution_policy import (
         RecognitionExecutionPolicy as RecognitionExecutionPolicy,
@@ -148,6 +153,8 @@ _PUBLIC_IMPORTS = {
         for name in (
             "GOOGLE_GEMINI_2_5_FLASH",
             "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING",
+            "GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE",
+            "DASHSCOPE_QWEN3_5_OCR_OPENAI_COMPATIBLE_CN_BEIJING",
         )
     },
     **{
@@ -164,6 +171,7 @@ _PUBLIC_IMPORTS = {
     "DashScopeCredentialPool": ".providers.dashscope.credential_pool",
     "DashScopeSettings": ".providers.dashscope.provider_settings",
     "GoogleGenAISettings": ".providers.google_genai.provider_settings",
+    "OpenAICompatibleSettings": ".providers.openai_compatible.provider_settings",
     "LocalOCRSettings": ".local_ocr_settings",
     "ProviderModel": ".providers.provider_model",
     "RecognitionExecutionPolicy": ".recognition_execution_policy",
@@ -201,6 +209,7 @@ __all__ = [
     "DependencyMissing",
     "InvalidSource",
     "GoogleGenAISettings",
+    "OpenAICompatibleSettings",
     "LocalOCRSettings",
     "NoTextDetected",
     "NoSpeechDetected",
@@ -247,6 +256,8 @@ __all__ = [
     "get_provider_error_disposition",
     "GOOGLE_GEMINI_2_5_FLASH",
     "DASHSCOPE_QWEN3_5_OCR_CN_BEIJING",
+    "GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE",
+    "DASHSCOPE_QWEN3_5_OCR_OPENAI_COMPATIBLE_CN_BEIJING",
 ]
 __version__ = "0.1.0"
 

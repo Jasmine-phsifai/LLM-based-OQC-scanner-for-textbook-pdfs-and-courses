@@ -9,8 +9,11 @@ from ..config import Config
 from ..errors import ConfigError
 from ..vision_model_settings import VisionModelSettings
 from .call_vision_provider import call_vision_provider
+from .openai_compatible.openai_compatible_provider import OpenAICompatibleProvider
+from .openai_compatible.provider_settings import OpenAICompatibleSettings
 from .provider_model import ProviderModel
 from .resolve_vision_provider import resolve_vision_provider
+from .resolved_vision_provider import ResolvedVisionProvider
 from .vision_provider_response import VisionProviderResponse
 
 
@@ -34,12 +37,25 @@ def recognize_provider_model_images(
             code="CONFIG_INVALID",
             details={"provider_calls_attempted": 0},
         ) from None
-    config = Config(
-        provider=provider_model.settings,
-        vision_model=VisionModelSettings(name=provider_model.model),
-        timeout_seconds=timeout_seconds,
-    )
-    resolved_provider = resolve_vision_provider(config)
+    if type(provider_model.settings) is OpenAICompatibleSettings:
+        config = Config(timeout_seconds=timeout_seconds)
+        resolved_provider = ResolvedVisionProvider(
+            value=OpenAICompatibleProvider(
+                vendor=provider_model.vendor,
+                model=provider_model.model,
+                settings=provider_model.settings,
+            ),
+            name=provider_model.vendor,
+            model=provider_model.model,
+            built_in=True,
+        )
+    else:
+        config = Config(
+            provider=provider_model.settings,
+            vision_model=VisionModelSettings(name=provider_model.model),
+            timeout_seconds=timeout_seconds,
+        )
+        resolved_provider = resolve_vision_provider(config)
     return call_vision_provider(
         resolved_provider,
         image_paths,

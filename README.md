@@ -62,6 +62,7 @@ pip install -e ".[audio,google]"
 pip install -e ".[pdf-vision,google]"
 pip install -e ".[video,image,audio]"
 pip install -e ".[image,dashscope]"
+pip install -e ".[image,openai-compatible]"
 pip install -e ".[ocr]"
 ```
 

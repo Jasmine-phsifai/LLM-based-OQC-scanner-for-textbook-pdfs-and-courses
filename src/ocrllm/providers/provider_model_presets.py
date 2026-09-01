@@ -6,6 +6,7 @@ from typing import Final
 
 from .dashscope.provider_settings import DashScopeSettings
 from .google_genai.provider_settings import GoogleGenAISettings
+from .openai_compatible.provider_settings import OpenAICompatibleSettings
 from .provider_model import ProviderModel
 
 
@@ -31,6 +32,38 @@ DASHSCOPE_QWEN3_5_OCR_CN_BEIJING: Final = ProviderModel(
     supports_detail_ocr=True,
     supports_audio=False,
     default_image_batch_size=1,
+    default_audio_minutes=None,
+    retry_rules={},
+)
+
+GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE: Final = ProviderModel(
+    vendor="google",
+    model="gemini-2.5-flash",
+    adapter_id="openai_compatible_chat",
+    settings=OpenAICompatibleSettings(
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        api_key_env="GEMINI_API_KEY",
+    ),
+    supports_plain_ocr=True,
+    supports_detail_ocr=True,
+    supports_audio=False,
+    default_image_batch_size=2,
+    default_audio_minutes=None,
+    retry_rules={},
+)
+
+DASHSCOPE_QWEN3_5_OCR_OPENAI_COMPATIBLE_CN_BEIJING: Final = ProviderModel(
+    vendor="dashscope",
+    model="qwen3.5-ocr",
+    adapter_id="openai_compatible_chat",
+    settings=OpenAICompatibleSettings(
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        api_key_env="DASHSCOPE_API_KEY",
+    ),
+    supports_plain_ocr=True,
+    supports_detail_ocr=True,
+    supports_audio=False,
+    default_image_batch_size=2,
     default_audio_minutes=None,
     retry_rules={},
 )

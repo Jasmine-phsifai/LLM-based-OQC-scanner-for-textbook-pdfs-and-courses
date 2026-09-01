@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import importlib
+import sys
 from threading import Event, Lock
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -24,6 +25,9 @@ from ocrllm.errors import (
     ResumeStateError,
 )
 from ocrllm.providers.google_genai.provider_settings import GoogleGenAISettings
+from ocrllm.providers.openai_compatible.provider_settings import (
+    OpenAICompatibleSettings,
+)
 from ocrllm.providers.provider_model import ProviderModel
 from ocrllm.providers.vision_provider_response import VisionProviderResponse
 from write_test_image import write_test_image
@@ -150,6 +154,94 @@ def _google_image_response(markdown: str, *, input_tokens: int, output_tokens: i
             candidates_token_count=output_tokens,
         ),
     )
+
+
+def test_public_merged_image_runs_openai_compatible_provider(
+    tmp_path,
+    monkeypatch,
+):
+    images = tuple(
+        write_test_image(
+            tmp_path / f"compatible-{index}.png",
+            color=(index + 1, index + 2, index + 3),
+        )
+        for index in range(2)
+    )
+    captured = {"calls": 0, "closed": False}
+    openai_module = ModuleType("openai")
+    openai_module.__version__ = "2.30.0"
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            self.chat = SimpleNamespace(
+                completions=SimpleNamespace(create=self.create)
+            )
+
+        def create(self, **kwargs):
+            captured["calls"] += 1
+            captured["request_keys"] = set(kwargs)
+            return SimpleNamespace(
+                model="served-compatible-alias",
+                choices=[
+                    SimpleNamespace(
+                        index=0,
+                        finish_reason="stop",
+                        message=SimpleNamespace(
+                            role="assistant",
+                            content="Merged compatible recognition",
+                            refusal=None,
+                        ),
+                    )
+                ],
+                usage=SimpleNamespace(prompt_tokens=30, completion_tokens=4),
+            )
+
+        def close(self):
+            captured["closed"] = True
+
+    openai_module.OpenAI = FakeClient
+    monkeypatch.setitem(sys.modules, "openai", openai_module)
+    provider = ProviderModel(
+        vendor="test-vendor",
+        model="compatible-model",
+        adapter_id="openai_compatible_chat",
+        settings=OpenAICompatibleSettings(
+            base_url="https://example.test/v1",
+            api_key_env="TEST_COMPATIBLE_KEY",
+            api_key="test-only-key",
+        ),
+        supports_plain_ocr=True,
+        supports_detail_ocr=True,
+        supports_audio=False,
+        default_image_batch_size=2,
+        default_audio_minutes=None,
+        retry_rules={},
+    )
+
+    result = recognize_images_to_markdown(
+        (images,),
+        provider=provider,
+        image_task="detail_ocr",
+    )
+
+    assert result.status == "complete"
+    assert result.markdown.startswith("## OCRLLM image slot 1 (1-2)\n")
+    assert "Merged compatible recognition" in result.markdown
+    assert result.metadata["provider_call_count"] == 1
+    assert result.metadata["current_provider_model_usage"] == (
+        {
+            "vendor": "test-vendor",
+            "model": "compatible-model",
+            "calls": 1,
+            "input_tokens": 30,
+            "output_tokens": 4,
+        },
+    )
+    assert captured == {
+        "calls": 1,
+        "closed": True,
+        "request_keys": {"model", "messages"},
+    }
 
 
 def test_invalid_merged_image_batch_shapes_report_zero_provider_calls(

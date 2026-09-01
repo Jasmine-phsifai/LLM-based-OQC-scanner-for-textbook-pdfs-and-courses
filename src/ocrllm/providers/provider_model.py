@@ -10,10 +10,12 @@ from ..errors import ConfigError, ProviderError
 from ..image_group_limits import MAX_IMAGE_GROUP_COUNT
 from .dashscope.provider_settings import DashScopeSettings
 from .google_genai.provider_settings import GoogleGenAISettings
+from .openai_compatible.provider_settings import OpenAICompatibleSettings
 
 
 _GOOGLE_ADAPTER_ID: Final = "google_genai"
 _DASHSCOPE_ADAPTER_ID: Final = "dashscope_openai_compatible"
+_OPENAI_COMPATIBLE_ADAPTER_ID: Final = "openai_compatible_chat"
 _RETRY_LABELS: Final = frozenset({"error", "next", "current"})
 _RETRY_RULE_CODES: Final = ProviderError.allowed_codes - {
     "ALL_CANDIDATES_EXHAUSTED"
@@ -51,7 +53,9 @@ class ProviderModel:
         vendor: str,
         model: str,
         adapter_id: str,
-        settings: GoogleGenAISettings | DashScopeSettings,
+        settings: (
+            GoogleGenAISettings | DashScopeSettings | OpenAICompatibleSettings
+        ),
         supports_plain_ocr: bool,
         supports_detail_ocr: bool,
         supports_audio: bool,
@@ -113,7 +117,9 @@ class ProviderModel:
         return self._adapter_id
 
     @property
-    def settings(self) -> GoogleGenAISettings | DashScopeSettings:
+    def settings(
+        self,
+    ) -> GoogleGenAISettings | DashScopeSettings | OpenAICompatibleSettings:
         """Return the exact runtime settings without treating them as identity."""
         return self._settings
 
@@ -170,11 +176,17 @@ class ProviderModel:
 def _expected_settings_type(
     vendor: str,
     adapter_id: str,
-) -> type[GoogleGenAISettings] | type[DashScopeSettings]:
+) -> (
+    type[GoogleGenAISettings]
+    | type[DashScopeSettings]
+    | type[OpenAICompatibleSettings]
+):
     if vendor == "google" and adapter_id == _GOOGLE_ADAPTER_ID:
         return GoogleGenAISettings
     if vendor == "dashscope" and adapter_id == _DASHSCOPE_ADAPTER_ID:
         return DashScopeSettings
+    if adapter_id == _OPENAI_COMPATIBLE_ADAPTER_ID:
+        return OpenAICompatibleSettings
     raise ConfigError(
         "ProviderModel vendor and adapter_id must select one supported built-in route.",
         code="CONFIG_INVALID",

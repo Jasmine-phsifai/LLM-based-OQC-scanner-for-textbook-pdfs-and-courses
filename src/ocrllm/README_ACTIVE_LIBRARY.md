@@ -21,6 +21,7 @@ pip install -e ".[audio,google]"
 pip install -e ".[pdf-vision,google]"
 pip install -e ".[video,image,audio]"
 pip install -e ".[image,dashscope]"
+pip install -e ".[image,openai-compatible]"
 ```
 
 Available extras:
@@ -31,6 +32,7 @@ Available extras:
 - `pdf-vision`: PDFium rendering for vision recognition;
 - `google`: native Google GenAI adapters;
 - `dashscope`: DashScope OpenAI-compatible image adapter;
+- `openai-compatible`: provider-neutral OpenAI Chat Completions image adapter;
 - `ocr`: local RapidOCR text extraction.
 
 Plain `import ocrllm` remains lightweight: it does not import OpenCV, NumPy,
@@ -46,7 +48,10 @@ presets:
 ```python
 from ocrllm import (
     DASHSCOPE_QWEN3_5_OCR_CN_BEIJING,
+    DASHSCOPE_QWEN3_5_OCR_OPENAI_COMPATIBLE_CN_BEIJING,
     GOOGLE_GEMINI_2_5_FLASH,
+    GOOGLE_GEMINI_2_5_FLASH_OPENAI_COMPATIBLE,
+    OpenAICompatibleSettings,
     ProviderModel,
 )
 ```
@@ -54,6 +59,17 @@ from ocrllm import (
 Use `list_google_genai_models()` for the current Google catalog. Catalog rows do
 not prove OCR quality, audio support, recommended batch size, or retry policy;
 unverified rows are not emitted as guessed presets.
+
+The two `*_OPENAI_COMPATIBLE*` presets use one generic, no-SDK-retry Chat
+Completions transport with standard Base64 `image_url` content. They do not
+replace the native presets. The common transport owns only endpoint,
+credential, standard request/response parsing, nullable usage, client cleanup,
+and common SDK/HTTP failure mapping; model capability flags and defaults remain
+on each exact preset. It deliberately sends no guessed output-token ceiling:
+a bounded Google run returned HTTP 200 with no content when a 32-token cap was
+supplied, then returned usable text after that cap was removed. Compatible
+audio, Responses API, vendor-specific `extra_body`, model mirrors, and retry
+execution are not claimed by these image presets.
 
 ## Images
 
