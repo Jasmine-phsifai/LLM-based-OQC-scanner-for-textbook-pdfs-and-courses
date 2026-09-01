@@ -21,7 +21,7 @@ pip install -e ".[audio,google]"
 pip install -e ".[pdf-vision,google]"
 pip install -e ".[video,image,audio]"
 pip install -e ".[image,dashscope]"
-pip install -e ".[image,openai-compatible]"
+pip install -e ".[image,audio,openai-compatible]"
 ```
 
 Available extras:
@@ -32,7 +32,7 @@ Available extras:
 - `pdf-vision`: PDFium rendering for vision recognition;
 - `google`: native Google GenAI adapters;
 - `dashscope`: DashScope OpenAI-compatible image adapter;
-- `openai-compatible`: provider-neutral OpenAI Chat Completions image adapter;
+- `openai-compatible`: provider-neutral OpenAI Chat Completions image and MP3 audio adapter;
 - `ocr`: local RapidOCR text extraction.
 
 Plain `import ocrllm` remains lightweight: it does not import OpenCV, NumPy,
@@ -60,16 +60,17 @@ Use `list_google_genai_models()` for the current Google catalog. Catalog rows do
 not prove OCR quality, audio support, recommended batch size, or retry policy;
 unverified rows are not emitted as guessed presets.
 
-The two `*_OPENAI_COMPATIBLE*` presets use one generic, no-SDK-retry Chat
-Completions transport with standard Base64 `image_url` content. They do not
-replace the native presets. The common transport owns only endpoint,
-credential, standard request/response parsing, nullable usage, client cleanup,
-and common SDK/HTTP failure mapping; model capability flags and defaults remain
-on each exact preset. It deliberately sends no guessed output-token ceiling:
-a bounded Google run returned HTTP 200 with no content when a 32-token cap was
-supplied, then returned usable text after that cap was removed. Compatible
-audio, Responses API, vendor-specific `extra_body`, model mirrors, and retry
-execution are not claimed by these image presets.
+The two shipped `*_OPENAI_COMPATIBLE*` presets use one generic, no-SDK-retry
+Chat Completions transport with standard Base64 `image_url` content. Callers may
+also construct exact image-only, audio-only, or multimodal `ProviderModel`
+values with `OpenAICompatibleSettings`; no full catalog or local-model preset is
+guessed. Compatible MP3 input uses standard raw Base64
+`input_audio.data` plus `input_audio.format="mp3"`. The common transport owns
+only endpoint, credential, standard request/response parsing, nullable usage,
+client cleanup, and common SDK/HTTP failure mapping. Model capabilities,
+planning defaults, and finite retry rules remain on each exact entity. It sends
+no guessed output-token ceiling and does not implement Responses API,
+vendor-specific `extra_body`, or model discovery.
 
 The DashScope compatible preset also has a complete public merged-image live
 run. The Google endpoint/model/request shape has usable direct live evidence,
@@ -161,9 +162,13 @@ result = recognize_audio_to_markdown(
 
 `split_audio()` returns an exact tuple of immutable `AudioSlice` identities. An
 exact `-1` selects the whole source; a positive exact integer selects minutes;
-an explicit value wins over provider defaults. Planning fully decodes duration,
-uses the existing 30-second boundary context for intervals, creates no physical
-clips/state/output, and makes no provider call.
+an explicit value wins over provider defaults. By default interval clips retain
+the existing 30-second boundary context. Set
+`include_boundary_context=False` to make every physical clip exactly its
+logical range for transcription models that cannot obey a middle-only prompt.
+Short final ranges below 30 seconds remain exact nonempty clips. Planning fully
+decodes duration, creates no physical clips/state/output, and makes no provider
+call.
 
 Merged audio recognition accepts one model, one nonempty exact built-in flat
 list, or one nonempty exact list of nonempty exact model lists. It writes all
@@ -171,24 +176,27 @@ ordered slots into one Markdown, checkpoints each speech/no-speech/failure
 outcome, and continues after ordinary provider failure. Nested lane `j` owns
 absolute slots `j, j + lane_count, ...`; lanes advance independently with one
 active request-owned interval clip each and never steal or rescue another lane's
-work. Whole audio through 300 seconds uses native inline transport; longer whole
-audio and explicit intervals use Google Files. Provider file/client cleanup
-failure is surfaced without claiming false success.
+work. Native Google retains its inline/Files transport selection. Generic
+OpenAI-compatible entities inline the already planned MP3 clip through Chat
+Completions. Provider cleanup failure is surfaced without claiming false
+success.
 
 Experimental `repair_audio_to_markdown()` applies only to a current OCRLLM
 multi-slot interval partial Markdown after its ordinary sidecar is lost. It
 accepts the original MP3, current provider topology, optional existing output,
-and timeout. Exact adjacent headings/comments supply failed logical seconds;
-the source's decoded duration and the fixed 30-second context reconstruct the
-temporary Files request. Speech and typed no-speech replace their markers before
-local clip/source cleanup. It restores no interval length, mode, provider, or
-historical usage and creates no repair state. A whole-audio failure publishes no
-partial Markdown, so it remains non-repairable after state loss.
+and timeout. Exact adjacent headings/comments supply failed logical and physical
+seconds, so both boundary-context and pure-logical plans reconstruct the same
+temporary request after state loss. Speech and typed no-speech replace their
+markers before local clip/source cleanup. It restores no interval length, mode,
+provider, or historical usage and creates no repair state. A whole-audio failure
+publishes no partial Markdown, so it remains non-repairable after state loss.
 
-Resume binds exact source bytes, ranges, and prompt mode. Settled slots are not
-replayed; failed/unresolved slots begin the supplied lane from candidate zero.
-Provider cursor and retry history are not persisted. A provider can be changed
-explicitly between invocations.
+Resume binds exact source bytes, logical/physical ranges, and prompt mode.
+Settled slots are not replayed; failed/unresolved slots begin the supplied lane
+from candidate zero. Provider cursor and retry history are not persisted. A
+provider can be changed explicitly between invocations. `ProviderModel`
+retry rules execute only finite caller-configured retries around one candidate;
+the OpenAI SDK itself remains configured with `max_retries=0`.
 
 The scalar/flat image and audio paths, including fallback and ordinary resume,
 have bounded real Google evidence. Fixed two-lane image pooling is live-proven.

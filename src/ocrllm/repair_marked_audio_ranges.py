@@ -30,6 +30,9 @@ from .provider_model_usage import (
     build_provider_model_usage_order,
     provider_model_usage_documents,
 )
+from .providers.call_provider_model_with_retries import (
+    call_provider_model_with_retries,
+)
 from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_audio import recognize_provider_model_audio
 from .result import RecognitionResult
@@ -73,13 +76,17 @@ def repair_marked_audio_ranges(
                     candidate = lane[provider_index]
                     no_speech = False
                     try:
-                        response = recognize_provider_model_audio(
+                        call_result = call_provider_model_with_retries(
                             candidate,
-                            request_snapshot,
-                            prompt=prompt,
-                            transport="files",
-                            timeout_seconds=config.timeout_seconds,
+                            lambda: recognize_provider_model_audio(
+                                candidate,
+                                request_snapshot,
+                                prompt=prompt,
+                                request_kind="interval",
+                                timeout_seconds=config.timeout_seconds,
+                            ),
                         )
+                        response = call_result.response
                     except NoSpeechDetected as error:
                         provider_succeeded = True
                         no_speech = True
@@ -124,13 +131,20 @@ def repair_marked_audio_ranges(
                         continue
                     else:
                         provider_succeeded = True
-                        calls = 1
-                        input_tokens = response.input_tokens
-                        output_tokens = response.output_tokens
+                        calls = call_result.calls
+                        input_tokens = _add_known(
+                            call_result.failed_input_tokens,
+                            response.input_tokens,
+                        )
+                        output_tokens = _add_known(
+                            call_result.failed_output_tokens,
+                            response.output_tokens,
+                        )
                         repaired_markdown = response.markdown
-                        provider_cleanup_failure = provider_cleanup_failure or (
-                            not response.client_closed
-                            or not response.remote_file_deleted
+                        provider_cleanup_failure = (
+                            provider_cleanup_failure
+                            or call_result.prior_cleanup_failed
+                            or response.provider_cleanup_failed
                         )
 
                     usage = add_provider_model_usage(
@@ -242,3 +256,7 @@ def _materialized_request(
                 - marker.window.actual_start_seconds
             ),
         )
+
+
+def _add_known(left: int | None, right: int | None) -> int | None:
+    return left + right if left is not None and right is not None else None

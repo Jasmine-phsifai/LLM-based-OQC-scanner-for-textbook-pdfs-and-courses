@@ -1,18 +1,18 @@
-"""Parse one standard non-streaming image Chat Completion."""
+"""Parse one standard non-streaming OpenAI-compatible Chat Completion."""
 
 from __future__ import annotations
 
 from ...errors import ProviderError
-from ..vision_provider_response import VisionProviderResponse
+from .openai_compatible_chat_response import OpenAICompatibleChatResponse
 
 
-def parse_openai_compatible_image_response(
+def parse_openai_compatible_chat_response(
     response: object,
     *,
     vendor: str,
     model: str,
-) -> VisionProviderResponse:
-    """Return text and nullable token usage without requiring model echo equality."""
+) -> OpenAICompatibleChatResponse:
+    """Return one assistant string without requiring model echo equality."""
     details = {"provider": vendor, "model": model}
     try:
         choices = getattr(response, "choices")
@@ -38,7 +38,6 @@ def parse_openai_compatible_image_response(
         "input_tokens": _optional_token_count(usage, "prompt_tokens"),
         "output_tokens": _optional_token_count(usage, "completion_tokens"),
     }
-
     if (
         type(choice_index) is not int
         or choice_index != 0
@@ -46,23 +45,20 @@ def parse_openai_compatible_image_response(
         or type(response_model) is not str
         or not response_model
     ):
-        raise ProviderError(
+        _raise_invalid(
             "The OpenAI-compatible endpoint returned an invalid assistant choice.",
-            code="PROVIDER_RESPONSE_INVALID",
             details={**details, **usage_details, "reason": "invalid_choice"},
-        ) from None
+        )
     if finish_reason == "length":
-        raise ProviderError(
+        _raise_invalid(
             "The OpenAI-compatible endpoint truncated the recognition response.",
-            code="PROVIDER_RESPONSE_INVALID",
             details={**details, **usage_details, "reason": "truncated"},
-        ) from None
+        )
     if finish_reason != "stop":
-        raise ProviderError(
+        _raise_invalid(
             "The OpenAI-compatible endpoint returned an incomplete response.",
-            code="PROVIDER_RESPONSE_INVALID",
             details={**details, **usage_details, "reason": "incomplete"},
-        ) from None
+        )
     if refusal is not None:
         raise ProviderError(
             "The OpenAI-compatible endpoint refused the recognition request.",
@@ -70,17 +66,23 @@ def parse_openai_compatible_image_response(
             details={**details, **usage_details, "reason": "refusal"},
         ) from None
     if type(content) is not str:
-        raise ProviderError(
+        _raise_invalid(
             "The OpenAI-compatible endpoint returned no text content.",
-            code="PROVIDER_RESPONSE_INVALID",
             details={**details, **usage_details, "reason": "missing_text"},
-        ) from None
-
-    return VisionProviderResponse(
-        markdown=content,
+        )
+    return OpenAICompatibleChatResponse(
+        text=content,
         input_tokens=usage_details["input_tokens"],
         output_tokens=usage_details["output_tokens"],
     )
+
+
+def _raise_invalid(message: str, *, details: dict[str, object]) -> None:
+    raise ProviderError(
+        message,
+        code="PROVIDER_RESPONSE_INVALID",
+        details=details,
+    ) from None
 
 
 def _optional_token_count(usage: object | None, name: str) -> int | None:

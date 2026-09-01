@@ -12,6 +12,7 @@ from .audio.build_long_audio_interval_prompt import (
     LONG_AUDIO_INTERVAL_PROMPT_VERSION,
 )
 from .audio.build_long_audio_interval_windows import (
+    LongAudioIntervalWindow,
     build_long_audio_interval_windows,
 )
 from .audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT_VERSION
@@ -199,22 +200,19 @@ class MergedAudioResumeState:
             or self.prompt_version != LONG_AUDIO_INTERVAL_PROMPT_VERSION
         ):
             raise ValueError("interval merged-audio plan is invalid")
-        expected = build_long_audio_interval_windows(
-            duration_seconds=self.slots[-1].logical_end_seconds,
-            interval_minutes=self.interval_minutes,
+        expected_plans = tuple(
+            build_long_audio_interval_windows(
+                duration_seconds=self.slots[-1].logical_end_seconds,
+                interval_minutes=self.interval_minutes,
+                include_boundary_context=include_boundary_context,
+            )
+            for include_boundary_context in (True, False)
         )
-        if len(expected) != len(self.slots):
-            raise ValueError("interval merged-audio slot count is invalid")
-        for slot, window in zip(self.slots, expected, strict=True):
-            if (
-                slot.index != window.index
-                or slot.logical_start_seconds != window.logical_start_seconds
-                or slot.logical_end_seconds != window.logical_end_seconds
-                or slot.actual_start_seconds != window.actual_start_seconds
-                or slot.actual_end_seconds != window.actual_end_seconds
-            ):
-                raise ValueError("interval merged-audio ranges are invalid")
-
+        if not any(
+            _slots_match_windows(self.slots, expected)
+            for expected in expected_plans
+        ):
+            raise ValueError("interval merged-audio ranges are invalid")
     def to_bytes(self) -> bytes:
         """Return deterministic secret-free UTF-8 JSON."""
         document = {
@@ -287,6 +285,22 @@ class MergedAudioResumeState:
                 "The merged-audio resume state is corrupt or unsupported.",
                 code="RESUME_STATE_INVALID",
             ) from None
+
+
+def _slots_match_windows(
+    slots: tuple[MergedAudioSlot, ...],
+    windows: tuple[LongAudioIntervalWindow, ...],
+) -> bool:
+    if len(windows) != len(slots):
+        return False
+    return all(
+        slot.index == window.index
+        and slot.logical_start_seconds == window.logical_start_seconds
+        and slot.logical_end_seconds == window.logical_end_seconds
+        and slot.actual_start_seconds == window.actual_start_seconds
+        and slot.actual_end_seconds == window.actual_end_seconds
+        for slot, window in zip(slots, windows, strict=True)
+    )
 
 
 def _state_from_document(document: object) -> MergedAudioResumeState:

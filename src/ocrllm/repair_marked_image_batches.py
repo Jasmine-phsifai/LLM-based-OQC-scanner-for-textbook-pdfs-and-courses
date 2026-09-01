@@ -21,6 +21,9 @@ from .provider_model_usage import (
     build_provider_model_usage_order,
     provider_model_usage_documents,
 )
+from .providers.call_provider_model_with_retries import (
+    call_provider_model_with_retries,
+)
 from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_images import (
     recognize_provider_model_images,
@@ -68,12 +71,16 @@ def repair_marked_image_batches(
                     provider_index = (lane_starts[lane_index] + offset) % len(lane)
                     candidate = lane[provider_index]
                     try:
-                        response = recognize_provider_model_images(
+                        call_result = call_provider_model_with_retries(
                             candidate,
-                            snapshots,
-                            prompt=prompt,
-                            timeout_seconds=config.timeout_seconds,
+                            lambda: recognize_provider_model_images(
+                                candidate,
+                                snapshots,
+                                prompt=prompt,
+                                timeout_seconds=config.timeout_seconds,
+                            ),
                         )
+                        response = call_result.response
                     except ProviderError as error:
                         calls, input_tokens, output_tokens = provider_failure_usage(
                             error
@@ -109,7 +116,9 @@ def repair_marked_image_batches(
                         input_tokens = response.input_tokens
                         output_tokens = response.output_tokens
                         provider_cleanup_failure = (
-                            provider_cleanup_failure or not response.client_closed
+                            provider_cleanup_failure
+                            or call_result.prior_cleanup_failed
+                            or not response.client_closed
                         )
                     else:
                         repaired_markdown = response
@@ -118,9 +127,15 @@ def repair_marked_image_batches(
                     usage = add_provider_model_usage(
                         usage,
                         provider=candidate,
-                        calls=1,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
+                        calls=call_result.calls,
+                        input_tokens=_add_known(
+                            call_result.failed_input_tokens,
+                            input_tokens,
+                        ),
+                        output_tokens=_add_known(
+                            call_result.failed_output_tokens,
+                            output_tokens,
+                        ),
                         usage_order=usage_order,
                     )
                     updated_markdown = markdown.replace(
@@ -201,3 +216,7 @@ def repair_marked_image_batches(
         warnings=tuple(warnings),
         metadata=metadata,
     )
+
+
+def _add_known(left: int | None, right: int | None) -> int | None:
+    return left + right if left is not None and right is not None else None

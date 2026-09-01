@@ -24,14 +24,17 @@ def build_long_audio_interval_windows(
     *,
     duration_seconds: float,
     interval_minutes: int,
+    include_boundary_context: bool = True,
 ) -> tuple[LongAudioIntervalWindow, ...]:
-    """Return ordered windows with fixed boundary context."""
+    """Return ordered logical windows with optional fixed boundary context."""
     if type(interval_minutes) is not int:
         raise TypeError("interval_minutes must be an integer") from None
     if interval_minutes <= 0:
         raise ValueError("interval_minutes must be positive") from None
     if type(duration_seconds) not in (int, float):
         raise TypeError("duration_seconds must be a number") from None
+    if type(include_boundary_context) is not bool:
+        raise TypeError("include_boundary_context must be a boolean") from None
 
     duration = float(duration_seconds)
     if not math.isfinite(duration) or duration <= 0:
@@ -47,13 +50,15 @@ def build_long_audio_interval_windows(
                 index=len(windows),
                 logical_start_seconds=logical_start,
                 logical_end_seconds=logical_end,
-                actual_start_seconds=max(
-                    0.0,
-                    logical_start - INTERVAL_CONTEXT_SECONDS,
+                actual_start_seconds=(
+                    max(0.0, logical_start - INTERVAL_CONTEXT_SECONDS)
+                    if include_boundary_context
+                    else logical_start
                 ),
-                actual_end_seconds=min(
-                    duration,
-                    logical_end + INTERVAL_CONTEXT_SECONDS,
+                actual_end_seconds=(
+                    min(duration, logical_end + INTERVAL_CONTEXT_SECONDS)
+                    if include_boundary_context
+                    else logical_end
                 ),
             )
         )

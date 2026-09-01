@@ -34,21 +34,27 @@ def resolve_audio_slice_mode(
     if not interval_minutes_value.is_integer() or interval_minutes_value <= 0:
         _raise_mismatch()
     interval_minutes = int(interval_minutes_value)
-    expected = build_long_audio_interval_windows(
-        duration_seconds=duration_seconds,
-        interval_minutes=interval_minutes,
+    expected_plans = tuple(
+        build_long_audio_interval_windows(
+            duration_seconds=duration_seconds,
+            interval_minutes=interval_minutes,
+            include_boundary_context=include_boundary_context,
+        )
+        for include_boundary_context in (True, False)
     )
-    if len(expected) != len(slices):
+    if not any(
+        len(expected) == len(slices)
+        and all(
+            item.index == window.index
+            and item.logical_start_seconds == window.logical_start_seconds
+            and item.logical_end_seconds == window.logical_end_seconds
+            and item.actual_start_seconds == window.actual_start_seconds
+            and item.actual_end_seconds == window.actual_end_seconds
+            for item, window in zip(slices, expected, strict=True)
+        )
+        for expected in expected_plans
+    ):
         _raise_mismatch()
-    for item, window in zip(slices, expected, strict=True):
-        if (
-            item.index != window.index
-            or item.logical_start_seconds != window.logical_start_seconds
-            or item.logical_end_seconds != window.logical_end_seconds
-            or item.actual_start_seconds != window.actual_start_seconds
-            or item.actual_end_seconds != window.actual_end_seconds
-        ):
-            _raise_mismatch()
     return "interval", interval_minutes, LONG_AUDIO_INTERVAL_PROMPT_VERSION
 
 

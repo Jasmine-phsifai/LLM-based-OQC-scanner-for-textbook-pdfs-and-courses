@@ -11,13 +11,77 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-09-01, #719)
+## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
 authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
+
+### #720 removes Google SDK ownership from merged ProviderModel audio
+
+The maintainer authorizes generic OpenAI-compatible image/audio entities,
+OCRLLM-owned finite retries, and an explicit audio-planning switch. The selected
+wire contract is standard non-streaming Chat Completions: image `image_url`;
+MP3 raw Base64 `input_audio.data` with `format="mp3"`; one assistant string
+choice ending in `stop`; nullable prompt/completion usage; OpenAI-style HTTP
+errors. The adapter does not use `/models`, Responses API, vendor extras, or a
+local-runner protocol.
+
+`OpenAICompatibleSettings` remains only base URL plus exact credential sources.
+No loopback port or Qwen preset is shipped. A caller can construct separate
+image-only and audio-only `ProviderModel` values by supplying exact model names,
+capability flags, planning defaults and retry maps. Merged image/audio, ordinary
+resume and experimental repair consume those entities without knowing WSL,
+vLLM, llama.cpp, model paths, CUDA, GPU ownership, service startup or internal
+ports.
+
+The compatible transport now shares one client lifecycle and one Chat response
+parser. Images use Base64 data URLs; audio uses bounded 25 MiB inline MP3.
+Successful audio is normalized into `AudioProviderResponse`; native Google
+continues to select inline or Files internally, but merged execution and repair
+no longer branch on Google response classes or remote-file fields. The
+no-speech sentinel and transcript validation are provider-neutral.
+
+`split_audio(include_boundary_context=True)` preserves the existing fixed
+30-second boundary context. Exact `False` creates physical ranges equal to their
+logical ranges for ASR models that cannot follow middle-only prompts. Short
+final ranges below 30 seconds remain exact nonempty clips. The existing sidecar
+schema already stores logical and physical bounds, so no version/field is added;
+validation accepts either uniform plan and resume compares all four values.
+Failed Markdown markers now carry exact physical bounds so state-loss repair
+cannot silently reintroduce context.
+
+`ProviderModel.retry_rules` now executes around each candidate in merged
+recognition and repair. SDK retries remain zero. Rules are bounded to at most ten
+extra attempts and 300 seconds between attempts; zero-call preflight never
+retries. Every failed call, exact-or-unknown token dimension, and cleanup result
+is accumulated into the settled or terminal checkpoint. Retry cursors are not
+persisted, and rules do not switch candidates or models.
+
+Focused current tests pass **221** across provider entities/errors, image/audio
+merged execution, resume/repair, native Google compatibility, slice planning,
+package exports/types and the release gate. One provider-free real-media
+scenario uses an immutable 91,637-byte lecture image and 38,734,743-byte lecture
+MP3: it forms the exact image request and one pure-logical 60-second MP3 request,
+forwards distinct caller model names, round-trips 91,637 and 481,004 payload
+bytes, leaves both source hashes unchanged, and makes zero provider calls.
+
+The current machine has no identifiable OCR/ASR localhost OpenAI listener.
+Model Lab still exposes only a private JSON-over-stdin WSL runner; OCRLLM does
+not consume or modify it. The later runner must provide one explicit loopback
+base URL and two exact model IDs after real image and audio calls through the
+standard contract succeed. Until then, localhost provider end-to-end evidence is
+blocked externally rather than replaced with a private adapter.
+
+Wheel selection passes at **348,317 bytes**. The attributable generic audio and
+retry slice moves the fixed cap once from 336 to **344 KiB**, leaving 3,939
+bytes. No Config/worker protocol, provider registry, gateway manager, model
+lifecycle, subprocess wrapper, Responses implementation, catalog mirror,
+provider pool or hardcoded local preset is added. The older direct
+`recognize_long_mp3(Config)` remains explicitly Google-only; generic local
+consumers use the visible `split_audio()` merged ProviderModel path.
 
 ### #719 adds one generic OpenAI-compatible image transport from real evidence
 

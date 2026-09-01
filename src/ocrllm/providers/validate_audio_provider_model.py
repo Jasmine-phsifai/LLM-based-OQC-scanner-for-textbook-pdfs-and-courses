@@ -12,7 +12,10 @@ def validate_audio_provider_model(provider_model: object) -> ProviderModel:
         _raise_invalid("Audio recognition requires an exact ProviderModel.")
     if not provider_model.supports_audio:
         _raise_invalid("The selected ProviderModel does not support audio input.")
-    if provider_model.adapter_id != "google_genai":
+    if provider_model.adapter_id not in {
+        "google_genai",
+        "openai_compatible_chat",
+    }:
         _raise_invalid("The selected ProviderModel has no admitted audio adapter.")
     return provider_model
 

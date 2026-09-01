@@ -1,4 +1,4 @@
-"""Describe one materialized interval honestly for provider upload."""
+"""Describe one materialized interval for provider audio recognition."""
 
 from __future__ import annotations
 

@@ -18,6 +18,7 @@ def split_audio(
     source: str | Path,
     *,
     interval_minutes: int | None = None,
+    include_boundary_context: bool = True,
     provider: (
         ProviderModel
         | list[ProviderModel]
@@ -26,6 +27,12 @@ def split_audio(
     ) = None,
 ) -> tuple[AudioSlice, ...]:
     """Return one fixed whole or integer-minute MP3 plan."""
+    if type(include_boundary_context) is not bool:
+        raise ConfigError(
+            "split_audio() include_boundary_context must be a boolean.",
+            code="CONFIG_INVALID",
+            details={"provider_calls_attempted": 0},
+        ) from None
     provider_lanes = (
         normalize_provider_model_lanes(
             provider,
@@ -74,6 +81,7 @@ def split_audio(
     windows = build_long_audio_interval_windows(
         duration_seconds=duration_seconds,
         interval_minutes=resolved_interval,
+        include_boundary_context=include_boundary_context,
     )
     return tuple(
         AudioSlice(

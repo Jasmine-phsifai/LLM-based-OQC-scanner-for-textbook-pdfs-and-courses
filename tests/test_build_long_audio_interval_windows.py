@@ -50,6 +50,36 @@ def test_build_long_audio_interval_windows_does_not_pad_one_logical_window() -> 
     ) == (0, 0.0, 90.5, 0.0, 90.5)
 
 
+def test_build_long_audio_interval_windows_can_keep_pure_logical_ranges() -> None:
+    windows = build_long_audio_interval_windows(
+        duration_seconds=125.0,
+        interval_minutes=1,
+        include_boundary_context=False,
+    )
+
+    assert tuple(
+        (
+            window.logical_start_seconds,
+            window.logical_end_seconds,
+            window.actual_start_seconds,
+            window.actual_end_seconds,
+        )
+        for window in windows
+    ) == (
+        (0.0, 60.0, 0.0, 60.0),
+        (60.0, 120.0, 60.0, 120.0),
+        (120.0, 125.0, 120.0, 125.0),
+    )
+
+    short = build_long_audio_interval_windows(
+        duration_seconds=20.0,
+        interval_minutes=1,
+        include_boundary_context=False,
+    )
+    assert len(short) == 1
+    assert short[0].actual_end_seconds - short[0].actual_start_seconds == 20.0
+
+
 @pytest.mark.parametrize(
     ("interval_minutes", "expected_exception"),
     [
@@ -78,4 +108,13 @@ def test_build_long_audio_interval_windows_rejects_invalid_duration(
         build_long_audio_interval_windows(
             duration_seconds=duration_seconds,
             interval_minutes=5,
+        )
+
+
+def test_build_long_audio_interval_windows_requires_exact_context_boolean() -> None:
+    with pytest.raises(TypeError):
+        build_long_audio_interval_windows(
+            duration_seconds=60.0,
+            interval_minutes=1,
+            include_boundary_context=1,  # type: ignore[arg-type]
         )

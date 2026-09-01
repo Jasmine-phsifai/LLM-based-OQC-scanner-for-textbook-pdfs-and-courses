@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import base64
 import importlib
 import re
 import subprocess
+import sys
 from pathlib import Path
 from threading import Event, Lock
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -25,9 +27,13 @@ from ocrllm.errors import (
     ConfigError,
     InvalidSource,
     ProviderError,
+    ProviderUnavailable,
     ResumeStateError,
 )
 from ocrllm.providers.google_genai.provider_settings import GoogleGenAISettings
+from ocrllm.providers.openai_compatible.provider_settings import (
+    OpenAICompatibleSettings,
+)
 
 
 MODEL = "gemini-2.5-flash"
@@ -174,6 +180,95 @@ def _provider(model: str = MODEL) -> ProviderModel:
     )
 
 
+def _compatible_audio_provider(model: str = "compatible-asr") -> ProviderModel:
+    return ProviderModel(
+        vendor="test-compatible",
+        model=model,
+        adapter_id="openai_compatible_chat",
+        settings=OpenAICompatibleSettings(
+            base_url="http://127.0.0.1:9999/v1",
+            api_key_env="TEST_COMPATIBLE_AUDIO_KEY",
+            api_key="test-only-key",
+        ),
+        supports_plain_ocr=False,
+        supports_detail_ocr=False,
+        supports_audio=True,
+        default_image_batch_size=None,
+        default_audio_minutes=1,
+        retry_rules={},
+    )
+
+
+def _install_fake_openai_audio(
+    monkeypatch,
+    responses: list[str | Exception],
+):
+    captured = {"requests": [], "closed": 0}
+    module = ModuleType("openai")
+    module.__version__ = "2.30.0"
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            self.chat = SimpleNamespace(
+                completions=SimpleNamespace(create=self.create)
+            )
+
+        def create(self, **kwargs):
+            captured["requests"].append(kwargs)
+            value = responses.pop(0)
+            if isinstance(value, Exception):
+                raise value
+            return _compatible_audio_response(
+                value,
+                call_index=len(captured["requests"]),
+            )
+
+        def close(self):
+            captured["closed"] += 1
+
+    module.OpenAI = FakeClient
+    monkeypatch.setitem(sys.modules, "openai", module)
+    return captured
+
+
+def _compatible_audio_response(text: str, *, call_index: int = 1):
+    return SimpleNamespace(
+        model="served-asr-alias",
+        choices=[
+            SimpleNamespace(
+                index=0,
+                finish_reason="stop",
+                message=SimpleNamespace(
+                    role="assistant",
+                    content=text,
+                    refusal=None,
+                ),
+            )
+        ],
+        usage=SimpleNamespace(
+            prompt_tokens=20 + call_index,
+            completion_tokens=3 + call_index,
+        ),
+    )
+
+
+def _single_response_client(response, captured):
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            self.chat = SimpleNamespace(
+                completions=SimpleNamespace(create=self.create)
+            )
+
+        def create(self, **kwargs):
+            captured["requests"].append(kwargs)
+            return response
+
+        def close(self):
+            captured["closed"] += 1
+
+    return FakeClient
+
+
 def _install_fake_sdk(
     monkeypatch,
     responses: list[str | Exception],
@@ -248,6 +343,198 @@ def _write_synthetic_mp3(path: Path, *, duration_seconds: int) -> Path:
     )
     assert completed.returncode == 0, completed.stderr
     return path
+
+
+def test_openai_compatible_audio_uses_standard_input_without_google(
+    tmp_path,
+    monkeypatch,
+):
+    source = tmp_path / "compatible.mp3"
+    source.write_bytes(SHORT_FIXTURE.read_bytes())
+    google_sdk_loaded = "google.genai" in sys.modules
+    captured = _install_fake_openai_audio(
+        monkeypatch,
+        ["Compatible transcript"],
+    )
+
+    result = recognize_audio_to_markdown(
+        split_audio(source, interval_minutes=-1),
+        provider=_compatible_audio_provider(),
+        output_path=tmp_path / "compatible.md",
+    )
+
+    assert result.status == "complete"
+    assert "Compatible transcript" in result.markdown
+    assert result.metadata["provider_call_count"] == 1
+    assert result.metadata["current_provider_model_usage"] == (
+        {
+            "vendor": "test-compatible",
+            "model": "compatible-asr",
+            "calls": 1,
+            "input_tokens": 21,
+            "output_tokens": 4,
+        },
+    )
+    assert captured["closed"] == 1
+    request = captured["requests"][0]
+    assert set(request) == {"model", "messages"}
+    content = request["messages"][0]["content"]
+    assert [part["type"] for part in content] == ["text", "input_audio"]
+    audio = content[1]["input_audio"]
+    assert audio["format"] == "mp3"
+    assert not audio["data"].startswith("data:")
+    assert base64.b64decode(audio["data"]) == source.read_bytes()
+    assert ("google.genai" in sys.modules) is google_sdk_loaded
+
+
+def test_openai_compatible_audio_preserves_no_speech_control(
+    tmp_path,
+    monkeypatch,
+):
+    source = tmp_path / "silence.mp3"
+    source.write_bytes(SHORT_FIXTURE.read_bytes())
+    _install_fake_openai_audio(monkeypatch, ["NOSPEECH4OCRLLM"])
+
+    result = recognize_audio_to_markdown(
+        split_audio(source, interval_minutes=-1),
+        provider=_compatible_audio_provider(),
+        output_path=tmp_path / "no-speech.md",
+    )
+
+    assert result.status == "complete"
+    assert result.metadata["no_speech_slot_count"] == 1
+    assert "OCRLLM_NO_SPEECH_AUDIO_SLOT index=1" in result.markdown
+
+
+def test_pure_logical_audio_plan_executes_short_final_interval(
+    tmp_path,
+    monkeypatch,
+):
+    source = _write_sixty_one_second_mp3(tmp_path / "sixty-one.mp3")
+    captured = _install_fake_openai_audio(
+        monkeypatch,
+        ["first minute", "final second"],
+    )
+    slices = split_audio(
+        source,
+        interval_minutes=1,
+        include_boundary_context=False,
+    )
+
+    result = recognize_audio_to_markdown(
+        slices,
+        provider=_compatible_audio_provider(),
+        output_path=tmp_path / "pure.md",
+    )
+
+    assert tuple(
+        (item.actual_start_seconds, item.actual_end_seconds) for item in slices
+    ) == ((0.0, 60.0), (60.0, pytest.approx(61.0, abs=0.02)))
+    assert result.status == "complete"
+    assert result.metadata["slot_count"] == 2
+    assert result.metadata["provider_call_count"] == 2
+    assert len(captured["requests"]) == 2
+    assert len(
+        base64.b64decode(
+            captured["requests"][1]["messages"][0]["content"][1][
+                "input_audio"
+            ]["data"]
+        )
+    ) < len(
+        base64.b64decode(
+            captured["requests"][0]["messages"][0]["content"][1][
+                "input_audio"
+            ]["data"]
+        )
+    )
+
+
+def test_pure_logical_audio_resume_reuses_settled_short_tail(
+    tmp_path,
+    monkeypatch,
+):
+    source = _write_sixty_one_second_mp3(tmp_path / "resume-pure.mp3")
+    provider = _compatible_audio_provider()
+    slices = split_audio(
+        source,
+        interval_minutes=1,
+        include_boundary_context=False,
+    )
+    output = tmp_path / "resume-pure.md"
+    module = _install_fake_openai_audio(
+        monkeypatch,
+        ["first minute", ProviderUnavailable()],
+    )
+
+    partial = recognize_audio_to_markdown(
+        slices,
+        provider=provider,
+        output_path=output,
+    )
+    assert partial.status == "partial"
+    assert partial.metadata["provider_call_count"] == 2
+
+    module["requests"].clear()
+    response = _compatible_audio_response("recovered final second")
+    fake_openai = sys.modules["openai"]
+    fake_openai.OpenAI = _single_response_client(response, module)
+    resumed = resume_audio_to_markdown(
+        slices,
+        provider=provider,
+        output_path=output,
+    )
+
+    assert resumed.status == "complete"
+    assert resumed.metadata["reused_slot_count"] == 1
+    assert resumed.metadata["provider_call_count"] == 1
+    assert len(module["requests"]) == 1
+
+
+
+def test_pure_logical_audio_repair_reuses_marker_physical_range(
+    tmp_path,
+    monkeypatch,
+):
+    source = _write_sixty_one_second_mp3(tmp_path / "repair-pure.mp3")
+    slices = split_audio(
+        source,
+        interval_minutes=1,
+        include_boundary_context=False,
+    )
+    output = tmp_path / "repair-pure.md"
+    _install_fake_openai_audio(
+        monkeypatch,
+        ["first minute", ProviderUnavailable()],
+    )
+    partial = recognize_audio_to_markdown(
+        slices,
+        provider=_compatible_audio_provider(),
+        output_path=output,
+    )
+    state = output.with_name("repair-pure.ocrllm-state.json")
+    assert partial.status == "partial"
+    assert "actual=60.000-61.000s" in partial.markdown
+    state.unlink()
+
+    captured = _install_fake_openai_audio(
+        monkeypatch,
+        ["repaired final second"],
+    )
+    repaired = repair_audio_to_markdown(
+        source,
+        provider=_compatible_audio_provider(),
+        output_path=output,
+    )
+
+    assert repaired.status == "complete"
+    assert len(captured["requests"]) == 1
+    assert len(
+        base64.b64decode(
+            captured["requests"][0]["messages"][0]["content"][1][
+                "input_audio"
+            ]["data"]
+        )
+    ) < 10_000
 
 
 def test_whole_audio_publishes_default_markdown_and_no_speech_marker(
@@ -979,7 +1266,10 @@ def test_audio_repair_preflight_rejects_state_and_bad_ranges_before_provider(
         ),
         valid_markdown.replace("60.000-", "59.000-"),
         valid_markdown
-        + "\n<!-- OCRLLM_FAILED_AUDIO_SLOT index=2 code=PROVIDER_UNAVAILABLE -->\n",
+        + (
+            "\n<!-- OCRLLM_FAILED_AUDIO_SLOT index=2 "
+            "code=PROVIDER_UNAVAILABLE actual=30.000-61.000s -->\n"
+        ),
         valid_markdown.replace(
             "OCRLLM_FAILED_AUDIO_SLOT",
             "OCRLLM_FAILED_SLOT",
@@ -996,3 +1286,26 @@ def test_audio_repair_preflight_rejects_state_and_bad_ranges_before_provider(
         assert marker_error.value.details["provider_calls_attempted"] == 0
 
     assert fake.models.generate_count == 0
+
+    legacy_markdown = valid_markdown.replace(
+        " actual=30.000-61.000s",
+        "",
+    )
+    output.write_text(legacy_markdown, encoding="utf-8")
+    legacy_fake = _install_fake_sdk(
+        monkeypatch,
+        [],
+        served_models=(model,),
+        behavior=lambda _model, slot_index: _raw_audio_response(
+            f"legacy marker repair {slot_index}",
+            input_tokens=10,
+            output_tokens=2,
+        ),
+    )
+    repaired = repair_audio_to_markdown(
+        source,
+        provider=_provider(model),
+        output_path=output,
+    )
+    assert repaired.status == "complete"
+    assert legacy_fake.models.slot_calls == [(model, 1)]

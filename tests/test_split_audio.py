@@ -73,6 +73,30 @@ def test_split_audio_reuses_context_windows(monkeypatch):
     )
 
 
+def test_split_audio_can_plan_pure_logical_windows_with_short_tail(monkeypatch):
+    monkeypatch.setattr(split_module, "probe_product_mp3", lambda _source: 125.0)
+
+    slices = split_audio(
+        "lecture.mp3",
+        interval_minutes=1,
+        include_boundary_context=False,
+    )
+
+    assert tuple(
+        (
+            item.logical_start_seconds,
+            item.logical_end_seconds,
+            item.actual_start_seconds,
+            item.actual_end_seconds,
+        )
+        for item in slices
+    ) == (
+        (0.0, 60.0, 0.0, 60.0),
+        (60.0, 120.0, 60.0, 120.0),
+        (120.0, 125.0, 120.0, 125.0),
+    )
+
+
 def test_split_audio_uses_smallest_provider_default_and_explicit_wins(monkeypatch):
     monkeypatch.setattr(split_module, "probe_product_mp3", lambda _source: 1200.0)
     providers = [
@@ -112,6 +136,16 @@ def test_split_audio_rejects_invalid_intervals_before_source(value):
     with pytest.raises(ConfigError) as captured:
         split_audio("missing.mp3", interval_minutes=value)  # type: ignore[arg-type]
     assert captured.value.code == "CONFIG_INVALID"
+    assert captured.value.details["provider_calls_attempted"] == 0
+
+
+def test_split_audio_rejects_inexact_context_switch_before_source():
+    with pytest.raises(ConfigError) as captured:
+        split_audio(
+            "missing.mp3",
+            interval_minutes=1,
+            include_boundary_context=1,  # type: ignore[arg-type]
+        )
     assert captured.value.details["provider_calls_attempted"] == 0
 
 

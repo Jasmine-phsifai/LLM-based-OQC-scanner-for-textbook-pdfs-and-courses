@@ -13,6 +13,9 @@ from .errors import OCRLLMError, OutputError, ProviderError, ResumeStateError
 from .fingerprint_image_sources import fingerprint_image_sources
 from .imaging.snapshot_image_group import snapshot_image_group
 from .merged_image_resume_state import MergedImageResumeState, MergedImageSlot
+from .providers.call_provider_model_with_retries import (
+    call_provider_model_with_retries,
+)
 from .output.save_merged_image_resume_state_atomically import (
     save_merged_image_resume_state_atomically,
 )
@@ -224,12 +227,16 @@ def _execute_merged_image_lane(
                     ) % len(provider_lane)
                     provider = provider_lane[provider_index]
                     try:
-                        response = recognize_provider_model_images(
+                        call_result = call_provider_model_with_retries(
                             provider,
-                            snapshots,
-                            prompt=prompt,
-                            timeout_seconds=timeout_seconds,
+                            lambda: recognize_provider_model_images(
+                                provider,
+                                snapshots,
+                                prompt=prompt,
+                                timeout_seconds=timeout_seconds,
+                            ),
                         )
+                        response = call_result.response
                     except ProviderError as error:
                         calls, input_tokens, output_tokens = provider_failure_usage(error)
                         description = bounded_provider_failure_description(error)
@@ -285,10 +292,18 @@ def _execute_merged_image_lane(
                     owner.checkpoint(
                         settled_slot,
                         provider=provider,
-                        calls=1,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        cleanup_failed=cleanup_failed,
+                        calls=call_result.calls,
+                        input_tokens=_add_known(
+                            call_result.failed_input_tokens,
+                            input_tokens,
+                        ),
+                        output_tokens=_add_known(
+                            call_result.failed_output_tokens,
+                            output_tokens,
+                        ),
+                        cleanup_failed=(
+                            call_result.prior_cleanup_failed or cleanup_failed
+                        ),
                     )
                     provider_failures.extend(slot_failures)
                     last_success_index = provider_index
@@ -345,3 +360,7 @@ def _checkpoint_outcome(
         )
         raise
     return updated, current_usage
+
+
+def _add_known(left: int | None, right: int | None) -> int | None:
+    return left + right if left is not None and right is not None else None

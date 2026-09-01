@@ -9,7 +9,12 @@ from types import ModuleType, SimpleNamespace
 import pytest
 
 from ocrllm import OpenAICompatibleSettings, batchify_images
-from ocrllm.errors import ConfigError, InvalidSource, ProviderError
+from ocrllm.errors import (
+    ConfigError,
+    InvalidSource,
+    ProviderError,
+    ProviderUnavailable,
+)
 from ocrllm.providers.dashscope.provider_settings import DashScopeSettings
 from ocrllm.providers.google_genai.provider_settings import GoogleGenAISettings
 from ocrllm.providers.provider_model import ProviderModel
@@ -21,6 +26,9 @@ from ocrllm.providers.provider_model_presets import (
 )
 from ocrllm.providers.recognize_provider_model_images import (
     recognize_provider_model_images,
+)
+from ocrllm.providers.call_provider_model_with_retries import (
+    call_provider_model_with_retries,
 )
 from write_test_image import write_test_image
 
@@ -262,6 +270,19 @@ def test_provider_model_rejects_inconsistent_capabilities_and_retry_rules():
             ),
         )
 
+    for retry_rules in (
+        {"PROVIDER_TIMEOUT": ("current", 11, 0)},
+        {"PROVIDER_TIMEOUT": ("current", 1, 301)},
+    ):
+        with pytest.raises(ConfigError):
+            ProviderModel(
+                vendor="google",
+                model="gemini-test-model",
+                adapter_id="google_genai",
+                settings=GoogleGenAISettings(),
+                **_image_fields(retry_rules=retry_rules),
+            )
+
 
 def test_openai_compatible_settings_are_public_exact_and_secret_safe():
     secret = "test-only-compatible-secret"
@@ -440,6 +461,112 @@ def test_openai_compatible_authentication_error_is_canonical_and_redacted(
     assert caught.value.details["provider_calls_attempted"] == 1
     assert "private" not in str(caught.value)
     assert captured["closed"] is True
+
+
+def test_provider_model_retry_rules_execute_exact_finite_attempts(monkeypatch):
+    provider = ProviderModel(
+        vendor="test",
+        model="retry-model",
+        adapter_id="openai_compatible_chat",
+        settings=OpenAICompatibleSettings(
+            base_url="http://127.0.0.1:8000/v1",
+            api_key_env="TEST_KEY",
+            api_key="test-only-key",
+        ),
+        **_image_fields(
+            retry_rules={"PROVIDER_UNAVAILABLE": ("current", 2, 3)}
+        ),
+    )
+    calls = 0
+    sleeps = []
+
+    def call():
+        nonlocal calls
+        calls += 1
+        if calls < 3:
+            raise ProviderUnavailable(
+                details={
+                    "provider_calls_attempted": 1,
+                    "input_tokens": None,
+                    "output_tokens": None,
+                }
+            )
+        return "settled"
+
+    retry_module = sys.modules[
+        "ocrllm.providers.call_provider_model_with_retries"
+    ]
+    monkeypatch.setattr(retry_module.time, "sleep", sleeps.append)
+
+    result = call_provider_model_with_retries(provider, call)
+    assert result.response == "settled"
+    assert result.calls == 3
+    assert result.failed_input_tokens is None
+    assert result.failed_output_tokens is None
+    assert calls == 3
+    assert sleeps == [3, 3]
+
+
+def test_provider_model_retry_rules_aggregate_final_attempt_evidence():
+    provider = ProviderModel(
+        vendor="test",
+        model="retry-model",
+        adapter_id="openai_compatible_chat",
+        settings=OpenAICompatibleSettings(
+            base_url="http://127.0.0.1:8000/v1",
+            api_key_env="TEST_KEY",
+            api_key="test-only-key",
+        ),
+        **_image_fields(
+            retry_rules={"PROVIDER_UNAVAILABLE": ("current", 1, 0)}
+        ),
+    )
+
+    with pytest.raises(ProviderUnavailable) as caught:
+        call_provider_model_with_retries(
+            provider,
+            lambda: _raise_retry_failure(),
+        )
+
+    assert caught.value.details["provider_calls_attempted"] == 2
+    assert caught.value.details["input_tokens"] is None
+    assert caught.value.details["output_tokens"] is None
+
+
+def test_provider_model_retry_never_retries_zero_call_preflight():
+    provider = ProviderModel(
+        vendor="test",
+        model="retry-model",
+        adapter_id="openai_compatible_chat",
+        settings=OpenAICompatibleSettings(
+            base_url="http://127.0.0.1:8000/v1",
+            api_key_env="TEST_KEY",
+            api_key="test-only-key",
+        ),
+        **_image_fields(
+            retry_rules={"PROVIDER_UNAVAILABLE": ("current", 10, 0)}
+        ),
+    )
+    calls = 0
+
+    def call():
+        nonlocal calls
+        calls += 1
+        raise ProviderUnavailable(details={"provider_calls_attempted": 0})
+
+    with pytest.raises(ProviderUnavailable):
+        call_provider_model_with_retries(provider, call)
+    assert calls == 1
+
+
+def _raise_retry_failure():
+    raise ProviderUnavailable(
+        details={
+            "provider_calls_attempted": 1,
+            "input_tokens": None,
+            "output_tokens": None,
+        }
+    )
 
 def test_batchify_images_uses_provider_default_and_explicit_size_wins(tmp_path):
     sources = tuple(

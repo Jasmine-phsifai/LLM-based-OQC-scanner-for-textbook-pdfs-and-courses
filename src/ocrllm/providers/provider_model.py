@@ -266,13 +266,14 @@ def _normalize_retry_rules(
             or type(rule[0]) is not str
             or rule[0] not in _RETRY_LABELS
             or type(rule[1]) is not int
-            or rule[1] < 0
+            or not 0 <= rule[1] <= 10
             or type(rule[2]) is not int
-            or rule[2] < 0
+            or not 0 <= rule[2] <= 300
         ):
             raise ConfigError(
                 "Each provider retry rule must be "
-                "(label, extra_retries, wait_seconds) with finite integers.",
+                "(label, extra_retries, wait_seconds) with extra_retries in "
+                "[0, 10] and wait_seconds in [0, 300].",
                 code="CONFIG_INVALID",
             ) from None
         normalized[code] = rule

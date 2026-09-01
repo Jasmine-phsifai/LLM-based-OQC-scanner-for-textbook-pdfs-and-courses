@@ -23,7 +23,9 @@ def compose_merged_audio_markdown(slots: tuple[MergedAudioSlot, ...]) -> str:
             code = slot.error_code or "UNRESOLVED"
             body = (
                 "<!-- OCRLLM_FAILED_AUDIO_SLOT "
-                f"index={slot.index + 1} code={code} -->"
+                f"index={slot.index + 1} code={code} "
+                f"actual={slot.actual_start_seconds:.3f}-"
+                f"{slot.actual_end_seconds:.3f}s -->"
             )
         sections.append(f"{heading}\n\n{body}")
     return "\n\n".join(sections).rstrip() + "\n"

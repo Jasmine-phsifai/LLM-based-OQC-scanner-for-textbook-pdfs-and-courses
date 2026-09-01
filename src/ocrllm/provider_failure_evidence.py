@@ -17,19 +17,21 @@ def provider_failure_usage(
     calls = error.details.get("provider_calls_attempted")
     if type(calls) is not int or calls < 0:
         calls = 0
-    input_tokens: int | None = None
-    output_tokens: int | None = None
+    input_tokens = _safe_optional_count(error.details.get("input_tokens"))
+    output_tokens = _safe_optional_count(error.details.get("output_tokens"))
     rows = error.details.get("settled_model_usage")
-    if type(rows) is tuple:
+    if input_tokens is None and output_tokens is None and type(rows) is tuple:
         for row in rows:
             if not isinstance(row, Mapping) or row.get("unit") != "tokens":
                 continue
-            candidate_input = row.get("input_count")
-            candidate_output = row.get("output_count")
-            input_tokens = candidate_input if type(candidate_input) is int else None
-            output_tokens = candidate_output if type(candidate_output) is int else None
+            input_tokens = _safe_optional_count(row.get("input_count"))
+            output_tokens = _safe_optional_count(row.get("output_count"))
             break
     return calls, input_tokens, output_tokens
+
+
+def _safe_optional_count(value: object) -> int | None:
+    return value if type(value) is int and value >= 0 else None
 
 
 def provider_cleanup_failed(error: OCRLLMError) -> bool:

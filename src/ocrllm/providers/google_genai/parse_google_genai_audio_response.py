@@ -2,16 +2,9 @@
 
 from __future__ import annotations
 
-from ...attach_current_model_token_usage_to_error import (
-    attach_current_model_token_usage_to_error,
-)
-from ...errors import NoSpeechDetected, OCRLLMError, ProviderError
-from ..validate_provider_markdown import validate_provider_markdown
+from ..validate_audio_provider_text import validate_audio_provider_text
 from .google_genai_audio_response import GoogleGenAIAudioResponse
 from .parse_google_genai_text_response import parse_google_genai_text_response
-
-
-NO_SPEECH_SENTINEL = "NOSPEECH4OCRLLM"
 
 
 def parse_google_genai_audio_response(
@@ -21,41 +14,13 @@ def parse_google_genai_audio_response(
 ) -> GoogleGenAIAudioResponse:
     """Return a transcript or one explicit no-speech/invalid-response failure."""
     parsed = parse_google_genai_text_response(response, model=model)
-    stripped = parsed.text.strip()
-    folded_sentinel = NO_SPEECH_SENTINEL.casefold()
-    current_usage = (
-        {
-            "model": model,
-            "input_tokens": parsed.input_tokens,
-            "output_tokens": parsed.output_tokens,
-        },
+    markdown = validate_audio_provider_text(
+        parsed.text,
+        vendor="google",
+        model=model,
+        input_tokens=parsed.input_tokens,
+        output_tokens=parsed.output_tokens,
     )
-    try:
-        if stripped.casefold() == folded_sentinel:
-            raise NoSpeechDetected(
-                details={"provider": "google", "model": model}
-            ) from None
-        if folded_sentinel in parsed.text.casefold():
-            raise ProviderError(
-                "Google GenAI returned an invalid no-speech marker.",
-                code="PROVIDER_RESPONSE_INVALID",
-                details={
-                    "provider": "google",
-                    "model": model,
-                    "reason": "invalid_no_speech_marker",
-                },
-            ) from None
-        markdown = validate_provider_markdown(parsed.text)
-    except OCRLLMError as error:
-        if "provider" not in error.details:
-            error._add_safe_detail("provider", "google")
-        if "model" not in error.details:
-            error._add_safe_detail("model", model)
-        attach_current_model_token_usage_to_error(
-            error,
-            current_usage,
-        )
-        raise
     return GoogleGenAIAudioResponse(
         markdown=markdown,
         input_tokens=parsed.input_tokens,

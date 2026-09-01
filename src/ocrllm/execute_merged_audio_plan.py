@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
 from threading import Event, Lock
-from typing import Literal
 
 from .audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
 from .audio.build_long_audio_interval_upload_snapshot import (
@@ -15,7 +14,6 @@ from .audio.build_long_audio_interval_upload_snapshot import (
 )
 from .audio.build_long_audio_interval_windows import LongAudioIntervalWindow
 from .audio.materialize_long_audio_interval import materialize_long_audio_interval
-from .audio.probe_short_mp3 import MAX_SHORT_MP3_DURATION_SECONDS
 from .audio.snapshot_long_mp3 import LongMP3Snapshot
 from .audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT
 from .errors import NoSpeechDetected, OCRLLMError, OutputError, ProviderError
@@ -32,6 +30,9 @@ from .provider_failure_evidence import (
     bounded_provider_failure_description,
     provider_cleanup_failed,
     provider_failure_usage,
+)
+from .providers.call_provider_model_with_retries import (
+    call_provider_model_with_retries,
 )
 from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_audio import recognize_provider_model_audio
@@ -204,18 +205,13 @@ def _execute_merged_audio_lane(
             if stop.is_set():
                 break
             if initial_state.mode == "whole":
-                transport: Literal["inline", "files"] = (
-                    "inline"
-                    if snapshot.duration_seconds <= MAX_SHORT_MP3_DURATION_SECONDS
-                    else "files"
-                )
                 slot_failures, success_index = _execute_audio_slot(
                     slot,
                     snapshot,
                     provider_lane=provider_lane,
                     start_index=last_success_index,
                     prompt=AUDIO_TRANSCRIPTION_PROMPT,
-                    transport=transport,
+                    request_kind="whole",
                     timeout_seconds=timeout_seconds,
                     owner=owner,
                     stop=stop,
@@ -238,7 +234,7 @@ def _execute_merged_audio_lane(
                         provider_lane=provider_lane,
                         start_index=last_success_index,
                         prompt=build_long_audio_interval_prompt(window),
-                        transport="files",
+                        request_kind="interval",
                         timeout_seconds=timeout_seconds,
                         owner=owner,
                         stop=stop,
@@ -261,7 +257,7 @@ def _execute_audio_slot(
     provider_lane: tuple[ProviderModel, ...],
     start_index: int,
     prompt: str,
-    transport: Literal["inline", "files"],
+    request_kind: str,
     timeout_seconds: float,
     owner: _MergedAudioStateOwner,
     stop: Event,
@@ -277,13 +273,17 @@ def _execute_audio_slot(
         provider_index = (start_index + offset) % len(provider_lane)
         provider = provider_lane[provider_index]
         try:
-            response = recognize_provider_model_audio(
+            call_result = call_provider_model_with_retries(
                 provider,
-                request_snapshot,
-                prompt=prompt,
-                transport=transport,
-                timeout_seconds=timeout_seconds,
+                lambda: recognize_provider_model_audio(
+                    provider,
+                    request_snapshot,
+                    prompt=prompt,
+                    request_kind=request_kind,
+                    timeout_seconds=timeout_seconds,
+                ),
             )
+            response = call_result.response
         except NoSpeechDetected as error:
             calls, input_tokens, output_tokens = provider_failure_usage(error)
             outcome = _settled_slot(slot, provider=provider, no_speech=True)
@@ -320,9 +320,6 @@ def _execute_audio_slot(
             )
             continue
 
-        cleanup_failed = not response.client_closed or (
-            transport == "files" and not response.remote_file_deleted
-        )
         outcome = _settled_slot(
             slot,
             provider=provider,
@@ -331,10 +328,19 @@ def _execute_audio_slot(
         owner.checkpoint(
             outcome,
             provider=provider,
-            calls=1,
-            input_tokens=response.input_tokens,
-            output_tokens=response.output_tokens,
-            cleanup_failed=cleanup_failed,
+            calls=call_result.calls,
+            input_tokens=_add_known(
+                call_result.failed_input_tokens,
+                response.input_tokens,
+            ),
+            output_tokens=_add_known(
+                call_result.failed_output_tokens,
+                response.output_tokens,
+            ),
+            cleanup_failed=(
+                call_result.prior_cleanup_failed
+                or response.provider_cleanup_failed
+            ),
         )
         return tuple(slot_failures), provider_index
     return (), None
@@ -442,3 +448,7 @@ def _checkpoint_outcome(
         )
         raise
     return updated, current_usage
+
+
+def _add_known(left: int | None, right: int | None) -> int | None:
+    return left + right if left is not None and right is not None else None

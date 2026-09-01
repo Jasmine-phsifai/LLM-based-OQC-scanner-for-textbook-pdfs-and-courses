@@ -1,8 +1,6 @@
 """Shared prompt for exact speech-transcription routes."""
 
-from ..providers.google_genai.parse_google_genai_audio_response import (
-    NO_SPEECH_SENTINEL,
-)
+from .no_speech_sentinel import NO_SPEECH_SENTINEL
 
 
 AUDIO_TRANSCRIPTION_PROMPT_VERSION = "audio.transcription.v1"
