@@ -71,6 +71,12 @@ supplied, then returned usable text after that cap was removed. Compatible
 audio, Responses API, vendor-specific `extra_body`, model mirrors, and retry
 execution are not claimed by these image presets.
 
+The DashScope compatible preset also has a complete public merged-image live
+run. The Google endpoint/model/request shape has usable direct live evidence,
+while its first committed public smoke ended with an honest `PROVIDER_NETWORK`
+and retained resume state; it is not documented as a complete public live
+success yet.
+
 ## Images
 
 The visible merged-image flow separates planning from provider work:

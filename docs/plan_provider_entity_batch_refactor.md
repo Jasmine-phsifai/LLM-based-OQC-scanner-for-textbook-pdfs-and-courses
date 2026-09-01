@@ -11,13 +11,80 @@ Authority: root `AGENTS.md` and the latest maintainer instructions outrank this
 plan. `docs/ACTIVE_STATE_AND_RULES.md` is the historical work log, not a higher
 authority.
 
-## 0. Current pruning and execution checkpoint (2026-08-31, #718)
+## 0. Current pruning and execution checkpoint (2026-09-01, #719)
 
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
 authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
+
+### #719 adds one generic OpenAI-compatible image transport from real evidence
+
+The maintainer explicitly reactivated provider extension and authorized bounded
+use of the three credentials already stored by the legacy UI. Three delegated
+official-document/live probes ran first through proxy `127.0.0.1:10080`, with
+no credential value persisted or printed:
+
+- DashScope compatible `/models` returned 249 rows but omitted
+  `qwen3-asr-flash`, whose direct audio request was nevertheless accepted. One
+  `qwen3.5-ocr` request recognized two images with 7,629/218 input/output
+  tokens. The ASR request used a no-speech MP3 and returned no usable text, so
+  it proves transport acceptance only and does not admit an audio preset.
+- Google compatible `/models` returned 53 rows. Supplying an unsupported
+  guessed `max_tokens=32` caused HTTP-200 empty output; MP3 ended with
+  `finish_reason=length`. Repeating the same two-image request exactly once
+  without any output ceiling returned nonempty string content, `stop`, and
+  529/2 input/output tokens. Total-token accounting remained larger than their
+  sum and is therefore left uninterpreted.
+- The stored Volcengine Agent Plan hybrid URL/key returned HTTP 401 for two
+  catalog probes and one two-image request. Current official Agent Plan
+  documentation uses a different dedicated-key/access contract, and the saved
+  model is not proven by its catalog. No Volcengine preset or audio call is
+  admitted; the maintainer must correct the dedicated route/key/model first.
+
+Implementation commit `655a909` adds exact public
+`OpenAICompatibleSettings`, adapter id `openai_compatible_chat`, and two
+credential-free image presets for the live-compatible Google and DashScope
+models. The adapter is independent of vendor: standard Chat Completions
+Base64 `image_url`, no SDK retry, no guessed `max_tokens`, strict nonempty
+single-choice text, nullable prompt/completion usage, client cleanup state, and
+common SDK/HTTP error mapping. Model capabilities and batch defaults stay on
+the exact presets. Existing native Google, existing DashScope, direct `Config`,
+and injected-provider paths are unchanged; only the `ProviderModel` dispatcher
+selects the new adapter. There is no registry, provider pool, Responses mode,
+`extra_body` framework, catalog mirror, retry executor, audio parser, or worker
+change.
+
+Focused provider/merged-image/resume/public-package/release checks pass **88**.
+Both presets pass the maintained zero-credential public runner with
+`CONFIG_MISSING`, calls zero, output absent, retained state, and unchanged
+sources. The committed DashScope public run settles one two-image batch in one
+call with 2,023/14 tokens, publishes complete Markdown, and removes state. The
+committed Google public run makes one call and returns honest
+`PROVIDER_NETWORK`, no output, retained state, unchanged sources, and clean
+client state; the earlier direct compatible request is the usable-content
+proof, so this public failure is not rewritten as success or immediately
+replayed. The final wheel is 339,302 bytes; its attributable feature growth
+moves the release ceiling once from 324 to **336 KiB**, leaving 4,762 bytes
+headroom. An isolated `[image,openai-compatible]` install proves exact METADATA,
+OpenAI 2.54.0/Pillow 12.3.0 resolution, dependency-light `import ocrllm`, both
+public presets, and installed credential-free `CONFIG_MISSING` with calls zero.
+
+The new on-demand scenario is not default pytest. Seven focused tests cover the
+public entity/settings, one real-shaped SDK boundary, HTTP-200 empty rejection
+with usage, authentication mapping, zero-call local preflight,
+successful-result preservation on client-close failure, and the installed
+extra. The eight small production files follow the repository's one-file/one-
+responsibility rule; collapsing request encoding, response parsing, secret
+resolution, HTTP mapping and lifecycle into one large provider function would
+reduce filenames but worsen cold-read maintenance. Conversely, adding audio,
+Responses, arbitrary vendor options, retries, catalog discovery, or Volcengine
+special cases now would be launch-silo overdesign and remains rejected.
+
+The maintainer also identifies `D:\univ` as the authorized source of real long
+PDFs for a later explicit PDF scenario. This removes #715's external-input
+location uncertainty but does not mix PDF work into this provider iteration.
 
 ### #667 publishes only the provider-data and image-planning slice
 

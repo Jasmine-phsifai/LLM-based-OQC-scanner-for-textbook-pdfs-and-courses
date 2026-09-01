@@ -5,6 +5,7 @@ from __future__ import annotations
 from types import ModuleType
 
 from ...errors import DependencyMissing, OCRLLMError, ProviderError
+from ..vision_provider_response import VisionProviderResponse
 from .build_openai_compatible_image_request import (
     build_openai_compatible_image_request,
 )
@@ -102,7 +103,7 @@ def recognize_openai_compatible_images(
         ) from None
     if client_closed:
         return response
-    return type(response)(
+    return VisionProviderResponse(
         markdown=response.markdown,
         input_tokens=response.input_tokens,
         output_tokens=response.output_tokens,

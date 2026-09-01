@@ -62,11 +62,11 @@ def run_openai_compatible_image_smoke(
             error.code,
             provider=provider.vendor,
             model=provider.model,
-            provider_calls_attempted=_safe_count(
+            provider_calls_attempted=_safe_nonnegative_int(
                 details.get("provider_calls_attempted")
             ),
-            input_tokens=_safe_token(details.get("input_tokens")),
-            output_tokens=_safe_token(details.get("output_tokens")),
+            input_tokens=_safe_nonnegative_int(details.get("input_tokens")),
+            output_tokens=_safe_nonnegative_int(details.get("output_tokens")),
             sources_unchanged=_sources_unchanged(images, before),
             output_exists=os.path.lexists(output),
             state_exists=os.path.lexists(state),
@@ -82,6 +82,16 @@ def run_openai_compatible_image_smoke(
     usage = result.metadata.get("current_provider_model_usage")
     usage_row = usage[0] if type(usage) is tuple and len(usage) == 1 else None
     output_bytes = _read_bytes(output)
+    provider_call_count = _safe_nonnegative_int(
+        result.metadata.get("provider_call_count")
+    )
+    slot_count = _safe_nonnegative_int(result.metadata.get("slot_count"))
+    settled_slot_count = _safe_nonnegative_int(
+        result.metadata.get("settled_slot_count")
+    )
+    reused_slot_count = _safe_nonnegative_int(
+        result.metadata.get("reused_slot_count")
+    )
     passed = (
         type(batches) is tuple
         and len(batches) == 1
@@ -91,17 +101,17 @@ def run_openai_compatible_image_smoke(
         and result.source_type == "image"
         and result.output_path == output
         and result.warnings == ()
-        and _safe_count(result.metadata.get("provider_call_count")) == 1
-        and _safe_count(result.metadata.get("slot_count")) == 1
-        and _safe_count(result.metadata.get("settled_slot_count")) == 1
-        and _safe_count(result.metadata.get("reused_slot_count")) == 0
+        and provider_call_count == 1
+        and slot_count == 1
+        and settled_slot_count == 1
+        and reused_slot_count == 0
         and result.metadata.get("historical_provider_model_usage") == ()
         and isinstance(usage_row, Mapping)
         and usage_row.get("vendor") == provider.vendor
         and usage_row.get("model") == provider.model
-        and _safe_count(usage_row.get("calls")) == 1
-        and _safe_token(usage_row.get("input_tokens")) is not None
-        and _safe_token(usage_row.get("output_tokens")) is not None
+        and _safe_nonnegative_int(usage_row.get("calls")) == 1
+        and _safe_nonnegative_int(usage_row.get("input_tokens")) is not None
+        and _safe_nonnegative_int(usage_row.get("output_tokens")) is not None
         and output_bytes == result.markdown.encode("utf-8")
         and not os.path.lexists(state)
         and _sources_unchanged(images, before)
@@ -119,12 +129,12 @@ def run_openai_compatible_image_smoke(
         "batch_sizes": tuple(len(batch) for batch in batches),
         "provider_call_count": result.metadata.get("provider_call_count"),
         "input_tokens": (
-            _safe_token(usage_row.get("input_tokens"))
+            _safe_nonnegative_int(usage_row.get("input_tokens"))
             if isinstance(usage_row, Mapping)
             else None
         ),
         "output_tokens": (
-            _safe_token(usage_row.get("output_tokens"))
+            _safe_nonnegative_int(usage_row.get("output_tokens"))
             if isinstance(usage_row, Mapping)
             else None
         ),
@@ -186,11 +196,7 @@ def _read_bytes(path: Path) -> bytes | None:
         return None
 
 
-def _safe_count(value: object) -> int | None:
-    return value if type(value) is int and value >= 0 else None
-
-
-def _safe_token(value: object) -> int | None:
+def _safe_nonnegative_int(value: object) -> int | None:
     return value if type(value) is int and value >= 0 else None
 
 

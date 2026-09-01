@@ -3648,3 +3648,38 @@ archive PDF input are evidence/external gates; M4A/other audio, PDF text, worker
 v1alpha2/shared registration, Route B, Electron expansion, catalog mirrors,
 social and Rust remain explicit deferrals. No current authorized implementation
 item is missing and no runtime/test/provider change is made for this checkpoint.
+
+#719 reopens one explicitly authorized provider-extension slice and ships a
+vendor-neutral OpenAI-compatible Chat Completions image adapter. Public
+`OpenAICompatibleSettings` carries only endpoint, credential environment name
+and optional secret; two exact image-only presets cover Google
+`gemini-2.5-flash` and Beijing DashScope `qwen3.5-ocr`. Native Google,
+DashScope-specific, injected, Config, audio, worker and media orchestration paths
+remain unchanged. The generic request sends ordered Base64 image URLs plus text,
+no guessed output ceiling and no SDK retries; it preserves nullable per-model
+usage, rejects empty/truncated/refusal-shaped HTTP-200 responses, maps common
+SDK/HTTP failures without vendor message rules, and reports client-close state.
+
+Three official/live probes drive the boundary. DashScope two-image OCR succeeds;
+its catalog omits an ASR model whose direct no-speech request is nevertheless
+accepted, so catalogs remain metadata and no audio preset is admitted. Google
+returns empty output under a 32-token cap but usable content when that cap is
+removed; unexplained total-token differences are not redistributed. The saved
+Volcengine Agent Plan hybrid/key returns HTTP 401 and differs from current
+official dedicated access, so no Volcengine preset is shipped. Committed public
+smokes then produce one complete DashScope call (2,023/14 tokens) and one honest
+Google `PROVIDER_NETWORK` partial-state failure after one call; neither is
+retried or reclassified.
+
+The focused provider/merged/resume/public/release set passes 88 tests; both
+credential-free public presets fail before SDK/network with calls zero. Wheel
+size is 339,302 bytes, so the attributable provider slice moves the fixed cap
+from 324 to 336 KiB with 4,762 bytes headroom. An isolated
+`[image,openai-compatible]` installation resolves OpenAI 2.54.0/Pillow 12.3.0,
+keeps the base import free of OpenAI/Pillow/Google modules, exports both presets,
+and proves credential-free public dispatch calls zero. One new optional
+`openai-compatible` extra and one on-demand two-image scenario are included;
+there is no registry, pool, Responses mode, arbitrary extra-body layer, retry
+executor, audio implementation, catalog mirror, worker edit or model sweep.
+`D:\univ` is now the authorized real-long-PDF source for a later explicit PDF
+scenario, not part of this provider change.

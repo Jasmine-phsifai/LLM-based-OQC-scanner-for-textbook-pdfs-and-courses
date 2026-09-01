@@ -6,7 +6,7 @@ still decide what is implemented. When an older plan conflicts with a decision
 below, agents must surface the conflict and update the active authority before
 implementing the older plan.
 
-[`ACTIVE_STATE_AND_RULES.md`](ACTIVE_STATE_AND_RULES.md) remains authoritative.
+The repository-root `AGENTS.md` is authoritative.
 Current provider/media implementation order is section 0 of
 [`plan_provider_entity_batch_refactor.md`](plan_provider_entity_batch_refactor.md),
 and the maintainer resumed migration on 2026-08-30, one atomic slice at a time.
@@ -35,6 +35,9 @@ reorder that board.
   tree for bounded image, audio, PDF, and video execution. Do not crawl or
   download replacement media when a suitable local source already exists, and
   never publish its course content or identifying path in tracked records.
+- For explicitly scheduled real-PDF gates, `D:\univ` is also an authorized
+  source and contains long PDFs. Prefer it over crawling or downloading; keep
+  file names, paths, and course content out of tracked evidence.
 - Treat the maintainer's proxy as always enabled and as the normal
   external-download path. A reported network failure should first trigger a
   check that the proxy was not accidentally disabled or dropped from the child
@@ -394,9 +397,11 @@ is often accepted.
   lifecycle. The active direct path deliberately uses one bounded inline MP3
   request. Files upload, polling, remote cleanup, long-audio routing, and
   chunking remain deferred until a real product need justifies that lifecycle.
-- Treat a Google OpenAI-compatible transport as a possible later, separate path,
-  not as evidence for native behavior. Add it only for a proven need and after
-  maintainer confirmation.
+- Treat Google OpenAI compatibility as a separate path, not evidence for native
+  behavior. The maintainer activated its image slice on 2026-09-01: the generic
+  Chat Completions adapter and exact preset coexist with native Google; the
+  compatible preset must not claim Files API, Responses API, long audio, or
+  compatible MP3 support without their own successful calls.
 - Also preserve an intentional OpenAI-compatible provider direction because
   later local models may expose that protocol. Implement local compatibility as
   a separate future path; a shared wire shape does not prove equivalent models,
@@ -441,8 +446,8 @@ is often accepted.
   status strings, exception messages, or response bodies. A provider-scoped
   rate limit with successful Files/client cleanup is a valid transient outcome,
   not authority for an adapter-internal retry or immediate model switch.
-- **Deferred provider-extension target.** After the core OCRLLM product paths
-  are stable, provider integration should become additive: adding a provider
+- **Provider-extension target.** Now that the core OCRLLM product paths are
+  stable, provider integration should remain additive: adding a provider
   should primarily mean adding one independently readable provider class (and
   its focused tests), not modifying conditionals throughout media processors or
   the common orchestration path. Each provider class should own its evidenced
@@ -474,12 +479,19 @@ is often accepted.
   `ProviderModel` and requires one direct real consumer in the same vertical
   slice; no registry or provider framework is currently authorized.
 - The maintainer has configured the current test account with the existing
-  provider sources and an additional free Volcengine OpenAI-compatible source.
-  The latter is authorized for future bounded compatibility and robustness
-  tests when an OpenAI-compatible feature is actually scheduled. Its presence
-  does not activate that feature now, prove model compatibility, or authorize
-  hardcoding and repairing models one by one; model discovery and provider
-  behavior remain live evidence.
+  provider sources and an additional free Volcengine source. It is authorized
+  for bounded compatibility and robustness tests but not model-by-model repair.
+  The 2026-09-01 probe found the stored `/api/plan/v3` hybrid and key rejected
+  with HTTP 401, while current official Agent Plan documentation uses a
+  different dedicated-key contract. Therefore no Volcengine preset is admitted
+  until that exact route/model call succeeds. Model discovery remains metadata,
+  not capability truth: DashScope's compatible `/models` omitted an ASR model
+  whose direct request was still accepted.
+- Compatible presets send no guessed output-token ceiling. Google returned
+  HTTP 200, zero output and `finish_reason=length` under a 32-token cap, then
+  returned nonempty text with `finish_reason=stop` when the cap was removed.
+  Empty HTTP-200 content is always a typed failure; unexplained differences
+  between total tokens and input-plus-output are not redistributed or invented.
 - This direction does not reactivate social-media downloading or recognition.
 
 ## Resume and bounded manual repair

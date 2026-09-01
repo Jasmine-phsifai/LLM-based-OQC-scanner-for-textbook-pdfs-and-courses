@@ -39,6 +39,15 @@ against code and tests before relying on them.
   inputs. Direct test authorization does not authorize publishing user data.
 - Social-media download and recognition work is deferred. Do not use this Google
   authority to expand or resume the social-media feature surface.
+- Bounded OpenAI-compatible image/audio investigation is also authorized with
+  the three credentials already stored by the legacy settings UI: DashScope,
+  Google Gemini, and the independent Volcengine source. Never copy those values
+  into the repository, commands, logs, or presets. Shared wire syntax does not
+  prove model capability, response shape, error meaning, or retry policy.
+- The 2026-09-01 Volcengine probe found that the stored Agent Plan hybrid URL and
+  key return HTTP 401 and do not match the currently documented Agent Plan
+  access contract. Do not ship a Volcengine preset or substitute a normal Ark
+  key/endpoint until the dedicated route and model are proved in a real call.
 
 ## Legacy Parent Evidence Rule
 
@@ -82,6 +91,9 @@ document on testing policy.
   mode cannot be reached through the scenario layer.
 - An edit earns a run of the tests that touch the changed subsystem, not a
   full-suite run by default.
+- `D:\univ` contains authorized real long PDFs for later PDF scenario work.
+  Prefer it over crawling or downloading a replacement when a real-PDF gate is
+  explicitly scheduled; do not publish course content or identifying paths.
 
 ## Suspended Plan
 
