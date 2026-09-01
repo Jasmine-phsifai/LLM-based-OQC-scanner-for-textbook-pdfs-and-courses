@@ -3717,3 +3717,57 @@ The later runner must supply one explicit loopback base URL and two exact model
 IDs after real standard Chat image/audio calls succeed. OCRLLM contains no port,
 Qwen preset, WSL/vLLM/llama/CUDA/GPU or model-lifecycle fact, no `/models`
 dependency and no Responses path.
+
+#720 removes the Google-SDK assumption from the merged ProviderModel audio path.
+Generic `OpenAICompatibleSettings` entities now execute standard Chat
+Completions `input_audio` MP3 requests and return provider-neutral audio
+responses. Native Google keeps inline/Files selection inside its adapter;
+merged execution, resume and repair no longer depend on Google response types.
+The old direct `recognize_long_mp3(Config)` remains an explicitly Google-only
+compatibility facade and is not the future local-gateway entry.
+
+`split_audio()` adds exact `include_boundary_context=True`: true preserves fixed
+30-second context and false creates pure logical physical clips. Plans with a
+short final range below 30 seconds are valid. Existing state already stores all
+four bounds; no schema field/version changes. Failed Markdown markers now store
+physical bounds so sidecar-loss repair reproduces pure or padded clips exactly.
+
+Finite `ProviderModel.retry_rules` now execute for image/audio recognition and
+repair, while provider SDK retries stay zero. At most ten extra attempts and a
+300-second wait are admitted; zero-call failures never retry. Successful and
+failed terminal checkpoints account for every attempt, exact-or-unknown tokens,
+and cleanup failure. Retry cursors and model switching are not persisted.
+
+Focused affected checks pass 221 tests. A provider-free real-media scenario
+uses one immutable lecture image and MP3, constructs exact image and
+pure-logical 60-second audio requests, forwards two arbitrary caller model IDs,
+round-trips the source/clip bytes, preserves both source hashes and makes zero
+provider calls. The built wheel is 348,317 bytes and passes file selection; the
+bounded cap moves from 336 to 344 KiB with 3,939 bytes headroom.
+
+No identifiable OCR/ASR OpenAI-compatible localhost listener is active. Model
+Lab still has only a private JSON-over-stdin WSL runner and was not modified.
+The later runner must supply one explicit loopback base URL and two exact model
+IDs after real standard Chat image/audio calls succeed. OCRLLM contains no port,
+Qwen preset, WSL/vLLM/llama/CUDA/GPU or model-lifecycle fact, no `/models`
+dependency and no Responses path.
+
+#721 checks the claimed Model Lab loopback service against current machine and
+worktree state. Commit `000cfe0` is no longer the whole candidate contract:
+Model Lab has uncommitted manager/service/tests/docs changes. Port 38871 remains
+owned by `wslrelay.exe`, while the supported manager reports `DISABLED`.
+
+OCRLLM fixes one own mismatch: `OpenAICompatibleSettings` now permits both
+credential fields to be absent for unauthenticated loopback services. The
+OpenAI client receives a fixed non-secret placeholder only because its
+constructor requires a string; explicit and environment credentials keep
+precedence.
+
+One public real-MP3 ASR call reached exact model `qwen3-asr-1.7b` and ended
+honestly with terminal `PROVIDER_UNAVAILABLE`, calls one, unchanged sources and
+no accepted output. OCR was not started after the ASR gate failed. Model Lab
+manager/listener lifecycle is the blocking fault, so an uncommitted root
+`URGENT information you need to read.md` requests stale-process cleanup,
+manager/PID/listener agreement and a fresh real ASR-to-OCR proof from the exact
+reviewed service code. OCRLLM neither adopts the private stdin runner nor hides
+the service failure.

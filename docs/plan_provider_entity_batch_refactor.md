@@ -19,6 +19,37 @@ authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
 
+### #721 verifies the claimed local gateway and finds stale lifecycle state
+
+The Model Lab claim at commit `000cfe0` is superseded by current uncommitted
+service/manager/test/document changes, so it is not treated as the running
+binary's exact contract. Port 38871 is listening through `wslrelay.exe`, but the
+supported manager reports `DISABLED`. A listener therefore survives without a
+matching managed service session.
+
+OCRLLM first exposed and fixes one own defect: generic compatible settings said
+the API key was optional but required `api_key_env`. The exact settings now
+accept neither credential source for unauthenticated loopback services; the
+OpenAI client receives a fixed non-secret placeholder because its constructor
+requires a string. Existing explicit/environment credentials keep their
+precedence and validation.
+
+One current public OCRLLM ASR request reached the listener with real authorized
+MP3 data and exact model `qwen3-asr-1.7b`. It made one call and ended with
+terminal `PROVIDER_UNAVAILABLE`; source hashes stayed unchanged and no false
+output was accepted. The verifier did not proceed to OCR because ASR failed.
+The mismatch belongs to Model Lab lifecycle, not OCRLLM request parsing: manager
+state and listener ownership disagree, and the listener cannot be assumed to
+run current uncommitted code.
+
+An explicit `URGENT information you need to read.md` is written in the Model Lab
+root without modifying or committing its active work. It requires stopping the
+stale listener/backend children, reviewing and committing the intended current
+media-first contract, starting that exact code through the manager, proving
+manager/PID/listener agreement, and repeating real ASR-to-OCR switching before
+claiming live compatibility. OCRLLM does not suppress or indefinitely retry the
+service failure and does not adopt the private JSON-over-stdin runner.
+
 ### #720 removes Google SDK ownership from merged ProviderModel audio
 
 The maintainer authorizes generic OpenAI-compatible image/audio entities,

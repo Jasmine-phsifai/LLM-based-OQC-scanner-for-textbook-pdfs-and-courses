@@ -9870,3 +9870,13 @@ slot `i` 固定使用 lane `i % lane_count`，每 lane 本次从候选 0 开始�
 **runner阻塞与跨仓纠偏。** Windows listener枚举没有可识别OCR/ASR localhost OpenAI service；Model Lab仍只有一次性JSON-over-stdin WSL runner，监督文件也要求暂停把`local-qwen-wsl`私有协议推给OCRLLM。OCRLLM未改Model Lab、未调用runner、未加入WSL/user/env/weights/llama/vLLM/CUDA/GPU/internal port。已给later runner精确prompt：提供runner选择并报告的127.0.0.1 base URL，Chat `/v1/chat/completions`按model路由，接受标准image/audio shape、返回assistant string/stop/nullable usage及OpenAI HTTP error；真实图+音频成功后报告两个exact model IDs。旧OCRLLM local adapter/preset/subprocess计划作废。
 
 **范围与体积复查。** 旧`recognize_long_mp3(Config)`及其partial-state仍是Google-only direct compatibility facade；future local consumer走`split_audio -> merged ProviderModel recognize/resume/repair`，不为旧入口重写Config/fingerprint/state。无gateway、process manager、registry、pool、model list、Responses或preset。wheel **348,317 bytes**且file-selection通过；cap从336升至**344KiB**，剩3,939。reviewer指出的helper tracking、retry success accounting、pure marker actual bounds均由主代理复核修复；old marker compatibility亦保留。root `AGENTS.md` concurrent audit hunk、根`TO CURRENT WORKING AGENT.md`及其他用户untracked保留不暂存。
+
+## #721 — 2026-09-01：核验 Model Lab 的 live claim，发现 stale listener
+
+**基线与当前更新。** 用户要求先信任`000cfe0` claim，但Model Lab当前session已有未提交`README/CURRENT_STATE/manager/service/tests`更新：prompt从必填改为媒体必填+text可选，一次public image request不再逐图循环/注入frame marker，ASR text改作Qwen hotword/context。故不能把commit claim当当前进程精确事实。Windows核对38871由`wslrelay.exe`监听；官方manager `status`却返回`DISABLED`。listener与lifecycle authority矛盾，且无法证明listener加载当前worktree。
+
+**OCRLLM自有修复。** `OpenAICompatibleSettings`原称optional key但仍强制`api_key_env`，无认证loopback会preflight失败。现改为`api_key_env: str|None=None`；显式key>env key保持，二者均无时给OpenAI client固定非秘密placeholder（SDK constructor要求string，service不认证）。不把placeholder写入settings/repr/URL/log。focused generic image/audio/public tests **61 passed / 7.66s**，compileall/diff check通过。
+
+**真实live结果与归责。** 第一次verifier用1200秒被OCRLLM既有`Config <=600`正确拒绝，随后按600秒重跑。真实授权MP3经public `split_audio -> recognize_audio_to_markdown`到达exact `qwen3-asr-1.7b`，provider calls1，terminal slot `PROVIDER_UNAVAILABLE`，source hash不变，无output伪成功；ASR gate失败后未启动OCR。此状态结合manager DISABLED+残留listener，责任在Model Lab lifecycle，不是OCRLLM parser/payload。没有无限retry或私有stdin fallback。
+
+**urgent handoff。** 按用户规则在Model Lab根新增未提交`URGENT information you need to read.md`：要求停stale listener/所有backend child，确认port absent；review/commit intended current service；由manager启动exact code并使status/PID/listener一致；用真实image/audio重跑ASR→OCR；记录exact commit/PID/calls/usage/source hash；继续标准Chat image_url/input_audio/OpenAI HTTP error。Model Lab已有未提交工作，本轮不替对方提交或覆盖。

@@ -297,6 +297,12 @@ def test_openai_compatible_settings_are_public_exact_and_secret_safe():
     assert settings.api_key == secret
     assert secret not in repr(settings)
 
+    unauthenticated = OpenAICompatibleSettings(
+        base_url="http://127.0.0.1:8000/v1",
+    )
+    assert unauthenticated.api_key is None
+    assert unauthenticated.api_key_env is None
+
     for kwargs in (
         {"base_url": "relative/v1", "api_key_env": "LOCAL_LLM_KEY"},
         {"base_url": "https://user@example.test/v1", "api_key_env": "KEY"},

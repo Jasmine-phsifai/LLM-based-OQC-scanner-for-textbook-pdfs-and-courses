@@ -17,18 +17,18 @@ class OpenAICompatibleSettings:
     """Configure one compatible endpoint without asserting vendor behavior."""
 
     base_url: str
-    api_key_env: str
+    api_key_env: str | None = None
     api_key: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         _validate_base_url(self.base_url)
-        if (
+        if self.api_key_env is not None and (
             type(self.api_key_env) is not str
             or _ENVIRONMENT_NAME.fullmatch(self.api_key_env) is None
         ):
             raise ConfigError(
                 "OpenAICompatibleSettings.api_key_env must be an environment "
-                "variable name.",
+                "variable name when set.",
                 code="CONFIG_INVALID",
             ) from None
         if self.api_key is not None:
