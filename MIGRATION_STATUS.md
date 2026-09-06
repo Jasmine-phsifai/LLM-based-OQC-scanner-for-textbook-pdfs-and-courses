@@ -7,7 +7,17 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-08-30.
+Last synchronized: 2026-09-06.
+
+The current maintainer request explicitly authorizes localhost model-service
+cooperation through generic OpenAI-compatible HTTP. Model Lab owns serving and
+process/GPU lifecycle; OCRLLM retains planning, finite retries and resume. Safe
+provider codes and request IDs now survive merged failure checkpoints, and HTTP
+504 maps to `PROVIDER_TIMEOUT`. No service launcher, private runner protocol,
+new resume schema, production CLI or extracted-course selector was added.
+See [integration guidance](docs/local_model_service_integration.md) and the
+[dated verification record](docs/local_model_service_verification_2026-09-06.md).
+Older gateway/lifecycle claims below are historical, not current live evidence.
 
 Refactor authority (approved direction, atomic implementation resumed): the narrowed
 provider-model/media-batch refactor (#568/#569 in

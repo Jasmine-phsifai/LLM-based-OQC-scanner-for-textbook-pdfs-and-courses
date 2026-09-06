@@ -19,6 +19,19 @@ authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
 
+### #722 — 2026-09-06 localhost cooperation
+
+The maintainer now explicitly requests independent model serving in Model Lab
+and harness/retry/resume in OCRLLM over OpenAI-compatible HTTP. This supersedes
+the old supervisor pause notes. The implementation keeps the current generic
+ProviderModel boundary; no repository imports or launches the other. It retains
+safe service error diagnostics in existing failure descriptions and maps HTTP
+504 to timeout. The future pre-extracted course selector and CLI are constraints
+on this work, not newly implemented workflows. Scenario inputs remain a few
+selected frames and short real audio excerpts, never an entire screenshot pack.
+See [the dated verification record](local_model_service_verification_2026-09-06.md)
+for actual live verdicts; historical assertions below are not substituted for it.
+
 ### #721 verifies the claimed local gateway and finds stale lifecycle state
 
 The Model Lab claim at commit `000cfe0` is superseded by current uncommitted

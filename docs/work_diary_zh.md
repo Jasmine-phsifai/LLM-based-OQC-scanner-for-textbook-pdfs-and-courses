@@ -9880,3 +9880,19 @@ slot `i` 固定使用 lane `i % lane_count`，每 lane 本次从候选 0 开始�
 **真实live结果与归责。** 第一次verifier用1200秒被OCRLLM既有`Config <=600`正确拒绝，随后按600秒重跑。真实授权MP3经public `split_audio -> recognize_audio_to_markdown`到达exact `qwen3-asr-1.7b`，provider calls1，terminal slot `PROVIDER_UNAVAILABLE`，source hash不变，无output伪成功；ASR gate失败后未启动OCR。此状态结合manager DISABLED+残留listener，责任在Model Lab lifecycle，不是OCRLLM parser/payload。没有无限retry或私有stdin fallback。
 
 **urgent handoff。** 按用户规则在Model Lab根新增未提交`URGENT information you need to read.md`：要求停stale listener/所有backend child，确认port absent；review/commit intended current service；由manager启动exact code并使status/PID/listener一致；用真实image/audio重跑ASR→OCR；记录exact commit/PID/calls/usage/source hash；继续标准Chat image_url/input_audio/OpenAI HTTP error。Model Lab已有未提交工作，本轮不替对方提交或覆盖。
+
+## #722 — 2026-09-06：独立 localhost 模型服务与 OCRLLM harness 协作
+
+**本轮授权与范围。** 维护者本次明确要求两个仓库通过 OpenAI-compatible HTTP 协作，Model Lab 管服务、模型加载/GPU/日志/重启，OCRLLM 管显式图片分批、音频切片、有限 retry/resume；并要求 Luna 子代理、真实小样本后再做压力验证。已读根 AGENTS 与审计第八节；旧监督文件中的暂停方向被本次用户原话覆盖，不把旧日志当当前能力事实。没有新增私有 stdin adapter、跨仓 import、服务 launcher、生产 CLI、预抽帧目录选择器或新持久化协议。未来每门约 2.5 小时课程选 50–80 帧是本次维护者给出的场景约束，不是本轮上线的选择算法。
+
+**真实缺陷与修复。** compatible adapter 原本保留 `provider_code/request_id`，merged slot 却只存 canonical code 和通用描述，导致恢复后无法关联服务日志。现把安全、限长字段写入既有 512 字符描述，保留现有 state schema。HTTP 504 原误分为 unavailable，现按通用 gateway timeout 映射 `PROVIDER_TIMEOUT`。Model Lab 修复 health/PID 一致性、owned-unready 状态、SIGKILL 遗留 llama group 的精确归属清理与 restart；请求 queue 等待、OCR context/output/visual budgets 与大小限制改为启动时校验配置，保留默认图片上限 8，实际 context 溢出返回 413 而非伪 transient 503。ASR 的 cooperative generation deadline 必须结合 EOS 检查，提前截断不能报 stop 成功。模型加载、性能配置均留在 Model Lab。
+
+**验证纪律与主代理复核。** Luna 完成各自修改后由主代理逐段审阅。拦下过四图“安全”硬限制（忽略文本且违背本轮方向）、ASR max_time 后仍可能接受非 EOS 输出、status 删除尚活 PID、恢复工具无条件 passed、未使用真实 duration 的音频 DTO 等问题，均已纠正。可从 HTTP 场景到达的 504 故障用按需工具验证，没有保留低层 mapper pytest ratchet。已有 provider/image/audio focused 54 passed；Model Lab unittest 15 passed；轻量 import 没有引入媒体/GPU/服务依赖。合成 HTTP recovery 校验十次请求、六个注入错误、每媒体 initial4 calls + resume1 call/reuse1 slot，且 timeout/service code/request ID 穿过磁盘 checkpoint。这是 harness 场景证据，不冒充真实 GPU overload。
+
+**真实运行及限制。** 首次 real 2-image OCR 返回成功（冷加载在内约 203.705 秒）；首次 ASR 约 36.894 秒但只有 4 output tokens，不以此宣布有意义的识别质量门。更换为有讲话的 24 kHz mono 短 MP3；最终真实 recovery/lifecycle 结果以 `docs/local_model_service_verification_2026-09-06.md` 为准。首次 SIGKILL 场景暴露 readiness 未捕获 ConnectionResetError，主代理补为 OSError 边界，随后按需复验。未投递整个课程的千余帧，未跑全套 pytest，未宣称吞吐或准确率提升。ASR deadline 是 generation step 间的合作式限时，并非 CUDA kernel 强杀保证。
+
+**文件与跨仓状态。** 本库改 `provider_failure_evidence.py`、compatible error mapper，扩展 bounded live smoke，新增按需 HTTP recovery scenario 及协作/验证说明，同步 migration 和当前 plan。Model Lab 改 manager/config/service/model manager、现有 smoke/tests、说明，新增 lifecycle scenario。运行过程中另一个未归属本团队的提交把 Model Lab HEAD 推进为 `3ca2805`（负责 Model Lab runtime 与验证的两名 Luna 均否认提交）；不擅自 amend/撤回该提交，也不把原有 user result JSON 改动纳入本轮提交。原始 OCRLLM AGENTS、legacy setup、未跟踪交接文件均保留。
+
+**Carry-forward judgement。** 本轮没有修改或调查 legacy 实现；新库与模型服务通过真实 HTTP 场景验证各自边界。后续扩展媒体/并发时应重复本轮按需 scenario，不能用 green offline tests 或非空 Markdown 代替真实讲话、完整输出与可关联故障证据。
+
+**#722 最终补录。** real HTTP recovery 最终返回 passed：每媒体注入429/503/504，十次proxy请求中六次是显式故障、四次是真实成功模型调用；两媒体 initial4 calls partial，resume1 call/reuse1 slot，timeout/service code/request ID落盘后仍在，源hash不变。修复 ConnectionReset 后 lifecycle crash gate passed：PID18868 的一个 orphan backend 精确识别清理，旧HTTP/group消失，两次受控启动21393→21399。服务保留 RUNNING PID21399。随后有讲话的24k mono片段 direct ASR实测 stop、240字符、817/147 tokens、42.063秒（含冷加载），不是no-speech sentinel；未计算WER/真实准确率。五个真实validation-only错误状态/code/requestID均通过。最终focused54 passed /7.98s，Model Lab15 passed；两个仓库记录详见dated verification。

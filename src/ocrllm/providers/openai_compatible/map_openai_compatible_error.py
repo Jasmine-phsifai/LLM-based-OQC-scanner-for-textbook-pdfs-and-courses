@@ -39,7 +39,7 @@ def map_openai_compatible_error(
 
     if _is_sdk_error(error, openai_module, "APITimeoutError") or isinstance(
         error, TimeoutError
-    ) or status == 408:
+    ) or status in {408, 504}:
         return ProviderError(
             "The OpenAI-compatible endpoint timed out.",
             code="PROVIDER_TIMEOUT",

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import re
 
 from .errors import OCRLLMError, ProviderError
 
 
 MAX_PROVIDER_FAILURE_DESCRIPTION_CHARS = 512
+_SAFE_DETAIL_TEXT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 
 def provider_failure_usage(
@@ -45,8 +47,30 @@ def provider_cleanup_failed(error: OCRLLMError) -> bool:
 
 
 def bounded_provider_failure_description(error: ProviderError) -> str:
-    """Return one bounded public description without raw provider details."""
+    """Return bounded text while retaining safe provider diagnostics.
+
+    Merged resume slots intentionally have a small, stable schema.  Include the
+    provider's safe machine code and request id in the existing description so
+    those diagnostics survive checkpointing and resume without adding a second
+    state schema.
+    """
     description = str(error).strip()
+    diagnostics = _diagnostic_suffix(error.details)
+    if diagnostics:
+        suffix = f" [{diagnostics}]"
+        available = MAX_PROVIDER_FAILURE_DESCRIPTION_CHARS - len(suffix)
+        if len(description) > available:
+            description = description[: max(0, available - 3)] + "..."
+        return description + suffix
     if len(description) <= MAX_PROVIDER_FAILURE_DESCRIPTION_CHARS:
         return description
     return description[: MAX_PROVIDER_FAILURE_DESCRIPTION_CHARS - 3] + "..."
+
+
+def _diagnostic_suffix(details: Mapping[str, object]) -> str:
+    values: list[str] = []
+    for key in ("provider_code", "request_id"):
+        value = details.get(key)
+        if type(value) is str and _SAFE_DETAIL_TEXT.fullmatch(value) is not None:
+            values.append(f"{key}={value}")
+    return " ".join(values)
