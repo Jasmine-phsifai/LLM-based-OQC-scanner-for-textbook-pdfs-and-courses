@@ -24,6 +24,8 @@ def _args():
     parser.add_argument("--audio", required=True, type=Path)
     parser.add_argument("--image-model", default="qwen3.8-27b-q6-k-medium-ocr")
     parser.add_argument("--audio-model", default="qwen3-asr-1.7b")
+    parser.add_argument("--image-task", choices=("plain_ocr", "detail_ocr", "course_ocr"), default="detail_ocr")
+    parser.add_argument("--image-repair", action="store_true", help="Exercise image repair after owned state loss instead of image resume.")
     parser.add_argument("--timeout", type=float, default=600.0)
     args = parser.parse_args()
     if len(args.image) != 2 or not 0 < args.timeout <= 600:
@@ -42,6 +44,7 @@ class _Proxy(ThreadingHTTPServer):
         self.timeout_seconds = timeout
         self.counts = {}
         self.injected = []
+        self.image_prompts = []
         self.lock = threading.Lock()
         super().__init__(("127.0.0.1", 0), _Handler)
 
@@ -58,7 +61,11 @@ class _Proxy(ThreadingHTTPServer):
 class _Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         body = self.rfile.read(int(self.headers["Content-Length"]))
-        model = json.loads(body)["model"]
+        request = json.loads(body)
+        model = request["model"]
+        content = request["messages"][0]["content"]
+        if any(item.get("type") == "image_url" for item in content):
+            self.server.image_prompts.append("\n".join(item["text"] for item in content if item.get("type") == "text"))
         ordinal, injected = self.server.next_request(model)
         if injected:
             data = json.dumps({"error": {
@@ -145,6 +152,7 @@ def run(args):
         OpenAICompatibleSettings, batchify_images, split_audio,
         recognize_audio_to_markdown, recognize_images_to_markdown,
         resume_audio_to_markdown, resume_images_to_markdown,
+        repair_images_to_markdown,
     )
     from ocrllm.audio.probe_product_mp3 import probe_product_mp3
     from ocrllm.errors import OCRLLMError
@@ -172,11 +180,31 @@ def run(args):
                     first = recognize_audio_to_markdown(plan, provider=provider, output_path=output, timeout_seconds=args.timeout)
                 else:
                     plan = batchify_images(tuple(args.image), batch_size=1)
-                    first = recognize_images_to_markdown(plan, provider=provider, image_task="detail_ocr", output_path=output, timeout_seconds=args.timeout)
+                    first = recognize_images_to_markdown(plan, provider=provider, image_task=args.image_task, output_path=output, timeout_seconds=args.timeout)
                 state = resolve_resume_state_path(output).read_text(encoding="utf-8")
                 resume = resume_audio_to_markdown if media == "audio" else resume_images_to_markdown
-                resumed = resume(plan, provider=provider, output_path=output, timeout_seconds=args.timeout)
+                if media == "image" and args.image_repair:
+                    resolve_resume_state_path(output).unlink()
+                    resumed = repair_images_to_markdown(plan, provider=provider, image_task=args.image_task, output_path=output, timeout_seconds=args.timeout)
+                else:
+                    resumed = resume(plan, provider=provider, output_path=output, timeout_seconds=args.timeout)
                 report[media] = _check(first, resumed, state)
+                if media == "image" and args.image_repair:
+                    checks = report[media]["checks"]
+                    del checks["resume_reuses_one"]
+                    checks["repair_complete"] = checks.pop("resume_complete")
+                    checks["repair_calls_one"] = checks.pop("resume_calls_one")
+                    checks["repair_one_slot"] = resumed.metadata.get("repaired_slot_count") == 1
+                    checks["repair_did_not_recreate_state"] = not resolve_resume_state_path(output).exists()
+                    report[media]["passed"] = all(checks.values())
+                if media == "image" and args.image_task == "course_ocr":
+                    from ocrllm.profiles.build_legacy_course_ocr_prompt import COURSE_OCR_PROMPT_VERSION, build_legacy_course_ocr_prompt
+                    expected = [build_legacy_course_ocr_prompt((args.image[index].name,)) for index in (0, 0, 1, 1, 1)]
+                    checks = report[media]["checks"]
+                    checks["exact_course_prompts_and_original_names"] = proxy.image_prompts == expected
+                    checks["course_prompt_state_identity"] = json.loads(state)["prompt_version"] == COURSE_OCR_PROMPT_VERSION
+                    checks["course_profile"] = resumed.profile == "course_ocr"
+                    report[media]["passed"] = all(checks.values())
     except OCRLLMError as error:
         report["error_code"] = error.code
     except (OSError, ValueError) as error:

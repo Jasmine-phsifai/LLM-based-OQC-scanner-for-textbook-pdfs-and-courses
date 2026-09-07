@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from .errors import ConfigError
 from .profiles.build_board_prompt import BOARD_PROMPT_VERSION, build_board_prompt
+from .profiles.build_legacy_course_ocr_prompt import (
+    COURSE_OCR_PROMPT_VERSION,
+    build_legacy_course_ocr_prompt,
+)
 from .profiles.build_plain_ocr_prompt import (
     PLAIN_OCR_PROMPT_VERSION,
     build_plain_ocr_prompt,
@@ -22,9 +26,13 @@ def resolve_merged_image_prompt(
             code="CONFIG_INVALID",
             details={"provider_calls_attempted": 0},
         ) from None
-    if type(image_task) is not str or image_task not in {"plain_ocr", "detail_ocr"}:
+    if type(image_task) is not str or image_task not in {
+        "plain_ocr",
+        "detail_ocr",
+        "course_ocr",
+    }:
         raise ConfigError(
-            "image_task must be exactly 'plain_ocr' or 'detail_ocr'.",
+            "image_task must be exactly 'plain_ocr', 'detail_ocr', or 'course_ocr'.",
             code="CONFIG_INVALID",
             details={"provider_calls_attempted": 0},
         ) from None
@@ -46,4 +54,6 @@ def resolve_merged_image_prompt(
         ) from None
     if image_task == "plain_ocr":
         return build_plain_ocr_prompt(), PLAIN_OCR_PROMPT_VERSION
+    if image_task == "course_ocr":
+        return build_legacy_course_ocr_prompt(), COURSE_OCR_PROMPT_VERSION
     return build_board_prompt(), BOARD_PROMPT_VERSION

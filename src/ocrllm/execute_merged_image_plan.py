@@ -13,6 +13,7 @@ from .errors import OCRLLMError, OutputError, ProviderError, ResumeStateError
 from .fingerprint_image_sources import fingerprint_image_sources
 from .imaging.snapshot_image_group import snapshot_image_group
 from .merged_image_resume_state import MergedImageResumeState, MergedImageSlot
+from .profiles.build_legacy_course_ocr_prompt import build_legacy_course_ocr_prompt
 from .providers.call_provider_model_with_retries import (
     call_provider_model_with_retries,
 )
@@ -207,6 +208,11 @@ def _execute_merged_image_lane(
             if stop.is_set():
                 break
             batch = batches[slot_index]
+            batch_prompt = (
+                build_legacy_course_ocr_prompt(tuple(path.name for path in batch))
+                if initial_state.image_task == "course_ocr"
+                else prompt
+            )
             with snapshot_image_group(batch, config=Config()) as snapshots:
                 actual_sources = fingerprint_image_sources(batch, snapshots)
                 expected_sources = tuple(
@@ -232,7 +238,7 @@ def _execute_merged_image_lane(
                             lambda: recognize_provider_model_images(
                                 provider,
                                 snapshots,
-                                prompt=prompt,
+                                prompt=batch_prompt,
                                 timeout_seconds=timeout_seconds,
                             ),
                         )

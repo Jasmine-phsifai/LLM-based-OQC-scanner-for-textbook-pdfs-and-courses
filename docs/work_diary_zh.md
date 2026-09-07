@@ -9896,3 +9896,35 @@ slot `i` 固定使用 lane `i % lane_count`，每 lane 本次从候选 0 开始�
 **Carry-forward judgement。** 本轮没有修改或调查 legacy 实现；新库与模型服务通过真实 HTTP 场景验证各自边界。后续扩展媒体/并发时应重复本轮按需 scenario，不能用 green offline tests 或非空 Markdown 代替真实讲话、完整输出与可关联故障证据。
 
 **#722 最终补录。** real HTTP recovery 最终返回 passed：每媒体注入429/503/504，十次proxy请求中六次是显式故障、四次是真实成功模型调用；两媒体 initial4 calls partial，resume1 call/reuse1 slot，timeout/service code/request ID落盘后仍在，源hash不变。修复 ConnectionReset 后 lifecycle crash gate passed：PID18868 的一个 orphan backend 精确识别清理，旧HTTP/group消失，两次受控启动21393→21399。服务保留 RUNNING PID21399。随后有讲话的24k mono片段 direct ASR实测 stop、240字符、817/147 tokens、42.063秒（含冷加载），不是no-speech sentinel；未计算WER/真实准确率。五个真实validation-only错误状态/code/requestID均通过。最终focused54 passed /7.98s，Model Lab15 passed；两个仓库记录详见dated verification。
+
+## #723 — 2026-09-07：同长度正常机位课程的真实计时
+
+**维护者口径与纠偏。** 本轮要求说明上轮两个仓库的改动与严重性，并以迁移后的三组真实课程分别测筛选、OCR、切片及ASR，提供平均值。维护者先更正图片数量为一千多张，再明确每小时24–40张是动态密度，50–80绝非所有时长的固定上限。主代理此前提出的benchmark截到80张方案有误，已在任何正式OCR调用前撤销；三组按现有核心自然保留75／97／96张，全部进入正式OCR。此澄清补充#722场景描述，不把旧日志中的2.5小时数量例子提升为硬限制。
+
+**样例与边界。** 三组相邻常规课程为161–163分钟、1210／1225／1224张8秒截图；逐组检查八个均匀时点，均为正对黑板及教师的正常机位。附件archive规则作为背景资料，本轮不执行其中的迁移设想。原始数据只读，课程映射、媒体及识别正文仅保存在本机临时目录。新增tools桥接现有内部selector，不宣称新增公开预抽帧目录API。当前公共音频入口仅接受MP3，AAC/M4A转MP3为实测输入适配，转换时间单独测量且计入整课成本。
+
+**改动与验证进度。** 新增两个按需工具 `benchmark_course_frame_selection.py`、`benchmark_course_recognition.py` 及 `docs/course_benchmark_2026-09-07.md`。识别工具调用公共planning/recognition接口，仅包装真实HTTP与subprocess边界计时；合成HTTP smoke验证记录器，不冒充真实模型结果。三组全量筛选实测分别14.144／13.906／14.032秒。真实音频进行中，首组存在多个NOSPEECH判定；CPU能量只能排除整段数字静音，不能证明片段有讲话，故安排同音频不同prompt的独立真实对照。技术complete与识别内容完整性必须分别报告，尚未完成的识别不得写成成功平均值。
+
+**Carry-forward judgement。** 未调查或修改legacy；未改变公共API或两仓责任边界。Qwen ASR将prompt作为context/hotwords，而OCRLLM提供区间控制指令，兼容性有待实测；不能以HTTP200、stop或非空Markdown代替内容质量证据。最终结果补录本条及本轮计时记录。
+
+**#723 AAC调查补录。** 维护者在实测中要求另派子代理并行核查“AAC切片损失采样率”，先报告事实再考虑修改。Luna只读核查与CPU复现、主代理源码及soundfile复核证明：公共长音频输入和Model Lab wire都只收MP3；OCRLLM切片明确写死`-ar 16000 -ac 1 -b:a 64k`。真实24 kHz MP3输入物化12秒后成为16 kHz、192000采样点，正好12秒。视频提取另用16 kHz/32 kbps，但本次预提取输入未走该路径。AAC转MP3可以显式保持24 kHz；采样率下降不是AAC固有现象。当前模型预处理仍转为16 kHz。新增 `docs/aac_mp3_sample_rate_investigation_2026-09-07.md`，区分降采样、码率和重复有损编码，未据此宣称识别质量下降的幅度或NOSPEECH根因，也未更改运行时参数。采样率的模型专属预处理应留在Model Lab，未来AAC支持需核验完整输入/切片/HTTP/解码边界，不能只扩后缀。
+
+**#723 ASR实测补录。** 三组首轮A complete、B/C partial，分别366.903／390.921／773.394秒；B非法无语音marker、C的生成不完整502经一次自动重试后仍失败。各partial只做一次公共resume，B增加11.341秒1call、C增加320.927秒2calls，均复用16slots且原失败复发。加AAC转MP3成本，三组387.257／422.641／1114.684秒，平均641.527秒；这是含两组partial的实际消耗，不是全成功平均。正式流程一直用`audio.long.interval.v1`。A的同一完整16k十分钟片段，库exact prompt给sentinel、无text给1759字，说明该模型对现有prompt存在真实敏感性；短30秒两种prompt都给讲话转写。未替换正式输出或把无text诊断当正式性能，未冒充逐字准确率核验。维护者还要求Terra/max并行只读调查CPU ASR以免占GPU，已派发且禁止在本轮计时期间做高负载CPU/GPU推理。
+
+## #724 — 2026-09-07：按维护者选择接入已有课程OCR提示词
+
+**明确授权与范围。** 维护者提醒OCR必须是已有定制prompt+medium思考。主代理核对实际服务启动参数已经是reasoning on/effort medium，但公共`detail_ocr`是`board.v17`，与Model Lab旧课程评测`ocrllm-legacy`不同。异步列明两份已有prompt后，维护者明确选择后者（逐帧标记、Mermaid/SVG/SMILES）。因此本次新增独立固定`image_task="course_ocr"`、`course.legacy.v1`，而非替换原默认或在HTTP层暗改prompt并伪装旧resume身份。
+
+**实现与复核。** 既有模板原样迁到`profiles/build_legacy_course_ocr_prompt.py`，AST逐字比较Model Lab reference完全一致。resolver和merged state接受第三task，沿用detail能力；执行及repair按每批原始文件名渲染，独立task/version+既有source身份保证resume不混淆。没有新schema、通用模板引擎、跨仓import或模型启动逻辑。主代理合并代理初稿中重复的渲染代码，改为只对course task显式渲染；删除新加的内部函数monkeypatch pytest，因为违反根规则且该行为可从HTTP场景到达。
+
+**验证与记录。** 现有merged-image针对性16 passed；扩展`run_local_gateway_recovery_scenario.py`的image-task及state-loss repair选项，通过真实HTTP边界＋合成upstream运行，证明精确prompt/原文件名、有限retry、checkpoint版本、resume及repair，输入不变。另跑benchmark工具的两图HTTP smoke。合成响应不算GPU性能。正式第一批实际wire prompt SHA已与原样模板加两张原文件名的期望值核对一致。同步migration、当前plan、active library说明、benchmark记录；新benchmark工具显式course_ocr并记录每次wire prompt hash。正式完整三组OCR随后开始，预热单列342.967秒；没有把旧board.v17调用混入正式组。
+
+**Carry-forward judgement。** 本轮只迁移维护者明确选定的已有prompt，不调查或修改legacy实现。图形代码指令不等于输出正确或安全渲染保证；不能把请求成功等同于所有帧标记齐全或图形无误。ASR提示词兼容性、AAC入口和CPU并行服务均需各自证据，不借此扩成跨仓私有preset或新生命周期。
+
+**#724 发布检查补录。** Luna独立复核resume/repair/task版本和轻量import通过；无隔离wheel构建及现有`check_built_wheel.py`通过，351093 bytes，小于原344 KiB门槛352256 bytes，新profile已打包，没有抬高门槛。正式OCR前四批逐批检查为两图两个frame marker；这是结构核验，不是内容准确率。
+
+**#723 CPU调查完成补录。** 按维护者指定的Terra/max身份完成只读调查，新增`docs/asr_cpu_investigation_2026-09-07.md`。现有1.7B服务绑定cuda:0、GPU lease和CUDA synchronize，不能直接切CPU；原生Transformers/OpenVINO为候选，精确1.7B-hf revision在本机CPU的导出、速度、RSS和质量未知。指定旧目录的CPU证据都是0.6B，其registry/worker仅提供离线benchmark生命周期而非常驻HTTP注册，多条candidate已retired。不能套用旧模型吞吐或把不占GPU等同不争CPU/内存带宽/I/O。未来可参数化管理代码或同gateway路由，未强定新端口/新registry；CPU执行不能继承GPU锁或与现单模型槽位伪并行。最小后续建议为同模型60秒、再本轮10分钟CPU probe，未执行。主代理复核官方模型卡和Optimum支持表，区分型号1.7B、卡中约2B元数据、4.076GB权重文件与实际RSS。本调查没有启动模型负载或干扰正式OCR。
+
+**#723 CPU服务调查更正补录。** Terra/max补查官方OVMS文档，确认已有常驻CPU speech-to-text HTTP服务，故更正“未发现官方现成CPU daemon”的过宽说法。其接口是multipart `/v3/audio/transcriptions`，当前官方表明确不支持prompt；不能只换base_url接入现有JSON Chat input_audio+text harness。GenAI点名支持原始1.7B，仍不等于精确1.7B-hf snapshot已导出/服务验证。主代理复核官方REST API表后补入报告，未安装、导出模型或改变正式计时。
+
+**#724 真实输出格式观察。** 正式计时期间Luna只读检查A组5个settled批次并直接查看6张原图，帧标记身份正确，但5批均输出裸SVG而非prompt要求的svg围栏。记录为可证格式不遵从，不把slot settled等同质量成功；未由模糊板书猜测符号缺陷或宣称全课准确率，未改变正在计时的配置/输出。此为当前模型输出观察，未调查legacy运行、未添加不可由场景必要性支持的永久pytest。

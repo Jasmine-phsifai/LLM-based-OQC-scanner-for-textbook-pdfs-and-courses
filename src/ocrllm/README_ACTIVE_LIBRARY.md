@@ -108,6 +108,15 @@ uses the smallest positive recommendation across all validated scalar, flat, or
 nested candidates. It validates all image groups, preserves order, writes
 nothing, and makes no provider call.
 
+`image_task` selects one fixed prompt: `plain_ocr`, `detail_ocr` (`board.v17`),
+or `course_ocr` (`course.legacy.v1`). The course task uses the existing legacy
+course instructions, including per-image frame comments and Mermaid/SVG/SMILES
+transcription where appropriate. Each batch uses its original input filenames.
+It requires `supports_detail_ocr`; recognition, resume and repair share the same
+profile. This selects prompt instructions, not a guarantee that every returned
+diagram is valid or that all visible content is recognized. Model reasoning
+settings belong to the chosen provider/service.
+
 Merged recognition accepts the exact batch tuple and one model, one nonempty
 exact built-in flat model list, or one nonempty exact list of nonempty exact
 model lists. A flat lane visits candidates serially at most once per unresolved

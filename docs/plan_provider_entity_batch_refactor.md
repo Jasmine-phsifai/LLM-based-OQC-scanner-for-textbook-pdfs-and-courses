@@ -19,6 +19,25 @@ authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
 
+### #723 — 2026-09-07 explicit legacy course prompt and real-course measurements
+
+The maintainer explicitly selected Model Lab's prior `ocrllm-legacy` prompt,
+including original frame markers and Mermaid/SVG/SMILES instructions, instead
+of the current library's `board.v17`. This authorizes the small fixed
+`image_task="course_ocr"` profile, version `course.legacy.v1`; it does not replace
+the two existing tasks or introduce arbitrary prompt templates. OCRLLM owns its
+copy and per-batch original filenames. Resume uses the existing task/version/
+source identity, and repair uses the same renderer. The serving backend owns
+medium reasoning. The historical two-value selector description below is
+superseded only by this explicit third value.
+
+The maintainer corrected course selection to dynamic 24–40 images/hour, not a
+fixed 50–80 cap. Three comparable normal-camera courses naturally selected
+75/97/96 of 1210/1225/1224 frames. Measurements, failures and separately timed
+diagnostics are recorded in `course_benchmark_2026-09-07.md`; technical completion
+is not content-quality proof. AAC/sample-rate and CPU-ASR questions are
+investigations before implementation, not authorization to widen those APIs.
+
 ### #722 — 2026-09-06 localhost cooperation
 
 The maintainer now explicitly requests independent model serving in Model Lab

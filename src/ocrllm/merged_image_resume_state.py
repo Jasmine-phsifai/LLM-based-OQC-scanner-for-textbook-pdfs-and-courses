@@ -13,7 +13,7 @@ from .provider_model_usage import ProviderModelUsage
 
 
 MERGED_IMAGE_RESUME_STATE_VERSION = "ocrllm.merged-image-resume.v1"
-_IMAGE_TASKS = frozenset({"plain_ocr", "detail_ocr"})
+_IMAGE_TASKS = frozenset({"plain_ocr", "detail_ocr", "course_ocr"})
 _SLOT_STATUSES = frozenset({"unresolved", "settled", "failed"})
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ROOT_KEYS = frozenset(

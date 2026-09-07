@@ -28,6 +28,7 @@ from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_images import (
     recognize_provider_model_images,
 )
+from .profiles.build_legacy_course_ocr_prompt import build_legacy_course_ocr_prompt
 from .providers.vision_provider_response import VisionProviderResponse
 from .result import RecognitionResult
 
@@ -57,6 +58,13 @@ def repair_marked_image_batches(
     snapshot_cleanup_failure = False
 
     for marker in markers:
+        batch_prompt = (
+            build_legacy_course_ocr_prompt(
+                tuple(path.name for path in batches[marker.slot_index])
+            )
+            if image_task == "course_ocr"
+            else prompt
+        )
         lane_index = marker.slot_index % len(provider_lanes)
         lane = provider_lanes[lane_index]
         slot_failures: list[dict[str, int | str]] = []
@@ -76,7 +84,7 @@ def repair_marked_image_batches(
                             lambda: recognize_provider_model_images(
                                 candidate,
                                 snapshots,
-                                prompt=prompt,
+                                prompt=batch_prompt,
                                 timeout_seconds=config.timeout_seconds,
                             ),
                         )

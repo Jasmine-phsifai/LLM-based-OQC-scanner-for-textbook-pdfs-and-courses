@@ -7,7 +7,17 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-09-06.
+Last synchronized: 2026-09-07.
+
+The maintainer explicitly selected the existing legacy course prompt (frame
+markers plus Mermaid/SVG/SMILES transcription) for real course measurements.
+Merged images now accept `image_task="course_ocr"`, version `course.legacy.v1`,
+using that fixed prompt and original per-batch filenames through recognition,
+resume and repair. The existing `detail_ocr` / `board.v17` remains distinct.
+No cross-repository imports or new state schema were added; model reasoning
+configuration remains owned by the serving backend. See the
+[course measurements](docs/course_benchmark_2026-09-07.md) and
+[AAC/sample-rate investigation](docs/aac_mp3_sample_rate_investigation_2026-09-07.md).
 
 The current maintainer request explicitly authorizes localhost model-service
 cooperation through generic OpenAI-compatible HTTP. Model Lab owns serving and
