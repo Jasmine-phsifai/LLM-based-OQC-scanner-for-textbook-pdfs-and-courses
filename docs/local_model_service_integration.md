@@ -42,6 +42,13 @@ failures should be corrected instead of retried. Each request timeout is at most
 600 seconds under the current OCRLLM contract. A larger service-side load budget
 does not enlarge that client bound.
 
+Model Lab now reports an explicit OCR generation limit as HTTP 422 with
+`provider_code=output_token_limit`. The existing generic adapter maps 422 to
+`PROVIDER_REQUEST_INVALID`, so the retry rules above do not repeat that request.
+Keep its error code and request ID, then adjust the service budget or image
+batch before a deliberate retry. The total context and generation budgets are
+different; reasoning shares the latter with visible output.
+
 Do not confuse a multi-image prompt with batching independent audio jobs. The
 Chat audio route takes one audio item per request; OCRLLM sends explicit slices.
 A backend may optimize execution internally while retaining that wire contract.
