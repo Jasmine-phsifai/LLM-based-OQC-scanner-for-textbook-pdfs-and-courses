@@ -9968,3 +9968,5 @@ slot `i` 固定使用 lane `i % lane_count`，每 lane 本次从候选 0 开始�
 **#723 C标记错误对repair的边界。** Luna只读调查、主代理核对parse_merged_image_failure_markers及repair代码：只按严格失败slot marker映射，不读取meta:frame文件名；故C拼写不会错映射其他失败slot，也不会自动修正。C无失败marker，现有预检按源码会SOURCE_INVALID且0调用；没有实际执行repair，未把代码推导写成实测。私人目录另准备最终Windows硬件事件只读脚本，查询异常会抛出，不把查询失败当无事件；尚未执行最终检查。A PID52125继续运行。
 
 **#723 A客户端实际中断与有限恢复。** root在04:46左右确认PID52125消失、无initial summary，30批checkpoint及30次HTTP事件仍完整（HTTP4165.373116秒）。执行代理原先直接exec捕获输出，未独立保存stdout/exit；其已截断上下文也无法追回session_id。根因未知，未从无OOM日志推断正常退出。第31请求仍在健康模型服务生成，最终5048tokens/233.77815秒后释放；root等slots空闲才在04:50:10启动原公共resume，PID67682，独立父进程67681保存开始/结束/退出码及日志。保留中断state私人快照，复用30批，不重跑60张。原首轮完整wall已不可恢复，最终必须区分恢复计时与可观测端到端，不能伪造同配置无中断初轮。运行时库与Model Lab服务未改/未重启。另完成新A五批结构抽样主代理复核，10源hash/marker通过、SVG8裸露2围栏；不称全课质量通过。Carry-forward judgement：长期场景命令仅依赖工具会话输出会丢退出证据；本次不能证明是库进程崩溃或GPU故障，不把未知原因关闭成已修复。
+
+**#723 中断后三组计时口径补证。** 私人audit增加读取A resume记录，保留原初轮wall缺失，不将resume wall当整课。三组统一另算首请求服务日志时间→最终summary文件mtime的可观测端到端时间，B5792.064091秒/C6014.598758秒已核实；此边界含中断等待与最终报告落盘，不含首请求前规划。A未结束不计算均值。记录在途5048token请求的独立模型233.77815秒损耗。未修改原输出/summary mtime或启动额外识别。
