@@ -12,6 +12,7 @@ class OpenAICompatibleChatResponse:
     text: str
     input_tokens: int | None = None
     output_tokens: int | None = None
+    request_id: str | None = None
 
     def __post_init__(self) -> None:
         if type(self.text) is not str:
@@ -19,3 +20,5 @@ class OpenAICompatibleChatResponse:
         for value in (self.input_tokens, self.output_tokens):
             if value is not None and (type(value) is not int or value < 0):
                 raise ValueError("compatible token usage must be nonnegative")
+        if self.request_id is not None and type(self.request_id) is not str:
+            raise TypeError("compatible request_id must be text or None")

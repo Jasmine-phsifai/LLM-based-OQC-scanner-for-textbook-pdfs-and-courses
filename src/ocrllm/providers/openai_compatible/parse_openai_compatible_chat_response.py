@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ...errors import ProviderError
+from ..safe_provider_request_id import safe_provider_request_id
 from .openai_compatible_chat_response import OpenAICompatibleChatResponse
 
 
@@ -14,6 +15,9 @@ def parse_openai_compatible_chat_response(
 ) -> OpenAICompatibleChatResponse:
     """Return one assistant string without requiring model echo equality."""
     details = {"provider": vendor, "model": model}
+    request_id = _safe_response_request_id(response)
+    if request_id is not None:
+        details["request_id"] = request_id
     try:
         choices = getattr(response, "choices")
         if type(choices) is not list or len(choices) != 1:
@@ -74,6 +78,7 @@ def parse_openai_compatible_chat_response(
         text=content,
         input_tokens=usage_details["input_tokens"],
         output_tokens=usage_details["output_tokens"],
+        request_id=request_id,
     )
 
 
@@ -95,3 +100,13 @@ def _safe_attribute(value: object, name: str) -> object | None:
         return getattr(value, name, None)
     except Exception:
         return None
+
+
+def _safe_response_request_id(response: object) -> str | None:
+    """Read the SDK request ID attached to a successful HTTP response."""
+    for name in ("_request_id", "request_id"):
+        value = _safe_attribute(response, name)
+        request_id = safe_provider_request_id(value)
+        if request_id is not None:
+            return request_id
+    return None

@@ -9970,3 +9970,10 @@ slot `i` 固定使用 lane `i % lane_count`，每 lane 本次从候选 0 开始�
 **#723 A客户端实际中断与有限恢复。** root在04:46左右确认PID52125消失、无initial summary，30批checkpoint及30次HTTP事件仍完整（HTTP4165.373116秒）。执行代理原先直接exec捕获输出，未独立保存stdout/exit；其已截断上下文也无法追回session_id。根因未知，未从无OOM日志推断正常退出。第31请求仍在健康模型服务生成，最终5048tokens/233.77815秒后释放；root等slots空闲才在04:50:10启动原公共resume，PID67682，独立父进程67681保存开始/结束/退出码及日志。保留中断state私人快照，复用30批，不重跑60张。原首轮完整wall已不可恢复，最终必须区分恢复计时与可观测端到端，不能伪造同配置无中断初轮。运行时库与Model Lab服务未改/未重启。另完成新A五批结构抽样主代理复核，10源hash/marker通过、SVG8裸露2围栏；不称全课质量通过。Carry-forward judgement：长期场景命令仅依赖工具会话输出会丢退出证据；本次不能证明是库进程崩溃或GPU故障，不把未知原因关闭成已修复。
 
 **#723 中断后三组计时口径补证。** 私人audit增加读取A resume记录，保留原初轮wall缺失，不将resume wall当整课。三组统一另算首请求服务日志时间→最终summary文件mtime的可观测端到端时间，B5792.064091秒/C6014.598758秒已核实；此边界含中断等待与最终报告落盘，不含首请求前规划。A未结束不计算均值。记录在途5048token请求的独立模型233.77815秒损耗。未修改原输出/summary mtime或启动额外识别。
+
+
+**#723 三组终结、诊断补丁落地及最终硬件核验。** A resume于05:10:57正常exit 0，复用30批/新增8调用，38批75图complete，源hash和全部75帧顺序通过；全程38已返回HTTP5410.666798秒，另1次在途结果丢失。统一首服务请求至summary mtime计时A/B/C5755.313387/5792.064091/6014.598758秒，均值5853.992079秒；包含A中断与B partial，不编造原A wall、不将C标记错误或SVG缺围栏当质量通过。最终私人JSON逐组保留hash、状态、起止和计时口径。
+
+固定三组结束后，主代理应用隔离HTTP200安全request ID补丁到active providers，新增tools/run_http200_request_id_scenario.py。实际源码场景使用真实SDK+本地合成HTTP，无模型调用，image空正文/merged marker-only/真正空正文/非法header/audio错误sentinel仍诚实失败，安全ID与用量、清理信息保留。provider_error_details、merged image/audio、lightweight import合计51项通过（9.14秒）；active wheel351985bytes，内容检查及352256bytes门槛通过。隔离54项并非额外54个不同用例。未改公共API、state schema、重试、prompt或空正文语义；未碰legacy，旧B失败记录不会自动补回ID。Carry-forward judgement：成功HTTP仍可能在本地业务校验失败，诊断必须跨该边界保留；真实场景覆盖，无新增镜像pytest。
+
+全部模型任务后05:11:28 Windows事件查询成功：仅原启动期信息WHEA ID3，无新增驱动/WHEA/41/6008；SMI空闲P8、46°C、14W、350W限制、PCIe Gen4 x16、重放0、热及硬件供电降频累计0。模型仍常驻但无正在处理的slot；没有新增推理或改硬件设置。显存结温不可读，未知BIOS选项及A旧进程消失根因仍未知，不将未查明事项写成修复。更新最终中文报告与GPU跟进；ASR提示词误判/partial、空板契约和图形格式质量问题明确保留，不宣称生产质量已全部达标。

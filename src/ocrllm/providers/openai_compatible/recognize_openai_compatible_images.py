@@ -57,4 +57,5 @@ def recognize_openai_compatible_images(
         input_tokens=parsed.input_tokens,
         output_tokens=parsed.output_tokens,
         client_closed=call.client_closed,
+        request_id=parsed.request_id,
     )

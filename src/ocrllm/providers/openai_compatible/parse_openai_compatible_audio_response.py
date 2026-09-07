@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...errors import OCRLLMError
 from ..audio_provider_response import AudioProviderResponse
 from ..validate_audio_provider_text import validate_audio_provider_text
 from .parse_openai_compatible_chat_response import (
@@ -21,13 +22,18 @@ def parse_openai_compatible_audio_response(
         vendor=vendor,
         model=model,
     )
-    markdown = validate_audio_provider_text(
-        parsed.text,
-        vendor=vendor,
-        model=model,
-        input_tokens=parsed.input_tokens,
-        output_tokens=parsed.output_tokens,
-    )
+    try:
+        markdown = validate_audio_provider_text(
+            parsed.text,
+            vendor=vendor,
+            model=model,
+            input_tokens=parsed.input_tokens,
+            output_tokens=parsed.output_tokens,
+        )
+    except OCRLLMError as error:
+        if parsed.request_id is not None:
+            error._add_safe_detail("request_id", parsed.request_id)
+        raise
     return AudioProviderResponse(
         markdown=markdown,
         input_tokens=parsed.input_tokens,

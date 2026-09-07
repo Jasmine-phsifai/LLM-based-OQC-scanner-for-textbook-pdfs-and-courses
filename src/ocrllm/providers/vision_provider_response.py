@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .safe_provider_request_id import safe_provider_request_id
+
 
 @dataclass(frozen=True, slots=True)
 class VisionProviderResponse:
@@ -13,6 +15,7 @@ class VisionProviderResponse:
     input_tokens: int | None = None
     output_tokens: int | None = None
     client_closed: bool = True
+    request_id: str | None = None
 
     def __post_init__(self) -> None:
         for value in (self.input_tokens, self.output_tokens):
@@ -20,3 +23,5 @@ class VisionProviderResponse:
                 raise ValueError("provider token usage must be nonnegative integers")
         if type(self.client_closed) is not bool:
             raise TypeError("client_closed must be a bool")
+        if self.request_id != safe_provider_request_id(self.request_id):
+            raise ValueError("provider request_id must be safe text or None")

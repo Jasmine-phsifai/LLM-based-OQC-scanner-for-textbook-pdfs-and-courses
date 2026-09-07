@@ -16,6 +16,7 @@ from .provider_request_start_gate import wait_for_provider_request_start
 from .resolved_vision_provider import ResolvedVisionProvider
 from .validate_provider_markdown import validate_provider_markdown
 from .vision_provider_response import VisionProviderResponse
+from .safe_provider_request_id import safe_provider_request_id
 
 
 def call_vision_provider(
@@ -93,6 +94,9 @@ def call_vision_provider(
         )
     if validation_error is not None:
         if type(provider_value) is VisionProviderResponse:
+            request_id = safe_provider_request_id(provider_value.request_id)
+            if request_id is not None:
+                validation_error._add_safe_detail("request_id", request_id)
             attach_current_model_token_usage_to_error(
                 validation_error,
                 (
@@ -116,6 +120,7 @@ def call_vision_provider(
             input_tokens=provider_value.input_tokens,
             output_tokens=provider_value.output_tokens,
             client_closed=provider_value.client_closed,
+            request_id=provider_value.request_id,
         )
     return markdown
 

@@ -22,7 +22,7 @@ A正式16K/8K首批提供了同两图、同prompt hash的追加证据：2676输�
 |---:|---:|---|
 | 8192 | 5500 | 同一难例先验证；2676+5500=8176，只余16tokens，不能推广到更长输入 |
 | 12288 | 8192 | 同两图输入最多约10868总tokens；KV静态约408MiB，比8K多136MiB |
-| 16384 | 8192 | 当前正在跑的三组固定配置，保留为对照 |
+| 16384 | 8192 | 本次三组固定配置（已结束），保留为对照 |
 
 比较需要固定图片、prompt、medium、BIOS/电源计划，并单列冷加载；记录热wall、完整结束、输出规模和设备放置证据。不以更少输出或失败丢弃来宣称更快。上述候选尚未运行，当前正式三组不因这个计划再次改参数。
 
@@ -36,10 +36,18 @@ A正式16K/8K首批提供了同两图、同prompt hash的追加证据：2676输�
 
 本次启动时间为9月7日23:36:14。启动前23:33有EventLog 6006正常停止、Kernel-Power 109系统发起关机，以及577重启过渡记录；本次启动后查询没有Kernel-Power 41、EventLog 6008、Display 4101或nvlddmkm事件。这更符合系统收到关机请求的日志轨迹，不能把维护者所述事件直接定性为已证实的物理供电瞬断。历史9月3日的41不属于本次事件。
 
-启动后有一条WHEA ID3。子代理读取其316字节CPER：header和唯一section的severity均为3（Informational），NotifyType为BOOT；唯一section是公开标准表外的厂商GUID，无法映射到RTX 3090或具体设备。没有标准PCIe设备/BDF/AER section，不凭这条记录认定GPU故障，也不以“信息级”断言硬件绝无问题。CPER时间戳有效位未设置，采用Windows事件时间。字段解释依据[Microsoft WHEA header](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ns-ntddk-_whea_error_record_header)、[severity枚举](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ne-ntddk-_whea_error_severity)和[UEFI CPER规范](https://uefi.org/specs/UEFI/2.10_A/Apx_N_Common_Platform_Error_Record.html)。原始XML仅保存在私人持久证据目录。以上是运行中检查，最终任务结束后还需检查是否新增驱动/硬件错误。
+启动后有一条WHEA ID3。子代理读取其316字节CPER：header和唯一section的severity均为3（Informational），NotifyType为BOOT；唯一section是公开标准表外的厂商GUID，无法映射到RTX 3090或具体设备。没有标准PCIe设备/BDF/AER section，不凭这条记录认定GPU故障，也不以“信息级”断言硬件绝无问题。CPER时间戳有效位未设置，采用Windows事件时间。字段解释依据[Microsoft WHEA header](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ns-ntddk-_whea_error_record_header)、[severity枚举](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ne-ntddk-_whea_error_severity)和[UEFI CPER规范](https://uefi.org/specs/UEFI/2.10_A/Apx_N_Common_Platform_Error_Record.html)。原始XML仅保存在私人持久证据目录。以上为运行中基线；任务结束复查见下。
 
 ## 间歇峰值与连续串行队列
 
 旧A组wall 5097.921420秒，实际HTTP累计5078.545385秒，请求外差值19.376035秒，仅约0.38%。在保持每批推理不变、仍串行的条件下，即便完全消掉这部分开销，收益上限也只有约0.38%；这不是张量批处理或并行推理的收益上限。现有harness已连续提交各批，不能从风扇/功耗波动推断大量客户端空等。输入处理、逐token生成和请求间工作负载不同，需要按阶段看吞吐。
 
 本次测试不能测出显卡寿命，也没有证据支持“始终100%占用”或“周期性峰值”必然更保护显卡。功耗/风扇波动本身不是损坏判据；本轮仅结合时钟、温度、功耗限制原因、PCIe状态和驱动事件判断已观察到的运行状态，没有改超频、风扇或功耗配置。
+
+## 全部模型任务结束后的复查（05:11）
+
+A恢复进程05:10:57以exit 0结束，llama slots显示is_processing=false，未追加模型负载。05:11:28 Windows查询成功：从23:36启动到此时，仅原23:36:33信息级WHEA ID3，没有新增WHEA、Display、nvlddmkm、Kernel-Power 41或EventLog 6008。
+
+最终nvidia-smi显示P8空闲、46°C、平均14.86W/瞬时14.23W，当前/请求/默认功耗上限均350W，PCIe Gen4 x16，重放计数0。热降频和硬件供电制动累计均0；软件功率限制累计约16017秒属于功率管理记录，当前空闲未触发。显存仍占23082MiB，因为服务按预期保留已加载模型。显存结温不可读，不据此声称显存全程温度正常。未复位、改频率/功耗/风扇或做额外烤机。
+
+结合本次长时真实运行及事件记录，目前没有发现支持“这次误触电源损坏3090”的新增证据；这不等于全面硬件诊断。两个BIOS选项仍无法仅凭右侧/中央偏下的位置确定，不能把不明开关当已证实限功耗原因。
