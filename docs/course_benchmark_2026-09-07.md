@@ -25,7 +25,7 @@
 
 GPU为RTX3090 24GiB、驱动610.88。服务模型ID为`qwen3.8-27b-q6-k-medium-ocr`，GGUF元数据的架构为Qwen3.5 hybrid；二者不能混作同一种命名。使用维护者选择的Model Lab既往`ocrllm-legacy`模板，包含逐帧标记和Mermaid/SVG/SMILES转写，**medium思考**。公共库对应独立`course_ocr` / `course.legacy.v1`；原`detail_ocr`的`board.v17`保持不变。
 
-| 组 | 选中图/计划批次 | 交付时间：首请求进入服务→最终结果落盘 | 实际服务调用 | 最终技术状态 |
+| 组 | 选中图/计划批次 | 交付时间：首请求进入服务→最终结果JSON mtime | 实际服务调用 | 最终技术状态 |
 |---|---:|---:|---:|---|
 | A | 75 / 38 | **5755.313387 s（95分55秒）** | 39（38次收到，1次中断丢失） | 恢复后complete；75个帧标记按序匹配 |
 | B | 97 / 49 | **5792.064091 s（96分32秒）** | 49 | partial；92张settled，末5张失败 |
@@ -74,7 +74,7 @@ ASR实际缓存为`Qwen/Qwen3-ASR-1.7B-hf`固定revision，当前BF16、cuda:0�
 
 ## 计时、冷加载与断电证据
 
-`tools/benchmark_course_recognition.py`通过公共batchify/recognize和split/recognize流程，包装真实HTTP及subprocess边界计时，不替换库内部函数或模拟正式模型响应。图片batch2，单通道，请求上限600秒；rate-limited/unavailable/timeout各允许一次额外重试、等待2秒。计入wall的是本次规划、快照、识别、切片、重试和写输出；工具额外前后hash审计及最后summary JSON写入不在wall内。HTTP/FFmpeg是内部明细，不重复相加。`passed`只表示技术complete且源hash不变。
+`tools/benchmark_course_recognition.py`通过公共batchify/recognize和split/recognize流程，包装真实HTTP及subprocess边界计时，不替换库内部函数或模拟正式模型响应。图片batch2，单通道，请求上限600秒；rate-limited/unavailable/timeout各允许一次额外重试、等待2秒。计入wall的是本次规划、识别、切片、重试和Markdown写出；工具额外前后hash审计及最后summary JSON写入不在wall内。HTTP/FFmpeg是内部明细，不重复相加。`passed`只表示技术complete且源hash不变。
 
 模型冷加载/独立预热不计入表中暖运行时间。ASR独立30秒讲话预热为22.175403秒（含首次加载），不计入三课平均。恢复后的同模板两图8K预热为508.542131秒；16K/8K已知难例probe为587.282203秒，含约327秒加载，输入处理5.15379秒、生成252.34071秒，2676输入+4643生成=7319，stop、truncated=0、1call。它不是整课耗时或暖批速度。断电前另一次预热342.9665秒用了近似legacy模板，不与exact模板预热混作同样本对照。
 
@@ -87,8 +87,8 @@ ASR实际缓存为`Qwen/Qwen3-ASR-1.7B-hf`固定revision，当前BF16、cuda:0�
 - OCRLLM `feca47c`补齐安全provider code/request ID在checkpoint中的诊断，504正确归类timeout。有限重试和断点恢复早已存在；原缺陷妨碍定位与按timeout策略恢复，没有证据证明整个库不可用或已发生数据丢失。
 - Model Lab `3ca2805`、`33c632a`修复进程/端口/health身份、保留活着的UNREADY进程、精确归属清理与restart。真实出现的“端口在、manager却DISABLED”能阻断无人值守恢复，是严重生产障碍。预算和队列等待改为校验后的配置，永久context错误返回413；ASR合作式时限结合EOS检查，不将提前截断当stop。上一轮54项库测试、15项服务测试及真实媒体/故障恢复有记录，不能当作吞吐或准确率证明。
 - 本轮`course_ocr`原样迁入维护者选择的既有模板，并按原文件名渲染，无运行时跨repo import；16项相关测试及真实HTTP边界的retry/resume/state-loss repair验证通过，既有wheel门槛和轻量import通过。
-- Model Lab `04030e5`将明确`finish_reason=length`在解析正文前分类为422/output_token_limit，覆盖null/空/部分正文，避免原参数当临时502重试。按需边界场景及11项服务契约测试通过，真实难例通过证明扩预算可解决该实例，不能冒充真实触发422测试。
-- 新发现的HTTP200后本地正文校验失败未携带request ID，三组结束后已将最小诊断修复应用到active库。`tools/run_http200_request_id_scenario.py`使用真实SDK和本地合成HTTP验证空图片、marker-only、非法ID及音频sentinel失败：保留安全ID、用量和清理状态，仍拒绝原错误。active相关51项测试通过；wheel构建、内容及352256B上限检查通过。隔离副本另有54项相关测试通过，不能相加当不同用例数。它不放宽空正文或sentinel规则，不新增checkpoint schema，不会追溯补回旧B失败记录。
+- Model Lab `04030e5`将明确`finish_reason=length`在解析正文前分类为422/output_token_limit，覆盖null/空/部分正文，避免原参数当临时502重试。按需边界场景及11项服务契约测试通过，真实难例证明扩预算使该实例避免输出长度失败并正常stop，不能冒充真实触发422测试。
+- 新发现的HTTP200后本地正文校验失败未携带request ID，三组结束后已将最小诊断修复应用到active库。`tools/run_http200_request_id_scenario.py`使用真实SDK和本地合成HTTP验证空图片、marker-only、非法ID及音频sentinel失败：保留安全ID、用量和清理状态，仍拒绝原错误。active相关51项测试通过；wheel实际351985B，构建、内容及352256B上限检查通过。隔离副本另有54项相关测试通过，不能相加当不同用例数。它不放宽空正文或sentinel规则，不新增checkpoint schema，不会追溯补回旧B失败记录。
 
 两仓继续只通过HTTP合作：Model Lab负责模型、预算、生命周期；OCRLLM负责选择、分批、重试、恢复。没有跨仓私有import、张量批处理加速或CPU常驻注册已完成的虚假声明。
 
