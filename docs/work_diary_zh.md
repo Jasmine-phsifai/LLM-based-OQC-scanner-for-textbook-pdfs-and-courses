@@ -9952,3 +9952,7 @@ slot `i` 固定使用 lane `i % lane_count`，每 lane 本次从候选 0 开始�
 **#723 新配置B首轮结束。** B真实wall5797.015423089秒，49次HTTP200/stop、无重复，92/97张settled；末5张因no recognition Markdown为partial。已派Luna只读调查源图及校验，不将末尾短响应猜成已证实空白；C自动接续，未重启。当前最高输出5302tokens，三批超过旧4096上限。
 
 **#723 B末尾空内容边界。** Luna看图确认末5张为空板/擦板且源hash一致；代码会拒绝marker-only，字符数相容但原文未保存，故不伪称精确重放、不改空回复防假成功规则。记录HTTP200校验失败未携带request ID到既有checkpoint描述的诊断缺口。92个已完成帧顺序核验通过；保持97张首轮partial，C继续。
+
+**#723 HTTP200校验诊断隔离修复。** B末尾暴露的request ID缺口也存在于compatible音频的文本校验异常边界。Luna在私人src副本补内部响应ID传递，复用原有单次正文校验及checkpoint描述，不改prompt、空结果/重试语义或state schema。主代理拒绝了早期重复校验方案，复核后补正独立场景默认源码路径及错误码/调用次数断言。真实本地合成HTTP场景确认image/merged/audio仍为原错误且保留安全ID、用量、清理状态；非法ID丢弃。隔离现有provider/image 37项、merged audio17项通过；wheel351985bytes低于352256门槛，轻量import通过。未调用模型或更改active src/tools，补丁须在固定三组计时结束后应用并核验。
+
+**#723 报告结构整理。** 在C继续运行时，将course_benchmark报告重写为当前数据表、计时口径、真实partial/质量缺口、历史对照及两仓改动，消除多轮追加造成的时态冲突；旧文本保留在Git历史和私人证据快照。没有填写未完成的OCR均值或声称隔离补丁已应用，所有追加调查仍保留。
