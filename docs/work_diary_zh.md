@@ -9964,3 +9964,5 @@ slot `i` 固定使用 lane `i % lane_count`，每 lane 本次从候选 0 开始�
 **#723 新配置C首轮结束与逐帧核验。** C真实wall6016.057545997秒、48次HTTP200/stop、无重试或length截断，96张技术complete；HTTP6012.387654974008秒。主代理核对完整输出发现第62个frame marker少一个零，其余95个按序一致；重建该批原模板和正确原文件名的prompt SHA与wire事件一致，证明输入正确、模型输出标记不遵从。保留原始输出，不以技术complete掩盖身份错误，不凭单个标记拼写断言正文遗漏。此前Luna五批十图结构抽样通过，主代理独立复核hash/顺序，但未覆盖此slot，故不能代替全量身份核验。A由同一代理自动接续，PID52125；未改active源码/服务或补跑。Carry-forward judgement：定制提示词不能保证模型严格输出原始标记；该问题可在active库再次出现，当前先记录真实质量限制，不把宽泛防御或自动改名塞进计时中的库。
 
 **#723 A首批同输入速度补证。** A正式首批同两图、同wire prompt hash，16K/8K暖服务输出1326tokens，HTTP66.958364秒；llama task250839生成62.76699秒（21.11tok/s）、输入3.76189秒。与8K前后1744tokens、30.02/30.05tok/s并列，明确输出规模不同，单次不能隔离上下文或设备放置原因。只读取既有事件/日志，无新增模型请求；更新GPU调查，A PID52125继续。
+
+**#723 C标记错误对repair的边界。** Luna只读调查、主代理核对parse_merged_image_failure_markers及repair代码：只按严格失败slot marker映射，不读取meta:frame文件名；故C拼写不会错映射其他失败slot，也不会自动修正。C无失败marker，现有预检按源码会SOURCE_INVALID且0调用；没有实际执行repair，未把代码推导写成实测。私人目录另准备最终Windows硬件事件只读脚本，查询异常会抛出，不把查询失败当无事件；尚未执行最终检查。A PID52125继续运行。
