@@ -4977,3 +4977,6 @@ when the section-0 video deletion lands.
   DashScope and Google GenAI adapters (~250-350 lines collapsible) once the
   merged image interfaces are rewritten around the first-class provider-model
   entity.
+
+
+2026-09-08 #726: Maintainer-authorized production composition now exposes `select_extracted_frames` over caller-owned timestamped JPEG records. It reuses the existing duration-aware selector; Crawler owns publication. Real fourth-course selection retained the exact same 97/1225 frame indices.

@@ -10010,3 +10010,5 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 
 
 **#725 收尾验证与部署。** Luna仅在ModelLab既有测试文件添加SDK边界替身，走transcribe_mp3验证cap有/无EOS均422、低于cap且EOS正常完成，15项服务契约通过，无真实GPU调用；root复核源码分支与测试。ModelLab efd21fc通过既有manager在实测全部结束后restart部署PID110061，status RUNNING。OCRLLM新增代码此前相关测试/真实HTTP场景均已完成，本次只补最终报告和日记，不重跑无关全套。报告保留所有partial、计时暂停及GPU采样缺口，不把条件分支修正冒充真实转写修复。
+
+**#726 2026-09-08 正式已提取图片选帧入口。** 维护者本轮要求“把现有媒体准备步骤接入正式消费流程”，授权生产消费者，因此新增 `select_extracted_frames(tuple[RetainedVideoFrame,...], duration_seconds=...)`；复用现有视频selector与28–40张/小时参数，返回原记录子集，不读Crawler manifest、不复制/删除/改写图片、不重建video lifecycle。真实第四组1225张通过公开入口14.455秒选97张，索引与已测基线逐项一致；可重跑工具 `tools/verify_extracted_frame_selection.py`。Carry-forward judgement：归档发布归Crawler，OCRLLM只拥有选择算法；原benchmark不作为生产入口。

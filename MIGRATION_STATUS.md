@@ -3801,3 +3801,6 @@ manager/listener lifecycle is the blocking fault, so an uncommitted root
 manager/PID/listener agreement and a fresh real ASR-to-OCR proof from the exact
 reviewed service code. OCRLLM neither adopts the private stdin runner nor hides
 the service failure.
+
+
+2026-09-08 #726: Maintainer-authorized production composition now exposes `select_extracted_frames` over caller-owned timestamped JPEG records. It reuses the existing duration-aware selector; Crawler owns publication. Real fourth-course selection retained the exact same 97/1225 frame indices.

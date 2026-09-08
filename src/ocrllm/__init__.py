@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 # Bind lightweight facade functions before callers can import their same-named
 # submodules and replace these public package attributes.
+from .select_extracted_frames import select_extracted_frames as select_extracted_frames
 from .batchify_images import batchify_images as batchify_images
 from .split_audio import split_audio as split_audio
 from .recognize import recognize as recognize
@@ -193,6 +194,7 @@ __all__ = [
     "AudioSlice",
     "BatchItemOutcome",
     "batchify_images",
+    "select_extracted_frames",
     "split_audio",
     "Cancelled",
     "ConcurrencyLimited",
