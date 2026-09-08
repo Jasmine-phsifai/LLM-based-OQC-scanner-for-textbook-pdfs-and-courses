@@ -4,9 +4,9 @@
 
 ## 职责与实现
 
-Model Lab识别既有legacy课程提示词首行及帧注释指令，验证返回的`<!-- meta:frame id=原文件名 -->`行是否与本批文件名对应；缺失/错名返回HTTP422 `course_frame_markers_invalid`。只审注释，返回原文，不添加或修复模型标记。普通OCR请求不强加课程规则。ASR公共入口兼容接收text但不交给模型，manager调用processor时明确prompt=None。
+本次第四组使用的Model Lab持久HTTP服务识别既有legacy课程提示词首行及帧注释指令，只验证返回文本中是否包含本批各原始文件名对应的完整`<!-- meta:frame id=原文件名 -->`注释，不要求独占一行，不检查重复、额外标记或排列；缺失/错名返回HTTP422 `course_frame_markers_invalid`。只审注释，不添加或修复模型标记；返回内容仍经过manager既有的首尾空白strip，并非逐字节原样。普通OCR请求不强加课程规则。同一持久服务的ASR公共入口兼容接收text但不交给模型，manager调用processor时明确prompt=None。旧一次性诊断adapter仍存在补marker和terminology_prompt路径，本次不调用，不能把持久服务结论扩大到旧诊断路径。
 
-OCRLLM只新增通用provider选项：`response_validation="nonempty_text"`让服务负责图片内容语义，库保留字符串/编码/非空与传输完整性检查；`send_audio_prompt=False`使请求只含input_audio。默认其他provider仍用原markdown验证和音频prompt。没有在库里添加帧名解析、ModelLab URL分支或课程专用校验。默认单图落实于本机测试工具和ModelLab既有provider默认；其他云provider批次未改。
+OCRLLM只新增通用provider选项：`response_validation="nonempty_text"`让服务负责图片内容语义，库保留字符串/编码/非空与传输完整性检查；`send_audio_prompt=False`使请求只含input_audio。默认其他provider仍用原markdown验证和音频prompt。没有在库里添加帧名解析、ModelLab URL分支或课程专用校验。OCRLLM仍保留既有course_ocr profile及提示词渲染；本轮模型任务校验放在ModelLab，不把既有profile的存在描述为已迁出。默认单图落实于本机测试工具和ModelLab既有provider默认；其他云provider批次未改。
 
 merged resume原本允许更换provider并重用settled；新选项同样仅影响未完成slot，不新增state schema。为避免比较时混入旧prompt结果，本次使用全新输出目录，未复用前三组结果。
 
@@ -32,7 +32,7 @@ RTX3090，8,192总context/7,168最大输出，medium，图像上限1,024tokens�
 
 复用原B同一门163.246分钟正常机位课程、1225原图、97选中图（35.65张/小时），从而控制输入；不是另挑一门课程来混淆模型配置比较。另行复测筛选：扫描7.897443秒、选择0.110308秒、复制0.352801秒，合计8.360552秒；97个选中时间戳与旧B逐项一致，原图只读。与旧B43.963594秒未控制缓存，不能把这部分差异算作模型优化收益。正式单图97批，对照旧B双图49批、16K/8K。提示词仍legacy+medium，模型服务顺序使用GPU。切片10分钟，不重叠，ASR使用同课音频，单独暖机后计时；转码仍24kHz MP3，物理切片仍16kHz，与旧B保持一致。
 
-正式序列已启动，全部结束后再填写OCR/ASR时长、调用/失败数量、无提示词wire证据、整组功耗与对照差异。不能把先行5图外推为97图完成时间；也不能把空板由失败变通过造成的状态变化当作内容准确率提升。
+正式序列已启动，全部结束后再填写OCR/ASR时长、调用/失败数量、无提示词wire证据、整组功耗与对照差异。首轮前段使用过额外检查标记数量/顺序的版本，出现两次422；没有保留失败模型原文，不能将其归因于模型错名。已在保全在途响应后部署仅检查存在性的最终规则，10:52:28—10:53:36维护暂停及之后冷加载均包含在正式耗时中。这一轮不是无中断的纯暖机控制实验；初轮结束后仅续跑未完成项一次，单独记录耗时。不能把先行5图外推为97图完成时间；也不能把空板由失败变通过造成的状态变化当作内容准确率提升。
 
 ## 当前验证
 
