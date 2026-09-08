@@ -11,7 +11,7 @@ from pathlib import Path
 from threading import Thread
 
 from ocrllm import (ProviderModel, OpenAICompatibleSettings, split_audio,
-                    recognize_audio_to_markdown, inspect_markdown_job)
+                    recognize_audio_to_markdown, resume_audio_to_markdown, inspect_markdown_job)
 from ocrllm.audio.load_audio_ffmpeg_executable import load_audio_ffmpeg_executable
 from ocrllm.errors import AllCandidatesExhausted
 
@@ -55,13 +55,24 @@ def main():
         assert result.status=='complete' and result.metadata['provider_call_count']==3
         assert len(calls)==3 and inspect_markdown_job(output)=='complete'
         assert result.metadata['provider_failures'][0]['code']=='PROVIDER_REQUEST_INVALID'
-        calls.clear(); machine_code = 'course_frame_markers_invalid'
+        calls.clear()
+        saved_output = args.work_dir/'saved-cap.md'
+        try:
+            recognize_audio_to_markdown(plan, provider=provider, output_path=saved_output)
+            raise AssertionError('An unconfigured initial cap must fail')
+        except AllCandidatesExhausted:
+            assert len(calls)==1
+        resumed = resume_audio_to_markdown(plan, provider=provider, output_path=saved_output,
+                                          failed_slice_minutes=1, only_output_limit=True)
+        assert resumed.status=='complete' and resumed.metadata['provider_call_count']==2
+        assert len(calls)==3  # Saved original cap was not sent again.
+        calls.clear(); machine_code = 'response_validation_failed'
         try:
             recognize_audio_to_markdown(plan,provider=provider,output_path=args.work_dir/'invalid.md',failed_slice_minutes=1)
             raise AssertionError('Non-budget rejection must stay failed')
         except AllCandidatesExhausted:
             assert len(calls)==1
-        print(json.dumps({'passed':True,'automatic_cap_calls':3,'non_budget_calls':1,'real_model_calls':0,'synthetic_http':True}))
+        print(json.dumps({'passed':True,'automatic_cap_calls':3,'non_budget_calls':1,'saved_cap_resume_calls':2,'real_model_calls':0,'synthetic_http':True}))
     finally:
         server.shutdown();server.server_close();thread.join()
     return 0

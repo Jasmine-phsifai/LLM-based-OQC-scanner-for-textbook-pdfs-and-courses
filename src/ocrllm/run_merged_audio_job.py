@@ -45,8 +45,11 @@ def run_merged_audio_job(
     resume: bool,
     overwrite: bool,
     failed_slice_minutes: int | None = None,
+    only_output_limit: bool = False,
 ) -> RecognitionResult:
     """Validate, snapshot, settle, checkpoint, and publish one audio plan."""
+    if type(only_output_limit) is not bool:
+        raise ConfigError("only_output_limit must be a boolean.", code="CONFIG_INVALID")
     if failed_slice_minutes is not None and (
         type(failed_slice_minutes) is not int or failed_slice_minutes <= 0
     ):
@@ -95,7 +98,10 @@ def run_merged_audio_job(
                 historical_usage = state.usage
                 if failed_slice_minutes is not None:
                     from .resplit_failed_audio_slots import resplit_failed_audio_slots
-                    state = resplit_failed_audio_slots(state, interval_minutes=failed_slice_minutes)
+                    state = resplit_failed_audio_slots(
+                        state, interval_minutes=failed_slice_minutes,
+                        only_output_limit=only_output_limit,
+                    )
                     save_merged_audio_resume_state_atomically(state_path, state)
             else:
                 state = requested_state

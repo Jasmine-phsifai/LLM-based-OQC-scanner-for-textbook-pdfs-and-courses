@@ -47,3 +47,19 @@ remain under the existing fourth-course directory. Production callers use
 Relevant checks: selection 23 passed/3 skipped; AAC preparation and audio 41
 passed/1 skipped; recovery changes existing merged-audio/light-import 27 passed.
 These overlap; counts are not summed as independent coverage.
+
+Final refinement (Model Lab 0bf5161 under systemd): 9120–9180 seconds settled
+(input795/output176/EOS true, 4.783 seconds inference); 9180–9240 seconds still
+hit 8192 output tokens with input795/EOS false after191.727 seconds. Stop here:
+16/17 parents remain complete, one explicit sixty-second gap remains partial.
+There are thirteen children, twelve settled with valid saved Markdown hashes.
+The private final-refinement report's `all_prior_subslot_text_retained:false`
+checked only published partial Markdown, not the checkpoint. Read-only audit
+proved the five successful children of still-failed parent15 remain in state;
+the existing composer emits only that parent's failure marker until it finishes.
+Published partial Markdown exactly matched composing the saved state. Audit is
+`fourth-audio-checkpoint-audit.json`; no state was edited to claim success.
+
+Production resume now accepts `only_output_limit=True` alongside the same
+`failed_slice_minutes` opt-in, so an interrupted program retains automatic
+budget recovery without subdividing validation or credential failures.

@@ -20,12 +20,16 @@ def resume_audio_to_markdown(
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
     failed_slice_minutes: int | None = None,
+    only_output_limit: bool = False,
 ) -> RecognitionResult:
     """Restore the original plan, optionally subdividing its failed ranges.
 
     failed_slice_minutes explicitly plans smaller children only for failed slots;
     existing settled parents/children stay reusable. Subsequent ordinary resume
-    needs no special option. This is a bounded subdivision, not a retry loop.
+    needs no special option to reuse those children. For continued unattended
+    recovery, pass the same interval with only_output_limit=True: saved budget
+    failures subdivide before dispatch and later budget failures subdivide once.
+    This is a bounded subdivision, not a retry loop.
     """
     from .clear_public_error import clear_public_error
     from .errors import OCRLLMError
@@ -40,6 +44,7 @@ def resume_audio_to_markdown(
             timeout_seconds=timeout_seconds,
             resume=True,
             failed_slice_minutes=failed_slice_minutes,
+            only_output_limit=only_output_limit,
             overwrite=True,
         )
     except OCRLLMError as error:

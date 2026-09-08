@@ -115,3 +115,19 @@ preserved the first two children and ordinary resume sent only the other ten.
 One two-minute child remained a real generation-cap failure. This is recovery
 and transport evidence, not a word-accuracy evaluation or proof that two-minute
 slices always succeed. See the dated production-integration record.
+
+For an unattended interrupted job, use
+`resume_audio_to_markdown(original_plan, ..., failed_slice_minutes=2, only_output_limit=True)`.
+This also preserves the opt-in recovery for later unattempted original slots.
+Already saved output-cap failures subdivide before another request; other
+failure reasons are not selected for subdivision. Existing children are reused,
+and automatic recovery never recursively subdivides them. Omitting
+`only_output_limit` retains deliberate maintenance's broader explicit failed-range
+selection. A production loop should not repeatedly resume terminal partial jobs.
+
+Partial Markdown still represents each unfinished original parent by its
+existing failure marker; successful children of that parent stay in the
+checkpoint until the parent completes. They are retained work, not lost text,
+and must not be interpreted as already published complete Markdown. The final
+one-minute refinement left only 9180–9240 seconds at the generation cap;
+16/17 parents are complete and all 12 successful children remain in checkpoint.
