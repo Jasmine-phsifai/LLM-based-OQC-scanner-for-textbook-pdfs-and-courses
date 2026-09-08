@@ -18,13 +18,15 @@ Use `batchify_images(selected_paths, batch_size=...)` followed by
 `recognize_images_to_markdown(...)`. `selected_paths` is the ordered set selected
 by the caller. It is not every screenshot in an extracted course folder.
 The future scenario is approximately 50–80 selected frames for a 2.5-hour course,
-with the count varying with duration. Selection of a pre-extracted picture pack
-and a production CLI are future work, not new hidden operations in these APIs.
+with the count varying with duration. Use `select_extracted_frames(tuple[RetainedVideoFrame, ...], duration_seconds=...)`
+for already extracted JPEGs; it returns the existing duration-aware selector's
+ordered subset. Crawler owns copying and publishing the selected package.
 
-For MP3 audio, compose `split_audio(path, interval_minutes=..., include_boundary_context=False)` with `recognize_audio_to_markdown(...)`.
+For MP3 or 24 kHz AAC in M4A course archives, compose `split_audio(path, interval_minutes=..., include_boundary_context=False)` with `recognize_audio_to_markdown(...)`.
 The default boundary-context behavior remains available. A 24 kHz mono MP3 is a
-valid source; physical clips are normalized by the existing media path. No new
-codec promise is made for WAV/M4A. Keep all slices for one course in the explicit
+valid source; physical clips are normalized by the existing media path. M4A container duration is inspected without a full-course conversion; each
+request clip is converted directly from the original AAC to the existing MP3
+provider input. The archive is not rewritten. WAV and raw AAC remain unsupported. Keep all slices for one course in the explicit
 plan and resume unresolved slices with `resume_audio_to_markdown(...)`.
 
 A caller can use finite policy such as:
@@ -73,3 +75,14 @@ forwarding successful requests to the real model service. Its report separates
 injected HTTP failures from real inference; it does not claim that injected
 responses measure real service overload. See the dated run record for actual
 verdicts and remaining limits.
+
+
+## Publication reconciliation
+
+`inspect_markdown_job(output_path)` returns `missing`, `pending`, or `complete`
+for an exclusively OCRLLM-owned merged output target. Use the fresh recognize
+call for missing, ordinary resume for pending, and consume complete output.
+Partial jobs and process interruptions retain the existing checkpoint; complete
+Markdown is atomically published before that checkpoint is removed. If cleanup
+is interrupted, a subsequent resume reuses every settled slot and finalizes.
+The inspection is not a validator for arbitrary preexisting user Markdown.

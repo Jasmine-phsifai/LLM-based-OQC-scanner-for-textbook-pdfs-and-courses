@@ -18,7 +18,8 @@ MAX_PRODUCT_MP3_SOURCE_BYTES = 2_000_000_000
 def probe_product_mp3(source_path: Path) -> float:
     """Return decoded seconds without applying one provider's request limit."""
     source = Path(source_path)
-    detect_source_type(source)
+    if source.suffix.casefold() != ".m4a":
+        detect_source_type(source)
     try:
         source_stat = source.stat()
     except FileNotFoundError as error:
@@ -51,7 +52,11 @@ def probe_product_mp3(source_path: Path) -> float:
             },
         ) from None
 
-    duration_seconds = decode_mp3_duration(source, backend=load_miniaudio())
+    if source.suffix.casefold() == ".m4a":
+        from .probe_aac_m4a import probe_aac_m4a
+        duration_seconds = probe_aac_m4a(source)
+    else:
+        duration_seconds = decode_mp3_duration(source, backend=load_miniaudio())
     if duration_seconds > MAX_PRODUCT_AUDIO_DURATION_SECONDS:
         raise InvalidSource(
             "The MP3 source exceeds the ten-hour product limit.",

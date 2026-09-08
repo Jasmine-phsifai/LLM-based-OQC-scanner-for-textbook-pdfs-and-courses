@@ -42,10 +42,12 @@ def snapshot_mp3(
     temp_dir: str | Path | None,
     maximum_source_bytes: int,
     probe: Callable[[Path], float],
+    allow_aac_m4a: bool = False,
 ) -> Iterator[MP3Snapshot]:
     """Copy, fully validate, and yield one request-owned MP3."""
     source = Path(source_path)
-    _validate_mp3_suffix(source)
+    if not (allow_aac_m4a and source.suffix.casefold() == ".m4a"):
+        _validate_mp3_suffix(source)
     _validate_source_path(source, maximum_source_bytes=maximum_source_bytes)
     source_stream = _open_source(source)
     snapshot_root: Path | None = None
@@ -68,7 +70,7 @@ def snapshot_mp3(
                     code="OUTPUT_WRITE_FAILED",
                 ) from error
 
-            snapshot_path = snapshot_root / "source.mp3"
+            snapshot_path = snapshot_root / ("source" + source.suffix.casefold())
             copied_size, source_sha256 = _copy_and_hash_open_source(
                 source_stream,
                 snapshot_path,

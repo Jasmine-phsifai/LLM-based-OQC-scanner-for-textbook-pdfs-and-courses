@@ -204,7 +204,7 @@ def _execute_merged_audio_lane(
                 continue
             if stop.is_set():
                 break
-            if initial_state.mode == "whole":
+            if initial_state.mode == "whole" and snapshot.path.suffix.casefold() == ".mp3":
                 slot_failures, success_index = _execute_audio_slot(
                     slot,
                     snapshot,
@@ -233,8 +233,9 @@ def _execute_merged_audio_lane(
                         upload,
                         provider_lane=provider_lane,
                         start_index=last_success_index,
-                        prompt=build_long_audio_interval_prompt(window),
-                        request_kind="interval",
+                        prompt=(AUDIO_TRANSCRIPTION_PROMPT if initial_state.mode == "whole"
+                                else build_long_audio_interval_prompt(window)),
+                        request_kind=initial_state.mode,
                         timeout_seconds=timeout_seconds,
                         owner=owner,
                         stop=stop,

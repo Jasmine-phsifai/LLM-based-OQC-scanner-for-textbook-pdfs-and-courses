@@ -26,6 +26,7 @@ def snapshot_product_mp3(
         temp_dir=temp_dir,
         maximum_source_bytes=MAX_PRODUCT_MP3_SOURCE_BYTES,
         probe=probe_product_mp3,
+        allow_aac_m4a=True,
     ) as snapshot:
         yield LongMP3Snapshot(
             path=snapshot.path,

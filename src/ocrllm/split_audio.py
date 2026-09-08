@@ -26,7 +26,7 @@ def split_audio(
         | None
     ) = None,
 ) -> tuple[AudioSlice, ...]:
-    """Return one fixed whole or integer-minute MP3 plan."""
+    """Return one fixed whole or integer-minute MP3 or 24 kHz AAC/M4A plan."""
     if type(include_boundary_context) is not bool:
         raise ConfigError(
             "split_audio() include_boundary_context must be a boolean.",
