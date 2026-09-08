@@ -9990,3 +9990,6 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 **#725 职责收敛与第四组启动。** ModelLab实现既有课程prompt对应帧名注释校验，422/course_frame_markers_invalid，不审正文/SVG，不插入标记；ASR public忽略text、manager明确prompt=None。root复核发现Luna报告“manager固定None”原先实际只在route传None，已把manager调用也明确None后复跑14契约测试。默认预算随本轮试验改8192/7168；单图真实输入1649，说明可启动不等于可生成满7K。5张热观测全部stop，峰值346.65W/78°C，无热或硬件供电降频；真正电压字段未返回。统一idle后重启PID95922，再以独立日志父进程95948启动新warmup→D97图→ASR独立warmup→D音频，尚未结束。
 
 库仅加provider通用开关send_audio_prompt/response_validation，其他provider默认不变，不含课程语义。模型规则在ModelLab，无跨repoimport。新模式非空metadata真实HTTP resume场景通过，旧默认测试通过；merged state本来允许换provider复用settled，未新增指纹/schema，本次fresh job避开历史混合。wheel实际352360B，为两通用选项新增375B，原344KiB门槛只差104B，按新授权功能调为345KiB而非代码压缩规避；相关gate/轻量import23pass3平台skip。发现ModelLab旧一次性adapter会补缺失marker，但本次HTTP不走该路径；记录观察，不将未测旧兼容路径宣称修复。
+
+
+**#725 注释存在性边界复核（待当前组后部署）。** Luna指出ModelLab首版tuple相等还检查数量/顺序，超出维护者“只看有没有完整注释”的口径。root将源码收窄为每个对应原文件名的完整注释存在即可，重复、额外标记、同行正文不拒绝；扩充同一现有service场景的输入，14契约测试通过。当前D进程使用已加载的首版校验，避免中途杀请求/重载权重；本轮模型任务全部结束后统一restart部署最终规则。D若有相关失败须如实分辨/处理，不能把首版额外限制算作模型缺陷。README预算表与历史探针段的旧默认残留也已更正。
