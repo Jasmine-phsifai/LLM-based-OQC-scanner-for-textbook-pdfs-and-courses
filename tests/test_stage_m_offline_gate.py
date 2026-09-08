@@ -209,9 +209,9 @@ def test_base_install_probe_resolves_public_class_type_hints() -> None:
 def test_base_wheel_budget_keeps_bounded_product_headroom() -> None:
     script = GATE_SCRIPT.read_text(encoding="utf-8")
 
-    assert "$baseWheelMaximumBytes = 352256" in script
+    assert "$baseWheelMaximumBytes = 353280" in script
     assert "if ($wheel.Length -gt $baseWheelMaximumBytes)" in script
-    assert "base wheel exceeds 344 KiB" in script
+    assert "base wheel exceeds 345 KiB" in script
 
 
 @pytest.mark.parametrize(

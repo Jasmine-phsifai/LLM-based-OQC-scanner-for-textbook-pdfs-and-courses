@@ -18,7 +18,7 @@ from .provider_settings import OpenAICompatibleSettings
 def recognize_openai_compatible_audio(
     snapshot: LongMP3Snapshot,
     *,
-    prompt: str,
+    prompt: str | None,
     vendor: str,
     model: str,
     settings: OpenAICompatibleSettings,
@@ -30,6 +30,7 @@ def recognize_openai_compatible_audio(
             snapshot,
             prompt=prompt,
             model=model,
+            send_audio_prompt=settings.send_audio_prompt,
         )
     except OCRLLMError as error:
         if "provider_calls_attempted" not in error.details:

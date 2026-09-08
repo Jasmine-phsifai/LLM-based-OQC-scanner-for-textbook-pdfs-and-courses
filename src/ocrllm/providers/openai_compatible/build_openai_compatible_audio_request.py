@@ -17,27 +17,31 @@ class OpenAICompatibleAudioRequest:
     """Hold request values without exposing Base64 audio in repr."""
 
     _model: str = field(repr=False)
-    _prompt: str = field(repr=False)
+    _prompt: str | None = field(repr=False)
+    _send_audio_prompt: bool = field(repr=False)
     _audio_base64: str = field(repr=False)
 
     @property
     def kwargs(self) -> dict[str, Any]:
         """Return fresh containers for one Chat Completions request."""
+        content: list[dict[str, Any]] = []
+        if self._send_audio_prompt:
+            content.append({"type": "text", "text": self._prompt})
+        content.append(
+            {
+                "type": "input_audio",
+                "input_audio": {
+                    "data": self._audio_base64,
+                    "format": "mp3",
+                },
+            }
+        )
         return {
             "model": self._model,
             "messages": [
                 {
                     "role": "user",
-                    "content": [
-                        {"type": "text", "text": self._prompt},
-                        {
-                            "type": "input_audio",
-                            "input_audio": {
-                                "data": self._audio_base64,
-                                "format": "mp3",
-                            },
-                        },
-                    ],
+                    "content": content,
                 }
             ],
         }
@@ -46,8 +50,9 @@ class OpenAICompatibleAudioRequest:
 def build_openai_compatible_audio_request(
     snapshot: LongMP3Snapshot,
     *,
-    prompt: str,
+    prompt: str | None,
     model: str,
+    send_audio_prompt: bool = True,
 ) -> OpenAICompatibleAudioRequest:
     """Verify one exact MP3 clip and encode raw Base64 audio."""
     if type(snapshot) is not LongMP3Snapshot:
@@ -55,7 +60,13 @@ def build_openai_compatible_audio_request(
             "The compatible audio request requires an exact MP3 snapshot.",
             code="SOURCE_INVALID",
         ) from None
-    if type(prompt) is not str or not prompt.strip():
+    if type(send_audio_prompt) is not bool:
+        raise ConfigError(
+            "OpenAI-compatible audio recognition requires a boolean "
+            "send_audio_prompt setting.",
+            code="CONFIG_INVALID",
+        ) from None
+    if send_audio_prompt and (type(prompt) is not str or not prompt.strip()):
         raise ConfigError(
             "OpenAI-compatible audio recognition requires a nonempty prompt.",
             code="CONFIG_INVALID",
@@ -87,6 +98,7 @@ def build_openai_compatible_audio_request(
     return OpenAICompatibleAudioRequest(
         _model=model,
         _prompt=prompt,
+        _send_audio_prompt=send_audio_prompt,
         _audio_base64=encoded,
     )
 

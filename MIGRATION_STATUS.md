@@ -7,7 +7,17 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-09-07.
+Last synchronized: 2026-09-08.
+
+The local-service comparison now uses provider-scoped OpenAI-compatible
+settings: `send_audio_prompt=False` omits audio text on the wire, and
+`response_validation="nonempty_text"` leaves image content semantics to the service.
+Both are opt-in; other providers retain their existing defaults. Model Lab
+owns course frame-name annotation checks and the ASR model task. The library
+contains no course marker parser or model-specific validation exception.
+Merged resume continues to reuse settled slots even when a caller changes
+provider settings; use a fresh output job to compare prompt/validation policies.
+No new checkpoint schema or cross-repository import was added.
 
 The maintainer explicitly selected the existing legacy course prompt (frame
 markers plus Mermaid/SVG/SMILES transcription) for real course measurements.

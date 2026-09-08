@@ -61,4 +61,8 @@ def recognize_provider_model_images(
         image_paths,
         prompt=prompt,
         config=config,
+        nonempty_text_only=(
+            type(provider_model.settings) is OpenAICompatibleSettings
+            and provider_model.settings.response_validation == "nonempty_text"
+        ),
     )

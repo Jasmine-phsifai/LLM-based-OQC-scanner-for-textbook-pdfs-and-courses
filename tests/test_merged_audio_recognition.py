@@ -180,7 +180,11 @@ def _provider(model: str = MODEL) -> ProviderModel:
     )
 
 
-def _compatible_audio_provider(model: str = "compatible-asr") -> ProviderModel:
+def _compatible_audio_provider(
+    model: str = "compatible-asr",
+    *,
+    send_audio_prompt: bool = True,
+) -> ProviderModel:
     return ProviderModel(
         vendor="test-compatible",
         model=model,
@@ -189,6 +193,7 @@ def _compatible_audio_provider(model: str = "compatible-asr") -> ProviderModel:
             base_url="http://127.0.0.1:9999/v1",
             api_key_env="TEST_COMPATIBLE_AUDIO_KEY",
             api_key="test-only-key",
+            send_audio_prompt=send_audio_prompt,
         ),
         supports_plain_ocr=False,
         supports_detail_ocr=False,
@@ -385,6 +390,32 @@ def test_openai_compatible_audio_uses_standard_input_without_google(
     assert not audio["data"].startswith("data:")
     assert base64.b64decode(audio["data"]) == source.read_bytes()
     assert ("google.genai" in sys.modules) is google_sdk_loaded
+
+
+def test_openai_compatible_audio_can_omit_prompt_text(
+    tmp_path,
+    monkeypatch,
+):
+    source = tmp_path / "compatible-audio-only.mp3"
+    source.write_bytes(SHORT_FIXTURE.read_bytes())
+    captured = _install_fake_openai_audio(
+        monkeypatch,
+        ["Audio-only compatible transcript"],
+    )
+
+    result = recognize_audio_to_markdown(
+        split_audio(source, interval_minutes=-1),
+        provider=_compatible_audio_provider(send_audio_prompt=False),
+        output_path=tmp_path / "compatible-audio-only.md",
+    )
+
+    assert result.status == "complete"
+    request = captured["requests"][0]
+    content = request["messages"][0]["content"]
+    assert [part["type"] for part in content] == ["input_audio"]
+    assert base64.b64decode(content[0]["input_audio"]["data"]) == (
+        source.read_bytes()
+    )
 
 
 def test_openai_compatible_audio_preserves_no_speech_control(

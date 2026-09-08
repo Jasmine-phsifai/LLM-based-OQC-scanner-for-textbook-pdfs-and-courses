@@ -55,6 +55,10 @@ def timed_boundaries(events, log_path, course_id, phase):
                 row['prompt_sha256'] = hashlib.sha256('\n'.join(prompts).encode()).hexdigest()
                 row['prompt_characters'] = sum(map(len, prompts))
                 row['image_count'] = sum(item.get('type') == 'image_url' for item in content)
+            if phase == 'audio':
+                content = json.loads(request.content)['messages'][0]['content']
+                row['text_item_count'] = sum(item.get('type') == 'text' for item in content)
+                row['audio_item_count'] = sum(item.get('type') == 'input_audio' for item in content)
             response = original_send(client, request, *args, **kwargs)
             row['http_status'] = response.status_code
             row['request_id'] = response.headers.get('x-request-id')
@@ -103,7 +107,11 @@ def provider(args, image):
         vendor='local-benchmark',
         model=args.image_model if image else args.audio_model,
         adapter_id='openai_compatible_chat',
-        settings=OpenAICompatibleSettings(base_url=args.base_url),
+        settings=OpenAICompatibleSettings(
+            base_url=args.base_url,
+            send_audio_prompt=not args.no_audio_prompt,
+            response_validation=args.response_validation,
+        ),
         supports_plain_ocr=image, supports_detail_ocr=image, supports_audio=not image,
         default_image_batch_size=args.batch_size if image else None,
         default_audio_minutes=None if image else args.audio_minutes,
@@ -189,10 +197,12 @@ def main():
     parser.add_argument('--base-url', default='http://127.0.0.1:38871/v1')
     parser.add_argument('--image-model', default='qwen3.8-27b-q6-k-medium-ocr')
     parser.add_argument('--audio-model', default='qwen3-asr-1.7b')
-    parser.add_argument('--batch-size', type=int, default=2)
+    parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--audio-minutes', type=int, default=30)
     parser.add_argument('--timeout', type=float, default=600)
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--no-audio-prompt', action='store_true')
+    parser.add_argument('--response-validation', choices=('markdown', 'nonempty_text'), default='markdown')
     args = parser.parse_args()
     if not 1 <= args.batch_size <= 8 or not 1 <= args.audio_minutes <= 30 or not 0 < args.timeout <= 600:
         parser.error('Use batch size1–8, audio interval1–30 minutes, timeout<=600 seconds.')

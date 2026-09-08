@@ -68,14 +68,15 @@ def _import_source(source_root: Path):
     return ocrllm
 
 
-def _provider(server: ThreadingHTTPServer):
+def _provider(server: ThreadingHTTPServer, *, validation: str = "markdown"):
     from ocrllm.providers.openai_compatible.provider_settings import OpenAICompatibleSettings
     from ocrllm.providers.provider_model import ProviderModel
 
     return ProviderModel(
         vendor="synthetic", model="synthetic-model", adapter_id="openai_compatible_chat",
         settings=OpenAICompatibleSettings(
-            base_url=f"http://127.0.0.1:{server.server_port}/v1/", api_key="synthetic-key"
+            base_url=f"http://127.0.0.1:{server.server_port}/v1/", api_key="synthetic-key",
+            response_validation=validation,
         ),
         supports_plain_ocr=True, supports_detail_ocr=False, supports_audio=False,
         default_image_batch_size=1, default_audio_minutes=None, retry_rules={},
@@ -149,6 +150,31 @@ def _run_merged(server: ThreadingHTTPServer, source: Path, ocrllm) -> None:
             print(json.dumps({"case": name, "description": description, "usage": state["usage"], "provider_cleanup_failed": state["provider_cleanup_failed"]}, sort_keys=True))
 
 
+def _run_nonempty_text(server: ThreadingHTTPServer, source: Path, ocrllm) -> None:
+    """An opted-in provider owns content semantics; the harness accepts metadata."""
+    provider = _provider(server, validation="nonempty_text")
+    with tempfile.TemporaryDirectory() as temporary:
+        output = Path(temporary) / "metadata.md"
+        SyntheticOpenAIHandler.content = ""
+        try:
+            ocrllm.recognize_images_to_markdown(
+                ((source,),), provider=provider, image_task="plain_ocr",
+                output_path=output, timeout_seconds=5.0,
+            )
+        except ocrllm.AllCandidatesExhausted:
+            pass
+        state_path = output.with_name(f"{output.stem}.ocrllm-state.json")
+        state = json.loads(state_path.read_text())
+        assert state["slots"][0]["status"] == "failed"
+        SyntheticOpenAIHandler.content = "<!-- arbitrary provider metadata -->"
+        result = ocrllm.resume_images_to_markdown(
+            ((source,),), provider=provider, output_path=output, timeout_seconds=5.0,
+        )
+        assert result.status == "complete"
+        assert SyntheticOpenAIHandler.content in result.markdown
+        print(json.dumps({"case": "nonempty-text-metadata-resume", "status": result.status}))
+
+
 def _run_audio(server: ThreadingHTTPServer, source: Path) -> None:
     from ocrllm.audio.snapshot_long_mp3 import LongMP3Snapshot
     from ocrllm.errors import ProviderError
@@ -195,6 +221,7 @@ def main() -> None:
             audio.write_bytes(b"synthetic authorized audio boundary")
             _run_image(server, image)
             _run_merged(server, image, ocrllm)
+            _run_nonempty_text(server, image, ocrllm)
             _run_audio(server, audio)
     finally:
         server.shutdown()

@@ -9980,3 +9980,13 @@ slot `i` 固定使用 lane `i % lane_count`，每 lane 本次从候选 0 开始�
 
 
 **#723 最终只读复核补录。** Luna最终审稿指出计时文字易混淆：工具外层源fingerprint在wall之前，已删除泛指“快照计入wall”，明确工具前后hash审计不计；交付表头明确最终JSON mtime。扩预算结论收紧为避免实例length失败并正常stop，非质量修复。wheel同时写实际351985B与上限352256B。两仓自有提交已推送origin；未提交用户原有文件。
+
+
+**#725 单图第四组与职责纠正（进行中）。** 维护者要求单图批次、8K总上下文/7K输出试跑、ASR不带提示词，并收窄OCR验收。root最初将完整HTML注释误读为任意注释，拟在库course路径校验；维护者纠正必须含对应帧文件名，模型任务修改应在ModelLab。root撤回自身未提交课程校验/HTTP场景修改，未将误读规则提交或用于正式第四组。Luna的ASR库调查尚未写代码，转为ModelLab侧方案；已询问wire也必须无text还是只模型不接收提示词的精确边界。
+
+ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，源码预算默认暂未改；本仓provider批次默认由8改1。root使用原B同97张准备第四组以控制输入，首图warmup PID89908正在cold load，未删提示词/缩图。GPU每秒采样持久记录在home第四组目录；此时仍加载中，不能把idle功耗当推理功耗。OCRLLM benchmark工具默认batch1（通用测试参数）；没有改其他厂商preset。Carry-forward judgement：模型任务的提示词/标记语义应在ModelLab维护，库通用传输和恢复边界如需调整必须独立说明，不能为了本机模型塞入隐性课程规则。
+
+
+**#725 职责收敛与第四组启动。** ModelLab实现既有课程prompt对应帧名注释校验，422/course_frame_markers_invalid，不审正文/SVG，不插入标记；ASR public忽略text、manager明确prompt=None。root复核发现Luna报告“manager固定None”原先实际只在route传None，已把manager调用也明确None后复跑14契约测试。默认预算随本轮试验改8192/7168；单图真实输入1649，说明可启动不等于可生成满7K。5张热观测全部stop，峰值346.65W/78°C，无热或硬件供电降频；真正电压字段未返回。统一idle后重启PID95922，再以独立日志父进程95948启动新warmup→D97图→ASR独立warmup→D音频，尚未结束。
+
+库仅加provider通用开关send_audio_prompt/response_validation，其他provider默认不变，不含课程语义。模型规则在ModelLab，无跨repoimport。新模式非空metadata真实HTTP resume场景通过，旧默认测试通过；merged state本来允许换provider复用settled，未新增指纹/schema，本次fresh job避开历史混合。wheel实际352360B，为两通用选项新增375B，原344KiB门槛只差104B，按新授权功能调为345KiB而非代码压缩规避；相关gate/轻量import23pass3平台skip。发现ModelLab旧一次性adapter会补缺失marker，但本次HTTP不走该路径；记录观察，不将未测旧兼容路径宣称修复。

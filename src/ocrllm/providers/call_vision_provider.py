@@ -25,6 +25,7 @@ def call_vision_provider(
     *,
     prompt: str,
     config: Config,
+    nonempty_text_only: bool = False,
 ) -> str | VisionProviderResponse:
     """Return one complete provider response or one redacted typed failure."""
 
@@ -81,7 +82,9 @@ def call_vision_provider(
             if type(provider_value) is VisionProviderResponse
             else provider_value
         )
-        markdown = validate_provider_markdown(markdown_value)
+        markdown = validate_provider_markdown(
+            markdown_value, nonempty_text_only=nonempty_text_only
+        )
     except ProviderError as error:
         validation_error = ProviderError(
             str(error),
