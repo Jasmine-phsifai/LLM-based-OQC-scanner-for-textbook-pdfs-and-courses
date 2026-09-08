@@ -86,3 +86,32 @@ Partial jobs and process interruptions retain the existing checkpoint; complete
 Markdown is atomically published before that checkpoint is removed. If cleanup
 is interrupted, a subsequent resume reuses every settled slot and finalizes.
 The inspection is not a validator for arbitrary preexisting user Markdown.
+
+## Bounded failed-range recovery
+
+`bounded_transient_retry_rules()` returns the existing opt-in recipe for one
+retry after two seconds on canonical rate-limit/unavailable/timeout errors.
+The library does not install it as every provider's default.
+
+`recognize_audio_to_markdown(..., failed_slice_minutes=2)` enables one automatic
+subdivision of an original failed range only when the service reports the
+observed `output_token_limit` code. It does not reinterpret input-context,
+validation, permission or transient failures as generation-budget errors.
+Use the same original `split_audio` plan on resume. Explicit
+`resume_audio_to_markdown(..., failed_slice_minutes=2)` subdivides failed slots;
+ordinary resume automatically reuses any already saved children. An explicitly
+smaller maintenance interval can refine only remaining failed children, keeping
+all settled text and source ranges. A fixed interval cannot trigger an infinite
+split/retry loop. Unrecovered failures remain partial and should not block other
+courses.
+
+Subranges live in the original recognition checkpoint (v2 only when needed),
+not a separate course journal. v1 checkpoints still load unchanged. Every child
+is checkpointed before the next request, while original parent identities,
+source fingerprints, successful parent results and provider accounting remain.
+The real fourth-course scenario recovered 11 of 12 two-minute children, retaining
+14 original successful parents; a KeyboardInterrupt before the third HTTP call
+preserved the first two children and ordinary resume sent only the other ten.
+One two-minute child remained a real generation-cap failure. This is recovery
+and transport evidence, not a word-accuracy evaluation or proof that two-minute
+slices always succeed. See the dated production-integration record.

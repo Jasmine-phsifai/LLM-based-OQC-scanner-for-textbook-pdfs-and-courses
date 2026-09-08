@@ -20,8 +20,14 @@ def recognize_audio_to_markdown(
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
     overwrite: bool = False,
+    failed_slice_minutes: int | None = None,
 ) -> RecognitionResult:
-    """Settle explicit audio ranges through fixed provider lanes."""
+    """Settle explicit audio ranges through fixed provider lanes.
+
+    Opt-in failed_slice_minutes subdivides a range once when the service reports
+    the proven output_token_limit machine code. Other failures remain explicit;
+    provider defaults and the caller's original slice plan are unchanged.
+    """
     from .clear_public_error import clear_public_error
     from .errors import OCRLLMError
     from .run_merged_audio_job import run_merged_audio_job
@@ -34,6 +40,7 @@ def recognize_audio_to_markdown(
             output_path=output_path,
             timeout_seconds=timeout_seconds,
             resume=False,
+            failed_slice_minutes=failed_slice_minutes,
             overwrite=overwrite,
         )
     except OCRLLMError as error:

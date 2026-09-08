@@ -45,6 +45,7 @@ def execute_merged_audio_plan(
     provider_lanes: tuple[tuple[ProviderModel, ...], ...],
     state_path: Path,
     timeout_seconds: float,
+    failed_slice_minutes: int | None = None,
 ) -> tuple[
     MergedAudioResumeState,
     tuple[ProviderModelUsage, ...],
@@ -85,6 +86,7 @@ def execute_merged_audio_plan(
                 timeout_seconds=timeout_seconds,
                 owner=owner,
                 stop=stop,
+                failed_slice_minutes=failed_slice_minutes,
             )
         )
     else:
@@ -103,6 +105,7 @@ def execute_merged_audio_plan(
                     timeout_seconds=timeout_seconds,
                     owner=owner,
                     stop=stop,
+                    failed_slice_minutes=failed_slice_minutes,
                 )
                 for lane_index in active_lanes
             )
@@ -177,6 +180,19 @@ class _MergedAudioStateOwner:
         with self._lock:
             return self._state, self._current_usage
 
+    def plan_failed_subslots(self, index, *, interval_minutes):
+        from .resplit_failed_audio_slots import resplit_failed_audio_slots
+        with self._lock:
+            updated = resplit_failed_audio_slots(
+                self._state, interval_minutes=interval_minutes,
+                slot_indices=(index,), only_output_limit=True,
+            )
+            if updated is self._state:
+                return None
+            save_merged_audio_resume_state_atomically(self._state_path, updated)
+            self._state = updated
+            return updated.slots[index]
+
     def current_call_count(self) -> int:
         with self._lock:
             return sum(row.calls for row in self._current_usage)
@@ -191,6 +207,7 @@ def _execute_merged_audio_lane(
     timeout_seconds: float,
     owner: _MergedAudioStateOwner,
     stop: Event,
+    failed_slice_minutes: int | None = None,
 ) -> tuple[dict[str, int | str], ...]:
     """Run one fixed audio lane serially with one active clip at a time."""
     provider_lane = provider_lanes[lane_index]
@@ -204,7 +221,12 @@ def _execute_merged_audio_lane(
                 continue
             if stop.is_set():
                 break
-            if initial_state.mode == "whole" and snapshot.path.suffix.casefold() == ".mp3":
+            if slot.subslots:
+                slot_failures, success_index = _execute_audio_subslots(
+                    slot, snapshot, provider_lane=provider_lane, start_index=last_success_index,
+                    timeout_seconds=timeout_seconds, owner=owner, stop=stop,
+                )
+            elif initial_state.mode == "whole" and snapshot.path.suffix.casefold() == ".mp3":
                 slot_failures, success_index = _execute_audio_slot(
                     slot,
                     snapshot,
@@ -240,6 +262,18 @@ def _execute_merged_audio_lane(
                         owner=owner,
                         stop=stop,
                     )
+            if success_index is None and failed_slice_minutes is not None and not stop.is_set():
+                divided = owner.plan_failed_subslots(slot.index, interval_minutes=failed_slice_minutes)
+                if divided is not None:
+                    slot_failures, success_index = _execute_audio_subslots(
+                        divided, snapshot, provider_lane=provider_lane, start_index=last_success_index,
+                        timeout_seconds=timeout_seconds, owner=owner, stop=stop,
+                    )
+                    slot_failures = ({
+                        "slot_index": divided.index, "vendor": divided.vendor,
+                        "model": divided.model, "code": divided.error_code,
+                        "description": divided.error_description,
+                    }, *slot_failures)
             if stop.is_set():
                 break
             if success_index is not None:
@@ -453,3 +487,54 @@ def _checkpoint_outcome(
 
 def _add_known(left: int | None, right: int | None) -> int | None:
     return left + right if left is not None and right is not None else None
+
+
+class _MergedAudioSubslotOwner:
+    """Checkpoint each child through the same parent state and usage owner."""
+
+    def __init__(self, parent, owner):
+        self.parent = parent
+        self.owner = owner
+
+    def checkpoint(self, outcome, **usage):
+        children = list(self.parent.subslots)
+        children[outcome.index] = outcome
+        self.parent = replace(self.parent, subslots=tuple(children))
+        if all(child.status == 'settled' for child in children):
+            markdown = '\n\n'.join(child.markdown.strip() for child in children if child.markdown)
+            self.parent = replace(
+                _settled_slot(self.parent, provider=usage['provider'],
+                              markdown=markdown or None, no_speech=not markdown),
+                subslots=tuple(children),
+            )
+        elif outcome.status == 'failed':
+            self.parent = replace(self.parent, error_code=outcome.error_code,
+                                  error_description=outcome.error_description)
+        self.owner.checkpoint(self.parent, **usage)
+
+
+def _execute_audio_subslots(parent, snapshot, *, provider_lane, start_index,
+                            timeout_seconds, owner, stop):
+    child_owner = _MergedAudioSubslotOwner(parent, owner)
+    failures = []
+    success_index = start_index
+    for child in parent.subslots:
+        if child.status == 'settled':
+            continue
+        if stop.is_set():
+            break
+        window = _window_from_slot(child)
+        with materialize_long_audio_interval(snapshot.path, window=window) as segment:
+            upload = build_long_audio_interval_upload_snapshot(
+                segment, duration_seconds=child.actual_end_seconds-child.actual_start_seconds,
+            )
+            child_failures, succeeded = _execute_audio_slot(
+                child, upload, provider_lane=provider_lane, start_index=success_index,
+                prompt=build_long_audio_interval_prompt(window), request_kind='interval',
+                timeout_seconds=timeout_seconds, owner=child_owner, stop=stop,
+            )
+        for failure in child_failures:
+            failures.append({**failure, 'slot_index': parent.index, 'subslot_index': child.index})
+        if succeeded is not None:
+            success_index = succeeded
+    return tuple(failures), success_index

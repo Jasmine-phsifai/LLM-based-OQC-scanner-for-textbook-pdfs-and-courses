@@ -22,6 +22,7 @@ from .provider_model_usage import ProviderModelUsage
 
 
 MERGED_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v1"
+SPLIT_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v2"
 _SLOT_STATUSES = frozenset({"unresolved", "settled", "failed"})
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ROOT_KEYS = frozenset(
@@ -76,8 +77,24 @@ class MergedAudioSlot:
     model: str | None = None
     error_code: str | None = None
     error_description: str | None = None
+    subslots: tuple[MergedAudioSlot, ...] = ()
 
     def __post_init__(self) -> None:
+        if type(self.subslots) is not tuple:
+            raise ValueError("audio subslots must be a tuple")
+        if self.subslots:
+            previous = self.logical_start_seconds
+            for index, child in enumerate(self.subslots):
+                if (type(child) is not MergedAudioSlot or child.subslots
+                    or child.index != index or child.logical_start_seconds != previous
+                    or child.actual_start_seconds < self.actual_start_seconds
+                    or child.actual_end_seconds > self.actual_end_seconds):
+                    raise ValueError("audio subslots must partition their parent once")
+                previous = child.logical_end_seconds
+            if previous != self.logical_end_seconds:
+                raise ValueError("audio subslots do not cover their parent")
+            if self.status == "settled" and any(child.status != "settled" for child in self.subslots):
+                raise ValueError("a settled audio parent has unfinished subslots")
         if type(self.index) is not int or self.index < 0:
             raise ValueError("merged-audio slot index is invalid")
         boundaries = (
@@ -158,7 +175,7 @@ class MergedAudioResumeState:
     provider_cleanup_failed: bool = False
 
     def __post_init__(self) -> None:
-        if self.state_version != MERGED_AUDIO_RESUME_STATE_VERSION:
+        if self.state_version not in (MERGED_AUDIO_RESUME_STATE_VERSION, SPLIT_AUDIO_RESUME_STATE_VERSION):
             raise ValueError("merged-audio resume state version is unsupported")
         if type(self.source) is not SourceFingerprint:
             raise ValueError("merged-audio source is invalid")
@@ -169,6 +186,8 @@ class MergedAudioResumeState:
             or tuple(slot.index for slot in self.slots) != tuple(range(len(self.slots)))
         ):
             raise ValueError("merged-audio slots are invalid")
+        if self.state_version == MERGED_AUDIO_RESUME_STATE_VERSION and any(slot.subslots for slot in self.slots):
+            raise ValueError("audio subslots require state v2")
         self._validate_plan()
         if (
             type(self.usage) is not tuple
@@ -225,24 +244,7 @@ class MergedAudioResumeState:
                 "byte_size": self.source.byte_size,
                 "sha256": self.source.sha256,
             },
-            "slots": [
-                {
-                    "index": slot.index,
-                    "logical_start_seconds": slot.logical_start_seconds,
-                    "logical_end_seconds": slot.logical_end_seconds,
-                    "actual_start_seconds": slot.actual_start_seconds,
-                    "actual_end_seconds": slot.actual_end_seconds,
-                    "status": slot.status,
-                    "no_speech": slot.no_speech,
-                    "markdown": slot.markdown,
-                    "markdown_sha256": slot.markdown_sha256,
-                    "vendor": slot.vendor,
-                    "model": slot.model,
-                    "error_code": slot.error_code,
-                    "error_description": slot.error_description,
-                }
-                for slot in self.slots
-            ],
+            "slots": [_slot_document(slot) for slot in self.slots],
             "usage": [
                 {
                     "vendor": row.vendor,
@@ -321,27 +323,7 @@ def _state_from_document(document: object) -> MergedAudioResumeState:
         byte_size=source_document["byte_size"],
         sha256=source_document["sha256"],
     )
-    slots = []
-    for slot in slot_documents:
-        if type(slot) is not dict or frozenset(slot) != _SLOT_KEYS:
-            raise ValueError
-        slots.append(
-            MergedAudioSlot(
-                index=slot["index"],
-                logical_start_seconds=slot["logical_start_seconds"],
-                logical_end_seconds=slot["logical_end_seconds"],
-                actual_start_seconds=slot["actual_start_seconds"],
-                actual_end_seconds=slot["actual_end_seconds"],
-                status=slot["status"],
-                no_speech=slot["no_speech"],
-                markdown=slot["markdown"],
-                markdown_sha256=slot["markdown_sha256"],
-                vendor=slot["vendor"],
-                model=slot["model"],
-                error_code=slot["error_code"],
-                error_description=slot["error_description"],
-            )
-        )
+    slots = [_slot_from_document(slot) for slot in slot_documents]
     usage = []
     for row in usage_documents:
         if type(row) is not dict or frozenset(row) != _USAGE_KEYS:
@@ -382,3 +364,20 @@ def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
 
 def _reject_constant(_value: str) -> object:
     raise ValueError
+
+
+def _slot_document(slot):
+    document = {key: getattr(slot, key) for key in _SLOT_KEYS}
+    if slot.subslots:
+        document["subslots"] = [_slot_document(child) for child in slot.subslots]
+    return document
+
+
+def _slot_from_document(document, *, child=False):
+    if type(document) is not dict or frozenset(document) not in (_SLOT_KEYS, _SLOT_KEYS | {"subslots"}):
+        raise ValueError("invalid audio slot fields")
+    raw_children = document.get("subslots", [])
+    if type(raw_children) is not list or (child and raw_children):
+        raise ValueError("invalid nested audio subslots")
+    values = {key: document[key] for key in _SLOT_KEYS}
+    return MergedAudioSlot(**values, subslots=tuple(_slot_from_document(value, child=True) for value in raw_children))

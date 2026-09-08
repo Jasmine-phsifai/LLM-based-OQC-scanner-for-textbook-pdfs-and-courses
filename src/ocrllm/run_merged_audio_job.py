@@ -8,7 +8,7 @@ from .audio.snapshot_product_mp3 import snapshot_product_mp3
 from .audio_slice import AudioSlice
 from .build_merged_audio_resume_state import build_merged_audio_resume_state
 from .config import Config
-from .errors import ResumeStateError
+from .errors import ConfigError, ResumeStateError
 from .execute_merged_audio_plan import execute_merged_audio_plan
 from .finalize_merged_audio_result import finalize_merged_audio_result
 from .fingerprint_audio_snapshot import fingerprint_audio_snapshot
@@ -44,8 +44,13 @@ def run_merged_audio_job(
     timeout_seconds: float,
     resume: bool,
     overwrite: bool,
+    failed_slice_minutes: int | None = None,
 ) -> RecognitionResult:
     """Validate, snapshot, settle, checkpoint, and publish one audio plan."""
+    if failed_slice_minutes is not None and (
+        type(failed_slice_minutes) is not int or failed_slice_minutes <= 0
+    ):
+        raise ConfigError("failed_slice_minutes must be a positive integer.", code="CONFIG_INVALID")
     provider_lanes = normalize_provider_model_lanes(
         provider,
         distinguish_runtime_settings=True,
@@ -88,6 +93,10 @@ def run_merged_audio_job(
                 state = load_merged_audio_resume_state(state_path)
                 _validate_resume_plan(state, requested_state)
                 historical_usage = state.usage
+                if failed_slice_minutes is not None:
+                    from .resplit_failed_audio_slots import resplit_failed_audio_slots
+                    state = resplit_failed_audio_slots(state, interval_minutes=failed_slice_minutes)
+                    save_merged_audio_resume_state_atomically(state_path, state)
             else:
                 state = requested_state
                 historical_usage = ()
@@ -103,6 +112,7 @@ def run_merged_audio_job(
                 provider_lanes=provider_lanes,
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,
+                failed_slice_minutes=failed_slice_minutes,
             )
             return finalize_merged_audio_result(
                 state,

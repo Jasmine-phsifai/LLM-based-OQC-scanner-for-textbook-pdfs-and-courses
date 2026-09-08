@@ -3806,3 +3806,5 @@ the service failure.
 2026-09-08 #726: Maintainer-authorized production composition now exposes `select_extracted_frames` over caller-owned timestamped JPEG records. It reuses the existing duration-aware selector; Crawler owns publication. Real fourth-course selection retained the exact same 97/1225 frame indices.
 
 2026-09-08 #727: Explicit merged audio now admits 24 kHz AAC/M4A archives, with per-request direct MP3 clipping. inspect_markdown_job exposes existing publication status to caller-owned production targets. No combined media lifecycle or provider default change.
+
+2026-09-08 #728: Explicit failed audio subdivision checkpoints children in the existing state (v2 with v1 reads), retaining settled parent/child work. Fresh recognition opt-in handles the observed output_token_limit once. Real interruption/resume recovered 11/12 children; one remained partial. No quality guarantee or universal automatic success is claimed.

@@ -19,8 +19,14 @@ def resume_audio_to_markdown(
     ),
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
+    failed_slice_minutes: int | None = None,
 ) -> RecognitionResult:
-    """Restore one exact audio plan and resume through fixed lanes."""
+    """Restore the original plan, optionally subdividing its failed ranges.
+
+    failed_slice_minutes explicitly plans smaller children only for failed slots;
+    existing settled parents/children stay reusable. Subsequent ordinary resume
+    needs no special option. This is a bounded subdivision, not a retry loop.
+    """
     from .clear_public_error import clear_public_error
     from .errors import OCRLLMError
     from .run_merged_audio_job import run_merged_audio_job
@@ -33,6 +39,7 @@ def resume_audio_to_markdown(
             output_path=output_path,
             timeout_seconds=timeout_seconds,
             resume=True,
+            failed_slice_minutes=failed_slice_minutes,
             overwrite=True,
         )
     except OCRLLMError as error:
