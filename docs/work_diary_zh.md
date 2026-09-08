@@ -9999,3 +9999,14 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 
 
 **#725 最终职责措辞复核。** Luna只读复核确认持久HTTP路径的exact marker存在性与ASR无prompt；报告明确限定该路径，未把旧一次性诊断adapter的补marker/terminology_prompt误称已修复。manager既有strip仍保留，故不用逐字节原文承诺。OCRLLM既有course_ocr profile与提示词渲染仍存在，本轮新增的模型任务校验只在ModelLab。此时第四组仍运行，结果尚未定稿。
+
+
+**#725 第四组运行中新增观察。** 97张OCR首轮95 settled，5648.444448秒；仅续跑零基20/22两slot一次（复用95），130.628757秒，仍因准确完整帧名注释缺失被422拒绝，最终95/97 partial；不追加循环、不补marker。ASR已无prompt，前5片settled，第6片168.966722秒后502/response_incomplete，现有通用5xx→ProviderUnavailable分类触发一次自动重试。该记录是实测观察，不宣称已修复生成失败或重试分类；不将其归为OCR上下文错误。Carry-forward judgement：服务的生成未完成与暂时不可用应区分重试意图；保持模型错误语义在服务、通用重试在harness，不用模型名硬编码解决。
+
+
+**#725 第四组完整计时收尾。** 图像95/97 partial，首轮+唯一恢复5779.073204秒；旧B5797.015423秒，差18秒，不能宣称单图明显提速。ASR17片20调用全部wire0text/1audio，14 settled，零基5/15/16分别两次response_incomplete，六失败HTTP987.199271秒；正式wall1441.441436（含物理切片14.463837），加转码20.970039后1462.411475秒，即24分22秒。无额外手动ASR恢复，所有来源指纹不变。GPU3900采样含95秒交接缺口：364.66W瞬时/343.49W平均、78C，未见热/供电降频；最终P8/36C，无本轮新增GPU驱动事件，仅开机时WHEA信息事件。已停本轮自有监控。
+
+运行后ModelLab已知ASR输出上限错误分支改为先检查并返回422/output_token_limit，保留其他未EOS错误分类，添加无正文的token/耗时/EOS日志。该改动在ModelLab，未加OCRLLM厂商特判；边界验证及部署另记。当前实测没有内部token计数，不能宣称三失败均是cap或已经修复转写。README/CURRENT_STATE纠正历史30分钟单次成功不等于现行无prompt长片稳定的含义。Carry-forward judgement：生成预算耗尽应作为明确模型服务错误而非笼统临时故障；harness保持可配置且不无限重试。本轮仍有真实partial，不以更宽正文审核或补marker掩盖。
+
+
+**#725 收尾验证与部署。** Luna仅在ModelLab既有测试文件添加SDK边界替身，走transcribe_mp3验证cap有/无EOS均422、低于cap且EOS正常完成，15项服务契约通过，无真实GPU调用；root复核源码分支与测试。ModelLab efd21fc通过既有manager在实测全部结束后restart部署PID110061，status RUNNING。OCRLLM新增代码此前相关测试/真实HTTP场景均已完成，本次只补最终报告和日记，不重跑无关全套。报告保留所有partial、计时暂停及GPU采样缺口，不把条件分支修正冒充真实转写修复。
