@@ -7,7 +7,13 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-09-08.
+Last synchronized: 2026-09-09.
+
+The explicit compatible audio setting `audio_response_validation="visible_text"`
+now skips only natural-language refusal phrases while retaining Unicode visible
+text, NOSPEECH and structural response checks. Default `"markdown"` and the
+independent image option are unchanged. See the dated section in
+[local integration](docs/local_model_service_integration.md).
 
 The local-service comparison now uses provider-scoped OpenAI-compatible
 settings: `send_audio_prompt=False` omits audio text on the wire, and

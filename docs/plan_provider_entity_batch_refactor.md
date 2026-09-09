@@ -19,6 +19,15 @@ authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
 
+### #729 — 2026-09-09 explicit local ASR content validation
+
+The maintainer authorized retaining Unicode-content rejection while relaxing
+natural-language refusal phrases for local ASR. `audio_response_validation=
+"visible_text"` is a separate compatible-provider opt-in; default `"markdown"`
+and the image `nonempty_text` behavior remain unchanged. No model call,
+repetition algorithm, prompt migration or pipeline retry implementation belongs
+to this slice. Verification is recorded in local_model_service_integration.md.
+
 ### #723 — 2026-09-07 explicit legacy course prompt and real-course measurements
 
 The maintainer explicitly selected Model Lab's prior `ocrllm-legacy` prompt,

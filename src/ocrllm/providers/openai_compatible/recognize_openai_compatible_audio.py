@@ -48,6 +48,7 @@ def recognize_openai_compatible_audio(
             call.response,
             vendor=vendor,
             model=model,
+            check_refusal=settings.audio_response_validation != "visible_text",
         )
     except OCRLLMError as error:
         error._add_safe_detail("provider_calls_attempted", 1)

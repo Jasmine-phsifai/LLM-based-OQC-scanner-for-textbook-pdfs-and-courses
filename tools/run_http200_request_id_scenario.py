@@ -26,6 +26,8 @@ class SyntheticOpenAIHandler(BaseHTTPRequestHandler):
     content = ""
     request_id: str | None = IMAGE_REQUEST_ID
     model = "synthetic-model"
+    finish_reason = "stop"
+    refusal: str | None = None
 
     def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
         length = int(self.headers["Content-Length"])
@@ -38,8 +40,8 @@ class SyntheticOpenAIHandler(BaseHTTPRequestHandler):
                 "model": self.model,
                 "choices": [{
                     "index": 0,
-                    "message": {"role": "assistant", "content": self.content},
-                    "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": self.content, "refusal": self.refusal},
+                    "finish_reason": self.finish_reason,
                 }],
                 "usage": {"prompt_tokens": 7, "completion_tokens": 2},
             }
@@ -206,6 +208,60 @@ def _run_audio(server: ThreadingHTTPServer, source: Path) -> None:
         raise AssertionError("invalid audio sentinel was accepted")
 
 
+
+def _run_audio_visible_text(server: ThreadingHTTPServer, source: Path) -> None:
+    """Synthetic HTTP + real SDK prove opt-in changes only refusal phrases."""
+    from ocrllm.audio.snapshot_long_mp3 import LongMP3Snapshot
+    from ocrllm.errors import NoSpeechDetected, ProviderError
+    from ocrllm.providers.openai_compatible.provider_settings import OpenAICompatibleSettings
+    from ocrllm.providers.openai_compatible.recognize_openai_compatible_audio import recognize_openai_compatible_audio
+
+    payload = source.read_bytes()
+    snapshot = LongMP3Snapshot(path=source, byte_size=len(payload), sha256=hashlib.sha256(payload).hexdigest(), duration_seconds=1.0)
+    cases = [
+        ("classroom-apology", "对不起，刚才这个式子应该是负号。", None),
+        ("classroom-quotation", "The lecturer says: I cannot prove this without continuity.", None),
+        ("normal-unicode", "<!-- note --> α + 中文 123", None),
+        ("empty", "  ", "PROVIDER_RESPONSE_INVALID"),
+        ("comments-only", "<!-- transcript metadata -->", "PROVIDER_RESPONSE_INVALID"),
+        ("invalid-characters", "\x00\u200b。", "PROVIDER_RESPONSE_INVALID"),
+        ("invalid-utf8", "\ud800", "PROVIDER_RESPONSE_INVALID"),
+        ("mixed-sentinel", "speech NOSPEECH4OCRLLM", "PROVIDER_RESPONSE_INVALID"),
+        ("pure-sentinel", "  nospeech4ocrllm ", "no_speech"),
+        ("truncated", "有效正文", "PROVIDER_RESPONSE_INVALID"),
+        ("explicit-refusal", "有效正文", "PROVIDER_REFUSED_RECOGNITION"),
+    ]
+    try:
+        for mode in ("markdown", "visible_text"):
+            for name, content, expected in cases:
+                if mode == "markdown" and name.startswith("classroom-"):
+                    expected = "PROVIDER_REFUSED_RECOGNITION"
+                SyntheticOpenAIHandler.content = content
+                SyntheticOpenAIHandler.finish_reason = "length" if name == "truncated" else "stop"
+                SyntheticOpenAIHandler.refusal = "explicit" if name == "explicit-refusal" else None
+                try:
+                    response = recognize_openai_compatible_audio(
+                        snapshot, prompt=None, vendor="synthetic-audio", model="synthetic-audio-model",
+                        settings=OpenAICompatibleSettings(
+                            base_url=f"http://127.0.0.1:{server.server_port}/v1/", api_key="synthetic-key",
+                            send_audio_prompt=False, response_validation="nonempty_text",
+                            audio_response_validation=mode,
+                        ), timeout_seconds=5.0,
+                    )
+                except NoSpeechDetected:
+                    assert expected == "no_speech", (mode, name, expected)
+                except ProviderError as error:
+                    assert error.code == expected, (mode, name, error.code, expected)
+                    assert error.details["provider_calls_attempted"] == 1
+                else:
+                    assert expected is None, (mode, name, expected)
+                    assert response.markdown == content
+                print(json.dumps({"case": name, "audio_validation": mode, "expected": expected or "accepted", "passed": True}))
+    finally:
+        SyntheticOpenAIHandler.finish_reason = "stop"
+        SyntheticOpenAIHandler.refusal = None
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--expected-source-root", type=Path, default=Path(__file__).resolve().parents[1] / "src")
@@ -223,6 +279,7 @@ def main() -> None:
             _run_merged(server, image, ocrllm)
             _run_nonempty_text(server, image, ocrllm)
             _run_audio(server, audio)
+            _run_audio_visible_text(server, audio)
     finally:
         server.shutdown()
         server.server_close()

@@ -17,6 +17,7 @@ def validate_audio_provider_text(
     model: str,
     input_tokens: int | None,
     output_tokens: int | None,
+    check_refusal: bool = True,
 ) -> str:
     """Return visible transcript text or one usage-bearing typed control/error."""
     value = text if type(text) is str else ""
@@ -44,7 +45,7 @@ def validate_audio_provider_text(
                     "reason": "invalid_no_speech_marker",
                 },
             ) from None
-        markdown = validate_provider_markdown(value)
+        markdown = validate_provider_markdown(value, check_refusal=check_refusal)
     except OCRLLMError as error:
         if "provider" not in error.details:
             error._add_safe_detail("provider", vendor)

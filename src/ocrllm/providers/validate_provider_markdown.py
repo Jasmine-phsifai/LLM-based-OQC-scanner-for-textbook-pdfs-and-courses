@@ -9,7 +9,9 @@ from .looks_like_refusal import looks_like_refusal
 from .remove_closed_html_comments import remove_closed_html_comments
 
 
-def validate_provider_markdown(value: object, *, nonempty_text_only: bool = False) -> str:
+def validate_provider_markdown(
+    value: object, *, nonempty_text_only: bool = False, check_refusal: bool = True,
+) -> str:
     """Return visible Markdown or raise a redacted false-success error."""
     markdown: str = value if type(value) is str else ""
     try:
@@ -36,7 +38,7 @@ def validate_provider_markdown(value: object, *, nonempty_text_only: bool = Fals
             code="PROVIDER_RESPONSE_INVALID",
             details={"reason": "empty"},
         )
-    if looks_like_refusal(markdown):
+    if check_refusal and looks_like_refusal(markdown):
         raise ProviderError(
             "The configured provider declined the request instead of recognizing it.",
             code="PROVIDER_REFUSED_RECOGNITION",

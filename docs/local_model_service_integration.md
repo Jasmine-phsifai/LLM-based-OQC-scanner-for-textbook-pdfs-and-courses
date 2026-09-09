@@ -131,3 +131,33 @@ checkpoint until the parent completes. They are retained work, not lost text,
 and must not be interpreted as already published complete Markdown. The final
 one-minute refinement left only 9180–9240 seconds at the generation cap;
 16/17 parents are complete and all 12 successful children remain in checkpoint.
+
+
+## 2026-09-09: local ASR visible text validation
+
+Use `OpenAICompatibleSettings(audio_response_validation="visible_text")` only
+for an explicitly selected route. The default remains `"markdown"`. This audio
+option retains UTF-8, visible Unicode L/N/S after removing closed HTML comments
+from the inspection view, pure/mixed NOSPEECH handling, and the common HTTP,
+choice, finish_reason and explicit refusal-field checks. It skips only the
+short natural-language refusal-phrase heuristic, so a classroom quotation of
+“I cannot” or an apology is not rejected for that phrase alone. Returned text
+is not rewritten. This setting is independent of image
+`response_validation="nonempty_text"` and `send_audio_prompt=False`.
+
+The image option still checks UTF-8 and non-whitespace text; it intentionally
+does not require visible body text beyond a frame comment, preserving the
+approved empty-board behavior. The audio option must not reuse that weaker
+image-content path. No repetition algorithm, model constraint, prompt-version
+change, or checkpoint schema was added. Ordinary consumers load the setting
+when their next process constructs the provider; this library option needs no
+model-service restart. No running production process/state was changed here.
+
+Validation: `tools/run_http200_request_id_scenario.py` used the real SDK against
+a synthetic local HTTP server, testing both audio modes across 11 cases each:
+classroom apology/quotation, valid Unicode, empty, comment-only, control/format/
+punctuation-only, invalid UTF-8, mixed/pure NOSPEECH, length and explicit refusal.
+All 22 comparisons passed; existing image metadata/empty and diagnostic checks
+also passed. This is transport/validator evidence, not real model accuracy.
+Relevant existing provider-model, merged-audio, Google audio adapter and light
+import tests: 114 passed. No model requests were issued.

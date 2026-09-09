@@ -297,6 +297,7 @@ def test_openai_compatible_settings_are_public_exact_and_secret_safe():
     assert settings.api_key == secret
     assert settings.send_audio_prompt is True
     assert settings.response_validation == "markdown"
+    assert settings.audio_response_validation == "markdown"
     assert secret not in repr(settings)
 
     unauthenticated = OpenAICompatibleSettings(
@@ -309,9 +310,11 @@ def test_openai_compatible_settings_are_public_exact_and_secret_safe():
         base_url="http://127.0.0.1:8000/v1",
         send_audio_prompt=False,
         response_validation="nonempty_text",
+        audio_response_validation="visible_text",
     )
     assert audio_only.send_audio_prompt is False
     assert audio_only.response_validation == "nonempty_text"
+    assert audio_only.audio_response_validation == "visible_text"
 
     for kwargs in (
         {"base_url": "relative/v1", "api_key_env": "LOCAL_LLM_KEY"},
@@ -323,6 +326,8 @@ def test_openai_compatible_settings_are_public_exact_and_secret_safe():
             "response_validation": "plain_text",
         },
         {"base_url": "https://example.test/v1", "response_validation": []},
+        {"base_url": "https://example.test/v1", "audio_response_validation": "nonempty_text"},
+        {"base_url": "https://example.test/v1", "audio_response_validation": None},
     ):
         with pytest.raises(ConfigError):
             OpenAICompatibleSettings(**kwargs)

@@ -15,6 +15,7 @@ def parse_openai_compatible_audio_response(
     *,
     vendor: str,
     model: str,
+    check_refusal: bool = True,
 ) -> AudioProviderResponse:
     """Return one validated transcript and exact-or-unknown usage."""
     parsed = parse_openai_compatible_chat_response(
@@ -29,6 +30,7 @@ def parse_openai_compatible_audio_response(
             model=model,
             input_tokens=parsed.input_tokens,
             output_tokens=parsed.output_tokens,
+            check_refusal=check_refusal,
         )
     except OCRLLMError as error:
         if parsed.request_id is not None:

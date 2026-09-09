@@ -21,6 +21,7 @@ class OpenAICompatibleSettings:
     api_key: str | None = field(default=None, repr=False)
     send_audio_prompt: bool = True
     response_validation: str = "markdown"
+    audio_response_validation: str = "markdown"
 
     def __post_init__(self) -> None:
         _validate_base_url(self.base_url)
@@ -47,6 +48,15 @@ class OpenAICompatibleSettings:
             raise ConfigError(
                 "OpenAICompatibleSettings.response_validation must be "
                 "'markdown' or 'nonempty_text'.",
+                code="CONFIG_INVALID",
+            ) from None
+
+        if type(self.audio_response_validation) is not str or self.audio_response_validation not in {
+            "markdown", "visible_text",
+        }:
+            raise ConfigError(
+                "OpenAICompatibleSettings.audio_response_validation must be "
+                "'markdown' or 'visible_text'.",
                 code="CONFIG_INVALID",
             ) from None
 

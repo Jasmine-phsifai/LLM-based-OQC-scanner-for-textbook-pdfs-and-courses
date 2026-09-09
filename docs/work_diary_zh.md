@@ -10020,3 +10020,6 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 **#728 最终局部结论与生产resume收口。** 1min细分前段176生成tokens/EOS成功，后9180–9240s仍8192cap，191.727s；到此停止。现16/17，13子片12settled。private报告all_prior_subslot_text_retained=false实际比较partial MD，并非checkpoint保留：亲读state所有12成功子片hash正确，父15的5成功子片均保留在state，既有composer只将未完父片显示为失败marker；MD逐字等于compose(state)。已向root解释证据边界，无成功丢失或假complete。生产resume增加only_output_limit=True，配同failed_slice_minutes，使预存预算失败直接重切且后续未跑片保留自动恢复；其他失败不预重切，默认人工显式选择行为不变。
 
 **#728 resume-only-budget验证。** `tools/verify_audio_output_limit_recovery.py`增已存cap场景：首轮无opt-in真实合成HTTP返回cap并保存state，随后public resume(...failed_slice_minutes=1,only_output_limit=True)直接发两子片，当前2call/累计3call，未重发原61s；fresh自动cap为3call、非预算422为1call。以上为真实编码媒体+合成HTTP，不记作模型质量实测；18相关merged-audio测试通过。
+
+
+**#729 2026-09-09 本地ASR只放宽自然语言拒绝词。** 用户明确要求保留Unicode字符拒绝、放宽ASR拒绝词。新增独立 `OpenAICompatibleSettings.audio_response_validation="visible_text"`，默认markdown不变；当前模式仅跳过looks_like_refusal，保留UTF-8、去闭合注释后的L/N/S、NOSPEECH纯值/混入及HTTP/choice/stop/显式refusal字段检查。图片nonempty_text仍保留UTF-8，不擅自重新要求空板有正文。现有真实SDK+合成HTTP工具新增2模式×11场景全部通过，短课堂“对不起”“I cannot”新模式通过默认拒绝，无效字符/注释/非法UTF-8/混sentinel/截断/显式refusal均仍拒绝。既有provider model、merged audio、Google ASR、lightweight import共114通过；首次误写测试文件名未运行任何测试，已纠正真实路径。没有真实模型请求或在途state/service修改，不在本仓复制ModelLab相邻重复检测。Carry-forward judgement：音频放宽必须独立于图片nonempty_text，否则会错误关闭可见Unicode内容检查；调用方只选公共设置、不拥有校验算法。
