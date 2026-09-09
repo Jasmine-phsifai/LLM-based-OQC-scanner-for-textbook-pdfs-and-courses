@@ -208,3 +208,28 @@ No real-model quality result is claimed here. `tools/run_audio_gap_trial.py`
 prepares or executes the separately coordinated one-leaf trial, reusing the
 owner's original-plan validator. Its explicit `retry_rules={}` bounds this
 maintenance trial to three HTTP calls without changing production transient rules.
+
+### D004 real bounded trial
+
+OCRLLM `519989e93124fce4041d337430adae3959569410` executed the public resume
+trial on 2026-09-09, ending at 12:49:46 UTC. The original 9180–9240 second
+leaf received exactly three new requests; all returned `output_token_limit`.
+The measured resume wall was 560.826 seconds, including failed recognition.
+No reliable new transcription was recovered. Explicit limits of 5% total and
+120 seconds per failed segment accepted the remaining 60 seconds out of
+9794.795 seconds (0.61257%) as `complete_with_gaps`, not gap-free completion.
+
+Owner review confirmed both public inspection APIs return that terminal status;
+the MD visibly warns about missing content and marks exactly 9180–9240 seconds
+as FAIL. The retained checkpoint contains all three new attempts. All 26
+previously settled leaf records remain exactly equal, and source SHA-256 is
+unchanged. MD/checkpoint hashes match the trial result. World audio remained
+inspection-only: its 596.14 seconds (9.20517%) exceed this threshold, and its
+checkpoint hash is unchanged. These outcomes do not establish transcription
+accuracy within successful segments.
+
+Authoritative evidence (source paths, hashes, request IDs, preserved-leaf
+comparison and public summaries):
+`/mnt/r/course-pipeline-state/validation/audio-gap-policy-20260909/owner-trial/result.json`.
+This documentation review made no model requests or state changes. Production
+lifecycle and publication reconciliation remain recorded by the orchestrator.
