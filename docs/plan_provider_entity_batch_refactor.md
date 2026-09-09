@@ -19,6 +19,16 @@ authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
 
+### #730 — 2026-09-09 bounded audio gaps explicitly authorized
+
+Caller-supplied AudioGapPolicy owns no default threshold. OCRLLM persists at
+most three same-identity output-cap attempts for short leaves and returns
+complete_with_gaps only within the explicit limits. Exact failed leaf ranges,
+successful siblings and the accepted checkpoint remain durable; ordinary resume
+is zero-call. Owner scenario and integration details are in
+local_model_service_integration.md. Real maintenance trial is separately
+coordinated; the superseded 30-second experiment is not deployed.
+
 ### #729 — 2026-09-09 explicit local ASR content validation
 
 The maintainer authorized retaining Unicode-content rejection while relaxing

@@ -17,12 +17,14 @@ from .audio.build_long_audio_interval_windows import (
 )
 from .audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT_VERSION
 from .contracts.source_fingerprint import SourceFingerprint
+from .audio_gap_policy import AudioGapPolicy
 from .errors import ResumeStateError
 from .provider_model_usage import ProviderModelUsage
 
 
 MERGED_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v1"
 SPLIT_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v2"
+GAP_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v3"
 _SLOT_STATUSES = frozenset({"unresolved", "settled", "failed"})
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ROOT_KEYS = frozenset(
@@ -78,8 +80,15 @@ class MergedAudioSlot:
     error_code: str | None = None
     error_description: str | None = None
     subslots: tuple[MergedAudioSlot, ...] = ()
+    output_limit_attempts: int = 0
+    output_limit_identity: str | None = None
 
     def __post_init__(self) -> None:
+        if (type(self.output_limit_attempts) is not int or not 0 <= self.output_limit_attempts <= 3
+            or (self.output_limit_attempts == 0 and self.output_limit_identity is not None)
+            or (self.output_limit_attempts > 0 and (type(self.output_limit_identity) is not str
+                or _SHA256.fullmatch(self.output_limit_identity) is None))):
+            raise ValueError("invalid output-limit attempt evidence")
         if type(self.subslots) is not tuple:
             raise ValueError("audio subslots must be a tuple")
         if self.subslots:
@@ -173,9 +182,11 @@ class MergedAudioResumeState:
     slots: tuple[MergedAudioSlot, ...]
     usage: tuple[ProviderModelUsage, ...] = ()
     provider_cleanup_failed: bool = False
+    audio_gap_policy: AudioGapPolicy | None = None
+    accepted_with_gaps: bool = False
 
     def __post_init__(self) -> None:
-        if self.state_version not in (MERGED_AUDIO_RESUME_STATE_VERSION, SPLIT_AUDIO_RESUME_STATE_VERSION):
+        if self.state_version not in (MERGED_AUDIO_RESUME_STATE_VERSION, SPLIT_AUDIO_RESUME_STATE_VERSION, GAP_AUDIO_RESUME_STATE_VERSION):
             raise ValueError("merged-audio resume state version is unsupported")
         if type(self.source) is not SourceFingerprint:
             raise ValueError("merged-audio source is invalid")
@@ -188,6 +199,19 @@ class MergedAudioResumeState:
             raise ValueError("merged-audio slots are invalid")
         if self.state_version == MERGED_AUDIO_RESUME_STATE_VERSION and any(slot.subslots for slot in self.slots):
             raise ValueError("audio subslots require state v2")
+        if self.audio_gap_policy is not None and type(self.audio_gap_policy) is not AudioGapPolicy:
+            raise ValueError("invalid audio gap policy")
+        if type(self.accepted_with_gaps) is not bool:
+            raise ValueError("invalid audio completion status")
+        if self.state_version != GAP_AUDIO_RESUME_STATE_VERSION and (
+            self.audio_gap_policy is not None or self.accepted_with_gaps
+            or any(leaf.output_limit_attempts for parent in self.slots for leaf in parent.subslots or (parent,))
+        ):
+            raise ValueError("audio gap evidence requires state v3")
+        if self.accepted_with_gaps:
+            from .audio_gap_summary import audio_gap_summary
+            if not audio_gap_summary(self)['accepted_with_gaps']:
+                raise ValueError("accepted audio gaps lack threshold or retry evidence")
         self._validate_plan()
         if (
             type(self.usage) is not tuple
@@ -257,6 +281,10 @@ class MergedAudioResumeState:
             ],
             "provider_cleanup_failed": self.provider_cleanup_failed,
         }
+        if self.state_version == GAP_AUDIO_RESUME_STATE_VERSION:
+            from dataclasses import asdict
+            document['audio_gap_policy'] = asdict(self.audio_gap_policy) if self.audio_gap_policy else None
+            document['accepted_with_gaps'] = self.accepted_with_gaps
         return (
             json.dumps(
                 document,
@@ -306,7 +334,11 @@ def _slots_match_windows(
 
 
 def _state_from_document(document: object) -> MergedAudioResumeState:
-    if type(document) is not dict or frozenset(document) != _ROOT_KEYS:
+    if type(document) is not dict:
+        raise ValueError
+    expected_keys = (_ROOT_KEYS | {'audio_gap_policy', 'accepted_with_gaps'}
+                     if document.get('state_version') == GAP_AUDIO_RESUME_STATE_VERSION else _ROOT_KEYS)
+    if frozenset(document) != expected_keys:
         raise ValueError
     source_document = document["source"]
     slot_documents = document["slots"]
@@ -346,6 +378,9 @@ def _state_from_document(document: object) -> MergedAudioResumeState:
         slots=tuple(slots),
         usage=tuple(usage),
         provider_cleanup_failed=document["provider_cleanup_failed"],
+        audio_gap_policy=(AudioGapPolicy(**document['audio_gap_policy'])
+                          if document.get('audio_gap_policy') is not None else None),
+        accepted_with_gaps=document.get('accepted_with_gaps', False),
     )
 
 
@@ -368,16 +403,24 @@ def _reject_constant(_value: str) -> object:
 
 def _slot_document(slot):
     document = {key: getattr(slot, key) for key in _SLOT_KEYS}
+    if slot.output_limit_attempts:
+        document['output_limit_attempts'] = slot.output_limit_attempts
+        document['output_limit_identity'] = slot.output_limit_identity
     if slot.subslots:
         document["subslots"] = [_slot_document(child) for child in slot.subslots]
     return document
 
 
 def _slot_from_document(document, *, child=False):
-    if type(document) is not dict or frozenset(document) not in (_SLOT_KEYS, _SLOT_KEYS | {"subslots"}):
+    retry_keys = {'output_limit_attempts', 'output_limit_identity'}
+    allowed = (_SLOT_KEYS, _SLOT_KEYS | {'subslots'}, _SLOT_KEYS | retry_keys,
+               _SLOT_KEYS | retry_keys | {'subslots'})
+    if type(document) is not dict or frozenset(document) not in allowed:
         raise ValueError("invalid audio slot fields")
     raw_children = document.get("subslots", [])
     if type(raw_children) is not list or (child and raw_children):
         raise ValueError("invalid nested audio subslots")
     values = {key: document[key] for key in _SLOT_KEYS}
+    values['output_limit_attempts'] = document.get('output_limit_attempts', 0)
+    values['output_limit_identity'] = document.get('output_limit_identity')
     return MergedAudioSlot(**values, subslots=tuple(_slot_from_document(value, child=True) for value in raw_children))

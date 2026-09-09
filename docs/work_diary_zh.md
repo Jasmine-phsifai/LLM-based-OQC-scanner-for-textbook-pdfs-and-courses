@@ -10023,3 +10023,7 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 
 
 **#729 2026-09-09 本地ASR只放宽自然语言拒绝词。** 用户明确要求保留Unicode字符拒绝、放宽ASR拒绝词。新增独立 `OpenAICompatibleSettings.audio_response_validation="visible_text"`，默认markdown不变；当前模式仅跳过looks_like_refusal，保留UTF-8、去闭合注释后的L/N/S、NOSPEECH纯值/混入及HTTP/choice/stop/显式refusal字段检查。图片nonempty_text仍保留UTF-8，不擅自重新要求空板有正文。现有真实SDK+合成HTTP工具新增2模式×11场景全部通过，短课堂“对不起”“I cannot”新模式通过默认拒绝，无效字符/注释/非法UTF-8/混sentinel/截断/显式refusal均仍拒绝。既有provider model、merged audio、Google ASR、lightweight import共114通过；首次误写测试文件名未运行任何测试，已纠正真实路径。没有真实模型请求或在途state/service修改，不在本仓复制ModelLab相邻重复检测。Carry-forward judgement：音频放宽必须独立于图片nonempty_text，否则会错误关闭可见Unicode内容检查；调用方只选公共设置、不拥有校验算法。
+
+**#730 2026-09-09 显式短ASR缺口容限与耐久同因尝试。** 用户新指令替代继续30秒重切；未提交的旧尝试已独立留证、不部署。新增公开AudioGapPolicy及inspect_audio_completion，recognize/resume显式启用后仅对≤120s、output_token_limit叶累计同provider/prompt身份的初次+两复试；每次先原子保存，旧未知历史和外部诊断不伪计。超过阈值或证据不足仍partial；达标complete_with_gaps保留v3 sidecar、来源/区间/FAIL，普通恢复零call带完整metadata并可重建丢失MD。成功子片和NOSPEECH在partial父段中按实际区间显示，修复“state有成功正文而MD隐藏整父段”的实测问题，不改识别正文。默认v1/v2及其他错误/厂商行为不变。
+
+真实FFmpeg媒体+真实SDK合成HTTP场景验证阈值拒绝/接受、成功/无语音保留、旧状态迁移、4类非资格错误、第二次cap持久化后中断仅余一次、不同错误清零、接受后零调用恢复/重建；首次fixture未配置合法default_audio_minutes，在HTTP前拒绝，纠正后场景全过。62项既有相关回归通过。D004真实60秒缺口只读准备复用原计划校验；world五缺口约9.2%仅摘要，未发模型。真实D trial需统筹协调窗口，当前不宣称已接受或恢复。Carry-forward judgement：认可少量缺失是显式质量决策，须区分无缺完成；识别尝试与容限判定留责任库，统筹只配置阈值、读取公开结果。

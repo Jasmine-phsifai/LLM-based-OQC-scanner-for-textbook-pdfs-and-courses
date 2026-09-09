@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import json
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
 from threading import Event, Lock
 
+from .audio_gap_summary import is_output_limit_failure
 from .audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
 from .audio.build_long_audio_interval_upload_snapshot import (
     build_long_audio_interval_upload_snapshot,
@@ -143,6 +146,7 @@ class _MergedAudioStateOwner:
     ) -> None:
         self._lock = Lock()
         self._state = state
+        self.gap_policy = state.audio_gap_policy
         self._state_path = state_path
         self._current_usage: tuple[ProviderModelUsage, ...] = ()
         self._usage_order = build_provider_model_usage_order(
@@ -286,99 +290,70 @@ def _execute_merged_audio_lane(
 
 
 def _execute_audio_slot(
-    slot: MergedAudioSlot,
-    request_snapshot: LongMP3Snapshot,
-    *,
-    provider_lane: tuple[ProviderModel, ...],
-    start_index: int,
-    prompt: str,
-    request_kind: str,
-    timeout_seconds: float,
-    owner: _MergedAudioStateOwner,
-    stop: Event,
-) -> tuple[
-    tuple[dict[str, int | str], ...],
-    int | None,
-]:
-    """Attempt one prepared audio slot through each candidate at most once."""
-    slot_failures: list[dict[str, int | str]] = []
+    slot: MergedAudioSlot, request_snapshot: LongMP3Snapshot, *, provider_lane,
+    start_index, prompt, request_kind, timeout_seconds, owner, stop,
+):
+    """Persist every short-leaf output-cap attempt; never accept other errors."""
+    slot_failures = []
     for offset in range(len(provider_lane)):
         if stop.is_set():
             break
         provider_index = (start_index + offset) % len(provider_lane)
         provider = provider_lane[provider_index]
-        try:
-            call_result = call_provider_model_with_retries(
-                provider,
-                lambda: recognize_provider_model_audio(
-                    provider,
-                    request_snapshot,
-                    prompt=prompt,
-                    request_kind=request_kind,
-                    timeout_seconds=timeout_seconds,
-                ),
-            )
-            response = call_result.response
-        except NoSpeechDetected as error:
-            calls, input_tokens, output_tokens = provider_failure_usage(error)
-            outcome = _settled_slot(slot, provider=provider, no_speech=True)
-            owner.checkpoint(
-                outcome,
-                provider=provider,
-                calls=calls,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                cleanup_failed=provider_cleanup_failed(error),
-            )
-            return tuple(slot_failures), provider_index
-        except ProviderError as error:
-            calls, input_tokens, output_tokens = provider_failure_usage(error)
-            outcome = _failed_slot(slot, provider=provider, error=error)
-            assert outcome.error_description is not None
-            description = outcome.error_description
-            owner.checkpoint(
-                outcome,
-                provider=provider,
-                calls=calls,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                cleanup_failed=provider_cleanup_failed(error),
-            )
-            slot_failures.append(
-                {
-                    "slot_index": slot.index,
-                    "vendor": provider.vendor,
-                    "model": provider.model,
-                    "code": error.code,
-                    "description": description,
-                }
-            )
+        current = slot
+        bounded_cap = (owner.gap_policy is not None
+                       and slot.logical_end_seconds-slot.logical_start_seconds <= 120)
+        identity = _output_limit_identity(provider, prompt) if bounded_cap else None
+        if bounded_cap and current.output_limit_identity == identity and current.output_limit_attempts >= 3:
             continue
+        while not stop.is_set():
+            try:
+                call_result = call_provider_model_with_retries(
+                    provider, lambda: recognize_provider_model_audio(
+                        provider, request_snapshot, prompt=prompt, request_kind=request_kind,
+                        timeout_seconds=timeout_seconds,
+                    ),
+                )
+                response = call_result.response
+            except NoSpeechDetected as error:
+                calls, input_tokens, output_tokens = provider_failure_usage(error)
+                outcome = _settled_slot(current, provider=provider, no_speech=True)
+                owner.checkpoint(outcome, provider=provider, calls=calls,
+                    input_tokens=input_tokens, output_tokens=output_tokens,
+                    cleanup_failed=provider_cleanup_failed(error))
+                return tuple(slot_failures), provider_index
+            except ProviderError as error:
+                calls, input_tokens, output_tokens = provider_failure_usage(error)
+                outcome = _failed_slot(current, provider=provider, error=error)
+                if bounded_cap and is_output_limit_failure(outcome):
+                    previous = current.output_limit_attempts if current.output_limit_identity == identity else 0
+                    outcome = replace(outcome, output_limit_attempts=min(3, previous+1),
+                                      output_limit_identity=identity)
+                owner.checkpoint(outcome, provider=provider, calls=calls,
+                    input_tokens=input_tokens, output_tokens=output_tokens,
+                    cleanup_failed=provider_cleanup_failed(error))
+                slot_failures.append({'slot_index':slot.index, 'vendor':provider.vendor,
+                    'model':provider.model, 'code':error.code, 'description':outcome.error_description})
+                if bounded_cap and is_output_limit_failure(outcome) and outcome.output_limit_attempts < 3:
+                    current = outcome
+                    continue
+                break
+            outcome = _settled_slot(current, provider=provider, markdown=response.markdown)
+            owner.checkpoint(outcome, provider=provider, calls=call_result.calls,
+                input_tokens=_add_known(call_result.failed_input_tokens,response.input_tokens),
+                output_tokens=_add_known(call_result.failed_output_tokens,response.output_tokens),
+                cleanup_failed=call_result.prior_cleanup_failed or response.provider_cleanup_failed)
+            return tuple(slot_failures), provider_index
+    return tuple(slot_failures), None
 
-        outcome = _settled_slot(
-            slot,
-            provider=provider,
-            markdown=response.markdown,
-        )
-        owner.checkpoint(
-            outcome,
-            provider=provider,
-            calls=call_result.calls,
-            input_tokens=_add_known(
-                call_result.failed_input_tokens,
-                response.input_tokens,
-            ),
-            output_tokens=_add_known(
-                call_result.failed_output_tokens,
-                response.output_tokens,
-            ),
-            cleanup_failed=(
-                call_result.prior_cleanup_failed
-                or response.provider_cleanup_failed
-            ),
-        )
-        return tuple(slot_failures), provider_index
-    return (), None
+
+def _output_limit_identity(provider, prompt):
+    # Opaque request identity; no secret, backend constraint, or service state is copied.
+    settings = provider.settings
+    value = (provider.vendor, provider.model, provider.adapter_id, prompt,
+             getattr(settings, 'base_url', None), getattr(settings, 'send_audio_prompt', None),
+             getattr(settings, 'audio_response_validation', None))
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False).encode()).hexdigest()
 
 
 def _window_from_slot(slot: MergedAudioSlot) -> LongAudioIntervalWindow:
@@ -406,6 +381,8 @@ def _settled_slot(
         actual_end_seconds=slot.actual_end_seconds,
         status="settled",
         no_speech=no_speech,
+        output_limit_attempts=slot.output_limit_attempts,
+        output_limit_identity=slot.output_limit_identity,
         markdown=markdown,
         markdown_sha256=(
             None
@@ -495,6 +472,7 @@ class _MergedAudioSubslotOwner:
     def __init__(self, parent, owner):
         self.parent = parent
         self.owner = owner
+        self.gap_policy = owner.gap_policy
 
     def checkpoint(self, outcome, **usage):
         children = list(self.parent.subslots)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .audio_slice import AudioSlice
+from .audio_gap_policy import AudioGapPolicy
 from .providers.provider_model import ProviderModel
 from .result import RecognitionResult
 
@@ -20,6 +21,7 @@ def resume_audio_to_markdown(
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
     failed_slice_minutes: int | None = None,
+    audio_gap_policy: AudioGapPolicy | None = None,
     only_output_limit: bool = False,
 ) -> RecognitionResult:
     """Restore the original plan, optionally subdividing its failed ranges.
@@ -30,6 +32,10 @@ def resume_audio_to_markdown(
     recovery, pass the same interval with only_output_limit=True: saved budget
     failures subdivide before dispatch and later budget failures subdivide once.
     This is a bounded subdivision, not a retry loop.
+    Explicit audio_gap_policy persists bounded output-limit attempts and permits
+    complete_with_gaps only within caller limits after three same-identity
+    failures. Accepted jobs retain their checkpoint; ordinary resume returns
+    all gap metadata without provider calls, rebuilding a missing MD if needed.
     """
     from .clear_public_error import clear_public_error
     from .errors import OCRLLMError
@@ -44,6 +50,7 @@ def resume_audio_to_markdown(
             timeout_seconds=timeout_seconds,
             resume=True,
             failed_slice_minutes=failed_slice_minutes,
+            audio_gap_policy=audio_gap_policy,
             only_output_limit=only_output_limit,
             overwrite=True,
         )

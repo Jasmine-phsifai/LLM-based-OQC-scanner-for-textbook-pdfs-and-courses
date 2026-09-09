@@ -161,3 +161,50 @@ All 22 comparisons passed; existing image metadata/empty and diagnostic checks
 also passed. This is transport/validator evidence, not real model accuracy.
 Relevant existing provider-model, merged-audio, Google audio adapter and light
 import tests: 114 passed. No model requests were issued.
+
+## Explicit bounded audio gaps (2026-09-09)
+
+`recognize_audio_to_markdown` and `resume_audio_to_markdown` accept optional
+`audio_gap_policy=AudioGapPolicy(max_failed_fraction=..., max_failed_segment_seconds=...)`;
+`max_failed_seconds` is an optional additional total limit. The library supplies
+no acceptance threshold. Only a failed leaf at most 120 seconds with canonical
+`provider_code=output_token_limit` receives an initial attempt plus at most two
+same-identity retries. Long parent failures still use the separately enabled
+`failed_slice_minutes` subdivision. Existing provider transient rules stay
+independent; other errors cannot qualify as accepted gaps. Old failures without
+persisted attempt evidence start a new counter; external diagnostic calls are
+not imported as checkpoint attempts. Changing the observed error resets the
+consecutive counter; provider/prompt identity changes cannot reuse it.
+
+Opt-in state v3 retains the original source fingerprint, exact parent/child
+ranges, successful text/NOSPEECH, attempt counters and policy. v1/v2 remain
+readable; unconfigured jobs keep their old state behavior. A gap is accepted
+only when every failed leaf has three evidenced matching failures and all
+configured limits pass. Results report `status="complete_with_gaps"` separately
+from `complete`, with `accepted_with_gaps`, `failed_seconds`, `failed_fraction`
+and `failed_segments` metadata. Accepted MD explicitly warns about missing
+content. All partial child groups now render successful children and FAIL
+markers at the actual failed child intervals, instead of hiding the whole parent.
+Keep the checkpoint for ordinary recovery; the legacy lost-state repair parser
+does not reconstruct these subdivided groups from Markdown alone.
+
+Accepted jobs retain their sidecar. `inspect_markdown_job` returns
+`complete_with_gaps`; `inspect_audio_completion(output_path, audio_gap_policy=...)`
+returns a read-only dict with actual acceptance plus threshold/evidence facts.
+Supplying a policy to inspection never accepts a job. A completed legacy MD
+without a sidecar has unknown gap details (`None`), not an invented zero.
+Ordinary resume of an accepted job makes zero provider calls, returns full
+metadata and can rebuild a missing MD from its checkpoint. All-success jobs
+continue deleting their checkpoint after publication.
+
+Validation: `tools/verify_audio_gap_acceptance.py` used real FFmpeg media and the
+real SDK against synthetic HTTP. It covered threshold rejection/acceptance,
+retained successful/NOSPEECH children, exact ranges, old-state migration,
+noneligible failures, interruption after the second persisted cap with only one
+remaining call, changed-error counter reset, zero-call accepted resume and
+missing-MD reconstruction. Evidence: persistent validation directory
+`audio-gap-policy-scenario-durable/result.json`; 62 existing focused tests passed.
+No real-model quality result is claimed here. `tools/run_audio_gap_trial.py`
+prepares or executes the separately coordinated one-leaf trial, reusing the
+owner's original-plan validator. Its explicit `retry_rules={}` bounds this
+maintenance trial to three HTTP calls without changing production transient rules.

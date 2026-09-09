@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from dataclasses import replace
+
+from .audio_gap_policy import AudioGapPolicy
+from .merged_audio_resume_state import GAP_AUDIO_RESUME_STATE_VERSION
 
 from .audio.snapshot_product_mp3 import snapshot_product_mp3
 from .audio_slice import AudioSlice
@@ -45,9 +49,12 @@ def run_merged_audio_job(
     resume: bool,
     overwrite: bool,
     failed_slice_minutes: int | None = None,
+    audio_gap_policy: AudioGapPolicy | None = None,
     only_output_limit: bool = False,
 ) -> RecognitionResult:
     """Validate, snapshot, settle, checkpoint, and publish one audio plan."""
+    if audio_gap_policy is not None and type(audio_gap_policy) is not AudioGapPolicy:
+        raise ConfigError("audio_gap_policy must be an AudioGapPolicy.", code="CONFIG_INVALID")
     if type(only_output_limit) is not bool:
         raise ConfigError("only_output_limit must be a boolean.", code="CONFIG_INVALID")
     if failed_slice_minutes is not None and (
@@ -96,6 +103,16 @@ def run_merged_audio_job(
                 state = load_merged_audio_resume_state(state_path)
                 _validate_resume_plan(state, requested_state)
                 historical_usage = state.usage
+                if state.accepted_with_gaps:
+                    return finalize_merged_audio_result(
+                        state, output_path=resolved_output_path, state_path=state_path,
+                        current_usage=(), historical_usage=historical_usage,
+                        reused_slot_count=sum(slot.status == 'settled' for slot in state.slots),
+                        provider_failures=(), overwrite=True,
+                    )
+                if audio_gap_policy is not None:
+                    state = replace(state, state_version=GAP_AUDIO_RESUME_STATE_VERSION,
+                                    audio_gap_policy=audio_gap_policy)
                 if failed_slice_minutes is not None:
                     from .resplit_failed_audio_slots import resplit_failed_audio_slots
                     state = resplit_failed_audio_slots(
@@ -103,8 +120,13 @@ def run_merged_audio_job(
                         only_output_limit=only_output_limit,
                     )
                     save_merged_audio_resume_state_atomically(state_path, state)
+                elif audio_gap_policy is not None:
+                    save_merged_audio_resume_state_atomically(state_path, state)
             else:
                 state = requested_state
+                if audio_gap_policy is not None:
+                    state = replace(state, state_version=GAP_AUDIO_RESUME_STATE_VERSION,
+                                    audio_gap_policy=audio_gap_policy)
                 historical_usage = ()
                 save_merged_audio_resume_state_atomically(state_path, state)
             (

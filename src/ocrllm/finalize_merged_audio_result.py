@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from dataclasses import replace
+
+from .audio_gap_summary import audio_gap_summary
+from .output.save_merged_audio_resume_state_atomically import save_merged_audio_resume_state_atomically
 
 from .compose_merged_audio_markdown import compose_merged_audio_markdown
 from .errors import AllCandidatesExhausted
@@ -43,7 +47,9 @@ def finalize_merged_audio_result(
         if slot.status != "settled"
     )
     current_calls = sum(row.calls for row in current_usage)
-    if settled_count == 0:
+    if settled_count == 0 and not any(
+        child.status == 'settled' for parent in state.slots for child in parent.subslots
+    ):
         raise AllCandidatesExhausted(
             "No provider candidate could settle any merged-audio slot.",
             details={
@@ -55,7 +61,13 @@ def finalize_merged_audio_result(
             },
         ) from None
 
+    gap = audio_gap_summary(state)
+    status = ('complete_with_gaps' if gap['accepted_with_gaps']
+              else 'partial' if failed_slots else 'complete')
     markdown = compose_merged_audio_markdown(state.slots)
+    if status == 'complete_with_gaps':
+        markdown = (f"音频识别已完成，但保留明确缺口：{gap['failed_seconds']:.3f} 秒"
+                    f"（{gap['failed_fraction']:.2%}）。FAIL 区间未获得可靠转写。\n\n" + markdown)
     write_markdown_atomically(output_path, markdown, overwrite=overwrite)
     warnings: list[str] = []
     if provider_failures:
@@ -66,7 +78,9 @@ def finalize_merged_audio_result(
         warnings.append(
             "At least one provider audio upload or client could not be cleaned up."
         )
-    status = "partial" if failed_slots else "complete"
+    if status == 'complete_with_gaps':
+        state = replace(state, accepted_with_gaps=True)
+        save_merged_audio_resume_state_atomically(state_path, state)
     if status == "complete":
         try:
             state_path.unlink(missing_ok=True)
@@ -87,6 +101,7 @@ def finalize_merged_audio_result(
         "duration_seconds": state.slots[-1].logical_end_seconds,
         "byte_size": state.source.byte_size,
     }
+    metadata.update(gap)
     if failed_slots:
         metadata["failed_slots"] = failed_slots
     if provider_failures:

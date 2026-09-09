@@ -7,6 +7,14 @@ The authoritative implementation GO/NO-GO record is now
 `docs/ocrllm_library_go_no_go.md`. Use that file for current phase order, file
 responsibilities, PDFium, migration, rewrite, and rejection rules.
 
+## Current narrow audio contract addition (2026-09-09, #730)
+
+Explicit AudioGapPolicy, retained accepted-gap checkpoints and public audio
+completion inspection keep recognition evidence and quality decisions in
+OCRLLM. The orchestrator supplies thresholds and consumes complete versus
+complete_with_gaps; it does not parse or mutate recognition state. No default
+acceptance threshold or broad retry framework is introduced.
+
 ## What I Found
 
 The existing OCRLLM codebase has useful product behavior, but it is shaped like

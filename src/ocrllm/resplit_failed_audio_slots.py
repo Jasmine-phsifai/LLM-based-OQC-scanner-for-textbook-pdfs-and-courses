@@ -2,7 +2,7 @@
 from dataclasses import replace
 
 from .errors import ConfigError
-from .merged_audio_resume_state import MergedAudioSlot, SPLIT_AUDIO_RESUME_STATE_VERSION
+from .merged_audio_resume_state import MergedAudioSlot, SPLIT_AUDIO_RESUME_STATE_VERSION, GAP_AUDIO_RESUME_STATE_VERSION
 
 
 def resplit_failed_audio_slots(state, *, interval_minutes, slot_indices=None, only_output_limit=False):
@@ -50,4 +50,4 @@ def resplit_failed_audio_slots(state, *, interval_minutes, slot_indices=None, on
             changed = True
         else:
             slots.append(slot)
-    return replace(state, state_version=SPLIT_AUDIO_RESUME_STATE_VERSION, slots=tuple(slots)) if changed else state
+    return replace(state, state_version=(GAP_AUDIO_RESUME_STATE_VERSION if state.state_version == GAP_AUDIO_RESUME_STATE_VERSION else SPLIT_AUDIO_RESUME_STATE_VERSION), slots=tuple(slots)) if changed else state

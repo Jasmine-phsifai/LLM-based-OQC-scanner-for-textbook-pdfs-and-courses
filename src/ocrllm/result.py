@@ -17,7 +17,7 @@ class RecognitionResult:
     markdown: str
     source_type: Literal["image", "pdf", "audio", "video"]
     profile: str | None = None
-    status: Literal["complete", "partial"] = "complete"
+    status: Literal["complete", "complete_with_gaps", "partial"] = "complete"
     output_path: Path | None = None
     assets: tuple[Path, ...] = ()
     hotwords: tuple[str, ...] = ()
@@ -33,8 +33,10 @@ class RecognitionResult:
             not isinstance(self.profile, str) or not self.profile.strip()
         ):
             raise ValueError("RecognitionResult.profile must be nonempty text when set")
-        if self.status not in {"complete", "partial"}:
-            raise ValueError("RecognitionResult.status must be 'complete' or 'partial'")
+        if self.status not in {"complete", "complete_with_gaps", "partial"}:
+            raise ValueError("RecognitionResult.status is invalid")
+        if self.status == 'complete_with_gaps' and self.source_type != 'audio':
+            raise ValueError("complete_with_gaps is an audio-only result")
         hotwords = tuple(self.hotwords)
         warnings = tuple(self.warnings)
         if any(not isinstance(value, str) for value in hotwords):
