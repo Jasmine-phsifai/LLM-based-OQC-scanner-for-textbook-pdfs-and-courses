@@ -22,9 +22,12 @@ class OpenAICompatibleSettings:
     send_audio_prompt: bool = True
     response_validation: str = "markdown"
     audio_response_validation: str = "markdown"
+    capture_error_output: bool = False
 
     def __post_init__(self) -> None:
         _validate_base_url(self.base_url)
+        if type(self.capture_error_output) is not bool:
+            raise ConfigError('capture_error_output must be a boolean.', code='CONFIG_INVALID')
         if self.api_key_env is not None and (
             type(self.api_key_env) is not str
             or _ENVIRONMENT_NAME.fullmatch(self.api_key_env) is None

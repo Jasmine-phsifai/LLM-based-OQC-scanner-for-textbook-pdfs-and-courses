@@ -10035,3 +10035,6 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 48既有image/audio/import回归通过。真实JPEG/MP3+真实SDK合成HTTP场景10观测请求=2新帧/61新源秒/6失败，3复用单位新增为0，额外1call验证坏sink隔离；两worker上下文、request ID、父子关系、NOSPEECH及accepted零调用恢复通过。初始scenario的retry label和course_ocr capability配置错误均在HTTP前被拒，纠正fixture后完成，不隐去失败准备。未发真实模型/重启生产。Carry-forward judgement：HTTP尝试、校验接受、checkpoint持久化和模型执行是不同事实；监控汇总不能把复用或传播事件重复当新增吞吐。
 
 **#731 观测身份对账补充。** 统筹要求明确跨resume身份/覆盖并集契约，文档补图片source SHA+原index组、音频source SHA+logical区间的稳定ID；实际输入边界上下文不算新增源秒。只读核查最终scenario三条复用ID均匹配先前成功请求，无新调用或重跑测试。Carry-forward judgement：保留全部尝试工时，同时按稳定单位/公开logical区间去重新增内容，不能把模型重复完成当重复生产。
+
+
+**2026-09-10 超限OCR原文错误详情。** 用户明确要求保留输出以区分思考过多、循环和未写完。新增显式capture_error_output设置，默认false；兼容HTTP错误仅提取generation_output中正文/独立reasoning/用量/工件信息，不复制任意错误正文、凭据或请求头。merged图片终态失败可携带诊断到provider_failures及AllCandidatesExhausted.details；保留默认fallback元数据语义、checkpoint格式和失败状态，不把被拒正文塞进成功Markdown。Model Lab负责原始响应耐久文件，统筹只选择公开设置。真实SDK+本地合成HTTP场景5调用、零模型，22,000字符正文和19,000字符reasoning逐字保留，默认脱敏、全失败、部分失败和resume复用成功帧均通过；37项provider/image既有测试通过。场景初稿遗漏ProviderModel必填字段及image_task，修正后通过；首次扩展终态failure集合影响3项默认语义测试，收窄为显式诊断后通过。Carry-forward judgement：错误码不应替代可检查的生成证据；原始输出只在调用方主动启用时进入错误详情，源匹配、断点和成功判定继续归库。

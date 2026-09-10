@@ -7,7 +7,13 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-09-09.
+Last synchronized: 2026-09-10.
+
+Compatible `capture_error_output=True` optionally exposes the provider's structured
+token-limit generation output (content, reasoning, usage and diagnostic reference)
+in canonical errors and merged-image failure metadata. Default error redaction,
+checkpoint schemas and resume behavior remain unchanged. The synthetic HTTP scenario
+`tools/verify_ocr_error_output.py` verifies all-failed, mixed and resumed results.
 
 The caller-opted `observation_context` now exposes owner JSONL plans, compatible
 HTTP attempts, durable reuse/results and preparation/Markdown stages. Defaults,

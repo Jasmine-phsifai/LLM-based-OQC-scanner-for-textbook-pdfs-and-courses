@@ -54,7 +54,7 @@ def execute_merged_image_plan(
     MergedImageResumeState,
     tuple[ProviderModelUsage, ...],
     int,
-    tuple[dict[str, int | str], ...],
+    tuple[dict[str, object], ...],
 ]:
     """Settle fixed lane assignments with one serialized state owner."""
     reused_slot_count = sum(slot.status == "settled" for slot in state.slots)
@@ -79,7 +79,7 @@ def execute_merged_image_plan(
         state_path=state_path,
         provider_lanes=provider_lanes,
     )
-    lane_failures: list[dict[str, int | str]] = []
+    lane_failures: list[dict[str, object]] = []
     if len(active_lanes) == 1:
         lane_failures.extend(
             _execute_merged_image_lane(
@@ -200,12 +200,12 @@ def _execute_merged_image_lane(
     timeout_seconds: float,
     owner: _MergedImageStateOwner,
     stop: Event,
-) -> tuple[dict[str, int | str], ...]:
+) -> tuple[dict[str, object], ...]:
     """Run one fixed lane serially while other lanes progress independently."""
     provider_lane = provider_lanes[lane_index]
     lane_count = len(provider_lanes)
     last_success_index = 0
-    provider_failures: list[dict[str, int | str]] = []
+    provider_failures: list[dict[str, object]] = []
     try:
         for slot_index in range(lane_index, len(initial_state.slots), lane_count):
             slot = initial_state.slots[slot_index]
@@ -231,7 +231,7 @@ def _execute_merged_image_lane(
                             code="RESUME_STATE_MISMATCH",
                             details={"provider_calls_attempted": 0},
                         ) from None
-                    slot_failures: list[dict[str, int | str]] = []
+                    slot_failures: list[dict[str, object]] = []
                     for offset in range(len(provider_lane)):
                         if stop.is_set():
                             break
@@ -277,6 +277,8 @@ def _execute_merged_image_lane(
                                     "model": provider.model,
                                     "code": error.code,
                                     "description": description,
+                                    **({'details': {'generation_output': error.details['generation_output']}}
+                                       if 'generation_output' in error.details else {}),
                                 }
                             )
                             continue
@@ -321,6 +323,10 @@ def _execute_merged_image_lane(
                         provider_failures.extend(slot_failures)
                         last_success_index = provider_index
                         break
+                    else:
+                        # Terminal failures already have failed_slots. Retain their
+                        # opt-in output evidence too, without widening default metadata.
+                        provider_failures.extend(f for f in slot_failures if 'details' in f)
         return tuple(provider_failures)
     except BaseException:
         stop.set()

@@ -26,7 +26,7 @@ def finalize_merged_image_result(
     current_usage: tuple[ProviderModelUsage, ...],
     historical_usage: tuple[ProviderModelUsage, ...],
     reused_slot_count: int,
-    provider_failures: tuple[dict[str, int | str], ...],
+    provider_failures: tuple[dict[str, object], ...],
     overwrite: bool,
 ) -> RecognitionResult:
     """Publish complete/partial Markdown or raise when no slot settled."""
@@ -48,6 +48,7 @@ def finalize_merged_image_result(
             "No provider candidate could settle any merged-image slot.",
             details={
                 "failed_slots": failed_slots,
+                **({'provider_failures': provider_failures} if provider_failures else {}),
                 "provider_calls_attempted": current_calls,
                 "current_provider_model_usage": provider_model_usage_documents(
                     current_usage
@@ -60,7 +61,8 @@ def finalize_merged_image_result(
     warnings: list[str] = []
     if provider_failures:
         warnings.append(
-            "Recognition completed after one or more provider candidates failed."
+            "One or more provider candidates failed." if any('details' in f for f in provider_failures)
+            else "Recognition completed after one or more provider candidates failed."
         )
     if state.provider_cleanup_failed:
         warnings.append(

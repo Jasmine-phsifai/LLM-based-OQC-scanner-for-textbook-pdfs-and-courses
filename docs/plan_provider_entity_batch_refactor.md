@@ -13,6 +13,16 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-10 rejected OCR output explicitly requested
+
+The maintainer requested original output in token-limit error details to distinguish
+excess reasoning, repetition and unfinished board transcription. Compatible settings
+now offer `capture_error_output=False` (opt-in). Only the structured generation-output
+fields are copied; generic error messages/headers remain redacted. Merged image
+results and all-candidate errors retain opted-in terminal diagnostic evidence.
+Checkpoint schemas, resume plans and success criteria are unchanged. Model Lab owns
+the durable raw backend-response artifact. Verification: `tools/verify_ocr_error_output.py`.
+
 The maintainer has now authorized migration to begin. Authorization advances
 only the next independently verifiable slice in the sequence below; it does not
 authorize building later topology, compatibility wrappers, or unused framework

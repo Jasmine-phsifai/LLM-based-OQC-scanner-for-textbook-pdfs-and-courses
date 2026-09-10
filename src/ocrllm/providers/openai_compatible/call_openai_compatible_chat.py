@@ -70,6 +70,7 @@ def call_openai_compatible_chat(
                 openai_module=openai_module,
                 vendor=vendor,
                 model=model,
+                capture_error_output=settings.capture_error_output,
             )
         )
         if "provider_calls_attempted" not in public_error.details:

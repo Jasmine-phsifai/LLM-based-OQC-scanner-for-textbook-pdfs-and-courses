@@ -24,10 +24,11 @@ def map_openai_compatible_error(
     openai_module: object | None,
     vendor: str,
     model: str,
+    capture_error_output: bool = False,
 ) -> OCRLLMError:
     """Return one redacted canonical error from shared SDK/HTTP evidence."""
     status = _safe_integer_attribute(error, "status_code")
-    details: dict[str, str | int] = {"provider": vendor, "model": model}
+    details: dict[str, object] = {"provider": vendor, "model": model}
     if status is not None:
         details["http_status"] = status
     provider_code = _extract_provider_code(error)
@@ -36,6 +37,14 @@ def map_openai_compatible_error(
     request_id = _safe_text_attribute(error, "request_id")
     if request_id is not None:
         details["request_id"] = request_id
+    if capture_error_output and provider_code == 'output_token_limit':
+        output = _extract_generation_output(error)
+        if output is not None:
+            details['generation_output'] = output
+            usage = output.get('usage', {})
+            for name, key in (('input_tokens', 'prompt_tokens'), ('output_tokens', 'completion_tokens')):
+                if key in usage:
+                    details[name] = usage[key]
 
     if _is_sdk_error(error, openai_module, "APITimeoutError") or isinstance(
         error, TimeoutError
@@ -158,3 +167,39 @@ def _extract_provider_code(error: Exception) -> str | None:
 
 def _nested_error_code(value: object) -> object:
     return value.get("code") if type(value) is dict else None
+
+
+def _extract_generation_output(error: Exception) -> dict | None:
+    """Opt-in output evidence only: never copy generic error bodies or headers."""
+    try:
+        body = getattr(error, 'body', None)
+    except Exception:
+        return None
+    if type(body) is not dict:
+        return None
+    body = body.get('error', body)
+    if type(body) is not dict or type(body.get('details')) is not dict:
+        return None
+    value = body['details'].get('generation_output')
+    if type(value) is not dict:
+        return None
+    output = {}
+    message = value.get('message')
+    if type(message) is dict:
+        output['message'] = {k: message[k] for k in ('content', 'reasoning_content', 'reasoning')
+                             if k in message and (message[k] is None or type(message[k]) is str)}
+    elif message is None:
+        output['message'] = None
+    for key in ('finish_reason', 'artifact_path', 'artifact_error'):
+        if type(value.get(key)) is str:
+            output[key] = value[key]
+    if type(value.get('artifact_saved')) is bool:
+        output['artifact_saved'] = value['artifact_saved']
+    for key in ('context_tokens', 'max_output_tokens'):
+        if type(value.get(key)) is int and value[key] >= 0:
+            output[key] = value[key]
+    usage = value.get('usage')
+    output['usage'] = ({k: usage[k] for k in ('prompt_tokens', 'completion_tokens', 'total_tokens')
+                        if type(usage.get(k)) is int and usage[k] >= 0}
+                       if type(usage) is dict else {})
+    return output
