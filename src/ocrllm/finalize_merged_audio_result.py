@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .observe_recognition import observed_stage
+
 from pathlib import Path
 from dataclasses import replace
 
@@ -19,6 +21,7 @@ from .provider_model_usage import (
 from .result import RecognitionResult
 
 
+@observed_stage('markdown', 'asr')
 def finalize_merged_audio_result(
     state: MergedAudioResumeState,
     *,

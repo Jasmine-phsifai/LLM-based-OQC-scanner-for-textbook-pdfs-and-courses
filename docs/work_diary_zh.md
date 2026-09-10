@@ -10029,3 +10029,7 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 真实FFmpeg媒体+真实SDK合成HTTP场景验证阈值拒绝/接受、成功/无语音保留、旧状态迁移、4类非资格错误、第二次cap持久化后中断仅余一次、不同错误清零、接受后零调用恢复/重建；首次fixture未配置合法default_audio_minutes，在HTTP前拒绝，纠正后场景全过。62项既有相关回归通过。D004真实60秒缺口只读准备复用原计划校验；world五缺口约9.2%仅摘要，未发模型。真实D trial需统筹协调窗口，当前不宣称已接受或恢复。Carry-forward judgement：认可少量缺失是显式质量决策，须区分无缺完成；识别尝试与容限判定留责任库，统筹只配置阈值、读取公开结果。
 
 **#730 真实D004试点收尾。** 519989e公开resume真实发3次新请求，均output_token_limit，wall560.826秒；没有补回可靠转写。调用方5%/120s策略接受60秒/0.61257%为complete_with_gaps，原26个settled叶逐字段完全保留，源hash不变，MD精确FAIL9180–9240s且保留三次证据sidecar。只读复核两个公开inspect均为容缺终态，成品与state hash匹配result.json。world596.14秒/9.20517%超阈值仅inspect，state hash不变。本次仅文档收尾，无新模型调用、状态修改或重复测试；服务/生产恢复证据归统筹。Carry-forward judgement：本次证明有界缺口策略和成功结果保留，不将接受缺口写成识别恢复成功。
+
+**#731 2026-09-09 公开opt-in课程观测。** 用户授权监控计划后，新增observation_context(path或sink,lecture_id,runtime_version)，默认无输出。责任库从原计划/实际HTTP边界/原校验/耐久checkpoint输出JSONL，固定worker传播context，原始与派生父子区间、重试失败/复用/新合法单位分明；准备/MD阶段和容缺摘要不要求统筹解析state。兼容请求只计客户端实际发起，模型执行未知；无凭据、endpoint、正文、prompt，sink异常仅记类型不影响识别。原校验、retry、gap策略和checkpoint格式未改。
+
+48既有image/audio/import回归通过。真实JPEG/MP3+真实SDK合成HTTP场景10观测请求=2新帧/61新源秒/6失败，3复用单位新增为0，额外1call验证坏sink隔离；两worker上下文、request ID、父子关系、NOSPEECH及accepted零调用恢复通过。初始scenario的retry label和course_ocr capability配置错误均在HTTP前被拒，纠正fixture后完成，不隐去失败准备。未发真实模型/重启生产。Carry-forward judgement：HTTP尝试、校验接受、checkpoint持久化和模型执行是不同事实；监控汇总不能把复用或传播事件重复当新增吞吐。

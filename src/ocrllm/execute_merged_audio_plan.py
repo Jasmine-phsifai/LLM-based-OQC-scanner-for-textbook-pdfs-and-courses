@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from contextvars import copy_context
+from .observation_context import emit
+from .observe_recognition import observed_execution, observed_audio_unit, audio_unit, unit_result
+
 import hashlib
 import json
 
@@ -41,6 +45,7 @@ from .providers.provider_model import ProviderModel
 from .providers.recognize_provider_model_audio import recognize_provider_model_audio
 
 
+@observed_execution('asr')
 def execute_merged_audio_plan(
     state: MergedAudioResumeState,
     snapshot: LongMP3Snapshot,
@@ -100,6 +105,7 @@ def execute_merged_audio_plan(
         ) as executor:
             futures = tuple(
                 executor.submit(
+                    copy_context().run,
                     _execute_merged_audio_lane,
                     state,
                     snapshot,
@@ -195,7 +201,10 @@ class _MergedAudioStateOwner:
                 return None
             save_merged_audio_resume_state_atomically(self._state_path, updated)
             self._state = updated
-            return updated.slots[index]
+            parent = updated.slots[index]
+            for child in parent.subslots:
+                emit('plan', **audio_unit(child, parent=parent, source_id=updated.source.sha256), plan_role='derived_unit', status=child.status)
+            return parent
 
     def current_call_count(self) -> int:
         with self._lock:
@@ -289,6 +298,7 @@ def _execute_merged_audio_lane(
         raise
 
 
+@observed_audio_unit
 def _execute_audio_slot(
     slot: MergedAudioSlot, request_snapshot: LongMP3Snapshot, *, provider_lane,
     start_index, prompt, request_kind, timeout_seconds, owner, stop,
@@ -459,6 +469,8 @@ def _checkpoint_outcome(
             sum(row.calls for row in current_usage),
         )
         raise
+    if not outcome.subslots:
+        unit_result(outcome)
     return updated, current_usage
 
 
@@ -489,6 +501,7 @@ class _MergedAudioSubslotOwner:
             self.parent = replace(self.parent, error_code=outcome.error_code,
                                   error_description=outcome.error_description)
         self.owner.checkpoint(self.parent, **usage)
+        unit_result(outcome)
 
 
 def _execute_audio_subslots(parent, snapshot, *, provider_lane, start_index,

@@ -11,6 +11,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+from ..observe_recognition import observation_stage, audio_unit
 from ..errors import DependencyMissing, InvalidSource, OCRLLMError, OutputError
 from .build_long_audio_interval_windows import LongAudioIntervalWindow
 from .load_audio_ffmpeg_executable import load_audio_ffmpeg_executable
@@ -34,16 +35,17 @@ def materialize_long_audio_interval(
     segment_path = _create_interval_path(source.parent, index=window.index)
     primary_error: BaseException | None = None
     try:
-        _run_interval_ffmpeg(
-            executable,
-            source_path=source,
-            segment_path=segment_path,
-            start_seconds=window.actual_start_seconds,
-            duration_seconds=(
-                window.actual_end_seconds - window.actual_start_seconds
-            ),
-        )
-        _require_nonempty_interval(segment_path)
+        with observation_stage('prepare_audio_clip', **audio_unit(window)):
+            _run_interval_ffmpeg(
+                executable,
+                source_path=source,
+                segment_path=segment_path,
+                start_seconds=window.actual_start_seconds,
+                duration_seconds=(
+                    window.actual_end_seconds - window.actual_start_seconds
+                ),
+            )
+            _require_nonempty_interval(segment_path)
         yield segment_path
     except BaseException as error:
         primary_error = error

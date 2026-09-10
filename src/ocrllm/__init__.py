@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 # submodules and replace these public package attributes.
 from .bounded_transient_retry_rules import bounded_transient_retry_rules as bounded_transient_retry_rules
 from .inspect_markdown_job import inspect_markdown_job as inspect_markdown_job
+from .observation_context import observation_context
 from .audio_gap_policy import AudioGapPolicy as AudioGapPolicy
 from .inspect_audio_completion import inspect_audio_completion as inspect_audio_completion
 from .select_extracted_frames import select_extracted_frames as select_extracted_frames
@@ -200,6 +201,7 @@ __all__ = [
     "batchify_images",
     "select_extracted_frames",
     "inspect_markdown_job",
+    "observation_context",
     "AudioGapPolicy",
     "inspect_audio_completion",
     "bounded_transient_retry_rules",

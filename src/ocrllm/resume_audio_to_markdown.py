@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .observe_recognition import observed_stage
+
 from pathlib import Path
 
 from .audio_slice import AudioSlice
@@ -10,6 +12,7 @@ from .providers.provider_model import ProviderModel
 from .result import RecognitionResult
 
 
+@observed_stage('resume', 'asr')
 def resume_audio_to_markdown(
     slices: tuple[AudioSlice, ...],
     *,

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from .observe_recognition import observed_stage
+
 from pathlib import Path
 
 from .providers.provider_model import ProviderModel
 from .result import RecognitionResult
 
 
+@observed_stage('resume', 'ocr')
 def resume_images_to_markdown(
     batches: tuple[tuple[str | Path, ...], ...],
     *,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .observe_recognition import observed_stage
+
 from pathlib import Path
 
 from .audio.build_long_audio_interval_windows import (
@@ -14,6 +16,7 @@ from .normalize_provider_model_lanes import normalize_provider_model_lanes
 from .providers.provider_model import ProviderModel
 
 
+@observed_stage('prepare_audio_plan', 'asr')
 def split_audio(
     source: str | Path,
     *,

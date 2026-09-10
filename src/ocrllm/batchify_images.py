@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .observe_recognition import observed_stage
+
 from pathlib import Path
 
 from .errors import ConfigError, InvalidSource
@@ -10,6 +12,7 @@ from .providers.provider_model import ProviderModel
 from .validate_image_group import validate_image_group
 
 
+@observed_stage('prepare_image_batches', 'ocr')
 def batchify_images(
     sources: tuple[str | Path, ...],
     *,

@@ -19,6 +19,16 @@ authorize building later topology, compatibility wrappers, or unused framework
 pieces in advance. Historical questions below remain the reasoning trail; this
 section alone is the current decision and execution board.
 
+### #731 — 2026-09-09 authorized course monitoring observations
+
+The maintainer authorized owner instrumentation for the monitoring plan. The
+public opt-in observation_context emits the cross-repo JSONL envelope around
+existing preparation/recognize/resume APIs. Plans, HTTP attempts, durable
+results/reuse, derived audio units and Markdown summaries remain OCRLLM facts.
+No validation, retry or gap-policy behavior changes. Native-provider HTTP detail
+remains unavailable; no request is falsely counted as model execution. See local
+integration documentation and the real-media/synthetic-HTTP scenario evidence.
+
 ### #730 — 2026-09-09 bounded audio gaps explicitly authorized
 
 Caller-supplied AudioGapPolicy owns no default threshold. OCRLLM persists at

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from ..observe_provider_attempt import observed_provider_attempt
+
 import time
 from collections.abc import Callable
 from typing import TypeVar
@@ -34,7 +36,11 @@ def call_provider_model_with_retries(
     while True:
         attempts += 1
         try:
-            response = call()
+            with observed_provider_attempt(provider) as observation:
+                response = call()
+                if observation is not None:
+                    observation.update(input_tokens=getattr(response, 'input_tokens', None),
+                                       output_tokens=getattr(response, 'output_tokens', None))
             return ProviderModelCallResult(
                 response=response,
                 calls=total_calls + 1,

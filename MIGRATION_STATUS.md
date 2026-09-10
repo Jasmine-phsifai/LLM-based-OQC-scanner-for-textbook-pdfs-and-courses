@@ -9,6 +9,12 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 Last synchronized: 2026-09-09.
 
+The caller-opted `observation_context` now exposes owner JSONL plans, compatible
+HTTP attempts, durable reuse/results and preparation/Markdown stages. Defaults,
+recognition validation, retries and checkpoint formats are unchanged. See the
+observation section in local_model_service_integration.md for timing/counting
+semantics and synthetic-HTTP evidence; deployment is owned by the consumer.
+
 The explicit compatible audio setting `audio_response_validation="visible_text"`
 now skips only natural-language refusal phrases while retaining Unicode visible
 text, NOSPEECH and structural response checks. Default `"markdown"` and the

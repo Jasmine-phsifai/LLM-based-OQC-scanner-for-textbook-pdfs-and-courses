@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from contextvars import copy_context
+from .observation_context import observation_fields
+from .observe_recognition import observed_execution, image_unit, unit_result
+
 import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
@@ -37,6 +41,7 @@ from .providers.recognize_provider_model_images import (
 from .providers.vision_provider_response import VisionProviderResponse
 
 
+@observed_execution('ocr')
 def execute_merged_image_plan(
     state: MergedImageResumeState,
     batches: tuple[tuple[Path, ...], ...],
@@ -96,6 +101,7 @@ def execute_merged_image_plan(
         ) as executor:
             futures = tuple(
                 executor.submit(
+                    copy_context().run,
                     _execute_merged_image_lane,
                     state,
                     batches,
@@ -213,107 +219,108 @@ def _execute_merged_image_lane(
                 if initial_state.image_task == "course_ocr"
                 else prompt
             )
-            with snapshot_image_group(batch, config=Config()) as snapshots:
-                actual_sources = fingerprint_image_sources(batch, snapshots)
-                expected_sources = tuple(
-                    initial_state.sources[index] for index in slot.source_indexes
-                )
-                if actual_sources != expected_sources:
-                    raise ResumeStateError(
-                        "An image source changed after the merged plan was validated.",
-                        code="RESUME_STATE_MISMATCH",
-                        details={"provider_calls_attempted": 0},
-                    ) from None
-                slot_failures: list[dict[str, int | str]] = []
-                for offset in range(len(provider_lane)):
-                    if stop.is_set():
-                        break
-                    provider_index = (
-                        last_success_index + offset
-                    ) % len(provider_lane)
-                    provider = provider_lane[provider_index]
-                    try:
-                        call_result = call_provider_model_with_retries(
-                            provider,
-                            lambda: recognize_provider_model_images(
+            with observation_fields(**image_unit(slot, initial_state)):
+                with snapshot_image_group(batch, config=Config()) as snapshots:
+                    actual_sources = fingerprint_image_sources(batch, snapshots)
+                    expected_sources = tuple(
+                        initial_state.sources[index] for index in slot.source_indexes
+                    )
+                    if actual_sources != expected_sources:
+                        raise ResumeStateError(
+                            "An image source changed after the merged plan was validated.",
+                            code="RESUME_STATE_MISMATCH",
+                            details={"provider_calls_attempted": 0},
+                        ) from None
+                    slot_failures: list[dict[str, int | str]] = []
+                    for offset in range(len(provider_lane)):
+                        if stop.is_set():
+                            break
+                        provider_index = (
+                            last_success_index + offset
+                        ) % len(provider_lane)
+                        provider = provider_lane[provider_index]
+                        try:
+                            call_result = call_provider_model_with_retries(
                                 provider,
-                                snapshots,
-                                prompt=batch_prompt,
-                                timeout_seconds=timeout_seconds,
-                            ),
-                        )
-                        response = call_result.response
-                    except ProviderError as error:
-                        calls, input_tokens, output_tokens = provider_failure_usage(error)
-                        description = bounded_provider_failure_description(error)
-                        failed_slot = MergedImageSlot(
+                                lambda: recognize_provider_model_images(
+                                    provider,
+                                    snapshots,
+                                    prompt=batch_prompt,
+                                    timeout_seconds=timeout_seconds,
+                                ),
+                            )
+                            response = call_result.response
+                        except ProviderError as error:
+                            calls, input_tokens, output_tokens = provider_failure_usage(error)
+                            description = bounded_provider_failure_description(error)
+                            failed_slot = MergedImageSlot(
+                                index=slot.index,
+                                source_indexes=slot.source_indexes,
+                                status="failed",
+                                vendor=provider.vendor,
+                                model=provider.model,
+                                error_code=error.code,
+                                error_description=description,
+                            )
+                            owner.checkpoint(
+                                failed_slot,
+                                provider=provider,
+                                calls=calls,
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens,
+                                cleanup_failed=provider_cleanup_failed(error),
+                            )
+                            slot_failures.append(
+                                {
+                                    "slot_index": slot.index,
+                                    "vendor": provider.vendor,
+                                    "model": provider.model,
+                                    "code": error.code,
+                                    "description": description,
+                                }
+                            )
+                            continue
+
+                        if type(response) is VisionProviderResponse:
+                            markdown = response.markdown
+                            input_tokens = response.input_tokens
+                            output_tokens = response.output_tokens
+                            cleanup_failed = not response.client_closed
+                        else:
+                            markdown = response
+                            input_tokens = None
+                            output_tokens = None
+                            cleanup_failed = False
+                        settled_slot = MergedImageSlot(
                             index=slot.index,
                             source_indexes=slot.source_indexes,
-                            status="failed",
+                            status="settled",
+                            markdown=markdown,
+                            markdown_sha256=hashlib.sha256(
+                                markdown.encode("utf-8")
+                            ).hexdigest(),
                             vendor=provider.vendor,
                             model=provider.model,
-                            error_code=error.code,
-                            error_description=description,
                         )
                         owner.checkpoint(
-                            failed_slot,
+                            settled_slot,
                             provider=provider,
-                            calls=calls,
-                            input_tokens=input_tokens,
-                            output_tokens=output_tokens,
-                            cleanup_failed=provider_cleanup_failed(error),
+                            calls=call_result.calls,
+                            input_tokens=_add_known(
+                                call_result.failed_input_tokens,
+                                input_tokens,
+                            ),
+                            output_tokens=_add_known(
+                                call_result.failed_output_tokens,
+                                output_tokens,
+                            ),
+                            cleanup_failed=(
+                                call_result.prior_cleanup_failed or cleanup_failed
+                            ),
                         )
-                        slot_failures.append(
-                            {
-                                "slot_index": slot.index,
-                                "vendor": provider.vendor,
-                                "model": provider.model,
-                                "code": error.code,
-                                "description": description,
-                            }
-                        )
-                        continue
-
-                    if type(response) is VisionProviderResponse:
-                        markdown = response.markdown
-                        input_tokens = response.input_tokens
-                        output_tokens = response.output_tokens
-                        cleanup_failed = not response.client_closed
-                    else:
-                        markdown = response
-                        input_tokens = None
-                        output_tokens = None
-                        cleanup_failed = False
-                    settled_slot = MergedImageSlot(
-                        index=slot.index,
-                        source_indexes=slot.source_indexes,
-                        status="settled",
-                        markdown=markdown,
-                        markdown_sha256=hashlib.sha256(
-                            markdown.encode("utf-8")
-                        ).hexdigest(),
-                        vendor=provider.vendor,
-                        model=provider.model,
-                    )
-                    owner.checkpoint(
-                        settled_slot,
-                        provider=provider,
-                        calls=call_result.calls,
-                        input_tokens=_add_known(
-                            call_result.failed_input_tokens,
-                            input_tokens,
-                        ),
-                        output_tokens=_add_known(
-                            call_result.failed_output_tokens,
-                            output_tokens,
-                        ),
-                        cleanup_failed=(
-                            call_result.prior_cleanup_failed or cleanup_failed
-                        ),
-                    )
-                    provider_failures.extend(slot_failures)
-                    last_success_index = provider_index
-                    break
+                        provider_failures.extend(slot_failures)
+                        last_success_index = provider_index
+                        break
         return tuple(provider_failures)
     except BaseException:
         stop.set()
@@ -365,6 +372,7 @@ def _checkpoint_outcome(
             sum(row.calls for row in current_usage),
         )
         raise
+    unit_result(outcome)
     return updated, current_usage
 
 

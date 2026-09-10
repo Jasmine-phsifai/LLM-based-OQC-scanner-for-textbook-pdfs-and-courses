@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from ...observe_provider_attempt import mark_http_started, mark_request_id
+from .parse_openai_compatible_chat_response import _safe_response_request_id
+
 from dataclasses import dataclass, field
 from types import ModuleType
 from typing import Any
@@ -55,7 +58,9 @@ def call_openai_compatible_chat(
         if not callable(create):
             raise TypeError
         generation_started = True
+        mark_http_started()
         raw_response = create(**request_kwargs)
+        mark_request_id(_safe_response_request_id(raw_response))
     except Exception as error:
         public_error = (
             error

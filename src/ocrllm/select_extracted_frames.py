@@ -1,11 +1,14 @@
 """Select existing complete JPEG frames without owning their publication."""
 from __future__ import annotations
 
+from .observe_recognition import observed_stage
+
 import math
 
 from .retained_video_frame import RetainedVideoFrame
 
 
+@observed_stage('select_frames', 'ocr')
 def select_extracted_frames(
     frames: tuple[RetainedVideoFrame, ...], *, duration_seconds: float,
 ) -> tuple[RetainedVideoFrame, ...]:

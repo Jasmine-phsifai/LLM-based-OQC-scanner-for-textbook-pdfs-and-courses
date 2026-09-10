@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .observe_recognition import observe_plan
+
 from pathlib import Path
 from dataclasses import replace
 
@@ -104,6 +106,7 @@ def run_merged_audio_job(
                 _validate_resume_plan(state, requested_state)
                 historical_usage = state.usage
                 if state.accepted_with_gaps:
+                    observe_plan(state, "asr")
                     return finalize_merged_audio_result(
                         state, output_path=resolved_output_path, state_path=state_path,
                         current_usage=(), historical_usage=historical_usage,

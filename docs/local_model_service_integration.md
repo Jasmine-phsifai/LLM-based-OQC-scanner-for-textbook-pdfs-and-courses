@@ -233,3 +233,73 @@ comparison and public summaries):
 `/mnt/r/course-pipeline-state/validation/audio-gap-policy-20260909/owner-trial/result.json`.
 This documentation review made no model requests or state changes. Production
 lifecycle and publication reconciliation remain recorded by the orchestrator.
+
+## Opt-in owner observations (2026-09-09)
+
+Wrap public preparation and merged recognize/resume calls with:
+
+```python
+from ocrllm import observation_context
+with observation_context(
+    path="/mnt/r/course-pipeline-state/observations/ocrllm/events.jsonl",
+    lecture_id=lecture_id,
+    runtime_version=loaded_ocrllm_version,
+):
+    # Existing select/batchify/split and recognize/resume calls, unchanged.
+    ...
+```
+
+The path is a caller choice, not a library default. Alternatively supply
+`sink=callable` instead of `path`; it receives one envelope dict and should
+return promptly. Default callers emit nothing. File output is UTF-8 JSONL,
+`schema_version="course-observation/v1"`, `owner="ocrllm"`, unique event and
+process-instance IDs, UTC timestamps, optional caller lecture/runtime identity.
+Each line is flushed by closing its append stream; writes from the current
+worker lanes are serialized. This does not promise power-loss fsync or locking
+between independent processes: those callers should select separate files.
+Sink failures log only their exception type to `ocrllm.observation` and leave
+recognition unchanged; a service caller should retain its normal diagnostic log.
+No credential, endpoint, signed URL, prompt or response body is emitted.
+
+`plan` gives original batch/segment totals and stable unit IDs, source images or
+source-time ranges, saved status and derived parent/child relationships.
+`unit_result` reports durable checkpoint acceptance, failure or reuse; reused
+units have zero `valid_units` and separate `reused_units`. Accepted audio terminal
+resume still emits its retained plan and reused successes without requesting a
+model. Preparation, recognition/resume and Markdown have paired stage events;
+Markdown completion includes frame counts or actual failed audio seconds and
+ranges, preserving `complete_with_gaps` explicitly. Plans and unit results are
+observations of the owner's existing state, not a second checkpoint format.
+
+For the current OpenAI-compatible route, `attempt_started` occurs immediately
+before the SDK HTTP call (SDK retries remain disabled). Matching
+`attempt_finished` follows existing response validation/client cleanup. It
+includes elapsed monotonic seconds, safe server request ID when supplied,
+canonical/provider error codes, exact-or-unknown token counts and new valid
+frames or logical source seconds. Valid NOSPEECH counts as successful source
+coverage. Every failed/cancelled attempt contributes zero; retries get distinct
+attempt IDs. A transport attempt does not prove model execution, so
+`model_execution_count` is null. Native-provider HTTP boundaries are not yet
+instrumented and must not be fabricated from their stage summaries.
+
+Throughput consumers count successful `attempt_finished.valid_units` only;
+`unit_result` confirms persistence and must not be added again. Attempt acceptance
+means the unchanged provider validator passed; a later output-write failure
+remains a separate owner error. Durable unit IDs allow subsequent observations
+to be reconciled without parsing private state. A killed process may leave an
+unmatched start: the observation does not invent its terminal result.
+Client attempt time includes server work and validation; outer recognition time
+also includes preparation, retry waits and Markdown. Clip preparation excludes
+inference. These nested/parallel times must not be summed as exclusive wall.
+
+`tools/verify_course_observations.py` exercised real JPEG/MP3 media and SDK calls
+against synthetic HTTP, including two worker lanes, a transient retry, failed
+image resume, audio subdivision, three cap failures, NOSPEECH, accepted-terminal
+reuse and a failing sink. Ten observed HTTP attempts accounted for two new
+frames, 61 new source seconds, six failures and three reused logical units;
+a separate eleventh call proved sink failure cannot block recognition. Request
+IDs, matching starts/ends, derived units and body exclusion were verified.
+Evidence: `/mnt/r/course-pipeline-state/validation/ocrllm-observations-scenario-final/result.json`.
+The 48 existing merged-image/audio/import tests passed. This is observation
+contract evidence using synthetic HTTP, not a production deployment or new model
+quality measurement; the live consumer was not restarted by this slice.

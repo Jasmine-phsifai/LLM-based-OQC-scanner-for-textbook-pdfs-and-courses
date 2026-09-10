@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .observe_recognition import observed_stage
+
 from pathlib import Path
 
 from .compose_merged_image_markdown import compose_merged_image_markdown
@@ -15,6 +17,7 @@ from .provider_model_usage import (
 from .result import RecognitionResult
 
 
+@observed_stage('markdown', 'ocr')
 def finalize_merged_image_result(
     state: MergedImageResumeState,
     *,
