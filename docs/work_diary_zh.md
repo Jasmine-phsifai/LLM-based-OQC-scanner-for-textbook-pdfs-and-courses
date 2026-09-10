@@ -10033,3 +10033,5 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 **#731 2026-09-09 公开opt-in课程观测。** 用户授权监控计划后，新增observation_context(path或sink,lecture_id,runtime_version)，默认无输出。责任库从原计划/实际HTTP边界/原校验/耐久checkpoint输出JSONL，固定worker传播context，原始与派生父子区间、重试失败/复用/新合法单位分明；准备/MD阶段和容缺摘要不要求统筹解析state。兼容请求只计客户端实际发起，模型执行未知；无凭据、endpoint、正文、prompt，sink异常仅记类型不影响识别。原校验、retry、gap策略和checkpoint格式未改。
 
 48既有image/audio/import回归通过。真实JPEG/MP3+真实SDK合成HTTP场景10观测请求=2新帧/61新源秒/6失败，3复用单位新增为0，额外1call验证坏sink隔离；两worker上下文、request ID、父子关系、NOSPEECH及accepted零调用恢复通过。初始scenario的retry label和course_ocr capability配置错误均在HTTP前被拒，纠正fixture后完成，不隐去失败准备。未发真实模型/重启生产。Carry-forward judgement：HTTP尝试、校验接受、checkpoint持久化和模型执行是不同事实；监控汇总不能把复用或传播事件重复当新增吞吐。
+
+**#731 观测身份对账补充。** 统筹要求明确跨resume身份/覆盖并集契约，文档补图片source SHA+原index组、音频source SHA+logical区间的稳定ID；实际输入边界上下文不算新增源秒。只读核查最终scenario三条复用ID均匹配先前成功请求，无新调用或重跑测试。Carry-forward judgement：保留全部尝试工时，同时按稳定单位/公开logical区间去重新增内容，不能把模型重复完成当重复生产。

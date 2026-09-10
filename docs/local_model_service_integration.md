@@ -303,3 +303,18 @@ Evidence: `/mnt/r/course-pipeline-state/validation/ocrllm-observations-scenario-
 The 48 existing merged-image/audio/import tests passed. This is observation
 contract evidence using synthetic HTTP, not a production deployment or new model
 quality measurement; the live consumer was not restarted by this slice.
+
+Logical unit identity is stable across ordinary resume of the validated original
+plan: image IDs derive from ordered source SHA-256/index pairs in that batch;
+audio IDs derive from source SHA-256 plus logical start/end seconds. Repeated
+requests for the same unit keep that ID while receiving distinct attempt IDs.
+Count new accepted content once per lecture/task/logical unit, retaining all
+attempt times and failures; use durable unit results to distinguish checkpoint
+persistence from provider acceptance and Markdown delivery. For audio, original
+and derived units additionally expose `source_start_seconds` and
+`source_end_seconds` in the same source timeline, and `parent_unit_id` links
+children. A consumer may union these owner-provided logical intervals to avoid
+overlapping coverage; `actual_*` includes request boundary context and is not
+additional unique content. This requires no private checkpoint parsing. Read-only
+review of the scenario JSONL confirmed all three resumed reused IDs match their
+prior successful attempt IDs.
