@@ -55,6 +55,7 @@ def run_merged_audio_job(
     audio_gap_policy: AudioGapPolicy | None = None,
     audio_output_limit_policy: AudioOutputLimitPolicy | None = None,
     only_output_limit: bool = False,
+    stop_requested: object | None = None,
 ) -> RecognitionResult:
     """Validate, snapshot, settle, checkpoint, and publish one audio plan."""
     if audio_gap_policy is not None and type(audio_gap_policy) is not AudioGapPolicy:
@@ -79,7 +80,7 @@ def run_merged_audio_job(
     ):
         validate_audio_provider_model(candidate)
     slices = normalize_audio_slices(slices)
-    Config(timeout_seconds=timeout_seconds, overwrite=overwrite)
+    Config(timeout_seconds=timeout_seconds, overwrite=overwrite, cancellation=stop_requested)
     source_path = slices[0].source
     resolved_output_path = resolve_merged_audio_output_path(
         source_path,
@@ -159,6 +160,7 @@ def run_merged_audio_job(
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,
                 failed_slice_minutes=failed_slice_minutes,
+                stop_requested=stop_requested,
             )
             return finalize_merged_audio_result(
                 state,

@@ -9,6 +9,12 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 Last synchronized: 2026-09-13.
 
+The four merged recognize/resume APIs now accept caller `stop_requested` signals.
+They drain admitted requests into the existing checkpoint and then acknowledge
+`Cancelled` with `safe_stop=True`; they do not cancel in-flight HTTP. ASR binary
+reservations and successful work survive ordinary resume. See
+[the owner contract and verification](docs/cooperative_safe_stop_2026-09-13.md).
+
 Explicit AudioOutputLimitPolicy adds bounded binary ASR recovery in v4 while
 keeping old checkpoints readable. Public inspect_audio_completion can evaluate real cap-recovery candidates without
 mutation, including pending derived leaves with retained ancestor cap evidence.

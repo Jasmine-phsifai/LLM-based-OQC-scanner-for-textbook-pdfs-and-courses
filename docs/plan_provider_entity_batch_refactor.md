@@ -13,6 +13,16 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-13 safe stop/continue explicitly requested
+
+The user requested a one-click orchestrator stop/continue control that waits for
+current image/audio work to reach disk. The four merged APIs accept an opt-in
+Event-compatible `stop_requested`; existing owner lanes drain provider outcomes
+before acknowledging `Cancelled` with safe-stop details. No new worker protocol,
+checkpoint schema or provider lifecycle is added. See
+[owner contract and scenario](cooperative_safe_stop_2026-09-13.md); production
+control and its real stop/continue verification stay with the orchestrator.
+
 ### 2026-09-13 bounded binary ASR recovery explicitly requested
 
 The maintainer confirmed an initial request plus at most two retries per range,

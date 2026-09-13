@@ -21,6 +21,7 @@ def resume_images_to_markdown(
     ),
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
+    stop_requested: object | None = None,
 ) -> RecognitionResult:
     """Restore the saved task/plan and dispatch only unresolved batches."""
     from .build_merged_image_resume_state import build_merged_image_resume_state
@@ -55,7 +56,7 @@ def resume_images_to_markdown(
             output_path=output_path,
         )
         state_path = resolve_resume_state_path(resolved_output_path)
-        Config(timeout_seconds=timeout_seconds)
+        Config(timeout_seconds=timeout_seconds, cancellation=stop_requested)
         with OutputTargetClaims() as claims:
             claims.claim(resolved_output_path)
             preflight_resumable_markdown_output(
@@ -94,6 +95,7 @@ def resume_images_to_markdown(
                 prompt=prompt,
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,
+                stop_requested=stop_requested,
             )
             return finalize_merged_image_result(
                 state,

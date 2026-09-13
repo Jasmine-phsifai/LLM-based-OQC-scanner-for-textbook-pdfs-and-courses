@@ -8,6 +8,7 @@ import time
 from collections.abc import Callable
 from typing import TypeVar
 
+from ..cooperative_stop import ProviderDispatchStopped
 from ..errors import NoSpeechDetected, OCRLLMError, ProviderError
 from ..provider_failure_evidence import (
     provider_cleanup_failed,
@@ -26,6 +27,7 @@ def call_provider_model_with_retries(
     *,
     max_attempts: int | None = None,
     stop_provider_codes: frozenset[str] = frozenset(),
+    stop_requested=None,
 ) -> ProviderModelCallResult[_ResponseT]:
     """Return one final response plus every finite attempt spent to obtain it."""
     if type(provider) is not ProviderModel or not callable(call):
@@ -38,7 +40,20 @@ def call_provider_model_with_retries(
     total_input_tokens: int | None = 0
     total_output_tokens: int | None = 0
     cleanup_failed = False
+    retry_error: ProviderError | None = None
     while True:
+        # This is the admission boundary, before an audio dispatch reserves its
+        # budget. Once admitted, the call finishes even if the signal changes.
+        if stop_requested is not None and stop_requested.is_set():
+            if retry_error is None:
+                raise ProviderDispatchStopped() from None
+            # The owner must save the last returned error and all spent usage
+            # before it acknowledges a stop. Never discard a completed attempt.
+            _attach_aggregate_error(
+                retry_error, calls=total_calls, input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens, cleanup_failed=cleanup_failed,
+            )
+            raise retry_error
         attempts += 1
         try:
             with observed_provider_attempt(provider) as observation:
@@ -91,8 +106,17 @@ def call_provider_model_with_retries(
                     cleanup_failed=cleanup_failed,
                 )
                 raise
+            retry_error = error
             if wait_seconds:
-                time.sleep(wait_seconds)
+                if stop_requested is None:
+                    time.sleep(wait_seconds)
+                else:
+                    deadline = time.monotonic() + wait_seconds
+                    while not stop_requested.is_set():
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            break
+                        time.sleep(min(0.2, remaining))
         except OCRLLMError:
             raise
 

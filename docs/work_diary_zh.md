@@ -10062,3 +10062,12 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 同轮分类复核：原helper只搜description中的精确码分隔串，虽然当前OpenAI映射使用固定安全消息，仍可能把自由描述中提及的旧码误认成实际错误；已改为只认末尾规范机器码块，并要求PROVIDER_REQUEST_INVALID。新二分、旧only_output_limit路径、gap和只读候选共用判定。六个正反描述探针通过；原真实媒体/合成HTTP超限工具复验通过，不扩展到任何输入context错误。
 
 统筹复核再指出“只剩发布”的任务也需公开资格：已settled/accepted但MD发布或hash保存中断时，没有识别候选不代表没有可完成工作。新增audio_publication_pending，由owner核对MD后给available=true/0候选秒数，不重开模型。扩展场景验证全settled未发布资格，以及v4接受缺口后丢失MD或残留旧partial稿的零推理重建；已有效发布接受缺口仍排除。
+
+
+**2026-09-13 识别责任库 cooperative safe-stop。** 用户要求一键安全停止/继续，允许当前图片/音频段完成落盘。统筹授权最小公开入口后，4 个 merged recognize/resume API 增加可选 `stop_requested`（现有 is_set 布尔信号协议），共享当前固定 lane 的停止信号，不引入 worker/调度框架。检查位于实际 provider 尝试准入前、ASR 预算预留前；准入后即使信号变化仍完成当前请求，不把软停信号传进可能丢弃已返回内容的 adapter。所有 lane 的 success/no-speech/失败先 checkpoint，再以 Cancelled(code=CANCELLED) 明确 safe_stop/resume_available/current_call_count/provider_calls_attempted；观测 stage 记 cancelled，真实失败单元仍记 failed。暂时错误的重试等待被软停打断时，先把最后真实错误与累计 usage 交 owner 保存，不能直接抛 Cancelled 吃掉证据。输出写盘故障优先报真实错误，不假称已安全停止。
+
+现有 ASR 二分 policy 每叶三次预留和深度均跨暂停保持；仅 output_token_limit 二分，非 cap 不分裂。核实 only_output_limit=True 只作用旧 fixed-interval resplit，不会过滤新 policy 尚有预算的暂时错误。OCR/非policy 的普通 resume 本来重新应用 provider 的有限 retry recipe；本次没有扩建通用 provider 重试游标/checkpoint，已明确告诉统筹这与 ASR 持久三次总预算的范围不同。源状态/成功正文/工件引用继续由库持有，统筹只保存自己的暂停意图与次数。
+
+69 项既有 merged image/audio、provider-model 与轻量/public import 测试通过。新增 `tools/verify_cooperative_safe_stop.py` 以真实 PNG、121.375秒 FFmpeg MP3、实际 SDK 和本机合成 HTTP 验证：预先暂停0调用/0预留；OCR和ASR双lane均完成保存后才确认；暂时等待暂停保留错误/usage并原参数继续；最后成功已保存但未发布时0推理续写MD；no-speech先settled；OS replace预留边界收到暂停仍完成已准入请求，不留unknown reservation；三次cap之间分别暂停也不得发第四次；30/15/15秒二级不等长叶和1.375秒尾片复用；二分计划保存后0子预算停止；写盘错误不能冒充安全停止；非法signal结构在请求前拒绝。前两轮场景断在fixture假设零值字段必写入JSON，已改为按既有稀疏序列化读取后全轮通过，未修改产品状态格式。完整结果在 `cooperative-safe-stop-20260913/owner-third/result.json`，由统筹复制到当前工作区文档。
+
+没有调用真实模型、操作生产进程或编辑生产checkpoint；真实一停一启由统筹完成后才可称生产验证通过。Carry-forward judgement：观测事件、HTTP结束与全lane耐久停止是三个不同边界；SIGSTOP/kill不能替代owner确认，软停也不能在预算预留之后取消尚未发出的已准入调用。

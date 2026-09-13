@@ -99,7 +99,8 @@ def observation_stage(stage, task, **fields):
         try:
             yield summary
         except BaseException as error:
-            status = 'failed' if isinstance(error, Exception) else 'cancelled'
+            status = ('cancelled' if getattr(error, 'code', None) == 'CANCELLED'
+                      or not isinstance(error, Exception) else 'failed')
             error_code = getattr(error, 'code', None)
             raise
         finally:

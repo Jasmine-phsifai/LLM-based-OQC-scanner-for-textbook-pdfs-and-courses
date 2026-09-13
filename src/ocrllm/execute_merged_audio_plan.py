@@ -14,7 +14,9 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
-from threading import Event, Lock
+from threading import Lock
+
+from .cooperative_stop import CooperativeStop, ProviderDispatchStopped
 
 from .audio_gap_summary import is_output_limit_failure
 from .audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
@@ -55,6 +57,7 @@ def execute_merged_audio_plan(
     provider_lanes: tuple[tuple[ProviderModel, ...], ...],
     state_path: Path,
     timeout_seconds: float,
+    stop_requested: object | None = None,
     failed_slice_minutes: int | None = None,
 ) -> tuple[
     MergedAudioResumeState,
@@ -76,10 +79,10 @@ def execute_merged_audio_plan(
             )
         )
     )
+    stop = CooperativeStop(stop_requested)
     if not active_lanes:
+        stop.acknowledge(current_call_count=0)
         return state, (), reused_slot_count, ()
-
-    stop = Event()
     owner = _MergedAudioStateOwner(
         state,
         state_path=state_path,
@@ -87,18 +90,21 @@ def execute_merged_audio_plan(
     )
     lane_failures: list[dict[str, int | str]] = []
     if len(active_lanes) == 1:
-        lane_failures.extend(
-            _execute_merged_audio_lane(
-                state,
-                snapshot,
-                lane_index=active_lanes[0],
-                provider_lanes=provider_lanes,
-                timeout_seconds=timeout_seconds,
-                owner=owner,
-                stop=stop,
-                failed_slice_minutes=failed_slice_minutes,
+        try:
+            lane_failures.extend(
+                _execute_merged_audio_lane(
+                    state,
+                    snapshot,
+                    lane_index=active_lanes[0],
+                    provider_lanes=provider_lanes,
+                    timeout_seconds=timeout_seconds,
+                    owner=owner,
+                    stop=stop,
+                    failed_slice_minutes=failed_slice_minutes,
+                )
             )
-        )
+        except ProviderDispatchStopped:
+            pass  # A request gate closed before any new provider call.
     else:
         primary_error: BaseException | None = None
         with ThreadPoolExecutor(
@@ -123,6 +129,8 @@ def execute_merged_audio_plan(
             for future in as_completed(futures):
                 try:
                     lane_failures.extend(future.result())
+                except ProviderDispatchStopped:
+                    pass  # Other lanes still finish and checkpoint admitted calls.
                 except BaseException as error:
                     stop.set()
                     if primary_error is None:
@@ -135,6 +143,7 @@ def execute_merged_audio_plan(
                 )
             raise primary_error
 
+    stop.acknowledge(current_call_count=owner.current_call_count())
     settled_state, current_usage = owner.result()
     provider_failures = tuple(
         sorted(lane_failures, key=lambda row: row["slot_index"])
@@ -245,7 +254,7 @@ def _execute_merged_audio_lane(
     provider_lanes: tuple[tuple[ProviderModel, ...], ...],
     timeout_seconds: float,
     owner: _MergedAudioStateOwner,
-    stop: Event,
+    stop: CooperativeStop,
     failed_slice_minutes: int | None = None,
 ) -> tuple[dict[str, int | str], ...]:
     """Run one fixed audio lane serially with one active clip at a time."""
@@ -383,6 +392,7 @@ def _execute_audio_slot(
             try:
                 call_result = call_provider_model_with_retries(
                     provider, dispatch,
+                    stop_requested=stop if stop.enabled else None,
                     max_attempts=(1 + policy.max_retries-current.recovery_attempts if policy else None),
                     stop_provider_codes=(frozenset({'output_token_limit'}) if policy else frozenset()),
                 )

@@ -22,6 +22,7 @@ def recognize_images_to_markdown(
     image_task: str,
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
+    stop_requested: object | None = None,
     overwrite: bool = False,
 ) -> RecognitionResult:
     """Settle caller-planned batches through fixed provider lanes."""
@@ -62,7 +63,7 @@ def recognize_images_to_markdown(
             candidate for lane in provider_lanes for candidate in lane
         ):
             resolve_merged_image_prompt(candidate, image_task)
-        Config(timeout_seconds=timeout_seconds, overwrite=overwrite)
+        Config(timeout_seconds=timeout_seconds, overwrite=overwrite, cancellation=stop_requested)
         resolved_output_path = resolve_merged_image_output_path(
             normalized_batches,
             output_path=output_path,
@@ -96,6 +97,7 @@ def recognize_images_to_markdown(
                 prompt=prompt,
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,
+                stop_requested=stop_requested,
             )
             return finalize_merged_image_result(
                 state,

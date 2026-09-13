@@ -10,7 +10,9 @@ import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
-from threading import Event, Lock
+from threading import Lock
+
+from .cooperative_stop import CooperativeStop, ProviderDispatchStopped
 
 from .config import Config
 from .errors import OCRLLMError, OutputError, ProviderError, ResumeStateError
@@ -50,6 +52,7 @@ def execute_merged_image_plan(
     prompt: str,
     state_path: Path,
     timeout_seconds: float,
+    stop_requested: object | None = None,
 ) -> tuple[
     MergedImageResumeState,
     tuple[ProviderModelUsage, ...],
@@ -70,10 +73,10 @@ def execute_merged_image_plan(
             )
         )
     )
+    stop = CooperativeStop(stop_requested)
     if not active_lanes:
+        stop.acknowledge(current_call_count=0)
         return state, (), reused_slot_count, ()
-
-    stop = Event()
     owner = _MergedImageStateOwner(
         state,
         state_path=state_path,
@@ -81,18 +84,21 @@ def execute_merged_image_plan(
     )
     lane_failures: list[dict[str, object]] = []
     if len(active_lanes) == 1:
-        lane_failures.extend(
-            _execute_merged_image_lane(
-                state,
-                batches,
-                lane_index=active_lanes[0],
-                provider_lanes=provider_lanes,
-                prompt=prompt,
-                timeout_seconds=timeout_seconds,
-                owner=owner,
-                stop=stop,
+        try:
+            lane_failures.extend(
+                _execute_merged_image_lane(
+                    state,
+                    batches,
+                    lane_index=active_lanes[0],
+                    provider_lanes=provider_lanes,
+                    prompt=prompt,
+                    timeout_seconds=timeout_seconds,
+                    owner=owner,
+                    stop=stop,
+                )
             )
-        )
+        except ProviderDispatchStopped:
+            pass  # A request gate closed before any new provider call.
     else:
         primary_error: BaseException | None = None
         with ThreadPoolExecutor(
@@ -117,6 +123,8 @@ def execute_merged_image_plan(
             for future in as_completed(futures):
                 try:
                     lane_failures.extend(future.result())
+                except ProviderDispatchStopped:
+                    pass  # Other lanes still finish and checkpoint admitted calls.
                 except BaseException as error:
                     stop.set()
                     if primary_error is None:
@@ -129,6 +137,7 @@ def execute_merged_image_plan(
                 )
             raise primary_error
 
+    stop.acknowledge(current_call_count=owner.current_call_count())
     settled_state, current_usage = owner.result()
     provider_failures = tuple(
         sorted(lane_failures, key=lambda row: row["slot_index"])
@@ -199,7 +208,7 @@ def _execute_merged_image_lane(
     prompt: str,
     timeout_seconds: float,
     owner: _MergedImageStateOwner,
-    stop: Event,
+    stop: CooperativeStop,
 ) -> tuple[dict[str, object], ...]:
     """Run one fixed lane serially while other lanes progress independently."""
     provider_lane = provider_lanes[lane_index]
@@ -248,6 +257,7 @@ def _execute_merged_image_lane(
                                     prompt=batch_prompt,
                                     timeout_seconds=timeout_seconds,
                                 ),
+                                stop_requested=stop if stop.enabled else None,
                             )
                             response = call_result.response
                         except ProviderError as error:

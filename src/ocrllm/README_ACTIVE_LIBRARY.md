@@ -314,6 +314,19 @@ New image/audio batch integrations should prefer the visible planning plus
 merged-recognition APIs above because their slot identity and ordinary resume
 contracts are explicit.
 
+## Cooperative stop and resume
+
+The four merged image/audio recognize and resume APIs accept optional
+`stop_requested` with an `is_set() -> bool` method. Current admitted provider
+requests finish and checkpoint before `Cancelled(code="CANCELLED")` acknowledges
+`safe_stop=True`, `resume_available=True` and this invocation's
+`current_call_count` / `provider_calls_attempted`. Clear the signal and use the
+ordinary resume API. ASR binary-policy reservations cannot reset across pauses;
+settled work and final zero-call Markdown publication remain resumable. Observe
+whole-call acknowledgement, not one lane's event, before stopping a consumer.
+See [contract and scenario](../../docs/cooperative_safe_stop_2026-09-13.md), including
+ordinary non-policy resume semantics and the distinction from in-flight cancellation.
+
 ## Output and error rules
 
 - Provider credentials, raw response bodies, signed URLs, and user media never
