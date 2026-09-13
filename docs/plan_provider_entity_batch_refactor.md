@@ -23,6 +23,13 @@ checkpoint schema or provider lifecycle is added. See
 [owner contract and scenario](cooperative_safe_stop_2026-09-13.md); production
 control and its real stop/continue verification stay with the orchestrator.
 
+The first old-consumer migration exposed a reservation window after a durable
+unit event. A separately authorized read-only `inspect_audio_completion` assertion
+now confirms the latest saved v4 leaf reservations only under an existing caller
+barrier. Unknown/non-cap/legacy cases remain unconfirmed; no schema or retry
+change is involved. The caller must prove all consumer threads actually stopped,
+not merely that it sent a stop signal, and separately verify model idleness.
+
 ### 2026-09-13 bounded binary ASR recovery explicitly requested
 
 The maintainer confirmed an initial request plus at most two retries per range,

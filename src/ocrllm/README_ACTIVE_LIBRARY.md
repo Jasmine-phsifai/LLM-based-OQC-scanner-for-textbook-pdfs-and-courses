@@ -327,6 +327,14 @@ whole-call acknowledgement, not one lane's event, before stopping a consumer.
 See [contract and scenario](../../docs/cooperative_safe_stop_2026-09-13.md), including
 ordinary non-policy resume semantics and the distinction from in-flight cancellation.
 
+`inspect_audio_completion(output_path)` also exposes
+`audio_dispatch_checkpoint_confirmed` / `audio_dispatch_checkpoint_reason` for
+saved v4 ASR binary-policy states. This read-only snapshot can conservatively
+confirm the latest reservations only after the caller has stopped all new
+consumer dispatch/checkpoint writes; it is not a model-idle proof or a stop API.
+Unknown, legacy and unverifiable non-cap outcomes are not confirmed. See the same
+owner contract for the first old-consumer migration and its atomic-write scenario.
+
 ## Output and error rules
 
 - Provider credentials, raw response bodies, signed URLs, and user media never

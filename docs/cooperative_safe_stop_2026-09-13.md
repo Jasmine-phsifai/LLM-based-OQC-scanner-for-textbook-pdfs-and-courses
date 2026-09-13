@@ -80,6 +80,66 @@ again. The persistent three-call guarantee applies to the opted-in ASR binary
 policy. The orchestrator must preserve its own attempt accounting and must not
 turn repeated process restarts into a new autonomous retry mechanism.
 
+## Read-only confirmation for the first old-consumer migration
+
+The real old consumer did not load the new cooperative signal. A public durable
+`unit_result` alone cannot prove that it has not already saved the next attempt's
+reservation. The maintainer authorized a narrow read-only check for this exposed
+migration gap, without a new checkpoint format or retry state machine.
+
+`inspect_audio_completion(output_path)` now additionally returns:
+
+```json
+{
+  "audio_dispatch_checkpoint_confirmed": true,
+  "audio_dispatch_checkpoint_reason": "confirmed"
+}
+```
+
+This is an assertion about the **saved v4 binary-policy checkpoint**, not a stop,
+lock, model-idle assertion or acknowledgement from the old running process.
+The caller must first prevent **all** consumer threads from issuing calls or
+committing a new checkpoint, and keep that barrier through the reload decision.
+Sending SIGSTOP alone is asynchronous: the caller must verify that the exact
+process identity and all of its threads have actually stopped before querying.
+It must separately establish its existing current-phase / final durable event /
+model-idle and exclusive-maintenance conditions. A false result or any inspection
+exception means the caller must restore the old consumer and reject this candidate.
+This API does not authorize model termination; Model Lab still owns that lifecycle.
+
+Only the saved v4 policy is evaluated. Missing state gives `missing_state`; a
+legacy or non-policy state gives `unsupported_state`. Invalid/unreadable state
+keeps the existing typed inspection error contract and cannot count as confirmed.
+The optional policy arguments used to evaluate future recovery eligibility do
+not change this assertion about the actual saved checkpoint.
+
+For every current leaf, confirmation accepts an already `settled` result, or an
+`unresolved` leaf with zero reservations. A cap-failed leaf needs a persisted
+record whose exact logical start/end, split depth and **latest** attempt number
+match its current reservation; explicitly unknown adopted history does not prove
+that match. Missing/newer unconfirmed reservations give `unconfirmed_reservation`.
+A non-cap failure gives `unverifiable_outcome`: the current schema lacks a general
+per-attempt confirmation for those errors, so no inference is made from its text.
+Ancestors which have already split are not executable leaves; their historical
+unknown reservations do not block new zero-reservation children. No history is
+removed, filled in or relabelled by inspection.
+
+If a consumer is stopped before reservation `os.replace`, the committed state
+still has no new reservation, and owner ordering proves no HTTP dispatch yet.
+After reservation `os.replace`, the new count is visible but its outcome evidence
+is absent, so the assertion is false even before HTTP starts. Completed outcome
+`os.replace` restores a provable match. These ordering guarantees require the
+caller barrier: a query against an actively changing process is insufficient.
+
+Extended real-media/HTTP scenario output:
+`/mnt/r/course-pipeline-state/validation/cooperative-safe-stop-20260913/owner-dispatch-confirmation/result.json`.
+It checks the tempfile / atomic replace / pre-HTTP boundaries, old cap evidence
+versus a new reservation, current unknown denial, split-ancestor history, unequal
+leaves, no-speech/settled results, non-cap denial, legacy/unknown history, and
+missing state. Each inspection compares checkpoint bytes and request counts before
+and after, proving that this query does not mutate either. No real model was called.
+32 existing merged-audio and import tests also passed.
+
 ## Verification (2026-09-13)
 
 `tools/verify_cooperative_safe_stop.py` uses real generated PNGs and a 121.375-second

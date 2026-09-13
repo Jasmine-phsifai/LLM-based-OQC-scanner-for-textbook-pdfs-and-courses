@@ -129,6 +129,17 @@ def main():
     def checkpoint(out):
         return json.loads(out.with_suffix('.ocrllm-state.json').read_text())
 
+    def dispatch_confirmation(out, expected, reason=None):
+        path = out.with_suffix('.ocrllm-state.json')
+        before = path.read_bytes() if path.exists() else None
+        call_count = len(calls)
+        summary = inspect_audio_completion(out)
+        assert summary['audio_dispatch_checkpoint_confirmed'] is expected
+        if reason is not None:
+            assert summary['audio_dispatch_checkpoint_reason'] == reason
+        assert (path.read_bytes() if path.exists() else None) == before
+        assert len(calls) == call_count
+
     def audio(out, *, slices=plan, resume=False, provider_arg=provider, **kwargs):
         function = resume_audio_to_markdown if resume else recognize_audio_to_markdown
         return function(slices, provider=provider_arg, output_path=out,
@@ -167,6 +178,7 @@ def main():
             assert not saved['usage'] and all(row['status'] == 'unresolved' for row in saved['slots'])
             if name == 'audio':
                 assert all(row.get('recovery_attempts', 0) == 0 for row in saved['slots'])
+                dispatch_confirmation(out, True)
             reset([Reply()] * (len(plan) if name == 'audio' else len(batches)))
             assert function(out, resume=True).status == 'complete'
         verdicts['preset_stop_zero_calls_and_reservations'] = True
@@ -199,12 +211,14 @@ def main():
             if name == 'audio':
                 assert saved['slots'][0]['recovery_attempts'] == 1
                 assert saved['slots'][0].get('output_limit_attempts', 0) == 0
+                dispatch_confirmation(out, False, 'unverifiable_outcome')
             reset([Reply()] * (len(plan) if name == 'audio' else len(batches)))
             result = function(out, resume=True, **({'only_output_limit': True} if name == 'audio' else {}))
             assert result.status == 'complete'
             assert sum(row['calls'] for row in result.metadata['historical_provider_model_usage']) == 1
             if name == 'audio':
                 assert checkpoint(out)['slots'][0]['recovery_attempts'] == 2
+                dispatch_confirmation(out, True)
         verdicts['transient_wait_stops_without_losing_failure_or_usage'] = True
         verdicts['only_output_limit_resume_preserves_transient_remaining_budget'] = True
 
@@ -215,6 +229,8 @@ def main():
             options = {'slices': whole} if name == 'audio' else {'selected': batches[:1]}
             paused(lambda: function(out, **options), 1)
             assert not out.exists() and inspect_markdown_job(out) == 'pending'
+            if name == 'audio':
+                dispatch_confirmation(out, True)
             reset([])
             result = function(out, resume=True, **options)
             assert result.status == 'complete' and result.metadata['provider_call_count'] == 0
@@ -226,6 +242,7 @@ def main():
         paused(lambda: audio(out), 1)
         assert checkpoint(out)['slots'][0]['no_speech'] is True
         assert checkpoint(out)['slots'][0]['status'] == 'settled'
+        dispatch_confirmation(out, True)
         reset([Reply()] * 2)
         assert audio(out, resume=True).status == 'complete' and len(calls) == 2
         verdicts['no_speech_outcome_checkpointed_before_stop'] = True
@@ -236,11 +253,20 @@ def main():
         out = args.work_dir / 'reservation-race.md'
         original_replace = os.replace
         def stop_during_reservation(source, target):
-            original_replace(source, target)
             if Path(target) == out.with_suffix('.ocrllm-state.json'):
-                saved = checkpoint(out)
-                if saved['slots'][0].get('recovery_attempts', 0) == 1:
+                candidate = json.loads(Path(source).read_text())['slots'][0]
+                if candidate.get('recovery_attempts', 0) == 1 and candidate['status'] == 'unresolved':
+                    # The new reservation exists only in the completed tempfile.
+                    # Until replace, no provider HTTP can have started.
+                    dispatch_confirmation(out, True)
+                    assert not calls
+                    original_replace(source, target)
+                    # Now reserved, but the dispatch closure has not called HTTP.
+                    dispatch_confirmation(out, False, 'unconfirmed_reservation')
+                    assert not calls
                     stop.set()
+                    return
+            original_replace(source, target)
         os.replace = stop_during_reservation
         try:
             paused(lambda: audio(out, slices=whole), 1)
@@ -248,9 +274,11 @@ def main():
             os.replace = original_replace
         saved = checkpoint(out)['slots'][0]
         assert saved['status'] == 'settled' and saved['recovery_attempts'] == 1
+        dispatch_confirmation(out, True)
         reset([])
         assert audio(out, slices=whole, resume=True).metadata['provider_call_count'] == 0
         verdicts['post_admission_stop_does_not_abandon_reserved_attempt'] = True
+        verdicts['reservation_query_changes_only_at_atomic_replace'] = True
 
         # A real output-cap reply is saved, then no second attempt or bisection
         # runs while stopped. Repeated pauses cannot replenish the leaf budget.
@@ -264,12 +292,39 @@ def main():
             saved = checkpoint(out)['slots'][0]
             assert saved['recovery_attempts'] == attempt and saved['output_limit_attempts'] == attempt
             assert len(saved['output_limit_evidence']) == attempt
+            dispatch_confirmation(out, True)
         reset([Reply(), Reply()])
         result = resume_audio_to_markdown(plan, provider=provider, output_path=out,
                                          audio_output_limit_policy=no_split, stop_requested=stop)
         assert result.status == 'partial' and len(calls) == 2
         assert checkpoint(out)['slots'][0]['recovery_attempts'] == 3
         verdicts['cap_failure_evidence_saved_and_pause_cannot_reset_budget'] = True
+
+        # The previous cap's error fields remain during a later reservation;
+        # they cannot confirm the new attempt before its own result is saved.
+        reset([Reply(422, 'output_token_limit', request_stop=True)])
+        out = args.work_dir / 'previous-cap-evidence.md'
+        paused(lambda: audio(out), 1)
+        dispatch_confirmation(out, True)
+        reset([Reply(422, 'output_token_limit')])
+        def stop_after_new_cap_reservation(source, target):
+            if Path(target) == out.with_suffix('.ocrllm-state.json'):
+                leaf = json.loads(Path(source).read_text())['slots'][0]
+                if (leaf.get('recovery_attempts') == 2
+                        and len(leaf.get('output_limit_evidence', [])) == 1):
+                    dispatch_confirmation(out, True)
+                    original_replace(source, target)
+                    dispatch_confirmation(out, False, 'unconfirmed_reservation')
+                    stop.set()
+                    return
+            original_replace(source, target)
+        os.replace = stop_after_new_cap_reservation
+        try:
+            paused(lambda: audio(out, resume=True), 1)
+        finally:
+            os.replace = original_replace
+        dispatch_confirmation(out, True)
+        verdicts['previous_cap_cannot_confirm_later_reservation'] = True
 
         # Non-equal leaves [30s, 15s, 15s], then original 60s and short tail.
         # The right leaf remains pending, and successful siblings retain identity.
@@ -281,12 +336,14 @@ def main():
         assert [row['split_depth'] for row in saved['subslots']] == [1, 2, 2]
         assert [row['status'] for row in saved['subslots']] == ['settled', 'settled', 'unresolved']
         settled_before = saved['subslots'][:2]
+        dispatch_confirmation(out, True)
         reset([Reply()] * 3)
         result = audio(out, resume=True, only_output_limit=True)
         assert result.status == 'complete' and len(calls) == 3
         after = checkpoint(out)
         assert after['slots'][0]['subslots'][:2] == settled_before
         assert after['slots'][-1]['logical_end_seconds'] - after['slots'][-1]['logical_start_seconds'] < 2
+        dispatch_confirmation(out, True)
         verdicts['two_level_unequal_children_and_short_tail_resume'] = True
 
         # A stop at the saved bisection plan creates no child reservation.
@@ -304,9 +361,55 @@ def main():
             os.replace = original_replace
         assert all(row.get('recovery_attempts', 0) == 0 for row in checkpoint(out)['slots'][0]['subslots'])
         assert inspect_audio_completion(out, audio_output_limit_policy=policy)['output_limit_recovery_available']
+        dispatch_confirmation(out, True)
         reset([Reply()] * 4)
         assert audio(out, resume=True).status == 'complete' and len(calls) == 4
         verdicts['saved_split_stops_before_child_reservation'] = True
+
+        # A historical unknown reservation blocks while it is a current leaf.
+        # Once ordinary recovery splits that exhausted parent, its history must
+        # not be mistaken for a live reservation on the new zero-budget leaves.
+        reset([cap, cap])
+        out = args.work_dir / 'unknown-ancestor.md'
+        def interrupt_third_reservation(source, target):
+            original_replace(source, target)
+            if Path(target) == out.with_suffix('.ocrllm-state.json'):
+                leaf = checkpoint(out)['slots'][0]
+                if leaf.get('recovery_attempts') == 3:
+                    raise KeyboardInterrupt('Synthetic unknown third reservation')
+        os.replace = interrupt_third_reservation
+        try:
+            audio(out, slices=whole)
+        except KeyboardInterrupt:
+            pass
+        else:
+            raise AssertionError('Third reservation interruption did not happen')
+        finally:
+            os.replace = original_replace
+        assert len(calls) == 2
+        dispatch_confirmation(out, False, 'unconfirmed_reservation')
+        reset([])
+        os.replace = stop_after_split
+        try:
+            paused(lambda: audio(out, slices=whole, resume=True), 0)
+        finally:
+            os.replace = original_replace
+        dispatch_confirmation(out, True)
+        assert all(row.get('recovery_attempts', 0) == 0 for row in checkpoint(out)['slots'][0]['subslots'])
+        verdicts['unknown_current_leaf_denied_but_inactive_ancestor_ignored'] = True
+
+        # Unsupported legacy format and unknown adopted history are denied.
+        reset([Reply(422, 'output_token_limit', request_stop=True)])
+        out = args.work_dir / 'legacy-unconfirmed.md'
+        paused(lambda: recognize_audio_to_markdown(whole, provider=provider,
+                    output_path=out, stop_requested=stop), 1)
+        dispatch_confirmation(out, False, 'unsupported_state')
+        reset([])
+        stop.set()
+        paused(lambda: audio(out, slices=whole, resume=True), 0)
+        dispatch_confirmation(out, False, 'unconfirmed_reservation')
+        dispatch_confirmation(args.work_dir / 'absent.md', False, 'missing_state')
+        verdicts['legacy_missing_and_unknown_history_are_not_confirmed'] = True
 
         # A real write failure outranks a simultaneously requested soft stop.
         reset([Reply(request_stop=True)])

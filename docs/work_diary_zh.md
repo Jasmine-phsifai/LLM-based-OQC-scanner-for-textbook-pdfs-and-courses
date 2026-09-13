@@ -10071,3 +10071,10 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 69 项既有 merged image/audio、provider-model 与轻量/public import 测试通过。新增 `tools/verify_cooperative_safe_stop.py` 以真实 PNG、121.375秒 FFmpeg MP3、实际 SDK 和本机合成 HTTP 验证：预先暂停0调用/0预留；OCR和ASR双lane均完成保存后才确认；暂时等待暂停保留错误/usage并原参数继续；最后成功已保存但未发布时0推理续写MD；no-speech先settled；OS replace预留边界收到暂停仍完成已准入请求，不留unknown reservation；三次cap之间分别暂停也不得发第四次；30/15/15秒二级不等长叶和1.375秒尾片复用；二分计划保存后0子预算停止；写盘错误不能冒充安全停止；非法signal结构在请求前拒绝。前两轮场景断在fixture假设零值字段必写入JSON，已改为按既有稀疏序列化读取后全轮通过，未修改产品状态格式。完整结果在 `cooperative-safe-stop-20260913/owner-third/result.json`，由统筹复制到当前工作区文档。
 
 没有调用真实模型、操作生产进程或编辑生产checkpoint；真实一停一启由统筹完成后才可称生产验证通过。Carry-forward judgement：观测事件、HTTP结束与全lane耐久停止是三个不同边界；SIGSTOP/kill不能替代owner确认，软停也不能在预算预留之后取消尚未发出的已准入调用。
+
+
+**2026-09-13 首次旧消费者迁移的只读预留确认。** 旧806消费者未加载safe-stop，新接口上线前若只凭最后durable unit事件冻结重载，可能恰逢下次ASR预算已预留但HTTP尚未开始，导致消耗unknown次数。维护者授权补最小公开只读判定，未改checkpoint schema、计数、重试或模型生命周期。`inspect_audio_completion`新增audio_dispatch_checkpoint_confirmed/reason；仅认可已保存v4 policy，逐个当前叶接受settled、未预留pending，或精确逻辑区间/深度/latest attempt与当前reserved一致的已知cap证据。missing/旧格式/非cap/unknown保守不确认；已拆分祖先不再执行，其历史unknown不等于当前新叶在途，不作第二遍阻断。查询不写state、不重置预算、不补造历史。文档明确它不是锁/模型idle证明：调用方必须已经阻止所有consumer线程的新准入和状态提交，并持续到重载决定。只发送SIGSTOP并不同步保证所有线程已停，已向统筹/reloader责任agent指出须核对精确PID、全部task停稳后才查询；Model Lab生命周期仍归其owner。
+
+扩展既有真实PNG/121.375秒FFmpeg MP3/合成HTTP场景，OS replace边界验证：新预留仍在temp未replace时旧state确认true；replace后HTTP前确认false；旧attempt证据不能冒充新预留；真实当前unknown叶false，普通恢复将其拆分后reserved0的新叶true且旧祖先证据未改；不等长二层/短尾、NOSPEECH与已settled结果、暂时错误非cap、legacy/历史未知、缺失state均按保守契约返回。每次查询前后比对checkpoint原始字节和实际HTTP计数，均不变。完整场景一次通过，结果在 `cooperative-safe-stop-20260913/owner-dispatch-confirmation/result.json`。没有冻结/重启生产或发GPU请求；首次真实迁移由统筹另证。Carry-forward judgement：事件已落盘并不代表之后没有新预留；只读查询必须放在真实写入屏障之后，不能将历史已spent未知次数与当前新增未决预留混为一谈。
+
+补充：32 项既有 merged-audio、轻量导入与公开 import-contract 测试通过。对正在运行课程单次只读耗时约0.20秒，返回unconfirmed_reservation；未冻结，因此明确不将该快照用于重载决定。

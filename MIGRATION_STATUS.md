@@ -14,6 +14,9 @@ They drain admitted requests into the existing checkpoint and then acknowledge
 `Cancelled` with `safe_stop=True`; they do not cancel in-flight HTTP. ASR binary
 reservations and successful work survive ordinary resume. See
 [the owner contract and verification](docs/cooperative_safe_stop_2026-09-13.md).
+The public audio inspection additionally offers a conservative latest-reservation
+checkpoint assertion for the first old-consumer migration. It requires an existing
+caller dispatch/write barrier and does not replace Model Lab idle checks.
 
 Explicit AudioOutputLimitPolicy adds bounded binary ASR recovery in v4 while
 keeping old checkpoints readable. Public inspect_audio_completion can evaluate real cap-recovery candidates without
