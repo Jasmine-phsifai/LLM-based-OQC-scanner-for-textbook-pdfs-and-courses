@@ -8,6 +8,7 @@ from .bounded_transient_retry_rules import bounded_transient_retry_rules as boun
 from .inspect_markdown_job import inspect_markdown_job as inspect_markdown_job
 from .observation_context import observation_context as observation_context
 from .audio_gap_policy import AudioGapPolicy as AudioGapPolicy
+from .audio_output_limit_policy import AudioOutputLimitPolicy as AudioOutputLimitPolicy
 from .inspect_audio_completion import inspect_audio_completion as inspect_audio_completion
 from .select_extracted_frames import select_extracted_frames as select_extracted_frames
 from .batchify_images import batchify_images as batchify_images
@@ -203,6 +204,7 @@ __all__ = [
     "inspect_markdown_job",
     "observation_context",
     "AudioGapPolicy",
+    "AudioOutputLimitPolicy",
     "inspect_audio_completion",
     "bounded_transient_retry_rules",
     "split_audio",

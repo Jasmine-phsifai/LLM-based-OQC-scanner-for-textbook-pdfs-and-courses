@@ -23,11 +23,16 @@ _ResponseT = TypeVar("_ResponseT")
 def call_provider_model_with_retries(
     provider: ProviderModel,
     call: Callable[[], _ResponseT],
+    *,
+    max_attempts: int | None = None,
+    stop_provider_codes: frozenset[str] = frozenset(),
 ) -> ProviderModelCallResult[_ResponseT]:
     """Return one final response plus every finite attempt spent to obtain it."""
     if type(provider) is not ProviderModel or not callable(call):
         raise TypeError("provider retry execution requires exact inputs") from None
 
+    if max_attempts is not None and (type(max_attempts) is not int or max_attempts < 1):
+        raise ValueError("max_attempts must be a positive integer")
     attempts = 0
     total_calls = 0
     total_input_tokens: int | None = 0
@@ -64,7 +69,10 @@ def call_provider_model_with_retries(
             total_output_tokens = _add_known(total_output_tokens, output_tokens)
             cleanup_failed = cleanup_failed or provider_cleanup_failed(error)
             rule = provider.retry_rules.get(error.code)
-            if rule is None or calls == 0:
+            if (rule is None or calls == 0
+                or (isinstance(error.details.get("provider_code"), str)
+                    and error.details["provider_code"] in stop_provider_codes)
+                or max_attempts is not None and attempts >= max_attempts):
                 _attach_aggregate_error(
                     error,
                     calls=total_calls,

@@ -13,6 +13,18 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-13 bounded binary ASR recovery explicitly requested
+
+The maintainer confirmed an initial request plus at most two retries per range,
+with at most two binary subdivisions. Explicit AudioOutputLimitPolicy enables
+v4 checkpoint reservations, failed-generation artifact references and preserved
+successful ranges. Old v1/v2/v3 checkpoints remain readable; existing children
+consume the first split level, and missing old attempt history stays explicit.
+A retained completion checkpoint requires a matching MD publication hash.
+Provider transient rules keep their classification/waits within the remaining
+range budget. See [owner evidence](asr_binary_recovery_2026-09-13.md); production
+deployment and real-model observations remain a separate orchestrator gate.
+
 ### 2026-09-10 rejected OCR output explicitly requested
 
 The maintainer requested original output in token-limit error details to distinguish

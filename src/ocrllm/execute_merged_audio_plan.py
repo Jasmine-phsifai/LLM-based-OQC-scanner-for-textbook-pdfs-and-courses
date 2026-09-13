@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from contextvars import copy_context
+from collections.abc import Mapping
+from .thaw_json_value import thaw_json_value
 from .observation_context import emit
 from .observe_recognition import observed_execution, observed_audio_unit, audio_unit, unit_result
 
@@ -153,6 +155,7 @@ class _MergedAudioStateOwner:
         self._lock = Lock()
         self._state = state
         self.gap_policy = state.audio_gap_policy
+        self.output_limit_policy = state.audio_output_limit_policy
         self._state_path = state_path
         self._current_usage: tuple[ProviderModelUsage, ...] = ()
         self._usage_order = build_provider_model_usage_order(
@@ -206,6 +209,29 @@ class _MergedAudioStateOwner:
                 emit('plan', **audio_unit(child, parent=parent, source_id=updated.source.sha256), plan_role='derived_unit', status=child.status)
             return parent
 
+    def persist_slot(self, outcome):
+        """Save a dispatch reservation without claiming a provider result."""
+        with self._lock:
+            slots = list(self._state.slots)
+            slots[outcome.index] = outcome
+            updated = replace(self._state, slots=tuple(slots))
+            save_merged_audio_resume_state_atomically(self._state_path, updated)
+            self._state = updated
+
+    def plan_bisection(self, index):
+        from .bisect_failed_audio_slots import bisect_failed_audio_slots
+        with self._lock:
+            updated = bisect_failed_audio_slots(self._state, slot_index=index)
+            if updated is self._state:
+                return None
+            save_merged_audio_resume_state_atomically(self._state_path, updated)
+            self._state = updated
+            parent = updated.slots[index]
+            for child in parent.subslots:
+                emit('plan', **audio_unit(child, parent=parent, source_id=updated.source.sha256),
+                     plan_role='derived_unit', status=child.status)
+            return parent
+
     def current_call_count(self) -> int:
         with self._lock:
             return sum(row.calls for row in self._current_usage)
@@ -234,6 +260,9 @@ def _execute_merged_audio_lane(
                 continue
             if stop.is_set():
                 break
+            if owner.output_limit_policy is not None:
+                # Exhausted saved parents split before any further dispatch.
+                slot = owner.plan_bisection(slot.index) or slot
             if slot.subslots:
                 slot_failures, success_index = _execute_audio_subslots(
                     slot, snapshot, provider_lane=provider_lane, start_index=last_success_index,
@@ -287,10 +316,21 @@ def _execute_merged_audio_lane(
                         "model": divided.model, "code": divided.error_code,
                         "description": divided.error_description,
                     }, *slot_failures)
+            if owner.output_limit_policy is not None:
+                while not stop.is_set():
+                    divided = owner.plan_bisection(slot.index)
+                    if divided is None:
+                        break
+                    child_failures, success_index = _execute_audio_subslots(
+                        divided, snapshot, provider_lane=provider_lane, start_index=last_success_index,
+                        timeout_seconds=timeout_seconds, owner=owner, stop=stop,
+                    )
+                    slot_failures = (*slot_failures, *child_failures)
             if stop.is_set():
                 break
-            if success_index is not None:
+            if success_index is not None or owner.output_limit_policy is not None:
                 provider_failures.extend(slot_failures)
+            if success_index is not None:
                 last_success_index = success_index
         return tuple(provider_failures)
     except BaseException:
@@ -305,24 +345,46 @@ def _execute_audio_slot(
 ):
     """Persist every short-leaf output-cap attempt; never accept other errors."""
     slot_failures = []
+    current = slot
     for offset in range(len(provider_lane)):
         if stop.is_set():
             break
         provider_index = (start_index + offset) % len(provider_lane)
         provider = provider_lane[provider_index]
-        current = slot
-        bounded_cap = (owner.gap_policy is not None
-                       and slot.logical_end_seconds-slot.logical_start_seconds <= 120)
+        policy = owner.output_limit_policy
+        if policy is None:
+            current = slot
+        bounded_cap = (policy is not None or (owner.gap_policy is not None
+                       and slot.logical_end_seconds-slot.logical_start_seconds <= 120))
         identity = _output_limit_identity(provider, prompt) if bounded_cap else None
         if bounded_cap and current.output_limit_identity == identity and current.output_limit_attempts >= 3:
             continue
         while not stop.is_set():
-            try:
-                call_result = call_provider_model_with_retries(
-                    provider, lambda: recognize_provider_model_audio(
+            if policy is not None:
+                if current.recovery_attempts >= 1 + policy.max_retries:
+                    break
+            def dispatch():
+                nonlocal current
+                if policy is not None:
+                    current = replace(current, recovery_attempts=current.recovery_attempts + 1)
+                    owner.persist_slot(current)
+                try:
+                    return recognize_provider_model_audio(
                         provider, request_snapshot, prompt=prompt, request_kind=request_kind,
                         timeout_seconds=timeout_seconds,
-                    ),
+                    )
+                except ProviderError as error:
+                    if policy is not None and error.details.get('provider_code') != 'output_token_limit':
+                        # A transient failure breaks consecutive cap evidence,
+                        # including when the configured provider retry succeeds later.
+                        current = _failed_slot(current, provider=provider, error=error)
+                        owner.persist_slot(current)
+                    raise
+            try:
+                call_result = call_provider_model_with_retries(
+                    provider, dispatch,
+                    max_attempts=(1 + policy.max_retries-current.recovery_attempts if policy else None),
+                    stop_provider_codes=(frozenset({'output_token_limit'}) if policy else frozenset()),
                 )
                 response = call_result.response
             except NoSpeechDetected as error:
@@ -339,13 +401,23 @@ def _execute_audio_slot(
                     previous = current.output_limit_attempts if current.output_limit_identity == identity else 0
                     outcome = replace(outcome, output_limit_attempts=min(3, previous+1),
                                       output_limit_identity=identity)
+                if policy is not None and is_output_limit_failure(outcome):
+                    generation = error.details.get('generation_output')
+                    reference = ({key: thaw_json_value(value) for key, value in generation.items()
+                                  if key != 'message'} if isinstance(generation, Mapping) else {})
+                    evidence = {'start_seconds': current.logical_start_seconds,
+                                'end_seconds': current.logical_end_seconds,
+                                'split_depth': current.split_depth, 'attempt': current.recovery_attempts,
+                                'request_id': error.details.get('request_id') or reference.get('request_id'),
+                                'generation_output': reference}
+                    outcome = replace(outcome, output_limit_evidence=(*current.output_limit_evidence, evidence))
                 owner.checkpoint(outcome, provider=provider, calls=calls,
                     input_tokens=input_tokens, output_tokens=output_tokens,
                     cleanup_failed=provider_cleanup_failed(error))
                 slot_failures.append({'slot_index':slot.index, 'vendor':provider.vendor,
                     'model':provider.model, 'code':error.code, 'description':outcome.error_description})
+                current = outcome
                 if bounded_cap and is_output_limit_failure(outcome) and outcome.output_limit_attempts < 3:
-                    current = outcome
                     continue
                 break
             outcome = _settled_slot(current, provider=provider, markdown=response.markdown)
@@ -393,6 +465,8 @@ def _settled_slot(
         no_speech=no_speech,
         output_limit_attempts=slot.output_limit_attempts,
         output_limit_identity=slot.output_limit_identity,
+        split_depth=slot.split_depth, recovery_attempts=slot.recovery_attempts,
+        output_limit_evidence=slot.output_limit_evidence,
         markdown=markdown,
         markdown_sha256=(
             None
@@ -417,6 +491,8 @@ def _failed_slot(
         actual_start_seconds=slot.actual_start_seconds,
         actual_end_seconds=slot.actual_end_seconds,
         status="failed",
+        split_depth=slot.split_depth, recovery_attempts=slot.recovery_attempts,
+        output_limit_evidence=slot.output_limit_evidence,
         vendor=provider.vendor,
         model=provider.model,
         error_code=error.code,
@@ -485,6 +561,13 @@ class _MergedAudioSubslotOwner:
         self.parent = parent
         self.owner = owner
         self.gap_policy = owner.gap_policy
+        self.output_limit_policy = owner.output_limit_policy
+
+    def persist_slot(self, outcome):
+        children = list(self.parent.subslots)
+        children[outcome.index] = outcome
+        self.parent = replace(self.parent, subslots=tuple(children))
+        self.owner.persist_slot(self.parent)
 
     def checkpoint(self, outcome, **usage):
         children = list(self.parent.subslots)

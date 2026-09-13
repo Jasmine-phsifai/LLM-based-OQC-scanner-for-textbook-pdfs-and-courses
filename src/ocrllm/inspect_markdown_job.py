@@ -24,7 +24,11 @@ def inspect_markdown_job(output_path: str | Path) -> Literal['missing', 'pending
             state = load_merged_audio_resume_state(state_path)
         except OCRLLMError:
             return 'pending'
-        if state.accepted_with_gaps and path.is_file():
+        from .is_audio_markdown_published import is_audio_markdown_published
+        published = is_audio_markdown_published(state, path)
+        if state.accepted_with_gaps and published:
             return 'complete_with_gaps'
+        if state.audio_output_limit_policy and published and all(slot.status == 'settled' for slot in state.slots):
+            return 'complete'
         return 'pending'
     return 'complete' if path.is_file() else 'missing'

@@ -10038,3 +10038,16 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 
 
 **2026-09-10 超限OCR原文错误详情。** 用户明确要求保留输出以区分思考过多、循环和未写完。新增显式capture_error_output设置，默认false；兼容HTTP错误仅提取generation_output中正文/独立reasoning/用量/工件信息，不复制任意错误正文、凭据或请求头。merged图片终态失败可携带诊断到provider_failures及AllCandidatesExhausted.details；保留默认fallback元数据语义、checkpoint格式和失败状态，不把被拒正文塞进成功Markdown。Model Lab负责原始响应耐久文件，统筹只选择公开设置。真实SDK+本地合成HTTP场景5调用、零模型，22,000字符正文和19,000字符reasoning逐字保留，默认脱敏、全失败、部分失败和resume复用成功帧均通过；37项provider/image既有测试通过。场景初稿遗漏ProviderModel必填字段及image_task，修正后通过；首次扩展终态failure集合影响3项默认语义测试，收窄为显式诊断后通过。Carry-forward judgement：错误码不应替代可检查的生成证据；原始输出只在调用方主动启用时进入错误详情，源匹配、断点和成功判定继续归库。
+
+
+**2026-09-13 显式 ASR 超限证据及两层二等分恢复。** 维护者确认每个区间首次识别 + 最多两次重试、最多两层等分，保留120秒/5%缺口阈值。新增公开 `AudioOutputLimitPolicy`，仅opt-in；v4保存实际provider调用前的预算预留、深度、失败工件引用，沿用扁平subslots、成功兄弟和source hash+逻辑区间身份，普通resume不得重置。旧v3已知次数保留；v1/v2只承认最新失败并明确历史未知；旧父聚合错误可能来自子段，不能据此捏造整父请求证据。Model Lab原工件负责全文，OCRLLM只保存source区间和轻量引用，不把截断原文填进成功MD。ASR直接input/generated计数补入公共错误用量，数值保留限定在显式generation_output，不放宽通用错误脱敏。
+
+原provider暂时错误recipe的分类/等待保持，在本叶剩余预算内继续；每次实际调用通过闭包预留，output-limit回音频owner逐次记录，非cap打断连续cap证明且不二分。第三次预留中断消耗次数但不能作为第三条超限证明。最坏每原段21次，10→5→2.5分钟，150秒失败仍partial。实现初稿曾要求空retry_rules；统筹指出生产已有有界暂时重试后，在部署前改为共同预算，不取消既有恢复。
+
+统筹审查发现保留complete checkpoint后的真实原子发布风险：最后成功已checkpoint但最终MD未替换时，单凭all-settled+文件存在会把旧partial MD误判complete。部署前已改为v4最终MD发布hash，仅原子写MD成功后保存；两个公开inspect都核对hash，MD发布中断后零推理resume重建。
+
+`tools/verify_audio_binary_recovery.py`最终使用真实601秒/241秒/61秒FFmpeg媒体、真实SDK和合成HTTP完成：21次全失败树+1可继续tail，21份工件引用；成功5分钟兄弟只1次调用；预留后中断不新增原段预算；最终叶unknown不能满足3次cap证明；原暂时重试最多3次且可成功恢复；v2/v3迁移；all-failed无MD时公开inspect仍可见证据；在实际os.replace边界中断最终MD发布后inspect pending、零新请求重建complete。结果在持久验证目录 `asr-binary-recovery-20260913/owner-scenario-final/result.json`，统筹将复制到当前repo。45项既有audio/error回归通过；进一步收窄数值脱敏后27项error测试通过。旧gap和旧一次细分两个真实媒体/合成HTTP工具全部通过。首轮场景为排查长等待人工中断，堆栈证明停在既有FFmpeg子片提取而非重试死循环；随后完整重跑通过，没有用中断轮冒充完成。既有18项音频测试初轮发现默认provider_failures集合被意外扩大，已收窄到新opt-in路径并重跑通过。
+
+本仓没有发真实GPU请求、重启服务、编辑生产checkpoint或清理归档。真实新模型服务引用与持续生产部署由统筹在课程边界验证；机制通过不等于质量或吞吐提高。Carry-forward judgement：恢复预算、逐次证据和最终发布都必须归识别责任库；保留checkpoint后不能继续沿用“文件存在即已完成”的快捷判断，也不能将unknown预留当已确认失败。
+
+补充验证：35 项既有 provider-model、轻量导入与公共 import-contract 测试通过。

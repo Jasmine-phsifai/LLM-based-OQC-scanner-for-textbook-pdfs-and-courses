@@ -381,6 +381,15 @@ def _redact_frozen_mapping(
     for key, item in value.items():
         if _is_safe_usage_detail(key, item):
             redacted[key] = item
+        elif key == "generation_output" and isinstance(item, Mapping):
+            # This field comes from explicit capture_error_output. Preserve
+            # numeric ASR budget evidence without widening generic redaction.
+            output = dict(_redact_frozen_mapping(item))
+            for count_key in ("generated_tokens", "max_new_tokens"):
+                count = item.get(count_key)
+                if type(count) is int and count >= 0:
+                    output[count_key] = count
+            redacted[key] = MappingProxyType(output)
         elif _is_sensitive_detail_key(key):
             redacted[key] = _REDACTED
         else:

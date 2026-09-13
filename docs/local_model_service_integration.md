@@ -318,3 +318,14 @@ overlapping coverage; `actual_*` includes request boundary context and is not
 additional unique content. This requires no private checkpoint parsing. Read-only
 review of the scenario JSONL confirmed all three resumed reused IDs match their
 prior successful attempt IDs.
+
+
+## 2026-09-13 显式 ASR 两层二等分恢复
+
+维护者确认每个区间首次 + 两次重试、最多两层等分。新增
+`AudioOutputLimitPolicy(max_retries=2, max_split_depth=2)`，与旧
+`failed_slice_minutes` 互斥；v4 逐次调用前保存预算并保留失败工件引用。
+原 transient recipe 继续执行，但总尝试受本叶剩余预算约束。成功 v4
+checkpoint 保留，并用最终 MD 发布 hash 防止中断后将旧 partial 稿当成完成。
+公共 `inspect_audio_completion` 返回 policy、失败引用和耗尽叶摘要。
+详细接口、迁移和场景边界见 [本次责任说明](asr_binary_recovery_2026-09-13.md)。

@@ -5,6 +5,7 @@ from __future__ import annotations
 from .observe_recognition import observed_stage
 
 from pathlib import Path
+import hashlib
 from dataclasses import replace
 
 from .audio_gap_summary import audio_gap_summary
@@ -83,8 +84,11 @@ def finalize_merged_audio_result(
         )
     if status == 'complete_with_gaps':
         state = replace(state, accepted_with_gaps=True)
+    if state.audio_output_limit_policy is not None and status in ('complete', 'complete_with_gaps'):
+        state = replace(state, published_markdown_sha256=hashlib.sha256(markdown.encode('utf-8')).hexdigest())
+    if status == 'complete_with_gaps' or state.audio_output_limit_policy is not None and status == 'complete':
         save_merged_audio_resume_state_atomically(state_path, state)
-    if status == "complete":
+    if status == "complete" and state.audio_output_limit_policy is None:
         try:
             state_path.unlink(missing_ok=True)
         except (OSError, ValueError):
@@ -105,6 +109,9 @@ def finalize_merged_audio_result(
         "byte_size": state.source.byte_size,
     }
     metadata.update(gap)
+    if state.audio_output_limit_policy is not None:
+        from .audio_output_limit_summary import audio_output_limit_summary
+        metadata.update(audio_output_limit_summary(state))
     if failed_slots:
         metadata["failed_slots"] = failed_slots
     if provider_failures:

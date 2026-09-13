@@ -8,6 +8,7 @@ from pathlib import Path
 from dataclasses import replace
 
 from .audio_gap_policy import AudioGapPolicy
+from .audio_output_limit_policy import AudioOutputLimitPolicy
 from .merged_audio_resume_state import GAP_AUDIO_RESUME_STATE_VERSION
 
 from .audio.snapshot_product_mp3 import snapshot_product_mp3
@@ -52,11 +53,17 @@ def run_merged_audio_job(
     overwrite: bool,
     failed_slice_minutes: int | None = None,
     audio_gap_policy: AudioGapPolicy | None = None,
+    audio_output_limit_policy: AudioOutputLimitPolicy | None = None,
     only_output_limit: bool = False,
 ) -> RecognitionResult:
     """Validate, snapshot, settle, checkpoint, and publish one audio plan."""
     if audio_gap_policy is not None and type(audio_gap_policy) is not AudioGapPolicy:
         raise ConfigError("audio_gap_policy must be an AudioGapPolicy.", code="CONFIG_INVALID")
+    if audio_output_limit_policy is not None:
+        if type(audio_output_limit_policy) is not AudioOutputLimitPolicy:
+            raise ConfigError("audio_output_limit_policy must be an AudioOutputLimitPolicy.", code="CONFIG_INVALID")
+        if failed_slice_minutes is not None:
+            raise ConfigError("Choose binary output-limit recovery or failed_slice_minutes, not both.", code="CONFIG_INVALID")
     if type(only_output_limit) is not bool:
         raise ConfigError("only_output_limit must be a boolean.", code="CONFIG_INVALID")
     if failed_slice_minutes is not None and (
@@ -114,8 +121,13 @@ def run_merged_audio_job(
                         provider_failures=(), overwrite=True,
                     )
                 if audio_gap_policy is not None:
-                    state = replace(state, state_version=GAP_AUDIO_RESUME_STATE_VERSION,
+                    state = replace(state, state_version=(state.state_version if state.audio_output_limit_policy else GAP_AUDIO_RESUME_STATE_VERSION),
                                     audio_gap_policy=audio_gap_policy)
+                if audio_output_limit_policy is not None:
+                    from .bisect_failed_audio_slots import upgrade_audio_output_limit_state
+                    state = upgrade_audio_output_limit_state(state, audio_output_limit_policy)
+                if state.audio_output_limit_policy is not None and failed_slice_minutes is not None:
+                    raise ConfigError("Saved binary recovery cannot use failed_slice_minutes.", code="CONFIG_INVALID")
                 if failed_slice_minutes is not None:
                     from .resplit_failed_audio_slots import resplit_failed_audio_slots
                     state = resplit_failed_audio_slots(
@@ -123,13 +135,16 @@ def run_merged_audio_job(
                         only_output_limit=only_output_limit,
                     )
                     save_merged_audio_resume_state_atomically(state_path, state)
-                elif audio_gap_policy is not None:
+                elif audio_gap_policy is not None or audio_output_limit_policy is not None:
                     save_merged_audio_resume_state_atomically(state_path, state)
             else:
                 state = requested_state
                 if audio_gap_policy is not None:
-                    state = replace(state, state_version=GAP_AUDIO_RESUME_STATE_VERSION,
+                    state = replace(state, state_version=(state.state_version if state.audio_output_limit_policy else GAP_AUDIO_RESUME_STATE_VERSION),
                                     audio_gap_policy=audio_gap_policy)
+                if audio_output_limit_policy is not None:
+                    from .bisect_failed_audio_slots import upgrade_audio_output_limit_state
+                    state = upgrade_audio_output_limit_state(state, audio_output_limit_policy)
                 historical_usage = ()
                 save_merged_audio_resume_state_atomically(state_path, state)
             (

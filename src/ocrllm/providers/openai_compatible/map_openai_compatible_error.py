@@ -45,6 +45,10 @@ def map_openai_compatible_error(
             for name, key in (('input_tokens', 'prompt_tokens'), ('output_tokens', 'completion_tokens')):
                 if key in usage:
                     details[name] = usage[key]
+                else:
+                    direct_key = 'input_tokens' if name == 'input_tokens' else 'generated_tokens'
+                    if type(output.get(direct_key)) is int:
+                        details[name] = output[direct_key]
 
     if _is_sdk_error(error, openai_module, "APITimeoutError") or isinstance(
         error, TimeoutError
@@ -190,12 +194,13 @@ def _extract_generation_output(error: Exception) -> dict | None:
                              if k in message and (message[k] is None or type(message[k]) is str)}
     elif message is None:
         output['message'] = None
-    for key in ('finish_reason', 'artifact_path', 'artifact_error'):
+    for key in ('finish_reason', 'artifact_path', 'artifact_error', 'request_id', 'input_audio_sha256'):
         if type(value.get(key)) is str:
             output[key] = value[key]
-    if type(value.get('artifact_saved')) is bool:
-        output['artifact_saved'] = value['artifact_saved']
-    for key in ('context_tokens', 'max_output_tokens'):
+    for key in ('artifact_saved', 'reached_eos'):
+        if type(value.get(key)) is bool:
+            output[key] = value[key]
+    for key in ('context_tokens', 'max_output_tokens', 'input_tokens', 'generated_tokens', 'max_new_tokens'):
         if type(value.get(key)) is int and value[key] >= 0:
             output[key] = value[key]
     usage = value.get('usage')

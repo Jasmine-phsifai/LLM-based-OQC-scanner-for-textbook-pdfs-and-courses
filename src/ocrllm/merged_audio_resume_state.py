@@ -18,6 +18,7 @@ from .audio.build_long_audio_interval_windows import (
 from .audio.transcription_prompt import AUDIO_TRANSCRIPTION_PROMPT_VERSION
 from .contracts.source_fingerprint import SourceFingerprint
 from .audio_gap_policy import AudioGapPolicy
+from .audio_output_limit_policy import AudioOutputLimitPolicy
 from .errors import ResumeStateError
 from .provider_model_usage import ProviderModelUsage
 
@@ -25,6 +26,7 @@ from .provider_model_usage import ProviderModelUsage
 MERGED_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v1"
 SPLIT_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v2"
 GAP_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v3"
+BOUNDED_AUDIO_RESUME_STATE_VERSION = "ocrllm.merged-audio-resume.v4"
 _SLOT_STATUSES = frozenset({"unresolved", "settled", "failed"})
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ROOT_KEYS = frozenset(
@@ -82,8 +84,16 @@ class MergedAudioSlot:
     subslots: tuple[MergedAudioSlot, ...] = ()
     output_limit_attempts: int = 0
     output_limit_identity: str | None = None
+    split_depth: int = 0
+    recovery_attempts: int = 0
+    output_limit_evidence: tuple[dict, ...] = ()
 
     def __post_init__(self) -> None:
+        if (type(self.split_depth) is not int or not 0 <= self.split_depth <= 2
+            or type(self.recovery_attempts) is not int or not 0 <= self.recovery_attempts <= 3
+            or type(self.output_limit_evidence) is not tuple
+            or any(type(row) is not dict for row in self.output_limit_evidence)):
+            raise ValueError("invalid bounded audio recovery evidence")
         if (type(self.output_limit_attempts) is not int or not 0 <= self.output_limit_attempts <= 3
             or (self.output_limit_attempts == 0 and self.output_limit_identity is not None)
             or (self.output_limit_attempts > 0 and (type(self.output_limit_identity) is not str
@@ -184,9 +194,11 @@ class MergedAudioResumeState:
     provider_cleanup_failed: bool = False
     audio_gap_policy: AudioGapPolicy | None = None
     accepted_with_gaps: bool = False
+    audio_output_limit_policy: AudioOutputLimitPolicy | None = None
+    published_markdown_sha256: str | None = None
 
     def __post_init__(self) -> None:
-        if self.state_version not in (MERGED_AUDIO_RESUME_STATE_VERSION, SPLIT_AUDIO_RESUME_STATE_VERSION, GAP_AUDIO_RESUME_STATE_VERSION):
+        if self.state_version not in (MERGED_AUDIO_RESUME_STATE_VERSION, SPLIT_AUDIO_RESUME_STATE_VERSION, GAP_AUDIO_RESUME_STATE_VERSION, BOUNDED_AUDIO_RESUME_STATE_VERSION):
             raise ValueError("merged-audio resume state version is unsupported")
         if type(self.source) is not SourceFingerprint:
             raise ValueError("merged-audio source is invalid")
@@ -203,7 +215,20 @@ class MergedAudioResumeState:
             raise ValueError("invalid audio gap policy")
         if type(self.accepted_with_gaps) is not bool:
             raise ValueError("invalid audio completion status")
-        if self.state_version != GAP_AUDIO_RESUME_STATE_VERSION and (
+        if self.published_markdown_sha256 is not None and (type(self.published_markdown_sha256) is not str
+            or _SHA256.fullmatch(self.published_markdown_sha256) is None):
+            raise ValueError("invalid published audio Markdown hash")
+        if self.audio_output_limit_policy is not None and type(self.audio_output_limit_policy) is not AudioOutputLimitPolicy:
+            raise ValueError("invalid audio output-limit policy")
+        if self.state_version != BOUNDED_AUDIO_RESUME_STATE_VERSION and (
+            self.audio_output_limit_policy is not None or self.published_markdown_sha256 is not None
+            or any(leaf.split_depth or leaf.recovery_attempts or leaf.output_limit_evidence
+                   for parent in self.slots for leaf in (parent, *parent.subslots))
+        ):
+            raise ValueError("bounded audio recovery requires state v4")
+        if self.state_version == BOUNDED_AUDIO_RESUME_STATE_VERSION and self.audio_output_limit_policy is None:
+            raise ValueError("bounded audio recovery requires an explicit policy")
+        if self.state_version not in (GAP_AUDIO_RESUME_STATE_VERSION, BOUNDED_AUDIO_RESUME_STATE_VERSION) and (
             self.audio_gap_policy is not None or self.accepted_with_gaps
             or any(leaf.output_limit_attempts for parent in self.slots for leaf in parent.subslots or (parent,))
         ):
@@ -281,10 +306,13 @@ class MergedAudioResumeState:
             ],
             "provider_cleanup_failed": self.provider_cleanup_failed,
         }
-        if self.state_version == GAP_AUDIO_RESUME_STATE_VERSION:
+        if self.state_version in (GAP_AUDIO_RESUME_STATE_VERSION, BOUNDED_AUDIO_RESUME_STATE_VERSION):
             from dataclasses import asdict
             document['audio_gap_policy'] = asdict(self.audio_gap_policy) if self.audio_gap_policy else None
             document['accepted_with_gaps'] = self.accepted_with_gaps
+        if self.state_version == BOUNDED_AUDIO_RESUME_STATE_VERSION:
+            document['audio_output_limit_policy'] = asdict(self.audio_output_limit_policy)
+            document['published_markdown_sha256'] = self.published_markdown_sha256
         return (
             json.dumps(
                 document,
@@ -337,7 +365,9 @@ def _state_from_document(document: object) -> MergedAudioResumeState:
     if type(document) is not dict:
         raise ValueError
     expected_keys = (_ROOT_KEYS | {'audio_gap_policy', 'accepted_with_gaps'}
-                     if document.get('state_version') == GAP_AUDIO_RESUME_STATE_VERSION else _ROOT_KEYS)
+                     if document.get('state_version') in (GAP_AUDIO_RESUME_STATE_VERSION, BOUNDED_AUDIO_RESUME_STATE_VERSION) else _ROOT_KEYS)
+    if document.get('state_version') == BOUNDED_AUDIO_RESUME_STATE_VERSION:
+        expected_keys = expected_keys | {'audio_output_limit_policy', 'published_markdown_sha256'}
     if frozenset(document) != expected_keys:
         raise ValueError
     source_document = document["source"]
@@ -381,6 +411,9 @@ def _state_from_document(document: object) -> MergedAudioResumeState:
         audio_gap_policy=(AudioGapPolicy(**document['audio_gap_policy'])
                           if document.get('audio_gap_policy') is not None else None),
         accepted_with_gaps=document.get('accepted_with_gaps', False),
+        published_markdown_sha256=document.get('published_markdown_sha256'),
+        audio_output_limit_policy=(AudioOutputLimitPolicy(**document['audio_output_limit_policy'])
+                                   if document.get('audio_output_limit_policy') is not None else None),
     )
 
 
@@ -406,6 +439,10 @@ def _slot_document(slot):
     if slot.output_limit_attempts:
         document['output_limit_attempts'] = slot.output_limit_attempts
         document['output_limit_identity'] = slot.output_limit_identity
+    if slot.split_depth or slot.recovery_attempts or slot.output_limit_evidence:
+        document['split_depth'] = slot.split_depth
+        document['recovery_attempts'] = slot.recovery_attempts
+        document['output_limit_evidence'] = list(slot.output_limit_evidence)
     if slot.subslots:
         document["subslots"] = [_slot_document(child) for child in slot.subslots]
     return document
@@ -415,6 +452,8 @@ def _slot_from_document(document, *, child=False):
     retry_keys = {'output_limit_attempts', 'output_limit_identity'}
     allowed = (_SLOT_KEYS, _SLOT_KEYS | {'subslots'}, _SLOT_KEYS | retry_keys,
                _SLOT_KEYS | retry_keys | {'subslots'})
+    recovery_keys = {'split_depth', 'recovery_attempts', 'output_limit_evidence'}
+    allowed = (*allowed, *(keys | recovery_keys for keys in allowed))
     if type(document) is not dict or frozenset(document) not in allowed:
         raise ValueError("invalid audio slot fields")
     raw_children = document.get("subslots", [])
@@ -423,4 +462,10 @@ def _slot_from_document(document, *, child=False):
     values = {key: document[key] for key in _SLOT_KEYS}
     values['output_limit_attempts'] = document.get('output_limit_attempts', 0)
     values['output_limit_identity'] = document.get('output_limit_identity')
+    values['split_depth'] = document.get('split_depth', 0)
+    values['recovery_attempts'] = document.get('recovery_attempts', 0)
+    raw_evidence = document.get('output_limit_evidence', [])
+    if type(raw_evidence) is not list:
+        raise ValueError('invalid audio failure evidence')
+    values['output_limit_evidence'] = tuple(raw_evidence)
     return MergedAudioSlot(**values, subslots=tuple(_slot_from_document(value, child=True) for value in raw_children))

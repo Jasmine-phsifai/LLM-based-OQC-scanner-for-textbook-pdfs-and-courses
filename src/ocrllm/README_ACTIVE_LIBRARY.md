@@ -345,3 +345,14 @@ Run focused tests from the maintained environment:
 The installed-profile gate is `tools/run_stage_m_offline_gate.ps1`. It builds an
 isolated wheel, proves base import and optional extras, and exercises the visible
 video inspect/extract/batchify/split flow without provider calls.
+
+
+### Explicit audio output-limit recovery
+
+`AudioOutputLimitPolicy(max_retries=2, max_split_depth=2)` is an optional
+`recognize_audio_to_markdown` / `resume_audio_to_markdown` argument. It persists
+finite per-range dispatch reservations and bisects only exhausted output-limit
+failures. It cannot combine with `failed_slice_minutes`; ordinary resume restores
+the saved policy. `inspect_audio_completion` exposes small policy, failure-artifact
+and exhausted-range summaries. Retained v4 state requires a matching publication
+hash before inspect reports complete. See the [owner contract](../../docs/asr_binary_recovery_2026-09-13.md).

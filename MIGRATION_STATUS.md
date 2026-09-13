@@ -7,7 +7,15 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-09-10.
+Last synchronized: 2026-09-13.
+
+Explicit AudioOutputLimitPolicy adds bounded binary ASR recovery in v4 while
+keeping old checkpoints readable. Provider calls reserve their budget before
+dispatch; failed output artifacts remain referenced after recovery. Retained
+complete states include a Markdown publication hash so interrupted publication
+cannot turn a stale partial MD into complete. See
+[owner contract and scenario](docs/asr_binary_recovery_2026-09-13.md).
+
 
 Compatible `capture_error_output=True` optionally exposes the provider's structured
 token-limit generation output (content, reasoning, usage and diagnostic reference)

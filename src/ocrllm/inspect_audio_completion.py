@@ -26,5 +26,12 @@ def inspect_audio_completion(output_path: str | Path, *, audio_gap_policy: Audio
     summary = audio_gap_summary(state, audio_gap_policy)
     summary['would_accept_with_supplied_policy'] = summary['accepted_with_gaps']
     summary['accepted_with_gaps'] = state.accepted_with_gaps
-    summary['status'] = ('complete_with_gaps' if state.accepted_with_gaps and path.is_file() else 'partial')
+    from .is_audio_markdown_published import is_audio_markdown_published
+    published = is_audio_markdown_published(state, path)
+    summary['status'] = ('complete_with_gaps' if state.accepted_with_gaps and published
+                         else 'complete' if state.audio_output_limit_policy and published and all(slot.status == 'settled' for slot in state.slots)
+                         else 'partial')
+    if state.audio_output_limit_policy is not None:
+        from .audio_output_limit_summary import audio_output_limit_summary
+        summary.update(audio_output_limit_summary(state))
     return summary
