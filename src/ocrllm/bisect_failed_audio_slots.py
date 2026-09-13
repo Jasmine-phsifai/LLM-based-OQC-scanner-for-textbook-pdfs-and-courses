@@ -41,15 +41,14 @@ def upgrade_audio_output_limit_state(state, policy):
 
 def bisect_failed_audio_slots(state, *, slot_index):
     """Split only exhausted output-limit leaves, at most to the saved depth."""
+    from .audio_output_limit_recovery_summary import output_limit_recovery_action
     policy = state.audio_output_limit_policy
     parent = state.slots[slot_index]
     children = []
     history = parent.output_limit_evidence
     changed = False
     for candidate in parent.subslots or (parent,):
-        if (not is_output_limit_failure(candidate)
-            or candidate.recovery_attempts < 1 + policy.max_retries
-            or candidate.split_depth >= policy.max_split_depth):
+        if output_limit_recovery_action(candidate, policy) != 'bisect':
             children.append(candidate)
             continue
         midpoint = (candidate.logical_start_seconds + candidate.logical_end_seconds) / 2

@@ -1,13 +1,18 @@
 """Read audio completion and actual failed ranges through an owner public API."""
 from pathlib import Path
 from .audio_gap_policy import AudioGapPolicy
+from .audio_output_limit_policy import AudioOutputLimitPolicy
 
 
-def inspect_audio_completion(output_path: str | Path, *, audio_gap_policy: AudioGapPolicy | None = None) -> dict:
+def inspect_audio_completion(output_path: str | Path, *, audio_gap_policy: AudioGapPolicy | None = None,
+                             audio_output_limit_policy: AudioOutputLimitPolicy | None = None) -> dict:
     """Summarize durable audio state without inference or mutation.
 
     A supplied policy evaluates threshold eligibility without changing the saved
     completion decision. A completed file without state has unknown gap details.
+    audio_output_limit_policy evaluates only real cap-recovery work without
+    changing the saved policy, retry counts or publication. Candidate fields
+    include pending derived ranges whose saved ancestor proves a cap failure.
     Use only for caller-owned OCRLLM merged-audio targets.
     """
     from .audio_gap_summary import audio_gap_summary
@@ -16,12 +21,15 @@ def inspect_audio_completion(output_path: str | Path, *, audio_gap_policy: Audio
     from .errors import ConfigError
     if audio_gap_policy is not None and type(audio_gap_policy) is not AudioGapPolicy:
         raise ConfigError('audio_gap_policy must be an AudioGapPolicy.', code='CONFIG_INVALID')
+    if audio_output_limit_policy is not None and type(audio_output_limit_policy) is not AudioOutputLimitPolicy:
+        raise ConfigError('audio_output_limit_policy must be an AudioOutputLimitPolicy.', code='CONFIG_INVALID')
     path = Path(output_path)
     state_path = resolve_resume_state_path(path)
     if not state_path.exists():
         return {'status': 'complete' if path.is_file() else 'missing',
                 'failed_seconds': None, 'failed_fraction': None, 'failed_segments': None,
-                'accepted_with_gaps': False}
+                'accepted_with_gaps': False, 'audio_publication_pending': False, 'output_limit_recovery_available': False,
+                'output_limit_recovery_candidate_seconds': 0.0, 'output_limit_recovery_candidates': []}
     state = load_merged_audio_resume_state(state_path)
     summary = audio_gap_summary(state, audio_gap_policy)
     summary['would_accept_with_supplied_policy'] = summary['accepted_with_gaps']
@@ -34,4 +42,11 @@ def inspect_audio_completion(output_path: str | Path, *, audio_gap_policy: Audio
     if state.audio_output_limit_policy is not None:
         from .audio_output_limit_summary import audio_output_limit_summary
         summary.update(audio_output_limit_summary(state))
+    from .audio_output_limit_recovery_summary import audio_output_limit_recovery_summary
+    publication_pending = summary['status'] == 'partial' and (
+        state.accepted_with_gaps or all(slot.status == 'settled' for slot in state.slots)
+    )
+    summary.update(audio_output_limit_recovery_summary(
+        state, audio_output_limit_policy, publication_pending=publication_pending,
+    ))
     return summary

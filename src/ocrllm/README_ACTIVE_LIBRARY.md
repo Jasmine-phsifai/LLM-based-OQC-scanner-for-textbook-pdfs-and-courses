@@ -356,3 +356,12 @@ failures. It cannot combine with `failed_slice_minutes`; ordinary resume restore
 the saved policy. `inspect_audio_completion` exposes small policy, failure-artifact
 and exhausted-range summaries. Retained v4 state requires a matching publication
 hash before inspect reports complete. See the [owner contract](../../docs/asr_binary_recovery_2026-09-13.md).
+
+`inspect_audio_completion(..., audio_output_limit_policy=policy)` also evaluates
+`output_limit_recovery_available`, candidate source seconds and retry/bisect/continue
+ranges without mutation. Only cap failures or pending descendants with saved cap
+evidence qualify; accepted gaps, non-cap errors and ordinary pending work do not.
+
+`audio_publication_pending` identifies a saved settled/accepted result whose final
+MD still needs publication. It is available recovery with zero candidate audio
+seconds; ordinary resume republishes it without inference.

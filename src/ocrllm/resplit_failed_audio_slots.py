@@ -2,6 +2,7 @@
 from dataclasses import replace
 
 from .errors import ConfigError
+from .audio_gap_summary import is_output_limit_failure
 from .merged_audio_resume_state import MergedAudioSlot, SPLIT_AUDIO_RESUME_STATE_VERSION, GAP_AUDIO_RESUME_STATE_VERSION
 
 
@@ -29,9 +30,7 @@ def resplit_failed_audio_slots(state, *, interval_minutes, slot_indices=None, on
             eligible = (candidate.status == 'failed'
                         and candidate.logical_end_seconds-candidate.logical_start_seconds > span)
             if only_output_limit:
-                description = candidate.error_description or ''
-                eligible = eligible and ('provider_code=output_token_limit ' in description
-                                         or 'provider_code=output_token_limit]' in description)
+                eligible = eligible and is_output_limit_failure(candidate)
             if not eligible:
                 children.append(candidate)
                 continue

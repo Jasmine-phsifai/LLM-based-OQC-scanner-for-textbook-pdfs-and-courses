@@ -10,7 +10,9 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 Last synchronized: 2026-09-13.
 
 Explicit AudioOutputLimitPolicy adds bounded binary ASR recovery in v4 while
-keeping old checkpoints readable. Provider calls reserve their budget before
+keeping old checkpoints readable. Public inspect_audio_completion can evaluate real cap-recovery candidates without
+mutation, including pending derived leaves with retained ancestor cap evidence.
+Provider calls reserve their budget before
 dispatch; failed output artifacts remain referenced after recovery. Retained
 complete states include a Markdown publication hash so interrupted publication
 cannot turn a stale partial MD into complete. See

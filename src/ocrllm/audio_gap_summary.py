@@ -1,11 +1,16 @@
 """Summarize actual audio leaves without counting failed parents twice."""
+import re
+
+
+_OUTPUT_LIMIT_DIAGNOSTIC = re.compile(
+    r" \[provider_code=output_token_limit(?: request_id=[A-Za-z0-9][A-Za-z0-9._:-]{0,127})?\]$"
+)
 
 
 def is_output_limit_failure(slot):
     description = slot.error_description or ''
     return (slot.status == 'failed' and slot.error_code == 'PROVIDER_REQUEST_INVALID'
-            and ('provider_code=output_token_limit ' in description
-                 or 'provider_code=output_token_limit]' in description))
+            and _OUTPUT_LIMIT_DIAGNOSTIC.search(description) is not None)
 
 
 def audio_gap_summary(state, policy=None):

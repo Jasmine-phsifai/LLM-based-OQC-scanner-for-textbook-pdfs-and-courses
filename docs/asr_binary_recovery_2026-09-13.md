@@ -51,3 +51,28 @@ v4 checkpoint 保留策略、每叶预算、深度、失败引用和最终 Markd
 本轮结果：最终二层场景全部通过，真实模型调用为 0；45 项既有音频/error 回归、收窄错误数字字段后 27 项 error 回归，以及原 gap/一次细分两个场景均通过。最终 JSON 位于持久验证目录 `asr-binary-recovery-20260913/owner-scenario-final/result.json`，由统筹复制进当前仓库。部署仍须通过真实课程边界的服务和消费者检查。
 
 补充验证：35 项既有 provider-model、轻量导入与公共 import-contract 测试通过。
+
+
+## 同日补充：旧失败优先级和不等长恢复审查
+
+用户进一步要求优先处理旧机制失败、当前机制仍有可恢复工作的任务，并再次限定分割只用于 token 超限。本轮保持唯一触发码 `output_token_limit`；独立输入上下文错误、校验错误、凭据、限流和暂时服务错误没有被纳入分割。后两类的原有限重试仍可按原recipe执行。
+
+`inspect_audio_completion(output_path, audio_output_limit_policy=policy)` 现在只读评估当前策略下真实可继续的 cap 工作，返回：
+
+- `output_limit_recovery_available` 和 `output_limit_recovery_candidate_seconds`，供调用方优先排队；
+- `output_limit_recovery_candidates`：源区间、深度、剩余预算，以及 `retry` / `bisect` / `continue` 动作；
+- `output_limit_recovery_policy` 是评估策略，原 `audio_output_limit_policy` 仍表示已保存实际策略；`output_limit_recovery_policy_mismatch` 阻止用评估参数重置已存预算；`output_limit_recovery_from_legacy` 表示是否评估旧状态升级。
+
+`continue` 仅用于已有祖先超限证据覆盖的未请求派生叶，解决“二分计划已保存、首个子请求前中断”后仍需排队的问题。普通原始 pending 槽、无超限来源证明的旧手动子槽、其他错误、已耗尽深度/预算以及已有效发布的接受缺口均不列识别候选。函数不写checkpoint、不发请求，也不更改课程完成状态。实际分割与只读评估复用同一超限动作判定，统筹不用解析错误描述或复制内部状态。
+
+对源码的有界审查没有发现“子槽必须等长”的限制：`resolve_audio_slice_mode`、`_validate_resume_plan` 与 state `_validate_plan` 保持原父计划校验，末尾原父段由实际时长截短；子叶只检查正时长、逻辑连续覆盖与实际范围包含关系。切片、提示词、MD、缺口统计均读取实际端点，provider调用使用原有实际范围。源覆盖观测和logical unit ID使用 source hash + logical范围，列表index只作存储/顺序索引；重排不改变逻辑身份。原父边界上下文是有意保留的输入重叠，新增内容仍按logical区间计量。
+
+扩展原真实媒体/合成HTTP场景使用661.375秒输入、原10分钟计划，末尾父片为600–661.375秒。左半失败再分后，最终子叶为600–615.34375、615.34375–630.6875、630.6875–661.375秒：右侧30.6875秒成功兄弟从index1移到index2，但正文、预算和logical ID保持。最后一个15.34375秒子叶调用前中断，再用原始10分钟计划恢复，仅发1次新请求便完成；所有成功logical区间的唯一覆盖和源总时长严格相等，复用计量新增为0，Markdown顺序正确。
+
+另在真正的os.replace边界使二分checkpoint已落盘、任何子请求尚未预留即中断：公开inspect仍列两个continue候选、每叶3次剩余预算；普通resume只发两次成功请求后完成。旧v2/v3超限分别公开判为retry/bisect，检查前后checkpoint字节不变。既有accepted-with-gaps、response-validation、authentication、rate-limit和service-unavailable五份场景状态公开检查均available=false且未写文件。
+
+完整扩展场景通过，结果在持久验证目录 `asr-binary-recovery-20260913/owner-priority-uneven/result.json`；23项既有merged-audio/import-contract回归通过。无真实模型请求，无生产状态或进程修改。此次实际补的是责任库的只读恢复候选API，不把“未发现等长冲突”包装成已修复某个不存在的固定间隔缺陷。
+
+额外收紧分类：只认末尾完整规范诊断块 `[provider_code=output_token_limit]` 或带合法request_id的同块，同时要求canonical `PROVIDER_REQUEST_INVALID`。自由描述中提到同词、后面实际诊断为validation/context/incomplete等码，均不计为cap。新二分、旧`only_output_limit=True`细分、gap与只读候选复用同一判定。六个正反描述边界检查通过，原真实媒体/合成HTTP超限恢复工具再次通过。
+
+发布恢复另以 `audio_publication_pending` 表示：全部原槽已settled或已经保存accepted_with_gaps，但MD尚未通过发布核对时，available=true、候选秒数0、识别候选列表为空。此时普通resume只补最终MD，不发模型请求。场景同时覆盖全settled未发布，以及v4已接受缺口但MD缺失/被旧partial稿替换；正常已发布的complete_with_gaps仍available=false。

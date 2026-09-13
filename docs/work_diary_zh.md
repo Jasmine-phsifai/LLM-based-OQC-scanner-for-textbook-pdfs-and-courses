@@ -10051,3 +10051,14 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 本仓没有发真实GPU请求、重启服务、编辑生产checkpoint或清理归档。真实新模型服务引用与持续生产部署由统筹在课程边界验证；机制通过不等于质量或吞吐提高。Carry-forward judgement：恢复预算、逐次证据和最终发布都必须归识别责任库；保留checkpoint后不能继续沿用“文件存在即已完成”的快捷判断，也不能将unknown预留当已确认失败。
 
 补充验证：35 项既有 provider-model、轻量导入与公共 import-contract 测试通过。
+
+
+**2026-09-13 旧ASR失败优先级与不等长槽审查。** 用户要求只对超限分割、优先排队旧机制失败但新机制仍可能恢复的任务，并自查不等长槽与固定interval假设。与统筹对齐后扩展公开 `inspect_audio_completion(..., audio_output_limit_policy=...)`：只读给available、候选秒数、retry/bisect/continue区间及策略差异，不写状态或改变完成判定；只有精确output_token_limit失败或有祖先cap证据的未请求派生叶才入选，已接受缺口不重开。实际bisect与inspect复用同一动作判定，避免统筹复制错误策略。
+
+审查原计划校验、子槽分区、物理切片/提示词、MD/usage/observations：未发现强迫子叶等长的限制；固定分钟只用于核实原父计划，子叶读真实端点、逻辑ID不依赖会重排的index。扩展原601秒场景，增加661.375秒输入的61.375秒尾父片：左半再分15.34375/15.34375秒、右侧30.6875秒成功兄弟从index1变2，正文与logical ID完全保留。末叶请求预留后中断，原始10分钟plan普通resume只1新请求完成，覆盖并集恰好等于总源时长、复用新增为0、MD顺序正确。另在实际os.replace保存二分checkpoint后中断、首子未请求时，owner仍返回两个continue候选；普通resume2次成功完成。完整扩展真实FFmpeg媒体/合成HTTP场景和23项现有audio/import测试通过；5份既有accepted/非cap状态只读排除，checkpoint字节不变。结果 `owner-priority-uneven/result.json` 交统筹复制到当前repo。
+
+没有触碰生产进程、真实checkpoint或发GPU调用；独立输入context错误仍未纳入output-limit分割。Carry-forward judgement：调度层只能消费责任库公开恢复资格，不按错误描述自行推断；将祖先超限派生的pending与普通pending分开，才能既避免错误提升优先级，也不让已保存二分计划的中断任务饿死。
+
+同轮分类复核：原helper只搜description中的精确码分隔串，虽然当前OpenAI映射使用固定安全消息，仍可能把自由描述中提及的旧码误认成实际错误；已改为只认末尾规范机器码块，并要求PROVIDER_REQUEST_INVALID。新二分、旧only_output_limit路径、gap和只读候选共用判定。六个正反描述探针通过；原真实媒体/合成HTTP超限工具复验通过，不扩展到任何输入context错误。
+
+统筹复核再指出“只剩发布”的任务也需公开资格：已settled/accepted但MD发布或hash保存中断时，没有识别候选不代表没有可完成工作。新增audio_publication_pending，由owner核对MD后给available=true/0候选秒数，不重开模型。扩展场景验证全settled未发布资格，以及v4接受缺口后丢失MD或残留旧partial稿的零推理重建；已有效发布接受缺口仍排除。
