@@ -1,6 +1,6 @@
 # ASR 持续生成循环的有界恢复（2026-09-15）
 
-状态：owner 实现及场景验证通过；真实 Model Lab 集成与生产观察由统筹继续验证。
+状态：owner 实现及场景验证通过；2026-09-15 07:36:31 UTC 已在生产消费者启用，真实 Model Lab 集成与自然生产恢复已核验。
 
 维护者本轮明确以管线效率和学习者可用转写为目标，不对重试、分块、模型、惩罚、检测作人为限制。这取代把旧“两次重试/两层切分”视为不得调整的产品要求；本次先复用现有两层结构验证一项具体改善。
 
@@ -11,3 +11,7 @@ Model Lab 通过 422/generation_repetition 明确报告生成停止于持续循�
 工具 tools/materialize_asr_optimization_cases.py 使用现有 materialize_long_audio_interval 准备私有固定源片段，验证源哈希，既不调用模型也不写生产checkpoint。模型代码、解码参数、GPU和原始tokens由Model Lab维护；统筹负责安全GPU窗口、部署顺序和生产产出观察。
 
 验证：tools/verify_audio_binary_recovery.py 使用真实编码MP3及合成HTTP，在新循环分支验证7次树＋1次正常尾段、四叶每叶仅一次、恢复零新增调用、循环不接受gap、工件引用保留；原21次cap树、未知预留、暂时错误、旧版本接入、不等长尾、成功兄弟复用及发布恢复仍通过。既有merged-audio 18项测试通过。场景不构成真实转写质量证据。
+
+生产证据：消费者 runtime fe68015 与 Model Lab runtime 9135366/configuration c1fb4047605571cb44012b4fff14c3fbe65301bd14252b0098eba978fcc466c4 已按 request_id 对齐。专业外语源3900–4200秒的300秒区间返回 generation_repetition，直接二分3900–4050及4050–4200，两段成功；三次客户端请求合计约29.67秒，没有同字节原段重试。已到二层深度的3600–3750秒循环段保留失败，后续正常工作继续。公共 inspect_audio_completion 确认 durable checkpoint，并保持 partial / accepted_with_gaps=false。
+
+Model Lab 的独立对照显示循环检测保持四个正常转写逐字一致；惩罚1.05会令一个正常对照退化，未上线。60秒短分块虽10/12子片段完成、MOSS四段返回结果，尚无人工真值支持质量放行。本次只改变明确循环的时间成本和相同输入重试；全局更短分块、替代模型路由和旧耗尽预算的迁移均未启用。统筹仓库 docs/asr-optimization-20260915/ 保存用户可读报告、场景结果、真实HTTP与生产观察证据。

@@ -10081,3 +10081,5 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 
 
 **2026-09-15 ASR循环恢复优化。** 维护者解除重试/分块/模型等人为限制，要求提高效率且保留可用转写。新增明确generation_repetition分类，复用v4两层切分，直接二分而非原样重试；不放宽gap、不重置预算、不改成功结果。场景与18项merged-audio测试通过，真实推理验证另记。工具准备8个固定源输入及12个更短对照，原始源哈希校验且生产checkpoint写入0。实现与验证见[记录](asr_generation_repetition_2026-09-15.md)。Carry-forward judgement：循环与token cap不能混成同一种缺口证据；后续换模型/切片仍必须保留真实源覆盖和未知预留，不得把提前停止误作成功。
+
+本日上线补证：07:36:31 UTC恢复消费者后，fe68015自然接收Model Lab的generation_repetition；3900–4200秒原段一次失败后直接二分，两子段成功，无原样重试。公开inspection确认checkpoint落盘、partial且不接受gap，旧失败750秒仍明确保留。Model Lab四个正常对照逐字不变，独立HTTP也复现576-token循环失败和正常成功；1.05惩罚、短片段和MOSS候选未作为质量已通过策略上线。真实跨repo证据在统筹docs/asr-optimization-20260915，owner记录已更新。Carry-forward judgement：减少失败消耗已获真实链路证据，但不能把小样本、合成场景或返回非空文本升级为长期吞吐/人工准确率结论。
