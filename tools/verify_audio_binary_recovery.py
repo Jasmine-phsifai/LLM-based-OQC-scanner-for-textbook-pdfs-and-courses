@@ -108,6 +108,26 @@ def main():
                                           audio_output_limit_policy=policy, audio_gap_policy=gap, **kwargs)
 
     try:
+        # Sustained loops have a different recovery action: bisect immediately,
+        # never manufacture three cap failures or accept the stopped prefix.
+        reset([(422, 'generation_repetition')] * 7 + [OK])
+        repeated_out = args.work_dir / 'all-repetition.md'
+        repeated_result = recognize(repeated_out)
+        assert repeated_result.status == 'partial' and len(calls) == 8
+        repeated_state = state(repeated_out)
+        repeated_leaves = repeated_state['slots'][0]['subslots']
+        assert len(repeated_leaves) == 4
+        assert all(r['recovery_attempts'] == 1 and r.get('output_limit_attempts', 0) == 0 for r in repeated_leaves)
+        assert not repeated_result.metadata['accepted_with_gaps']
+        assert len(repeated_result.metadata['output_limit_failure_evidence']) == 7
+        assert all(r['provider_code'] == 'generation_repetition'
+                   and r['generation_output']['artifact_saved']
+                   for r in repeated_result.metadata['output_limit_failure_evidence'])
+        assert not inspect_audio_completion(repeated_out, audio_output_limit_policy=policy)['output_limit_recovery_available']
+        before_calls = len(calls)
+        resume_audio_to_markdown(plan, provider=provider, output_path=repeated_out)
+        assert len(calls) == before_calls
+
         # The original 600-second interval fails at every level; tail continues.
         reset([CAP] * 21 + [OK])
         out = args.work_dir / 'all-cap.md'
@@ -451,7 +471,7 @@ def main():
         continued = resume_audio_to_markdown(short_plan, provider=provider, output_path=derived)
         assert continued.status == 'complete' and continued.metadata['provider_call_count'] == 2
         print('Passed: unequal tail, reindexed sibling identity, logical coverage and pending cap-derived priority.', flush=True)
-        report = {'passed': True, 'real_model_calls': 0, 'synthetic_http': True,
+        report = {'repetition_calls': 8, 'repetition_exhausted_resume_calls': 0, 'repetition_gap_accepted': False, 'passed': True, 'real_model_calls': 0, 'synthetic_http': True,
                   'worst_case_original_range_calls': 21, 'worst_case_tail_calls': 1,
                   'durable_failed_artifact_references': 21, 'deepest_segment_seconds': 150,
                   'successful_sibling_reused': True, 'complete_checkpoint_retained': True,

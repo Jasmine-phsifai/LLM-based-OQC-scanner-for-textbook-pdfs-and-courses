@@ -10,6 +10,8 @@ class AudioOutputLimitPolicy:
 
     The initial request is separate from max_retries. Interrupted dispatched
     attempts consume budget; they do not prove an output-limit failure.
+    Explicit generation_repetition failures bisect without identical retries,
+    within max_split_depth. They never qualify as accepted short audio gaps.
     """
 
     max_retries: int = 2

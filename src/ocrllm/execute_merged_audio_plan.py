@@ -19,6 +19,7 @@ from threading import Lock
 from .cooperative_stop import CooperativeStop, ProviderDispatchStopped
 
 from .audio_gap_summary import is_output_limit_failure
+from .is_audio_generation_failure import is_audio_generation_failure, is_generation_repetition_failure
 from .audio.build_long_audio_interval_prompt import build_long_audio_interval_prompt
 from .audio.build_long_audio_interval_upload_snapshot import (
     build_long_audio_interval_upload_snapshot,
@@ -355,6 +356,10 @@ def _execute_audio_slot(
     """Persist every short-leaf output-cap attempt; never accept other errors."""
     slot_failures = []
     current = slot
+    if owner.output_limit_policy is not None and is_generation_repetition_failure(slot):
+        # Recovery planning bisects a confirmed loop; identical dispatch does not
+        # regain a retry allowance on resume or a later sibling pass.
+        return (), None
     for offset in range(len(provider_lane)):
         if stop.is_set():
             break
@@ -394,7 +399,7 @@ def _execute_audio_slot(
                     provider, dispatch,
                     stop_requested=stop if stop.enabled else None,
                     max_attempts=(1 + policy.max_retries-current.recovery_attempts if policy else None),
-                    stop_provider_codes=(frozenset({'output_token_limit'}) if policy else frozenset()),
+                    stop_provider_codes=(frozenset({'output_token_limit', 'generation_repetition'}) if policy else frozenset()),
                 )
                 response = call_result.response
             except NoSpeechDetected as error:
@@ -411,11 +416,12 @@ def _execute_audio_slot(
                     previous = current.output_limit_attempts if current.output_limit_identity == identity else 0
                     outcome = replace(outcome, output_limit_attempts=min(3, previous+1),
                                       output_limit_identity=identity)
-                if policy is not None and is_output_limit_failure(outcome):
+                if policy is not None and is_audio_generation_failure(outcome):
                     generation = error.details.get('generation_output')
                     reference = ({key: thaw_json_value(value) for key, value in generation.items()
                                   if key != 'message'} if isinstance(generation, Mapping) else {})
-                    evidence = {'start_seconds': current.logical_start_seconds,
+                    evidence = {'provider_code': error.details.get('provider_code'),
+                                'start_seconds': current.logical_start_seconds,
                                 'end_seconds': current.logical_end_seconds,
                                 'split_depth': current.split_depth, 'attempt': current.recovery_attempts,
                                 'request_id': error.details.get('request_id') or reference.get('request_id'),

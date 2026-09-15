@@ -1,5 +1,7 @@
 """Expose small, durable ASR recovery facts without checkpoint consumers."""
 from dataclasses import asdict
+from .is_audio_generation_failure import is_generation_repetition_failure
+from .audio_output_limit_recovery_summary import output_limit_recovery_action
 
 
 def audio_output_limit_summary(state):
@@ -16,6 +18,8 @@ def audio_output_limit_summary(state):
              'confirmed_consecutive_output_limits': leaf.output_limit_attempts,
              'status': leaf.status}
             for leaf in leaves if leaf.status != 'settled'
-            and leaf.recovery_attempts >= 1 + state.audio_output_limit_policy.max_retries
+            and (leaf.recovery_attempts >= 1 + state.audio_output_limit_policy.max_retries
+                 or (is_generation_repetition_failure(leaf)
+                     and output_limit_recovery_action(leaf, state.audio_output_limit_policy) is None))
         ],
     }

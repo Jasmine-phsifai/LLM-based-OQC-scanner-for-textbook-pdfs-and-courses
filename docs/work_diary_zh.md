@@ -10078,3 +10078,6 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 扩展既有真实PNG/121.375秒FFmpeg MP3/合成HTTP场景，OS replace边界验证：新预留仍在temp未replace时旧state确认true；replace后HTTP前确认false；旧attempt证据不能冒充新预留；真实当前unknown叶false，普通恢复将其拆分后reserved0的新叶true且旧祖先证据未改；不等长二层/短尾、NOSPEECH与已settled结果、暂时错误非cap、legacy/历史未知、缺失state均按保守契约返回。每次查询前后比对checkpoint原始字节和实际HTTP计数，均不变。完整场景一次通过，结果在 `cooperative-safe-stop-20260913/owner-dispatch-confirmation/result.json`。没有冻结/重启生产或发GPU请求；首次真实迁移由统筹另证。Carry-forward judgement：事件已落盘并不代表之后没有新预留；只读查询必须放在真实写入屏障之后，不能将历史已spent未知次数与当前新增未决预留混为一谈。
 
 补充：32 项既有 merged-audio、轻量导入与公开 import-contract 测试通过。对正在运行课程单次只读耗时约0.20秒，返回unconfirmed_reservation；未冻结，因此明确不将该快照用于重载决定。
+
+
+**2026-09-15 ASR循环恢复优化。** 维护者解除重试/分块/模型等人为限制，要求提高效率且保留可用转写。新增明确generation_repetition分类，复用v4两层切分，直接二分而非原样重试；不放宽gap、不重置预算、不改成功结果。场景与18项merged-audio测试通过，真实推理验证另记。工具准备8个固定源输入及12个更短对照，原始源哈希校验且生产checkpoint写入0。实现与验证见[记录](asr_generation_repetition_2026-09-15.md)。Carry-forward judgement：循环与token cap不能混成同一种缺口证据；后续换模型/切片仍必须保留真实源覆盖和未知预留，不得把提前停止误作成功。

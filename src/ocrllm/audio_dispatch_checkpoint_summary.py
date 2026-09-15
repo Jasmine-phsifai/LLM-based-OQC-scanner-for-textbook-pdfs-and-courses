@@ -1,6 +1,6 @@
 """Conservatively verify latest ASR reservations from one saved checkpoint."""
 
-from .audio_gap_summary import is_output_limit_failure
+from .is_audio_generation_failure import is_audio_generation_failure
 from .merged_audio_resume_state import BOUNDED_AUDIO_RESUME_STATE_VERSION
 
 
@@ -24,7 +24,7 @@ def audio_dispatch_checkpoint_summary(state):
                     continue
                 if leaf.status == 'unresolved' and leaf.recovery_attempts == 0:
                     continue
-                if not is_output_limit_failure(leaf):
+                if not is_audio_generation_failure(leaf):
                     reason = ('unconfirmed_reservation' if leaf.status == 'unresolved'
                               else 'unverifiable_outcome')
                     break

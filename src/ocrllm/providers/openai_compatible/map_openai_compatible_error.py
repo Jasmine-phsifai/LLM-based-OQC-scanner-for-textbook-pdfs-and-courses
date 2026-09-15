@@ -37,7 +37,7 @@ def map_openai_compatible_error(
     request_id = _safe_text_attribute(error, "request_id")
     if request_id is not None:
         details["request_id"] = request_id
-    if capture_error_output and provider_code == 'output_token_limit':
+    if capture_error_output and provider_code in {'output_token_limit', 'generation_repetition'}:
         output = _extract_generation_output(error)
         if output is not None:
             details['generation_output'] = output

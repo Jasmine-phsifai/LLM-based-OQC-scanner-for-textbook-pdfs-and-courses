@@ -7,7 +7,9 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-09-13.
+Last synchronized: 2026-09-15.
+
+Explicit audio recovery now handles provider generation_repetition with immediate bounded bisection, preserving cap-only gap acceptance and the v4 checkpoint. See [owner verification](docs/asr_generation_repetition_2026-09-15.md).
 
 The four merged recognize/resume APIs now accept caller `stop_requested` signals.
 They drain admitted requests into the existing checkpoint and then acknowledge
