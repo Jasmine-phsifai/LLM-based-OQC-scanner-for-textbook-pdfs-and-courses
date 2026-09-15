@@ -114,6 +114,18 @@ def _ensure_long_test_audio(parent: QWidget) -> Optional[tuple[str, Optional[str
     return (out_path, None)
 
 
+def _upload_filetrans_probe_audio(api_key: str, model_name: str, local_path: str) -> str:
+    """把本地测试音频上传到 DashScope OSS，返回 oss:// URL（与生产识别路径一致）。"""
+    try:
+        from dashscope.utils.oss_utils import OssUtils
+    except ImportError as exc:
+        raise RuntimeError("缺少 dashscope SDK，无法上传本地测试音频") from exc
+    file_url, _upload_certificate = OssUtils.upload(model=model_name, file_path=local_path, api_key=api_key)
+    if not file_url or not str(file_url).startswith("oss://"):
+        raise RuntimeError(f"OSS 上传未返回 oss:// URL: {file_url}")
+    return str(file_url)
+
+
 def _is_known_model(name: str, kind: str) -> bool:
     if kind == "vision":
         return model_catalog.find_vision_model(name) is not None
@@ -167,19 +179,31 @@ def _validate_audio(parent: QWidget, client: LLMClient, model_name: str) -> bool
     progress.setCancelButton(None)
     progress.show()
     try:
-        if remote_url:
+        if model_catalog.is_asr_long_family(model_name):
+            # filetrans 家族只接受 DashScope 原生异步接口，chat.completions 必然 4xx；
+            # 本地文件先上传 OSS 换取 oss:// URL（与生产识别路径一致）
+            url = remote_url
+            if not url:
+                try:
+                    url = _upload_filetrans_probe_audio(client.cfg.api.api_key, model_name, local_path)
+                except Exception as exc:
+                    QMessageBox.critical(parent, "上传失败", f"本地音频上传 OSS 失败：\n{exc}")
+                    return False
+            ok, msg = client.probe_audio_filetrans_model(model_name, url, max_wait=600)
+            kind = "asr_long"
+        elif remote_url:
             ok, msg = client.probe_audio_filetrans_model(model_name, remote_url, max_wait=600)
+            kind = "asr_long"
         else:
-            # 本地音频走同步路径（仅适合 omni / 短模型；filetrans 模型必须公网 URL）
+            # 本地音频走同步路径（仅适合 omni / 短模型）
             ok, msg = client.probe_audio_short_model(model_name, local_path, timeout=120)
+            kind = "asr_short"
     finally:
         progress.close()
     if not ok:
         QMessageBox.critical(parent, "音频模型不可用",
                              f"模型 {model_name} 测试失败：\n{msg}\n\n该模型不会被保存到下拉清单。")
         return False
-    # 推断类型：若用户给的是远程 URL（≥5min），通常按 asr_long 保存；本地音频按 asr_short
-    kind = "asr_long" if remote_url else "asr_short"
     model_catalog.save_user_audio_model(model_catalog.AudioModel(
         name=model_name,
         label=f"{model_name} — 用户自定义（已通过测试）",

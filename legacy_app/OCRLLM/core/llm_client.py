@@ -915,20 +915,24 @@ class LLMClient:
         api_key = self.cfg.api.api_key
         if not api_key:
             return False, "未配置 API Key"
-        from OCRLLM.processors.audio import _derive_asr_api_root
+        from OCRLLM.processors.audio import _derive_asr_api_root, _uses_single_file_url
         api_root = _derive_asr_api_root(self.cfg.api.base_url)
         submit_url = f"{api_root}/api/v1/services/audio/asr/transcription"
+        audio_input = {"file_url": audio_url} if _uses_single_file_url(model) else {"file_urls": [audio_url]}
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "X-DashScope-Async": "enable",
+        }
+        if audio_url.startswith("oss://"):
+            headers["X-DashScope-OssResourceResolve"] = "enable"
         try:
             submit = requests.post(
                 submit_url,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "X-DashScope-Async": "enable",
-                },
+                headers=headers,
                 json={
                     "model": model,
-                    "input": {"file_urls": [audio_url]},
+                    "input": audio_input,
                     "parameters": {"channel_id": [0]},
                 },
                 timeout=30,

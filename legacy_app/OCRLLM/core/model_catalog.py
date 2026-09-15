@@ -10,8 +10,9 @@ GUI 与 CLI 通过 list_vision_models()/list_audio_models() 读取。
   3. 用户在 GUI 输入新模型名且通过测试后，会写入 user_models.json
      永久追加到清单中（builtin 之后），下次启动仍可用。
 
-模型来源：通过 `client.models.list()` (OpenAI 兼容) + DashScope 原生 filetrans 枚举，
-每个条目都用 LLMClient.probe_* 实测过：
+模型来源：通过 `client.models.list()` (OpenAI 兼容) 实时分类；
+注意 /models 列表不含 filetrans 异步任务模型，新型号只能靠内置登记或 GUI 手动添加。
+每个 builtin 条目都用 LLMClient.probe_* 实测过：
   · 视觉模型：发一张含字符的小图，要求 OCR 出来；
   · 长音频模型：调 DashScope 异步 filetrans，看任务能否被受理。
 失败 / 未激活的不放入 builtin，请通过 GUI 自定义+测试加入。
@@ -157,6 +158,10 @@ BUILTIN_AUDIO_MODELS: tuple[AudioModel, ...] = (
     AudioModel("qwen3-asr-flash-filetrans", "Qwen3-ASR Flash Filetrans — 长录音异步 (≤12小时)",
                "asr_long",  True, max_seconds=12*3600,
                note="录课首选；DashScope 原生异步 API；支持中英多语种、热词 corpus"),
+    AudioModel("qwen-audio-3.0-asr-flash-filetrans", "Qwen-Audio 3.0 ASR Flash Filetrans — 长录音异步 (≤12小时)",
+               "asr_long",  True, max_seconds=12*3600,
+               note="qwen3-asr-flash-filetrans 的新命名；DashScope 原生异步 API；"
+                    "异步任务模型不出现在 /models 列表，只能内置登记"),
     AudioModel("paraformer-v2",             "Paraformer v2 — 经典长录音异步",
                "asr_long",  True, max_seconds=12*3600,
                note="阿里老牌 ASR；中英日韩德法俄等；带时间戳"),
@@ -294,12 +299,22 @@ def _classify_bailian_vision_model(model_id: str) -> VisionModel | None:
     return VisionModel(name=name, label=label, kind=kind, free_quota=False, max_images=None, note="百炼 /models 实时获取")
 
 
+def is_asr_long_family(name: str) -> bool:
+    """长录音异步 (filetrans) 家族判定。
+
+    这类模型走 DashScope 原生异步任务 API，不会出现在 OpenAI 兼容
+    /models 列表里，也不能用 chat.completions 探测。
+    """
+    lowered = (name or "").strip().lower()
+    return "filetrans" in lowered or lowered.startswith(("paraformer", "sensevoice", "fun-asr"))
+
+
 def _classify_bailian_audio_model(model_id: str) -> AudioModel | None:
     name = model_id.strip()
     lowered = name.lower()
     if not name:
         return None
-    if "filetrans" in lowered or lowered.startswith(("paraformer", "sensevoice", "fun-asr")):
+    if is_asr_long_family(name):
         return AudioModel(
             name=name,
             label=f"{name} — 百炼实时获取长录音",
