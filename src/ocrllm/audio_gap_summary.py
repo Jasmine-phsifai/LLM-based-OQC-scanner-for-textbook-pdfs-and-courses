@@ -13,6 +13,18 @@ def is_output_limit_failure(slot):
             and _OUTPUT_LIMIT_DIAGNOSTIC.search(description) is not None)
 
 
+def is_output_limit_evidence(row):
+    """Distinguish cap evidence from loop records in the unchanged v4 field."""
+    code = row.get('provider_code')
+    if code is not None:
+        return code == 'output_token_limit'
+    # Before provider_code was persisted, adoption saved the canonical error
+    # description. A mention inside free prose is still not cap evidence.
+    description = row.get('description')
+    return (isinstance(description, str)
+            and _OUTPUT_LIMIT_DIAGNOSTIC.search(description) is not None)
+
+
 def audio_gap_summary(state, policy=None):
     policy = policy if policy is not None else state.audio_gap_policy
     failed = []

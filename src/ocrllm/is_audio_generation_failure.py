@@ -1,4 +1,4 @@
-"""Recognize explicit provider generation failures for bounded audio recovery."""
+"""Recognize saved generation-failure evidence, not subdivision eligibility."""
 import re
 from .audio_gap_summary import is_output_limit_failure
 
@@ -13,5 +13,6 @@ def is_generation_repetition_failure(slot):
 
 
 def is_audio_generation_failure(slot):
-    # Gap acceptance deliberately continues to require output-limit evidence.
+    # Evidence retention and safe-stop confirmation include loops. Subdivision,
+    # priority recovery offers and gap acceptance require output-limit evidence.
     return is_output_limit_failure(slot) or is_generation_repetition_failure(slot)

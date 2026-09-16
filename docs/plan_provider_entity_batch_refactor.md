@@ -13,6 +13,16 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-16 ASR token-only subdivision restored
+
+The current user boundary restricts new bisection to canonical output_token_limit.
+Generation loops retain failed artifacts and at most three same-range attempts;
+they cannot authorize token-recovery priority or gap acceptance. The unchanged
+v4 reader reuses settled leaves in prior loop trees, preserving reserved budget.
+Real encoded audio / local HTTP historical-owner scenarios and 39 related
+contracts passed; no production model or state was changed. See
+[current owner evidence](asr_token_only_recovery_2026-09-16.md).
+
 ### 2026-09-16 Codex production interface and owner image recovery
 
 The authorized OCR route now has explicit service tier, opt-in fsynced public

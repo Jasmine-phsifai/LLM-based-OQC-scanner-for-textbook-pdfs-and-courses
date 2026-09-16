@@ -10,9 +10,9 @@ def inspect_audio_completion(output_path: str | Path, *, audio_gap_policy: Audio
 
     A supplied policy evaluates threshold eligibility without changing the saved
     completion decision. A completed file without state has unknown gap details.
-    audio_output_limit_policy evaluates only explicit cap/repetition recovery work without
+    audio_output_limit_policy evaluates only explicit token-cap recovery work without
     changing the saved policy, retry counts or publication. Candidate fields
-    include pending derived ranges whose saved ancestor proves a generation failure.
+    include pending derived ranges whose saved ancestor proves a token-cap failure.
     audio_dispatch_checkpoint_confirmed conservatively verifies the latest saved
     reservations of current v4 binary-policy leaves. It is only a snapshot:
     the caller must already prevent new dispatch through its decision, and must

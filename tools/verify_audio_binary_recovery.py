@@ -9,7 +9,7 @@ import json
 import subprocess
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from threading import Thread
+from threading import Event, Thread
 
 import httpx
 
@@ -17,7 +17,7 @@ from ocrllm import (AudioGapPolicy, AudioOutputLimitPolicy, OpenAICompatibleSett
                     ProviderModel, inspect_audio_completion, inspect_markdown_job,
                     recognize_audio_to_markdown, resume_audio_to_markdown, split_audio, observation_context)
 from ocrllm.audio.load_audio_ffmpeg_executable import load_audio_ffmpeg_executable
-from ocrllm.errors import AllCandidatesExhausted, ConfigError, ResumeStateError
+from ocrllm.errors import AllCandidatesExhausted, Cancelled, ConfigError, ResumeStateError
 
 
 CAP = (422, 'output_token_limit')
@@ -41,6 +41,10 @@ def main():
                                                        error_description=description)) is expected
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work-dir', required=True, type=Path)
+    parser.add_argument('--create-legacy-repetition-fixture', action='store_true',
+                        help='Run only with historical fe68015 owner code to save a naturally interrupted loop tree.')
+    parser.add_argument('--legacy-repetition-fixture', type=Path,
+                        help='Read/resume a fixture produced by historical owner code; never edit its state.')
     args = parser.parse_args()
     args.work_dir.mkdir(parents=True, exist_ok=True)
     media = args.work_dir / 'input.mp3'
@@ -48,6 +52,7 @@ def main():
                     '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=16000', '-t', '601',
                     '-c:a', 'libmp3lame', str(media)], check=True, timeout=30)
     outcomes, calls = [], []
+    historical_stop = Event()
     artifact_dir = args.work_dir / 'synthetic-service-artifacts'
     artifact_dir.mkdir(exist_ok=True)
 
@@ -62,6 +67,8 @@ def main():
             status, value = outcomes[index]
             request_id = f'chatcmpl-binary-{len(list(artifact_dir.iterdir()))}-{index}'
             calls.append((status, value))
+            if args.create_legacy_repetition_fixture and len(calls) == 3:
+                historical_stop.set()
             if status == 200:
                 payload = {'id': request_id, 'model': 'synthetic-audio',
                            'choices': [{'index': 0, 'finish_reason': 'stop',
@@ -108,25 +115,110 @@ def main():
                                           audio_output_limit_policy=policy, audio_gap_policy=gap, **kwargs)
 
     try:
-        # Sustained loops have a different recovery action: bisect immediately,
-        # never manufacture three cap failures or accept the stopped prefix.
-        reset([(422, 'generation_repetition')] * 7 + [OK])
+        if args.create_legacy_repetition_fixture:
+            reset([(422, 'generation_repetition'), OK, (422, 'generation_repetition')])
+            historical = args.work_dir / 'historical-repetition.md'
+            try:
+                recognize(historical, stop_requested=historical_stop)
+            except Cancelled as error:
+                assert error.details['provider_calls_attempted'] == 3
+            else:
+                raise AssertionError('Historical safe stop was not acknowledged')
+            saved = state(historical)
+            children = saved['slots'][0]['subslots']
+            assert len(calls) == 3 and len(children) == 2
+            assert children[0]['status'] == 'settled' and children[1]['status'] == 'failed'
+            assert children[1]['recovery_attempts'] == 1
+            import os
+            pending_loop = args.work_dir / 'historical-pending-loop.md'
+            original_replace = os.replace
+            def stop_after_old_loop_split(source, destination, *args, **kwargs):
+                original_replace(source, destination, *args, **kwargs)
+                if Path(destination) == pending_loop.with_suffix('.ocrllm-state.json'):
+                    saved = json.loads(Path(destination).read_text())
+                    if saved['slots'][0].get('subslots'):
+                        raise KeyboardInterrupt('Historical loop children persisted before their first dispatch')
+            reset([(422, 'generation_repetition')])
+            os.replace = stop_after_old_loop_split
+            try:
+                recognize(pending_loop)
+            except KeyboardInterrupt:
+                pass
+            finally:
+                os.replace = original_replace
+            assert len(calls) == 1
+            assert all(row['status'] == 'unresolved' for row in state(pending_loop)['slots'][0]['subslots'])
+            print('Saved historical public-API loop trees: settled/failed siblings and unstarted children; no state edits.')
+            return
+        # A loop is a validation failure, not a token-cap split request. Its
+        # original range consumes at most the first call plus two retries.
+        reset([(422, 'generation_repetition')] * 3 + [OK])
         repeated_out = args.work_dir / 'all-repetition.md'
         repeated_result = recognize(repeated_out)
-        assert repeated_result.status == 'partial' and len(calls) == 8
+        assert repeated_result.status == 'partial' and len(calls) == 4
         repeated_state = state(repeated_out)
-        repeated_leaves = repeated_state['slots'][0]['subslots']
-        assert len(repeated_leaves) == 4
-        assert all(r['recovery_attempts'] == 1 and r.get('output_limit_attempts', 0) == 0 for r in repeated_leaves)
+        repeated_leaf = repeated_state['slots'][0]
+        assert not repeated_leaf.get('subslots') and repeated_leaf['recovery_attempts'] == 3
+        assert repeated_leaf.get('output_limit_attempts', 0) == 0
         assert not repeated_result.metadata['accepted_with_gaps']
-        assert len(repeated_result.metadata['output_limit_failure_evidence']) == 7
+        assert not repeated_result.metadata['output_limit_failure_evidence']
+        assert not repeated_result.metadata['output_limit_exhausted_segments']
+        assert len(repeated_result.metadata['generation_repetition_failure_evidence']) == 3
         assert all(r['provider_code'] == 'generation_repetition'
                    and r['generation_output']['artifact_saved']
-                   for r in repeated_result.metadata['output_limit_failure_evidence'])
+                   and Path(r['generation_output']['artifact_path']).is_file()
+                   for r in repeated_result.metadata['generation_repetition_failure_evidence'])
+        assert repeated_result.metadata['generation_repetition_failed_segments'][0]['retry_exhausted']
         assert not inspect_audio_completion(repeated_out, audio_output_limit_policy=policy)['output_limit_recovery_available']
         before_calls = len(calls)
         resume_audio_to_markdown(plan, provider=provider, output_path=repeated_out)
         assert len(calls) == before_calls
+        reset([(422, 'generation_repetition')] * 2 + [OK, OK])
+        loop_recovered_out = args.work_dir / 'loop-same-range-recovered.md'
+        loop_recovered = recognize(loop_recovered_out)
+        assert loop_recovered.status == 'complete' and len(calls) == 4
+        assert not state(loop_recovered_out)['slots'][0].get('subslots')
+        assert len(loop_recovered.metadata['generation_repetition_failure_evidence']) == 2
+
+        legacy_loop_checked = False
+        if args.legacy_repetition_fixture:
+            historical = args.legacy_repetition_fixture / 'historical-repetition.md'
+            historical_plan = split_audio(args.legacy_repetition_fixture / 'input.mp3',
+                interval_minutes=10, include_boundary_context=False)
+            old = state(historical)
+            old_children = old['slots'][0]['subslots']
+            assert len(old_children) == 2 and old_children[1]['recovery_attempts'] == 1
+            before = historical.with_suffix('.ocrllm-state.json').read_bytes()
+            inspection = inspect_audio_completion(historical, audio_output_limit_policy=policy)
+            assert not inspection['output_limit_recovery_available']
+            assert inspection['output_limit_recovery_candidates'] == []
+            assert inspection['output_limit_failure_evidence'] == []
+            assert len(inspection['generation_repetition_failure_evidence']) == 2
+            assert historical.with_suffix('.ocrllm-state.json').read_bytes() == before
+            reset([(422, 'generation_repetition')] * 2 + [OK])
+            restored = resume_audio_to_markdown(historical_plan, provider=provider,
+                output_path=historical, audio_output_limit_policy=policy)
+            assert restored.status == 'partial' and len(calls) == 3
+            children = state(historical)['slots'][0]['subslots']
+            assert len(children) == 2 and children[0] == old_children[0]
+            assert children[1]['split_depth'] == 1 and children[1]['recovery_attempts'] == 3
+            assert len(restored.metadata['generation_repetition_failure_evidence']) == 4
+            assert not restored.metadata['output_limit_failure_evidence']
+            again = resume_audio_to_markdown(historical_plan, provider=provider, output_path=historical)
+            assert again.metadata['provider_call_count'] == 0 and len(calls) == 3
+            pending_loop = args.legacy_repetition_fixture / 'historical-pending-loop.md'
+            before = pending_loop.with_suffix('.ocrllm-state.json').read_bytes()
+            inspection = inspect_audio_completion(pending_loop, audio_output_limit_policy=policy)
+            assert not inspection['output_limit_recovery_available']
+            assert inspection['output_limit_recovery_candidates'] == []
+            assert pending_loop.with_suffix('.ocrllm-state.json').read_bytes() == before
+            reset([(422, 'generation_repetition')] * 3 + [OK, OK])
+            continued = resume_audio_to_markdown(historical_plan, provider=provider, output_path=pending_loop)
+            assert continued.status == 'partial' and len(calls) == 5
+            assert len(state(pending_loop)['slots'][0]['subslots']) == 2
+            assert not inspect_audio_completion(pending_loop, audio_output_limit_policy=policy)['output_limit_recovery_available']
+            legacy_loop_checked = True
+        print('Passed: loops remain unsplit; at most three attempts, evidence retained, exhausted resume zero calls.', flush=True)
 
         # The original 600-second interval fails at every level; tail continues.
         reset([CAP] * 21 + [OK])
@@ -471,7 +563,11 @@ def main():
         continued = resume_audio_to_markdown(short_plan, provider=provider, output_path=derived)
         assert continued.status == 'complete' and continued.metadata['provider_call_count'] == 2
         print('Passed: unequal tail, reindexed sibling identity, logical coverage and pending cap-derived priority.', flush=True)
-        report = {'repetition_calls': 8, 'repetition_exhausted_resume_calls': 0, 'repetition_gap_accepted': False, 'passed': True, 'real_model_calls': 0, 'synthetic_http': True,
+        report = {'repetition_calls': 4, 'repetition_same_range_max_attempts': 3,
+                  'repetition_new_subslots': 0, 'repetition_exhausted_resume_calls': 0,
+                  'repetition_gap_accepted': False, 'repetition_evidence_retained': True,
+                  'historical_loop_tree_resumed_without_new_subdivision': legacy_loop_checked,
+                  'passed': True, 'real_model_calls': 0, 'synthetic_http': True,
                   'worst_case_original_range_calls': 21, 'worst_case_tail_calls': 1,
                   'durable_failed_artifact_references': 21, 'deepest_segment_seconds': 150,
                   'successful_sibling_reused': True, 'complete_checkpoint_retained': True,

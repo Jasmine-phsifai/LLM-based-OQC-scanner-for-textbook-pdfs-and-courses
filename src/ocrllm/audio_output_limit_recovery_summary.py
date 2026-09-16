@@ -1,14 +1,14 @@
 """Inspect available cap recovery without dispatching or changing checkpoints."""
 from dataclasses import asdict
 
-from .is_audio_generation_failure import is_audio_generation_failure, is_generation_repetition_failure
+from .audio_gap_summary import is_output_limit_evidence, is_output_limit_failure
 
 
 def output_limit_recovery_action(slot, policy):
     """Use the same narrow classification for recovery planning and inspection."""
-    if not is_audio_generation_failure(slot):
+    if not is_output_limit_failure(slot):
         return None
-    if not is_generation_repetition_failure(slot) and slot.recovery_attempts < 1 + policy.max_retries:
+    if slot.recovery_attempts < 1 + policy.max_retries:
         return 'retry'
     midpoint = (slot.logical_start_seconds + slot.logical_end_seconds) / 2
     if (slot.split_depth < policy.max_split_depth
@@ -55,9 +55,11 @@ def audio_output_limit_recovery_summary(state, policy=None, *, publication_pendi
 
 
 def _has_ancestor_cap_evidence(parent, leaf):
-    # These records are written only for confirmed generation failures. An old aggregate
-    # parent's latest error may instead belong to a child, so it is not evidence.
+    # The legacy field also contains loop failures. They cannot authorize a
+    # token-recovery offer for previously created but unstarted child ranges.
     for row in parent.output_limit_evidence:
+        if not is_output_limit_evidence(row):
+            continue
         start, end, depth = row.get('start_seconds'), row.get('end_seconds'), row.get('split_depth')
         if (type(start) in (int, float) and type(end) in (int, float) and type(depth) is int
             and depth < leaf.split_depth

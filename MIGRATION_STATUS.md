@@ -24,7 +24,7 @@ remains a separately source-reviewed route. It reuses legacy OSS/async protocol,
 requires persistent task state, preserves complete transcripts and refuses
 ambiguous duplicate submissions; this Codex slice does not activate or validate it.
 
-Explicit audio recovery now handles provider generation_repetition with immediate bounded bisection, preserving cap-only gap acceptance and the v4 checkpoint. See [owner verification](docs/asr_generation_repetition_2026-09-15.md).
+Audio binary recovery is restricted to canonical output_token_limit failures. Generation loops retain artifact evidence and use only remaining same-range attempts (initial plus at most two retries), without new subdivisions or cap recovery offers. Existing v4 loop trees remain readable and settled leaves are reused. See [current owner verification](docs/asr_token_only_recovery_2026-09-16.md); the [September 15 loop-bisection record](docs/asr_generation_repetition_2026-09-15.md) is historical.
 
 The four merged recognize/resume APIs now accept caller `stop_requested` signals.
 They drain admitted requests into the existing checkpoint and then acknowledge

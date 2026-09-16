@@ -356,10 +356,6 @@ def _execute_audio_slot(
     """Persist every short-leaf output-cap attempt; never accept other errors."""
     slot_failures = []
     current = slot
-    if owner.output_limit_policy is not None and is_generation_repetition_failure(slot):
-        # Recovery planning bisects a confirmed loop; identical dispatch does not
-        # regain a retry allowance on resume or a later sibling pass.
-        return (), None
     for offset in range(len(provider_lane)):
         if stop.is_set():
             break
@@ -434,6 +430,11 @@ def _execute_audio_slot(
                     'model':provider.model, 'code':error.code, 'description':outcome.error_description})
                 current = outcome
                 if bounded_cap and is_output_limit_failure(outcome) and outcome.output_limit_attempts < 3:
+                    continue
+                if (policy is not None and is_generation_repetition_failure(outcome)
+                        and current.recovery_attempts < 1 + policy.max_retries):
+                    # Loop validation failures get only the remaining same-range
+                    # attempts. They never authorize subdivision or cap priority.
                     continue
                 break
             outcome = _settled_slot(current, provider=provider, markdown=response.markdown)

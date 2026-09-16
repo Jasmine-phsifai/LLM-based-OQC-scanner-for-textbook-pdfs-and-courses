@@ -10101,3 +10101,12 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 同责任库另一agent提交并推送2d5b282：公开restore_image_batch_plan只校验源指纹并返回既有原分组，不写状态、不重组成功帧。Codex opt-in多图校验先准确/缺jpg绑定身份，再按既有30%增删成本限制处理真实comments；每expected均有唯一归属，额外重复已覆盖帧和无歧义乱序不单独拒绝，不补造缺失marker。推荐显式adjacent_repeat_limit=8，仅连续高相同自然语言行，不全文查重，不改Model Lab本地标准。38场景全部通过，7次真实本地替身CLI/0模型调用；旧8+1及1+1+1部分恢复各只重做1批，换provider/3lane仍复用。7,900个既有帧段守卫0标记；30,424字符8帧校验中位2.70ms、最大2.86ms。Windows超长路径在调用前拒绝已有证据，.cmd替身的完整提示引号传参限制未作为WSL生产前置，见[独立记录](course_image_contract_2026-09-16.md)。
 
 本轮聚焦settings/adapter/usage/merged image/provider-model/import/aggregate既有合同共124项通过；两个真实子进程流式与超时场景独立保留为tools/verify_codex_usage_events.py，按需执行，未变成每轮自动运行的真实场景pytest。真实脚本证明：进程未结束时已可读fsynced usage；停止后当前请求仍完成；超时保留已完成turn与未知在途turn，失败正文另存。完整持久证据复制在当前统筹工作区docs/codex-production-design-20260916/owner-usage-scenario-02。没有收费模型调用或切换生产；此处通过不能代替20路systemd实测、识别人工准确率或生产复启。共享原有dirty legacy/agent文件未暂存。Carry-forward judgement：程序事件名不等于计费语义，必须追到实际emitter；公开不可变事实与唯一owner checkpoint各司其职，统筹只作事务投影和运行控制。
+
+
+### 2026-09-16 ASR 二分恢复范围收回 token 超限
+
+统筹复核自然生产事件发现 generation_repetition 被记在 output_limit_failure_evidence 并由 600→300→150 秒二分；核对责任库确认来自 fe68015 的明确扩展，并非 Model Lab 错误分类。本轮按用户当前“仅 token 超限分割”的要求在 OCRLLM 收回准入：loop保留每次截断/循环工件，最多初次+2次同段请求，预算持久化、耗尽后普通resume零调用，其他可继续段照常运行。真实output_token_limit的三次/两层恢复、暂时错误行为及cap-only缺口条件不变，不引入输入context新分类。
+
+v4内部历史字段保持兼容，公开cap证据与generation_repetition_failure_evidence/failed_segments分开；loop叶及仅loop祖先派生的未开始子段不再成为cap恢复候选。安全停止仍可用已保存loop证据确认最新预留，不将确认与二分资格混为一谈。旧0e98180 owner通过真实MP3/本机HTTP/安全停止及OS写入中断生成历史树，新owner复用成功300秒兄弟原行、仅补失败300秒剩余两次并继续尾段；已存在而未开始的两子段可普通resume，但不再产生loop孙段。所有状态由公开owner创建/继续，未手造手改生产或测试checkpoint。
+
+39项既有merged-audio/provider-model测试通过；扩展真实编码音频/合成HTTP工具全轮通过，连续loop3次仅1原槽、尾段继续、loop工件3份保留/公开cap0；原cap树21份工件、预算/未知预留/v2/v3接入/不等长覆盖/成功兄弟与发布恢复全通过。脚本初轮仅因冻结metadata的空tuple/list断言差异停止，按既有不可变类型修正场景后通过；首次历史safe-stop会抛Cancelled，场景现明确核实该公共确认。报告与聚合证据均在本仓[asr_token_only_recovery_2026-09-16.md](asr_token_only_recovery_2026-09-16.md)。无真实模型调用、生产重启或checkpoint编辑。Carry-forward judgement：保留失败证据不能自动扩大可切分错误集合；旧子树存在不代表准许创建新树，恢复预算和已成功源范围必须跨版本保持。
