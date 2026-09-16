@@ -31,6 +31,7 @@ from .repair_images_to_markdown import (
 from .resume_images_to_markdown import (
     resume_images_to_markdown as resume_images_to_markdown,
 )
+from .restore_image_batch_plan import restore_image_batch_plan as restore_image_batch_plan
 from .resume_audio_to_markdown import (
     resume_audio_to_markdown as resume_audio_to_markdown,
 )
@@ -269,6 +270,7 @@ __all__ = [
     "recognize_images_to_markdown",
     "repair_images_to_markdown",
     "resume_images_to_markdown",
+    "restore_image_batch_plan",
     "resume_audio_to_markdown",
     "resume_video",
     "extract_pdf_pages",

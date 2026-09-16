@@ -1,0 +1,79 @@
+{
+  "markers": {
+    "cases": {
+      "eight_exact": "accepted",
+      "jpg_omission": "accepted",
+      "jpg_letters_omission": "accepted",
+      "format_typo_and_spacing": "accepted",
+      "quoted_identity": "accepted",
+      "explicit_reversed_order": "accepted",
+      "extra_identified_duplicate": "accepted",
+      "same_comment_cannot_cover_eight": "rejected",
+      "duplicate_cannot_fill_missing_neighbor": "rejected",
+      "fuzzy_duplicate_cannot_fill_missing_neighbor": "rejected",
+      "ambiguous_neighbor": "rejected",
+      "missing_marker_only_in_fence": "rejected",
+      "missing_marker_only_in_tilde_fence": "rejected",
+      "missing_marker_only_in_inline_code": "rejected",
+      "missing_marker_only_in_indented_code": "rejected",
+      "missing_marker_only_in_svg_code": "rejected",
+      "ordinary_comment_is_not_a_frame": "rejected",
+      "strict_threshold_below": "accepted",
+      "strict_threshold_at": "rejected",
+      "exact_identity_does_not_waive_format_budget": "rejected",
+      "jpg_omission_does_not_waive_other_format_edits": "rejected",
+      "substitution_is_two_edits": "rejected",
+      "only_marker_span_changes": "accepted",
+      "replacement_unicode": "rejected",
+      "unencodable_unicode": "rejected",
+      "repetition_guard_explicitly_optional": "accepted",
+      "eight_adjacent_long_prose_lines": "rejected",
+      "seven_adjacent_prose_lines": "accepted",
+      "nonadjacent_same_prose": "accepted",
+      "same_board_text_across_frames": "accepted",
+      "svg_completeness_is_not_a_body_audit": "accepted",
+      "fenced_prose": "accepted",
+      "svg_template": "accepted",
+      "unclosed_svg_template": "accepted",
+      "math_and_separator": "accepted",
+      "math_template": "accepted",
+      "unfenced_console_paths": "accepted",
+      "markdown_headings": "accepted"
+    },
+    "timing_characters": 30424,
+    "validation_median_seconds": 0.0026998899993486702,
+    "validation_max_seconds": 0.0028642120014410466
+  },
+  "public_restore": {
+    "eight_plus_tail": [
+      8,
+      1
+    ],
+    "single_groups_retained": [
+      1,
+      1,
+      1
+    ],
+    "resume_calls": 1,
+    "single_resume_calls": 1,
+    "source_mismatch_calls": 0,
+    "lookup_kept_state_and_markdown_bytes": true,
+    "output_path_characters": 316,
+    "long_output_path_characters": 316,
+    "windows_overlong_rejected_before_dispatch": false,
+    "real_model_calls": 0,
+    "synthetic_cli_calls": 7
+  },
+  "existing_prose_guard": {
+    "frame_segments": 7900,
+    "flagged_segments": 0,
+    "elapsed_seconds": 0.762405024986947,
+    "body_copied": false
+  },
+  "runtime": "WSL Python 3; actual synthetic CLI subprocess, no model calls",
+  "windows_boundary": {
+    "existing_overlong_output_preflight_rejected_before_dispatch": true,
+    "full_synthetic_cli_scenario": "not_passed",
+    "reason": "Windows .cmd synthetic launcher loses quoted full course prompt argument; production CLI runs in WSL. No Windows subprocess compatibility claim."
+  }
+}
