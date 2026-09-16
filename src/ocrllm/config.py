@@ -188,6 +188,10 @@ def _normalize_provider(value: object | None) -> object | None:
             fast_mode=value.fast_mode,
             timeout_seconds=value.timeout_seconds,
             max_images_per_call=value.max_images_per_call,
+            service_tier=value.service_tier,
+            usage_event_dir=value.usage_event_dir,
+            course_validation=value.course_validation,
+            adjacent_repeat_limit=value.adjacent_repeat_limit,
         )
     if isinstance(value, DashScopeSettings):
         raise ConfigError(

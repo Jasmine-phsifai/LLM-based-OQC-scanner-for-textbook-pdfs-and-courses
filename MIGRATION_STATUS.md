@@ -9,12 +9,20 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 Last synchronized: 2026-09-16.
 
-The active library now admits the existing Codex CLI image adapter through
-ProviderModel and has a native DashScope FileTrans boundary for
-`qwen-audio-3.0-asr-flash-filetrans`. It reuses the legacy OSS/async protocol,
-requires persistent task state, preserves complete transcripts, and refuses
-ambiguous duplicate submissions. This slice received source-only review;
-the maintainer explicitly deferred tests and real recognition.
+The Codex CLI image route now has explicit service tier, opt-in durable public usage,
+real CLI version provenance, and merged stop/deadline propagation. CLI cumulative
+usage is normalized per field without double counting; failed/unknown attempts
+remain visible. Original image grouping can be restored through the public
+`restore_image_batch_plan`; opt-in course marker normalization stays in OCRLLM.
+Focused contracts and real local scripted subprocess scenarios passed; production
+activation and model throughput are still orchestrator-owned verification. See
+[the contract](docs/codex_cli_production_contract.md) and
+[marker/recovery evidence](docs/course_image_contract_2026-09-16.md).
+
+The native DashScope FileTrans boundary for `qwen-audio-3.0-asr-flash-filetrans`
+remains a separately source-reviewed route. It reuses legacy OSS/async protocol,
+requires persistent task state, preserves complete transcripts and refuses
+ambiguous duplicate submissions; this Codex slice does not activate or validate it.
 
 Explicit audio recovery now handles provider generation_repetition with immediate bounded bisection, preserving cap-only gap acceptance and the v4 checkpoint. See [owner verification](docs/asr_generation_repetition_2026-09-15.md).
 

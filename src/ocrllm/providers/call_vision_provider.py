@@ -9,6 +9,7 @@ from ..attach_current_model_token_usage_to_error import (
     attach_current_model_token_usage_to_error,
 )
 from ..config import Config
+from ..cooperative_stop import ProviderDispatchStopped
 from ..errors import ConfigError, OCRLLMError, ProviderError
 from .bounded_provider_call import BoundedProviderCall, ProviderDeadlineExceeded
 from .map_injected_provider_error import map_injected_provider_error
@@ -92,7 +93,10 @@ def call_vision_provider(
             details={
                 **dict(error.details),
                 **_known_provider_details(resolved_provider),
-                "provider_calls_attempted": 1,
+                "provider_calls_attempted": (
+                    provider_value.provider_calls_attempted
+                    if type(provider_value) is VisionProviderResponse else 1
+                ),
             },
         )
     if validation_error is not None:
@@ -124,6 +128,7 @@ def call_vision_provider(
             output_tokens=provider_value.output_tokens,
             client_closed=provider_value.client_closed,
             request_id=provider_value.request_id,
+            provider_calls_attempted=provider_value.provider_calls_attempted,
         )
     return markdown
 
@@ -164,6 +169,8 @@ def _dispatch_provider_call(
             dispatch_started = True
             return bounded_call.run_within(config.timeout_seconds)
     except ProviderDeadlineExceeded:
+        raise
+    except ProviderDispatchStopped:
         raise
     except Exception as error:
         public_error = (

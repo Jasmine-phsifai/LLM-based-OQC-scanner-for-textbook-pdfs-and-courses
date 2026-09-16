@@ -228,7 +228,8 @@ def _execute_merged_image_lane(
                 if initial_state.image_task == "course_ocr"
                 else prompt
             )
-            with observation_fields(**image_unit(slot, initial_state)):
+            with observation_fields(**image_unit(slot, initial_state), prompt_version=initial_state.prompt_version,
+                                    configured_concurrency=len(provider_lanes)):
                 with snapshot_image_group(batch, config=Config()) as snapshots:
                     actual_sources = fingerprint_image_sources(batch, snapshots)
                     expected_sources = tuple(
@@ -256,6 +257,7 @@ def _execute_merged_image_lane(
                                     snapshots,
                                     prompt=batch_prompt,
                                     timeout_seconds=timeout_seconds,
+                                    stop_requested=stop,
                                 ),
                                 stop_requested=stop if stop.enabled else None,
                             )

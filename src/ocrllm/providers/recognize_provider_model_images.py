@@ -9,6 +9,8 @@ from ..config import Config
 from ..errors import ConfigError
 from ..vision_model_settings import VisionModelSettings
 from .call_vision_provider import call_vision_provider
+from .codex_cli.call_control import codex_call_control
+from .codex_cli.provider_settings import CodexCLISettings
 from .openai_compatible.openai_compatible_provider import OpenAICompatibleProvider
 from .openai_compatible.provider_settings import OpenAICompatibleSettings
 from .provider_model import ProviderModel
@@ -23,6 +25,7 @@ def recognize_provider_model_images(
     *,
     prompt: str,
     timeout_seconds: float = 120.0,
+    stop_requested=None,
 ) -> str | VisionProviderResponse:
     """Dispatch one no-fallback image request through an existing adapter."""
     if type(provider_model) is not ProviderModel:
@@ -56,6 +59,9 @@ def recognize_provider_model_images(
             timeout_seconds=timeout_seconds,
         )
         resolved_provider = resolve_vision_provider(config)
+    if type(provider_model.settings) is CodexCLISettings:
+        with codex_call_control(stop_requested=stop_requested, timeout_seconds=timeout_seconds):
+            return call_vision_provider(resolved_provider, image_paths, prompt=prompt, config=config)
     return call_vision_provider(
         resolved_provider,
         image_paths,

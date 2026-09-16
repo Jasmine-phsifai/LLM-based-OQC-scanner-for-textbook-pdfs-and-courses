@@ -10090,3 +10090,14 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 ### 2026-09-16 学期识别串联：仅实现与静态审查
 
 按用户要求，为现有 Codex CLI 适配器接通 ProviderModel 合并图像入口；新增原生 DashScope FileTrans 音频适配器，沿用 legacy OSS 上传和异步任务协议。源文件/模型/提示词身份与远端任务号保存在调用方指定的持久目录；提交结果不明时拒绝重复 POST，完整文本缓存保留至父级断点可复用。临时音频目录不能充当持久任务目录。没有修改 legacy 行为。已为调度运行环境安装 DashScope SDK 1.27.5；没有导入运行适配器、执行测试或调用模型/提供方。静态审查不能代替后续真实验收。迁移判断：此原生协议已放入 src/ocrllm，未来修改必须保留任务身份、完整转写、多段恢复及密钥隔离，不能退回 Chat Completions 音频路由。
+
+
+### 2026-09-16 Codex OCR 生产接口、用量事实与旧分组恢复
+
+统筹按用户要求授权Codex CLI作为可选OCR路线，本地GPU ASR维持原责任边界。本轮在责任库补显式service_tier（保留fast_mode priority旧兼容、冲突提前拒绝）、独立--json事件与--output-last-message正文、原名附图映射、opt-in course_validation/adjacent_repeat_limit，以及merged stop与总deadline传递。已准入子进程完成；每个真实成功或失败spawn的事件先flush/fsync，再允许重试、清理临时输出或safe-stop；暂停中产生的真实失败先回原checkpoint，不被Cancelled覆盖。停止在durable start期间到达时，记录zero-spawn终态并不再启动。失败正文单独持久文件保留，账本仅公开路径和SHA，不放提示、正文、reasoning或私有会话。持久写失败禁止后续准入，不能假称完成日志已经保存。
+
+用量核查发现官方CLI类型注释“during a turn”不足以证明可相加；精确rust-v0.154.0-alpha.6.1 emitter实际读取ThreadTokenUsage.total。已按fresh exec/thread逐字段累计差输出四个可空usage字段，同时保留raw_usage和normalization来源。缺中间字段、负差、turn.failed无usage、超时未结束turn均显式unknown；后来累计值不能重复充当单turn。输入/输出分别累计，cached是input子项、reasoning是output子项，total只取input+output。成功但缺usage不捏造0；失败但已知usage照计。actual model/effort/tier未报告就留null；真实CLI --version按resolved binary+mtime/size缓存，3秒有界失败unknown，exec使用同一binary。每条事件重复实际start_event_id和课程/逻辑单元身份，跨文件乱序可由统筹投影；与generic durable unit_result的PID/lecture/unit身份联接已验证。公开合同：[codex_cli_production_contract.md](codex_cli_production_contract.md)。
+
+同责任库另一agent提交并推送2d5b282：公开restore_image_batch_plan只校验源指纹并返回既有原分组，不写状态、不重组成功帧。Codex opt-in多图校验先准确/缺jpg绑定身份，再按既有30%增删成本限制处理真实comments；每expected均有唯一归属，额外重复已覆盖帧和无歧义乱序不单独拒绝，不补造缺失marker。推荐显式adjacent_repeat_limit=8，仅连续高相同自然语言行，不全文查重，不改Model Lab本地标准。38场景全部通过，7次真实本地替身CLI/0模型调用；旧8+1及1+1+1部分恢复各只重做1批，换provider/3lane仍复用。7,900个既有帧段守卫0标记；30,424字符8帧校验中位2.70ms、最大2.86ms。Windows超长路径在调用前拒绝已有证据，.cmd替身的完整提示引号传参限制未作为WSL生产前置，见[独立记录](course_image_contract_2026-09-16.md)。
+
+本轮聚焦settings/adapter/usage/merged image/provider-model/import/aggregate既有合同共124项通过；两个真实子进程流式与超时场景独立保留为tools/verify_codex_usage_events.py，按需执行，未变成每轮自动运行的真实场景pytest。真实脚本证明：进程未结束时已可读fsynced usage；停止后当前请求仍完成；超时保留已完成turn与未知在途turn，失败正文另存。完整持久证据复制在当前统筹工作区docs/codex-production-design-20260916/owner-usage-scenario-02。没有收费模型调用或切换生产；此处通过不能代替20路systemd实测、识别人工准确率或生产复启。共享原有dirty legacy/agent文件未暂存。Carry-forward judgement：程序事件名不等于计费语义，必须追到实际emitter；公开不可变事实与唯一owner checkpoint各司其职，统筹只作事务投影和运行控制。

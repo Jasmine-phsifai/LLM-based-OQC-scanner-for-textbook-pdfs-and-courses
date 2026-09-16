@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from pathlib import Path
 
 from ...errors import ConfigError
 from ...image_group_limits import MAX_IMAGE_GROUP_COUNT
@@ -25,6 +26,10 @@ class CodexCLISettings:
     fast_mode: bool = False
     timeout_seconds: float = DEFAULT_CODEX_CLI_TIMEOUT_SECONDS
     max_images_per_call: int = DEFAULT_CODEX_CLI_MAX_IMAGES_PER_CALL
+    service_tier: str | None = None
+    usage_event_dir: str | Path | None = None
+    course_validation: bool = False
+    adjacent_repeat_limit: int | None = None
 
     def __post_init__(self) -> None:
         _require_clean_text(self.command, field_name="command", allow_inner_space=True)
@@ -39,6 +44,25 @@ class CodexCLISettings:
                 "CodexCLISettings.fast_mode must be a boolean",
                 code="CONFIG_INVALID",
             ) from None
+        if self.service_tier is not None:
+            _require_clean_text(self.service_tier, field_name="service_tier", allow_inner_space=False)
+        if self.fast_mode and self.service_tier not in (None, "priority"):
+            raise ConfigError("CodexCLISettings.service_tier conflicts with fast_mode.", code="CONFIG_INVALID")
+        if type(self.course_validation) is not bool:
+            raise ConfigError("CodexCLISettings.course_validation must be a boolean.", code="CONFIG_INVALID")
+        if self.adjacent_repeat_limit is not None and (
+            type(self.adjacent_repeat_limit) is not int or self.adjacent_repeat_limit < 3
+        ):
+            raise ConfigError("CodexCLISettings.adjacent_repeat_limit must be an integer >= 3 or None.", code="CONFIG_INVALID")
+        if self.usage_event_dir is not None:
+            if not isinstance(self.usage_event_dir, Path) and (
+                type(self.usage_event_dir) is not str or not self.usage_event_dir.strip()
+            ):
+                raise ConfigError("CodexCLISettings.usage_event_dir must be a path.", code="CONFIG_INVALID")
+            destination = Path(self.usage_event_dir)
+            if not destination.is_absolute():
+                raise ConfigError("CodexCLISettings.usage_event_dir must be absolute.", code="CONFIG_INVALID")
+            object.__setattr__(self, "usage_event_dir", destination)
         if (
             isinstance(self.timeout_seconds, bool)
             or not isinstance(self.timeout_seconds, (int, float))

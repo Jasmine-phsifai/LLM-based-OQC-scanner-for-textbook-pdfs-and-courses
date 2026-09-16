@@ -1,4 +1,7 @@
 import shutil
+import io
+import json
+import time
 import subprocess
 import threading
 from pathlib import Path
@@ -26,37 +29,48 @@ from write_test_image import write_test_image
 
 @pytest.fixture
 def fake_cli(monkeypatch):
-    """Install a scripted `codex exec` subprocess and zero retry delays."""
+    """Script only process/clock system boundaries, leaving owner code real."""
     monkeypatch.setattr(shutil, "which", lambda command: "/fake/codex")
-    monkeypatch.setattr(codex_adapter, "_RETRY_DELAY_SECONDS", 0.0)
-    monkeypatch.setattr(
-        codex_adapter,
-        "_IMAGE_ACCESS_RETRY_DELAYS_SECONDS",
-        (0.0, 0.0, 0.0, 0.0, 0.0),
-    )
-    state = {"script": [], "calls": [], "kwargs": []}
+    clock = {"now": 100.0}
+    monkeypatch.setattr(time, "monotonic", lambda: clock["now"])
+    monkeypatch.setattr(time, "sleep", lambda seconds: clock.__setitem__("now", clock["now"] + seconds))
+    state = {"script": [], "calls": [], "kwargs": [], "timeouts": []}
 
-    def fake_run(argv, **kwargs):
-        state["calls"].append(list(argv))
-        state["kwargs"].append(kwargs)
-        hook = state.get("on_call")
-        if hook is not None:
-            hook()
-        index = min(len(state["calls"]) - 1, len(state["script"]) - 1)
-        action, payload = state["script"][index]
-        if action == "ok":
-            output_path = Path(argv[argv.index("--output-last-message") + 1])
-            output_path.write_text(payload, encoding="utf-8")
-            return subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
-        if action == "fail":
-            return subprocess.CompletedProcess(argv, 2, stdout="", stderr=payload)
-        if action == "timeout":
-            raise subprocess.TimeoutExpired(cmd=argv, timeout=1)
-        if action == "oserror":
-            raise OSError(payload)
-        raise AssertionError(f"unknown fake action: {action}")
+    class FakeProcess:
+        def __init__(self, argv, **kwargs):
+            state["calls"].append(list(argv))
+            state["kwargs"].append(kwargs)
+            hook = state.get("on_call")
+            if hook is not None:
+                hook()
+            index = min(len(state["calls"]) - 1, len(state["script"]) - 1)
+            self.action, payload = state["script"][index]
+            if self.action == "oserror":
+                raise OSError(payload)
+            self.returncode = 0 if self.action == "ok" else 2
+            events = state.get("events", [{"type": "turn.completed", "usage": {
+                "input_tokens": 100, "cached_input_tokens": 30, "output_tokens": 20, "reasoning_output_tokens": 5}}])
+            if "events_per_call" in state:
+                events = state["events_per_call"][index]
+            self.stdout = io.StringIO("".join(json.dumps(event) + "\n" for event in events))
+            if self.action == "ok":
+                Path(argv[argv.index("--output-last-message") + 1]).write_text(payload, encoding="utf-8")
+            elif self.action == "fail":
+                kwargs["stderr"].write(payload.encode())
+            elif self.action != "timeout":
+                raise AssertionError(self.action)
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+        def wait(self, timeout=None):
+            state["timeouts"].append(timeout)
+            if self.action == "timeout":
+                raise subprocess.TimeoutExpired(cmd="codex", timeout=timeout)
+            return self.returncode
+
+        def kill(self):
+            self.action = "killed"
+            self.returncode = -9
+
+    monkeypatch.setattr(subprocess, "Popen", FakeProcess)
     return state
 
 
@@ -77,9 +91,9 @@ def test_adapter_dispatches_luna_low_with_eight_staged_images(tmp_path, fake_cli
 
     text = _run(tmp_path, count=8)
 
-    assert text == "# Board\n\ncontent"
+    assert text.markdown == "# Board\n\ncontent"
     argv = fake_cli["calls"][0]
-    assert argv[:2] == ["codex", "--ask-for-approval"]
+    assert argv[:2] == ["/fake/codex", "--ask-for-approval"]
     assert "exec" in argv
     assert "--ephemeral" in argv
     assert "--ignore-user-config" in argv
@@ -94,7 +108,8 @@ def test_adapter_dispatches_luna_low_with_eight_staged_images(tmp_path, fake_cli
     assert "SORRY4OCRLLM" in prompt
     assert "本次共有 8 张图片" in prompt
     assert "识别这些板书" in prompt
-    assert fake_cli["kwargs"][0]["timeout"] == 1800.0
+    assert fake_cli["timeouts"][0] == 1800.0
+    assert "--json" in argv
 
 
 def test_adapter_honors_fast_mode_and_model_override(tmp_path, fake_cli):
@@ -153,7 +168,7 @@ def test_adapter_retries_failed_exit_then_succeeds(tmp_path, fake_cli):
         ("ok", "recovered"),
     ]
 
-    assert _run(tmp_path) == "recovered"
+    assert _run(tmp_path).markdown == "recovered"
     assert len(fake_cli["calls"]) == 3
 
 
@@ -187,7 +202,7 @@ def test_image_attachment_loss_uses_separate_backoff_budget(tmp_path, fake_cli):
         ("ok", "# Board\n\nfinally visible"),
     ]
 
-    assert _run(tmp_path) == "# Board\n\nfinally visible"
+    assert _run(tmp_path).markdown == "# Board\n\nfinally visible"
     assert len(fake_cli["calls"]) == 2
 
 

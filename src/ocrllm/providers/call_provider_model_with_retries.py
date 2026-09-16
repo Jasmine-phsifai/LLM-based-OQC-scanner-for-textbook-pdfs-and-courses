@@ -63,7 +63,7 @@ def call_provider_model_with_retries(
                                        output_tokens=getattr(response, 'output_tokens', None))
             return ProviderModelCallResult(
                 response=response,
-                calls=total_calls + 1,
+                calls=total_calls + getattr(response, "provider_calls_attempted", 1),
                 failed_input_tokens=total_input_tokens,
                 failed_output_tokens=total_output_tokens,
                 prior_cleanup_failed=cleanup_failed,

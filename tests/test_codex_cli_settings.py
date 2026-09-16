@@ -50,6 +50,13 @@ def test_codex_cli_settings_are_frozen_slotted_with_defaults():
         ("reasoning_effort", ""),
         ("reasoning_effort", "lo w"),
         ("reasoning_effort", None),
+        ("service_tier", "bad tier"),
+        ("service_tier", 1),
+        ("usage_event_dir", "relative/path"),
+        ("usage_event_dir", ""),
+        ("course_validation", 1),
+        ("adjacent_repeat_limit", 2),
+        ("adjacent_repeat_limit", True),
         ("fast_mode", 0),
         ("fast_mode", "yes"),
         ("timeout_seconds", 0),
@@ -130,3 +137,18 @@ def test_resolve_vision_provider_lets_vision_model_name_override_codex_model():
 
     assert resolved.name == "codex_cli"
     assert resolved.model == "gpt-5.6-sol"
+
+
+def test_codex_new_opt_ins_survive_config_copy(tmp_path):
+    settings = CodexCLISettings(service_tier="default", usage_event_dir=tmp_path,
+        course_validation=True, adjacent_repeat_limit=8)
+    copied = Config(provider=settings).provider
+    assert copied == settings and copied is not settings
+    assert copied.service_tier == "default" and copied.usage_event_dir == tmp_path
+    assert copied.course_validation and copied.adjacent_repeat_limit == 8
+
+
+def test_explicit_tier_conflict_rejected_without_changing_legacy_fast_mode():
+    with pytest.raises(ConfigError, match="conflicts"):
+        CodexCLISettings(service_tier="default", fast_mode=True)
+    assert CodexCLISettings(service_tier="priority", fast_mode=True).fast_mode

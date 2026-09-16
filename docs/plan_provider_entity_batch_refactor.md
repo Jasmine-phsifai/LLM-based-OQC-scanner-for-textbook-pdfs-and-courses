@@ -13,6 +13,20 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-16 Codex production interface and owner image recovery
+
+The authorized OCR route now has explicit service tier, opt-in fsynced public
+attempt/turn events, actual CLI version/binary provenance, separate final Markdown,
+and propagated merged stop/deadline control. The verified CLI emits cumulative
+thread usage; the adapter preserves raw counts and emits per-field deltas with
+unknown gaps. Configurable lanes and the old checkpoint grouping remain intact.
+The owner image validator/restore slice is commit `2d5b282`; 38 scenarios, old
+8+1/single-image recovery, 7 local scripted CLI calls, and the existing 7,900-frame
+guard inspection are documented without a paid-model claim. Local Model Lab and
+ASR behavior are not changed by this Codex slice. Real deployment and throughput
+remain course-pipeline's task. See [contract](codex_cli_production_contract.md) and
+[image evidence](course_image_contract_2026-09-16.md).
+
 ### 2026-09-16 semester recognition composition (source-only)
 
 The maintainer explicitly requested Codex CLI OCR plus local ASR with Google and native DashScope FileTrans fallback. ProviderModel now admits the existing Codex CLI vision adapter; the native FileTrans route ports the legacy OSS/async protocol with persistent task identities. Testing and real recognition were explicitly deferred by the maintainer. No live readiness claim is made.

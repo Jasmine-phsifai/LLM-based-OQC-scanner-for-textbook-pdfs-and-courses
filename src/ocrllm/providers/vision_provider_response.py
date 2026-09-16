@@ -16,8 +16,11 @@ class VisionProviderResponse:
     output_tokens: int | None = None
     client_closed: bool = True
     request_id: str | None = None
+    provider_calls_attempted: int = 1
 
     def __post_init__(self) -> None:
+        if type(self.provider_calls_attempted) is not int or self.provider_calls_attempted < 1:
+            raise ValueError("provider_calls_attempted must be a positive integer")
         for value in (self.input_tokens, self.output_tokens):
             if value is not None and (type(value) is not int or value < 0):
                 raise ValueError("provider token usage must be nonnegative integers")

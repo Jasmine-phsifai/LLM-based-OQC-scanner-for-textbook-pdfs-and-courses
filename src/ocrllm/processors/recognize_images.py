@@ -398,7 +398,7 @@ def _recognize_images_once(
             attach_settled_model_usage(error)
             attach_client_cleanup_failure(error)
             raise
-        calls_dispatched += 1
+        calls_dispatched += getattr(provider_response, "provider_calls_attempted", 1)
         if type(provider_response) is VisionProviderResponse:
             markdown = provider_response.markdown
             provider_clients_closed = (
