@@ -13,6 +13,7 @@ from .audio_model_settings import AudioModelSettings
 from .errors import ConfigError
 from .freeze_json_value import FrozenJSONValue, JSONValue, freeze_json_value
 from .local_ocr_settings import LocalOCRSettings
+from .providers.codex_cli.provider_settings import CodexCLISettings
 from .providers.dashscope.provider_settings import DashScopeSettings
 from .providers.google_genai.provider_settings import GoogleGenAISettings
 from .providers.vision_provider import VisionProvider
@@ -27,7 +28,13 @@ _LANGUAGE_SUBTAG = re.compile(r"^[A-Za-z0-9]{1,8}$")
 class Config:
     """Runtime options for OCRLLM library calls."""
 
-    provider: DashScopeSettings | GoogleGenAISettings | VisionProvider | None = field(
+    provider: (
+        DashScopeSettings
+        | GoogleGenAISettings
+        | CodexCLISettings
+        | VisionProvider
+        | None
+    ) = field(
         default=None,
         repr=False,
     )
@@ -173,6 +180,15 @@ def _normalize_provider(value: object | None) -> object | None:
         )
     if type(value) is GoogleGenAISettings:
         return GoogleGenAISettings(api_key=value.api_key)
+    if type(value) is CodexCLISettings:
+        return CodexCLISettings(
+            command=value.command,
+            model=value.model,
+            reasoning_effort=value.reasoning_effort,
+            fast_mode=value.fast_mode,
+            timeout_seconds=value.timeout_seconds,
+            max_images_per_call=value.max_images_per_call,
+        )
     if isinstance(value, DashScopeSettings):
         raise ConfigError(
             "Config.provider must use an exact DashScopeSettings instance.",
@@ -181,6 +197,11 @@ def _normalize_provider(value: object | None) -> object | None:
     if isinstance(value, GoogleGenAISettings):
         raise ConfigError(
             "Config.provider must use an exact GoogleGenAISettings instance.",
+            code="CONFIG_INVALID",
+        ) from None
+    if isinstance(value, CodexCLISettings):
+        raise ConfigError(
+            "Config.provider must use an exact CodexCLISettings instance.",
             code="CONFIG_INVALID",
         ) from None
     if isinstance(value, str):

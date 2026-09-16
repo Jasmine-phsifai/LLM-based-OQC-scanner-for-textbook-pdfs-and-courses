@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..config import Config
 from ..errors import ConfigError
+from .codex_cli.provider_settings import CodexCLISettings
 from .dashscope.provider_settings import DashScopeSettings
 from .google_genai.provider_settings import GoogleGenAISettings
 
@@ -30,6 +31,9 @@ def validate_vision_provider_config(
             ) from None
         return
     if type(config.provider) is DashScopeSettings:
+        return
+    if type(config.provider) is CodexCLISettings:
+        # The CLI model defaults live in the settings; no model field required.
         return
     if not require_injected_callable:
         return

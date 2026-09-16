@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 
 from ..config import Config
+from .codex_cli.provider_settings import CodexCLISettings, resolve_codex_cli_model
 from .dashscope.provider_settings import DashScopeSettings
 from .dashscope.resolve_dashscope_model import resolve_dashscope_model
 from .google_genai.provider_settings import GoogleGenAISettings
@@ -46,6 +47,18 @@ def resolve_vision_provider(config: Config) -> ResolvedVisionProvider:
             value=provider_module,
             name="google",
             model=model,
+            built_in=True,
+        )
+
+    if type(provider) is CodexCLISettings:
+        provider_module = importlib.import_module(
+            ".codex_cli.recognize_images",
+            package=__package__,
+        )
+        return ResolvedVisionProvider(
+            value=provider_module,
+            name="codex_cli",
+            model=resolve_codex_cli_model(config.vision_model.name, provider),
             built_in=True,
         )
 

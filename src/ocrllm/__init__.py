@@ -87,6 +87,9 @@ if TYPE_CHECKING:
         DashScopeCredentialPoolReport as DashScopeCredentialPoolReport,
         DashScopeCredentialSlotReport as DashScopeCredentialSlotReport,
     )
+    from .providers.codex_cli.provider_settings import (
+        CodexCLISettings as CodexCLISettings,
+    )
     from .providers.dashscope.provider_settings import (
         DashScopeSettings as DashScopeSettings,
     )
@@ -172,6 +175,7 @@ _PUBLIC_IMPORTS = {
     "AudioSlice": ".audio_slice",
     "BatchItemOutcome": ".batch_item_outcome",
     "CapabilityReport": ".capability_report",
+    "CodexCLISettings": ".providers.codex_cli.provider_settings",
     "Config": ".config",
     "CredentialPoolPolicy": ".credential_pool_policy",
     "DashScopeCredential": ".providers.dashscope.credential",
@@ -209,6 +213,7 @@ __all__ = [
     "bounded_transient_retry_rules",
     "split_audio",
     "Cancelled",
+    "CodexCLISettings",
     "ConcurrencyLimited",
     "Config",
     "AllCandidatesExhausted",
