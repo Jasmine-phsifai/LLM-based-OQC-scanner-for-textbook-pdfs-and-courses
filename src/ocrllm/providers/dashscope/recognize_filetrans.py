@@ -66,7 +66,7 @@ def recognize_filetrans(
         ) from None
 
     raise_if_cancelled(cancellation)
-    identity = _request_identity(snapshot, model=model, prompt=prompt)
+    identity = _request_identity(snapshot, model=model, prompt=prompt, base_url=settings.base_url)
     state_path = _state_path(snapshot, settings, identity)
     with _claim_submission(state_path):
         state = _load_state(state_path, identity)
@@ -94,7 +94,7 @@ def recognize_filetrans(
         if not isinstance(task_id, str) or not task_id:
             # A rejected task can be retried days later; temporary OSS upload
             # references must not outlive their upload policy/credentials.
-            file_url = _upload_oss(snapshot.path, model=model, api_key=settings.api_key)
+            file_url = _upload_oss(snapshot.path, model=model, api_key=settings.api_key, base_url=settings.base_url)
             state = {key: value for key, value in state.items() if key != "file_url"}
             state = {**state, "status": "ready"}
             _write_state(state_path, state)
@@ -147,9 +147,10 @@ def recognize_filetrans(
         return AudioProviderResponse(markdown=markdown)
 
 
-def _request_identity(snapshot: LongMP3Snapshot, *, model: str, prompt: str) -> str:
+def _request_identity(snapshot: LongMP3Snapshot, *, model: str, prompt: str, base_url: str) -> str:
     value = json.dumps(
-        {"source_sha256": snapshot.sha256, "model": model, "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest()},
+        {"source_sha256": snapshot.sha256, "model": model, "endpoint": base_url.rstrip('/'),
+         "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest()},
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -233,7 +234,7 @@ def _write_state(path: Path, value: dict[str, object]) -> None:
             pass
 
 
-def _upload_oss(path: Path, *, model: str, api_key: str | None) -> str:
+def _upload_oss(path: Path, *, model: str, api_key: str | None, base_url: str) -> str:
     if not api_key:
         raise ConfigError("DashScope FileTrans requires an API key for OSS upload.", code="CONFIG_MISSING") from None
     try:
@@ -241,7 +242,8 @@ def _upload_oss(path: Path, *, model: str, api_key: str | None) -> str:
     except ImportError:
         raise DependencyMissing("DashScope FileTrans requires the dashscope SDK for OSS upload.") from None
     try:
-        file_url, _ = OssUtils.upload(model=model, file_path=str(path), api_key=api_key)
+        file_url, _ = OssUtils.upload(model=model, file_path=str(path), api_key=api_key,
+                                      base_address=base_url.rstrip('/') + '/api/v1')
     except Exception as error:
         raise _network_error(error, model=model, operation="oss_upload") from None
     if not isinstance(file_url, str) or not file_url.startswith("oss://"):
