@@ -8,6 +8,8 @@ from typing import Final, Literal
 
 from ..errors import ConfigError, ProviderError
 from ..image_group_limits import MAX_IMAGE_GROUP_COUNT
+from .codex_cli.provider_settings import CodexCLISettings
+from .dashscope.filetrans_settings import DashScopeFileTransSettings
 from .dashscope.provider_settings import DashScopeSettings
 from .google_genai.provider_settings import GoogleGenAISettings
 from .openai_compatible.provider_settings import OpenAICompatibleSettings
@@ -55,6 +57,7 @@ class ProviderModel:
         adapter_id: str,
         settings: (
             GoogleGenAISettings | DashScopeSettings | OpenAICompatibleSettings
+            | DashScopeFileTransSettings | CodexCLISettings
         ),
         supports_plain_ocr: bool,
         supports_detail_ocr: bool,
@@ -75,6 +78,11 @@ class ProviderModel:
         _require_exact_bool(supports_plain_ocr, field_name="supports_plain_ocr")
         _require_exact_bool(supports_detail_ocr, field_name="supports_detail_ocr")
         _require_exact_bool(supports_audio, field_name="supports_audio")
+        if adapter_id == "codex_cli" and supports_audio:
+            raise ConfigError(
+                "The Codex CLI provider supports image OCR only.",
+                code="CONFIG_INVALID",
+            ) from None
         if supports_detail_ocr and not supports_plain_ocr:
             raise ConfigError(
                 "ProviderModel detail OCR support requires plain OCR support.",
@@ -119,7 +127,13 @@ class ProviderModel:
     @property
     def settings(
         self,
-    ) -> GoogleGenAISettings | DashScopeSettings | OpenAICompatibleSettings:
+    ) -> (
+        GoogleGenAISettings
+        | DashScopeSettings
+        | OpenAICompatibleSettings
+        | DashScopeFileTransSettings
+        | CodexCLISettings
+    ):
         """Return the exact runtime settings without treating them as identity."""
         return self._settings
 
@@ -180,9 +194,15 @@ def _expected_settings_type(
     type[GoogleGenAISettings]
     | type[DashScopeSettings]
     | type[OpenAICompatibleSettings]
+    | type[DashScopeFileTransSettings]
+    | type[CodexCLISettings]
 ):
     if vendor == "google" and adapter_id == _GOOGLE_ADAPTER_ID:
         return GoogleGenAISettings
+    if vendor == "dashscope" and adapter_id == "dashscope_filetrans":
+        return DashScopeFileTransSettings
+    if vendor == "openai" and adapter_id == "codex_cli":
+        return CodexCLISettings
     if vendor == "dashscope" and adapter_id == _DASHSCOPE_ADAPTER_ID:
         return DashScopeSettings
     if adapter_id == _OPENAI_COMPATIBLE_ADAPTER_ID:

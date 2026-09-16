@@ -13,6 +13,10 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-16 semester recognition composition (source-only)
+
+The maintainer explicitly requested Codex CLI OCR plus local ASR with Google and native DashScope FileTrans fallback. ProviderModel now admits the existing Codex CLI vision adapter; the native FileTrans route ports the legacy OSS/async protocol with persistent task identities. Testing and real recognition were explicitly deferred by the maintainer. No live readiness claim is made.
+
 ### 2026-09-15 ASR efficiency optimization explicitly requested
 
 The maintainer removes prior policy restrictions and prioritizes useful transcription throughput. This slice adds explicit generation_repetition recovery using existing binary intervals, without identical retries or accepting stopped text. Model-side validation remains Model Lab owned. See [owner evidence](asr_generation_repetition_2026-09-15.md).

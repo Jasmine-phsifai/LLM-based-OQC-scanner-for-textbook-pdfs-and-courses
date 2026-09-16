@@ -15,6 +15,7 @@ def validate_audio_provider_model(provider_model: object) -> ProviderModel:
     if provider_model.adapter_id not in {
         "google_genai",
         "openai_compatible_chat",
+        "dashscope_filetrans",
     }:
         _raise_invalid("The selected ProviderModel has no admitted audio adapter.")
     return provider_model

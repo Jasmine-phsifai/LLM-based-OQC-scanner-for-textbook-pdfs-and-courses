@@ -10082,4 +10082,11 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 
 **2026-09-15 ASR循环恢复优化。** 维护者解除重试/分块/模型等人为限制，要求提高效率且保留可用转写。新增明确generation_repetition分类，复用v4两层切分，直接二分而非原样重试；不放宽gap、不重置预算、不改成功结果。场景与18项merged-audio测试通过，真实推理验证另记。工具准备8个固定源输入及12个更短对照，原始源哈希校验且生产checkpoint写入0。实现与验证见[记录](asr_generation_repetition_2026-09-15.md)。Carry-forward judgement：循环与token cap不能混成同一种缺口证据；后续换模型/切片仍必须保留真实源覆盖和未知预留，不得把提前停止误作成功。
 
+**2026-09-16 原生 DashScope FileTrans 边界。** 按跨仓调度要求在 active `src/ocrllm` 增加 `DashScopeFileTransSettings` 与 `dashscope_filetrans` ProviderModel 路由，固定支持 `qwen-audio-3.0-asr-flash-filetrans`。适配器复用 legacy 的 OSS 上传、`input.file_url`、OSS resolver header 和异步任务轮询；按源 SHA、模型和 prompt 建立 durable sidecar，并在第一次 poll 前保存已返回的 task id，后续调用复用同一已提交任务。提交结果不明时保留 `submission_uncertain` 并 fail closed，不把客户端请求头当作已证明的幂等语义；成功 transcript 也留在 sidecar，直到上层 checkpoint 完成。没有把 fallback 或 retry 放进 adapter，交给既有 provider lane；没有导入 GUI/legacy。另保留 Codex CLI 为 image-only ProviderModel。Carry-forward judgement：当前实现需要下一责任层提供稳定 task_state_dir、credential 和 provider lane；本轮未运行 import、测试、CLI 或真实 provider，不能把此边界称为运行时已验证。
+
 本日上线补证：07:36:31 UTC恢复消费者后，fe68015自然接收Model Lab的generation_repetition；3900–4200秒原段一次失败后直接二分，两子段成功，无原样重试。公开inspection确认checkpoint落盘、partial且不接受gap，旧失败750秒仍明确保留。Model Lab四个正常对照逐字不变，独立HTTP也复现576-token循环失败和正常成功；1.05惩罚、短片段和MOSS候选未作为质量已通过策略上线。真实跨repo证据在统筹docs/asr-optimization-20260915，owner记录已更新。Carry-forward judgement：减少失败消耗已获真实链路证据，但不能把小样本、合成场景或返回非空文本升级为长期吞吐/人工准确率结论。
+
+
+### 2026-09-16 学期识别串联：仅实现与静态审查
+
+按用户要求，为现有 Codex CLI 适配器接通 ProviderModel 合并图像入口；新增原生 DashScope FileTrans 音频适配器，沿用 legacy OSS 上传和异步任务协议。源文件/模型/提示词身份与远端任务号保存在调用方指定的持久目录；提交结果不明时拒绝重复 POST，完整文本缓存保留至父级断点可复用。临时音频目录不能充当持久任务目录。没有修改 legacy 行为。已为调度运行环境安装 DashScope SDK 1.27.5；没有导入运行适配器、执行测试或调用模型/提供方。静态审查不能代替后续真实验收。迁移判断：此原生协议已放入 src/ocrllm，未来修改必须保留任务身份、完整转写、多段恢复及密钥隔离，不能退回 Chat Completions 音频路由。

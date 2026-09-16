@@ -7,7 +7,14 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-09-15.
+Last synchronized: 2026-09-16.
+
+The active library now admits the existing Codex CLI image adapter through
+ProviderModel and has a native DashScope FileTrans boundary for
+`qwen-audio-3.0-asr-flash-filetrans`. It reuses the legacy OSS/async protocol,
+requires persistent task state, preserves complete transcripts, and refuses
+ambiguous duplicate submissions. This slice received source-only review;
+the maintainer explicitly deferred tests and real recognition.
 
 Explicit audio recovery now handles provider generation_repetition with immediate bounded bisection, preserving cap-only gap acceptance and the v4 checkpoint. See [owner verification](docs/asr_generation_repetition_2026-09-15.md).
 

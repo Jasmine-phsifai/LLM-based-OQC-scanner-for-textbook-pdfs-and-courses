@@ -12,6 +12,8 @@ from ..config import Config
 from .audio_provider_response import AudioProviderResponse
 from .google_genai.recognize_short_mp3 import recognize_short_mp3
 from .google_genai.recognize_uploaded_mp3 import recognize_uploaded_mp3
+from .dashscope.filetrans_settings import DashScopeFileTransSettings
+from .dashscope.recognize_filetrans import recognize_filetrans
 from .openai_compatible.provider_settings import OpenAICompatibleSettings
 from .openai_compatible.recognize_openai_compatible_audio import (
     recognize_openai_compatible_audio,
@@ -35,6 +37,16 @@ def recognize_provider_model_audio(
     if type(provider_model.settings) is OpenAICompatibleSettings:
         Config(timeout_seconds=timeout_seconds)
         return recognize_openai_compatible_audio(
+            snapshot,
+            prompt=prompt,
+            vendor=provider_model.vendor,
+            model=provider_model.model,
+            settings=provider_model.settings,
+            timeout_seconds=timeout_seconds,
+        )
+
+    if type(provider_model.settings) is DashScopeFileTransSettings:
+        return recognize_filetrans(
             snapshot,
             prompt=prompt,
             vendor=provider_model.vendor,

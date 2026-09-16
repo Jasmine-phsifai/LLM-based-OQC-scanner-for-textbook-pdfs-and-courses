@@ -93,6 +93,9 @@ if TYPE_CHECKING:
     from .providers.dashscope.provider_settings import (
         DashScopeSettings as DashScopeSettings,
     )
+    from .providers.dashscope.filetrans_settings import (
+        DashScopeFileTransSettings as DashScopeFileTransSettings,
+    )
     from .providers.google_genai.list_google_genai_models import (
         list_google_genai_models as list_google_genai_models,
     )
@@ -181,6 +184,7 @@ _PUBLIC_IMPORTS = {
     "DashScopeCredential": ".providers.dashscope.credential",
     "DashScopeCredentialPool": ".providers.dashscope.credential_pool",
     "DashScopeSettings": ".providers.dashscope.provider_settings",
+    "DashScopeFileTransSettings": ".providers.dashscope.filetrans_settings",
     "GoogleGenAISettings": ".providers.google_genai.provider_settings",
     "OpenAICompatibleSettings": ".providers.openai_compatible.provider_settings",
     "LocalOCRSettings": ".local_ocr_settings",
@@ -221,6 +225,7 @@ __all__ = [
     "CapabilityReport",
     "ConfigError",
     "DashScopeSettings",
+    "DashScopeFileTransSettings",
     "DashScopeCredential",
     "DashScopeCredentialPool",
     "DashScopeCredentialPoolReport",
