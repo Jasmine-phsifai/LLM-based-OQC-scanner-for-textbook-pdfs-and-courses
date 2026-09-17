@@ -1020,6 +1020,8 @@ class VideoProcessor(BaseProcessor):
         目标密度: 28~40 帧/小时 → 2.5h≈70-100帧, 1.5h≈42-60帧。
         通过二分搜索统一灵敏度乘子，调节 change_threshold / drift_threshold /
         max_segment_sec 三个旋钮，最多迭代 10 轮即可收敛到目标区间。
+        10 轮后仍超出上限时保留最佳结果的全部帧：变化密集的短视频被强行
+        均匀下采样会丢失内容，允许超出目标范围。
         """
         TARGET_LOW_PER_HOUR = 28.0
         TARGET_HIGH_PER_HOUR = 40.0
@@ -1078,16 +1080,6 @@ class VideoProcessor(BaseProcessor):
             "[VIDEO] 校准%d轮后使用最佳结果: %d帧 (目标%d~%d)",
             MAX_ATTEMPTS, len(best_selected), target_low, target_high,
         )
-
-        # 安全上限: 若仍超出目标，均匀子采样
-        if len(best_selected) > target_high:
-            final_index = len(best_selected) - 1
-            final_slot = target_high - 1
-            best_selected = [
-                best_selected[int(i * final_index / final_slot + 0.5)]
-                for i in range(target_high)
-            ]
-            logger.info("[VIDEO] 安全上限均匀下采样: → %d帧", len(best_selected))
 
         return best_selected
 

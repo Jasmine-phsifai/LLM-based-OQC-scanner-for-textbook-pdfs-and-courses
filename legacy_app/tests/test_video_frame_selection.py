@@ -123,7 +123,7 @@ def test_coarse_scan_reads_exact_final_frame_from_real_mp4(tmp_path: Path) -> No
     assert all(Path(candidate["temp_path"]).is_file() for candidate in candidates)
 
 
-def test_density_cap_preserves_first_and_final_selected_candidates() -> None:
+def test_calibration_overshoot_keeps_all_frames_after_ten_rounds() -> None:
     processor = _make_processor()
     candidates = [
         {"frame_idx": index, "timestamp": float(index)}
@@ -133,10 +133,4 @@ def test_density_cap_preserves_first_and_final_selected_candidates() -> None:
 
     selected = processor._auto_calibrate_segmentation(candidates, duration=1.0)
 
-    assert len(selected) == 10
-    assert selected[0]["frame_idx"] == 0
-    assert selected[-1]["frame_idx"] == 10
-    assert all(
-        selected[index]["frame_idx"] < selected[index + 1]["frame_idx"]
-        for index in range(len(selected) - 1)
-    )
+    assert [candidate["frame_idx"] for candidate in selected] == list(range(11))
