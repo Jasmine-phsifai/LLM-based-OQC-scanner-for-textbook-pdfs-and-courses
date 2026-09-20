@@ -559,6 +559,75 @@ def test_video_frame_scan_counts_the_final_frame_before_decoding() -> None:
     assert captured.value.details["maximum_candidate_count"] == 10_000
 
 
+def test_video_frame_scan_keeps_coarse_sample_when_tail_seek_cannot_decode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import numpy as np
+
+    import importlib
+
+    scan_module = importlib.import_module(
+        "ocrllm.video.scan_video_frame_candidates"
+    )
+
+    class FakeCV2:
+        CAP_PROP_POS_MSEC = 0
+        CAP_PROP_POS_FRAMES = 1
+        COLOR_BGR2GRAY = 2
+
+        @staticmethod
+        def cvtColor(frame, _code):
+            return frame[:, :, 0]
+
+        @staticmethod
+        def resize(frame, size):
+            return np.zeros((size[1], size[0]), dtype=frame.dtype)
+
+    class TailSeekFailureCapture:
+        def __init__(self):
+            self.requested = 0
+            self.decoded = -1
+
+        def set(self, prop, value):
+            self.requested = int(value / 1000) if prop == 0 else int(value)
+            return True
+
+        def read(self):
+            if self.requested == 2:
+                return False, None
+            self.decoded = self.requested
+            self.requested += 1
+            return True, np.zeros((4, 4, 3), dtype=np.uint8)
+
+        def get(self, prop):
+            if prop == 1:
+                return float(self.requested)
+            return float(self.decoded * 1000)
+
+    capture = TailSeekFailureCapture()
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def fake_open(_source, *, cv2):
+        yield capture
+
+    monkeypatch.setattr(scan_module, "open_video_capture", fake_open)
+    candidates = scan_module.scan_video_frame_candidates(
+        Path("tail-seek-failure.mp4"),
+        video_info=VideoInfo(
+            frame_count=3,
+            frames_per_second=1.0,
+            duration_seconds=3.0,
+            width_pixels=4,
+            height_pixels=4,
+        ),
+        cv2=FakeCV2,
+    )
+
+    assert [candidate.frame_index for candidate in candidates] == [0]
+
+
 def test_extract_video_frames_removes_snapshot_after_invalid_video(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

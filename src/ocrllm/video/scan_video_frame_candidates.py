@@ -58,17 +58,23 @@ def scan_video_frame_candidates(
             _append_ordered_candidate(candidates, candidate)
 
         if not candidates or candidates[-1].frame_index != final_frame_index:
-            _append_ordered_candidate(
-                candidates,
-                _read_candidate(
+            try:
+                final_candidate = _read_candidate(
                     capture,
                     position_property=cv2.CAP_PROP_POS_FRAMES,
                     position_value=final_frame_index,
                     expected_frame_index=final_frame_index,
                     video_info=video_info,
                     cv2=cv2,
-                ),
-            )
+                )
+            except VideoError as error:
+                # Some H.264 backends cannot seek the last non-key frame even
+                # though all coarse samples decoded. The preceding sample is
+                # sufficient for comparison; do not reject the whole video.
+                if not candidates or "position_property" not in error.details:
+                    raise
+            else:
+                _append_ordered_candidate(candidates, final_candidate)
 
     if not candidates:
         raise VideoError(
@@ -111,6 +117,14 @@ def _read_candidate(
             raise VideoError(
                 "The video backend could not decode a comparison frame.",
                 code="VIDEO_INVALID",
+                details={
+                    "position_property": position_property,
+                    "position_value": position_value,
+                    "expected_frame_index": expected_frame_index,
+                    "positioned": bool(positioned),
+                    "decoded": bool(decoded),
+                    "frame_is_none": frame is None,
+                },
             ) from None
         frame_index = read_decoded_video_frame_index(capture, cv2=cv2)
         if not 0 <= frame_index < video_info.frame_count:
