@@ -10132,3 +10132,10 @@ v4内部历史字段保持兼容，公开cap证据与generation_repetition_failu
 运行：`python tools/verify_cooperative_safe_stop.py --work-dir <独立持久验证目录>`。本轮聚合结果见[safe_owner_exit_2026-09-20.json](safe_owner_exit_2026-09-20.json)。统筹只消费该明确契约，不根据错误码自行认定保存完成、不解析checkpoint内部字段。生产部署及跨仓版本由course-pipeline记录。
 
 Carry-forward judgement：recognition failed与owner exit unconfirmed必须分开；只能由实际保存与lane收尾责任方给出确认，调用方不能通过放行错误码或抹去历史失败绕过。
+
+
+### 2026-09-20 图片旧服务故障限定恢复
+
+统筹真实发现旧服务不可用/超时失败课次。新增公开 inspection 与 service_recovery_only opt-in resume；只解释现有checkpoint并沿原lane调用，已有成功/非服务错误/unresolved不重跑，cleanup异常不开放。暂停新产生validation后再次续跑只处理剩余服务失败。恢复批次账与优先级属于统筹，不复制进库。真实媒体+本机HTTP scenario与16项merged-image测试通过；首轮测试脚本错误地使用dataclass.replace(ProviderModel)，已纠正并完整复验。参见 image_service_recovery_2026-09-20.md。
+
+后续判断：此类“恢复把永久错误重新入队”的风险会在任何新恢复入口重现；必须保留owner筛选与暂停续跑语义。默认普通resume和ASR无改动，未修改legacy实现。

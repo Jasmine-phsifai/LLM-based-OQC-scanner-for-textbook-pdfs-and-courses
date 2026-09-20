@@ -53,6 +53,7 @@ def execute_merged_image_plan(
     state_path: Path,
     timeout_seconds: float,
     stop_requested: object | None = None,
+    selected_slot_indexes: frozenset[int] | None = None,
 ) -> tuple[
     MergedImageResumeState,
     tuple[ProviderModelUsage, ...],
@@ -66,6 +67,7 @@ def execute_merged_image_plan(
         for lane_index in range(min(len(provider_lanes), len(state.slots)))
         if any(
             state.slots[slot_index].status != "settled"
+            and (selected_slot_indexes is None or slot_index in selected_slot_indexes)
             for slot_index in range(
                 lane_index,
                 len(state.slots),
@@ -95,6 +97,7 @@ def execute_merged_image_plan(
                     timeout_seconds=timeout_seconds,
                     owner=owner,
                     stop=stop,
+                    selected_slot_indexes=selected_slot_indexes,
                 )
             )
         except ProviderDispatchStopped:
@@ -117,6 +120,7 @@ def execute_merged_image_plan(
                     timeout_seconds=timeout_seconds,
                     owner=owner,
                     stop=stop,
+                    selected_slot_indexes=selected_slot_indexes,
                 )
                 for lane_index in active_lanes
             )
@@ -209,6 +213,7 @@ def _execute_merged_image_lane(
     timeout_seconds: float,
     owner: _MergedImageStateOwner,
     stop: CooperativeStop,
+    selected_slot_indexes: frozenset[int] | None = None,
 ) -> tuple[dict[str, object], ...]:
     """Run one fixed lane serially while other lanes progress independently."""
     provider_lane = provider_lanes[lane_index]
@@ -218,7 +223,8 @@ def _execute_merged_image_lane(
     try:
         for slot_index in range(lane_index, len(initial_state.slots), lane_count):
             slot = initial_state.slots[slot_index]
-            if slot.status == "settled":
+            if (slot.status == "settled" or
+                    (selected_slot_indexes is not None and slot_index not in selected_slot_indexes)):
                 continue
             if stop.is_set():
                 break

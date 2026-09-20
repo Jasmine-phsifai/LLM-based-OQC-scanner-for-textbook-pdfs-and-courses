@@ -386,3 +386,17 @@ evidence qualify; accepted gaps, non-cap errors and ordinary pending work do not
 `audio_publication_pending` identifies a saved settled/accepted result whose final
 MD still needs publication. It is available recovery with zero candidate audio
 seconds; ordinary resume republishes it without inference.
+
+### Narrow image service recovery (2026-09-20)
+
+`inspect_image_service_recovery(output_path)` returns
+`service_recovery_available`, `service_recovery_slot_count`, and `reason`.
+The read-only snapshot denies missing, incompatible and cleanup-unconfirmed
+checkpoints. It is not a dispatch reservation or proof that a worker is idle.
+`resume_images_to_markdown(..., service_recovery_only=True)` dispatches only
+currently saved PROVIDER_UNAVAILABLE / PROVIDER_TIMEOUT failed groups. Settled,
+unresolved and other failed groups retain their identity and content; the
+original fixed lane assignment and provider retry rules still apply. A pause
+followed by this same mode excludes any newly produced validation failure.
+The caller must bound and serialize its recovery campaign; ordinary resume
+remains unchanged. Partial output stays partial when excluded failures remain.

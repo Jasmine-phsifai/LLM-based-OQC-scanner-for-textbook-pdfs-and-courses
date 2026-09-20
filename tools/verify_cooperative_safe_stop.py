@@ -18,7 +18,7 @@ from PIL import Image
 
 from ocrllm import (
     AudioOutputLimitPolicy, OpenAICompatibleSettings, ProviderModel,
-    inspect_audio_completion, inspect_markdown_job, observation_context,
+    inspect_audio_completion, inspect_image_service_recovery, inspect_markdown_job, observation_context,
     recognize_audio_to_markdown, recognize_images_to_markdown,
     resume_audio_to_markdown, resume_images_to_markdown, split_audio,
 )
@@ -168,6 +168,82 @@ def main():
         return events
 
     try:
+        # Narrow image recovery is selected from owner state, not inferred by
+        # the caller. Real HTTP supplies both canonical service error classes.
+        service_provider = ProviderModel(**{name: getattr(provider, name) for name in (
+            "vendor", "model", "adapter_id", "settings", "supports_audio",
+            "supports_plain_ocr", "supports_detail_ocr", "default_image_batch_size",
+            "default_audio_minutes")}, retry_rules={})
+        out = args.work_dir / 'service-only-images.md'
+        reset([Reply(), Reply(503, 'unavailable'), Reply(value=''), Reply(504, 'timeout')])
+        assert images(out, provider_arg=service_provider).status == 'partial'
+        original = checkpoint(out)
+        assert [row['error_code'] for row in original['slots']] == [
+            None, 'PROVIDER_UNAVAILABLE', 'PROVIDER_RESPONSE_INVALID', 'PROVIDER_TIMEOUT']
+        summary = inspect_image_service_recovery(out)
+        assert summary['service_recovery_available'] and summary['service_recovery_slot_count'] == 2
+        assert checkpoint(out) == original
+        # The first service slot now yields invalid output and requests pause.
+        # A later recovery must never retry that new validation failure.
+        reset([Reply(value='', request_stop=True)])
+        paused(lambda: images(out, resume=True, provider_arg=service_provider,
+                              service_recovery_only=True), 1)
+        after_pause = checkpoint(out)
+        assert after_pause['slots'][1]['error_code'] == 'PROVIDER_RESPONSE_INVALID'
+        assert inspect_image_service_recovery(out)['service_recovery_slot_count'] == 1
+        reset([Reply()])
+        result = images(out, resume=True, provider_arg=[[service_provider], [service_provider]],
+                        service_recovery_only=True)
+        assert result.status == 'partial' and len(calls) == 1
+        assert result.metadata['reused_slot_count'] == 1
+        after = checkpoint(out)
+        assert after['slots'][0] == original['slots'][0]
+        assert after['slots'][1:3] == after_pause['slots'][1:3]
+        assert after['slots'][3]['status'] == 'settled'
+        assert not inspect_image_service_recovery(out)['service_recovery_available']
+        reset([])
+        result = images(out, resume=True, provider_arg=service_provider, service_recovery_only=True)
+        assert result.status == 'partial' and not calls
+        # Default resume keeps its original behavior and can recover other errors.
+        reset([Reply(), Reply()])
+        assert images(out, resume=True, provider_arg=service_provider).status == 'complete'
+        assert len(calls) == 2
+        assert not inspect_image_service_recovery(out)['service_recovery_available']
+        verdicts['service_only_mixed_errors_pause_preserves_new_validation_failure'] = True
+        verdicts['service_only_preserves_settled_groups_and_fixed_lanes'] = True
+        verdicts['default_image_resume_unchanged'] = True
+
+        # The filter does not implement its own retry policy: the existing
+        # configured finite current-provider retry still executes normally.
+        out = args.work_dir / 'service-bounded-retry.md'
+        reset([Reply(503, 'unavailable')])
+        try:
+            images(out, selected=batches[:1], provider_arg=service_provider)
+        except AllCandidatesExhausted:
+            pass
+        reset([Reply(503, 'unavailable'), Reply()])
+        result = images(out, selected=batches[:1], resume=True,
+                        service_recovery_only=True)
+        assert result.status == 'complete' and len(calls) == 2
+        verdicts['service_recovery_uses_existing_bounded_provider_retries'] = True
+
+
+        # A pending slot from a pre-dispatch pause is not a saved service failure.
+        reset([])
+        stop.set()
+        out = args.work_dir / 'service-only-pending.md'
+        paused(lambda: images(out, provider_arg=service_provider), 0)
+        assert not inspect_image_service_recovery(out)['service_recovery_available']
+        reset([])
+        try:
+            images(out, resume=True, provider_arg=service_provider, service_recovery_only=True)
+        except AllCandidatesExhausted:
+            pass
+        else:
+            raise AssertionError('Unresolved-only checkpoint became success')
+        assert not calls
+        verdicts['service_only_excludes_unresolved_slots'] = True
+
         # All-rejected recognition still has a safe owner exit after checkpoint
         # and HTTP-client cleanup. Failed cleanup must withhold this guarantee.
         from contextlib import nullcontext
@@ -196,6 +272,35 @@ def main():
                 assert saved['provider_cleanup_failed'] is cleanup_failed
                 assert not out.exists()
         verdicts['all_rejected_checkpoint_and_cleanup_contract'] = True
+        # Inject only the actual SDK cleanup boundary, never checkpoint edits.
+        out = args.work_dir / 'service-cleanup-unconfirmed.md'
+        reset([Reply(503, 'unavailable')])
+        with patch.object(openai.OpenAI, 'close', fail_client_close):
+            try:
+                images(out, selected=batches[:1], provider_arg=service_provider)
+            except AllCandidatesExhausted:
+                pass
+        assert inspect_image_service_recovery(out) == {
+            'service_recovery_available': False, 'service_recovery_slot_count': 0,
+            'reason': 'provider_cleanup_unconfirmed'}
+        reset([])
+        from ocrllm.errors import ResumeStateError
+        try:
+            images(out, selected=batches[:1], resume=True,
+                   provider_arg=service_provider, service_recovery_only=True)
+        except ResumeStateError as error:
+            assert error.details['provider_calls_attempted'] == 0
+        else:
+            raise AssertionError('Unconfirmed cleanup admitted recovery')
+        assert not calls
+        missing = args.work_dir / 'service-missing.md'
+        assert not inspect_image_service_recovery(missing)['service_recovery_available']
+        missing.with_suffix('.ocrllm-state.json').write_text('{invalid checkpoint')
+        assert not inspect_image_service_recovery(missing)['service_recovery_available']
+        missing.with_suffix('.ocrllm-state.json').write_text('{"state_version":"unsupported"}')
+        assert not inspect_image_service_recovery(missing)['service_recovery_available']
+        verdicts['service_recovery_denies_cleanup_missing_corrupt_unsupported'] = True
+
 
         # An already requested stop still creates a resumable, zero-call plan.
         for name, function in [('audio', audio), ('images', images)]:

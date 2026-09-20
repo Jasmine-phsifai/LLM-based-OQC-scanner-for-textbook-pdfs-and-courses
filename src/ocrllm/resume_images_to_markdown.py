@@ -22,8 +22,14 @@ def resume_images_to_markdown(
     output_path: str | Path | None = None,
     timeout_seconds: float = 120.0,
     stop_requested: object | None = None,
+    service_recovery_only: bool = False,
 ) -> RecognitionResult:
-    """Restore the saved task/plan and dispatch only unresolved batches."""
+    """Restore the plan; optionally retry only saved service failures.
+
+    Other failures and unresolved slots are excluded, including validation
+    failures produced before a pause. The caller owns the bounded recovery
+    campaign; this call uses the normal provider retry rules.
+    """
     from .build_merged_image_resume_state import build_merged_image_resume_state
     from .clear_public_error import clear_public_error
     from .config import Config
@@ -46,6 +52,9 @@ def resume_images_to_markdown(
 
     public_error: OCRLLMError | None = None
     try:
+        if type(service_recovery_only) is not bool:
+            from .errors import ConfigError
+            raise ConfigError("service_recovery_only must be bool.", code="CONFIG_INVALID")
         provider_lanes = normalize_provider_model_lanes(
             provider,
             distinguish_runtime_settings=True,
@@ -66,6 +75,16 @@ def resume_images_to_markdown(
                 overwrite=False,
             )
             state = load_merged_image_resume_state(state_path)
+            selected_slot_indexes = None
+            if service_recovery_only:
+                from .inspect_image_service_recovery import image_service_recovery_slots
+                from .errors import ResumeStateError
+                if state.provider_cleanup_failed:
+                    raise ResumeStateError(
+                        "Image service recovery requires confirmed provider cleanup.",
+                        code="RESUME_STATE_INVALID", details={"provider_calls_attempted": 0},
+                    )
+                selected_slot_indexes = image_service_recovery_slots(state)
             prompt, prompt_version = resolve_merged_image_prompt(
                 provider_lanes[0][0],
                 state.image_task,
@@ -96,6 +115,7 @@ def resume_images_to_markdown(
                 state_path=state_path,
                 timeout_seconds=timeout_seconds,
                 stop_requested=stop_requested,
+                selected_slot_indexes=selected_slot_indexes,
             )
             return finalize_merged_image_result(
                 state,

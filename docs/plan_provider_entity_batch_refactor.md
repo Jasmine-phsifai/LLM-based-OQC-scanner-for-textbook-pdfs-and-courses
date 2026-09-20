@@ -13,6 +13,12 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-20 Narrow image service-failure recovery
+
+A public read-only eligibility query and explicit service-only resume reuse the
+original checkpoint and lanes. No ASR changes, second recovery ledger or default
+retry expansion. See [scenario evidence](image_service_recovery_2026-09-20.md).
+
 ### 2026-09-20 All-failed owner exit acknowledgement
 
 Merged image/audio exhaustion now reports explicit `safe_owner_exit` only after

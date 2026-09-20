@@ -9,6 +9,13 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 Last synchronized: 2026-09-20.
 
+Images expose `inspect_image_service_recovery(output_path)` and opt-in
+`resume_images_to_markdown(..., service_recovery_only=True)`. Only saved
+PROVIDER_UNAVAILABLE / PROVIDER_TIMEOUT failed slots qualify; other failures,
+unresolved work and cleanup-unconfirmed states do not. The caller owns the
+bounded campaign; OCRLLM owns checkpoint interpretation and lane filtering.
+See [scenario evidence](docs/image_service_recovery_2026-09-20.md).
+
 Merged image/audio ALL_CANDIDATES_EXHAUSTED now carries an explicit
 `safe_owner_exit` acknowledgement after joined/checkpointed execution; failed
 client cleanup remains unconfirmed. Recognition still fails. See
