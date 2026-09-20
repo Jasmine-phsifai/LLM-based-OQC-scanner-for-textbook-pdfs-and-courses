@@ -5,7 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 
-COURSE_OCR_PROMPT_VERSION = "course.legacy.board.20260920"
+# Keep the existing checkpoint identity while restoring the user-authored text.
+# Runtime Git revision records which template produced each new attempt.
+COURSE_OCR_PROMPT_VERSION = "course.legacy.v1"
 _COURSE_OCR_PROMPT = """这是上课板书/课件截图（图片编号：{image_names}）。
 这些图片可能来自黑板、白板或投影PPT，可能具有手写个人风格。
 请你在保留数学公式（使用LaTeX格式）和表格结构（使用Markdown表格）的情况下，识别并输出Markdown文件。

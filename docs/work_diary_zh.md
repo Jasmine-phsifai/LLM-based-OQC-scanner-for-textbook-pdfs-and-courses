@@ -10187,3 +10187,5 @@ Carry-forward judgement：recognition failed与owner exit unconfirmed必须分�
 ## 2026-09-20：按用户指示停止质量试验，恢复手写课程提示词
 
 移除未提交且未部署的纯marker重试澄清候选。course_ocr 模板直接采用当前 legacy_app/OCRLLM/prompts.py 的 BOARD 原文，仅渲染图片名，不引入 legacy 运行时依赖。版本 course.legacy.board.20260920；AST提取原文与渲染逐字相等。未新增云端测试调用、未调整模型/校验/重试预算。后续通过正常生产验证，不再进行重复质量对照。
+
+加载后的正常恢复发现 prompt_version 改名阻止旧checkpoint恢复（0次provider调用）。保留既有course.legacy.v1恢复身份；当前用户手写文本由runtime Git revision追踪，不手改checkpoint、不重置失败预算。48d3043的版本改名被本次补正。
