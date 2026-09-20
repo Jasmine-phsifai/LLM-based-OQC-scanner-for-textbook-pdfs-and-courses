@@ -10146,3 +10146,14 @@ Carry-forward judgement：recognition failed与owner exit unconfirmed必须分�
 审查发现仅root每课一次预约不足以保证多次暂停时逐槽额度：仍503/timeout的旧槽每次resume都会重新入场。现于原image checkpoint可选保存批次ID→已预约槽；显式非空ID为service-only必需。owner在实际HTTP/CLI dispatch前原子预约，暂停前不扣、预约后仅首次请求必执行，后续内部重试仍被stop挡住，未知崩溃不退款。不同显式批次可新授权，无第二账本、无ASR改动。真实HTTP+合成Codex进程和反复暂停场景通过，88项相关测试通过。详见 image_service_recovery_2026-09-20.md。
 
 后续判断：WARNING FOR src/ocrllm：任何跨暂停有界恢复必须持久预约在owner，而不只是统筹层每课计数；新增provider应保留实际dispatch边界回调。已有旧进程reader须重载才能理解新可选字段。
+
+
+### 2026-09-20 Codex course 真空白语义候选否决，生产源码保持原样
+
+检查已有usage/failure_outputs证明拒识原文可持久溯源，无须新增诊断。课程prompt未规定空白帧合法输出，Codex wrapper对困惑/无法完成要求SORRY，因此做了最小wrapper候选对照。广版还鼓励逐帧保留部分内容，窄版仅加真无内容固定声明且保留原拒识规则。三组真实8图：before/广版6次API7次CLI，窄版3次API3次CLI；串行独立token事件，不碰生产checkpoint或失败预算。88项相关测试与合成CLI契约过，真实9次API也都validator complete，但人工发现数学帧内容交换、标题误字、摘要式板书和网页标题错误。广版、窄版都不证明质量/收益，根决定全部不部署。
+
+已把两候选、全部真实请求/输出/用量和实验工具存R持久实验目录；撤回本轮产品、tests和原scenario改动，校验builder与recognize源码逐字节等于3f2faca，不提交实验开关。只提交本调查记录及 docs/codex_course_empty_semantics_2026-09-20.md。保留他人legacy/setup_env.bat等脏文件。
+
+后续判断：WARNING FOR src/ocrllm：marker全齐不能证明多图片正文归属正确，后续须单独诊断8图帧内容错位；本轮不擅自增加正文审核或放宽校验。真实输出质量证据必须独立于validator通过，不能将候选的绿色测试当生产部署许可。
+
+补充同切片：根授权额外原HEAD单图frame75一次API，1次CLI/12.948秒，正确读出章节标题，但其余仍摘要化。证据在codex-course-single-frame75-20260920，独立tokens，不改生产8图，也不据此宣称单图满足完整转写。实验到此停止。
