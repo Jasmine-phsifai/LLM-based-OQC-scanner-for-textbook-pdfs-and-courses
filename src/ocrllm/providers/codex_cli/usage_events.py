@@ -9,6 +9,7 @@ import uuid
 
 from ...errors import OutputError
 from ...observation_context import _FIELDS, _OBSERVER
+from .summarize_codex_diagnostic import summarize_codex_diagnostic
 
 _LOCK = Lock()
 _INSTANCE = uuid.uuid4().hex
@@ -95,6 +96,10 @@ class CodexUsageAttempt:
             self.stream_complete = False
             return
         event_type = event["type"]
+        if event_type in ("error", "turn.failed"):
+            error = event.get("error")
+            message = error.get("message") if isinstance(error, dict) else event.get("message")
+            self.record_diagnostic(event_type, message)
         # Only explicit server values are actuals. Requested settings are never
         # substituted for missing execution facts.
         for source, target in (("model", "actual_model"), ("service_tier", "actual_service_tier"),
@@ -122,6 +127,15 @@ class CodexUsageAttempt:
                 self._terminal_ids[turn_id] = event.get("usage")
             self._turn(event_type, event.get("usage"), "usage_not_reported", turn_id=turn_id)
             self.active_turn = False
+
+    def record_diagnostic(self, source, text):
+        diagnostic = summarize_codex_diagnostic(source, text)
+        if diagnostic is not None:
+            values = self.common.setdefault("failure_diagnostics", [])
+            if diagnostic not in values:
+                # Keep the most recent bounded evidence, including final stderr.
+                values.append(diagnostic)
+                del values[:-8]
 
     def _turn(self, event_type, raw_usage, missing_reason, *, turn_id=None):
         raw_usage = raw_usage if isinstance(raw_usage, dict) else {}

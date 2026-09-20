@@ -60,4 +60,5 @@ def run_codex_process(argv, *, timeout_seconds, attempt):
         stderr.seek(0, 2)
         stderr.seek(max(0, stderr.tell() - 8192))
         detail = stderr.read().decode("utf-8", errors="replace")
+        attempt.record_diagnostic("stderr_tail", detail)
         return process.returncode, detail, timed_out

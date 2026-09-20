@@ -10116,3 +10116,9 @@ v4内部历史字段保持兼容，公开cap证据与generation_repetition_failu
 源证据：生产 events.jsonl 有 23 条损坏 JSON 行；orchestrator 的并行模态为同一路径创建不同 observation_context，每个上下文锁不能互相保护。R: 挂载盘隔离情景用 8 个线程各写 200 条约 24KB 事件，修复前仅保留 444/1600 条（静默丢失），修复后 1600 条全部可解析且标识唯一。修复仅给内置文件 sink 增加进程级锁，包含 open/write/close；自定义 sink 和识别结果不变。仍不承诺跨进程锁或断电 fsync。无 checkpoint 修改或历史事件重写。
 
 复现脚本：`PYTHONPATH=src python tools/verify_parallel_observation_append.py --directory /mnt/r/course-pipeline-state/validation`。另运行现有 `tools/verify_course_observations.py` 核验公开 API、失败、重试及恢复观察。生产已收到用户停止请求，不启动 consumer；改动在下次用户恢复后新进程导入时生效，当前生产运行验证待办。详细结果及提交引用由 orchestrator 本次报告记录。活跃库边界未改变。
+
+## 2026-09-20 Codex失败信号持久化
+
+实际生产近24小时954次超时、8次接受；此前26,643次PROVIDER_UNAVAILABLE没有保留足以判断额度/认证/网络原因的诊断。修复CodexUsageAttempt丢弃turn.failed/error消息、run_codex_process丢弃超时stderr的问题：只保留已观察的额度/限流/认证/连接/超时词汇信号、明确HTTP状态码、末8192字符指纹及长度；最多8条，不保存原始CLI正文、URL或凭据，不将信号当成确定根因或自动重试决定。数据随既有fsync尝试/turn事件保存，无新状态机、数据库schema或provider默认行为变更。
+
+`tools/verify_codex_failure_diagnostics.py`使用2个真实OS子进程验证turn.failed额度错误和超时前stderr，检查secret sentinel不进入事件、未知usage不转零、长度/条数有界。场景通过；既有Codex usage/adapter/settings测试72项通过，仅pytest cache不可写警告。未发真实模型请求、未修改checkpoint、未清除生产用户停止请求。下次新consumer导入生效；历史错误不可由新代码补造，恢复故障根因和提供方级停发仍待后续证据。Carry-forward judgement：通用错误码不能替代原故障信号；任何CLI接入都应在临时进程清理前保留有限、无秘密的诊断，且不能因此宣称网络已恢复。
