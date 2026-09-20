@@ -7,9 +7,10 @@ _CONTROL = ContextVar("ocrllm_codex_call_control", default=None)
 
 
 @contextmanager
-def codex_call_control(*, stop_requested=None, timeout_seconds=None):
+def codex_call_control(*, stop_requested=None, timeout_seconds=None, before_dispatch=None):
     token = _CONTROL.set({
         "stop_requested": stop_requested,
+        "before_dispatch": before_dispatch,
         "deadline": time.monotonic() + timeout_seconds if timeout_seconds is not None else None,
     })
     try:
@@ -28,3 +29,11 @@ def remaining_seconds(default):
     control = _CONTROL.get()
     deadline = control["deadline"] if control else None
     return min(default, deadline - time.monotonic()) if deadline is not None else default
+
+
+def before_dispatch():
+    """Invoke the owner reservation after admission, immediately before spawn."""
+    control = _CONTROL.get()
+    callback = control.get("before_dispatch") if control else None
+    if callback is not None:
+        callback()

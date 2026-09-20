@@ -23,12 +23,16 @@ def resume_images_to_markdown(
     timeout_seconds: float = 120.0,
     stop_requested: object | None = None,
     service_recovery_only: bool = False,
+    service_recovery_batch_id: str | None = None,
 ) -> RecognitionResult:
     """Restore the plan; optionally retry only saved service failures.
 
     Other failures and unresolved slots are excluded, including validation
     failures produced before a pause. The caller owns the bounded recovery
-    campaign; this call uses the normal provider retry rules.
+    campaign. A nonempty service_recovery_batch_id is required in this mode;
+    each slot is atomically reserved once for that ID before dispatch. Pauses or
+    unknown crashes do not refund reservations. Provider retry rules remain
+    bounded and drain still prevents new retries/fallbacks after a stop.
     """
     from .build_merged_image_resume_state import build_merged_image_resume_state
     from .clear_public_error import clear_public_error
@@ -55,6 +59,12 @@ def resume_images_to_markdown(
         if type(service_recovery_only) is not bool:
             from .errors import ConfigError
             raise ConfigError("service_recovery_only must be bool.", code="CONFIG_INVALID")
+        if service_recovery_only:
+            from .inspect_image_service_recovery import validate_service_recovery_batch_id
+            validate_service_recovery_batch_id(service_recovery_batch_id)
+        elif service_recovery_batch_id is not None:
+            from .errors import ConfigError
+            raise ConfigError("Service recovery batch ID requires service_recovery_only.", code="CONFIG_INVALID")
         provider_lanes = normalize_provider_model_lanes(
             provider,
             distinguish_runtime_settings=True,
@@ -84,7 +94,7 @@ def resume_images_to_markdown(
                         "Image service recovery requires confirmed provider cleanup.",
                         code="RESUME_STATE_INVALID", details={"provider_calls_attempted": 0},
                     )
-                selected_slot_indexes = image_service_recovery_slots(state)
+                selected_slot_indexes = image_service_recovery_slots(state, service_recovery_batch_id)
             prompt, prompt_version = resolve_merged_image_prompt(
                 provider_lanes[0][0],
                 state.image_task,
@@ -116,6 +126,7 @@ def resume_images_to_markdown(
                 timeout_seconds=timeout_seconds,
                 stop_requested=stop_requested,
                 selected_slot_indexes=selected_slot_indexes,
+                service_recovery_batch_id=service_recovery_batch_id,
             )
             return finalize_merged_image_result(
                 state,

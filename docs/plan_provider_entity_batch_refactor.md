@@ -13,6 +13,14 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-20 Recovery reservation continuity
+
+The same service recovery batch now atomically reserves each image slot before
+actual dispatch in its existing checkpoint. Pause/unknown crash cannot refund
+that slot. Stop still prevents subsequent internal retry/fallback; old v1 state
+without the optional field remains readable. Explicit batch ID is mandatory for
+service-only resume. Existing readers need reload before extended state is used.
+
 ### 2026-09-20 Narrow image service-failure recovery
 
 A public read-only eligibility query and explicit service-only resume reuse the

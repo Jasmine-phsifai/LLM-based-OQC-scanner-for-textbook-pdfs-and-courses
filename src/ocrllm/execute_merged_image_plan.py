@@ -54,6 +54,7 @@ def execute_merged_image_plan(
     timeout_seconds: float,
     stop_requested: object | None = None,
     selected_slot_indexes: frozenset[int] | None = None,
+    service_recovery_batch_id: str | None = None,
 ) -> tuple[
     MergedImageResumeState,
     tuple[ProviderModelUsage, ...],
@@ -98,6 +99,7 @@ def execute_merged_image_plan(
                     owner=owner,
                     stop=stop,
                     selected_slot_indexes=selected_slot_indexes,
+                    service_recovery_batch_id=service_recovery_batch_id,
                 )
             )
         except ProviderDispatchStopped:
@@ -121,6 +123,7 @@ def execute_merged_image_plan(
                     owner=owner,
                     stop=stop,
                     selected_slot_indexes=selected_slot_indexes,
+                    service_recovery_batch_id=service_recovery_batch_id,
                 )
                 for lane_index in active_lanes
             )
@@ -168,6 +171,20 @@ class _MergedImageStateOwner:
             slot_count=len(state.slots),
         )
 
+    def reserve_service_recovery(self, batch_id, slot_index, stop):
+        """Reserve once immediately before the first real dispatch; never refund."""
+        with self._lock:
+            if stop.is_set():
+                raise ProviderDispatchStopped()
+            reservations = dict(self._state.service_recovery_reservations)
+            previous = reservations.get(batch_id, ())
+            if slot_index in previous:
+                raise ProviderDispatchStopped()
+            reservations[batch_id] = tuple(sorted((*previous, slot_index)))
+            updated = replace(self._state, service_recovery_reservations=reservations)
+            save_merged_image_resume_state_atomically(self._state_path, updated)
+            self._state = updated
+
     def checkpoint(
         self,
         outcome: MergedImageSlot,
@@ -214,6 +231,7 @@ def _execute_merged_image_lane(
     owner: _MergedImageStateOwner,
     stop: CooperativeStop,
     selected_slot_indexes: frozenset[int] | None = None,
+    service_recovery_batch_id: str | None = None,
 ) -> tuple[dict[str, object], ...]:
     """Run one fixed lane serially while other lanes progress independently."""
     provider_lane = provider_lanes[lane_index]
@@ -247,6 +265,13 @@ def _execute_merged_image_lane(
                             code="RESUME_STATE_MISMATCH",
                             details={"provider_calls_attempted": 0},
                         ) from None
+                    reserved = False
+                    def before_dispatch():
+                        nonlocal reserved
+                        if service_recovery_batch_id is not None and not reserved:
+                            owner.reserve_service_recovery(service_recovery_batch_id, slot.index, stop)
+                            reserved = True
+
                     slot_failures: list[dict[str, object]] = []
                     for offset in range(len(provider_lane)):
                         if stop.is_set():
@@ -264,6 +289,7 @@ def _execute_merged_image_lane(
                                     prompt=batch_prompt,
                                     timeout_seconds=timeout_seconds,
                                     stop_requested=stop,
+                                    before_dispatch=before_dispatch if service_recovery_batch_id else None,
                                 ),
                                 stop_requested=stop if stop.enabled else None,
                             )

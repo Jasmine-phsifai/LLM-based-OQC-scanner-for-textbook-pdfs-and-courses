@@ -21,3 +21,30 @@ scenario 全通过，包括混合 settled / 503 / validation / 504；首次窄�
 最初scenario搭建误把 ProviderModel 当 dataclass 使用 replace，调用前 TypeError；已改为通过公开属性创建 ProviderModel 并重跑全部场景。测试无付费请求，无质量放宽。
 
 原始机器判据位于上述工作目录 `result.json`；本记录只含合成内容验证，不发布课程内容。
+
+## 2026-09-20 补充：跨暂停的逐槽预约
+
+生产恢复必须传非空 `service_recovery_batch_id`：
+
+```python
+summary = inspect_image_service_recovery(output_path, service_recovery_batch_id="operator-batch")
+result = resume_images_to_markdown(batches, provider=provider, output_path=output_path,
+    service_recovery_only=True, service_recovery_batch_id="operator-batch")
+```
+
+同一 ID 每槽只有一次既有有限 provider/fallback 执行额度，预约保存于原 image checkpoint
+可选 `service_recovery_reservations` 字段。无该字段的旧 v1 原样兼容；新字段需当前reader，
+部署时重载消费者与监控reader。不是新sidecar，也不改变默认普通resume。
+inspection 不传 ID 只报告原始服务失败数，传 ID 才扣除该批次预约；
+service-only resume 不传/传空 ID 则 CONFIG_INVALID。不同显式 ID 可另开一轮，授权归统筹。
+
+stop 在预约前不花额度；预约原子写完后只放行该首次已接受请求，随后CLI内部retry、
+provider retry 和 fallback 仍受原stop gate约束。返回失败或未知进程崩溃都不退预约。
+因此多次暂停不会让仍为503/timeout的旧槽再次发请求，未派发槽可继续。
+
+验证扩展原scenario：4个服务失败槽连续暂停4轮，每轮只请求一个未预约槽，之后同批次零请求；
+新显式批次可请求。HTTP及真实合成Codex进程均验证原子预约时触发stop，第一次真实请求
+仍执行，后续内部retry被阻止；3个未派发槽续跑；未知预约崩溃不重新发出。
+旧checkpoint正常读取、成功槽保留、缺ID拒绝、预先stop零预约均验证。
+最终持久结果 `/mnt/r/course-pipeline-state/scenarios/image-service-reservation-20260920-final/result.json`。
+88项 merged-image / Codex contracts通过（仅pytest缓存权限警告），无真实模型调用。

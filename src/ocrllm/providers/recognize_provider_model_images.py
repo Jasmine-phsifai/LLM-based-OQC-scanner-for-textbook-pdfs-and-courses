@@ -26,6 +26,7 @@ def recognize_provider_model_images(
     prompt: str,
     timeout_seconds: float = 120.0,
     stop_requested=None,
+    before_dispatch=None,
 ) -> str | VisionProviderResponse:
     """Dispatch one no-fallback image request through an existing adapter."""
     if type(provider_model) is not ProviderModel:
@@ -60,8 +61,11 @@ def recognize_provider_model_images(
         )
         resolved_provider = resolve_vision_provider(config)
     if type(provider_model.settings) is CodexCLISettings:
-        with codex_call_control(stop_requested=stop_requested, timeout_seconds=timeout_seconds):
+        with codex_call_control(stop_requested=stop_requested, timeout_seconds=timeout_seconds,
+                                before_dispatch=before_dispatch):
             return call_vision_provider(resolved_provider, image_paths, prompt=prompt, config=config)
+    if before_dispatch is not None:
+        before_dispatch()
     return call_vision_provider(
         resolved_provider,
         image_paths,

@@ -9,6 +9,11 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 Last synchronized: 2026-09-20.
 
+Image service-only recovery now requires an explicit nonempty batch ID. Optional
+reservations in the existing checkpoint prevent pause/restart from replenishing
+a slot admission; old checkpoints remain readable. Reader processes must reload
+before consuming extended states. No second ledger or ASR policy change.
+
 Images expose `inspect_image_service_recovery(output_path)` and opt-in
 `resume_images_to_markdown(..., service_recovery_only=True)`. Only saved
 PROVIDER_UNAVAILABLE / PROVIDER_TIMEOUT failed slots qualify; other failures,

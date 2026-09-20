@@ -15,7 +15,7 @@ from ...raise_if_cancelled import raise_if_cancelled
 from ..validate_provider_markdown import validate_provider_markdown
 from ..vision_provider_response import VisionProviderResponse
 from .build_codex_exec_command import build_codex_exec_command, build_codex_exec_prompt
-from .call_control import remaining_seconds, stop_requested
+from .call_control import before_dispatch, remaining_seconds, stop_requested
 from .codex_exec_output import is_image_access_refusal, parse_codex_refusal, summarize_codex_failure_output
 from .provider_settings import CodexCLISettings, resolve_codex_cli_model
 from .read_cli_version import read_cli_version
@@ -96,6 +96,11 @@ def recognize_images(image_paths: Sequence[Path], *, prompt: str, config: Config
                 observation.finish(spawned=False, exit_code=None, outcome="timed_out", validation_status="not_run", error_code="PROVIDER_TIMEOUT")
                 error = last_error or ProviderError("The Codex CLI call deadline elapsed before admission.", code="PROVIDER_TIMEOUT", retryable=True)
                 raise _with_usage(error, calls, totals)
+            try:
+                before_dispatch()
+            except BaseException:
+                observation.finish(spawned=False, exit_code=None, outcome="cancelled", validation_status="not_run")
+                raise
             delay = None
             outcome = "failed"
             validation = "not_run"

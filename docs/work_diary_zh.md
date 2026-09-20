@@ -10139,3 +10139,10 @@ Carry-forward judgement：recognition failed与owner exit unconfirmed必须分�
 统筹真实发现旧服务不可用/超时失败课次。新增公开 inspection 与 service_recovery_only opt-in resume；只解释现有checkpoint并沿原lane调用，已有成功/非服务错误/unresolved不重跑，cleanup异常不开放。暂停新产生validation后再次续跑只处理剩余服务失败。恢复批次账与优先级属于统筹，不复制进库。真实媒体+本机HTTP scenario与16项merged-image测试通过；首轮测试脚本错误地使用dataclass.replace(ProviderModel)，已纠正并完整复验。参见 image_service_recovery_2026-09-20.md。
 
 后续判断：此类“恢复把永久错误重新入队”的风险会在任何新恢复入口重现；必须保留owner筛选与暂停续跑语义。默认普通resume和ASR无改动，未修改legacy实现。
+
+
+### 2026-09-20 图片服务恢复暂停预算修正
+
+审查发现仅root每课一次预约不足以保证多次暂停时逐槽额度：仍503/timeout的旧槽每次resume都会重新入场。现于原image checkpoint可选保存批次ID→已预约槽；显式非空ID为service-only必需。owner在实际HTTP/CLI dispatch前原子预约，暂停前不扣、预约后仅首次请求必执行，后续内部重试仍被stop挡住，未知崩溃不退款。不同显式批次可新授权，无第二账本、无ASR改动。真实HTTP+合成Codex进程和反复暂停场景通过，88项相关测试通过。详见 image_service_recovery_2026-09-20.md。
+
+后续判断：WARNING FOR src/ocrllm：任何跨暂停有界恢复必须持久预约在owner，而不只是统筹层每课计数；新增provider应保留实际dispatch边界回调。已有旧进程reader须重载才能理解新可选字段。

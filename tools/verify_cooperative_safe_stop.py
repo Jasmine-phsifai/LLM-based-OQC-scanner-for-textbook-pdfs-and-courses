@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,7 +18,7 @@ from threading import Barrier, Event, Lock, Thread, Timer
 from PIL import Image
 
 from ocrllm import (
-    AudioOutputLimitPolicy, OpenAICompatibleSettings, ProviderModel,
+    AudioOutputLimitPolicy, CodexCLISettings, OpenAICompatibleSettings, ProviderModel,
     inspect_audio_completion, inspect_image_service_recovery, inspect_markdown_job, observation_context,
     recognize_audio_to_markdown, recognize_images_to_markdown,
     resume_audio_to_markdown, resume_images_to_markdown, split_audio,
@@ -187,13 +188,13 @@ def main():
         # A later recovery must never retry that new validation failure.
         reset([Reply(value='', request_stop=True)])
         paused(lambda: images(out, resume=True, provider_arg=service_provider,
-                              service_recovery_only=True), 1)
+                              service_recovery_only=True, service_recovery_batch_id="scenario-batch"), 1)
         after_pause = checkpoint(out)
         assert after_pause['slots'][1]['error_code'] == 'PROVIDER_RESPONSE_INVALID'
         assert inspect_image_service_recovery(out)['service_recovery_slot_count'] == 1
         reset([Reply()])
         result = images(out, resume=True, provider_arg=[[service_provider], [service_provider]],
-                        service_recovery_only=True)
+                        service_recovery_only=True, service_recovery_batch_id="scenario-batch")
         assert result.status == 'partial' and len(calls) == 1
         assert result.metadata['reused_slot_count'] == 1
         after = checkpoint(out)
@@ -202,7 +203,7 @@ def main():
         assert after['slots'][3]['status'] == 'settled'
         assert not inspect_image_service_recovery(out)['service_recovery_available']
         reset([])
-        result = images(out, resume=True, provider_arg=service_provider, service_recovery_only=True)
+        result = images(out, resume=True, provider_arg=service_provider, service_recovery_only=True, service_recovery_batch_id="scenario-batch")
         assert result.status == 'partial' and not calls
         # Default resume keeps its original behavior and can recover other errors.
         reset([Reply(), Reply()])
@@ -223,10 +224,159 @@ def main():
             pass
         reset([Reply(503, 'unavailable'), Reply()])
         result = images(out, selected=batches[:1], resume=True,
-                        service_recovery_only=True)
+                        service_recovery_only=True, service_recovery_batch_id="scenario-batch")
         assert result.status == 'complete' and len(calls) == 2
         verdicts['service_recovery_uses_existing_bounded_provider_retries'] = True
 
+
+        # Reservations survive repeated pauses and service failures. Every
+        # original slot gets one finite execution in this explicit batch.
+        out = args.work_dir / 'service-repeated-pause.md'
+        reset([Reply(503, 'unavailable')] * len(batches))
+        try:
+            images(out, provider_arg=service_provider)
+        except AllCandidatesExhausted:
+            pass
+        assert 'service_recovery_reservations' not in checkpoint(out)
+        reset([])
+        stop.set()
+        paused(lambda: images(out, resume=True, provider_arg=service_provider,
+            service_recovery_only=True, service_recovery_batch_id='repeated'), 0)
+        assert 'service_recovery_reservations' not in checkpoint(out)
+        stop.clear()
+        try:
+            images(out, resume=True, provider_arg=service_provider, service_recovery_only=True)
+        except ConfigError:
+            pass
+        else:
+            raise AssertionError('Service recovery without explicit batch ID was accepted')
+        assert not calls
+
+        for index in range(len(batches)):
+            reset([Reply(503, 'unavailable', request_stop=True)])
+            paused(lambda: images(out, resume=True, provider_arg=service_provider,
+                service_recovery_only=True, service_recovery_batch_id='repeated'), 1)
+            assert checkpoint(out)['service_recovery_reservations']['repeated'] == list(range(index+1))
+            assert inspect_image_service_recovery(out, service_recovery_batch_id='repeated')[
+                'service_recovery_slot_count'] == len(batches)-index-1
+        reset([])
+        try:
+            images(out, resume=True, provider_arg=service_provider,
+                   service_recovery_only=True, service_recovery_batch_id='repeated')
+        except AllCandidatesExhausted:
+            pass
+        assert not calls
+        reset([Reply()] * len(batches))
+        assert images(out, resume=True, provider_arg=service_provider,
+            service_recovery_only=True, service_recovery_batch_id='explicit-new-batch').status == 'complete'
+        verdicts['same_batch_repeated_pause_never_retries_reserved_service_slots'] = True
+
+        # A stop during atomic reservation admits that exact request, then
+        # blocks subsequent retry/fallback and leaves other slots unreserved.
+        out = args.work_dir / 'service-reservation-race.md'
+        reset([Reply(503, 'unavailable')] * len(batches))
+        try:
+            images(out, provider_arg=service_provider)
+        except AllCandidatesExhausted:
+            pass
+        original_replace = os.replace
+        def stop_at_service_reservation(source, target):
+            original_replace(source, target)
+            if Path(target) == out.with_suffix('.ocrllm-state.json'):
+                if checkpoint(out).get('service_recovery_reservations', {}).get('race'):
+                    stop.set()
+        reset([Reply(503, 'unavailable')])
+        os.replace = stop_at_service_reservation
+        try:
+            paused(lambda: images(out, resume=True, service_recovery_only=True,
+                                  service_recovery_batch_id='race'), 1)
+        finally:
+            os.replace = original_replace
+        assert checkpoint(out)['service_recovery_reservations']['race'] == [0]
+        reset([Reply()] * (len(batches)-1))
+        result = images(out, resume=True, provider_arg=service_provider,
+                        service_recovery_only=True, service_recovery_batch_id='race')
+        assert result.status == 'partial' and len(calls) == len(batches)-1
+        assert checkpoint(out)['slots'][0]['error_code'] == 'PROVIDER_UNAVAILABLE'
+        verdicts['service_reservation_race_runs_first_call_but_blocks_retry'] = True
+
+        # Codex has its own pre-spawn and internal-retry gates. A true OS
+        # subprocess proves the same reservation race at that adapter boundary.
+        cli_source = args.work_dir / 'reservation_codex.py'
+        cli_calls = args.work_dir / 'reservation_cli_calls.txt'
+        cli_ok = args.work_dir / 'reservation_cli_ok'
+        cli_source.write_text(
+            "import sys\nfrom pathlib import Path\na=sys.argv[1:]\n"
+            "if a==['--version']: print('synthetic-reservation 1'); raise SystemExit(0)\n"
+            f"with Path({str(cli_calls)!r}).open('a') as f: f.write('call\\n')\n"
+            f"if not Path({str(cli_ok)!r}).exists(): raise SystemExit(1)\n"
+            "Path(a[a.index('--output-last-message')+1]).write_text('Synthetic course content.')\n",
+            encoding='utf-8')
+        if os.name == 'nt':
+            cli = args.work_dir / 'reservation-codex.cmd'
+            cli.write_text(f'@echo off\r\n"{sys.executable}" "{cli_source}" %*\r\n')
+        else:
+            cli = args.work_dir / 'reservation-codex'
+            cli.write_text(f'#!{sys.executable}\nexec(compile(open({str(cli_source)!r}).read(), {str(cli_source)!r}, "exec"))\n')
+            cli.chmod(0o755)
+        cli_provider = ProviderModel(vendor='openai', model='synthetic-reservation',
+            adapter_id='codex_cli', settings=CodexCLISettings(command=str(cli), timeout_seconds=20),
+            supports_plain_ocr=True, supports_detail_ocr=True, supports_audio=False,
+            default_image_batch_size=1, default_audio_minutes=None, retry_rules={})
+        out = args.work_dir / 'service-codex-race.md'
+        reset([Reply(503, 'unavailable')] * len(batches))
+        try:
+            images(out, provider_arg=service_provider)
+        except AllCandidatesExhausted:
+            pass
+        reset([])
+        os.replace = stop_at_service_reservation
+        try:
+            images(out, resume=True, provider_arg=cli_provider,
+                   service_recovery_only=True, service_recovery_batch_id='race')
+        except Cancelled as error:
+            assert error.details['safe_stop'] and error.details['current_call_count'] == 1
+        else:
+            raise AssertionError('Codex reservation race did not acknowledge stop')
+        finally:
+            os.replace = original_replace
+        assert cli_calls.read_text().splitlines() == ['call']
+        assert checkpoint(out)['service_recovery_reservations']['race'] == [0]
+        reset([])
+        cli_ok.touch()
+        result = images(out, resume=True, provider_arg=cli_provider,
+            service_recovery_only=True, service_recovery_batch_id='race')
+        assert result.status == 'partial' and len(cli_calls.read_text().splitlines()) == len(batches)
+        verdicts['codex_reservation_race_runs_one_spawn_and_stops_internal_retries'] = True
+
+        # Unknown crash after atomic reservation conservatively spends that
+        # slot's admission. It must not silently repeat on process recovery.
+        out = args.work_dir / 'service-reservation-crash.md'
+        reset([Reply(503, 'unavailable')] * len(batches))
+        try:
+            images(out, provider_arg=service_provider)
+        except AllCandidatesExhausted:
+            pass
+        def crash_at_service_reservation(source, target):
+            original_replace(source, target)
+            if Path(target) == out.with_suffix('.ocrllm-state.json'):
+                if checkpoint(out).get('service_recovery_reservations', {}).get('crash'):
+                    raise KeyboardInterrupt('Synthetic post-reservation crash')
+        reset([])
+        os.replace = crash_at_service_reservation
+        try:
+            images(out, resume=True, provider_arg=service_provider,
+                   service_recovery_only=True, service_recovery_batch_id='crash')
+        except KeyboardInterrupt:
+            pass
+        finally:
+            os.replace = original_replace
+        assert not calls
+        reset([Reply()] * (len(batches)-1))
+        assert images(out, resume=True, provider_arg=service_provider,
+            service_recovery_only=True, service_recovery_batch_id='crash').status == 'partial'
+        assert len(calls) == len(batches)-1
+        verdicts['unknown_service_reservation_not_reissued'] = True
 
         # A pending slot from a pre-dispatch pause is not a saved service failure.
         reset([])
@@ -236,7 +386,7 @@ def main():
         assert not inspect_image_service_recovery(out)['service_recovery_available']
         reset([])
         try:
-            images(out, resume=True, provider_arg=service_provider, service_recovery_only=True)
+            images(out, resume=True, provider_arg=service_provider, service_recovery_only=True, service_recovery_batch_id="scenario-batch")
         except AllCandidatesExhausted:
             pass
         else:
@@ -287,7 +437,7 @@ def main():
         from ocrllm.errors import ResumeStateError
         try:
             images(out, selected=batches[:1], resume=True,
-                   provider_arg=service_provider, service_recovery_only=True)
+                   provider_arg=service_provider, service_recovery_only=True, service_recovery_batch_id="scenario-batch")
         except ResumeStateError as error:
             assert error.details['provider_calls_attempted'] == 0
         else:

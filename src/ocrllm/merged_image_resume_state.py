@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .contracts.source_fingerprint import SourceFingerprint
 from .errors import ResumeStateError
@@ -122,6 +122,7 @@ class MergedImageResumeState:
     slots: tuple[MergedImageSlot, ...]
     usage: tuple[ProviderModelUsage, ...] = ()
     provider_cleanup_failed: bool = False
+    service_recovery_reservations: dict[str, tuple[int, ...]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.state_version != MERGED_IMAGE_RESUME_STATE_VERSION:
@@ -155,6 +156,13 @@ class MergedImageResumeState:
             != len(self.usage)
         ):
             raise ValueError("merged-image usage rows are invalid")
+        if (type(self.service_recovery_reservations) is not dict or any(
+            type(batch) is not str or not batch.strip() or type(indexes) is not tuple
+            or any(type(index) is not int or not 0 <= index < len(self.slots) for index in indexes)
+            or len(set(indexes)) != len(indexes)
+            for batch, indexes in self.service_recovery_reservations.items()
+        )):
+            raise ValueError("merged-image service recovery reservations are invalid")
         if type(self.provider_cleanup_failed) is not bool:
             raise ValueError("merged-image cleanup state is invalid")
 
@@ -198,6 +206,10 @@ class MergedImageResumeState:
             ],
             "provider_cleanup_failed": self.provider_cleanup_failed,
         }
+        if self.service_recovery_reservations:
+            document["service_recovery_reservations"] = {
+                batch: list(indexes) for batch, indexes in self.service_recovery_reservations.items()
+            }
         return (
             json.dumps(
                 document,
@@ -231,7 +243,9 @@ class MergedImageResumeState:
 
 
 def _state_from_document(document: object) -> MergedImageResumeState:
-    if type(document) is not dict or frozenset(document) != _ROOT_KEYS:
+    if type(document) is not dict or frozenset(document) not in (
+        _ROOT_KEYS, _ROOT_KEYS | {"service_recovery_reservations"}
+    ):
         raise ValueError
     source_documents = document["sources"]
     slot_documents = document["slots"]
@@ -286,6 +300,9 @@ def _state_from_document(document: object) -> MergedImageResumeState:
                 output_tokens=row["output_tokens"],
             )
         )
+    recovery = document.get("service_recovery_reservations", {})
+    if type(recovery) is not dict or any(type(indexes) is not list for indexes in recovery.values()):
+        raise ValueError
     return MergedImageResumeState(
         state_version=document["state_version"],
         image_task=document["image_task"],
@@ -294,6 +311,7 @@ def _state_from_document(document: object) -> MergedImageResumeState:
         slots=tuple(slots),
         usage=tuple(usage),
         provider_cleanup_failed=document["provider_cleanup_failed"],
+        service_recovery_reservations={batch: tuple(indexes) for batch, indexes in recovery.items()},
     )
 
 
