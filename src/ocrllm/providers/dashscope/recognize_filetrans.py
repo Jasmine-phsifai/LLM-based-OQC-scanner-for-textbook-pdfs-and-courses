@@ -91,6 +91,17 @@ def recognize_filetrans(
             return AudioProviderResponse(markdown=state["markdown"])
 
         task_id = state.get("task_id")
+        if state.get("status") == "failed" and isinstance(task_id, str) and task_id:
+            # A definitive provider terminal state cannot become successful
+            # by polling again. Preserve its identity for audit, then allow
+            # the caller's bounded retry policy to submit a fresh task.
+            failed_task_ids = list(state.get("failed_task_ids") or [])
+            if task_id not in failed_task_ids:
+                failed_task_ids.append(task_id)
+            state = {**state, "status": "ready", "task_id": None,
+                     "failed_task_ids": failed_task_ids}
+            _write_state(state_path, state)
+            task_id = None
         if not isinstance(task_id, str) or not task_id:
             # A rejected task can be retried days later; temporary OSS upload
             # references must not outlive their upload policy/credentials.
@@ -126,15 +137,32 @@ def recognize_filetrans(
         current = _load_state(state_path, identity)
         if current is not None and current.get("status") == "complete" and isinstance(current.get("markdown"), str):
             return AudioProviderResponse(markdown=current["markdown"])
-        result = _poll(
-            task_id,
-            model=model,
-            api_key=settings.api_key,
-            base_url=settings.base_url,
-            timeout_seconds=min(float(timeout_seconds), settings.poll_timeout_seconds),
-            poll_interval=settings.poll_interval_seconds,
-            cancellation=cancellation,
-        )
+        try:
+            result = _poll(
+                task_id,
+                model=model,
+                api_key=settings.api_key,
+                base_url=settings.base_url,
+                timeout_seconds=min(float(timeout_seconds), settings.poll_timeout_seconds),
+                poll_interval=settings.poll_interval_seconds,
+                cancellation=cancellation,
+            )
+        except ProviderError as error:
+            # A provider terminal failure is different from a successful
+            # no-speech result. Persist it with the task identity and the
+            # provider code so a later resume can diagnose/retry it without
+            # polling the same failed task forever or submitting blindly.
+            details = dict(error.details)
+            failure = {
+                "code": error.code,
+                "provider_code": details.get("provider_code", ""),
+                "task_status": details.get("task_status", "FAILED"),
+            }
+            _write_state(
+                state_path,
+                {**state, "status": "failed", "task_id": task_id, "failure": failure},
+            )
+            raise
         markdown = _extract_transcript(result, model=model, api_key=settings.api_key, base_url=settings.base_url, timeout_seconds=timeout_seconds)
         if markdown is None:
             _write_state(state_path, {**state, "status": "failed", "failure": "missing_transcript"})
@@ -282,13 +310,12 @@ def _poll(task_id: str, *, model: str, api_key: str | None, base_url: str, timeo
             return data
         if status in {"FAILED", "SUCCESS_WITH_NO_VALID_FRAGMENT"}:
             code = str(output.get("code") or "").upper()
-            if (
-                "NO_VALID_FRAGMENT" in code
-                or "ASR_RESPONSE_HAVE_NO_WORDS" in code
-                or status == "SUCCESS_WITH_NO_VALID_FRAGMENT"
-            ):
+            # DashScope uses SUCCESS_WITH_NO_VALID_FRAGMENT for a completed
+            # clip containing no speech. A FAILED task is a provider error,
+            # even when its diagnostic says ASR_RESPONSE_HAVE_NO_WORDS.
+            if status == "SUCCESS_WITH_NO_VALID_FRAGMENT":
                 raise NoSpeechDetected(details={"provider": "dashscope", "model": model, "provider_calls_attempted": 1}) from None
-            raise ProviderError("DashScope FileTrans task failed.", code="PROVIDER_RESPONSE_INVALID", details={"provider": "dashscope", "model": model, "provider_code": code or "task_failed", "provider_calls_attempted": 1}) from None
+            raise ProviderError("DashScope FileTrans task failed.", code="PROVIDER_RESPONSE_INVALID", details={"provider": "dashscope", "model": model, "provider_code": code or "task_failed", "task_status": status, "task_id": task_id, "provider_calls_attempted": 1}) from None
         if status not in {"PENDING", "RUNNING", "QUEUED", "WAITING"}:
             raise ProviderError("DashScope FileTrans returned an unsupported task status.", code="PROVIDER_RESPONSE_INVALID", details={"provider": "dashscope", "model": model, "provider_code": status or "missing_task_status", "provider_calls_attempted": 1}) from None
         remaining = deadline - time.monotonic()
@@ -349,8 +376,9 @@ def _collect_transcripts(payload: object, output: list[dict[str, object]]) -> No
         code = str(payload.get("code") or "")
         code_is_success = code.strip().upper() in {"", "0", "SUCCESS", "SUCCEEDED"}
         if status == "FAILED" or not code_is_success:
-            if "NO_VALID_FRAGMENT" in code.upper() or "ASR_RESPONSE_HAVE_NO_WORDS" in code.upper():
-                raise NoSpeechDetected(details={"provider": "dashscope", "provider_calls_attempted": 1}) from None
+            # Only an explicit successful no-fragment result means silence.
+            # A failed subtask, including ASR_RESPONSE_HAVE_NO_WORDS, must
+            # remain retryable provider failure.
             raise ProviderError("DashScope FileTrans returned a failed transcript subtask.", code="PROVIDER_RESPONSE_INVALID", details={"provider": "dashscope", "provider_code": code or "subtask_failed", "provider_calls_attempted": 1}) from None
         if isinstance(payload.get("sentences"), list):
             output.append({"sentences": payload["sentences"], "text": payload.get("text", "")})
