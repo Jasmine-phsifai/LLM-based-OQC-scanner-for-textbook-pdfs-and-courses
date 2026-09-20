@@ -10173,3 +10173,12 @@ Carry-forward judgement：recognition failed与owner exit unconfirmed必须分�
 后续判断：WARNING FOR src/ocrllm：只排除此自定义Responses路由CLI端变图/错序，不代表生产认证路由云端和模型绑定正确；verbosity low不是已证实的摘要化原因。不要把传输对齐当作课程内容质量合格。
 
 同切片复核：根review指出仅写报告不足以防未来场景假绿，补充必须每组恰好1请求、exit0、全匹配、无Authorization/捕获异常的总门禁，否则非零退出。loopback三组复跑passed=true；零捕获负例exit1。结果在codex-wire-images-20260920-verified和codex-wire-missing-capture-20260920，无云模型调用。
+
+
+### 2026-09-20 verbosity low/high 限定单因素对照
+
+先为既有loopback工具增加low/high参数，真实CLI本机wire各三请求确认text.verbosity对应，图片及无auth门禁都通过，0云模型消耗。随后按根明确授权真实最多4公开API（单图75、八图72..79各low/high），串行1、原模型luna/low/default、原wrapper和prompt不改，仅真实子进程argv加model_verbosity。终态4API/5spawn含1次拒识重试，input115258/output3521、cache26880子集，串行APIwall94.937秒；输入和prompt SHA每对完全相同，全部用量和失败wall保留。
+
+根审查确认：high八图末三帧对应改善属局部，但75/76标题错字、单图强连通丢失及大量概述遗漏仍在，不证明质量解决或稳定收益。保持生产verbosity不变，不再迭代参数。只提交loopback工具选项与事实报告/diary；实验runner仅在R持久目录，不建第二产品。云实验仅证明请求配置，不能声称服务端回显确认实际verbosity。详见codex_verbosity_comparison_2026-09-20.md。
+
+后续判断：WARNING FOR src/ocrllm：长文本不是完整准确转写；参数对照必须同时核对真实内容、帧归属、失败重试和tokens，不能仅看字数或validator complete。

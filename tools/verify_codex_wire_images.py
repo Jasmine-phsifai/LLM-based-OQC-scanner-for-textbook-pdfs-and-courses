@@ -38,6 +38,7 @@ def main():
     parser.add_argument('--config', type=Path, required=True)
     parser.add_argument('--model-cache', type=Path, required=True)
     parser.add_argument('--work-dir', type=Path, required=True)
+    parser.add_argument('--model-verbosity', choices=('low', 'high'))
     args = parser.parse_args()
     args.work_dir.mkdir(parents=True, exist_ok=False)
     selected = json.loads(args.config.read_text())['image_provider']
@@ -106,7 +107,7 @@ def main():
     thread.start()
     report = {'cli_version': subprocess.check_output([selected['command'],'--version'],text=True).strip(),
               'cli_binary': selected['command'], 'cache_sha256': hashlib.sha256(cache).hexdigest(),
-              'real_cloud_model_calls':0, 'groups':[]}
+              'real_cloud_model_calls':0, 'requested_model_verbosity':args.model_verbosity, 'groups':[]}
     try:
         for group in json.loads(args.manifest.read_text())['groups']:
             active['group'] = group['name']
@@ -131,6 +132,8 @@ def main():
                     'model_providers.loopback_capture.request_max_retries=0',
                     'model_providers.loopback_capture.stream_max_retries=0',
                     'model_providers.loopback_capture.stream_idle_timeout_ms=10000']
+                if args.model_verbosity is not None:
+                    overrides.append('model_verbosity=' + json.dumps(args.model_verbosity))
                 index = argv.index('--')
                 argv[index:index] = [part for value in overrides for part in ('-c',value)]
                 env = {'PATH':os.environ.get('PATH','/usr/bin:/bin'), 'LANG':'C.UTF-8', 'CODEX_HOME':str(home),
@@ -163,6 +166,8 @@ def main():
                       and row.get('bytes_and_order_equal') is True
                       and row.get('prompt_mapping_equal') is True for row in report['groups'])
               and all(row['authorization_present'] is False for row in records)
+              and (args.model_verbosity is None or all(
+                  (row.get('text') or {}).get('verbosity') == args.model_verbosity for row in records))
               and not (args.work_dir/'capture-error.txt').exists())
     report['passed'] = passed
     (args.work_dir/'result.json').write_text(json.dumps(report,indent=2))
