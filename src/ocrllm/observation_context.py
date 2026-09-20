@@ -14,6 +14,7 @@ _FIELDS = ContextVar('ocrllm_observation_fields', default={})
 _ATTEMPT = ContextVar('ocrllm_observation_attempt', default=None)
 _INSTANCE = f'{os.getpid()}-{uuid.uuid4().hex}'
 _LOG = logging.getLogger('ocrllm.observation')
+_FILE_LOCK = Lock()
 
 
 def _now():
@@ -65,8 +66,11 @@ def emit(kind, *, task=None, **data):
             else:
                 destination = observer['path']
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                with destination.open('a', encoding='utf-8') as stream:
-                    stream.write(json.dumps(event, ensure_ascii=False, allow_nan=False)+'\n')
+                # Separate modality contexts can share a file. Their individual
+                # observer locks do not serialize append/open on mounted drives.
+                with _FILE_LOCK:
+                    with destination.open('a', encoding='utf-8') as stream:
+                        stream.write(json.dumps(event, ensure_ascii=False, allow_nan=False)+'\n')
     except Exception as error:
         _LOG.warning('Observation emission failed (%s); recognition continues.', type(error).__name__)
 

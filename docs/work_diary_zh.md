@@ -10110,3 +10110,9 @@ ModelLab通过既有manager将服务环境切为8192/7168并重启，PID88929，
 v4内部历史字段保持兼容，公开cap证据与generation_repetition_failure_evidence/failed_segments分开；loop叶及仅loop祖先派生的未开始子段不再成为cap恢复候选。安全停止仍可用已保存loop证据确认最新预留，不将确认与二分资格混为一谈。旧0e98180 owner通过真实MP3/本机HTTP/安全停止及OS写入中断生成历史树，新owner复用成功300秒兄弟原行、仅补失败300秒剩余两次并继续尾段；已存在而未开始的两子段可普通resume，但不再产生loop孙段。所有状态由公开owner创建/继续，未手造手改生产或测试checkpoint。
 
 39项既有merged-audio/provider-model测试通过；扩展真实编码音频/合成HTTP工具全轮通过，连续loop3次仅1原槽、尾段继续、loop工件3份保留/公开cap0；原cap树21份工件、预算/未知预留/v2/v3接入/不等长覆盖/成功兄弟与发布恢复全通过。脚本初轮仅因冻结metadata的空tuple/list断言差异停止，按既有不可变类型修正场景后通过；首次历史safe-stop会抛Cancelled，场景现明确核实该公共确认。报告与聚合证据均在本仓[asr_token_only_recovery_2026-09-16.md](asr_token_only_recovery_2026-09-16.md)。无真实模型调用、生产重启或checkpoint编辑。Carry-forward judgement：保留失败证据不能自动扩大可切分错误集合；旧子树存在不代表准许创建新树，恢复预算和已成功源范围必须跨版本保持。
+
+## 2026-09-20 每日维护 d40863c588cf406c8dc1c8b4669141bf：并行观察写入丢失
+
+源证据：生产 events.jsonl 有 23 条损坏 JSON 行；orchestrator 的并行模态为同一路径创建不同 observation_context，每个上下文锁不能互相保护。R: 挂载盘隔离情景用 8 个线程各写 200 条约 24KB 事件，修复前仅保留 444/1600 条（静默丢失），修复后 1600 条全部可解析且标识唯一。修复仅给内置文件 sink 增加进程级锁，包含 open/write/close；自定义 sink 和识别结果不变。仍不承诺跨进程锁或断电 fsync。无 checkpoint 修改或历史事件重写。
+
+复现脚本：`PYTHONPATH=src python tools/verify_parallel_observation_append.py --directory /mnt/r/course-pipeline-state/validation`。另运行现有 `tools/verify_course_observations.py` 核验公开 API、失败、重试及恢复观察。生产已收到用户停止请求，不启动 consumer；改动在下次用户恢复后新进程导入时生效，当前生产运行验证待办。详细结果及提交引用由 orchestrator 本次报告记录。活跃库边界未改变。
