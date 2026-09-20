@@ -10182,3 +10182,8 @@ Carry-forward judgement：recognition failed与owner exit unconfirmed必须分�
 根审查确认：high八图末三帧对应改善属局部，但75/76标题错字、单图强连通丢失及大量概述遗漏仍在，不证明质量解决或稳定收益。保持生产verbosity不变，不再迭代参数。只提交loopback工具选项与事实报告/diary；实验runner仅在R持久目录，不建第二产品。云实验仅证明请求配置，不能声称服务端回显确认实际verbosity。详见codex_verbosity_comparison_2026-09-20.md。
 
 后续判断：WARNING FOR src/ocrllm：长文本不是完整准确转写；参数对照必须同时核对真实内容、帧归属、失败重试和tokens，不能仅看字数或validator complete。
+
+
+## 2026-09-20：按用户指示停止质量试验，恢复手写课程提示词
+
+移除未提交且未部署的纯marker重试澄清候选。course_ocr 模板直接采用当前 legacy_app/OCRLLM/prompts.py 的 BOARD 原文，仅渲染图片名，不引入 legacy 运行时依赖。版本 course.legacy.board.20260920；AST提取原文与渲染逐字相等。未新增云端测试调用、未调整模型/校验/重试预算。后续通过正常生产验证，不再进行重复质量对照。
