@@ -128,13 +128,14 @@ def check_contract():
             "validation_max_seconds": max(times)}
 
 
-def check_restore(work):
+def check_restore(work, source_manifest=None):
     work.mkdir(parents=True, exist_ok=True)
     control = work / "synthetic-control.json"
     calls = work / "synthetic-calls.jsonl"
     cli_source = work / "synthetic_codex.py"
-    cli_source.write_text('''import json,re,sys
+    cli_source.write_text('''import hashlib,json,re,sys
 from pathlib import Path
+from PIL import Image
 args=sys.argv[1:]
 if args==['--version']:
  print('synthetic-codex-contract 1');raise SystemExit(0)
@@ -143,8 +144,14 @@ config=json.loads((root/'synthetic-control.json').read_text())
 prompt=args[-1]
 match=re.search(r'（JSON数组，仅作文件身份映射）：(\\[[^\\n]*\\])。',prompt)
 names=json.loads(match.group(1))
+images=[]
+for i,a in enumerate(args):
+ if a=='-i':
+  p=Path(args[i+1])
+  with Image.open(p) as im: size=list(im.size)
+  images.append({'staged_name':p.name,'staged_path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'dimensions':size,'bytes':p.stat().st_size})
 with (root/'synthetic-calls.jsonl').open('a',encoding='utf-8') as stream:
- stream.write(json.dumps({'names':names,'model':args[args.index('-m')+1]})+'\\n')
+ stream.write(json.dumps({'names':names,'model':args[args.index('-m')+1],'images':images})+'\\n')
 text='\\n'.join('<!-- meta:frame id='+n.removesuffix('.jpg')+' -->\\n课程测试正文。' for n in names)
 if any(n in config.get('fail_names',[]) for n in names): text='当前批次没有应得帧标记。'
 Path(args[args.index('--output-last-message')+1]).write_text(text,encoding='utf-8')
@@ -241,7 +248,38 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':100,'cached_in
     old_complete = resume_images_to_markdown(old_plan, provider=provider("synthetic-new"),
         output_path=old_output, timeout_seconds=20)
     assert old_complete.status == "complete" and old_complete.metadata["reused_slot_count"] == 2
-    return {"eight_plus_tail": [8, 1], "single_groups_retained": [1, 1, 1],
+    transport = []
+    if source_manifest is not None:
+        groups = json.loads(source_manifest.read_text())["groups"]
+        for group_index, group in enumerate(groups):
+            original = tuple(Path(value) for value in group["images"])
+            assert len(original) == 8 and len({p.name for p in original}) == 8
+            expected = []
+            for source in original:
+                with Image.open(source) as opened:
+                    dimensions = list(opened.size)
+                expected.append({"source_name": source.name, "source_path": str(source),
+                    "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                    "dimensions": dimensions, "bytes": source.stat().st_size})
+            call_count = len(calls.read_text().splitlines())
+            result = recognize_images_to_markdown((original,), provider=provider("synthetic-transport"),
+                image_task="course_ocr", output_path=work / f"transport-{group_index}.md", timeout_seconds=20)
+            assert result.status == "complete" and result.metadata["provider_call_count"] == 1
+            captured = [json.loads(line) for line in calls.read_text().splitlines()][call_count:]
+            assert len(captured) == 1
+            captured = captured[0]
+            assert captured["names"] == [p.name for p in original]
+            assert len(captured["images"]) == 8
+            for index, (source, actual) in enumerate(zip(expected, captured["images"]), start=1):
+                assert actual["staged_name"] == f"image_{index:03d}" + Path(source["source_name"]).suffix.lower()
+                assert all(source[key] == actual[key] for key in ("sha256", "dimensions", "bytes"))
+                assert hashlib.sha256(original[index-1].read_bytes()).hexdigest() == source["sha256"]
+                assert not Path(actual["staged_path"]).exists(), "CLI temp should be removed after return"
+            transport.append({"group": group["name"], "sources": expected,
+                "captured_process": captured, "source_order_bytes_dimensions_match": True,
+                "prompt_filename_order_match": True, "source_bytes_unchanged": True,
+                "temporary_staging_removed": True})
+    return {"source_transport": transport, "eight_plus_tail": [8, 1], "single_groups_retained": [1, 1, 1],
             "resume_calls": complete.metadata["provider_call_count"],
             "single_resume_calls": old_complete.metadata["provider_call_count"],
             "source_mismatch_calls": 0, "lookup_kept_state_and_markdown_bytes": True,
@@ -254,9 +292,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--work-dir", type=Path, required=True)
     parser.add_argument("--existing-output-root", type=Path)
+    parser.add_argument("--source-manifest", type=Path, help="Read-only real-source groups for synthetic CLI transport proof")
     args = parser.parse_args()
     args.work_dir = args.work_dir.resolve()
-    result = {"markers": check_contract(), "public_restore": check_restore(args.work_dir)}
+    result = {"markers": check_contract(), "public_restore": check_restore(args.work_dir, args.source_manifest)}
     if args.existing_output_root:
         if not args.existing_output_root.is_dir():
             raise SystemExit("--existing-output-root must be an existing directory")

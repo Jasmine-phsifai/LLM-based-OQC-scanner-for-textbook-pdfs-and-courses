@@ -10157,3 +10157,10 @@ Carry-forward judgement：recognition failed与owner exit unconfirmed必须分�
 后续判断：WARNING FOR src/ocrllm：marker全齐不能证明多图片正文归属正确，后续须单独诊断8图帧内容错位；本轮不擅自增加正文审核或放宽校验。真实输出质量证据必须独立于validator通过，不能将候选的绿色测试当生产部署许可。
 
 补充同切片：根授权额外原HEAD单图frame75一次API，1次CLI/12.948秒，正确读出章节标题，但其余仍摘要化。证据在codex-course-single-frame75-20260920，独立tokens，不改生产8图，也不据此宣称单图满足完整转写。实验到此停止。
+
+
+### 2026-09-20 8图实际CLI入场顺序的零模型诊断
+
+复用现有合成可执行CLI场景，通过公开merged API传入前轮三组真实8图，在子进程收到argv后读取8个-i文件的SHA/尺寸/字节和prompt原名JSON。三组24位置全部与原图有序一致（均1920×1080），跨组无串位，源hash未改。原场景+新增共10次synthetic进程，真实模型0。不改产品算法、提示或生产状态；只扩展按需场景和记录。机器证据在R的codex-source-transport-20260920，详见codex_source_transport_2026-09-20.md。
+
+后续判断：WARNING FOR src/ocrllm：本证据止于CLI进程入场，不能证明真实CLI/backend/模型的附件解释或marker正文绑定。8图内容错位仍待后续有界诊断；不要因本次传图核验通过而宣称识别质量合格。
