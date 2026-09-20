@@ -23,7 +23,7 @@ from ocrllm import (
     resume_audio_to_markdown, resume_images_to_markdown, split_audio,
 )
 from ocrllm.audio.load_audio_ffmpeg_executable import load_audio_ffmpeg_executable
-from ocrllm.errors import Cancelled, ConfigError, OutputError
+from ocrllm.errors import AllCandidatesExhausted, Cancelled, ConfigError, OutputError
 
 
 @dataclass
@@ -168,6 +168,35 @@ def main():
         return events
 
     try:
+        # All-rejected recognition still has a safe owner exit after checkpoint
+        # and HTTP-client cleanup. Failed cleanup must withhold this guarantee.
+        from contextlib import nullcontext
+        from unittest.mock import patch
+        import openai
+        original_close = openai.OpenAI.close
+        def fail_client_close(client):
+            original_close(client)
+            raise OSError('Synthetic SDK client close failure')
+        for cleanup_failed in (False, True):
+            for name, function in [('audio', audio), ('images', images)]:
+                count = len(plan) if name == 'audio' else len(batches)
+                reset([Reply(400, 'invalid_request')] * count)
+                out = args.work_dir / f'all-rejected-{name}-{cleanup_failed}.md'
+                with (patch.object(openai.OpenAI, 'close', fail_client_close)
+                      if cleanup_failed else nullcontext()):
+                    try:
+                        function(out, provider_arg=[[provider], [provider]])
+                    except AllCandidatesExhausted as error:
+                        assert error.details['safe_owner_exit'] is (not cleanup_failed)
+                    else:
+                        raise AssertionError('Rejected recognition became success')
+                assert len(calls) == len(completed) == count
+                saved = checkpoint(out)
+                assert all(slot['status'] == 'failed' for slot in saved['slots'])
+                assert saved['provider_cleanup_failed'] is cleanup_failed
+                assert not out.exists()
+        verdicts['all_rejected_checkpoint_and_cleanup_contract'] = True
+
         # An already requested stop still creates a resumable, zero-call plan.
         for name, function in [('audio', audio), ('images', images)]:
             reset([])

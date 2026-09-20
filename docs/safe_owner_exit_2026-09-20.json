@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "real_model_calls": 0,
+  "synthetic_http": true,
+  "all_rejected_checkpoint_and_cleanup_contract": true,
+  "preset_stop_zero_calls_and_reservations": true,
+  "audio_and_image_lanes_drained_before_ack": true,
+  "transient_wait_stops_without_losing_failure_or_usage": true,
+  "only_output_limit_resume_preserves_transient_remaining_budget": true,
+  "final_checkpoint_resumes_publication_with_zero_calls": true,
+  "no_speech_outcome_checkpointed_before_stop": true,
+  "post_admission_stop_does_not_abandon_reserved_attempt": true,
+  "reservation_query_changes_only_at_atomic_replace": true,
+  "cap_failure_evidence_saved_and_pause_cannot_reset_budget": true,
+  "previous_cap_cannot_confirm_later_reservation": true,
+  "two_level_unequal_children_and_short_tail_resume": true,
+  "saved_split_stops_before_child_reservation": true,
+  "unknown_current_leaf_denied_but_inactive_ancestor_ignored": true,
+  "legacy_missing_and_unknown_history_are_not_confirmed": true,
+  "checkpoint_failure_never_acknowledged_as_safe_stop": true,
+  "signal_shape_validated_before_dispatch": true
+}

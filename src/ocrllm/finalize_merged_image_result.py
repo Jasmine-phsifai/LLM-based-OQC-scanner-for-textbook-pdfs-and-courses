@@ -47,6 +47,9 @@ def finalize_merged_image_result(
         raise AllCandidatesExhausted(
             "No provider candidate could settle any merged-image slot.",
             details={
+                # Execution has joined all lanes and checkpointed each outcome.
+                # Recognition failure is distinct from an unconfirmed cleanup.
+                "safe_owner_exit": not state.provider_cleanup_failed,
                 "failed_slots": failed_slots,
                 **({'provider_failures': provider_failures} if provider_failures else {}),
                 "provider_calls_attempted": current_calls,

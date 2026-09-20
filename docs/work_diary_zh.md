@@ -10122,3 +10122,13 @@ v4内部历史字段保持兼容，公开cap证据与generation_repetition_failu
 实际生产近24小时954次超时、8次接受；此前26,643次PROVIDER_UNAVAILABLE没有保留足以判断额度/认证/网络原因的诊断。修复CodexUsageAttempt丢弃turn.failed/error消息、run_codex_process丢弃超时stderr的问题：只保留已观察的额度/限流/认证/连接/超时词汇信号、明确HTTP状态码、末8192字符指纹及长度；最多8条，不保存原始CLI正文、URL或凭据，不将信号当成确定根因或自动重试决定。数据随既有fsync尝试/turn事件保存，无新状态机、数据库schema或provider默认行为变更。
 
 `tools/verify_codex_failure_diagnostics.py`使用2个真实OS子进程验证turn.failed额度错误和超时前stderr，检查secret sentinel不进入事件、未知usage不转零、长度/条数有界。场景通过；既有Codex usage/adapter/settings测试72项通过，仅pytest cache不可写警告。未发真实模型请求、未修改checkpoint、未清除生产用户停止请求。下次新consumer导入生效；历史错误不可由新代码补造，恢复故障根因和提供方级停发仍待后续证据。Carry-forward judgement：通用错误码不能替代原故障信号；任何CLI接入都应在临时进程清理前保留有限、无秘密的诊断，且不能因此宣称网络已恢复。
+
+## 2026-09-20 全失败识别与安全退出分离
+
+生产统筹将ALL_CANDIDATES_EXHAUSTED一概视作owner未安全退出，导致已保存且已关闭请求的普通失败进入停止阻塞清单。图片/音频finalizer现仅在执行器已返回（lane已join且结果已checkpoint）时，在该异常details提供safe_owner_exit布尔值；provider_cleanup_failed为true时明确false。错误码、失败槽、预算、输出和checkpoint不改变。该标志不代表识别成功，不允许将其他错误或缺少标志的旧异常推断为安全。
+
+扩展既有tools/verify_cooperative_safe_stop.py，使用真实编码图片/MP3、本机HTTP全拒绝响应、OpenAI SDK close边界失败注入，覆盖图片/音频并行lane全失败保存、异常不变、无成功MD、cleanup失败不给确认。完整既有安全停止/重试/不等长切片/OS写盘失败场景也通过，无生产模型调用。既有merged image/audio公开合同34项通过（仅pytest cache权限警告）。
+
+运行：`python tools/verify_cooperative_safe_stop.py --work-dir <独立持久验证目录>`。本轮聚合结果见[safe_owner_exit_2026-09-20.json](safe_owner_exit_2026-09-20.json)。统筹只消费该明确契约，不根据错误码自行认定保存完成、不解析checkpoint内部字段。生产部署及跨仓版本由course-pipeline记录。
+
+Carry-forward judgement：recognition failed与owner exit unconfirmed必须分开；只能由实际保存与lane收尾责任方给出确认，调用方不能通过放行错误码或抹去历史失败绕过。

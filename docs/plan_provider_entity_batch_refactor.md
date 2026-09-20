@@ -13,6 +13,12 @@ authority.
 
 ## 0. Current pruning and execution checkpoint (2026-09-01, #720)
 
+### 2026-09-20 All-failed owner exit acknowledgement
+
+Merged image/audio exhaustion now reports explicit `safe_owner_exit` only after
+lane join and checkpoint; failed provider cleanup withholds confirmation. No
+recognition status or retry budget changed. See [owner evidence](safe_owner_exit_2026-09-20.md).
+
 ### 2026-09-16 ASR token-only subdivision restored
 
 The current user boundary restricts new bisection to canonical output_token_limit.

@@ -7,7 +7,12 @@ file and `AGENTS.md` differ, `AGENTS.md` wins.
 
 ## Current Status
 
-Last synchronized: 2026-09-16.
+Last synchronized: 2026-09-20.
+
+Merged image/audio ALL_CANDIDATES_EXHAUSTED now carries an explicit
+`safe_owner_exit` acknowledgement after joined/checkpointed execution; failed
+client cleanup remains unconfirmed. Recognition still fails. See
+[verification](docs/safe_owner_exit_2026-09-20.md).
 
 The Codex CLI image route now has explicit service tier, opt-in durable public usage,
 real CLI version provenance, and merged stop/deadline propagation. CLI cumulative
