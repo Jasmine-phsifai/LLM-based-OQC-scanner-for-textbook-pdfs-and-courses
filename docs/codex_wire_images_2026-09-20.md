@@ -40,6 +40,9 @@ stderr未出现fallback/cache/auth这些已检查关键词；不能把这个有�
 - `requests.json`：每组实际HTTP提取的图片摘要、顺序、模型/推理/verbosity/身份映射
 - `result.json`：CLI版本、缓存hash、原图摘要、比较结果和退出状态
 
+场景最终门禁要求三组均CLI exit0、各恰好一次请求、匹配全真且无Authorization；
+无捕获/请求异常/不匹配则非零退出，避免报告存在就被误判为通过。
+
 不持久完整HTTP头、认证值、原始base64大包或完整prompt。合成回复也不用于生产识别稿。
 
 复现（work-dir须不存在）：
@@ -55,3 +58,7 @@ stderr未出现fallback/cache/auth这些已检查关键词；不能把这个有�
 路径完全等价。后端解码/预处理、图像注意力分配、模型理解与正文-帧绑定仍未核实。
 low verbosity是实际观察，不是已经证明的摘要化原因；本轮未改变生产verbosity、
 模型、8图batch、prompt或重试。多图识别质量问题不能因传输正确被视为已修复。
+
+最终带非零失败门禁复跑保存于 `codex-wire-images-20260920-verified`，三组各1请求、
+passed=true。另用零组输入验证缺失捕获确实exit1、passed=false，保存于
+`codex-wire-missing-capture-20260920`；该负例没有图像请求。两项均零云模型调用。

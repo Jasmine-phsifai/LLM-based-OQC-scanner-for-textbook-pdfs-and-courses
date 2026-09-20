@@ -158,6 +158,16 @@ def main():
             print(json.dumps({k:v for k,v in summary.items() if k!='expected'}),flush=True)
     finally:
         server.shutdown(); server.server_close(); thread.join()
+    passed = (len(report['groups']) == 3 and len(records) == 3
+              and all(row['exit_code'] == 0 and row['requests'] == 1
+                      and row.get('bytes_and_order_equal') is True
+                      and row.get('prompt_mapping_equal') is True for row in report['groups'])
+              and all(row['authorization_present'] is False for row in records)
+              and not (args.work_dir/'capture-error.txt').exists())
+    report['passed'] = passed
+    (args.work_dir/'result.json').write_text(json.dumps(report,indent=2))
+    if not passed:
+        raise SystemExit('CLI wire capture failed; inspect the durable result.json')
 
 
 if __name__ == '__main__':

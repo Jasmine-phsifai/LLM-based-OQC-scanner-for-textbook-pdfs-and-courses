@@ -10171,3 +10171,5 @@ Carry-forward judgement：recognition failed与owner exit unconfirmed必须分�
 新增小型按需owner场景，实际生产CLI0.154.0-alpha.6.1以隔离CODEX_HOME（仅复制模型缓存，无auth/config）、无鉴权自定义provider连接本机fake Responses服务。真实三组8图各1请求、exit0，24位置JPEG SHA/字节/RGB像素/1920×1080尺寸与原图原序完全相同，prompt原名一致。请求effort low、verbosity low、detail和service_tier未提供、Authorization不存在。只保存摘要，无完整头/base64/prompt。真实云调用0，生产代理/凭据/模型/参数未改。详见codex_wire_images_2026-09-20.md，R目录codex-wire-images-20260920。
 
 后续判断：WARNING FOR src/ocrllm：只排除此自定义Responses路由CLI端变图/错序，不代表生产认证路由云端和模型绑定正确；verbosity low不是已证实的摘要化原因。不要把传输对齐当作课程内容质量合格。
+
+同切片复核：根review指出仅写报告不足以防未来场景假绿，补充必须每组恰好1请求、exit0、全匹配、无Authorization/捕获异常的总门禁，否则非零退出。loopback三组复跑passed=true；零捕获负例exit1。结果在codex-wire-images-20260920-verified和codex-wire-missing-capture-20260920，无云模型调用。
