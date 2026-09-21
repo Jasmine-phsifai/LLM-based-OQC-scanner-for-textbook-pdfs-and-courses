@@ -10189,3 +10189,8 @@ Carry-forward judgement：recognition failed与owner exit unconfirmed必须分�
 移除未提交且未部署的纯marker重试澄清候选。course_ocr 模板直接采用当前 legacy_app/OCRLLM/prompts.py 的 BOARD 原文，仅渲染图片名，不引入 legacy 运行时依赖。版本 course.legacy.board.20260920；AST提取原文与渲染逐字相等。未新增云端测试调用、未调整模型/校验/重试预算。后续通过正常生产验证，不再进行重复质量对照。
 
 加载后的正常恢复发现 prompt_version 改名阻止旧checkpoint恢复（0次provider调用）。保留既有course.legacy.v1恢复身份；当前用户手写文本由runtime Git revision追踪，不手改checkpoint、不重置失败预算。48d3043的版本改名被本次补正。
+
+
+### 2026-09-21：画面异常不使用拒识标签
+
+按用户要求，在 course_ocr 手写模板和 Codex CLI 外层提示同时明确：空白、无黑板/课件、视角不对、遮挡或模糊以对应帧标记加实际情况描述返回，不附加 SORRY4OCRLLM；可辨认部分仍识别，不编造内容。仅改提示，不放宽验证器、不改重试或 checkpoint 身份。离线渲染检查通过，不追加付费模型测试；生产响应由正常消费流程验证。

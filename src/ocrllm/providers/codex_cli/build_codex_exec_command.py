@@ -35,7 +35,7 @@ def build_codex_exec_prompt(user_prompt: str, image_count: int, *, source_names:
         "只根据附加图片完成识别，不调用工具，不读取项目文件，不编辑文件，不联网，不解释过程。"
         f"本次共有 {image_count} 张图片。"
         "按用户原始提示要求输出最终识别内容；如果原始提示要求 Markdown，就只输出 Markdown 正文。"
-        "如果识别任务令人困惑或无法根据附加图片完成，请只回复 `SORRY4OCRLLM, because {原因}`，除此之外不要输出任何内容。\n\n"
+        "黑板空白、没有黑板或课件、视角不对、遮挡或模糊等画面情况，不得使用或附加拒识标签；按用户要求保留帧标记并简短描述实际情况，有可辨认内容则照常识别。只有除此之外确实无法执行识别任务时，才只回复 `SORRY4OCRLLM, because {原因}`，除此之外不要输出任何内容。\n\n"
         f"{mapping}用户原始提示:\n"
         f"{user_prompt}"
     )
